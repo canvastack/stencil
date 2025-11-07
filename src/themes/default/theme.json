@@ -1,0 +1,24 @@
+{
+  "name": "Default Theme",
+  "version": "1.0.0",
+  "description": "Default theme for the application",
+  "author": "Stencil Team",
+  "components": {
+    "required": [
+      "Header",
+      "Footer"
+    ],
+    "optional": [
+      "HeroCarousel",
+      "CTASection",
+      "Product3DViewer",
+      "ScrollToTop"
+    ]
+  },
+  "styles": {
+    "entry": [
+      "base.css",
+      "theme.css"
+    ]
+  }
+}

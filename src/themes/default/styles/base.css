@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base Theme Configuration */
+@layer base {
+  :root {
+    /* Core Design Tokens */
+    --background: 36 100% 97%;
+    --foreground: 210 24% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 24% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 24% 16%;
+
+    --primary: 30 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 17% 82%;
+    --secondary-foreground: 210 24% 16%;
+
+    --muted: 210 17% 95%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 30 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 30 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom Design Tokens */
+    --navy: 213 29% 14%;
+    --navy-dark: 213 45% 8%;
+    --navy-light: 213 24% 24%;
+
+    --orange: 30 100% 50%;
+    --orange-light: 36 100% 60%;
+
+    --lavender: 225 15% 70%;
+    --lavender-light: 225 20% 85%;
+
+    /* Theme-specific Tokens */
+    --glass-bg: 213 29% 14% / 0.8;
+    --glass-border: 0 0% 100% / 0.1;
+
+    /* Gradient Tokens */
+    --gradient-hero: linear-gradient(135deg, hsl(213 45% 8%) 0%, hsl(213 29% 14%) 100%);
+    --gradient-orange: linear-gradient(135deg, hsl(30 100% 50%) 0%, hsl(36 100% 60%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(225 60% 60%) 0%, hsl(270 60% 60%) 100%);
+
+    /* Effect Tokens */
+    --shadow-glow: 0 0 40px hsl(30 100% 50% / 0.3);
+    --shadow-card: 0 10px 30px -10px hsl(213 45% 8% / 0.3);
+
+    /* Animation Tokens */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Dark Mode Override */
+  .dark {
+    --background: 213 29% 14%;
+    --foreground: 210 40% 98%;
+
+    --card: 213 24% 18%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 213 24% 18%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 30 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 213 24% 24%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 213 24% 24%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 30 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 213 24% 24%;
+    --input: 213 24% 20%;
+    --ring: 30 100% 50%;
+  }
+}
+
+/* Base Element Styles */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

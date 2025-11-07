@@ -1,0 +1,252 @@
+{
+  "id": "page-home-1",
+  "pageSlug": "home",
+  "content": {
+    "hero": {
+      "title": {
+        "static": "Etching Presisi untuk",
+        "typing": [
+          "Logam",
+          "Kaca",
+          "Kristal",
+          "Plastik",
+          "Kayu"
+        ]
+      },
+      "subtitle": "Teknologi laser etching terkini untuk hasil detail sempurna. Layanan profesional, cepat, dan berkualitas tinggi untuk kebutuhan bisnis dan personal Anda.",
+      "buttons": {
+        "primary": {
+          "text": "Lihat Katalog Produk",
+          "link": "/products",
+          "icon": "ArrowRight"
+        },
+        "secondary": {
+          "text": "Hubungi Kami",
+          "link": "/contact",
+          "icon": "Phone"
+        }
+      },
+      "carousel": {
+        "images": [
+          "/images/hero/etching-metal-sample-1.jpg",
+          "/images/hero/etching-glass-sample-2.jpg",
+          "/images/hero/etching-crystal-sample-3.jpg"
+        ],
+        "autoplay": true,
+        "interval": 5000
+      }
+    },
+    "stats": {
+      "enabled": true,
+      "items": [
+        {
+          "icon": "CheckCircle2",
+          "value": "500+",
+          "label": "Proyek Selesai",
+          "color": "text-green-600"
+        },
+        {
+          "icon": "Users",
+          "value": "300+",
+          "label": "Klien Puas",
+          "color": "text-blue-600"
+        },
+        {
+          "icon": "Award",
+          "value": "15+",
+          "label": "Tahun Pengalaman",
+          "color": "text-orange-600"
+        },
+        {
+          "icon": "TrendingUp",
+          "value": "98%",
+          "label": "Tingkat Kepuasan",
+          "color": "text-purple-600"
+        }
+      ]
+    },
+    "achievements": {
+      "enabled": true,
+      "title": "Kenapa Memilih Kami?",
+      "subtitle": "Kami berkomitmen memberikan layanan etching terbaik dengan standar industri tertinggi",
+      "items": [
+        {
+          "icon": "Zap",
+          "title": "Teknologi Terkini",
+          "description": "Menggunakan mesin laser etching generasi terbaru untuk hasil presisi maksimal"
+        },
+        {
+          "icon": "Clock",
+          "title": "Pengerjaan Cepat",
+          "description": "Proses pengerjaan yang efisien tanpa mengurangi kualitas hasil"
+        },
+        {
+          "icon": "ShieldCheck",
+          "title": "Garansi Kualitas",
+          "description": "Garansi 100% untuk setiap produk yang kami kerjakan"
+        },
+        {
+          "icon": "Users",
+          "title": "Tim Profesional",
+          "description": "Didukung oleh tim ahli berpengalaman lebih dari 15 tahun"
+        }
+      ]
+    },
+    "benefits": {
+      "enabled": true,
+      "title": "Keunggulan Layanan Kami",
+      "subtitle": "Solusi etching lengkap untuk berbagai material dan kebutuhan",
+      "items": [
+        {
+          "icon": "Sparkles",
+          "title": "Hasil Presisi Tinggi",
+          "description": "Detail sempurna hingga 0.01mm dengan teknologi laser fiber terbaru",
+          "color": "bg-blue-50 text-blue-600"
+        },
+        {
+          "icon": "Palette",
+          "title": "Custom Design",
+          "description": "Bebas request desain sesuai keinginan dengan tim desainer profesional",
+          "color": "bg-purple-50 text-purple-600"
+        },
+        {
+          "icon": "Package",
+          "title": "Berbagai Material",
+          "description": "Bisa untuk logam, kaca, kristal, plastik, kayu, dan material lainnya",
+          "color": "bg-green-50 text-green-600"
+        },
+        {
+          "icon": "DollarSign",
+          "title": "Harga Kompetitif",
+          "description": "Harga terjangkau dengan kualitas premium, tersedia paket hemat untuk order banyak",
+          "color": "bg-orange-50 text-orange-600"
+        }
+      ]
+    },
+    "process": {
+      "enabled": true,
+      "title": "Proses Pengerjaan",
+      "subtitle": "4 langkah mudah untuk mendapatkan produk etching berkualitas",
+      "steps": [
+        {
+          "number": 1,
+          "title": "Konsultasi & Design",
+          "description": "Diskusikan kebutuhan Anda dengan tim kami dan tentukan desain yang diinginkan",
+          "icon": "MessageSquare"
+        },
+        {
+          "number": 2,
+          "title": "Approval & Quotation",
+          "description": "Dapatkan mockup desain dan penawaran harga yang transparan",
+          "icon": "FileCheck"
+        },
+        {
+          "number": 3,
+          "title": "Produksi",
+          "description": "Tim profesional kami mulai mengerjakan produk dengan standar kualitas tinggi",
+          "icon": "Cpu"
+        },
+        {
+          "number": 4,
+          "title": "Quality Check & Delivery",
+          "description": "Produk diperiksa kualitasnya dan siap dikirim ke lokasi Anda",
+          "icon": "Truck"
+        }
+      ]
+    },
+    "testimonials": {
+      "enabled": true,
+      "title": "Apa Kata Klien Kami",
+      "items": [
+        {
+          "name": "Budi Santoso",
+          "role": "Owner",
+          "company": "CV. Maju Bersama",
+          "content": "Hasil etching sangat memuaskan! Detail logo perusahaan kami tercetak sempurna di plakat kristal. Tim sangat profesional dan responsif.",
+          "rating": 5,
+          "image": "/images/testimonials/client-1.jpg"
+        },
+        {
+          "name": "Siti Nurhaliza",
+          "role": "Manager HRD",
+          "company": "PT. Sejahtera Abadi",
+          "content": "Sudah beberapa kali order untuk kebutuhan corporate gift. Kualitas konsisten bagus, harga kompetitif, dan pengerjaan cepat. Highly recommended!",
+          "rating": 5,
+          "image": "/images/testimonials/client-2.jpg"
+        },
+        {
+          "name": "Ahmad Wijaya",
+          "role": "Event Organizer",
+          "company": "AW Events",
+          "content": "Partner terpercaya untuk pembuatan trophy dan plakat event kami. Hasilnya selalu memuaskan dan tepat waktu. Terima kasih!",
+          "rating": 5,
+          "image": "/images/testimonials/client-3.jpg"
+        }
+      ]
+    },
+    "cta": [
+      {
+        "type": "primary",
+        "title": "Siap Mewujudkan Proyek Etching Anda?",
+        "subtitle": "Konsultasikan kebutuhan etching Anda sekarang juga dengan tim profesional kami",
+        "buttons": [
+          {
+            "text": "Mulai Konsultasi Gratis",
+            "link": "/contact",
+            "variant": "default"
+          },
+          {
+            "text": "Lihat Portfolio",
+            "link": "/products",
+            "variant": "outline"
+          }
+        ],
+        "background": "bg-gradient-to-r from-navy to-purple-600"
+      },
+      {
+        "type": "secondary",
+        "title": "Butuh Bantuan?",
+        "subtitle": "Tim customer service kami siap membantu Anda",
+        "buttons": [
+          {
+            "text": "WhatsApp Kami",
+            "link": "https://wa.me/6281234567890",
+            "variant": "default"
+          }
+        ],
+        "stats": [
+          {
+            "value": "< 1 Jam",
+            "label": "Response Time"
+          },
+          {
+            "value": "24/7",
+            "label": "Customer Support"
+          }
+        ]
+      }
+    ],
+    "seo": {
+      "title": "Jasa Etching Profesional - Logam, Kaca, Kristal | Etching ID",
+      "description": "Layanan laser etching profesional untuk logam, kaca, kristal, dan berbagai material. Hasil presisi tinggi, pengerjaan cepat, harga kompetitif. Konsultasi gratis!",
+      "keywords": [
+        "jasa etching",
+        "laser etching",
+        "etching logam",
+        "etching kaca",
+        "etching kristal",
+        "plakat etching",
+        "trophy custom",
+        "corporate gift"
+      ],
+      "ogImage": "/images/og-image-home.jpg"
+    }
+  },
+  "status": "published",
+  "publishedAt": "2025-01-04T00:00:00Z",
+  "version": 1,
+  "previousVersion": null,
+  "createdAt": "2025-01-04T00:00:00Z",
+  "updatedAt": "2025-01-04T00:00:00Z",
+  "updatedBy": null
+}

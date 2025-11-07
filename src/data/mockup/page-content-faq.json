@@ -1,0 +1,134 @@
+{
+  "id": "page-faq-1",
+  "pageSlug": "faq",
+  "content": {
+    "hero": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Temukan jawaban untuk pertanyaan yang sering diajukan"
+    },
+    "categories": [
+      {
+        "id": "general",
+        "name": "Pertanyaan Umum",
+        "icon": "HelpCircle",
+        "items": [
+          {
+            "question": "Apa itu laser etching?",
+            "answer": "Laser etching adalah proses menggunakan teknologi laser untuk membuat desain, teks, atau gambar pada permukaan material dengan presisi tinggi. Prosesnya menggunakan sinar laser yang dikontrol komputer untuk mengikis atau mengubah warna permukaan material."
+          },
+          {
+            "question": "Material apa saja yang bisa di-etching?",
+            "answer": "Kami dapat melakukan etching pada berbagai material termasuk logam (stainless steel, aluminum, brass, titanium), kaca, kristal, akrilik, kayu, kulit, dan plastik tertentu. Setiap material memiliki karakteristik hasil yang berbeda."
+          },
+          {
+            "question": "Berapa lama waktu pengerjaan?",
+            "answer": "Waktu pengerjaan bervariasi tergantung kompleksitas desain dan jumlah pesanan. Umumnya 3-7 hari kerja untuk order standar. Untuk order mendesak, kami menyediakan layanan express dengan biaya tambahan."
+          }
+        ]
+      },
+      {
+        "id": "ordering",
+        "name": "Pemesanan",
+        "icon": "ShoppingCart",
+        "items": [
+          {
+            "question": "Bagaimana cara memesan?",
+            "answer": "Anda bisa memesan melalui: 1) Website dengan mengisi form konsultasi, 2) WhatsApp langsung ke customer service, 3) Email dengan mengirimkan detail kebutuhan dan desain. Tim kami akan membantu proses selanjutnya."
+          },
+          {
+            "question": "Apakah ada minimal order?",
+            "answer": "Tidak ada minimal order untuk produk standard. Untuk custom order, minimal order adalah 1 pcs. Namun untuk order dalam jumlah besar (>50 pcs), kami menyediakan harga khusus yang lebih kompetitif."
+          },
+          {
+            "question": "Apakah bisa melihat mockup sebelum produksi?",
+            "answer": "Ya, tentu! Kami akan memberikan mockup digital atau proof sebelum memulai proses produksi. Anda bisa melakukan revisi hingga desain sesuai dengan keinginan Anda."
+          }
+        ]
+      },
+      {
+        "id": "design",
+        "name": "Desain & Customization",
+        "icon": "Palette",
+        "items": [
+          {
+            "question": "Apakah bisa request desain custom?",
+            "answer": "Sangat bisa! Tim desainer kami siap membantu mewujudkan ide Anda. Anda bisa memberikan brief, referensi, atau konsep yang diinginkan, dan kami akan buatkan desainnya."
+          },
+          {
+            "question": "Format file apa yang diterima?",
+            "answer": "Kami menerima berbagai format file seperti AI, EPS, PDF, PNG, JPG, CDR, dan SVG. Untuk hasil terbaik, kami rekomendasikan format vector (AI, EPS, SVG) dengan resolusi tinggi."
+          },
+          {
+            "question": "Apakah ada batasan ukuran atau detail desain?",
+            "answer": "Teknologi laser kami dapat mengerjakan detail hingga 0.01mm. Ukuran area kerja maksimal tergantung mesin yang digunakan, umumnya hingga 60x40cm. Untuk ukuran lebih besar bisa dikonsultasikan terlebih dahulu."
+          }
+        ]
+      },
+      {
+        "id": "pricing",
+        "name": "Harga & Pembayaran",
+        "icon": "DollarSign",
+        "items": [
+          {
+            "question": "Bagaimana sistem pembayaran?",
+            "answer": "Kami menerima pembayaran via transfer bank (BCA, Mandiri, BNI), e-wallet (OVO, GoPay, Dana), dan kartu kredit. Untuk order baru, kami meminta DP 50% dan pelunasan sebelum pengiriman."
+          },
+          {
+            "question": "Apakah harga sudah termasuk ongkir?",
+            "answer": "Harga yang kami quote belum termasuk ongkos kirim. Biaya pengiriman akan dihitung berdasarkan lokasi tujuan, berat, dan volume paket. Kami bekerja sama dengan berbagai ekspedisi terpercaya."
+          },
+          {
+            "question": "Apakah ada diskon untuk pembelian dalam jumlah banyak?",
+            "answer": "Ya! Kami memberikan harga khusus untuk pembelian dalam jumlah banyak. Semakin banyak quantity, semakin besar diskon yang bisa kami berikan. Silakan hubungi tim sales untuk penawaran terbaik."
+          }
+        ]
+      },
+      {
+        "id": "quality",
+        "name": "Kualitas & Garansi",
+        "icon": "Award",
+        "items": [
+          {
+            "question": "Apakah ada garansi?",
+            "answer": "Ya, kami memberikan garansi 100% untuk kualitas hasil etching. Jika ada cacat produksi atau hasil tidak sesuai approval, kami akan mengerjakan ulang tanpa biaya tambahan."
+          },
+          {
+            "question": "Bagaimana standar quality control?",
+            "answer": "Setiap produk melalui quality check ketat sebelum dikirim. Kami periksa detail etching, kebersihan permukaan, dan kesesuaian dengan mockup yang diapprove. Produk yang tidak lolos QC akan dikerjakan ulang."
+          },
+          {
+            "question": "Apakah hasil etching permanen?",
+            "answer": "Ya, hasil laser etching bersifat permanen. Pada logam, etching mengubah struktur permukaan material. Pada kaca/kristal, laser menciptakan micro-fracture yang permanen. Hasilnya tahan lama dan tidak mudah pudar."
+          }
+        ]
+      }
+    ],
+    "cta": {
+      "title": "Masih Ada Pertanyaan?",
+      "subtitle": "Tim customer service kami siap membantu Anda",
+      "buttons": [
+        {
+          "text": "Hubungi Kami",
+          "link": "/contact",
+          "variant": "default"
+        },
+        {
+          "text": "Chat WhatsApp",
+          "link": "https://wa.me/6281234567890",
+          "variant": "outline"
+        }
+      ]
+    },
+    "seo": {
+      "title": "FAQ - Pertanyaan Seputar Laser Etching | Etching ID",
+      "description": "Temukan jawaban untuk pertanyaan umum seputar layanan laser etching. Informasi lengkap tentang proses, harga, material, dan garansi.",
+      "keywords": ["faq etching", "pertanyaan laser etching", "info etching"],
+      "ogImage": "/images/og-image-faq.jpg"
+    }
+  },
+  "status": "published",
+  "publishedAt": "2025-01-04T00:00:00Z",
+  "version": 1,
+  "createdAt": "2025-01-04T00:00:00Z",
+  "updatedAt": "2025-01-04T00:00:00Z"
+}

@@ -1,0 +1,86 @@
+/* Theme-specific Animations */
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes typing-fade {
+  0%, 100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  10%, 90% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Theme-specific Classes */
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-typing {
+  animation: typing-fade 4s ease-in-out infinite;
+}
+
+/* Theme Root Layout */
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Theme-specific Components */
+.glass-card {
+  background: hsl(var(--glass-bg));
+  border: 1px solid hsl(var(--glass-border));
+  backdrop-filter: blur(8px);
+}
+
+.gradient-text {
+  background: var(--gradient-orange);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-hover {
+  transition: var(--transition-smooth);
+}
+
+.shadow-hover:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff8000;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff9933;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #ff8000 hsl(var(--muted));
+}
