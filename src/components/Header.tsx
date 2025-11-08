@@ -30,6 +30,7 @@ const Header = () => {
     { name: "Beranda", path: "/" },
     { name: "Tentang Kami", path: "/about" },
     { name: "Produk", path: "/products" },
+    { name: "FAQ", path: "/faq" },
     { name: "Kontak", path: "/contact" },
   ];
 
@@ -46,10 +47,10 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 bg-gradient-to-br from-primary to-orange-light rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform">
-              <span className="text-white font-bold text-xl">EP</span>
+              <span className="text-white font-bold text-xl">CEX</span>
             </div>
             <span className="text-xl font-bold text-foreground">
-              Etching <span className="text-primary">Presisi</span>
+              Etching <span className="text-primary">Xenial</span>
             </span>
           </Link>
 

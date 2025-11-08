@@ -12,8 +12,8 @@ const defaultTheme: Theme = {
   metadata: {
     name: 'Default Theme',
     version: '1.0.0',
-    description: 'Default theme for Etching Presisi - A modern, responsive theme with 3D product visualization',
-    author: 'Etching Presisi Team',
+    description: 'Default theme for Etching Xenial - A modern, responsive theme with 3D product visualization',
+    author: 'Etching Xenial Team',
     license: 'MIT',
     homepage: 'https://etchingpresisi.com',
     keywords: ['default', 'etching', 'modern', '3d', 'responsive'],

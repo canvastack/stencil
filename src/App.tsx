@@ -7,13 +7,14 @@ import { ThemeProvider } from "@/core/engine/ThemeProvider";
 import { themeManager } from "@/core/engine/ThemeManager";
 import '@/themes/default';
 import { 
-  BrowserRouter, 
-  Routes, 
+  BrowserRouter,
+  Routes,
   Route
 } from "react-router-dom";
 import { ThemeScrollToTop } from "@/core/engine/ThemeComponent";
 import { CartProvider } from "@/contexts/CartContext";
 import { ContentProvider } from "@/contexts/ContentContext";
+import { HelmetProvider } from "react-helmet-async";
 
 import Home from "@/themes/default/pages/Home";
 import About from "@/themes/default/pages/About";
@@ -37,6 +38,8 @@ const PageContact = lazy(() => import("./pages/admin/PageContact"));
 const PageFAQ = lazy(() => import("./pages/admin/PageFAQ"));
 const ProductList = lazy(() => import("./pages/admin/ProductList"));
 const ProductEditor = lazy(() => import("./pages/admin/ProductEditor"));
+const ProductPageContent = lazy(() => import("@/features/admin/pages/ProductPageContent"));
+const ProductSettings = lazy(() => import("@/features/admin/pages/ProductSettings"));
 const ReviewList = lazy(() => import("./pages/admin/ReviewList"));
 const MediaLibrary = lazy(() => import("./pages/admin/MediaLibrary"));
 const Documentation = lazy(() => import("./pages/admin/Documentation"));
@@ -84,26 +87,27 @@ function App() {
 
   return (
     <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider initialTheme="default">
-          <ContentProvider>
-            <CartProvider>
-              <Toaster />
-              <Sonner />
-              {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
-                  import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
-                  Fallback to '/' when empty. */}
-              <BrowserRouter
-                basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
-                future={{ v7_startTransition: true }}
-              >
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider initialTheme="default">
+            <ContentProvider>
+              <CartProvider>
+                <Toaster />
+                <Sonner />
+                {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
+                    import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
+                    Fallback to '/' when empty. */}
+                <BrowserRouter
+                  basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
+                  future={{ v7_startTransition: true }}
+                >
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/products" element={<Products />} />
-                  <Route path="/products/:id" element={<ProductDetail />} />
+                  <Route path="/products/:slug" element={<ProductDetail />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/login" element={<Login />} />
@@ -121,6 +125,8 @@ function App() {
                   <Route path="products/new" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
                   <Route path="products/:id/edit" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
                   <Route path="products/categories" element={<Suspense fallback={<LoadingFallback />}><ProductCategories /></Suspense>} />
+                  <Route path="products/page-content" element={<Suspense fallback={<LoadingFallback />}><ProductPageContent /></Suspense>} />
+                  <Route path="products/settings" element={<Suspense fallback={<LoadingFallback />}><ProductSettings /></Suspense>} />
                   <Route path="reviews" element={<Suspense fallback={<LoadingFallback />}><ReviewList /></Suspense>} />
                   <Route path="media" element={<Suspense fallback={<LoadingFallback />}><MediaLibrary /></Suspense>} />
                   <Route path="users" element={<Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense>} />
@@ -149,11 +155,12 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <ThemeScrollToTop />
-              </BrowserRouter>
-            </CartProvider>
-          </ContentProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+                </BrowserRouter>
+              </CartProvider>
+            </ContentProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
     </React.StrictMode>
   );
 }

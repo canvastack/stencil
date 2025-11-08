@@ -32,9 +32,12 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, Plus, Trash2, ArrowUpDown } from "lucide-react";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
+import { Modal } from "@/components/ui/modal";
+import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
-import { reviews } from "@/data/reviews";
+import { useProductReviews } from "@/hooks/useReviews";
+import { useProductBySlug } from "@/hooks/useProducts";
 
 // Import product images
 import metalEtching1 from "@/assets/products/metal-etching-1.jpg";
@@ -469,12 +472,77 @@ const allProducts = [
 ];
 
 const ProductDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addToCart } = useCart();
-  const product = allProducts.find(p => p.id === id);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
+  const handleSubmitReview = async (review: { rating: number; comment: string }) => {
+    // TODO: Replace with actual API call
+    toast({
+      title: "Ulasan Terkirim!",
+      description: "Terima kasih telah memberikan ulasan Anda.",
+    });
+  };
+  const searchParams = new URLSearchParams(window.location.search);
+  const isPreview = searchParams.get('preview') === 'true';
+  
+  // Get draft data from sessionStorage if in preview mode
+  const draftProduct = isPreview ? JSON.parse(sessionStorage.getItem('productDraft') || 'null') : null;
+  const { product: cmsProduct, loading: loadingProduct } = useProductBySlug(slug || '');
+
+  const hardcodedProduct = allProducts.find(p => 
+    p.name.toLowerCase().replace(/\s+/g, '-') === slug
+  );
+
+  // Use draft data in preview mode, otherwise use normal product data
+  // Get reviews for current product
+  const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(slug || '');
+  
+  const product = draftProduct || cmsProduct || (hardcodedProduct ? {
+    id: hardcodedProduct.id,
+    name: hardcodedProduct.name,
+    slug: hardcodedProduct.name.toLowerCase().replace(/\s+/g, '-'),
+    description: hardcodedProduct.description,
+    longDescription: hardcodedProduct.features?.join('\n'),
+    images: hardcodedProduct.images.map(img => typeof img === 'string' ? img : img),
+    category: hardcodedProduct.category,
+    tags: [hardcodedProduct.type],
+    material: hardcodedProduct.specifications?.material || hardcodedProduct.type,
+    price: hardcodedProduct.price ? parseInt(hardcodedProduct.price.replace(/\D/g, '')) : 0,
+    currency: "IDR" as const,
+    priceUnit: "per pcs",
+    minOrder: hardcodedProduct.specifications?.minOrder ? parseInt(hardcodedProduct.specifications.minOrder.replace(/\D/g, '')) : 1,
+    specifications: hardcodedProduct.features?.map(f => ({ key: f.split(':')[0], value: f.split(':')[1]?.trim() || f })) || [],
+    customizable: true,
+    inStock: true,
+    leadTime: hardcodedProduct.specifications?.leadTime || "5-7 hari kerja",
+    status: 'published' as const,
+    featured: hardcodedProduct.rating >= 5,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } : null);
   const [reviewSort, setReviewSort] = useState<'rating-high' | 'rating-low' | 'newest' | 'oldest'>('newest');
+
+  const sortedReviews = [...productReviews].sort((a, b) => {
+    switch (reviewSort) {
+      case 'rating-high':
+        return b.rating - a.rating;
+      case 'rating-low':
+        return a.rating - b.rating;
+      case 'newest':
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      case 'oldest':
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      default:
+        return 0;
+    }
+  });
+
+  const averageRating = productReviews.length 
+    ? productReviews.reduce((acc, review) => acc + review.rating, 0) / productReviews.length 
+    : 0;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -501,6 +569,17 @@ const ProductDetail = () => {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  if (loadingProduct) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold text-foreground">Memuat produk...</h1>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -642,7 +721,7 @@ const ProductDetail = () => {
     addToCart({
       id: product.id,
       name: product.name,
-      price: parseFloat(product.price?.replace(/[^\d]/g, '') || '0'),
+      price: product.price,
       image: product.images[0],
       type: formData.productType,
       size: formData.size,
@@ -650,33 +729,35 @@ const ProductDetail = () => {
     });
   };
 
-  // Get related products (same type but different id)
+  // Get related products based on same category/type
   const relatedProducts = allProducts
-    .filter(p => p.type === product?.type && p.id !== product?.id)
-    .slice(0, 3);
+    .filter(p => 
+      p.id !== product.id && // Exclude current product
+      (p.category === product.category || p.type === product.type) // Same category or type
+    )
+    .slice(0, 3); // Limit to 3 related products
 
-  // Sort reviews
-  const productReviews = reviews.filter(r => r.productId === product?.id);
-  const sortedReviews = [...productReviews].sort((a, b) => {
-    switch (reviewSort) {
-      case 'rating-high':
-        return b.rating - a.rating;
-      case 'rating-low':
-        return a.rating - b.rating;
-      case 'newest':
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      case 'oldest':
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
-      default:
-        return 0;
-    }
-  });
+  const formatPrice = (price: number, currency: string) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  // Just use the already sorted and filtered reviews from above
 
   return (
     <div className="min-h-screen bg-background">
+      {isPreview && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-foreground py-2 px-4 text-center">
+          <p className="text-sm font-medium">Preview Mode - This is a draft preview of the product</p>
+        </div>
+      )}
       <Header />
       
-      <section className="pt-32 pb-12 px-4">
+      <section className={`${isPreview ? 'pt-40' : 'pt-32'} pb-12 px-4`}>
         <div className="container mx-auto max-w-7xl">
           {/* Breadcrumb Navigation */}
           <Breadcrumb className="mb-6">
@@ -812,17 +893,17 @@ const ProductDetail = () => {
                 <Card className="p-4 text-center border-border bg-card/50 backdrop-blur hover:bg-card transition-all">
                   <Package className="w-6 h-6 mx-auto mb-2 text-primary" />
                   <p className="text-xs text-muted-foreground">Min. Order</p>
-                  <p className="text-sm font-bold text-foreground">{product.specifications.minOrder}</p>
+                  <p className="text-sm font-bold text-foreground">{product.minOrder} {product.priceUnit}</p>
                 </Card>
                 <Card className="p-4 text-center border-border bg-card/50 backdrop-blur hover:bg-card transition-all">
                   <Ruler className="w-6 h-6 mx-auto mb-2 text-primary" />
                   <p className="text-xs text-muted-foreground">Material</p>
-                  <p className="text-sm font-bold text-foreground">{product.specifications.material}</p>
+                  <p className="text-sm font-bold text-foreground">{product.material}</p>
                 </Card>
                 <Card className="p-4 text-center border-border bg-card/50 backdrop-blur hover:bg-card transition-all">
                   <Palette className="w-6 h-6 mx-auto mb-2 text-primary" />
                   <p className="text-xs text-muted-foreground">Lead Time</p>
-                  <p className="text-sm font-bold text-foreground">{product.specifications.leadTime}</p>
+                  <p className="text-sm font-bold text-foreground">{product.leadTime}</p>
                 </Card>
               </div>
             </div>
@@ -835,27 +916,25 @@ const ProductDetail = () => {
                     <Star
                       key={idx}
                       className={`w-5 h-5 ${
-                        idx < Math.floor(product.rating)
+                        idx < Math.floor(averageRating)
                           ? "fill-primary text-primary"
                           : "text-muted"
                       }`}
                     />
                   ))}
-                  <span className="text-sm text-muted-foreground">({product.rating})</span>
+                  <span className="text-sm text-muted-foreground">({averageRating.toFixed(1)})</span>
                 </div>
 
                 <h1 className="text-4xl font-bold text-foreground mb-4">{product.name}</h1>
-                {product.price && (
-                  <p className="text-2xl font-bold text-primary mb-4">{product.price}</p>
-                )}
+                <p className="text-2xl font-bold text-primary mb-4">{formatPrice(product.price, product.currency)}</p>
                 <p className="text-muted-foreground leading-relaxed mb-6">{product.description}</p>
 
                 <div className="space-y-3 mb-6">
-                  <h3 className="text-lg font-bold text-foreground">Fitur Unggulan:</h3>
-                  {product.features.map((feature, idx) => (
+                  <h3 className="text-lg font-bold text-foreground">Spesifikasi:</h3>
+                  {product.specifications.map((spec, idx) => (
                     <div key={idx} className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-muted-foreground">{feature}</span>
+                      <span className="text-muted-foreground"><strong>{spec.key}:</strong> {spec.value}</span>
                     </div>
                   ))}
                 </div>
@@ -1199,13 +1278,13 @@ const ProductDetail = () => {
                 {/* Rating Summary */}
                 <div className="flex flex-col md:flex-row gap-8 mb-8 pb-8 border-b border-border">
                   <div className="text-center md:text-left">
-                    <div className="text-6xl font-bold text-primary mb-2">{product.rating}</div>
+                    <div className="text-6xl font-bold text-primary mb-2">{averageRating.toFixed(1)}</div>
                     <div className="flex items-center justify-center md:justify-start gap-1 mb-2">
                       {[...Array(5)].map((_, idx) => (
                         <Star
                           key={idx}
                           className={`w-5 h-5 ${
-                            idx < Math.floor(product.rating)
+                            idx < Math.floor(averageRating)
                               ? "fill-primary text-primary"
                               : "text-muted"
                           }`}
@@ -1216,6 +1295,13 @@ const ProductDetail = () => {
                   </div>
                   
                   <div className="flex-1 space-y-2">
+                    <Button
+                      onClick={() => setReviewModalOpen(true)}
+                      className="w-full mb-4 bg-primary hover:bg-primary/90"
+                    >
+                      Tulis Ulasan
+                    </Button>
+
                     {[5, 4, 3, 2, 1].map((star) => {
                       const count = sortedReviews.filter(r => r.rating === star).length;
                       const percentage = sortedReviews.length > 0 ? (count / sortedReviews.length) * 100 : 0;
@@ -1355,6 +1441,25 @@ const ProductDetail = () => {
 
       <ScrollToTop />
       <Footer />
+
+      {/* Review Modal */}
+      <Modal
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
+        title="Tulis Ulasan"
+        submitLabel="Kirim Ulasan"
+        onSubmit={() => {
+          const formElement = document.querySelector('form');
+          if (formElement) {
+            formElement.dispatchEvent(new Event('submit', { cancelable: true }));
+          }
+        }}
+      >
+        <ReviewForm
+          onSubmit={handleSubmitReview}
+          onCancel={() => setReviewModalOpen(false)}
+        />
+      </Modal>
     </div>
   );
 };

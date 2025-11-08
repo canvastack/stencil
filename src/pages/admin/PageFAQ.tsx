@@ -104,9 +104,9 @@ export default function PageFAQ() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <GripVertical className="w-5 h-5 text-muted-foreground" />
-                      {category.name}
+                      {category.category}
                     </CardTitle>
-                    <CardDescription>{category.items?.length || 0} questions</CardDescription>
+                    <CardDescription>{category.questions?.length || 0} questions</CardDescription>
                   </div>
                   <Button
                     variant="ghost"
@@ -125,10 +125,10 @@ export default function PageFAQ() {
                 <div className="space-y-2">
                   <Label>Category Name</Label>
                   <Input
-                    defaultValue={category.name}
+                    value={category.category}
                     onChange={(e) => {
                       const newCategories = [...formData.categories];
-                      newCategories[catIndex].name = e.target.value;
+                      newCategories[catIndex].category = e.target.value;
                       setFormData({ ...formData, categories: newCategories });
                       setHasChanges(true);
                     }}
@@ -137,7 +137,7 @@ export default function PageFAQ() {
 
                 <div className="space-y-3">
                   <Label>Questions & Answers</Label>
-                  {category.items?.map((item: any, qIndex: number) => (
+                  {(category.questions || []).map((item: any, qIndex: number) => (
                     <Card key={qIndex} className="bg-muted/30">
                       <CardContent className="pt-4 space-y-3">
                         <div className="flex justify-end">
@@ -146,7 +146,7 @@ export default function PageFAQ() {
                             size="icon"
                             onClick={() => {
                               const newCategories = [...formData.categories];
-                              newCategories[catIndex].items = category.items.filter((_: any, i: number) => i !== qIndex);
+                              newCategories[catIndex].questions = category.questions.filter((_: any, i: number) => i !== qIndex);
                               setFormData({ ...formData, categories: newCategories });
                               setHasChanges(true);
                             }}
@@ -158,10 +158,10 @@ export default function PageFAQ() {
                           <Label>Question</Label>
                           <Input
                             placeholder="Enter question..."
-                            defaultValue={item.question}
+                            value={item.q}
                             onChange={(e) => {
                               const newCategories = [...formData.categories];
-                              newCategories[catIndex].items[qIndex].question = e.target.value;
+                              newCategories[catIndex].questions[qIndex].q = e.target.value;
                               setFormData({ ...formData, categories: newCategories });
                               setHasChanges(true);
                             }}
@@ -172,10 +172,10 @@ export default function PageFAQ() {
                           <Textarea
                             rows={3}
                             placeholder="Enter answer..."
-                            defaultValue={item.answer}
+                            value={item.a}
                             onChange={(e) => {
                               const newCategories = [...formData.categories];
-                              newCategories[catIndex].items[qIndex].answer = e.target.value;
+                              newCategories[catIndex].questions[qIndex].a = e.target.value;
                               setFormData({ ...formData, categories: newCategories });
                               setHasChanges(true);
                             }}
@@ -190,9 +190,9 @@ export default function PageFAQ() {
                     className="w-full"
                     onClick={() => {
                       const newCategories = [...formData.categories];
-                      newCategories[catIndex].items = [
-                        ...(category.items || []),
-                        { question: '', answer: '' }
+                      newCategories[catIndex].questions = [
+                        ...(category.questions || []),
+                        { q: '', a: '' }
                       ];
                       setFormData({ ...formData, categories: newCategories });
                       setHasChanges(true);
@@ -213,7 +213,7 @@ export default function PageFAQ() {
                 ...formData,
                 categories: [
                   ...(formData.categories || []),
-                  { id: `cat-${Date.now()}`, name: 'New Category', icon: 'HelpCircle', items: [] }
+                  { id: `cat-${Date.now()}`, category: 'New Category', icon: 'HelpCircle', questions: [] }
                 ]
               });
               setHasChanges(true);

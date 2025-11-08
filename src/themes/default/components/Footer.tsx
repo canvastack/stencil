@@ -13,10 +13,10 @@ const Footer: React.FC<FooterProps> = ({ className, showSocialLinks = true }) =>
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-orange-light rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">EP</span>
+                <span className="text-white font-bold text-lg">CEX</span>
               </div>
               <span className="text-lg font-bold">
-                Etching <span className="text-primary">Presisi</span>
+                Etching <span className="text-primary">Xenial</span>
               </span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
@@ -122,7 +122,7 @@ const Footer: React.FC<FooterProps> = ({ className, showSocialLinks = true }) =>
         <div className="pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-muted-foreground text-center md:text-left">
-              © 2025 Etching Presisi. Powered by Technology. Semua Hak Dilindungi.
+              © 2025 Etching Xenial. Powered by Technology. Semua Hak Dilindungi.
             </p>
             <div className="flex space-x-6 text-sm">
               <Link to="#" className="text-muted-foreground hover:text-primary">

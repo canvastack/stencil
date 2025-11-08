@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
 import { 
   Users, 
   Award, 
@@ -30,6 +31,7 @@ import { useTheme } from '@/core/engine/ThemeContext';
 import type { PageProps } from '@/core/engine/types';
 import { TypingEffect } from "@/components/TypingEffect";
 import { usePageContent } from "@/contexts/ContentContext";
+import { Helmet } from "react-helmet-async";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Users,
@@ -55,6 +57,7 @@ const Home: React.FC<PageProps> = ({ className }) => {
   const { currentTheme } = useTheme();
   const { Header, Footer, HeroCarousel } = currentTheme?.components ?? {};
   const { content, loading } = usePageContent("home");
+  const navigate = useNavigate();
 
   if (!Header || !Footer || !HeroCarousel) {
     return <div>Loading theme components...</div>;
@@ -82,9 +85,25 @@ const Home: React.FC<PageProps> = ({ className }) => {
   }
 
   const pageData = content.content;
+  const seoData = pageData.seo || {};
 
   return (
     <div className={`min-h-screen ${className || ''}`}>
+      <Helmet>
+        <title>{seoData.title || "Home"}</title>
+        <meta name="description" content={seoData.description || ""} />
+        {seoData.keywords && (
+          <meta name="keywords" content={Array.isArray(seoData.keywords) ? seoData.keywords.join(", ") : seoData.keywords} />
+        )}
+        {seoData.ogImage && <meta property="og:image" content={seoData.ogImage} />}
+        <meta property="og:title" content={seoData.title || "Home"} />
+        <meta property="og:description" content={seoData.description || ""} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title || "Home"} />
+        <meta name="twitter:description" content={seoData.description || ""} />
+        {seoData.ogImage && <meta name="twitter:image" content={seoData.ogImage} />}
+      </Helmet>
       <Header />
       
       {/* Hero Section with Carousel */}
@@ -107,7 +126,7 @@ const Home: React.FC<PageProps> = ({ className }) => {
             <Button 
               size="lg" 
               className="bg-gradient-to-r from-primary to-orange-light text-white text-lg px-8 hover:shadow-glow transition-all"
-              onClick={() => window.location.href = pageData.hero?.buttons?.primary?.link || "#"}
+              onClick={() => navigate(pageData.hero?.buttons?.primary?.link || "/")}
             >
               {pageData.hero?.buttons?.primary?.text || "Lihat Layanan Kami"}
             </Button>
@@ -115,7 +134,7 @@ const Home: React.FC<PageProps> = ({ className }) => {
               size="lg" 
               variant="outline" 
               className="border-2 border-white/20 bg-white/5 backdrop-blur-sm text-white hover:bg-white/10 text-lg px-8 transition-all"
-              onClick={() => window.location.href = pageData.hero?.buttons?.secondary?.link || "#"}
+              onClick={() => navigate(pageData.hero?.buttons?.secondary?.link || "/contact")}
             >
               {pageData.hero?.buttons?.secondary?.text || "Hubungi Konsultan"}
             </Button>
@@ -197,7 +216,7 @@ const Home: React.FC<PageProps> = ({ className }) => {
                   </div>
                   <Button 
                     className="bg-gradient-to-r from-primary to-orange-light text-white px-8"
-                    onClick={() => window.location.href = pageData.process.preview.button?.link || "#"}
+                    onClick={() => navigate(pageData.process.preview.button?.link || "/")}
                   >
                     {pageData.process.preview.button?.text}
                   </Button>
@@ -382,7 +401,7 @@ const Home: React.FC<PageProps> = ({ className }) => {
                         size="lg" 
                         variant={button.variant}
                         className={`text-lg px-8 shadow-xl transition-all ${button.className || ''}`}
-                        onClick={() => window.location.href = button.link}
+                        onClick={() => navigate(button.link || "/")}
                       >
                         {IconComponent && i === 0 && <IconComponent className="mr-2 h-5 w-5" />}
                         {button.text}
@@ -408,7 +427,7 @@ const Home: React.FC<PageProps> = ({ className }) => {
                       key={i}
                       size="lg" 
                       className={button.className}
-                      onClick={() => window.location.href = button.link}
+                      onClick={() => navigate(button.link || "/")}
                     >
                       {button.text}
                     </Button>

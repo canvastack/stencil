@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Eye, RotateCcw, Plus, Trash } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export default function PageAbout() {
@@ -106,66 +107,99 @@ export default function PageAbout() {
           <Card>
             <CardHeader>
               <CardTitle>Company Values</CardTitle>
-              <CardDescription>Define your core values</CardDescription>
+              <CardDescription>Define your core values and principles</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {formData.values?.map((value: any, index: number) => (
-                  <Card key={index}>
-                    <CardContent className="pt-6 space-y-3">
-                      <div className="flex gap-3">
-                        <div className="flex-1 space-y-3">
-                          <Input
-                            placeholder="Value title"
-                            defaultValue={value.title}
-                            onChange={(e) => {
-                              const newValues = [...(formData.values || [])];
-                              newValues[index].title = e.target.value;
-                              setFormData({ ...formData, values: newValues });
-                              setHasChanges(true);
-                            }}
-                          />
-                          <Textarea
-                            placeholder="Value description"
-                            defaultValue={value.description}
-                            onChange={(e) => {
-                              const newValues = [...(formData.values || [])];
-                              newValues[index].description = e.target.value;
-                              setFormData({ ...formData, values: newValues });
-                              setHasChanges(true);
-                            }}
-                            rows={2}
-                          />
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const newValues = formData.values.filter((_: any, i: number) => i !== index);
-                            setFormData({ ...formData, values: newValues });
-                            setHasChanges(true);
-                          }}
-                        >
-                          <Trash className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="values-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="values-enabled"
+                  checked={formData.values?.enabled !== false}
+                  onCheckedChange={(checked) => {
                     setFormData({
                       ...formData,
-                      values: [...(formData.values || []), { title: '', description: '' }]
+                      values: { ...formData.values, enabled: checked }
                     });
                     setHasChanges(true);
                   }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Value
-                </Button>
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Title</Label>
+                <Input
+                  placeholder="Values section title"
+                  value={formData.values?.title || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      values: { ...formData.values, title: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Value Items</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentItems = formData.values?.items || [];
+                      setFormData({
+                        ...formData,
+                        values: {
+                          ...formData.values,
+                          items: [...currentItems, ""]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Value
+                  </Button>
+                </div>
+
+                {(formData.values?.items || []).map((value: string, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="flex gap-3">
+                      <Textarea
+                        placeholder="Value description"
+                        value={value}
+                        onChange={(e) => {
+                          const newItems = [...(formData.values?.items || [])];
+                          newItems[index] = e.target.value;
+                          setFormData({
+                            ...formData,
+                            values: { ...formData.values, items: newItems }
+                          });
+                          setHasChanges(true);
+                        }}
+                        rows={3}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newItems = (formData.values?.items || []).filter((_: any, i: number) => i !== index);
+                          setFormData({
+                            ...formData,
+                            values: { ...formData.values, items: newItems }
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        <Trash className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>

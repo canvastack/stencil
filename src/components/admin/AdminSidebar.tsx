@@ -61,6 +61,8 @@ const menuItems: MenuItem[] = [
       { title: 'All Products', path: '/admin/products' },
       { title: 'Add Product', path: '/admin/products/new' },
       { title: 'Categories', path: '/admin/products/categories' },
+      { title: 'Page Content', path: '/admin/products/page-content' },
+      { title: 'Settings', path: '/admin/products/settings' },
     ],
   },
   {

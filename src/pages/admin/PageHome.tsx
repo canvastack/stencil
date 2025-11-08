@@ -86,10 +86,11 @@ export default function PageHome() {
       <Tabs defaultValue="hero" className="space-y-4">
         <TabsList>
           <TabsTrigger value="hero">Hero Section</TabsTrigger>
-          <TabsTrigger value="stats">Stats</TabsTrigger>
-          <TabsTrigger value="achievements">Achievements</TabsTrigger>
-          <TabsTrigger value="benefits">Benefits</TabsTrigger>
+          <TabsTrigger value="socialProof">Social Proof</TabsTrigger>
           <TabsTrigger value="process">Process</TabsTrigger>
+          <TabsTrigger value="whyChooseUs">Why Choose Us</TabsTrigger>
+          <TabsTrigger value="achievements">Achievements</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
           <TabsTrigger value="cta">CTA Sections</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
@@ -486,21 +487,39 @@ export default function PageHome() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="stats" className="space-y-4">
+        <TabsContent value="socialProof" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Statistics Section</CardTitle>
-              <CardDescription>Display key performance indicators</CardDescription>
+              <CardTitle>Social Proof Section</CardTitle>
+              <CardDescription>Display key performance indicators and achievements</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="socialProof-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="socialProof-enabled"
+                  checked={formData.socialProof?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      socialProof: { ...formData.socialProof, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Section Title</Label>
                 <Input
-                  value={formData.stats?.title || ""}
+                  value={formData.socialProof?.title || ""}
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      stats: { ...formData.stats, title: e.target.value }
+                      socialProof: { ...formData.socialProof, title: e.target.value }
                     });
                     setHasChanges(true);
                   }}
@@ -510,11 +529,11 @@ export default function PageHome() {
                 <Label>Section Subtitle</Label>
                 <Textarea
                   rows={2}
-                  value={formData.stats?.subtitle || ""}
+                  value={formData.socialProof?.subtitle || ""}
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      stats: { ...formData.stats, subtitle: e.target.value }
+                      socialProof: { ...formData.socialProof, subtitle: e.target.value }
                     });
                     setHasChanges(true);
                   }}
@@ -528,12 +547,12 @@ export default function PageHome() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const currentItems = formData.stats?.items || [];
+                      const currentStats = formData.socialProof?.stats || [];
                       setFormData({
                         ...formData,
-                        stats: {
-                          ...formData.stats,
-                          items: [...currentItems, { icon: "Users", value: "", label: "", color: "blue" }]
+                        socialProof: {
+                          ...formData.socialProof,
+                          stats: [...currentStats, { icon: "Users", value: "", label: "", color: "text-blue-500" }]
                         }
                       });
                       setHasChanges(true);
@@ -543,7 +562,7 @@ export default function PageHome() {
                     Add Stat
                   </Button>
                 </div>
-                {(formData.stats?.items || []).map((item: any, index: number) => (
+                {(formData.socialProof?.stats || []).map((stat: any, index: number) => (
                   <Card key={index} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
@@ -552,10 +571,10 @@ export default function PageHome() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            const newItems = (formData.stats?.items || []).filter((_: any, i: number) => i !== index);
+                            const newStats = (formData.socialProof?.stats || []).filter((_: any, i: number) => i !== index);
                             setFormData({
                               ...formData,
-                              stats: { ...formData.stats, items: newItems }
+                              socialProof: { ...formData.socialProof, stats: newStats }
                             });
                             setHasChanges(true);
                           }}
@@ -567,14 +586,14 @@ export default function PageHome() {
                         <div className="space-y-2">
                           <Label className="text-sm">Icon Name</Label>
                           <Input
-                            placeholder="Users, Target, Award"
-                            value={item.icon}
+                            placeholder="Users, Target, Award, CheckCircle2"
+                            value={stat.icon}
                             onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, icon: e.target.value };
+                              const newStats = [...(formData.socialProof?.stats || [])];
+                              newStats[index] = { ...stat, icon: e.target.value };
                               setFormData({
                                 ...formData,
-                                stats: { ...formData.stats, items: newItems }
+                                socialProof: { ...formData.socialProof, stats: newStats }
                               });
                               setHasChanges(true);
                             }}
@@ -584,13 +603,13 @@ export default function PageHome() {
                           <Label className="text-sm">Value</Label>
                           <Input
                             placeholder="2000+, 99%"
-                            value={item.value}
+                            value={stat.value}
                             onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, value: e.target.value };
+                              const newStats = [...(formData.socialProof?.stats || [])];
+                              newStats[index] = { ...stat, value: e.target.value };
                               setFormData({
                                 ...formData,
-                                stats: { ...formData.stats, items: newItems }
+                                socialProof: { ...formData.socialProof, stats: newStats }
                               });
                               setHasChanges(true);
                             }}
@@ -600,29 +619,29 @@ export default function PageHome() {
                           <Label className="text-sm">Label</Label>
                           <Input
                             placeholder="Proyek Selesai"
-                            value={item.label}
+                            value={stat.label}
                             onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, label: e.target.value };
+                              const newStats = [...(formData.socialProof?.stats || [])];
+                              newStats[index] = { ...stat, label: e.target.value };
                               setFormData({
                                 ...formData,
-                                stats: { ...formData.stats, items: newItems }
+                                socialProof: { ...formData.socialProof, stats: newStats }
                               });
                               setHasChanges(true);
                             }}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-sm">Color</Label>
+                          <Label className="text-sm">Color (Tailwind class)</Label>
                           <Input
-                            placeholder="blue, green, purple"
-                            value={item.color}
+                            placeholder="text-blue-500, text-green-500, text-primary"
+                            value={stat.color}
                             onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, color: e.target.value };
+                              const newStats = [...(formData.socialProof?.stats || [])];
+                              newStats[index] = { ...stat, color: e.target.value };
                               setFormData({
                                 ...formData,
-                                stats: { ...formData.stats, items: newItems }
+                                socialProof: { ...formData.socialProof, stats: newStats }
                               });
                               setHasChanges(true);
                             }}
@@ -775,21 +794,39 @@ export default function PageHome() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="benefits" className="space-y-4">
+        <TabsContent value="services" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Benefits Section</CardTitle>
-              <CardDescription>Why customers should choose your service</CardDescription>
+              <CardTitle>Services Section</CardTitle>
+              <CardDescription>Showcase your service offerings</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="services-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="services-enabled"
+                  checked={formData.services?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      services: { ...formData.services, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Section Title</Label>
                 <Input
-                  value={formData.benefits?.title || ""}
+                  value={formData.services?.title || ""}
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      benefits: { ...formData.benefits, title: e.target.value }
+                      services: { ...formData.services, title: e.target.value }
                     });
                     setHasChanges(true);
                   }}
@@ -799,11 +836,11 @@ export default function PageHome() {
                 <Label>Section Subtitle</Label>
                 <Textarea
                   rows={2}
-                  value={formData.benefits?.subtitle || ""}
+                  value={formData.services?.subtitle || ""}
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      benefits: { ...formData.benefits, subtitle: e.target.value }
+                      services: { ...formData.services, subtitle: e.target.value }
                     });
                     setHasChanges(true);
                   }}
@@ -812,16 +849,170 @@ export default function PageHome() {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Benefit Items</Label>
+                  <Label>Service Items</Label>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const currentItems = formData.benefits?.items || [];
+                      const currentItems = formData.services?.items || [];
                       setFormData({
                         ...formData,
-                        benefits: {
-                          ...formData.benefits,
+                        services: {
+                          ...formData.services,
+                          items: [...currentItems, { icon: "Package", title: "", description: "" }]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Service
+                  </Button>
+                </div>
+                {(formData.services?.items || []).map((item: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Service #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newItems = (formData.services?.items || []).filter((_: any, i: number) => i !== index);
+                            setFormData({
+                              ...formData,
+                              services: { ...formData.services, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Icon Name</Label>
+                          <Input
+                            placeholder="Package, Award, Shield, Palette, etc"
+                            value={item.icon}
+                            onChange={(e) => {
+                              const newItems = [...(formData.services?.items || [])];
+                              newItems[index] = { ...item, icon: e.target.value };
+                              setFormData({
+                                ...formData,
+                                services: { ...formData.services, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Title</Label>
+                          <Input
+                            placeholder="Service title"
+                            value={item.title}
+                            onChange={(e) => {
+                              const newItems = [...(formData.services?.items || [])];
+                              newItems[index] = { ...item, title: e.target.value };
+                              setFormData({
+                                ...formData,
+                                services: { ...formData.services, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Description</Label>
+                          <Textarea
+                            rows={2}
+                            placeholder="Service description"
+                            value={item.description}
+                            onChange={(e) => {
+                              const newItems = [...(formData.services?.items || [])];
+                              newItems[index] = { ...item, description: e.target.value };
+                              setFormData({
+                                ...formData,
+                                services: { ...formData.services, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="whyChooseUs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Why Choose Us Section</CardTitle>
+              <CardDescription>Key features and benefits that differentiate your service</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="whyChooseUs-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="whyChooseUs-enabled"
+                  checked={formData.whyChooseUs?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      whyChooseUs: { ...formData.whyChooseUs, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Title</Label>
+                <Input
+                  value={formData.whyChooseUs?.title || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      whyChooseUs: { ...formData.whyChooseUs, title: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Section Subtitle</Label>
+                <Textarea
+                  rows={2}
+                  value={formData.whyChooseUs?.subtitle || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      whyChooseUs: { ...formData.whyChooseUs, subtitle: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Feature Items</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentItems = formData.whyChooseUs?.items || [];
+                      setFormData({
+                        ...formData,
+                        whyChooseUs: {
+                          ...formData.whyChooseUs,
                           items: [...currentItems, { icon: "Zap", title: "", description: "", color: "orange" }]
                         }
                       });
@@ -829,22 +1020,22 @@ export default function PageHome() {
                     }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Benefit
+                    Add Feature
                   </Button>
                 </div>
-                {(formData.benefits?.items || []).map((item: any, index: number) => (
+                {(formData.whyChooseUs?.items || []).map((item: any, index: number) => (
                   <Card key={index} className="p-4">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="font-semibold">Benefit #{index + 1}</Label>
+                        <Label className="font-semibold">Feature #{index + 1}</Label>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            const newItems = (formData.benefits?.items || []).filter((_: any, i: number) => i !== index);
+                            const newItems = (formData.whyChooseUs?.items || []).filter((_: any, i: number) => i !== index);
                             setFormData({
                               ...formData,
-                              benefits: { ...formData.benefits, items: newItems }
+                              whyChooseUs: { ...formData.whyChooseUs, items: newItems }
                             });
                             setHasChanges(true);
                           }}
@@ -859,11 +1050,11 @@ export default function PageHome() {
                             placeholder="Zap, Layers, Palette"
                             value={item.icon}
                             onChange={(e) => {
-                              const newItems = [...(formData.benefits?.items || [])];
+                              const newItems = [...(formData.whyChooseUs?.items || [])];
                               newItems[index] = { ...item, icon: e.target.value };
                               setFormData({
                                 ...formData,
-                                benefits: { ...formData.benefits, items: newItems }
+                                whyChooseUs: { ...formData.whyChooseUs, items: newItems }
                               });
                               setHasChanges(true);
                             }}
@@ -872,14 +1063,14 @@ export default function PageHome() {
                         <div className="space-y-2">
                           <Label className="text-sm">Title</Label>
                           <Input
-                            placeholder="Benefit title"
+                            placeholder="Feature title"
                             value={item.title}
                             onChange={(e) => {
-                              const newItems = [...(formData.benefits?.items || [])];
+                              const newItems = [...(formData.whyChooseUs?.items || [])];
                               newItems[index] = { ...item, title: e.target.value };
                               setFormData({
                                 ...formData,
-                                benefits: { ...formData.benefits, items: newItems }
+                                whyChooseUs: { ...formData.whyChooseUs, items: newItems }
                               });
                               setHasChanges(true);
                             }}
@@ -889,14 +1080,14 @@ export default function PageHome() {
                           <Label className="text-sm">Description</Label>
                           <Textarea
                             rows={3}
-                            placeholder="Benefit description"
+                            placeholder="Feature description"
                             value={item.description}
                             onChange={(e) => {
-                              const newItems = [...(formData.benefits?.items || [])];
+                              const newItems = [...(formData.whyChooseUs?.items || [])];
                               newItems[index] = { ...item, description: e.target.value };
                               setFormData({
                                 ...formData,
-                                benefits: { ...formData.benefits, items: newItems }
+                                whyChooseUs: { ...formData.whyChooseUs, items: newItems }
                               });
                               setHasChanges(true);
                             }}
@@ -908,11 +1099,11 @@ export default function PageHome() {
                             placeholder="orange, blue, purple"
                             value={item.color}
                             onChange={(e) => {
-                              const newItems = [...(formData.benefits?.items || [])];
+                              const newItems = [...(formData.whyChooseUs?.items || [])];
                               newItems[index] = { ...item, color: e.target.value };
                               setFormData({
                                 ...formData,
-                                benefits: { ...formData.benefits, items: newItems }
+                                whyChooseUs: { ...formData.whyChooseUs, items: newItems }
                               });
                               setHasChanges(true);
                             }}
@@ -1096,7 +1287,7 @@ export default function PageHome() {
                         ...formData,
                         testimonials: {
                           ...formData.testimonials,
-                          items: [...currentItems, { name: "", role: "", company: "", content: "", rating: 5, avatar: "" }]
+                          items: [...currentItems, { name: "", role: "", company: "", content: "", rating: 5, image: "" }]
                         }
                       });
                       setHasChanges(true);
@@ -1194,14 +1385,14 @@ export default function PageHome() {
                           />
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                          <Label className="text-sm">Avatar URL</Label>
+                          <Label className="text-sm">Image URL</Label>
                           <div className="flex gap-2">
                             <Input
-                              placeholder="Avatar image URL"
-                              value={item.avatar}
+                              placeholder="Image URL"
+                              value={item.image}
                               onChange={(e) => {
                                 const newItems = [...(formData.testimonials?.items || [])];
-                                newItems[index] = { ...item, avatar: e.target.value };
+                                newItems[index] = { ...item, image: e.target.value };
                                 setFormData({
                                   ...formData,
                                   testimonials: { ...formData.testimonials, items: newItems }

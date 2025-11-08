@@ -10,7 +10,7 @@ export const AdminFooter = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left Side */}
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <span>© {currentYear} Etching Presisi. Made with</span>
+            <span>© {currentYear} Etching Xenial. Made with</span>
             <Heart className="w-4 h-4 text-destructive fill-destructive" />
             <span>by Development Team</span>
           </div>

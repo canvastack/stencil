@@ -20,14 +20,16 @@ import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2 } from 'lucid
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
+import { LivePreview } from '@/components/admin/LivePreview';
 
 export default function ProductEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { product, loading } = useProduct(id || '');
   const isNew = id === 'new';
+  // Only fetch product data when editing an existing product
+  const { product, loading } = useProduct(isNew ? '' : (id || ''));
 
-  const [formData, setFormData] = useState({
+  const defaultFormData = {
     name: '',
     slug: '',
     description: '',
@@ -52,64 +54,59 @@ export default function ProductEditor() {
     status: 'draft',
     featured: false,
     images: [] as string[],
-    // New fields from ProductDetail
+    // Form order fields with default values
     productType: '',
     size: '',
     bahan: '',
     bahanOptions: [] as string[],
-    kualitas: '',
+    kualitas: 'standard', // Default to standard quality
     kualitasOptions: [] as string[],
-    ketebalan: '',
+    ketebalan: '1mm', // Default thickness
     ketebalanOptions: [] as string[],
-    ukuran: '',
+    ukuran: '15x20', // Default to recommended size
     ukuranOptions: [] as string[],
-    warnaBackground: '',
+    warnaBackground: '#FFFFFF', // Default to white background
     designFileUrl: '',
     customTexts: [] as Array<{ text: string; placement: string; position: string; color: string }>,
     notesWysiwyg: '',
-  });
+  };
+  
+  const [formData, setFormData] = useState(defaultFormData);
+
+  // Save form data to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('productDraft', JSON.stringify({
+      ...formData,
+      // Convert values to match ProductDetail format
+      images: formData.images.length > 0 ? formData.images : ['https://via.placeholder.com/800x600?text=Product+Image'],
+      specifications: formData.specifications.map(spec => ({ key: spec.key, value: spec.value })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }));
+  }, [formData]);
 
   useEffect(() => {
-    if (product && !isNew) {
+    if (isNew) {
+      // For new products, set default form values
+      setFormData(defaultFormData);
+    } else if (product) {
+      // For existing products, merge product data with defaults
       setFormData({
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        longDescription: product.longDescription || '',
-        category: product.category,
-        subcategory: product.subcategory || '',
-        tags: product.tags,
-        material: product.material,
-        price: product.price,
-        currency: product.currency,
-        priceUnit: product.priceUnit,
-        minOrder: product.minOrder,
-        specifications: product.specifications,
-        customizable: product.customizable,
-        customOptions: product.customOptions || [],
-        inStock: product.inStock,
-        stockQuantity: product.stockQuantity || 0,
-        leadTime: product.leadTime,
-        seoTitle: product.seoTitle || '',
-        seoDescription: product.seoDescription || '',
-        seoKeywords: product.seoKeywords || [],
-        status: product.status,
-        featured: product.featured,
-        images: product.images,
-        productType: '',
-        size: '',
-        bahan: '',
-        bahanOptions: [],
-        kualitas: '',
-        kualitasOptions: [],
-        ketebalan: '',
-        ketebalanOptions: [],
-        ukuran: '',
-        ukuranOptions: [],
-        warnaBackground: '',
-        designFileUrl: '',
-        customTexts: [],
-        notesWysiwyg: '',
+        ...defaultFormData, // Ensure all fields have default values
+        ...product, // Override with existing product data
+        // Keep form order fields with defaults if not set
+        productType: product.productType || defaultFormData.productType,
+        bahan: product.bahan || defaultFormData.bahan,
+        kualitas: product.kualitas || defaultFormData.kualitas,
+        ketebalan: product.ketebalan || defaultFormData.ketebalan,
+        ukuran: product.ukuran || defaultFormData.ukuran,
+        warnaBackground: product.warnaBackground || defaultFormData.warnaBackground,
+        customTexts: product.customTexts || [],
+        bahanOptions: product.bahanOptions || [],
+        kualitasOptions: product.kualitasOptions || [],
+        ketebalanOptions: product.ketebalanOptions || [],
+        ukuranOptions: product.ukuranOptions || [],
+        notesWysiwyg: product.notesWysiwyg || '',
       });
     }
   }, [product, isNew]);
@@ -133,8 +130,16 @@ export default function ProductEditor() {
     });
   };
 
+  // Only show loading when fetching existing product
   if (loading && !isNew) {
-    return <div className="p-6">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="p-6 text-center">
+          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p>Loading product...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -156,7 +161,15 @@ export default function ProductEditor() {
             <X className="mr-2 h-4 w-4" />
             Cancel
           </Button>
-          <Button variant="outline">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              // Generate a temporary slug for new products
+              const previewSlug = formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-');
+              // Open product details page in a new tab with a preview flag
+              window.open(`/products/${previewSlug}?preview=true`, '_blank');
+            }}
+          >
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
@@ -172,7 +185,7 @@ export default function ProductEditor() {
           <TabsTrigger value="basic">Basic Info</TabsTrigger>
           <TabsTrigger value="pricing">Pricing & Stock</TabsTrigger>
           <TabsTrigger value="specifications">Specifications</TabsTrigger>
-          <TabsTrigger value="customization">Customization</TabsTrigger>
+          <TabsTrigger value="customization">Form Order</TabsTrigger>
           <TabsTrigger value="images">Images</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
         </TabsList>
@@ -401,7 +414,7 @@ export default function ProductEditor() {
 
         <TabsContent value="customization" className="space-y-4">
           <Card className="p-6 space-y-6">
-            <h3 className="text-lg font-semibold border-b pb-2">Product Configuration</h3>
+            <h3 className="text-lg font-semibold border-b pb-2">Product Form Order Configuration</h3>
             
             {/* Product Type */}
             <div className="space-y-2">
@@ -981,6 +994,15 @@ export default function ProductEditor() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Live Preview Section */}
+      <div className="border-t mt-6 pt-6">
+        <LivePreview 
+          previewUrl={`/products/${formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-')}?preview=true`}
+          initialDevice="desktop"
+          compactMode={true}
+        />
+      </div>
     </div>
   );
 }

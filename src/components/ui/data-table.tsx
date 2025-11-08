@@ -456,40 +456,10 @@ export function DataTable<TData>({
                     <TableCell key={cell.id} className="max-w-[280px] break-words">
                       {/* If this is a status column render an icon with tooltip */}
                       {cell.column.id === 'status' ? (
-                        (() => {
-                          const stock = row.getValue('stock') as number | undefined;
-                          const minStock = row.getValue('minStock') as number | undefined;
-                          let icon = <Info className="h-4 w-4" />;
-                          let text = String(cell.getValue() ?? '');
-                          if (typeof stock === 'number' && typeof minStock === 'number') {
-                            if (stock === 0) {
-                              icon = <XCircle className="h-4 w-4 text-red-600" />;
-                              text = 'Stock habis';
-                            } else if (stock <= minStock) {
-                              icon = <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-                              text = 'Stock menipis';
-                            } else {
-                              icon = <CheckCircle className="h-4 w-4 text-green-600" />;
-                              text = 'Stock masih ada';
-                            }
-                          } else {
-                            // Fallback: use cell value string
-                            const v = String(cell.getValue() ?? '').toLowerCase();
-                            if (v.includes('out') || v.includes('habis')) { icon = <XCircle className="h-4 w-4 text-red-600" />; }
-                            else if (v.includes('low') || v.includes('menipis')) { icon = <AlertTriangle className="h-4 w-4 text-yellow-600" />; }
-                            else { icon = <CheckCircle className="h-4 w-4 text-green-600" />; }
-                          }
-                          return (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex items-center">{icon}</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{text}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          );
-                        })()
+                        flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )
                       ) : (
                         flexRender(
                           cell.column.columnDef.cell,

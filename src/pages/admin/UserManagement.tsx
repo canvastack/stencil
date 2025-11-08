@@ -9,8 +9,11 @@ import {
   Shield,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
+import type { UserStatus } from '@/types/user';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,20 +93,19 @@ const mockUsers: UserWithLocation[] = [
 
 export default function UserManagement() {
   const [users, setUsers] = useState<UserWithLocation[]>(mockUsers);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<UserWithLocation | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     role: '',
     department: '',
-    status: 'active' as 'active' | 'inactive',
+    status: 'active' as UserStatus,
   });
   const [locationData, setLocationData] = useState<LocationData | undefined>();
 
-  const handleOpenDialog = (user?: User) => {
+  const handleOpenDialog = (user?: UserWithLocation) => {
     if (user) {
       setEditingUser(user);
       setFormData({
@@ -111,7 +113,7 @@ export default function UserManagement() {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        department: user.department,
+        department: user.department || '',
         status: user.status,
       });
       setLocationData(user.location);
@@ -139,9 +141,10 @@ export default function UserManagement() {
       ));
       toast.success('User updated successfully!');
     } else {
-      const newUser: User = {
+      const newUser: UserWithLocation = {
         id: Date.now().toString(),
         ...formData,
+        department: formData.department || '',
         location: locationData,
         createdAt: new Date().toISOString().split('T')[0],
       };
@@ -156,7 +159,7 @@ export default function UserManagement() {
     toast.success('User deleted successfully!');
   };
 
-  const columns: ColumnDef<User>[] = [
+  const columns: ColumnDef<UserWithLocation>[] = [
     {
       accessorKey: 'name',
       header: 'Name',
@@ -201,11 +204,23 @@ export default function UserManagement() {
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={row.getValue('status') === 'active' ? 'default' : 'secondary'}>
-          {row.getValue('status')}
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const status = row.getValue('status') as UserStatus;
+        return (
+          <Badge variant={status === 'active' ? 'default' : 'secondary'}>
+            <span className="flex items-center gap-1">
+              {status === 'active' ? (
+                <CheckCircle className="w-3 h-3 text-green-500" />
+              ) : status === 'suspended' ? (
+                <XCircle className="w-3 h-3 text-red-500" />
+              ) : (
+                <XCircle className="w-3 h-3 text-gray-500" />
+              )}
+              {status}
+            </span>
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: 'createdAt',
@@ -353,13 +368,14 @@ export default function UserManagement() {
                 </div>
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <Select value={formData.status} onValueChange={(value: 'active' | 'inactive') => setFormData({ ...formData, status: value })}>
+                  <Select value={formData.status} onValueChange={(value: UserStatus) => setFormData({ ...formData, status: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="suspended">Suspended</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

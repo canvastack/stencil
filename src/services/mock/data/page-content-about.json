@@ -18,22 +18,17 @@
     },
     "mission": {
       "enabled": true,
-      "title": "Misi Kami",
+      "title": "Visi & Misi Kami",
       "items": [
         {
           "icon": "Target",
-          "title": "Kualitas Terbaik",
-          "description": "Memberikan hasil etching dengan presisi dan kualitas tertinggi"
-        },
-        {
-          "icon": "Users",
-          "title": "Kepuasan Pelanggan",
-          "description": "Mengutamakan kepuasan pelanggan dengan layanan profesional"
+          "title": "VISI",
+          "description": "Menjadi perusahaan yang menghadirkan karya presisi tinggi dengan sentuhan seni dan teknologi, memberikan nilai estetika dan kualitas terbaik untuk kepuasan setiap pelanggan"
         },
         {
           "icon": "Lightbulb",
-          "title": "Inovasi Berkelanjutan",
-          "description": "Terus berinovasi dengan teknologi dan metode terbaru"
+          "title": "MISI",
+          "description": "1. Membangun kepercayaan konsumen melalui hasil kerja presisi, detail, dan ketepatan waktu. \n2. Mengembangkan desain etching yang inovatif untuk memenuhi kebutuhan personalisasi dan industri kreatif. \n3. Menjalin kemitraan strategis dengan pelaku industri untuk memperluas jangkauan pasar dan meningkatkan daya saing."
         }
       ]
     },
@@ -41,11 +36,9 @@
       "enabled": true,
       "title": "Nilai-Nilai Kami",
       "items": [
-        "Integritas dan transparansi dalam setiap transaksi",
-        "Komitmen terhadap kualitas dan kepuasan pelanggan",
-        "Inovasi dan peningkatan berkelanjutan",
-        "Profesionalisme dalam setiap aspek layanan",
-        "Tanggung jawab sosial dan lingkungan"
+        "Kami percaya bahwa setiap detail menentukan hasil akhir. Karena itu, presisi menjadi fondasi utama dalam setiap proses etching yang kami lakukan — dari desain hingga hasil jadi.",
+        "Kami membangun kepercayaan melalui kejujuran, transparansi, dan kerja sama erat antara tim internal, mitra, dan pelanggan kami.",
+        "Kami tidak hanya ingin memenuhi kebutuhan, tetapi juga memberikan pengalaman yang menyenangkan, hasil yang menginspirasi, dan layanan yang terpercaya."
       ]
     },
     "team": {

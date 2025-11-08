@@ -3,6 +3,51 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+interface PageContent {
+  hero: {
+    title: {
+      prefix: string;
+      highlight: string;
+      suffix?: string;
+    };
+    subtitle: string;
+    typingTexts?: readonly string[];
+  };
+  informationSection: {
+    title: {
+      prefix: string;
+      highlight: string;
+      suffix?: string;
+    };
+    subtitle: string;
+    cards: Array<{
+      title: string;
+      description: string;
+      features: string[];
+      icon: string;
+      buttonText?: string;
+    }>;
+  };
+  ctaSections: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    stats?: Array<{
+      value: string;
+      label: string;
+    }>;
+    buttons: Array<{
+      text: string;
+      variant: 'primary' | 'outline';
+      icon?: string;
+    }>;
+  }>;
+}
+
+interface ExtendedProduct extends Product {
+  subcategory?: string;
+}
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Pagination,
@@ -17,8 +62,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart } from "lucide-react";
 import { APP_CONFIG, TYPING_TEXTS } from "@/lib/constants";
+import { useProducts } from "@/hooks/useProducts";
+import { Product } from "@/types/product";
+import { getPageContent } from "@/services/mock/pages";
 
-// Import product images
 import metalEtching1 from "@/assets/products/metal-etching-1.jpg";
 import metalEtching2 from "@/assets/products/metal-etching-2.jpg";
 import metalEtching3 from "@/assets/products/metal-etching-3.jpg";
@@ -39,6 +86,7 @@ import bathroomMirror1 from "@/assets/products/bathroom-mirror-1.jpg";
 import lifetimeTrophy1 from "@/assets/products/lifetime-trophy-1.jpg";
 
 const Products = () => {
+  const { products: cmsProducts, loading: loadingProducts } = useProducts();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -51,229 +99,131 @@ const Products = () => {
   const [typingTextIndex, setTypingTextIndex] = useState(0);
   const { PRODUCTS_PER_PAGE } = APP_CONFIG;
 
-  const typingTexts = TYPING_TEXTS;
+  const cmsPageContent = getPageContent('products');
+  
+  // const hardcodedPageContent: PageContent = {
+  //   hero: {
+  //     title: { prefix: "Semua", highlight: "Produk" },
+  //     subtitle: "Temukan produk etching berkualitas tinggi dengan presisi sempurna untuk kebutuhan Anda.",
+  //     typingTexts: TYPING_TEXTS
+  //   },
+  //   informationSection: {
+  //     title: { prefix: "Layanan", highlight: "Etching", suffix: "Kami" },
+  //     subtitle: "Tiga kategori utama produk etching dengan kualitas terbaik dan presisi tinggi",
+  //     cards: [
+  //       { title: "Etching Logam", description: "Stainless steel, kuningan, tembaga, aluminium untuk berbagai aplikasi industri dan dekorasi.", features: ["Presisi tinggi", "Tahan lama", "Kustomisasi penuh"], icon: "⚙️", buttonText: "Pelajari Lebih Lanjut" },
+  //       { title: "Etching Kaca", description: "Kaca berkualitas tinggi dengan hasil etching yang halus dan elegan untuk interior dan hadiah.", features: ["Desain artistik", "Food-grade safe", "Transparan premium"], icon: "🏆", buttonText: "Pelajari Lebih Lanjut" },
+  //       { title: "Plakat Penghargaan", description: "Plakat custom untuk penghargaan perusahaan, acara, dan apresiasi dengan desain profesional.", features: ["Desain eksklusif", "Material premium", "Personalisasi lengkap"], icon: "🎖️", buttonText: "Pelajari Lebih Lanjut" }
+  //     ]
+  //   },
+  //   ctaSections: [
+  //     { id: "cta-1", title: "Siap Mewujudkan Proyek Anda?", subtitle: "Hubungi kami sekarang dan dapatkan konsultasi gratis untuk proyek etching Anda", stats: [{ value: "1000+", label: "Produk" }, { value: "15+", label: "Tahun Pengalaman" }, { value: "98%", label: "Tingkat Kepuasan" }], buttons: [{ text: "Hubungi Kami", variant: "primary" as const, icon: "Phone" }, { text: "Lihat Produk Kami", variant: "outline" as const, icon: "Target" }] },
+  //     { id: "cta-2", title: "Punya Pertanyaan atau Siap Memulai?", subtitle: "Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda.", buttons: [{ text: "Hubungi Tim Kami", variant: "primary" as const }] }
+  //   ]
+  // };
+
+  const defaultPageContent: PageContent = {
+    hero: {
+      title: { prefix: "Semua", highlight: "Produk" },
+      subtitle: "Temukan produk etching berkualitas tinggi dengan presisi sempurna untuk kebutuhan Anda.",
+      typingTexts: TYPING_TEXTS
+    },
+    informationSection: {
+      title: { prefix: "Layanan", highlight: "Etching", suffix: "Kami" },
+      subtitle: "Tiga kategori utama produk etching dengan kualitas terbaik dan presisi tinggi",
+      cards: [
+        { title: "Etching Logam", description: "Stainless steel, kuningan, tembaga, aluminium untuk berbagai aplikasi industri dan dekorasi.", features: ["Presisi tinggi", "Tahan lama", "Kustomisasi penuh"], icon: "⚙️", buttonText: "Pelajari Lebih Lanjut" },
+        { title: "Etching Kaca", description: "Kaca berkualitas tinggi dengan hasil etching yang halus dan elegan untuk interior dan hadiah.", features: ["Desain artistik", "Food-grade safe", "Transparan premium"], icon: "🏆", buttonText: "Pelajari Lebih Lanjut" },
+        { title: "Plakat Penghargaan", description: "Plakat custom untuk penghargaan perusahaan, acara, dan apresiasi dengan desain profesional.", features: ["Desain eksklusif", "Material premium", "Personalisasi lengkap"], icon: "🎖️", buttonText: "Pelajari Lebih Lanjut" }
+      ]
+    },
+    ctaSections: [
+      { id: "cta-1", title: "Siap Mewujudkan Proyek Anda?", subtitle: "Hubungi kami sekarang dan dapatkan konsultasi gratis untuk proyek etching Anda", stats: [{ value: "1000+", label: "Produk" }, { value: "15+", label: "Tahun Pengalaman" }, { value: "98%", label: "Tingkat Kepuasan" }], buttons: [{ text: "Hubungi Kami", variant: "primary" as const, icon: "Phone" }, { text: "Lihat Produk Kami", variant: "outline" as const, icon: "Target" }] },
+      { id: "cta-2", title: "Punya Pertanyaan atau Siap Memulai?", subtitle: "Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda.", buttons: [{ text: "Hubungi Tim Kami", variant: "primary" as const }] }
+    ]
+  };
+
+  const pageContent = (cmsPageContent || defaultPageContent) as PageContent;
+  const typingTexts = pageContent.hero?.typingTexts || TYPING_TEXTS;
 
   useEffect(() => {
     const interval = setInterval(() => {
       setTypingTextIndex((prev) => (prev + 1) % typingTexts.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [typingTexts]);
 
-  const products = [
-    {
-      id: "1",
-      name: "Nameplate Stainless Steel Premium",
-      image: metalEtching1,
-      type: "metal",
-      category: "industrial",
-      rating: 5,
-      description: "Nameplate stainless steel dengan pola geometris yang rumit dan presisi tinggi.",
-    },
-    {
-      id: "2",
-      name: "Glass Award Trophy Premium",
-      image: glassEtching1,
-      price: "Rp 450.000",
-      type: "glass",
-      category: "corporate",
-      rating: 5,
-      description: "Trophy kaca premium dengan etching logo perusahaan untuk penghargaan korporat.",
-    },
-    {
-      id: "3",
-      name: "Memorial Brass Plaque Deluxe",
-      image: awardPlaque1,
-      price: "Rp 650.000",
-      type: "award",
-      category: "corporate",
-      rating: 5,
-      description: "Plakat memorial kuningan dengan border ornamen elegan dan base kayu solid.",
-    },
-    {
-      id: "4",
-      name: "Copper Decorative Panel Artistic",
-      image: metalEtching2,
-      type: "metal",
-      category: "decorative",
-      rating: 4.5,
-      description: "Panel dekoratif tembaga dengan pola botanical artistik untuk interior modern.",
-    },
-    {
-      id: "5",
-      name: "Etched Crystal Vase Luxury",
-      image: glassEtching2,
-      price: "Rp 550.000",
-      type: "glass",
-      category: "decorative",
-      rating: 5,
-      description: "Vas crystal dengan pola floral etching halus, cocok untuk dekorasi rumah mewah.",
-    },
-    {
-      id: "6",
-      name: "Corporate Recognition Plaque",
-      image: awardPlaque2,
-      price: "Rp 500.000",
-      type: "award",
-      category: "corporate",
-      rating: 5,
-      description: "Plakat pengakuan korporat dengan plate metal dan frame kayu premium.",
-    },
-    {
-      id: "7",
-      name: "Industrial Signage Aluminum",
-      image: metalEtching3,
-      type: "metal",
-      category: "industrial",
-      rating: 4.5,
-      description: "Signage industrial aluminum dengan marking teknis presisi untuk aplikasi industri.",
-    },
-    {
-      id: "8",
-      name: "Frosted Glass Door Panel",
-      image: glassEtching3,
-      price: "Rp 1.200.000",
-      type: "glass",
-      category: "decorative",
-      rating: 5,
-      description: "Panel kaca pintu dengan pola geometris etching untuk interior arsitektur modern.",
-    },
-    {
-      id: "9",
-      name: "Championship Sports Trophy",
-      image: awardPlaque3,
-      price: "Rp 750.000",
-      type: "award",
-      category: "corporate",
-      rating: 5,
-      description: "Trophy olahraga custom dengan logo tim dan detail kejuaraan yang presisi.",
-    },
-    {
-      id: "10",
-      name: "Titanium Aerospace Plate",
-      image: titaniumAerospace1,
-      price: "Rp 950.000",
-      type: "metal",
-      category: "industrial",
-      rating: 5,
-      description: "Plate titanium grade aerospace dengan marking presisi untuk aplikasi high-tech.",
-    },
-    {
-      id: "11",
-      name: "Engraved Wine Glass Set",
-      image: wineGlassSet1,
-      type: "glass",
-      category: "decorative",
-      rating: 4.5,
-      description: "Set gelas wine dengan etching monogram elegan untuk hadiah premium.",
-    },
-    {
-      id: "12",
-      name: "Excellence Award Crystal",
-      image: crystalAward1,
-      price: "Rp 890.000",
-      type: "award",
-      category: "corporate",
-      rating: 5,
-      description: "Crystal award prestisius dengan etching 3D untuk penghargaan tertinggi.",
-    },
-    {
-      id: "13",
-      name: "Brass Door Sign Custom",
-      image: brassDoorSign1,
-      type: "metal",
-      category: "decorative",
-      rating: 4.5,
-      description: "Papan nama pintu kuningan dengan border dekoratif dan teks custom.",
-    },
-    {
-      id: "14",
-      name: "Decorative Mirror Frame",
-      image: mirrorFrame1,
-      price: "Rp 680.000",
-      type: "glass",
-      category: "decorative",
-      rating: 5,
-      description: "Frame cermin dengan pola etching art deco untuk interior luxury.",
-    },
-    {
-      id: "15",
-      name: "Retirement Commemoration Plaque",
-      image: retirementPlaque1,
-      price: "Rp 580.000",
-      type: "award",
-      category: "corporate",
-      rating: 5,
-      description: "Plakat pensiun dengan foto etching dan teks personalisasi lengkap.",
-    },
-    {
-      id: "16",
-      name: "Stainless Control Panel",
-      image: controlPanel1,
-      price: "Rp 420.000",
-      type: "metal",
-      category: "industrial",
-      rating: 4.5,
-      description: "Panel kontrol stainless dengan marking tombol dan instruksi teknis.",
-    },
-    {
-      id: "17",
-      name: "Bathroom Mirror Etched",
-      image: bathroomMirror1,
-      price: "Rp 1.500.000",
-      type: "glass",
-      category: "decorative",
-      rating: 5,
-      description: "Cermin kamar mandi dengan border etching dan anti-fog coating.",
-    },
-    {
-      id: "18",
-      name: "Lifetime Achievement Trophy",
-      image: lifetimeTrophy1,
-      price: "Rp 1.200.000",
-      type: "award",
-      category: "corporate",
-      rating: 5,
-      description: "Trophy prestasi seumur hidup dengan kombinasi metal, kaca, dan base granite.",
-    },
-  ];
+  // const hardcodedProducts = [
+  //   { id: "1", name: "Nameplate Stainless Steel Premium", image: metalEtching1, type: "metal", category: "industrial", rating: 5, description: "Nameplate stainless steel dengan pola geometris yang rumit dan presisi tinggi." },
+  //   { id: "2", name: "Glass Award Trophy Premium", image: glassEtching1, price: "Rp 450.000", type: "glass", category: "corporate", rating: 5, description: "Trophy kaca premium dengan etching logo perusahaan untuk penghargaan korporat." },
+  //   { id: "3", name: "Memorial Brass Plaque Deluxe", image: awardPlaque1, price: "Rp 650.000", type: "award", category: "corporate", rating: 5, description: "Plakat memorial kuningan dengan border ornamen elegan dan base kayu solid." },
+  //   { id: "4", name: "Copper Decorative Panel Artistic", image: metalEtching2, type: "metal", category: "decorative", rating: 4.5, description: "Panel dekoratif tembaga dengan pola botanical artistik untuk interior modern." },
+  //   { id: "5", name: "Etched Crystal Vase Luxury", image: glassEtching2, price: "Rp 550.000", type: "glass", category: "decorative", rating: 5, description: "Vas crystal dengan pola floral etching halus, cocok untuk dekorasi rumah mewah." },
+  //   { id: "6", name: "Corporate Recognition Plaque", image: awardPlaque2, price: "Rp 500.000", type: "award", category: "corporate", rating: 5, description: "Plakat pengakuan korporat dengan plate metal dan frame kayu premium." },
+  //   { id: "7", name: "Industrial Signage Aluminum", image: metalEtching3, type: "metal", category: "industrial", rating: 4.5, description: "Signage industrial aluminum dengan marking teknis presisi untuk aplikasi industri." },
+  //   { id: "8", name: "Frosted Glass Door Panel", image: glassEtching3, price: "Rp 1.200.000", type: "glass", category: "decorative", rating: 5, description: "Panel kaca pintu dengan pola geometris etching untuk interior arsitektur modern." },
+  //   { id: "9", name: "Championship Sports Trophy", image: awardPlaque3, price: "Rp 750.000", type: "award", category: "corporate", rating: 5, description: "Trophy olahraga custom dengan logo tim dan detail kejuaraan yang presisi." },
+  //   { id: "10", name: "Titanium Aerospace Plate", image: titaniumAerospace1, price: "Rp 950.000", type: "metal", category: "industrial", rating: 5, description: "Plate titanium grade aerospace dengan marking presisi untuk aplikasi high-tech." },
+  //   { id: "11", name: "Engraved Wine Glass Set", image: wineGlassSet1, type: "glass", category: "decorative", rating: 4.5, description: "Set gelas wine dengan etching monogram elegan untuk hadiah premium." },
+  //   { id: "12", name: "Excellence Award Crystal", image: crystalAward1, price: "Rp 890.000", type: "award", category: "corporate", rating: 5, description: "Crystal award prestisius dengan etching 3D untuk penghargaan tertinggi." },
+  //   { id: "13", name: "Brass Door Sign Custom", image: brassDoorSign1, type: "metal", category: "decorative", rating: 4.5, description: "Papan nama pintu kuningan dengan border dekoratif dan teks custom." },
+  //   { id: "14", name: "Decorative Mirror Frame", image: mirrorFrame1, price: "Rp 680.000", type: "glass", category: "decorative", rating: 5, description: "Frame cermin dengan pola etching art deco untuk interior luxury." },
+  //   { id: "15", name: "Retirement Achievement Plaque", image: retirementPlaque1, price: "Rp 720.000", type: "award", category: "corporate", rating: 5, description: "Plakat pensiun dengan desain elegan dan personalisasi nama serta tanggal." },
+  //   { id: "16", name: "Control Panel Marking", image: controlPanel1, type: "metal", category: "industrial", rating: 4.5, description: "Marking panel kontrol dengan simbol teknis dan label yang jelas dan tahan lama." },
+  //   { id: "17", name: "Decorative Bathroom Mirror", image: bathroomMirror1, price: "Rp 580.000", type: "glass", category: "decorative", rating: 5, description: "Cermin kamar mandi dengan etching border dekoratif dan anti-fog coating." },
+  //   { id: "18", name: "Lifetime Achievement Trophy", image: lifetimeTrophy1, price: "Rp 1.500.000", type: "award", category: "corporate", rating: 5, description: "Trophy prestise untuk lifetime achievement dengan desain mewah dan elegant." },
+  // ];
 
-  const infoCards = [
-    {
-      title: "Etching Logam",
-      description: "Stainless steel, kuningan, tembaga, aluminium untuk berbagai aplikasi industri dan dekorasi.",
-      features: ["Presisi tinggi", "Tahan lama", "Kustomisasi penuh"],
-      icon: "⚙️",
-    },
-    {
-      title: "Etching Kaca",
-      description: "Kaca berkualitas tinggi dengan hasil etching yang halus dan elegan untuk interior dan hadiah.",
-      features: ["Desain artistik", "Food-grade safe", "Transparan premium"],
-      icon: "🏆",
-    },
-    {
-      title: "Plakat Penghargaan",
-      description: "Plakat custom untuk penghargaan perusahaan, acara, dan apresiasi dengan desain profesional.",
-      features: ["Desain eksklusif", "Material premium", "Personalisasi lengkap"],
-      icon: "🎖️",
-    },
-  ];
+  const allProducts: ExtendedProduct[] = cmsProducts;
 
-  const filteredProducts = products.filter((product) => {
+  const formatPrice = (price: number, currency: string): string => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const getProductRating = (productId: string): number => {
+    return 5; // Default rating since we're using CMS products now
+  };
+
+  const filteredProducts = allProducts.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === "all" || product.type === selectedType;
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    const matchesRating = product.rating >= minRating;
+                         product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesType = selectedType === "all" || 
+                       product.category.toLowerCase().includes(selectedType.toLowerCase()) ||
+                       product.tags.some(tag => tag.toLowerCase() === selectedType.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || 
+                          product.category.toLowerCase().includes(selectedCategory.toLowerCase()) ||
+                          product.subcategory?.toLowerCase().includes(selectedCategory.toLowerCase());
+    const matchesRating = getProductRating(product.id) >= minRating;
     
-    return matchesSearch && matchesType && matchesCategory && matchesRating;
+    return matchesSearch && matchesType && matchesCategory && matchesRating && product.status === 'published';
+  });
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case "name-asc":
+        return a.name.localeCompare(b.name);
+      case "name-desc":
+        return b.name.localeCompare(a.name);
+      case "rating-high":
+        return getProductRating(b.id) - getProductRating(a.id);
+      case "rating-low":
+        return getProductRating(a.id) - getProductRating(b.id);
+      default:
+        return 0;
+    }
   });
 
   // Pagination
-  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+  const totalPages = Math.ceil(sortedProducts.length / PRODUCTS_PER_PAGE);
   const indexOfLastProduct = currentPage * PRODUCTS_PER_PAGE;
   const indexOfFirstProduct = indexOfLastProduct - PRODUCTS_PER_PAGE;
-  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -289,10 +239,10 @@ const Products = () => {
         
         <div className="container mx-auto text-center max-w-4xl animate-fade-in relative z-10">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white">
-            Semua <span className="text-primary">Produk</span>
+            {pageContent.hero.title.prefix} <span className="text-primary">{pageContent.hero.title.highlight}</span>
           </h1>
           <p className="text-lg text-slate-300 mb-4">
-            Temukan produk etching berkualitas tinggi dengan presisi sempurna untuk kebutuhan Anda.
+            {(pageContent.hero as any)?.subtitle}
           </p>
           <div className="h-8 flex items-center justify-center">
             <p 
@@ -323,7 +273,9 @@ const Products = () => {
 
             {/* Filter Dropdowns */}
             <div className="flex gap-3 flex-wrap items-center">
-              <Select value={selectedType} onValueChange={setSelectedType}>
+              <Select 
+                value={selectedType} 
+                onValueChange={(value: string) => setSelectedType(value)}>
                 <SelectTrigger className="w-[150px] bg-[#0f172a] border-slate-700 text-white">
                   <SelectValue placeholder="Semua Produk" />
                 </SelectTrigger>
@@ -335,7 +287,9 @@ const Products = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select 
+                value={sortBy} 
+                onValueChange={(value: string) => setSortBy(value)}>
                 <SelectTrigger className="w-[150px] bg-[#0f172a] border-slate-700 text-white">
                   <SelectValue placeholder="Nama (A-Z)" />
                 </SelectTrigger>
@@ -493,7 +447,17 @@ const Products = () => {
 
             {/* Products Grid */}
             <div className="flex-1">
-              {filteredProducts.length === 0 ? (
+              {loadingProducts ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                  <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-full p-8 mb-6 animate-pulse">
+                    <ShoppingCart className="w-16 h-16 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2">Memuat produk...</h3>
+                  <p className="text-slate-400 max-w-md">
+                    Mohon tunggu sebentar
+                  </p>
+                </div>
+              ) : sortedProducts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
                   <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-full p-8 mb-6">
                     <Fish className="w-16 h-16 text-primary animate-float" />
@@ -506,65 +470,66 @@ const Products = () => {
               ) : (
                 <>
                   <div className={`grid ${viewMode === "grid" ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"} gap-6`}>
-                    {currentProducts.map((product, i) => (
-                    <Card
-                      key={product.id}
-                      className="group bg-card border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden animate-scale-in"
-                      style={{ animationDelay: `${i * 0.1}s` }}
-                    >
-                      {/* Product Image */}
-                      <div className="relative aspect-video overflow-hidden bg-muted">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      </div>
-
-                      <div className="p-6">
-                        {/* Rating */}
-                        <div className="flex items-center gap-1 mb-3">
-                          {[...Array(5)].map((_, idx) => (
-                            <Star
-                              key={idx}
-                              className={`w-4 h-4 ${
-                                idx < Math.floor(product.rating)
-                                  ? "fill-primary text-primary"
-                                  : "text-muted"
-                              }`}
+                    {currentProducts.map((product, i) => {
+                      const rating = getProductRating(product.id);
+                      return (
+                        <Card
+                          key={product.id}
+                          className="group bg-card border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden animate-scale-in"
+                          style={{ animationDelay: `${i * 0.1}s` }}
+                        >
+                          {/* Product Image */}
+                          <div className="relative aspect-video overflow-hidden bg-muted">
+                            <img
+                              src={product.images[0]}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
-                          ))}
-                          <span className="text-sm text-muted-foreground ml-1">({product.rating})</span>
-                        </div>
+                          </div>
 
-                        <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                          {product.name}
-                        </h3>
-                        {product.price && (
-                          <p className="text-lg font-bold text-primary mb-2">{product.price}</p>
-                        )}
-                        <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-2">{product.description}</p>
-                        
-                        <div className="flex gap-3">
-                          <Button
-                            onClick={() => navigate(`/products/${product.id}`)}
-                            variant="outline"
-                            className="flex-1 border-primary text-primary hover:bg-primary/10 font-semibold"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Detail
-                          </Button>
-                          <Button
-                            onClick={() => navigate(`/products/${product.id}`)}
-                            className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Pesan
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
+                          <div className="p-6">
+                            {/* Rating */}
+                            <div className="flex items-center gap-1 mb-3">
+                              {[...Array(5)].map((_, idx) => (
+                                <Star
+                                  key={idx}
+                                  className={`w-4 h-4 ${
+                                    idx < Math.floor(rating)
+                                      ? "fill-primary text-primary"
+                                      : "text-muted"
+                                  }`}
+                                />
+                              ))}
+                              <span className="text-sm text-muted-foreground ml-1">({rating})</span>
+                            </div>
+
+                            <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                              {product.name}
+                            </h3>
+                            <p className="text-lg font-bold text-primary mb-2">{formatPrice(product.price, product.currency)}</p>
+                            <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-2">{product.description}</p>
+                            
+                            <div className="flex gap-3">
+                              <Button
+                                onClick={() => navigate(`/products/${product.slug}`)}
+                                variant="outline"
+                                className="flex-1 border-primary text-primary hover:bg-primary/10 font-semibold"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Detail
+                              </Button>
+                              <Button
+                                onClick={() => navigate(`/products/${product.slug}`)}
+                                className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
+                              >
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Pesan
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })}
                 </div>
 
                 {/* Pagination */}
@@ -636,15 +601,15 @@ const Products = () => {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12 animate-fade-in">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              Layanan <span className="text-primary">Etching</span> Kami
+              {pageContent.informationSection.title.prefix} <span className="text-primary">{pageContent.informationSection.title.highlight}</span> {pageContent.informationSection.title.suffix}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Tiga kategori utama produk etching dengan kualitas terbaik dan presisi tinggi
+              {(pageContent.informationSection as any)?.subtitle}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {infoCards.map((card, i) => (
+            {(pageContent.informationSection.cards || []).map((card, i) => (
               <Card
                 key={i}
                 className="group bg-card border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden animate-scale-in"
@@ -673,7 +638,7 @@ const Products = () => {
                     variant="outline"
                     className="w-full border-primary text-primary hover:bg-primary/10 font-semibold group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all"
                   >
-                    Pelajari Lebih Lanjut
+                    {card.buttonText || "Pelajari Lebih Lanjut"}
                   </Button>
                 </div>
               </Card>
@@ -682,80 +647,82 @@ const Products = () => {
         </div>
       </section>
 
-      {/* CTA Section 1 - "Siap Mewujudkan Proyek Anda?" Style */}
-      <section className="py-20 px-4 bg-gradient-to-r from-[#f59e0b] to-[#f97316] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-30"></div>
-        
-        <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Siap Mewujudkan Proyek Anda?
-            </h2>
-            <p className="text-lg text-white/90 max-w-2xl mx-auto">
-              Hubungi kami sekarang dan dapatkan konsultasi gratis untuk proyek etching Anda
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 mb-12">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
-              <div className="text-5xl font-bold text-white mb-2">1000+</div>
-              <div className="text-white/90 font-medium">Produk</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
-              <div className="text-5xl font-bold text-white mb-2">15+</div>
-              <div className="text-white/90 font-medium">Tahun Pengalaman</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
-              <div className="text-5xl font-bold text-white mb-2">98%</div>
-              <div className="text-white/90 font-medium">Tingkat Kepuasan</div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-[#475569] hover:bg-[#334155] text-white font-semibold px-8 shadow-xl hover:shadow-2xl transition-all"
-            >
-              <Phone className="w-5 h-5 mr-2" />
-              Hubungi Kami
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-[#fbbf24] bg-transparent hover:bg-white/10 text-white font-semibold px-8 shadow-xl hover:shadow-2xl transition-all"
-            >
-              Lihat Produk Kami
-              <Target className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section 2 - "Punya Pertanyaan atau Siap Memulai?" Style */}
-      <section className="py-16 px-4 bg-gradient-to-r from-[#d97706] to-[#ea580c] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuMDMiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
-        
-        <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
-                Punya Pertanyaan atau Siap Memulai?
+      {/* CTA Section 1 */}
+      {((pageContent.ctaSections as any)?.[0]) && (
+        <section className="py-20 px-4 bg-gradient-to-r from-[#f59e0b] to-[#f97316] relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-30"></div>
+          
+          <div className="container mx-auto max-w-6xl relative z-10">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                {(pageContent.ctaSections as any)[0]?.title}
               </h2>
-              <p className="text-lg text-white/90">
-                Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda.
+              <p className="text-lg text-white/90 max-w-2xl mx-auto">
+                {(pageContent.ctaSections as any)[0]?.subtitle}
               </p>
             </div>
-            <div className="flex-shrink-0">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f59e0b]/90 hover:to-[#f97316]/90 text-white font-semibold px-12 py-6 text-lg shadow-2xl hover:shadow-3xl transition-all backdrop-blur-sm border border-white/20 hover:scale-105"
-              >
-                Hubungi Tim Kami
-              </Button>
+
+            {(pageContent.ctaSections as any)[0]?.stats && (
+              <div className="grid md:grid-cols-3 gap-6 mb-12">
+                {(pageContent.ctaSections as any)[0].stats.map((stat: any, i: number) => (
+                  <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition-all">
+                    <div className="text-5xl font-bold text-white mb-2">{stat.value}</div>
+                    <div className="text-white/90 font-medium">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {(pageContent.ctaSections as any)[0]?.buttons?.map((btn: any, i: number) => (
+                <Button
+                  key={i}
+                  size="lg"
+                  variant={btn.variant === 'outline' ? 'outline' : 'default'}
+                  className={btn.variant === 'outline' 
+                    ? "border-2 border-[#fbbf24] bg-transparent hover:bg-white/10 text-white font-semibold px-8 shadow-xl hover:shadow-2xl transition-all"
+                    : "bg-[#475569] hover:bg-[#334155] text-white font-semibold px-8 shadow-xl hover:shadow-2xl transition-all"
+                  }
+                >
+                  {btn.icon === 'Phone' && <Phone className="w-5 h-5 mr-2" />}
+                  {btn.text}
+                  {btn.icon === 'Target' && <Target className="w-5 h-5 ml-2" />}
+                </Button>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
+
+      {/* CTA Section 2 */}
+      {((pageContent.ctaSections as any)?.[1]) && (
+        <section className="py-16 px-4 bg-gradient-to-r from-[#d97706] to-[#ea580c] relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuMDMiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
+          
+          <div className="container mx-auto max-w-6xl relative z-10">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="flex-1 text-center md:text-left">
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                  {(pageContent.ctaSections as any)[1]?.title}
+                </h2>
+                <p className="text-lg text-white/90">
+                  {(pageContent.ctaSections as any)[1]?.subtitle}
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                {(pageContent.ctaSections as any)[1]?.buttons?.[0] && (
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f59e0b]/90 hover:to-[#f97316]/90 text-white font-semibold px-12 py-6 text-lg shadow-2xl hover:shadow-3xl transition-all backdrop-blur-sm border border-white/20 hover:scale-105"
+                  >
+                    {(pageContent.ctaSections as any)[1].buttons[0].text}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </div>

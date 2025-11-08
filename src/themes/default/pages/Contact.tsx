@@ -4,10 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 import { MapPin, Mail, Phone, Clock, Users, Award, Target, CheckCircle2, MessageSquare } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { usePageContent } from "@/contexts/ContentContext";
+import { Helmet } from "react-helmet-async";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   MapPin,
@@ -23,6 +25,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const Contact = () => {
   const { content, loading } = usePageContent("contact");
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -46,9 +49,25 @@ const Contact = () => {
   }
 
   const pageData = content.content;
+  const seoData = pageData.seo || {};
 
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>{seoData.title || "Contact"}</title>
+        <meta name="description" content={seoData.description || ""} />
+        {seoData.keywords && (
+          <meta name="keywords" content={Array.isArray(seoData.keywords) ? seoData.keywords.join(", ") : seoData.keywords} />
+        )}
+        {seoData.ogImage && <meta property="og:image" content={seoData.ogImage} />}
+        <meta property="og:title" content={seoData.title || "Contact"} />
+        <meta property="og:description" content={seoData.description || ""} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title || "Contact"} />
+        <meta name="twitter:description" content={seoData.description || ""} />
+        {seoData.ogImage && <meta name="twitter:image" content={seoData.ogImage} />}
+      </Helmet>
       <Header />
       
       {/* Hero Section */}
@@ -249,7 +268,7 @@ const Contact = () => {
                         ? 'border-2 border-white/50 bg-transparent text-white hover:bg-white/10 text-lg px-8 shadow-xl transition-all'
                         : 'bg-slate-700 hover:bg-slate-800 text-white text-lg px-8 shadow-xl transition-all'
                     }
-                    onClick={() => window.location.href = button.link || "#"}
+                    onClick={() => navigate(button.link || "/")}
                   >
                     {button.text}
                   </Button>

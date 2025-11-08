@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Target, Eye, ChevronLeft, ChevronRight, MessageSquare, Users, Lightbulb, Award } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { usePageContent } from "@/contexts/ContentContext";
+import { Helmet } from "react-helmet-async";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Target,
@@ -17,6 +19,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 const About = () => {
   const { content, loading } = usePageContent("about");
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -40,6 +43,7 @@ const About = () => {
   }
 
   const pageData = content.content;
+  const seoData = pageData.seo || {};
   const team = pageData.team?.members || [];
 
   const nextTeam = () => {
@@ -52,6 +56,21 @@ const About = () => {
 
   return (
     <div className="min-h-screen">
+      <Helmet>
+        <title>{seoData.title || "About"}</title>
+        <meta name="description" content={seoData.description || ""} />
+        {seoData.keywords && (
+          <meta name="keywords" content={Array.isArray(seoData.keywords) ? seoData.keywords.join(", ") : seoData.keywords} />
+        )}
+        {seoData.ogImage && <meta property="og:image" content={seoData.ogImage} />}
+        <meta property="og:title" content={seoData.title || "About"} />
+        <meta property="og:description" content={seoData.description || ""} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title || "About"} />
+        <meta name="twitter:description" content={seoData.description || ""} />
+        {seoData.ogImage && <meta name="twitter:image" content={seoData.ogImage} />}
+      </Helmet>
       <Header />
       
       {/* Hero Section */}
@@ -79,7 +98,7 @@ const About = () => {
                     <div className="text-center p-8">
                       <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary to-orange-light flex items-center justify-center">
                         <span className="text-4xl font-bold text-white">
-                          {pageData.company?.title?.substring(0, 2).toUpperCase() || "EP"}
+                          {pageData.company?.title?.substring(0, 2).toUpperCase() || "CEX"}
                         </span>
                       </div>
                       <p className="text-muted-foreground">{pageData.company?.description || ""}</p>
@@ -290,7 +309,7 @@ const About = () => {
                         ? 'border-2 border-white/50 bg-transparent text-white hover:bg-white/10 text-lg px-8 shadow-xl transition-all'
                         : 'bg-slate-700 hover:bg-slate-800 text-white text-lg px-8 shadow-xl transition-all'
                     }
-                    onClick={() => window.location.href = button.link || "#"}
+                    onClick={() => navigate(button.link || "/")}
                   >
                     {button.text}
                   </Button>

@@ -24,6 +24,10 @@ dist_local
 *.sln
 *.sw?
 *.zip
+*.backup*
+*.bak
+*.tmp
+*.orig*
 
 # Ignore docs/DEVELOPMENTS folder
 docs/DEVELOPMENTS/

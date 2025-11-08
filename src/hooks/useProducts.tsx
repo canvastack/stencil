@@ -43,7 +43,7 @@ export const useProducts = (options: UseProductsOptions = {}) => {
 
 export const useProduct = (id: string) => {
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!id); // Only start loading if an id is provided
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {

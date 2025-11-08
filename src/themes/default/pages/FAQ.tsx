@@ -6,6 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { MessageCircle, HelpCircle, Lightbulb, ShoppingCart, Truck, Package, CheckCircle2 } from "lucide-react";
 import { usePageContent } from "@/contexts/ContentContext";
+import { Helmet } from "react-helmet-async";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   HelpCircle,
@@ -41,10 +42,26 @@ const FAQ = () => {
   }
 
   const pageData = content.content;
+  const seoData = pageData.seo || {};
   const faqCategories = pageData.categories || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted">
+      <Helmet>
+        <title>{seoData.title || "FAQ"}</title>
+        <meta name="description" content={seoData.description || ""} />
+        {seoData.keywords && (
+          <meta name="keywords" content={Array.isArray(seoData.keywords) ? seoData.keywords.join(", ") : seoData.keywords} />
+        )}
+        {seoData.ogImage && <meta property="og:image" content={seoData.ogImage} />}
+        <meta property="og:title" content={seoData.title || "FAQ"} />
+        <meta property="og:description" content={seoData.description || ""} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title || "FAQ"} />
+        <meta name="twitter:description" content={seoData.description || ""} />
+        {seoData.ogImage && <meta name="twitter:image" content={seoData.ogImage} />}
+      </Helmet>
       <Header />
       
       {/* Hero Section */}

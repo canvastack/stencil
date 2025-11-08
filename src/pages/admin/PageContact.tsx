@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Eye, RotateCcw, Plus, Trash } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import MapPicker from "@/components/admin/MapPicker";
 
@@ -107,63 +108,120 @@ export default function PageContact() {
               <CardDescription>Update your contact details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Address</Label>
-                <Textarea
-                  rows={3}
-                  defaultValue={formData.contactInfo?.address}
-                  onChange={(e) => {
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="contactInfo-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide contact info on public page</p>
+                </div>
+                <Switch
+                  id="contactInfo-enabled"
+                  checked={formData.contactInfo?.enabled !== false}
+                  onCheckedChange={(checked) => {
                     setFormData({
                       ...formData,
-                      contactInfo: { ...formData.contactInfo, address: e.target.value }
+                      contactInfo: { ...formData.contactInfo, enabled: checked }
                     });
                     setHasChanges(true);
                   }}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <Input
-                    defaultValue={formData.contactInfo?.phone}
-                    onChange={(e) => {
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Contact Info Items</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentItems = formData.contactInfo?.items || [];
                       setFormData({
                         ...formData,
-                        contactInfo: { ...formData.contactInfo, phone: e.target.value }
+                        contactInfo: {
+                          ...formData.contactInfo,
+                          items: [...currentItems, { icon: "MapPin", title: "", content: "" }]
+                        }
                       });
                       setHasChanges(true);
                     }}
-                  />
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Info Item
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    defaultValue={formData.contactInfo?.email}
-                    onChange={(e) => {
-                      setFormData({
-                        ...formData,
-                        contactInfo: { ...formData.contactInfo, email: e.target.value }
-                      });
-                      setHasChanges(true);
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Operating Hours</Label>
-                <Textarea
-                  rows={3}
-                  placeholder="Monday - Friday: 9AM - 5PM"
-                  defaultValue={formData.contactInfo?.hours}
-                  onChange={(e) => {
-                    setFormData({
-                      ...formData,
-                      contactInfo: { ...formData.contactInfo, hours: e.target.value }
-                    });
-                    setHasChanges(true);
-                  }}
-                />
+                {(formData.contactInfo?.items || []).map((item: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Info #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newItems = (formData.contactInfo?.items || []).filter((_: any, i: number) => i !== index);
+                            setFormData({
+                              ...formData,
+                              contactInfo: { ...formData.contactInfo, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Icon Name</Label>
+                          <Input
+                            placeholder="MapPin, Phone, Mail, Clock"
+                            value={item.icon}
+                            onChange={(e) => {
+                              const newItems = [...(formData.contactInfo?.items || [])];
+                              newItems[index] = { ...item, icon: e.target.value };
+                              setFormData({
+                                ...formData,
+                                contactInfo: { ...formData.contactInfo, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Title</Label>
+                          <Input
+                            placeholder="e.g., Alamat, Telepon, Email"
+                            value={item.title}
+                            onChange={(e) => {
+                              const newItems = [...(formData.contactInfo?.items || [])];
+                              newItems[index] = { ...item, title: e.target.value };
+                              setFormData({
+                                ...formData,
+                                contactInfo: { ...formData.contactInfo, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Content</Label>
+                          <Textarea
+                            rows={2}
+                            placeholder="Contact information content"
+                            value={item.content}
+                            onChange={(e) => {
+                              const newItems = [...(formData.contactInfo?.items || [])];
+                              newItems[index] = { ...item, content: e.target.value };
+                              setFormData({
+                                ...formData,
+                                contactInfo: { ...formData.contactInfo, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -172,39 +230,110 @@ export default function PageContact() {
         <TabsContent value="form" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Contact Form Fields</CardTitle>
+              <CardTitle>Contact Form Settings</CardTitle>
               <CardDescription>Configure form fields and validation</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="form-enabled">Enable Contact Form</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide contact form on public page</p>
+                </div>
+                <Switch
+                  id="form-enabled"
+                  checked={formData.form?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      form: { ...formData.form, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Form Title</Label>
+                <Input
+                  placeholder="Contact form title"
+                  value={formData.form?.title || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      form: { ...formData.form, title: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Form Subtitle</Label>
+                <Textarea
+                  rows={2}
+                  placeholder="Form subtitle or description"
+                  value={formData.form?.subtitle || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      form: { ...formData.form, subtitle: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
               <div className="space-y-4">
-                {formData.form?.fields?.map((field: any, index: number) => (
-                  <Card key={index}>
-                    <CardContent className="pt-6">
-                      <div className="grid grid-cols-3 gap-3">
-                        <Input
-                          placeholder="Field name"
-                          defaultValue={field.name}
-                          onChange={(e) => {
-                            const newFields = [...formData.form.fields];
-                            newFields[index].name = e.target.value;
+                <div className="flex items-center justify-between">
+                  <Label>Form Fields</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        form: {
+                          ...formData.form,
+                          fields: [...(formData.form?.fields || []), { name: '', type: 'text', label: '', placeholder: '', required: true }]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Field
+                  </Button>
+                </div>
+
+                {(formData.form?.fields || []).map((field: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Field #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newFields = (formData.form?.fields || []).filter((_: any, i: number) => i !== index);
                             setFormData({
                               ...formData,
                               form: { ...formData.form, fields: newFields }
                             });
                             setHasChanges(true);
                           }}
-                        />
-                        <Input
-                          placeholder="Type"
-                          defaultValue={field.type}
-                        />
-                        <div className="flex gap-2">
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Field Name</Label>
                           <Input
-                            placeholder="Label"
-                            defaultValue={field.label}
+                            placeholder="e.g., name, email, phone"
+                            value={field.name}
                             onChange={(e) => {
-                              const newFields = [...formData.form.fields];
-                              newFields[index].label = e.target.value;
+                              const newFields = [...(formData.form?.fields || [])];
+                              newFields[index] = { ...field, name: e.target.value };
                               setFormData({
                                 ...formData,
                                 form: { ...formData.form, fields: newFields }
@@ -212,42 +341,75 @@ export default function PageContact() {
                               setHasChanges(true);
                             }}
                           />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              const newFields = formData.form.fields.filter((_: any, i: number) => i !== index);
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Field Type</Label>
+                          <Input
+                            placeholder="text, email, tel, select, textarea"
+                            value={field.type}
+                            onChange={(e) => {
+                              const newFields = [...(formData.form?.fields || [])];
+                              newFields[index] = { ...field, type: e.target.value };
                               setFormData({
                                 ...formData,
                                 form: { ...formData.form, fields: newFields }
                               });
                               setHasChanges(true);
                             }}
-                          >
-                            <Trash className="w-4 h-4" />
-                          </Button>
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Label</Label>
+                          <Input
+                            placeholder="Field label"
+                            value={field.label}
+                            onChange={(e) => {
+                              const newFields = [...(formData.form?.fields || [])];
+                              newFields[index] = { ...field, label: e.target.value };
+                              setFormData({
+                                ...formData,
+                                form: { ...formData.form, fields: newFields }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Placeholder</Label>
+                          <Input
+                            placeholder="Placeholder text"
+                            value={field.placeholder}
+                            onChange={(e) => {
+                              const newFields = [...(formData.form?.fields || [])];
+                              newFields[index] = { ...field, placeholder: e.target.value };
+                              setFormData({
+                                ...formData,
+                                form: { ...formData.form, fields: newFields }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center space-x-2 pt-6">
+                          <Switch
+                            id={`required-${index}`}
+                            checked={field.required !== false}
+                            onCheckedChange={(checked) => {
+                              const newFields = [...(formData.form?.fields || [])];
+                              newFields[index] = { ...field, required: checked };
+                              setFormData({
+                                ...formData,
+                                form: { ...formData.form, fields: newFields }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                          <Label htmlFor={`required-${index}`} className="text-sm">Required</Label>
                         </div>
                       </div>
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setFormData({
-                      ...formData,
-                      form: {
-                        ...formData.form,
-                        fields: [...(formData.form?.fields || []), { name: '', type: 'text', label: '', required: true }]
-                      }
-                    });
-                    setHasChanges(true);
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Form Field
-                </Button>
               </div>
             </CardContent>
           </Card>
