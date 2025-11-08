@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { usePageContent } from "@/contexts/ContentContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,7 @@ import {
   Eye,
   Save
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 export default function PageHome() {
@@ -86,10 +87,11 @@ export default function PageHome() {
       <Tabs defaultValue="hero" className="space-y-4">
         <TabsList>
           <TabsTrigger value="hero">Hero Section</TabsTrigger>
-          <TabsTrigger value="stats">Stats</TabsTrigger>
-          <TabsTrigger value="achievements">Achievements</TabsTrigger>
-          <TabsTrigger value="benefits">Benefits</TabsTrigger>
+          <TabsTrigger value="socialProof">Social Proof</TabsTrigger>
           <TabsTrigger value="process">Process</TabsTrigger>
+          <TabsTrigger value="whyChooseUs">Why Choose Us</TabsTrigger>
+          <TabsTrigger value="achievements">Achievements</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
           <TabsTrigger value="cta">CTA Sections</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
@@ -486,21 +488,45 @@ export default function PageHome() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="stats" className="space-y-4">
+        <TabsContent value="socialProof" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Statistics Section</CardTitle>
-              <CardDescription>Display key performance indicators</CardDescription>
+              <CardTitle>Social Proof Section</CardTitle>
+              <CardDescription>Display achievements and trust indicators</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="enable-social-proof">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show or hide the social proof section</p>
+                </div>
+                <Switch
+                  id="enable-social-proof"
+                  checked={formData.socialProof?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      socialProof: { 
+                        ...formData.socialProof, 
+                        enabled: checked 
+                      }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Section Title</Label>
                 <Input
-                  value={formData.stats?.title || ""}
+                  value={formData.socialProof?.title || ""}
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      stats: { ...formData.stats, title: e.target.value }
+                      socialProof: { 
+                        ...formData.socialProof, 
+                        title: e.target.value 
+                      }
                     });
                     setHasChanges(true);
                   }}
@@ -510,11 +536,14 @@ export default function PageHome() {
                 <Label>Section Subtitle</Label>
                 <Textarea
                   rows={2}
-                  value={formData.stats?.subtitle || ""}
+                  value={formData.socialProof?.subtitle || ""}
                   onChange={(e) => {
                     setFormData({
                       ...formData,
-                      stats: { ...formData.stats, subtitle: e.target.value }
+                      socialProof: { 
+                        ...formData.socialProof, 
+                        subtitle: e.target.value 
+                      }
                     });
                     setHasChanges(true);
                   }}
@@ -523,113 +552,147 @@ export default function PageHome() {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label>Stat Items</Label>
+                  <Label>Statistics</Label>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const currentItems = formData.stats?.items || [];
+                      const currentStats = formData.socialProof?.stats || [];
                       setFormData({
                         ...formData,
-                        stats: {
-                          ...formData.stats,
-                          items: [...currentItems, { icon: "Users", value: "", label: "", color: "blue" }]
+                        socialProof: {
+                          ...formData.socialProof,
+                          stats: [...currentStats, { 
+                            icon: "Users", 
+                            value: "", 
+                            label: "", 
+                            color: "text-blue-500" 
+                          }]
                         }
                       });
                       setHasChanges(true);
                     }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Stat
+                    Add Statistic
                   </Button>
                 </div>
-                {(formData.stats?.items || []).map((item: any, index: number) => (
-                  <Card key={index} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="font-semibold">Stat #{index + 1}</Label>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const newItems = (formData.stats?.items || []).filter((_: any, i: number) => i !== index);
+                {(formData.socialProof?.stats || []).map((item: any, index: number) => (
+                  <Card key={index} className="relative">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center space-x-2">
+                        <Label>Icon</Label>
+                        <Input
+                          className="flex-1"
+                          value={item.icon}
+                          placeholder="Users, Target, Award"
+                          onChange={(e) => {
+                            const updatedItems = [...(formData.achievements?.items || [])];
+                            updatedItems[index] = { ...item, icon: e.target.value };
                             setFormData({
                               ...formData,
-                              stats: { ...formData.stats, items: newItems }
+                              socialProof: { 
+                                ...formData.socialProof, 
+                                stats: updatedStats 
+                              }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Label>Value</Label>
+                        <Input
+                          className="flex-1"
+                          placeholder="2000+, 99%"
+                          value={stat.value}
+                          onChange={(e) => {
+                            const updatedStats = [...(formData.socialProof?.stats || [])];
+                            updatedStats[index] = { ...stat, value: e.target.value };
+                            setFormData({
+                              ...formData,
+                              socialProof: { 
+                                ...formData.socialProof, 
+                                stats: updatedStats 
+                              }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label>Label</Label>
+                        <Input
+                          className="flex-1"
+                          placeholder="Happy Customers"
+                          value={stat.label}
+                          onChange={(e) => {
+                            const updatedStats = [...(formData.socialProof?.stats || [])];
+                            updatedStats[index] = { ...stat, label: e.target.value };
+                            setFormData({
+                              ...formData,
+                              socialProof: { 
+                                ...formData.socialProof, 
+                                stats: updatedStats 
+                              }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label>Color</Label>
+                        <Select
+                          value={stat.color}
+                          onValueChange={(value) => {
+                            const updatedStats = [...(formData.socialProof?.stats || [])];
+                            updatedStats[index] = { ...stat, color: value };
+                            setFormData({
+                              ...formData,
+                              socialProof: { 
+                                ...formData.socialProof, 
+                                stats: updatedStats 
+                              }
                             });
                             setHasChanges(true);
                           }}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text-blue-500">Blue</SelectItem>
+                            <SelectItem value="text-green-500">Green</SelectItem>
+                            <SelectItem value="text-red-500">Red</SelectItem>
+                            <SelectItem value="text-purple-500">Purple</SelectItem>
+                            <SelectItem value="text-yellow-500">Yellow</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="grid md:grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-sm">Icon Name</Label>
-                          <Input
-                            placeholder="Users, Target, Award"
-                            value={item.icon}
-                            onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, icon: e.target.value };
-                              setFormData({
-                                ...formData,
-                                stats: { ...formData.stats, items: newItems }
-                              });
-                              setHasChanges(true);
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">Value</Label>
-                          <Input
-                            placeholder="2000+, 99%"
-                            value={item.value}
-                            onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, value: e.target.value };
-                              setFormData({
-                                ...formData,
-                                stats: { ...formData.stats, items: newItems }
-                              });
-                              setHasChanges(true);
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">Label</Label>
-                          <Input
-                            placeholder="Proyek Selesai"
-                            value={item.label}
-                            onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, label: e.target.value };
-                              setFormData({
-                                ...formData,
-                                stats: { ...formData.stats, items: newItems }
-                              });
-                              setHasChanges(true);
-                            }}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">Color</Label>
-                          <Input
-                            placeholder="blue, green, purple"
-                            value={item.color}
-                            onChange={(e) => {
-                              const newItems = [...(formData.stats?.items || [])];
-                              newItems[index] = { ...item, color: e.target.value };
-                              setFormData({
-                                ...formData,
-                                stats: { ...formData.stats, items: newItems }
-                              });
-                              setHasChanges(true);
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          const updatedStats = [...(formData.socialProof?.stats || [])];
+                          updatedStats.splice(index, 1);
+                          setFormData({
+                            ...formData,
+                            socialProof: { 
+                              ...formData.socialProof, 
+                              stats: updatedStats 
+                            }
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Remove
+                      </Button>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>
@@ -681,93 +744,300 @@ export default function PageHome() {
                   </Button>
                 </div>
                 {(formData.achievements?.items || []).map((item: any, index: number) => (
-                  <Card key={index} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="font-semibold">Achievement #{index + 1}</Label>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const newItems = (formData.achievements?.items || []).filter((_: any, i: number) => i !== index);
+                  <Card key={index} className="relative">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center space-x-2">
+                        <Label>Icon</Label>
+                        <Input
+                          className="flex-1"
+                          value={item.icon}
+                          placeholder="Users, Target, Award"
+                          onChange={(e) => {
+                            const updatedItems = [...(formData.achievements?.items || [])];
+                            updatedItems[index] = { ...item, icon: e.target.value };
                             setFormData({
                               ...formData,
-                              achievements: { ...formData.achievements, items: newItems }
+                              achievements: { 
+                                ...formData.achievements, 
+                                items: updatedItems 
+                              }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Label>Value</Label>
+                        <Input
+                          className="flex-1"
+                          placeholder="2000+, 99%"
+                          value={stat.value}
+                          onChange={(e) => {
+                            const updatedStats = [...(formData.socialProof?.stats || [])];
+                            updatedStats[index] = { ...stat, value: e.target.value };
+                            setFormData({
+                              ...formData,
+                              socialProof: { 
+                                ...formData.socialProof, 
+                                stats: updatedStats 
+                              }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label>Label</Label>
+                        <Input
+                          className="flex-1"
+                          placeholder="Happy Customers"
+                          value={stat.label}
+                          onChange={(e) => {
+                            const updatedStats = [...(formData.socialProof?.stats || [])];
+                            updatedStats[index] = { ...stat, label: e.target.value };
+                            setFormData({
+                              ...formData,
+                              socialProof: { 
+                                ...formData.socialProof, 
+                                stats: updatedStats 
+                              }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label>Color</Label>
+                        <Select
+                          value={stat.color}
+                          onValueChange={(value) => {
+                            const updatedStats = [...(formData.socialProof?.stats || [])];
+                            updatedStats[index] = { ...stat, color: value };
+                            setFormData({
+                              ...formData,
+                              socialProof: { 
+                                ...formData.socialProof, 
+                                stats: updatedStats 
+                              }
                             });
                             setHasChanges(true);
                           }}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select color" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text-blue-500">Blue</SelectItem>
+                            <SelectItem value="text-green-500">Green</SelectItem>
+                            <SelectItem value="text-red-500">Red</SelectItem>
+                            <SelectItem value="text-purple-500">Purple</SelectItem>
+                            <SelectItem value="text-yellow-500">Yellow</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="grid gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-sm">Icon Name</Label>
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => {
+                          const updatedStats = [...(formData.socialProof?.stats || [])];
+                          updatedStats.splice(index, 1);
+                          setFormData({
+                            ...formData,
+                            socialProof: { 
+                              ...formData.socialProof, 
+                              stats: updatedStats 
+                            }
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Remove
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+
+                <div className="flex items-center justify-between mt-6">
+                  <Label>Customer Reviews</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentReviews = formData.socialProof?.reviews || [];
+                      setFormData({
+                        ...formData,
+                        socialProof: {
+                          ...formData.socialProof,
+                          reviews: [...currentReviews, {
+                            avatar: "", 
+                            name: "",
+                            role: "",
+                            company: "",
+                            content: "",
+                            rating: 5
+                          }]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Review
+                  </Button>
+                </div>
+
+                {(formData.socialProof?.reviews || []).map((review: any, index: number) => (
+                  <Card key={index} className="relative mt-4">
+                    <CardHeader>
+                      <div className="grid gap-4">
+                        <div className="grid gap-2">
+                          <Label>Customer Avatar URL</Label>
                           <Input
-                            placeholder="Shield, Award, Medal"
-                            value={item.icon}
+                            value={review.avatar}
                             onChange={(e) => {
-                              const newItems = [...(formData.achievements?.items || [])];
-                              newItems[index] = { ...item, icon: e.target.value };
+                              const updatedReviews = [...(formData.socialProof?.reviews || [])];
+                              updatedReviews[index] = { ...review, avatar: e.target.value };
                               setFormData({
                                 ...formData,
-                                achievements: { ...formData.achievements, items: newItems }
+                                socialProof: {
+                                  ...formData.socialProof,
+                                  reviews: updatedReviews
+                                }
                               });
                               setHasChanges(true);
                             }}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">Title</Label>
+                        <div className="grid gap-2">
+                          <Label>Customer Name</Label>
                           <Input
-                            placeholder="Achievement title"
-                            value={item.title}
+                            value={review.name}
                             onChange={(e) => {
-                              const newItems = [...(formData.achievements?.items || [])];
-                              newItems[index] = { ...item, title: e.target.value };
+                              const updatedReviews = [...(formData.socialProof?.reviews || [])];
+                              updatedReviews[index] = { ...review, name: e.target.value };
                               setFormData({
                                 ...formData,
-                                achievements: { ...formData.achievements, items: newItems }
+                                socialProof: {
+                                  ...formData.socialProof,
+                                  reviews: updatedReviews
+                                }
                               });
                               setHasChanges(true);
                             }}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">Description</Label>
+                        <div className="grid gap-2">
+                          <Label>Role & Company</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Role"
+                              value={review.role}
+                              onChange={(e) => {
+                                const updatedReviews = [...(formData.socialProof?.reviews || [])];
+                                updatedReviews[index] = { ...review, role: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  socialProof: {
+                                    ...formData.socialProof,
+                                    reviews: updatedReviews
+                                  }
+                                });
+                                setHasChanges(true);
+                              }}
+                            />
+                            <Input
+                              placeholder="Company"
+                              value={review.company}
+                              onChange={(e) => {
+                                const updatedReviews = [...(formData.socialProof?.reviews || [])];
+                                updatedReviews[index] = { ...review, company: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  socialProof: {
+                                    ...formData.socialProof,
+                                    reviews: updatedReviews
+                                  }
+                                });
+                                setHasChanges(true);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Review Content</Label>
                           <Textarea
-                            rows={2}
-                            placeholder="Achievement description"
-                            value={item.description}
+                            rows={3}
+                            value={review.content}
                             onChange={(e) => {
-                              const newItems = [...(formData.achievements?.items || [])];
-                              newItems[index] = { ...item, description: e.target.value };
+                              const updatedReviews = [...(formData.socialProof?.reviews || [])];
+                              updatedReviews[index] = { ...review, content: e.target.value };
                               setFormData({
                                 ...formData,
-                                achievements: { ...formData.achievements, items: newItems }
+                                socialProof: {
+                                  ...formData.socialProof,
+                                  reviews: updatedReviews
+                                }
                               });
                               setHasChanges(true);
                             }}
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm">Color Theme</Label>
-                          <Input
-                            placeholder="blue, purple, green"
-                            value={item.color}
-                            onChange={(e) => {
-                              const newItems = [...(formData.achievements?.items || [])];
-                              newItems[index] = { ...item, color: e.target.value };
+                        <div className="grid gap-2">
+                          <Label>Rating</Label>
+                          <Select
+                            value={review.rating.toString()}
+                            onValueChange={(value) => {
+                              const updatedReviews = [...(formData.socialProof?.reviews || [])];
+                              updatedReviews[index] = { ...review, rating: parseInt(value) };
                               setFormData({
                                 ...formData,
-                                achievements: { ...formData.achievements, items: newItems }
+                                socialProof: {
+                                  ...formData.socialProof,
+                                  reviews: updatedReviews
+                                }
                               });
                               setHasChanges(true);
                             }}
-                          />
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select rating" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 Star</SelectItem>
+                              <SelectItem value="2">2 Stars</SelectItem>
+                              <SelectItem value="3">3 Stars</SelectItem>
+                              <SelectItem value="4">4 Stars</SelectItem>
+                              <SelectItem value="5">5 Stars</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                    </div>
+                    </CardHeader>
+                    <CardFooter>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          const updatedReviews = [...(formData.socialProof?.reviews || [])];
+                          updatedReviews.splice(index, 1);
+                          setFormData({
+                            ...formData,
+                            socialProof: {
+                              ...formData.socialProof,
+                              reviews: updatedReviews
+                            }
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Remove Review
+                      </Button>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>

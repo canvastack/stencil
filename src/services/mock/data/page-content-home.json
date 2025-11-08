@@ -13,6 +13,15 @@
         ]
       },
       "subtitle": "Teknologi laser etching terkini untuk hasil detail sempurna. Layanan profesional, cepat, dan berkualitas tinggi untuk kebutuhan bisnis dan personal Anda.",
+      "carousel": {
+        "images": [
+          "/images/hero/etching-1.jpg",
+          "/images/hero/etching-2.jpg",
+          "/images/hero/etching-3.jpg"
+        ],
+        "autoPlayInterval": 5000,
+        "showPauseButton": true
+      },
       "buttons": {
         "primary": {
           "text": "Lihat Layanan Kami",

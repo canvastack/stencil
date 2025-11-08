@@ -158,7 +158,7 @@ Integrate all public frontpage pages with existing infrastructure:
   - [x] Replace hardcoded team with `pageData.team.members`
   - [x] Replace hardcoded certifications with `pageData.certifications.items`
   - [x] Add loading/error states
-  - [x] Test integration with admin panel (manual testing required)
+  - [ ] Test integration with admin panel (manual testing required)
 
 - [x] **Task 1.3: Update Contact.tsx** (3-4 hours) ✅ COMPLETED
   - [x] Import `usePageContent` hook
@@ -170,7 +170,7 @@ Integrate all public frontpage pages with existing infrastructure:
   - [x] Replace hardcoded quick contact with `pageData.quickContact.items`
   - [x] Add loading/error states
   - [x] Test form functionality
-  - [x] Test integration with admin panel
+  - [ ] Test integration with admin panel
 
 - [x] **Task 1.4: Update FAQ.tsx** (2-3 hours) ✅ COMPLETED
   - [x] Import `usePageContent` hook
@@ -179,7 +179,7 @@ Integrate all public frontpage pages with existing infrastructure:
   - [x] Replace hardcoded CTA with `pageData.cta`
   - [x] Add loading/error states
   - [x] Test accordion functionality
-  - [x] Test integration with admin panel
+  - [ ] Test integration with admin panel
 
 - [x] **Task 1.5: Update Products.tsx** (3-4 hours) ⏭️ **INTENTIONALLY SKIPPED**
   - **Rationale**: Contains complex product management system with 18 hardcoded products, sophisticated filtering, search, pagination logic, and state management. Better suited for Phase 2: Product Service Layer implementation rather than ContentContext integration.

@@ -14,6 +14,7 @@ interface PageContent {
 
 interface ContentContextType {
   getPageContent: (slug: string) => Promise<PageContent | null>;
+  updatePageContent: (slug: string, content: Record<string, any>) => Promise<boolean>;
   loading: boolean;
   error: Error | null;
   cache: Map<string, PageContent>;
@@ -64,8 +65,46 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [cache]);
 
+  const handleUpdatePageContent = useCallback(async (slug: string, content: Record<string, any>): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Update mock data
+      const page = getPageBySlug(slug);
+      if (!page) {
+        throw new Error(`Page not found: ${slug}`);
+      }
+
+      // Update the page content
+      page.content = content;
+      page.updatedAt = new Date().toISOString();
+      
+      // Update cache
+      if (cache.has(slug)) {
+        const cachedPage = cache.get(slug)!;
+        cache.set(slug, {
+          ...cachedPage,
+          content: page.content,
+          updatedAt: page.updatedAt
+        });
+      }
+      
+      // Also update localStorage for persistence
+      localStorage.setItem(`page-content-${slug}`, JSON.stringify(page));
+      
+      return true;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to update page content');
+      setError(error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [cache]);
+
   return (
-    <ContentContext.Provider value={{ getPageContent, loading, error, cache }}>
+    <ContentContext.Provider value={{ getPageContent, updatePageContent: handleUpdatePageContent, loading, error, cache }}>
       {children}
     </ContentContext.Provider>
   );
@@ -81,12 +120,12 @@ export const useContent = () => {
 
 // Hook for specific page
 export const usePageContent = (slug: string) => {
-  const { getPageContent, loading, error } = useContent();
+  const { getPageContent, updatePageContent, loading, error } = useContent();
   const [content, setContent] = React.useState<PageContent | null>(null);
 
   React.useEffect(() => {
     getPageContent(slug).then(setContent);
   }, [slug, getPageContent]);
 
-  return { content, loading, error };
+  return { content, loading, error, updatePageContent };
 };
