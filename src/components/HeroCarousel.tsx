@@ -10,9 +10,9 @@ export const HeroCarousel = () => {
 
   // Default carousel settings
   const defaultImages = [
-    '/images/hero/default-1.jpg',
-    '/images/hero/default-2.jpg',
-    '/images/hero/default-3.jpg'
+    './images/hero/default-1.jpg',
+    './images/hero/default-2.jpg',
+    './images/hero/default-3.jpg'
   ];
   const images = content?.content?.hero?.carousel?.images || defaultImages;
   const autoPlayInterval = content?.content?.hero?.carousel?.autoPlayInterval || 5000;

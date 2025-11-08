@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/core/engine/ThemeProvider";
 import { themeManager } from "@/core/engine/ThemeManager";
 import '@/themes/default';
 import { 
-  BrowserRouter, 
+  HashRouter, 
   Routes, 
   Route
 } from "react-router-dom";
@@ -90,7 +90,7 @@ function App() {
             <CartProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter future={{ v7_startTransition: true }}>
+              <HashRouter future={{ v7_startTransition: true }}>
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Home />} />
@@ -143,7 +143,7 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <ThemeScrollToTop />
-              </BrowserRouter>
+              </HashRouter>
             </CartProvider>
           </ContentProvider>
         </ThemeProvider>
