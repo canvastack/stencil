@@ -9,10 +9,13 @@ export const HeroCarousel = () => {
   const [isPaused, setIsPaused] = useState(false);
 
   // Default carousel settings
+  const isDevEnv = import.meta.env.DEV;
+  const basePath = isDevEnv ? '' : '/stencil';
+  
   const defaultImages = [
-    './images/hero/default-1.jpg',
-    './images/hero/default-2.jpg',
-    './images/hero/default-3.jpg'
+    `${basePath}/images/hero/default-1.jpg`,
+    `${basePath}/images/hero/default-2.jpg`,
+    `${basePath}/images/hero/default-3.jpg`
   ];
   const images = content?.content?.hero?.carousel?.images || defaultImages;
   const autoPlayInterval = content?.content?.hero?.carousel?.autoPlayInterval || 5000;
