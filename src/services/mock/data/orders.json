@@ -1,0 +1,166 @@
+[
+  {
+    "id": "ord-1",
+    "orderNumber": "ORD-2024-001",
+    "orderCode": "ORD001",
+    "customerId": "cust-1",
+    "customerName": "Budi Santoso",
+    "customerEmail": "budi.santoso@example.com",
+    "customerPhone": "+62812345678",
+    "vendorId": "vend-1",
+    "vendorName": "PT Etching Solutions",
+    "items": [
+      {
+        "productId": "1",
+        "productName": "Nameplate Stainless Steel",
+        "quantity": 5,
+        "price": 450000,
+        "subtotal": 2250000,
+        "customization": {
+          "size": "10x5 cm",
+          "material": "Stainless Steel 304",
+          "customText": "PT Example Company"
+        }
+      }
+    ],
+    "subtotal": 2250000,
+    "tax": 247500,
+    "shippingCost": 50000,
+    "discount": 0,
+    "totalAmount": 2547500,
+    "status": "in_production",
+    "productionType": "vendor",
+    "paymentStatus": "paid",
+    "paymentMethod": "bank_transfer",
+    "shippingAddress": "Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta 10110",
+    "billingAddress": "Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta 10110",
+    "customerNotes": "Please deliver before end of month",
+    "internalNotes": "VIP customer, priority handling",
+    "orderDate": "2024-01-15T08:30:00Z",
+    "estimatedDelivery": "2024-02-10T00:00:00Z",
+    "createdAt": "2024-01-15T08:30:00Z",
+    "updatedAt": "2024-01-20T14:22:00Z"
+  },
+  {
+    "id": "ord-2",
+    "orderNumber": "ORD-2024-002",
+    "orderCode": "ORD002",
+    "customerId": "cust-2",
+    "customerName": "Siti Rahayu",
+    "customerEmail": "siti.rahayu@company.com",
+    "customerPhone": "+62813456789",
+    "vendorId": "vend-2",
+    "vendorName": "CV Glass Etching Pro",
+    "items": [
+      {
+        "productId": "2",
+        "productName": "Crystal Trophy",
+        "quantity": 10,
+        "price": 850000,
+        "subtotal": 8500000,
+        "customization": {
+          "size": "25x15 cm",
+          "material": "Crystal Glass",
+          "customText": "Annual Awards 2024"
+        }
+      }
+    ],
+    "subtotal": 8500000,
+    "tax": 935000,
+    "shippingCost": 100000,
+    "discount": 500000,
+    "totalAmount": 9035000,
+    "status": "completed",
+    "productionType": "vendor",
+    "paymentStatus": "paid",
+    "paymentMethod": "midtrans",
+    "shippingAddress": "Jl. Gatot Subroto No. 456, Bandung, Jawa Barat 40264",
+    "billingAddress": "Jl. Gatot Subroto No. 456, Bandung, Jawa Barat 40264",
+    "customerNotes": "",
+    "internalNotes": "Bulk order - discount applied",
+    "orderDate": "2024-01-10T10:15:00Z",
+    "estimatedDelivery": "2024-02-05T00:00:00Z",
+    "actualDelivery": "2024-02-03T14:30:00Z",
+    "createdAt": "2024-01-10T10:15:00Z",
+    "updatedAt": "2024-02-03T14:30:00Z"
+  },
+  {
+    "id": "ord-3",
+    "orderNumber": "ORD-2024-003",
+    "orderCode": "ORD003",
+    "customerId": "cust-3",
+    "customerName": "Ahmad Yusuf",
+    "customerEmail": "ahmad.yusuf@email.com",
+    "customerPhone": "+62814567890",
+    "items": [
+      {
+        "productId": "3",
+        "productName": "Brass Plaque",
+        "quantity": 2,
+        "price": 1250000,
+        "subtotal": 2500000,
+        "customization": {
+          "size": "30x20 cm",
+          "material": "Brass",
+          "customText": "Heritage Building - Est. 1950"
+        }
+      }
+    ],
+    "subtotal": 2500000,
+    "tax": 275000,
+    "shippingCost": 75000,
+    "discount": 0,
+    "totalAmount": 2850000,
+    "status": "waiting_payment",
+    "productionType": "internal",
+    "paymentStatus": "unpaid",
+    "shippingAddress": "Jl. Ahmad Yani No. 789, Surabaya, Jawa Timur 60234",
+    "customerNotes": "Rush order if possible",
+    "internalNotes": "Check internal production capacity",
+    "orderDate": "2024-01-22T13:45:00Z",
+    "estimatedDelivery": "2024-02-20T00:00:00Z",
+    "createdAt": "2024-01-22T13:45:00Z",
+    "updatedAt": "2024-01-22T13:45:00Z"
+  },
+  {
+    "id": "ord-4",
+    "orderNumber": "ORD-2024-004",
+    "orderCode": "ORD004",
+    "customerId": "cust-1",
+    "customerName": "Budi Santoso",
+    "customerEmail": "budi.santoso@example.com",
+    "customerPhone": "+62812345678",
+    "vendorId": "vend-1",
+    "vendorName": "PT Etching Solutions",
+    "items": [
+      {
+        "productId": "4",
+        "productName": "Acrylic Sign",
+        "quantity": 3,
+        "price": 320000,
+        "subtotal": 960000,
+        "customization": {
+          "size": "20x10 cm",
+          "material": "Acrylic Clear",
+          "customText": "Office Reception"
+        }
+      }
+    ],
+    "subtotal": 960000,
+    "tax": 105600,
+    "shippingCost": 30000,
+    "discount": 0,
+    "totalAmount": 1095600,
+    "status": "new",
+    "productionType": "vendor",
+    "paymentStatus": "unpaid",
+    "shippingAddress": "Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta 10110",
+    "billingAddress": "Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta 10110",
+    "customerNotes": "",
+    "internalNotes": "Repeat customer",
+    "orderDate": "2024-01-25T09:20:00Z",
+    "estimatedDelivery": "2024-02-15T00:00:00Z",
+    "createdAt": "2024-01-25T09:20:00Z",
+    "updatedAt": "2024-01-25T09:20:00Z"
+  }
+]

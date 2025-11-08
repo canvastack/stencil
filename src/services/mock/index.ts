@@ -3,3 +3,6 @@ export * from './pages';
 export * from './orders';
 export * from './customers';
 export * from './vendors';
+export * from './reviews';
+export * from './dashboard';
+export * from './settings';

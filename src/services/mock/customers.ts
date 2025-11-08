@@ -1,6 +1,7 @@
 import { Customer, CustomerFilters, CustomerFormData, CustomerType, CustomerStatus } from '@/types/customer';
+import customersData from './data/customers.json';
 
-let mockCustomers: Customer[] = [];
+let mockCustomers: Customer[] = [...customersData];
 
 export function getCustomers(filters?: CustomerFilters): Customer[] {
   let filtered = [...mockCustomers];

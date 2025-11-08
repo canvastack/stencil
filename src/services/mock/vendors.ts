@@ -1,6 +1,7 @@
 import { Vendor, VendorFilters, VendorFormData, VendorStatus } from '@/types/vendor';
+import vendorsData from './data/vendors.json';
 
-let mockVendors: Vendor[] = [];
+let mockVendors: Vendor[] = [...vendorsData];
 
 export function getVendors(filters?: VendorFilters): Vendor[] {
   let filtered = [...mockVendors];

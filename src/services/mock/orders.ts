@@ -1,6 +1,7 @@
 import { Order, OrderFilters, OrderStatus, ProductionType, PaymentStatus } from '@/types/order';
+import ordersData from './data/orders.json';
 
-let mockOrders: Order[] = [];
+let mockOrders: Order[] = [...ordersData];
 
 export function getOrders(filters?: OrderFilters): Order[] {
   let filtered = [...mockOrders];

@@ -1,0 +1,88 @@
+{
+  "general": {
+    "siteName": "Artful Etch Studio",
+    "siteUrl": "https://artfuletchstudio.com",
+    "contactEmail": "info@artfuletchstudio.com",
+    "maintenanceMode": false
+  },
+  "notifications": {
+    "emailNotifications": true,
+    "notificationPreferences": {
+      "newOrders": true,
+      "newReviews": true,
+      "contactSubmissions": true,
+      "lowStockAlerts": true,
+      "systemUpdates": false
+    }
+  },
+  "security": {
+    "sslEnabled": true,
+    "twoFactorAuth": false,
+    "forcePasswordChange": false,
+    "sessionTimeout": true,
+    "allowedIPs": []
+  },
+  "analytics": {
+    "googleAnalyticsId": "",
+    "facebookPixelId": ""
+  },
+  "emailService": {
+    "provider": "smtp",
+    "smtp": {
+      "host": "smtp.example.com",
+      "port": "587",
+      "encryption": "tls",
+      "username": "",
+      "password": ""
+    },
+    "sendgrid": {
+      "apiKey": "",
+      "fromEmail": "",
+      "fromName": ""
+    },
+    "mailgun": {
+      "domain": "",
+      "apiKey": "",
+      "fromEmail": ""
+    }
+  },
+  "paymentGateway": {
+    "provider": "midtrans",
+    "currency": "IDR",
+    "acceptedMethods": {
+      "cash": true,
+      "creditCard": true,
+      "eWallet": true,
+      "bankTransfer": true,
+      "qris": true
+    },
+    "midtrans": {
+      "serverKey": "",
+      "clientKey": "",
+      "production": false
+    },
+    "xendit": {
+      "secretKey": "",
+      "publicKey": "",
+      "production": false
+    },
+    "stripe": {
+      "secretKey": "",
+      "publicKey": ""
+    }
+  },
+  "whatsapp": {
+    "businessNumber": "",
+    "defaultMessage": "Hello, I'm interested in your products..."
+  },
+  "backup": {
+    "enabled": true,
+    "schedule": "daily",
+    "retention": {
+      "daily": 7,
+      "weekly": 4
+    },
+    "storage": "Lovable Cloud (encrypted)",
+    "lastBackup": "Today at 2:00 AM UTC"
+  }
+}

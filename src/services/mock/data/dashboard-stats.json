@@ -1,0 +1,83 @@
+{
+  "stats": [
+    {
+      "title": "Total Orders",
+      "value": 245,
+      "icon": "Package",
+      "trend": "+18%",
+      "color": "text-blue-600 dark:text-blue-400",
+      "bgColor": "bg-blue-50 dark:bg-blue-950"
+    },
+    {
+      "title": "Revenue (MTD)",
+      "value": "Rp 125.5M",
+      "icon": "TrendingUp",
+      "trend": "+23%",
+      "color": "text-green-600 dark:text-green-400",
+      "bgColor": "bg-green-50 dark:bg-green-950"
+    },
+    {
+      "title": "Active Products",
+      "value": 18,
+      "icon": "LayoutDashboard",
+      "trend": "+12%",
+      "color": "text-purple-600 dark:text-purple-400",
+      "bgColor": "bg-purple-50 dark:bg-purple-950"
+    },
+    {
+      "title": "Customers",
+      "value": 89,
+      "icon": "Users",
+      "trend": "+15%",
+      "color": "text-orange-600 dark:text-orange-400",
+      "bgColor": "bg-orange-50 dark:bg-orange-950"
+    }
+  ],
+  "recentActivities": [
+    {
+      "action": "New order received",
+      "item": "Brass Plaque - Order #1234",
+      "time": "15 minutes ago"
+    },
+    {
+      "action": "Product delivered",
+      "item": "Stainless Steel Nameplate",
+      "time": "2 hours ago"
+    },
+    {
+      "action": "Customer review added",
+      "item": "Glass Trophy Set - 5 stars",
+      "time": "5 hours ago"
+    },
+    {
+      "action": "Low stock alert",
+      "item": "Crystal Glass Premium",
+      "time": "1 day ago"
+    },
+    {
+      "action": "Payment received",
+      "item": "Order #1233 - Rp 4.5M",
+      "time": "2 days ago"
+    }
+  ],
+  "contentOverview": [
+    {
+      "icon": "Eye",
+      "title": "Pending Orders",
+      "description": "Awaiting processing",
+      "value": 12
+    },
+    {
+      "icon": "Package",
+      "title": "Best Seller",
+      "description": "This month",
+      "value": "Brass Plaque"
+    },
+    {
+      "icon": "LayoutDashboard",
+      "title": "Avg Order Value",
+      "description": "Last 30 days",
+      "value": "Rp 2.8M"
+    }
+  ]
+}

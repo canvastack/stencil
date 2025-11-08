@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -7,23 +7,63 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Settings as SettingsIcon, Globe, Bell, Shield, Database, Mail } from 'lucide-react';
+import { Settings as SettingsIcon, Globe, Bell, Shield, Database, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { settingsService } from '@/services/mock';
+import { Settings as SettingsType } from '@/types/settings';
 
 export default function Settings() {
-  const [settings, setSettings] = useState({
-    siteName: 'Artful Etch Studio',
-    siteUrl: 'https://artfuletchstudio.com',
-    contactEmail: 'info@artfuletchstudio.com',
-    analyticsId: '',
-    maintenanceMode: false,
-    emailNotifications: true,
-    backupEnabled: true,
-  });
+  const [settings, setSettings] = useState<SettingsType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    toast.success('Settings saved successfully');
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setLoading(true);
+        const data = await settingsService.getSettings();
+        setSettings(data);
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+        toast.error('Failed to load settings');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  const handleSave = async () => {
+    if (!settings) return;
+
+    try {
+      setSaving(true);
+      await settingsService.updateSettings(settings);
+      toast.success('Settings saved successfully');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast.error('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-destructive">Failed to load settings</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -32,7 +72,10 @@ export default function Settings() {
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground">Configure your CMS and site settings</p>
         </div>
-        <Button onClick={handleSave}>Save Changes</Button>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {saving ? 'Saving...' : 'Save Changes'}
+        </Button>
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
@@ -67,8 +110,11 @@ export default function Settings() {
               <Label htmlFor="siteName">Site Name</Label>
               <Input
                 id="siteName"
-                value={settings.siteName}
-                onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
+                value={settings.general.siteName}
+                onChange={(e) => setSettings({ 
+                  ...settings, 
+                  general: { ...settings.general, siteName: e.target.value } 
+                })}
               />
             </div>
 
@@ -77,8 +123,11 @@ export default function Settings() {
               <Input
                 id="siteUrl"
                 type="url"
-                value={settings.siteUrl}
-                onChange={(e) => setSettings({ ...settings, siteUrl: e.target.value })}
+                value={settings.general.siteUrl}
+                onChange={(e) => setSettings({ 
+                  ...settings, 
+                  general: { ...settings.general, siteUrl: e.target.value } 
+                })}
               />
             </div>
 
@@ -87,8 +136,11 @@ export default function Settings() {
               <Input
                 id="contactEmail"
                 type="email"
-                value={settings.contactEmail}
-                onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                value={settings.general.contactEmail}
+                onChange={(e) => setSettings({ 
+                  ...settings, 
+                  general: { ...settings.general, contactEmail: e.target.value } 
+                })}
               />
             </div>
 
@@ -100,9 +152,12 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.maintenanceMode}
+                checked={settings.general.maintenanceMode}
                 onCheckedChange={(checked) =>
-                  setSettings({ ...settings, maintenanceMode: checked })
+                  setSettings({ 
+                    ...settings, 
+                    general: { ...settings.general, maintenanceMode: checked } 
+                  })
                 }
               />
             </div>
@@ -121,9 +176,15 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.emailNotifications}
+                checked={settings.notifications.emailNotifications}
                 onCheckedChange={(checked) =>
-                  setSettings({ ...settings, emailNotifications: checked })
+                  setSettings({ 
+                    ...settings, 
+                    notifications: { 
+                      ...settings.notifications, 
+                      emailNotifications: checked 
+                    } 
+                  })
                 }
               />
             </div>
@@ -133,23 +194,93 @@ export default function Settings() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>New Product Orders</Label>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={settings.notifications.notificationPreferences.newOrders}
+                    onCheckedChange={(checked) =>
+                      setSettings({ 
+                        ...settings, 
+                        notifications: { 
+                          ...settings.notifications, 
+                          notificationPreferences: {
+                            ...settings.notifications.notificationPreferences,
+                            newOrders: checked
+                          }
+                        } 
+                      })
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>New Customer Reviews</Label>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={settings.notifications.notificationPreferences.newReviews}
+                    onCheckedChange={(checked) =>
+                      setSettings({ 
+                        ...settings, 
+                        notifications: { 
+                          ...settings.notifications, 
+                          notificationPreferences: {
+                            ...settings.notifications.notificationPreferences,
+                            newReviews: checked
+                          }
+                        } 
+                      })
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Contact Form Submissions</Label>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={settings.notifications.notificationPreferences.contactSubmissions}
+                    onCheckedChange={(checked) =>
+                      setSettings({ 
+                        ...settings, 
+                        notifications: { 
+                          ...settings.notifications, 
+                          notificationPreferences: {
+                            ...settings.notifications.notificationPreferences,
+                            contactSubmissions: checked
+                          }
+                        } 
+                      })
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>Low Stock Alerts</Label>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={settings.notifications.notificationPreferences.lowStockAlerts}
+                    onCheckedChange={(checked) =>
+                      setSettings({ 
+                        ...settings, 
+                        notifications: { 
+                          ...settings.notifications, 
+                          notificationPreferences: {
+                            ...settings.notifications.notificationPreferences,
+                            lowStockAlerts: checked
+                          }
+                        } 
+                      })
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label>System Updates</Label>
-                  <Switch />
+                  <Switch 
+                    checked={settings.notifications.notificationPreferences.systemUpdates}
+                    onCheckedChange={(checked) =>
+                      setSettings({ 
+                        ...settings, 
+                        notifications: { 
+                          ...settings.notifications, 
+                          notificationPreferences: {
+                            ...settings.notifications.notificationPreferences,
+                            systemUpdates: checked
+                          }
+                        } 
+                      })
+                    }
+                  />
                 </div>
               </div>
             </div>
@@ -211,8 +342,11 @@ export default function Settings() {
               <Input
                 id="analyticsId"
                 placeholder="G-XXXXXXXXXX"
-                value={settings.analyticsId}
-                onChange={(e) => setSettings({ ...settings, analyticsId: e.target.value })}
+                value={settings.analytics.googleAnalyticsId}
+                onChange={(e) => setSettings({ 
+                  ...settings, 
+                  analytics: { ...settings.analytics, googleAnalyticsId: e.target.value } 
+                })}
               />
               <p className="text-xs text-muted-foreground">
                 Get your Measurement ID from Google Analytics dashboard
@@ -447,20 +581,23 @@ export default function Settings() {
                 </p>
               </div>
               <Switch
-                checked={settings.backupEnabled}
+                checked={settings.backup.enabled}
                 onCheckedChange={(checked) =>
-                  setSettings({ ...settings, backupEnabled: checked })
+                  setSettings({ 
+                    ...settings, 
+                    backup: { ...settings.backup, enabled: checked } 
+                  })
                 }
               />
             </div>
 
-            {settings.backupEnabled && (
+            {settings.backup.enabled && (
               <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded">
                 <h4 className="font-semibold mb-2">Backup Schedule</h4>
                 <ul className="text-sm space-y-1">
-                  <li>• Daily backups at 2:00 AM UTC</li>
-                  <li>• Retention: 7 days for daily, 4 weeks for weekly</li>
-                  <li>• Storage: Lovable Cloud (encrypted)</li>
+                  <li>• {settings.backup.schedule.charAt(0).toUpperCase() + settings.backup.schedule.slice(1)} backups at 2:00 AM UTC</li>
+                  <li>• Retention: {settings.backup.retention.daily} days for daily, {settings.backup.retention.weekly} weeks for weekly</li>
+                  <li>• Storage: {settings.backup.storage}</li>
                 </ul>
               </div>
             )}
@@ -475,7 +612,7 @@ export default function Settings() {
                 <Button variant="outline">Download Backup</Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Last backup: Today at 2:00 AM UTC
+                Last backup: {settings.backup.lastBackup}
               </p>
             </div>
           </Card>
