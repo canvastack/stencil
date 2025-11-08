@@ -1,0 +1,211 @@
+[
+  {
+    "id": "prod-001",
+    "name": "Crystal Award Trophy",
+    "slug": "crystal-award-trophy",
+    "description": "Trophy kristal premium dengan etching presisi tinggi",
+    "longDescription": "Trophy kristal dengan kualitas optical crystal grade A. Dilengkapi dengan base kayu elegant dan etching laser presisi tinggi untuk logo dan text. Perfect untuk penghargaan perusahaan, achievement awards, dan event special.",
+    "images": [
+      "/images/products/crystal-award-1.jpg",
+      "/images/products/crystal-award-2.jpg",
+      "/images/products/crystal-award-3.jpg"
+    ],
+    "category": "Awards & Trophies",
+    "subcategory": "Crystal Awards",
+    "tags": ["crystal", "trophy", "award", "corporate gift", "penghargaan"],
+    "material": "Optical Crystal + Wooden Base",
+    "price": 350000,
+    "currency": "IDR",
+    "priceUnit": "per pcs",
+    "minOrder": 1,
+    "specifications": [
+      { "key": "Material", "value": "Optical Crystal Grade A" },
+      { "key": "Size", "value": "20cm x 15cm x 5cm" },
+      { "key": "Base", "value": "Premium Wooden Base" },
+      { "key": "Etching Method", "value": "Laser Engraving" },
+      { "key": "Finish", "value": "Polished Crystal" }
+    ],
+    "customizable": true,
+    "customOptions": [
+      { "name": "Logo Etching", "type": "boolean" },
+      { "name": "Text Personalization", "type": "text" },
+      { "name": "Base Wood Color", "type": "select", "options": ["Natural", "Dark Brown", "Black"] }
+    ],
+    "inStock": true,
+    "stockQuantity": 50,
+    "leadTime": "5-7 hari kerja",
+    "seoTitle": "Crystal Award Trophy - Penghargaan Kristal Etching Premium",
+    "seoDescription": "Trophy kristal premium dengan laser etching presisi tinggi. Base kayu elegant, customizable logo & text. Perfect untuk corporate awards. Harga mulai Rp 350.000",
+    "seoKeywords": ["trophy kristal", "crystal award", "penghargaan kristal", "corporate trophy"],
+    "status": "published",
+    "featured": true,
+    "createdAt": "2025-01-04T00:00:00Z",
+    "updatedAt": "2025-01-04T00:00:00Z"
+  },
+  {
+    "id": "prod-002",
+    "name": "Stainless Steel Plaque",
+    "slug": "stainless-steel-plaque",
+    "description": "Plakat stainless steel dengan etching presisi",
+    "longDescription": "Plakat stainless steel berkualitas tinggi dengan finishing brushed/mirror. Laser etching presisi untuk text, logo, dan design kompleks. Tahan karat, elegant, dan cocok untuk penghargaan, memorial, atau signage premium.",
+    "images": [
+      "/images/products/metal-plaque-1.jpg",
+      "/images/products/metal-plaque-2.jpg"
+    ],
+    "category": "Plaques & Signage",
+    "subcategory": "Metal Plaques",
+    "tags": ["stainless steel", "plakat", "signage", "memorial"],
+    "material": "Stainless Steel 304",
+    "price": 250000,
+    "currency": "IDR",
+    "priceUnit": "per pcs",
+    "minOrder": 1,
+    "specifications": [
+      { "key": "Material", "value": "Stainless Steel 304" },
+      { "key": "Size", "value": "30cm x 20cm" },
+      { "key": "Thickness", "value": "2mm" },
+      { "key": "Finish", "value": "Brushed/Mirror" },
+      { "key": "Mounting", "value": "Wall Mount Ready" }
+    ],
+    "customizable": true,
+    "customOptions": [
+      { "name": "Finish Type", "type": "select", "options": ["Brushed", "Mirror"] },
+      { "name": "Custom Size", "type": "boolean" },
+      { "name": "Mounting Holes", "type": "boolean" }
+    ],
+    "inStock": true,
+    "stockQuantity": 100,
+    "leadTime": "3-5 hari kerja",
+    "seoTitle": "Plakat Stainless Steel - Laser Etching Presisi",
+    "seoDescription": "Plakat stainless steel 304 dengan laser etching presisi. Finish brushed/mirror, anti karat, mounting ready. Custom size available. Mulai Rp 250.000",
+    "seoKeywords": ["plakat stainless", "stainless steel plaque", "plakat logam"],
+    "status": "published",
+    "featured": true,
+    "createdAt": "2025-01-04T00:00:00Z",
+    "updatedAt": "2025-01-04T00:00:00Z"
+  },
+  {
+    "id": "prod-003",
+    "name": "Glass Photo Frame Custom",
+    "slug": "glass-photo-frame-custom",
+    "description": "Frame kaca dengan etching design custom",
+    "longDescription": "Photo frame kaca premium dengan etching design sesuai keinginan. Bisa untuk foto keluarga, couple, graduation, atau gift special. Glass thickness 5mm dengan finishing edges polished untuk keamanan.",
+    "images": [
+      "/images/products/glass-frame-1.jpg",
+      "/images/products/glass-frame-2.jpg"
+    ],
+    "category": "Decorative Items",
+    "subcategory": "Photo Frames",
+    "tags": ["glass", "photo frame", "gift", "decoration"],
+    "material": "Clear Glass 5mm",
+    "price": 180000,
+    "currency": "IDR",
+    "priceUnit": "per pcs",
+    "minOrder": 1,
+    "specifications": [
+      { "key": "Material", "value": "Clear Glass" },
+      { "key": "Thickness", "value": "5mm" },
+      { "key": "Size", "value": "20cm x 25cm (4R)" },
+      { "key": "Edge", "value": "Polished Safety Edge" },
+      { "key": "Stand", "value": "Included" }
+    ],
+    "customizable": true,
+    "customOptions": [
+      { "name": "Photo Size", "type": "select", "options": ["4R", "5R", "A4"] },
+      { "name": "Border Design", "type": "select", "options": ["Floral", "Geometric", "Minimalist"] },
+      { "name": "Name Personalization", "type": "text" }
+    ],
+    "inStock": true,
+    "stockQuantity": 75,
+    "leadTime": "4-6 hari kerja",
+    "seoTitle": "Frame Kaca Custom Etching - Photo Frame Glass Premium",
+    "seoDescription": "Photo frame kaca dengan etching design custom. Safety polished edge, berbagai ukuran, personalized name. Gift special & decoration. Rp 180.000",
+    "seoKeywords": ["frame kaca", "photo frame etching", "glass frame custom"],
+    "status": "published",
+    "featured": false,
+    "createdAt": "2025-01-04T00:00:00Z",
+    "updatedAt": "2025-01-04T00:00:00Z"
+  },
+  {
+    "id": "prod-004",
+    "name": "Wooden Cutting Board Custom",
+    "slug": "wooden-cutting-board-custom",
+    "description": "Talenan kayu dengan etching personalisasi",
+    "longDescription": "Cutting board dari kayu jati pilihan dengan laser etching custom. Food-safe finishing, cocok untuk personal use atau wedding gift. Bisa etching nama, quote, atau design khusus.",
+    "images": [
+      "/images/products/wood-board-1.jpg",
+      "/images/products/wood-board-2.jpg"
+    ],
+    "category": "Kitchen & Dining",
+    "subcategory": "Cutting Boards",
+    "tags": ["wood", "cutting board", "kitchen", "wedding gift"],
+    "material": "Teak Wood",
+    "price": 120000,
+    "currency": "IDR",
+    "priceUnit": "per pcs",
+    "minOrder": 1,
+    "specifications": [
+      { "key": "Material", "value": "Premium Teak Wood" },
+      { "key": "Size", "value": "30cm x 20cm x 2cm" },
+      { "key": "Finish", "value": "Food-Safe Oil" },
+      { "key": "Handle", "value": "Integrated Handle" }
+    ],
+    "customizable": true,
+    "customOptions": [
+      { "name": "Text Personalization", "type": "text" },
+      { "name": "Design Style", "type": "select", "options": ["Classic", "Modern", "Rustic"] }
+    ],
+    "inStock": true,
+    "stockQuantity": 60,
+    "leadTime": "3-5 hari kerja",
+    "seoTitle": "Talenan Kayu Custom Etching - Wooden Cutting Board Personalized",
+    "seoDescription": "Cutting board kayu jati dengan laser etching custom. Food-safe finish, personalized name/quote. Perfect wedding gift. Mulai Rp 120.000",
+    "seoKeywords": ["talenan kayu custom", "cutting board etching", "wooden board personalized"],
+    "status": "published",
+    "featured": false,
+    "createdAt": "2025-01-04T00:00:00Z",
+    "updatedAt": "2025-01-04T00:00:00Z"
+  },
+  {
+    "id": "prod-005",
+    "name": "Acrylic LED Sign Custom",
+    "slug": "acrylic-led-sign-custom",
+    "description": "Sign akrilik dengan etching dan LED backlight",
+    "longDescription": "Signage akrilik premium dengan laser etching dan LED backlight. Perfect untuk shop signage, room decor, atau business branding. Thickness 10mm dengan edge lighting LED untuk tampilan modern dan attractive.",
+    "images": [
+      "/images/products/acrylic-sign-1.jpg",
+      "/images/products/acrylic-sign-2.jpg"
+    ],
+    "category": "Signage & Display",
+    "subcategory": "LED Signs",
+    "tags": ["acrylic", "led sign", "signage", "decoration"],
+    "material": "Acrylic 10mm + LED",
+    "price": 450000,
+    "currency": "IDR",
+    "priceUnit": "per pcs",
+    "minOrder": 1,
+    "specifications": [
+      { "key": "Material", "value": "Clear Acrylic" },
+      { "key": "Thickness", "value": "10mm" },
+      { "key": "Size", "value": "40cm x 30cm" },
+      { "key": "LED", "value": "RGB Color Changing" },
+      { "key": "Power", "value": "USB/Adapter" }
+    ],
+    "customizable": true,
+    "customOptions": [
+      { "name": "Custom Size", "type": "boolean" },
+      { "name": "LED Color", "type": "select", "options": ["White", "Warm White", "RGB"] },
+      { "name": "Remote Control", "type": "boolean" }
+    ],
+    "inStock": true,
+    "stockQuantity": 30,
+    "leadTime": "7-10 hari kerja",
+    "seoTitle": "Acrylic LED Sign Custom - Signage Etching dengan Lampu LED",
+    "seoDescription": "Sign akrilik dengan laser etching dan LED backlight RGB. Perfect untuk shop signage & decoration. Remote control optional. Rp 450.000",
+    "seoKeywords": ["acrylic led sign", "signage etching", "neon sign custom"],
+    "status": "published",
+    "featured": true,
+    "createdAt": "2025-01-04T00:00:00Z",
+    "updatedAt": "2025-01-04T00:00:00Z"
+  }
+]

@@ -35,19 +35,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-
-interface OrderItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  customization?: {
-    size?: string;
-    material?: string;
-    color?: string;
-    customText?: string;
-  };
-}
+import type { OrderItem } from '@/types/order';
 
 interface Order {
   id: string;

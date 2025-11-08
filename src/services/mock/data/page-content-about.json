@@ -1,0 +1,160 @@
+{
+  "id": "page-about-1",
+  "pageSlug": "about",
+  "content": {
+    "hero": {
+      "title": "Tentang Kami",
+      "subtitle": "Pionir teknologi laser etching di Indonesia dengan pengalaman lebih dari 15 tahun",
+      "image": "/images/about/company-hero.jpg"
+    },
+    "company": {
+      "enabled": true,
+      "title": "Profil Perusahaan",
+      "description": "Kami adalah perusahaan yang berfokus pada layanan laser etching profesional untuk berbagai kebutuhan industri dan personal. Dengan teknologi terkini dan tim yang berpengalaman, kami berkomitmen memberikan hasil terbaik untuk setiap proyek.",
+      "founded": "2008",
+      "location": "Jakarta, Indonesia",
+      "employees": "50+",
+      "clients": "300+"
+    },
+    "mission": {
+      "enabled": true,
+      "title": "Misi Kami",
+      "items": [
+        {
+          "icon": "Target",
+          "title": "Kualitas Terbaik",
+          "description": "Memberikan hasil etching dengan presisi dan kualitas tertinggi"
+        },
+        {
+          "icon": "Users",
+          "title": "Kepuasan Pelanggan",
+          "description": "Mengutamakan kepuasan pelanggan dengan layanan profesional"
+        },
+        {
+          "icon": "Lightbulb",
+          "title": "Inovasi Berkelanjutan",
+          "description": "Terus berinovasi dengan teknologi dan metode terbaru"
+        }
+      ]
+    },
+    "values": {
+      "enabled": true,
+      "title": "Nilai-Nilai Kami",
+      "items": [
+        "Integritas dan transparansi dalam setiap transaksi",
+        "Komitmen terhadap kualitas dan kepuasan pelanggan",
+        "Inovasi dan peningkatan berkelanjutan",
+        "Profesionalisme dalam setiap aspek layanan",
+        "Tanggung jawab sosial dan lingkungan"
+      ]
+    },
+    "team": {
+      "enabled": true,
+      "title": "Tim Profesional",
+      "subtitle": "Didukung oleh tim ahli berpengalaman di bidangnya",
+      "members": [
+        {
+          "name": "John Doe",
+          "role": "CEO & Founder",
+          "image": "/images/team/ceo.jpg",
+          "bio": "Pengalaman 20+ tahun di industri laser etching"
+        },
+        {
+          "name": "Jane Smith",
+          "role": "Technical Director",
+          "image": "/images/team/technical-director.jpg",
+          "bio": "Spesialis teknologi laser dengan sertifikasi internasional"
+        },
+        {
+          "name": "Ahmad Rahman",
+          "role": "Production Manager",
+          "image": "/images/team/production-manager.jpg",
+          "bio": "Expert dalam quality control dan production management"
+        }
+      ]
+    },
+    "timeline": {
+      "enabled": true,
+      "title": "Perjalanan Kami",
+      "events": [
+        {
+          "year": "2008",
+          "title": "Pendirian Perusahaan",
+          "description": "Memulai bisnis dengan 1 mesin laser etching"
+        },
+        {
+          "year": "2012",
+          "title": "Ekspansi Fasilitas",
+          "description": "Membuka fasilitas produksi baru dengan 5 mesin"
+        },
+        {
+          "year": "2018",
+          "title": "Sertifikasi ISO",
+          "description": "Mendapatkan sertifikasi ISO 9001:2015"
+        },
+        {
+          "year": "2023",
+          "title": "Teknologi Terkini",
+          "description": "Investasi mesin laser fiber generasi terbaru"
+        }
+      ]
+    },
+    "certifications": {
+      "enabled": true,
+      "title": "Sertifikasi & Penghargaan",
+      "items": [
+        {
+          "name": "ISO 9001:2015",
+          "description": "Quality Management System",
+          "image": "/images/certifications/iso-9001.jpg"
+        },
+        {
+          "name": "Best Etching Service 2024",
+          "description": "Indonesia Manufacturing Awards",
+          "image": "/images/certifications/award-2024.jpg"
+        }
+      ]
+    },
+    "cta": [
+      {
+        "type": "primary",
+        "title": "Siap Mewujudkan Proyek Etching Anda?",
+        "subtitle": "Konsultasikan kebutuhan etching Anda sekarang juga dengan tim profesional kami",
+        "buttons": [
+          {
+            "text": "Mulai Konsultasi Gratis",
+            "link": "/contact",
+            "variant": "default"
+          },
+          {
+            "text": "Lihat Portfolio",
+            "link": "/products",
+            "variant": "outline"
+          }
+        ],
+        "stats": [
+          {
+            "value": "1000+",
+            "label": "Products"
+          },
+          {
+            "value": "15+",
+            "label": "Tahun Pengalaman"
+          }
+        ],
+        "background": "bg-gradient-to-r from-navy to-purple-600"
+      }
+    ],
+    "seo": {
+      "title": "Tentang Kami - Etching Profesional Indonesia",
+      "description": "Pionir laser etching di Indonesia sejak 2008. Tim profesional dengan pengalaman 15+ tahun, sertifikasi ISO 9001:2015, dan teknologi terkini.",
+      "keywords": ["tentang perusahaan etching", "profil perusahaan laser", "tim etching profesional"],
+      "ogImage": "/images/og-image-about.jpg"
+    }
+  },
+  "status": "published",
+  "publishedAt": "2025-01-04T00:00:00Z",
+  "version": 1,
+  "createdAt": "2025-01-04T00:00:00Z",
+  "updatedAt": "2025-01-04T00:00:00Z"
+}

@@ -48,20 +48,14 @@ import MapPicker, { LocationData } from '@/components/admin/MapPicker';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
+import type { User } from '@/types/user';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: 'active' | 'inactive';
-  department: string;
+interface UserWithLocation extends User {
   location?: LocationData;
-  createdAt: string;
+  department: string;
 }
 
-const mockUsers: User[] = [
+const mockUsers: UserWithLocation[] = [
   {
     id: '1',
     name: 'John Doe',
@@ -95,7 +89,7 @@ const mockUsers: User[] = [
 ];
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<UserWithLocation[]>(mockUsers);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);

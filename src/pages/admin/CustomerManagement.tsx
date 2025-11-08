@@ -51,22 +51,7 @@ import MapPicker, { LocationData } from '@/components/admin/MapPicker';
 import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  company?: string;
-  customerType: 'individual' | 'business';
-  status: 'active' | 'inactive' | 'blocked';
-  location?: LocationData;
-  totalOrders: number;
-  totalSpent: number;
-  notes?: string;
-  createdAt: string;
-  lastOrderDate?: string;
-}
+import type { Customer } from '@/types/customer';
 
 const mockCustomers: Customer[] = [
   {

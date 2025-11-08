@@ -1,0 +1,66 @@
+export interface ProductSpecification {
+  key: string;
+  value: string;
+}
+
+export interface ProductCustomOption {
+  name: string;
+  type: 'boolean' | 'text' | 'select' | 'number';
+  options?: string[];
+  required?: boolean;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  longDescription?: string;
+  images: string[];
+  category: string;
+  subcategory?: string;
+  tags: string[];
+  material: string;
+  price: number;
+  currency: string;
+  priceUnit: string;
+  minOrder: number;
+  specifications: ProductSpecification[];
+  customizable: boolean;
+  customOptions?: ProductCustomOption[];
+  inStock: boolean;
+  stockQuantity?: number;
+  leadTime: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  status: 'draft' | 'published' | 'archived';
+  featured: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  parent_id?: string;
+  image?: string;
+  order?: number;
+  isActive: boolean;
+}
+
+export interface ProductFilters {
+  category?: string;
+  subcategory?: string;
+  featured?: boolean;
+  status?: string;
+  inStock?: boolean;
+  priceMin?: number;
+  priceMax?: number;
+  search?: string;
+  tags?: string[];
+  limit?: number;
+  offset?: number;
+}

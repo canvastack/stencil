@@ -7,8 +7,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MapPin, Mail, Phone, Clock, Users, Award, Target, CheckCircle2, MessageSquare } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { usePageContent } from "@/contexts/ContentContext";
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  MapPin,
+  Mail,
+  Phone,
+  Clock,
+  Users,
+  Award,
+  Target,
+  CheckCircle2,
+  MessageSquare
+};
 
 const Contact = () => {
+  const { content, loading } = usePageContent("contact");
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading content...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!content?.content) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive">Failed to load page content</p>
+        </div>
+      </div>
+    );
+  }
+
+  const pageData = content.content;
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -19,10 +57,10 @@ const Contact = () => {
         
         <div className="container mx-auto text-center max-w-4xl">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in text-white">
-            Hubungi <span className="text-[#f59e0b]">Kami</span>
+            {pageData.hero?.title || "Hubungi Kami"}
           </h1>
           <p className="text-lg md:text-xl text-slate-300 animate-fade-in-up">
-            Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda.
+            {pageData.hero?.subtitle || ""}
           </p>
         </div>
       </section>
@@ -80,200 +118,147 @@ const Contact = () => {
 
             {/* Contact Information */}
             <div className="space-y-6">
-              <Card className="p-6">
-                <h3 className="text-xl font-bold mb-4">Informasi Kontak</h3>
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <MapPin className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Alamat Workshop</p>
-                      <p className="text-sm text-muted-foreground">
-                        Jl. Industri No. 123, Kawasan Industri Pulogadung<br />
-                        Jakarta Timur, DKI Jakarta 13260
-                      </p>
-                    </div>
+              {pageData.contactInfo?.enabled && (
+                <Card className="p-6">
+                  <h3 className="text-xl font-bold mb-4">Informasi Kontak</h3>
+                  <div className="space-y-4">
+                    {(pageData.contactInfo?.items || []).map((item: any, i: number) => {
+                      const IconComponent = iconMap[item.icon] || MapPin;
+                      return (
+                        <div key={i} className="flex items-start space-x-3">
+                          <IconComponent className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium">{item.title}</p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-line">
+                              {item.content}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-
-                  <div className="flex items-start space-x-3">
-                    <Mail className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Email</p>
-                      <a href="mailto:info@etchingpresisi.com" className="text-sm text-primary hover:underline">
-                        info@etchingpresisi.com
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <Phone className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Telepon / WhatsApp</p>
-                      <a href="tel:+6282112345678" className="text-sm text-primary hover:underline">
-                        +62 821-1234-5678
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <Clock className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">Jam Operasional</p>
-                      <p className="text-sm text-muted-foreground">
-                        Senin - Jumat: 08:00 - 17:00 WIB<br />
-                        Sabtu: 08:00 - 13:00 WIB<br />
-                        Minggu: Tutup
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+                </Card>
+              )}
 
               {/* Map Placeholder */}
-              <Card className="p-6">
-                <h3 className="text-xl font-bold mb-4">Lokasi Kami</h3>
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="h-12 w-12 text-primary mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Peta Lokasi Workshop</p>
+              {pageData.map?.enabled && (
+                <Card className="p-6">
+                  <h3 className="text-xl font-bold mb-4">{pageData.map?.title || "Lokasi Kami"}</h3>
+                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <MapPin className="h-12 w-12 text-primary mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">Peta Lokasi Workshop</p>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              )}
             </div>
           </div>
         </div>
       </section>
 
       {/* Achievements Section */}
-      <section className="py-16 px-4 bg-muted/50">
-        <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-4">Pencapaian Kami</h2>
-          <p className="text-center text-muted-foreground mb-12">
-            Kepercayaan yang telah diberikan selama bertahun-tahun
-          </p>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { icon: Users, value: "2000+", label: "Proyek Selesai", color: "text-blue-500" },
-              { icon: Award, value: "10+", label: "Tahun Pengalaman", color: "text-green-500" },
-              { icon: Target, value: "500+", label: "Klien Puas", color: "text-purple-500" },
-              { icon: CheckCircle2, value: "99%", label: "Tingkat Presisi", color: "text-primary" },
-            ].map((stat, i) => (
-              <Card key={i} className="p-6 text-center hover:shadow-lg transition-all">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
-                </div>
-                <div className="text-4xl font-bold mb-2 text-primary">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </Card>
-            ))}
+      {pageData.achievements?.enabled && (
+        <section className="py-16 px-4 bg-muted/50">
+          <div className="container mx-auto max-w-6xl">
+            <h2 className="text-3xl font-bold text-center mb-4">
+              {pageData.achievements?.title || "Pencapaian Kami"}
+            </h2>
+            <p className="text-center text-muted-foreground mb-12">
+              {pageData.achievements?.subtitle || ""}
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {(pageData.achievements?.items || []).map((stat: any, i: number) => {
+                const IconComponent = iconMap[stat.icon] || CheckCircle2;
+                return (
+                  <Card key={i} className="p-6 text-center hover:shadow-lg transition-all">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                      <IconComponent className={`h-8 w-8 ${stat.color}`} />
+                    </div>
+                    <div className="text-4xl font-bold mb-2 text-primary">{stat.value}</div>
+                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Why Choose Us Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Mengapa Memilih <span className="text-primary">Kami?</span>
-          </h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Kualitas Terjamin",
-                description: "Semua produk telah melalui quality control ketat dan memiliki sertifikasi resmi dari lembaga terpercaya.",
-              },
-              {
-                title: "Tim Ahli Berpengalaman",
-                description: "Didukung oleh tim ahli akuakultur dengan pengalaman puluhan tahun di industri perikanan.",
-              },
-              {
-                title: "Layanan Prima",
-                description: "Konsultasi gratis, dukungan teknis 24/7, dan garansi kepuasan untuk semua pelanggan.",
-              },
-            ].map((feature, i) => (
-              <Card key={i} className="p-6 text-center hover:shadow-lg transition-all">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-                  <CheckCircle2 className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section - Siap Mewujudkan */}
-      <section className="py-20 px-4 bg-gradient-to-r from-[#f59e0b] to-[#f97316] text-white">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Siap Mewujudkan Proyek Anda?
+      {pageData.whyChooseUs?.enabled && (
+        <section className="py-16 px-4">
+          <div className="container mx-auto max-w-6xl">
+            <h2 className="text-3xl font-bold text-center mb-12">
+              {pageData.whyChooseUs?.title || "Mengapa Memilih Kami?"}
             </h2>
-            <p className="text-lg md:text-xl text-white/90">
-              Diskusikan kebutuhan Anda dengan tim kami dan dapatkan penawaran gratis hari ini.
-            </p>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+              {(pageData.whyChooseUs?.items || []).map((feature: any, i: number) => (
+                <Card key={i} className="p-6 text-center hover:shadow-lg transition-all">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                </Card>
+              ))}
+            </div>
           </div>
+        </section>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2 text-white">1000+</div>
-              <div className="text-white/90">Products</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2 text-white">15+</div>
-              <div className="text-white/90">Tahun Pengalaman</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl md:text-5xl font-bold mb-2 text-white">98%</div>
-              <div className="text-white/90">Tingkat Kepuasan</div>
-            </div>
-          </div>
+      {/* CTA Sections */}
+      {(pageData.cta || []).map((ctaSection: any, index: number) => {
+        const isPrimary = ctaSection.type === 'primary';
+        return (
+          <section 
+            key={index}
+            className={`py-20 px-4 ${isPrimary ? 'bg-gradient-to-r from-[#f59e0b] to-[#f97316]' : 'bg-gradient-to-r from-[#d97706] to-[#ea580c]'} text-white relative overflow-hidden`}
+          >
+            <div className="container mx-auto relative z-10 max-w-6xl">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-5xl font-bold mb-4">
+                  {ctaSection.title}
+                </h2>
+                <p className="text-lg md:text-xl text-white/90">
+                  {ctaSection.subtitle}
+                </p>
+              </div>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button 
-              size="lg" 
-              className="bg-[#475569] hover:bg-[#475569]/90 text-white text-lg px-8 gap-2"
-            >
-              <MessageSquare className="h-5 w-5" />
-              Hubungi Kami
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="border-2 border-[#fbbf24] bg-transparent text-white hover:bg-white/10 text-lg px-8 gap-2"
-            >
-              Lihat Produk Kami
-              <Target className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </section>
+              {ctaSection.stats && ctaSection.stats.length > 0 && (
+                <div className={`grid grid-cols-1 md:grid-cols-${Math.min(ctaSection.stats.length, 3)} gap-6 mb-12`}>
+                  {ctaSection.stats.map((stat: any, i: number) => (
+                    <div key={i} className="text-center">
+                      <div className="text-4xl md:text-5xl font-bold mb-2 text-white">{stat.value}</div>
+                      <div className="text-white/90">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-      {/* CTA Section - Punya Pertanyaan */}
-      <section className="py-20 px-4 bg-gradient-to-r from-[#d97706] to-[#ea580c] text-white">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                Punya Pertanyaan atau Siap Memulai?
-              </h2>
-              <p className="text-lg md:text-xl text-white/90">
-                Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda
-              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                {(ctaSection.buttons || []).map((button: any, i: number) => (
+                  <Button 
+                    key={i}
+                    size="lg" 
+                    variant={button.variant === 'outline' ? 'outline' : 'default'}
+                    className={
+                      button.variant === 'outline' 
+                        ? 'border-2 border-white/50 bg-transparent text-white hover:bg-white/10 text-lg px-8 shadow-xl transition-all'
+                        : 'bg-slate-700 hover:bg-slate-800 text-white text-lg px-8 shadow-xl transition-all'
+                    }
+                    onClick={() => window.location.href = button.link || "#"}
+                  >
+                    {button.text}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div className="flex-shrink-0">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-[#f59e0b] to-[#f97316] hover:from-[#f59e0b]/90 hover:to-[#f97316]/90 text-white text-lg px-8 backdrop-blur-sm hover:backdrop-blur-md transition-all"
-              >
-                Hubungi Tim Kami
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        );
+      })}
 
       <Footer />
     </div>

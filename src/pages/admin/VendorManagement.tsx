@@ -25,23 +25,7 @@ import { Search, Plus, Edit, Trash2, Building2, Phone, Mail, MapPin } from 'luci
 import { toast } from 'sonner';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
-
-interface Vendor {
-  id: string;
-  name: string;
-  code: string;
-  email: string;
-  phone: string;
-  contactPerson: string;
-  category: string;
-  status: 'active' | 'inactive';
-  rating: number;
-  totalOrders: number;
-  location: LocationData;
-  notes: string;
-  paymentTerms: string;
-  taxId: string;
-}
+import type { Vendor } from '@/types/vendor';
 
 const mockVendors: Vendor[] = [
   {

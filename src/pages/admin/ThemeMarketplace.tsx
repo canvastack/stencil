@@ -7,29 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { themePackageManager } from '@/core/engine/packaging/ThemePackageManager';
 import { InstallationProgress } from '@/core/engine/packaging/ThemePackageManager';
-
-interface MarketplaceTheme {
-  id: string;
-  name: string;
-  displayName: string;
-  author: string;
-  version: string;
-  description: string;
-  preview: string;
-  screenshots: string[];
-  downloads: number;
-  rating: number;
-  reviews: number;
-  price: number;
-  isPremium: boolean;
-  isVerified: boolean;
-  isFeatured: boolean;
-  category: string;
-  tags: string[];
-  lastUpdated: string;
-  size: number;
-  compatibility: string;
-}
+import type { MarketplaceTheme } from '@/types/theme';
 
 export default function ThemeMarketplace() {
   const [themes, setThemes] = useState<MarketplaceTheme[]>([]);

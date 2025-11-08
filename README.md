@@ -6,7 +6,7 @@
 [![Laravel](https://img.shields.io/badge/Laravel-10-red)](https://laravel.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue)](https://www.postgresql.org/)
 
-**Stencil** adalah platform Content Management System (CMS) multi-tenant yang dikembangkan oleh **CanvaStack** berbasis WordPress-like architecture yang dirancang untuk mendukung multiple bisnis dengan data, konfigurasi, dan tampilan yang terisolasi. Platform ini menggunakan **Hexagonal Architecture** dan **Domain-Driven Design (DDD)** untuk memastikan skalabilitas, maintainability, dan fleksibilitas tingkat enterprise.
+**CanvaStencil** adalah platform Content Management System (CMS) multi-tenant yang dikembangkan oleh **CanvaStack** berbasis WordPress-like architecture yang dirancang untuk mendukung multiple bisnis dengan data, konfigurasi, dan tampilan yang terisolasi. Platform ini menggunakan **Hexagonal Architecture** dan **Domain-Driven Design (DDD)** untuk memastikan skalabilitas, maintainability, dan fleksibilitas tingkat enterprise.
 
 ## 🎯 Platform Vision
 
@@ -56,7 +56,7 @@ Backend menggunakan clean separation antara domain logic dan infrastructure:
 ┌─────────────────────────────────────────────┐
 │             Presentation Layer              │
 │    ┌──────────────┐    ┌──────────────┐     │
-│    │ API Routes   │    │   Console    │     │
+│    │  API Routes  │    │   Console    │     │
 │    └──────────────┘    └──────────────┘     │
 └─────────────────────┬───────────────────────┘
                       │

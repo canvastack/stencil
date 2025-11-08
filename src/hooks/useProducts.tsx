@@ -1,34 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-
-export interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  longDescription?: string;
-  images: string[];
-  category: string;
-  subcategory?: string;
-  tags: string[];
-  material: string;
-  price: number;
-  currency: string;
-  priceUnit: string;
-  minOrder: number;
-  specifications: Array<{ key: string; value: string }>;
-  customizable: boolean;
-  customOptions?: Array<any>;
-  inStock: boolean;
-  stockQuantity?: number;
-  leadTime: string;
-  seoTitle?: string;
-  seoDescription?: string;
-  seoKeywords?: string[];
-  status: string;
-  featured: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Product } from '@/types/product';
+import { getProducts } from '@/services/mock/products';
 
 interface UseProductsOptions {
   category?: string;
@@ -46,26 +18,12 @@ export const useProducts = (options: UseProductsOptions = {}) => {
     try {
       setLoading(true);
       
-      // Load from JSON mockup
-      const response = await fetch('/src/data/mockup/products.json');
-      let data: Product[] = await response.json();
-      
-      // Apply filters
-      if (options.category) {
-        data = data.filter(p => p.category === options.category);
-      }
-      
-      if (options.featured !== undefined) {
-        data = data.filter(p => p.featured === options.featured);
-      }
-      
-      if (options.status) {
-        data = data.filter(p => p.status === options.status);
-      }
-      
-      if (options.limit) {
-        data = data.slice(0, options.limit);
-      }
+      const data = getProducts({
+        category: options.category,
+        featured: options.featured,
+        status: options.status,
+        limit: options.limit,
+      });
       
       setProducts(data);
       setError(null);
@@ -93,11 +51,7 @@ export const useProduct = (slugOrId: string) => {
       try {
         setLoading(true);
         
-        // Load all products and find by slug or id
-        const response = await fetch('/src/data/mockup/products.json');
-        const data: Product[] = await response.json();
-        
-        const found = data.find(p => p.slug === slugOrId || p.id === slugOrId);
+        const found = getProducts().find(p => p.slug === slugOrId || p.id === slugOrId);
         
         if (found) {
           setProduct(found);
@@ -128,10 +82,7 @@ export const useProductCategories = () => {
       try {
         setLoading(true);
         
-        const response = await fetch('/src/data/mockup/products.json');
-        const data: Product[] = await response.json();
-        
-        // Extract unique categories
+        const data = getProducts();
         const uniqueCategories = Array.from(new Set(data.map(p => p.category)));
         
         setCategories(uniqueCategories);

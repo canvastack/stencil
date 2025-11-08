@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { getPageBySlug } from '@/services/mock/pages';
 
 interface PageContent {
   id: string;
@@ -26,7 +27,6 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [cache] = useState<Map<string, PageContent>>(new Map());
 
   const getPageContent = useCallback(async (slug: string): Promise<PageContent | null> => {
-    // Check cache first
     if (cache.has(slug)) {
       return cache.get(slug)!;
     }
@@ -35,16 +35,23 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(true);
       setError(null);
       
-      // Load from JSON mockup
-      const response = await fetch(`/src/data/mockup/page-content-${slug}.json`);
+      const page = getPageBySlug(slug);
       
-      if (!response.ok) {
+      if (!page) {
         throw new Error(`Failed to load page content for ${slug}`);
       }
       
-      const data: PageContent = await response.json();
+      const data: PageContent = {
+        id: page.id,
+        pageSlug: page.pageSlug,
+        content: page.content,
+        status: page.status || 'published',
+        publishedAt: page.publishedAt,
+        version: 1,
+        createdAt: page.createdAt || new Date().toISOString(),
+        updatedAt: page.updatedAt || new Date().toISOString(),
+      };
       
-      // Cache the result
       cache.set(slug, data);
       
       return data;
