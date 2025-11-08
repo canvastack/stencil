@@ -11,6 +11,20 @@ const defaultHeroImages = [
   '/images/hero/default-3.jpg',
 ];
 
+// Resolve image paths so builds with a non-root base (e.g. /stencil/) work correctly.
+const resolveImageUrl = (img: string) => {
+  if (!img) return img;
+  // absolute remote URLs should be left as-is
+  if (/^https?:\/\//.test(img) || /^\/\//.test(img)) return img;
+  const base = import.meta.env.BASE_URL || '/';
+  // If image starts with '/', join with base without duplicating slashes
+  if (img.startsWith('/')) {
+    return `${base.replace(/\/$/, '')}${img}`;
+  }
+  // relative path: base already ends with '/'
+  return `${base}${img}`;
+};
+
 const HeroCarousel: React.FC<HeroCarouselProps> = (props) => {
   const { className } = props;
   const { content } = usePageContent("home");
@@ -21,7 +35,7 @@ const HeroCarousel: React.FC<HeroCarouselProps> = (props) => {
 
   const slides = carouselImages.map((image, index) => ({ 
     id: String(index), 
-    image 
+    image: resolveImageUrl(image)
   }));
 
   const [currentIndex, setCurrentIndex] = useState(0);
