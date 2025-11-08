@@ -90,7 +90,13 @@ function App() {
             <CartProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter basename={import.meta.env.PROD ? '/stencil' : '/'} future={{ v7_startTransition: true }}>
+              {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
+                  import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
+                  Fallback to '/' when empty. */}
+              <BrowserRouter
+                basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
+                future={{ v7_startTransition: true }}
+              >
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Home />} />
