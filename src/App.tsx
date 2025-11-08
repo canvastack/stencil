@@ -6,7 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/core/engine/ThemeProvider";
 import { themeManager } from "@/core/engine/ThemeManager";
 import '@/themes/default';
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { 
+  BrowserRouter, 
+  Routes, 
+  Route
+} from "react-router-dom";
 import { ThemeScrollToTop } from "@/core/engine/ThemeComponent";
 import { CartProvider } from "@/contexts/CartContext";
 import { ContentProvider } from "@/contexts/ContentContext";
@@ -86,7 +90,7 @@ function App() {
             <CartProvider>
               <Toaster />
               <Sonner />
-              <Router future={{ v7_startTransition: true }}>
+              <BrowserRouter basename={import.meta.env.PROD ? '/stencil' : '/'} future={{ v7_startTransition: true }}>
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Home />} />
@@ -139,7 +143,7 @@ function App() {
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <ThemeScrollToTop />
-              </Router>
+              </BrowserRouter>
             </CartProvider>
           </ContentProvider>
         </ThemeProvider>

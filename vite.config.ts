@@ -5,8 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // GitHub Pages deployment: Set base to '/' for custom domain, or '/repo-name/' for github.io
-  base: '/stencil/',
+  // GitHub Pages deployment: use '/stencil/' in production, but '/' locally during development
+  // `mode` is provided by Vite config function above.
+  base: mode === 'production' ? '/stencil/' : '/',
   
   server: {
     host: "::",
