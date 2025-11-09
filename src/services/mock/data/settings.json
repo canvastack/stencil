@@ -1,8 +1,8 @@
 {
   "general": {
-    "siteName": "Artful Etch Studio",
-    "siteUrl": "https://artfuletchstudio.com",
-    "contactEmail": "info@artfuletchstudio.com",
+    "siteName": "CanvaStencil",
+    "siteUrl": "https://canvastencil.com",
+    "contactEmail": "info@canvastencil.com",
     "maintenanceMode": false
   },
   "notifications": {
@@ -82,7 +82,7 @@
       "daily": 7,
       "weekly": 4
     },
-    "storage": "Lovable Cloud (encrypted)",
+    "storage": "Canva Stencil Cloud",
     "lastBackup": "Today at 2:00 AM UTC"
   }
 }

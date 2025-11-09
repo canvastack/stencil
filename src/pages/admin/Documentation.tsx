@@ -190,7 +190,7 @@ export default function Documentation() {
                   <div>
                     <h4 className="font-semibold">Backend (Recommended)</h4>
                     <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                      <li>Lovable Cloud (Supabase)</li>
+                      <li>CanvaStencil Cloud (Supabase)</li>
                       <li>PostgreSQL database</li>
                       <li>Row Level Security (RLS)</li>
                       <li>Edge Functions for API</li>
@@ -350,7 +350,7 @@ const homeContent = getPageContent('home');`}
               <AccordionItem value="faq-8">
                 <AccordionTrigger>How often should I backup the database?</AccordionTrigger>
                 <AccordionContent>
-                  <p>If using Lovable Cloud (Supabase), automatic backups are included. For self-hosted installations, we recommend:</p>
+                  <p>If using CanvaStencil Cloud (Supabase), automatic backups are included. For self-hosted installations, we recommend:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
                     <li>Daily automatic backups</li>
                     <li>Weekly manual verification of backups</li>
@@ -370,7 +370,7 @@ const homeContent = getPageContent('home');`}
               <div>
                 <h3 className="text-xl font-semibold mb-2">Production Deployment</h3>
                 <p className="text-muted-foreground mb-4">
-                  This guide covers deploying your CMS to production with Lovable.
+                  This guide covers deploying your CMS to production with CanvaStencil.
                 </p>
                 
                 <div className="space-y-4">
@@ -405,9 +405,9 @@ const homeContent = getPageContent('home');`}
                   </div>
 
                   <div>
-                    <h4 className="font-semibold">2. Deploy with Lovable</h4>
+                    <h4 className="font-semibold">2. Deploy with CanvaStencil</h4>
                     <ol className="list-decimal list-inside space-y-2 ml-4 mt-2">
-                      <li>Click the <strong>"Publish"</strong> button in Lovable</li>
+                      <li>Click the <strong>"Publish"</strong> button in CanvaStencil</li>
                       <li>Your site will be deployed to <code className="bg-muted px-2 py-1 rounded text-sm">yoursite.lovable.app</code></li>
                       <li>SSL certificate is automatically configured</li>
                       <li>Changes go live immediately</li>
@@ -426,12 +426,12 @@ const homeContent = getPageContent('home');`}
                   </div>
 
                   <div>
-                    <h4 className="font-semibold">4. Enable Lovable Cloud (Optional)</h4>
+                    <h4 className="font-semibold">4. Enable CanvaStencil Cloud (Optional)</h4>
                     <p className="text-sm text-muted-foreground mt-2">
                       For database, authentication, and backend features:
                     </p>
                     <ol className="list-decimal list-inside space-y-2 ml-4 mt-2">
-                      <li>Enable Lovable Cloud from the dashboard</li>
+                      <li>Enable CanvaStencil Cloud from the dashboard</li>
                       <li>Database tables auto-generate from schema</li>
                       <li>Configure Row Level Security policies</li>
                       <li>Set up authentication (email/password, OAuth)</li>
