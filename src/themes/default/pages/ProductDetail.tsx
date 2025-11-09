@@ -729,7 +729,7 @@ const ProductDetail = () => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.images[0],
+      image: typeof product.images[0] === 'string' ? resolveImageUrl(product.images[0], { preview: isPreview }) : product.images[0],
       type: formData.productType,
       size: formData.size,
       material: formData.bahan,
@@ -802,23 +802,26 @@ const ProductDetail = () => {
               <Card className="overflow-hidden border-border bg-card shadow-xl group">
                 <Carousel className="w-full">
                   <CarouselContent>
-                    {product.images.map((image, index) => (
-                      <CarouselItem key={index}>
-                        <div 
-                          className="aspect-video relative overflow-hidden bg-muted cursor-zoom-in"
-                          onClick={() => setMagnifiedImage(image)}
-                        >
-                          <img
-                            src={image}
-                            alt={`${product.name} ${index + 1}`}
-                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
-                            <ZoomIn className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {product.images.map((image, index) => {
+                      const srcUrl = typeof image === 'string' ? resolveImageUrl(image, { preview: isPreview }) : image;
+                      return (
+                        <CarouselItem key={index}>
+                          <div 
+                            className="aspect-video relative overflow-hidden bg-muted cursor-zoom-in"
+                            onClick={() => setMagnifiedImage(srcUrl)}
+                          >
+                            <img
+                              src={srcUrl}
+                              alt={`${product.name} ${index + 1}`}
+                              className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                              <ZoomIn className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </div>
                           </div>
-                        </div>
-                      </CarouselItem>
-                    ))}
+                        </CarouselItem>
+                      );
+                    })}
                   </CarouselContent>
                   <CarouselPrevious className="left-4" />
                   <CarouselNext className="right-4" />
@@ -827,7 +830,7 @@ const ProductDetail = () => {
 
               {/* View Button */}
               <Button
-                onClick={() => open360View(product.images[0])}
+                onClick={() => open360View(resolveImageUrl(product.images[0], { preview: isPreview }))}
                 className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold shadow-lg"
               >
                 <Rotate3D className="w-5 h-5 mr-2" />
