@@ -1,13 +1,28 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  // GitHub Pages deployment: use '/stencil/' in production, but '/' locally during development
-  // `mode` is provided by Vite config function above.
-  base: mode === 'production' ? '/stencil/' : '/',
+export default defineConfig(({ mode }) => {
+  // Load env file based on mode
+  const env = loadEnv(mode, process.cwd(), '');
+  
+  // Determine base URL based on deployment platform and environment
+  const getBaseUrl = () => {
+    const platform = env.VITE_APP_DEPLOY_PLATFORM || 'local';
+    const isGithubPages = env.VITE_APP_IS_GITHUB_PAGES === 'true';
+    
+    if (platform === 'github' || isGithubPages) {
+      return '/stencil/';
+    }
+    
+    // Use env variable or fallback to root
+    return env.VITE_APP_BASE_URL || '/';
+  };
+  
+  return {
+    base: getBaseUrl(),
   
   server: {
     host: "::",
@@ -44,4 +59,5 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-}));
+  }
+});

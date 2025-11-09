@@ -1,10 +1,27 @@
 import { Link } from "react-router-dom";
-import { Facebook, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { FooterProps } from "@/core/engine/interfaces";
+import { useThemeComponents } from "@/hooks/useThemeComponents";
+import { headerContent } from "@/config/navigation.config";
 
 const Footer: React.FC<FooterProps> = ({ className, showSocialLinks = true }) => {
+  const { footerContent } = useThemeComponents();
+
+  const getSocialIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'facebook':
+        return <Facebook className="h-4 w-4" />;
+      case 'instagram':
+        return <Instagram className="h-4 w-4" />;
+      case 'twitter':
+        return <Twitter className="h-4 w-4" />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <footer className={`bg-card border-t border-border ${className || ''}`}>
       <div className="container mx-auto px-4 py-12">
@@ -13,68 +30,52 @@ const Footer: React.FC<FooterProps> = ({ className, showSocialLinks = true }) =>
           <div>
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-orange-light rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">CEX</span>
+                <span className="text-white font-bold text-lg">{headerContent.brandInitials}</span>
               </div>
               <span className="text-lg font-bold">
-                Etching <span className="text-primary">Xenial</span>
+                {headerContent.brandName.split(' ')[0]} <span className="text-primary">{headerContent.brandName.split(' ')[1]}</span>
               </span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              Platform layanan etching presisi tinggi untuk kebutuhan industri dan personal dengan teknologi terkini.
+              {footerContent.bottomText}
             </p>
             {showSocialLinks && (
               <div className="flex space-x-2">
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Facebook className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Instagram className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Youtube className="h-4 w-4" />
-                </Button>
+                {footerContent.socialLinks.map((social) => (
+                  <Button 
+                    key={social.platform}
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full"
+                    asChild
+                  >
+                    <a href={social.url} target="_blank" rel="noopener noreferrer">
+                      {getSocialIcon(social.platform)}
+                    </a>
+                  </Button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Navigation */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-4">Jelajahi</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
-                  Beranda
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                  Tentang Kami
-                </Link>
-              </li>
-              <li>
-                <Link to="/products" className="text-muted-foreground hover:text-primary transition-colors">
-                  Produk
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                  Kontak
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-4">Layanan Kami</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>Etching Logam</li>
-              <li>Etching Kaca</li>
-              <li>Plakat Penghargaan</li>
-              <li>Signage Custom</li>
-              <li>Komponen Industri</li>
-            </ul>
-          </div>
+          {/* Footer Sections */}
+          {footerContent.sections.map((section) => (
+            <div key={section.title}>
+              <h3 className="font-semibold text-foreground mb-4">{section.title}</h3>
+              <ul className="space-y-2 text-sm">
+                {section.links.map((link) => (
+                  <li key={link.path}>
+                    <Link 
+                      to={link.path} 
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
 
           {/* Contact Info */}
           <div>
@@ -122,15 +123,18 @@ const Footer: React.FC<FooterProps> = ({ className, showSocialLinks = true }) =>
         <div className="pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-muted-foreground text-center md:text-left">
-              © 2025 Etching Xenial. Powered by Technology. Semua Hak Dilindungi.
+              {footerContent.copyrightText}
             </p>
             <div className="flex space-x-6 text-sm">
-              <Link to="#" className="text-muted-foreground hover:text-primary">
-                Kebijakan Privasi
-              </Link>
-              <Link to="#" className="text-muted-foreground hover:text-primary">
-                Syarat & Ketentuan
-              </Link>
+              {footerContent.sections.find(section => section.title === "Legal")?.links.map((link) => (
+                <Link 
+                  key={link.path}
+                  to={link.path} 
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  {link.name}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

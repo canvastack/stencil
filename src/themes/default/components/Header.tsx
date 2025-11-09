@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Menu, X, ShoppingCart } from "lucide-react";
 import type { HeaderProps } from "@/core/engine/interfaces";
+import { useThemeComponents } from "@/hooks/useThemeComponents";
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
   const [isDark, setIsDark] = useState(true);
@@ -27,12 +28,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navigation = [
-    { name: "Beranda", path: "/" },
-    { name: "Tentang Kami", path: "/about" },
-    { name: "Produk", path: "/products" },
-    { name: "Kontak", path: "/contact" },
-  ];
+  const { headerContent } = useThemeComponents();
 
   return (
     <header
@@ -56,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {navigation.map((item) => (
+            {headerContent.navigation.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -128,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-white/10">
             <nav className="flex flex-col space-y-2">
-              {navigation.map((item) => (
+              {headerContent.navigation.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}

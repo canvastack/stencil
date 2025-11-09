@@ -1,4 +1,17 @@
+export interface PageHeaderContent {
+  background?: string;
+  navigation?: {
+    style?: string;
+    activeStyle?: string;
+  };
+  logo?: {
+    variant?: 'light' | 'dark';
+    className?: string;
+  };
+}
+
 export interface PageContent {
+  header?: PageHeaderContent;
   hero: {
     title: {
       prefix: string;
@@ -7,6 +20,7 @@ export interface PageContent {
     };
     subtitle: string;
     typingTexts?: readonly string[];
+    background?: string;
   };
   informationSection: {
     title: {

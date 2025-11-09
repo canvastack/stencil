@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Menu, X, ShoppingCart } from "lucide-react";
+import { useThemeComponents } from "@/hooks/useThemeComponents";
+import { usePageContent } from "@/hooks/usePageContent";
 
 const Header = () => {
   const [isDark, setIsDark] = useState(true);
@@ -26,46 +28,39 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navigation = [
-    { name: "Beranda", path: "/" },
-    { name: "Tentang Kami", path: "/about" },
-    { name: "Produk", path: "/products" },
-    { name: "FAQ", path: "/faq" },
-    { name: "Kontak", path: "/contact" },
-  ];
+  const { headerContent } = useThemeComponents();
+  const isHomePage = location.pathname === '/';
+
+  // Use transparent style for home page, default style for other pages
+  const activeStyle = isHomePage && !isScrolled ? headerContent.styles.transparent : headerContent.styles.default;
+  const headerBackground = isScrolled ? headerContent.styles.default.background : activeStyle.background;
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-background/80 backdrop-blur-lg border-b border-white/10 shadow-lg"
-          : "bg-transparent"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${headerBackground}`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 bg-gradient-to-br from-primary to-orange-light rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform">
-              <span className="text-white font-bold text-xl">CEX</span>
+              <span className="text-white font-bold text-xl">{headerContent.brandInitials}</span>
             </div>
-            <span className="text-xl font-bold text-foreground">
-              Etching <span className="text-primary">Xenial</span>
+            <span className={`text-xl font-bold ${activeStyle.text}`}>
+              {headerContent.brandName.split(' ')[0]} <span className="text-primary">{headerContent.brandName.split(' ')[1]}</span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {navigation.map((item) => (
+            {headerContent.navigation.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   location.pathname === item.path
-                    ? "bg-primary text-white"
-                    : isScrolled
-                      ? "text-foreground/80 hover:text-foreground hover:bg-muted"
-                      : "text-white/90 hover:text-white hover:bg-white/10"
+                    ? activeStyle.active
+                    : `${activeStyle.text} ${activeStyle.hover}`
                 }`}
               >
                 {item.name}
@@ -81,7 +76,7 @@ const Header = () => {
               asChild
               className="rounded-lg"
             >
-              <Link to="/cart">
+              <Link to={headerContent.cartPath}>
                 <ShoppingCart className="h-5 w-5" />
               </Link>
             </Button>
@@ -103,8 +98,8 @@ const Header = () => {
               className="hidden md:flex bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow"
               asChild
             >
-              <Link to="/login">
-                Login
+              <Link to={headerContent.loginPath}>
+                {headerContent.loginText}
               </Link>
             </Button>
 
@@ -128,15 +123,15 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-white/10">
             <nav className="flex flex-col space-y-2">
-              {navigation.map((item) => (
+              {headerContent.navigation.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                     location.pathname === item.path
-                      ? "bg-primary text-white"
-                      : "text-foreground/80 hover:bg-muted"
+                      ? headerContent.styles.default.active
+                      : `${headerContent.styles.default.text} ${headerContent.styles.default.hover}`
                   }`}
                 >
                   {item.name}
@@ -147,17 +142,17 @@ const Header = () => {
                 className="w-full justify-start"
                 asChild
               >
-                <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to={headerContent.cartPath} onClick={() => setIsMobileMenuOpen(false)}>
                   <ShoppingCart className="h-5 w-5 mr-2" />
-                  Keranjang
+                  {headerContent.cartText}
                 </Link>
               </Button>
               <Button
                 className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
                 asChild
               >
-                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  Login
+                <Link to={headerContent.loginPath} onClick={() => setIsMobileMenuOpen(false)}>
+                  {headerContent.loginText}
                 </Link>
               </Button>
             </nav>
