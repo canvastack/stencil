@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Pause, Play } from 'lucide-react';
 import type { HeroCarouselProps } from '@/core/engine/interfaces';
 import { usePageContent } from '@/contexts/ContentContext';
+import { resolveImageUrl } from '@/utils/imageUtils';
 
 // Default images sebagai fallback jika tidak ada data
 const defaultHeroImages = [
@@ -11,31 +12,18 @@ const defaultHeroImages = [
   '/images/hero/default-3.jpg',
 ];
 
-// Resolve image paths so builds with a non-root base (e.g. /stencil/) work correctly.
-const resolveImageUrl = (img: string) => {
-  if (!img) return img;
-  // absolute remote URLs should be left as-is
-  if (/^https?:\/\//.test(img) || /^\/\//.test(img)) return img;
-  const base = import.meta.env.BASE_URL || '/';
-  // If image starts with '/', join with base without duplicating slashes
-  if (img.startsWith('/')) {
-    return `${base.replace(/\/$/, '')}${img}`;
-  }
-  // relative path: base already ends with '/'
-  return `${base}${img}`;
-};
-
 const HeroCarousel: React.FC<HeroCarouselProps> = (props) => {
   const { className } = props;
   const { content } = usePageContent("home");
   
+  const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
   const carouselImages = content?.content?.hero?.carousel?.images || defaultHeroImages;
   const autoPlayInterval = content?.content?.hero?.carousel?.autoPlayInterval || 5000;
   const showPauseButton = content?.content?.hero?.carousel?.showPauseButton !== false;
 
   const slides = carouselImages.map((image, index) => ({ 
     id: String(index), 
-    image: resolveImageUrl(image)
+    image: resolveImageUrl(image, { preview: isPreview })
   }));
 
   const [currentIndex, setCurrentIndex] = useState(0);

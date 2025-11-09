@@ -233,7 +233,7 @@ export default function PageHome() {
                       <div className="relative aspect-video bg-muted">
                         {image ? (
                           <img
-                            src={image}
+                            src={image.startsWith('blob:') ? image : import.meta.env.BASE_URL + image.replace(/^\//, '')}
                             alt={`Carousel Image ${actualIndex + 1}`}
                             className="absolute inset-0 w-full h-full object-cover"
                             onError={(e) => {
@@ -279,16 +279,18 @@ export default function PageHome() {
                             onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                const uploadFormData = new FormData();
-                                uploadFormData.append('file', file);
+                                let objectUrl;
                                 try {
-                                  // Simpan file ke folder public/images/carousel
+                                  // Create temporary object URL for preview
+                                  objectUrl = URL.createObjectURL(file);
+                                  
+                                  // Generate image path
                                   const fileName = `carousel-${Date.now()}-${file.name}`;
-                                  // Di sini seharusnya ada API endpoint untuk handle upload
-                                  // Untuk sementara kita gunakan URL.createObjectURL
-                                  const imageUrl = URL.createObjectURL(file);
+                                  const imagePath = `/images/hero/${fileName}`;
+                                  
+                                  // Update form data with the new image path
                                   const newImages = [...(formData.hero?.carousel?.images || [])];
-                                  newImages[actualIndex] = imageUrl;
+                                  newImages[actualIndex] = imagePath;
                                   setFormData({
                                     ...formData,
                                     hero: {
@@ -300,10 +302,12 @@ export default function PageHome() {
                                     }
                                   });
                                   setHasChanges(true);
-                                  toast.success('Image uploaded successfully');
+                                  toast.success('Image added successfully');
                                 } catch (error) {
-                                  console.error('Error uploading image:', error);
-                                  toast.error('Failed to upload image');
+                                  console.error('Error adding image:', error);
+                                  toast.error('Failed to add image');
+                                } finally {
+                                  if (objectUrl) URL.revokeObjectURL(objectUrl);
                                 }
                               }
                             }}

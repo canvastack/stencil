@@ -1,8 +1,9 @@
 import React from 'react';
 import { useProducts } from '@/hooks/useProducts';
-import type { Product } from '@/hooks/useProducts';
+import type { Product } from '@/types/product';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { resolveImageUrl } from '@/utils/imageUtils';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import {
@@ -27,7 +28,7 @@ const columns: ColumnDef<Product>[] = [
       const images = row.getValue("images") as string[];
       return (
         <img
-          src={images[0]}
+          src={resolveImageUrl(images[0])}
           alt={row.getValue("name")}
           className="w-16 h-16 object-cover rounded"
         />

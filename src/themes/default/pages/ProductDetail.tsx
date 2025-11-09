@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useProductReviews } from "@/hooks/useReviews";
 import { useProductBySlug } from "@/hooks/useProducts";
+import { resolveImageUrl } from '@/utils/imageUtils';
 
 // Import product images
 import metalEtching1 from "@/assets/products/metal-etching-1.jpg";
@@ -506,7 +507,13 @@ const ProductDetail = () => {
     slug: hardcodedProduct.name.toLowerCase().replace(/\s+/g, '-'),
     description: hardcodedProduct.description,
     longDescription: hardcodedProduct.features?.join('\n'),
-    images: hardcodedProduct.images.map(img => typeof img === 'string' ? img : img),
+    images: hardcodedProduct.images.map(img => {
+      if (typeof img === 'string') {
+        // Handle imported images vs string paths differently
+        return img.startsWith('/') ? resolveImageUrl(img, { preview: isPreview }) : img;
+      }
+      return img;
+    }),
     category: hardcodedProduct.category,
     tags: [hardcodedProduct.type],
     material: hardcodedProduct.specifications?.material || hardcodedProduct.type,
@@ -1386,7 +1393,7 @@ const ProductDetail = () => {
                     >
                       <div className="aspect-video relative overflow-hidden bg-muted">
                         <img
-                          src={relatedProduct.images[0]}
+                          src={resolveImageUrl(relatedProduct.images[0], { preview: isPreview })}
                           alt={relatedProduct.name}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />

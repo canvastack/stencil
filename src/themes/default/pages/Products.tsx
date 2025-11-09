@@ -62,7 +62,8 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart } from "lucide-react";
 import { APP_CONFIG, TYPING_TEXTS } from "@/lib/constants";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts } from '@/hooks/useProducts';
+import { resolveImageUrl } from '@/utils/imageUtils';
 import { Product } from "@/types/product";
 import { getPageContent } from "@/services/mock/pages";
 
@@ -481,7 +482,7 @@ const Products = () => {
                           {/* Product Image */}
                           <div className="relative aspect-video overflow-hidden bg-muted">
                             <img
-                              src={product.images[0]}
+                              src={resolveImageUrl(product.images[0])}
                               alt={product.name}
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />

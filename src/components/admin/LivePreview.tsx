@@ -116,6 +116,11 @@ export function LivePreview({
   };
 
   const deviceSize = DEVICE_SIZES[device];
+  
+  // Resolve preview URL with base path
+  const resolvedPreviewUrl = previewUrl.startsWith('http') 
+    ? previewUrl 
+    : `${import.meta.env.BASE_URL}${previewUrl.replace(/^\//, '')}`;
 
   return (
     <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
@@ -238,7 +243,7 @@ export function LivePreview({
               <iframe
                 key={iframeKey}
                 ref={iframeRef}
-                src={previewUrl}
+                src={resolvedPreviewUrl}
                 className="w-full h-full border-0"
                 title="Live Preview"
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups"

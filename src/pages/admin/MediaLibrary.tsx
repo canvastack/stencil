@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { resolveImageUrl } from '@/utils/imageUtils';
 import {
   Select,
   SelectContent,
@@ -55,7 +56,7 @@ const mockMedia: MediaItem[] = [
     id: '1',
     name: 'award-plaque-1.jpg',
     type: 'image',
-    url: '/src/assets/products/award-plaque-1.jpg',
+    url: 'images/products/award-plaque-1.jpg',
     size: 245000,
     uploadedAt: '2024-01-15',
     folder: 'products',
@@ -64,7 +65,7 @@ const mockMedia: MediaItem[] = [
     id: '2',
     name: 'crystal-award-1.jpg',
     type: 'image',
-    url: '/src/assets/products/crystal-award-1.jpg',
+    url: 'images/products/crystal-award-1.jpg',
     size: 312000,
     uploadedAt: '2024-01-14',
     folder: 'products',
@@ -73,7 +74,7 @@ const mockMedia: MediaItem[] = [
     id: '3',
     name: 'glass-etching-1.jpg',
     type: 'image',
-    url: '/src/assets/products/glass-etching-1.jpg',
+    url: 'images/products/glass-etching-1.jpg',
     size: 198000,
     uploadedAt: '2024-01-13',
     folder: 'products',
@@ -261,7 +262,7 @@ export default function MediaLibrary() {
             <div className="aspect-square bg-muted flex items-center justify-center">
               {item.type === 'image' ? (
                 <img
-                  src={item.url}
+                  src={resolveImageUrl(item.url)}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />
@@ -344,7 +345,7 @@ export default function MediaLibrary() {
               <div className="bg-muted rounded-lg flex items-center justify-center p-8">
                 {selectedMedia.type === 'image' ? (
                   <img
-                    src={selectedMedia.url}
+                    src={resolveImageUrl(selectedMedia.url)}
                     alt={selectedMedia.name}
                     className="max-h-96 object-contain"
                   />

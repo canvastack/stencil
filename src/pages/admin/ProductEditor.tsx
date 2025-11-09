@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
+import { resolveImageUrl } from '@/utils/imageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -166,8 +167,11 @@ export default function ProductEditor() {
             onClick={() => {
               // Generate a temporary slug for new products
               const previewSlug = formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-');
+              // Use BASE_URL from environment for proper path resolution
+              const baseUrl = import.meta.env.BASE_URL || '/';
+              const cleanBase = baseUrl.replace(/\/+$/, '');
               // Open product details page in a new tab with a preview flag
-              window.open(`/products/${previewSlug}?preview=true`, '_blank');
+              window.open(`${cleanBase}/products/${previewSlug}?preview=true`, '_blank');
             }}
           >
             <Eye className="mr-2 h-4 w-4" />
@@ -881,7 +885,7 @@ export default function ProductEditor() {
               {formData.images.map((image, index) => (
                 <div key={index} className="relative group">
                   <img
-                    src={image}
+                    src={resolveImageUrl(image)}
                     alt={`Product ${index + 1}`}
                     className="w-full h-40 object-cover rounded border"
                   />

@@ -38,6 +38,21 @@ export interface Product {
   featured: boolean;
   createdAt: string;
   updatedAt: string;
+  // Optional form/order related fields used by admin editor
+  productType?: string;
+  size?: string;
+  bahan?: string;
+  bahanOptions?: string[];
+  kualitas?: string;
+  kualitasOptions?: string[];
+  ketebalan?: string;
+  ketebalanOptions?: string[];
+  ukuran?: string;
+  ukuranOptions?: string[];
+  warnaBackground?: string;
+  designFileUrl?: string;
+  customTexts?: Array<{ text: string; placement: string; position: string; color: string }>;
+  notesWysiwyg?: string;
 }
 
 export interface ProductCategory {
