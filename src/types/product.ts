@@ -17,6 +17,7 @@ export interface Product {
   description: string;
   longDescription?: string;
   images: string[];
+  features?: string[];
   category: string;
   subcategory?: string;
   tags: string[];

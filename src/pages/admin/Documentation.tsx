@@ -408,7 +408,7 @@ const homeContent = getPageContent('home');`}
                     <h4 className="font-semibold">2. Deploy with CanvaStencil</h4>
                     <ol className="list-decimal list-inside space-y-2 ml-4 mt-2">
                       <li>Click the <strong>"Publish"</strong> button in CanvaStencil</li>
-                      <li>Your site will be deployed to <code className="bg-muted px-2 py-1 rounded text-sm">yoursite.lovable.app</code></li>
+                      <li>Your site will be deployed to <code className="bg-muted px-2 py-1 rounded text-sm">yoursite.canvastencil.app</code></li>
                       <li>SSL certificate is automatically configured</li>
                       <li>Changes go live immediately</li>
                     </ol>

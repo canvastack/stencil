@@ -6,7 +6,17 @@
     "description": "Nameplate stainless steel dengan pola geometris yang rumit dan presisi tinggi.",
     "longDescription": "Nameplate stainless steel premium dengan laser etching presisi tinggi. Tahan karat, cocok untuk aplikasi industrial dan marking permanen. Material grade 304 dengan finishing brushed atau mirror.",
     "images": [
-      "/images/products/metal-etching-1.jpg"
+      "/images/products/metal-etching-1.jpg",
+      "/images/products/metal-etching-2.jpg",
+      "/images/products/metal-etching-3.jpg"
+    ],
+    "features": [
+      "Laser etching presisi tinggi dengan detail sempurna",
+      "Material stainless steel grade 304 tahan karat",
+      "Pilihan finishing brushed atau mirror polish",
+      "Tahan terhadap cuaca ekstrem dan korosi",
+      "Cocok untuk outdoor dan indoor application",
+      "Permanent marking yang tidak akan luntur"
     ],
     "category": "industrial",
     "subcategory": "Metal Etching",
@@ -42,7 +52,17 @@
     "description": "Trophy kaca premium dengan etching logo perusahaan untuk penghargaan korporat.",
     "longDescription": "Trophy kaca premium dengan laser etching logo dan text. Cocok untuk penghargaan korporat, achievement awards, dan event special. Kaca tebal dengan finishing edges polished.",
     "images": [
-      "/images/products/glass-etching-1.jpg"
+      "/images/products/glass-etching-1.jpg",
+      "/images/products/glass-etching-2.jpg",
+      "/images/products/glass-etching-3.jpg"
+    ],
+    "features": [
+      "Clear glass premium dengan kejernihan tinggi",
+      "Laser etching logo dan text custom",
+      "Polished safety edge untuk keamanan maksimal",
+      "Base kayu premium included",
+      "Perfect untuk corporate awards dan employee recognition",
+      "Packaging eksklusif dengan premium gift box"
     ],
     "category": "corporate",
     "subcategory": "Glass Awards",
@@ -82,7 +102,17 @@
     "description": "Plakat memorial kuningan dengan border ornamen elegan dan base kayu solid.",
     "longDescription": "Plakat memorial brass premium dengan laser etching presisi. Border ornamen dekoratif dan base kayu solid oak. Cocok untuk penghargaan, memorial, dan appreciation corporate.",
     "images": [
-      "/images/products/award-plaque-1.jpg"
+      "/images/products/award-plaque-1.jpg",
+      "/images/products/award-plaque-2.jpg",
+      "/images/products/award-plaque-3.jpg"
+    ],
+    "features": [
+      "Premium brass dengan ornamen border dekoratif",
+      "Solid oak wood base dengan pilihan warna finishing",
+      "Laser etching presisi untuk text dan logo",
+      "Polished brass finish untuk tampilan mewah",
+      "Ukuran ideal 30x20cm untuk display",
+      "Ready to hang dengan mounting hardware included"
     ],
     "category": "corporate",
     "subcategory": "Memorial Plaques",
@@ -163,7 +193,17 @@
     "description": "Vas crystal dengan pola floral etching halus, cocok untuk dekorasi rumah mewah.",
     "longDescription": "Vas crystal luxury dengan laser etching pola floral halus dan elegant. Lead crystal grade premium dengan clarity tinggi. Perfect untuk dekorasi rumah mewah dan hadiah ekslusif.",
     "images": [
-      "/images/products/glass-etching-2.jpg"
+      "/images/products/glass-etching-2.jpg",
+      "/images/products/glass-etching-1.jpg",
+      "/images/products/glass-etching-3.jpg"
+    ],
+    "features": [
+      "Lead crystal AAA grade dengan kejernihan sempurna",
+      "Laser etching pola floral halus dan elegant",
+      "Tinggi 30cm diameter 15cm ukuran ideal",
+      "Pilihan pattern: Floral, Geometric, atau Classic",
+      "Personalisasi message untuk gift special",
+      "Premium gift box packaging included"
     ],
     "category": "decorative",
     "subcategory": "Crystal Vases",
@@ -203,7 +243,17 @@
     "description": "Plakat pengakuan korporat dengan plate metal dan frame kayu premium.",
     "longDescription": "Plakat pengakuan korporat dengan metal plate laser etching dan frame kayu premium. Cocok untuk employee recognition, achievement awards, dan corporate appreciation programs.",
     "images": [
-      "/images/products/award-plaque-2.jpg"
+      "/images/products/award-plaque-2.jpg",
+      "/images/products/award-plaque-1.jpg",
+      "/images/products/award-plaque-3.jpg"
+    ],
+    "features": [
+      "Metal plate pilihan: Brass, Stainless Steel, atau Aluminum",
+      "Premium wood frame dengan 3 pilihan warna",
+      "Laser etching precision untuk text dan logo",
+      "Ukuran 25x35cm ideal untuk corporate display",
+      "Wall mount ready dengan mounting hardware",
+      "Full customization text dan logo upload"
     ],
     "category": "corporate",
     "subcategory": "Recognition Plaques",
@@ -285,7 +335,17 @@
     "description": "Panel kaca pintu dengan pola geometris etching untuk interior arsitektur modern.",
     "longDescription": "Panel kaca pintu dengan laser etching pola geometris modern. Tempered glass untuk keamanan maksimal. Perfect untuk office partition, bathroom door, atau interior modern residential.",
     "images": [
-      "/images/products/glass-etching-3.jpg"
+      "/images/products/glass-etching-3.jpg",
+      "/images/products/glass-etching-2.jpg",
+      "/images/products/glass-etching-1.jpg"
+    ],
+    "features": [
+      "Tempered safety glass 12mm untuk keamanan maksimal",
+      "Laser etching pola geometris modern",
+      "Custom size sesuai kebutuhan pintu Anda",
+      "Pilihan pattern: Geometric, Minimalist, Art Deco, Custom",
+      "Frosted coverage: Full, Partial, atau Border Only",
+      "Perfect untuk office partition dan residential door"
     ],
     "category": "decorative",
     "subcategory": "Glass Panels",

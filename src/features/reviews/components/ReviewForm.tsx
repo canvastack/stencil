@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { Star } from "lucide-react";
+import { RatingStars } from "@/components/ui/rating-stars";
 
 interface ReviewFormProps {
   onSubmit: (review: { rating: number; comment: string }) => void;
@@ -10,7 +10,6 @@ interface ReviewFormProps {
 export function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [hoveredRating, setHoveredRating] = useState(0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,26 +22,13 @@ export function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium mb-2">Rating</label>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => setRating(star)}
-              onMouseEnter={() => setHoveredRating(star)}
-              onMouseLeave={() => setHoveredRating(0)}
-              className="focus:outline-none"
-            >
-              <Star
-                className={`w-6 h-6 ${
-                  star <= (hoveredRating || rating)
-                    ? "fill-primary text-primary"
-                    : "text-muted"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
+        <RatingStars 
+          rating={rating} 
+          size="lg" 
+          interactive={true} 
+          onRatingChange={setRating}
+          showValue={false}
+        />
       </div>
 
       <div>

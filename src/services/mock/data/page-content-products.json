@@ -1,25 +1,19 @@
 {
-  "id": "page-products-1",
-  "pageSlug": "products",
-  "status": "published",
-  "publishedAt": "2024-01-01T00:00:00.000Z",
-  "version": 1,
-  "previousVersion": null,
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z",
-  "updatedBy": null,
-  "content": {
-    "hero": {
+  "pageId": "products",
+  "pageName": "Products Page",
+  "hero": {
     "title": {
       "prefix": "Semua",
-      "highlight": "Produk"
+      "highlight": "Produk",
+      "suffix": ""
     },
     "subtitle": "Temukan produk etching berkualitas tinggi dengan presisi sempurna untuk kebutuhan Anda.",
     "typingTexts": [
-      "Presisi tinggi untuk hasil sempurna",
-      "Kualitas terbaik dengan harga kompetitif",
-      "Teknologi modern untuk desain custom Anda",
-      "Pengalaman 15+ tahun melayani klien"
+      "Presisi Tinggi dengan Teknologi Laser Terkini",
+      "Kualitas Premium untuk Setiap Detail",
+      "Solusi Custom Sesuai Kebutuhan Anda",
+      "Pengalaman 15+ Tahun di Industri Etching",
+      "Gratis Konsultasi Design & Material"
     ]
   },
   "informationSection": {
@@ -108,6 +102,16 @@
         }
       ]
     }
-  ]
+  ],
+  "seo": {
+    "title": "Produk Etching Berkualitas - Metal, Glass & Plakat | Stencil",
+    "description": "Temukan produk etching terbaik untuk metal, glass, dan plakat penghargaan. Presisi tinggi, kustomisasi penuh, dan kualitas premium.",
+    "keywords": [
+      "etching metal",
+      "etching kaca",
+      "plakat penghargaan",
+      "laser etching",
+      "custom etching"
+    ]
   }
 }

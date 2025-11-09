@@ -64,31 +64,17 @@ import Footer from "@/components/Footer";
 import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart } from "lucide-react";
 import { APP_CONFIG, TYPING_TEXTS } from "@/lib/constants";
 import { useProducts } from '@/hooks/useProducts';
+import { useReviews } from '@/hooks/useReviews.tsx';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Product } from "@/types/product";
 import { getPageContent } from "@/services/mock/pages";
+import { RatingStars } from "@/components/ui/rating-stars";
 
-import metalEtching1 from "@/assets/products/metal-etching-1.jpg";
-import metalEtching2 from "@/assets/products/metal-etching-2.jpg";
-import metalEtching3 from "@/assets/products/metal-etching-3.jpg";
-import glassEtching1 from "@/assets/products/glass-etching-1.jpg";
-import glassEtching2 from "@/assets/products/glass-etching-2.jpg";
-import glassEtching3 from "@/assets/products/glass-etching-3.jpg";
-import awardPlaque1 from "@/assets/products/award-plaque-1.jpg";
-import awardPlaque2 from "@/assets/products/award-plaque-2.jpg";
-import awardPlaque3 from "@/assets/products/award-plaque-3.jpg";
-import titaniumAerospace1 from "@/assets/products/titanium-aerospace-1.jpg";
-import wineGlassSet1 from "@/assets/products/wine-glass-set-1.jpg";
-import crystalAward1 from "@/assets/products/crystal-award-1.jpg";
-import brassDoorSign1 from "@/assets/products/brass-door-sign-1.jpg";
-import mirrorFrame1 from "@/assets/products/mirror-frame-1.jpg";
-import retirementPlaque1 from "@/assets/products/retirement-plaque-1.jpg";
-import controlPanel1 from "@/assets/products/control-panel-1.jpg";
-import bathroomMirror1 from "@/assets/products/bathroom-mirror-1.jpg";
-import lifetimeTrophy1 from "@/assets/products/lifetime-trophy-1.jpg";
+
 
 const Products = () => {
   const { products: cmsProducts, loading: loadingProducts } = useProducts();
+  const { reviews: allReviews, loading: loadingReviews } = useReviews();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -102,27 +88,6 @@ const Products = () => {
   const { PRODUCTS_PER_PAGE } = APP_CONFIG;
 
   const cmsPageContent = getPageContent('products');
-  
-  // const hardcodedPageContent: PageContent = {
-  //   hero: {
-  //     title: { prefix: "Semua", highlight: "Produk" },
-  //     subtitle: "Temukan produk etching berkualitas tinggi dengan presisi sempurna untuk kebutuhan Anda.",
-  //     typingTexts: TYPING_TEXTS
-  //   },
-  //   informationSection: {
-  //     title: { prefix: "Layanan", highlight: "Etching", suffix: "Kami" },
-  //     subtitle: "Tiga kategori utama produk etching dengan kualitas terbaik dan presisi tinggi",
-  //     cards: [
-  //       { title: "Etching Logam", description: "Stainless steel, kuningan, tembaga, aluminium untuk berbagai aplikasi industri dan dekorasi.", features: ["Presisi tinggi", "Tahan lama", "Kustomisasi penuh"], icon: "⚙️", buttonText: "Pelajari Lebih Lanjut" },
-  //       { title: "Etching Kaca", description: "Kaca berkualitas tinggi dengan hasil etching yang halus dan elegan untuk interior dan hadiah.", features: ["Desain artistik", "Food-grade safe", "Transparan premium"], icon: "🏆", buttonText: "Pelajari Lebih Lanjut" },
-  //       { title: "Plakat Penghargaan", description: "Plakat custom untuk penghargaan perusahaan, acara, dan apresiasi dengan desain profesional.", features: ["Desain eksklusif", "Material premium", "Personalisasi lengkap"], icon: "🎖️", buttonText: "Pelajari Lebih Lanjut" }
-  //     ]
-  //   },
-  //   ctaSections: [
-  //     { id: "cta-1", title: "Siap Mewujudkan Proyek Anda?", subtitle: "Hubungi kami sekarang dan dapatkan konsultasi gratis untuk proyek etching Anda", stats: [{ value: "1000+", label: "Produk" }, { value: "15+", label: "Tahun Pengalaman" }, { value: "98%", label: "Tingkat Kepuasan" }], buttons: [{ text: "Hubungi Kami", variant: "primary" as const, icon: "Phone" }, { text: "Lihat Produk Kami", variant: "outline" as const, icon: "Target" }] },
-  //     { id: "cta-2", title: "Punya Pertanyaan atau Siap Memulai?", subtitle: "Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda.", buttons: [{ text: "Hubungi Tim Kami", variant: "primary" as const }] }
-  //   ]
-  // };
 
   const defaultPageContent: PageContent = {
     hero: {
@@ -155,27 +120,6 @@ const Products = () => {
     return () => clearInterval(interval);
   }, [typingTexts]);
 
-  // const hardcodedProducts = [
-  //   { id: "1", name: "Nameplate Stainless Steel Premium", image: metalEtching1, type: "metal", category: "industrial", rating: 5, description: "Nameplate stainless steel dengan pola geometris yang rumit dan presisi tinggi." },
-  //   { id: "2", name: "Glass Award Trophy Premium", image: glassEtching1, price: "Rp 450.000", type: "glass", category: "corporate", rating: 5, description: "Trophy kaca premium dengan etching logo perusahaan untuk penghargaan korporat." },
-  //   { id: "3", name: "Memorial Brass Plaque Deluxe", image: awardPlaque1, price: "Rp 650.000", type: "award", category: "corporate", rating: 5, description: "Plakat memorial kuningan dengan border ornamen elegan dan base kayu solid." },
-  //   { id: "4", name: "Copper Decorative Panel Artistic", image: metalEtching2, type: "metal", category: "decorative", rating: 4.5, description: "Panel dekoratif tembaga dengan pola botanical artistik untuk interior modern." },
-  //   { id: "5", name: "Etched Crystal Vase Luxury", image: glassEtching2, price: "Rp 550.000", type: "glass", category: "decorative", rating: 5, description: "Vas crystal dengan pola floral etching halus, cocok untuk dekorasi rumah mewah." },
-  //   { id: "6", name: "Corporate Recognition Plaque", image: awardPlaque2, price: "Rp 500.000", type: "award", category: "corporate", rating: 5, description: "Plakat pengakuan korporat dengan plate metal dan frame kayu premium." },
-  //   { id: "7", name: "Industrial Signage Aluminum", image: metalEtching3, type: "metal", category: "industrial", rating: 4.5, description: "Signage industrial aluminum dengan marking teknis presisi untuk aplikasi industri." },
-  //   { id: "8", name: "Frosted Glass Door Panel", image: glassEtching3, price: "Rp 1.200.000", type: "glass", category: "decorative", rating: 5, description: "Panel kaca pintu dengan pola geometris etching untuk interior arsitektur modern." },
-  //   { id: "9", name: "Championship Sports Trophy", image: awardPlaque3, price: "Rp 750.000", type: "award", category: "corporate", rating: 5, description: "Trophy olahraga custom dengan logo tim dan detail kejuaraan yang presisi." },
-  //   { id: "10", name: "Titanium Aerospace Plate", image: titaniumAerospace1, price: "Rp 950.000", type: "metal", category: "industrial", rating: 5, description: "Plate titanium grade aerospace dengan marking presisi untuk aplikasi high-tech." },
-  //   { id: "11", name: "Engraved Wine Glass Set", image: wineGlassSet1, type: "glass", category: "decorative", rating: 4.5, description: "Set gelas wine dengan etching monogram elegan untuk hadiah premium." },
-  //   { id: "12", name: "Excellence Award Crystal", image: crystalAward1, price: "Rp 890.000", type: "award", category: "corporate", rating: 5, description: "Crystal award prestisius dengan etching 3D untuk penghargaan tertinggi." },
-  //   { id: "13", name: "Brass Door Sign Custom", image: brassDoorSign1, type: "metal", category: "decorative", rating: 4.5, description: "Papan nama pintu kuningan dengan border dekoratif dan teks custom." },
-  //   { id: "14", name: "Decorative Mirror Frame", image: mirrorFrame1, price: "Rp 680.000", type: "glass", category: "decorative", rating: 5, description: "Frame cermin dengan pola etching art deco untuk interior luxury." },
-  //   { id: "15", name: "Retirement Achievement Plaque", image: retirementPlaque1, price: "Rp 720.000", type: "award", category: "corporate", rating: 5, description: "Plakat pensiun dengan desain elegan dan personalisasi nama serta tanggal." },
-  //   { id: "16", name: "Control Panel Marking", image: controlPanel1, type: "metal", category: "industrial", rating: 4.5, description: "Marking panel kontrol dengan simbol teknis dan label yang jelas dan tahan lama." },
-  //   { id: "17", name: "Decorative Bathroom Mirror", image: bathroomMirror1, price: "Rp 580.000", type: "glass", category: "decorative", rating: 5, description: "Cermin kamar mandi dengan etching border dekoratif dan anti-fog coating." },
-  //   { id: "18", name: "Lifetime Achievement Trophy", image: lifetimeTrophy1, price: "Rp 1.500.000", type: "award", category: "corporate", rating: 5, description: "Trophy prestise untuk lifetime achievement dengan desain mewah dan elegant." },
-  // ];
-
   const allProducts: ExtendedProduct[] = cmsProducts;
 
   const formatPrice = (price: number, currency: string): string => {
@@ -188,7 +132,14 @@ const Products = () => {
   };
 
   const getProductRating = (productId: string): number => {
-    return 5; // Default rating since we're using CMS products now
+    const productReviews = allReviews.filter(review => review.productId === productId);
+    
+    if (productReviews.length === 0) {
+      return 0;
+    }
+    
+    const sum = productReviews.reduce((acc, review) => acc + review.rating, 0);
+    return parseFloat((sum / productReviews.length).toFixed(1));
   };
 
   const filteredProducts = allProducts.filter((product) => {
@@ -283,9 +234,9 @@ const Products = () => {
                 </SelectTrigger>
                 <SelectContent className="bg-[#1e293b] border-slate-700">
                   <SelectItem value="all">Semua Produk</SelectItem>
-                  <SelectItem value="metal">Etching Logam</SelectItem>
-                  <SelectItem value="glass">Etching Kaca</SelectItem>
-                  <SelectItem value="award">Plakat</SelectItem>
+                  <SelectItem value="metal">Metal Etching</SelectItem>
+                  <SelectItem value="glass">Glass Etching</SelectItem>
+                  <SelectItem value="award">Awards & Plaques</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -363,9 +314,9 @@ const Products = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e293b] border-slate-700">
                       <SelectItem value="all">Semua Tipe</SelectItem>
-                      <SelectItem value="metal">Etching Logam</SelectItem>
-                      <SelectItem value="glass">Etching Kaca</SelectItem>
-                      <SelectItem value="award">Plakat Penghargaan</SelectItem>
+                      <SelectItem value="metal">Metal Etching</SelectItem>
+                      <SelectItem value="glass">Glass Etching</SelectItem>
+                      <SelectItem value="award">Awards & Plaques</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -449,7 +400,7 @@ const Products = () => {
 
             {/* Products Grid */}
             <div className="flex-1">
-              {loadingProducts ? (
+              {loadingProducts || loadingReviews ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
                   <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-full p-8 mb-6 animate-pulse">
                     <ShoppingCart className="w-16 h-16 text-primary" />
@@ -491,19 +442,7 @@ const Products = () => {
 
                           <div className="p-6">
                             {/* Rating */}
-                            <div className="flex items-center gap-1 mb-3">
-                              {[...Array(5)].map((_, idx) => (
-                                <Star
-                                  key={idx}
-                                  className={`w-4 h-4 ${
-                                    idx < Math.floor(rating)
-                                      ? "fill-primary text-primary"
-                                      : "text-muted"
-                                  }`}
-                                />
-                              ))}
-                              <span className="text-sm text-muted-foreground ml-1">({rating})</span>
-                            </div>
+                            <RatingStars rating={rating} size="sm" className="mb-3" />
 
                             <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors line-clamp-2">
                               {product.name}

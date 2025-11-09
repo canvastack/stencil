@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,441 +39,10 @@ import { Modal } from "@/components/ui/modal";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
-import { useProductReviews } from "@/hooks/useReviews";
-import { useProductBySlug } from "@/hooks/useProducts";
+import { useProductReviews, useReviews } from "@/hooks/useReviews.tsx";
+import { useProductBySlug, useProducts } from "@/hooks/useProducts";
 import { resolveImageUrl } from '@/utils/imageUtils';
-
-// Import product images
-import metalEtching1 from "@/assets/products/metal-etching-1.jpg";
-import metalEtching2 from "@/assets/products/metal-etching-2.jpg";
-import metalEtching3 from "@/assets/products/metal-etching-3.jpg";
-import glassEtching1 from "@/assets/products/glass-etching-1.jpg";
-import glassEtching2 from "@/assets/products/glass-etching-2.jpg";
-import glassEtching3 from "@/assets/products/glass-etching-3.jpg";
-import awardPlaque1 from "@/assets/products/award-plaque-1.jpg";
-import awardPlaque2 from "@/assets/products/award-plaque-2.jpg";
-import awardPlaque3 from "@/assets/products/award-plaque-3.jpg";
-import titaniumAerospace1 from "@/assets/products/titanium-aerospace-1.jpg";
-import wineGlassSet1 from "@/assets/products/wine-glass-set-1.jpg";
-import crystalAward1 from "@/assets/products/crystal-award-1.jpg";
-import brassDoorSign1 from "@/assets/products/brass-door-sign-1.jpg";
-import mirrorFrame1 from "@/assets/products/mirror-frame-1.jpg";
-import retirementPlaque1 from "@/assets/products/retirement-plaque-1.jpg";
-import controlPanel1 from "@/assets/products/control-panel-1.jpg";
-import bathroomMirror1 from "@/assets/products/bathroom-mirror-1.jpg";
-import lifetimeTrophy1 from "@/assets/products/lifetime-trophy-1.jpg";
-
-const allProducts = [
-  {
-    id: "1",
-    name: "Nameplate Stainless Steel Premium",
-    type: "metal",
-    category: "industrial",
-    rating: 5,
-    images: [metalEtching1, metalEtching2, metalEtching3],
-    description: "Nameplate stainless steel dengan pola geometris yang rumit, cocok untuk aplikasi industrial dan dekorasi premium. Material berkualitas tinggi dengan hasil etching presisi tinggi.",
-    features: [
-      "Material: Stainless Steel 304",
-      "Ketebalan: 0.5mm - 2mm",
-      "Finishing: Brushed/Mirror",
-      "Tahan korosi dan weathering",
-      "Presisi tinggi hingga 0.1mm"
-    ],
-    specifications: {
-      material: "Stainless Steel 304",
-      thickness: "0.5mm - 2mm",
-      minOrder: "10 pcs",
-      leadTime: "7-14 hari kerja"
-    }
-  },
-  {
-    id: "2",
-    name: "Glass Award Trophy Premium",
-    type: "glass",
-    category: "corporate",
-    price: "Rp 450.000",
-    rating: 5,
-    images: [glassEtching1, glassEtching2, glassEtching3],
-    description: "Trophy kaca premium dengan etching logo perusahaan, sempurna untuk penghargaan korporat. Kaca berkualitas tinggi dengan detail etching yang halus dan elegan.",
-    features: [
-      "Kaca Crystal Premium",
-      "Etching halus dan detail",
-      "Include base akrilik/kayu",
-      "Food-grade safe",
-      "Dapat dicuci dengan aman"
-    ],
-    specifications: {
-      material: "Crystal Glass",
-      thickness: "8mm - 12mm",
-      minOrder: "5 pcs",
-      leadTime: "10-14 hari kerja"
-    }
-  },
-  {
-    id: "3",
-    name: "Memorial Brass Plaque Deluxe",
-    type: "award",
-    category: "corporate",
-    price: "Rp 650.000",
-    rating: 5,
-    images: [awardPlaque1, awardPlaque2, awardPlaque3],
-    description: "Plakat memorial kuningan dengan border ornamen elegan dan ukiran teks yang presisi. Dilengkapi dengan base kayu untuk tampilan yang lebih mewah.",
-    features: [
-      "Material: Brass Premium",
-      "Base kayu solid",
-      "Border ornamen custom",
-      "Teks ukiran detail",
-      "Anti-tarnish coating"
-    ],
-    specifications: {
-      material: "Brass/Kuningan Premium",
-      baseSize: "15cm x 20cm",
-      minOrder: "1 pcs",
-      leadTime: "14-21 hari kerja"
-    }
-  },
-  {
-    id: "4",
-    name: "Copper Decorative Panel Artistic",
-    type: "metal",
-    category: "decorative",
-    rating: 4.5,
-    images: [metalEtching2, metalEtching1, metalEtching3],
-    description: "Panel dekoratif tembaga dengan pola botanical artistik. Finishing metalik kemerahan yang hangat, cocok untuk interior modern dan kontemporer.",
-    features: [
-      "Material: Pure Copper",
-      "Pola botanical artistik",
-      "Finishing anti-oxidation",
-      "Mounting hardware included",
-      "Custom design available"
-    ],
-    specifications: {
-      material: "Pure Copper 99.9%",
-      size: "60cm x 80cm",
-      minOrder: "1 pcs",
-      leadTime: "21-30 hari kerja"
-    }
-  },
-  {
-    id: "5",
-    name: "Etched Crystal Vase Luxury",
-    type: "glass",
-    category: "decorative",
-    price: "Rp 550.000",
-    rating: 5,
-    images: [glassEtching2, glassEtching1, glassEtching3],
-    description: "Vas crystal dengan pola floral etching yang halus. Transparansi sempurna dengan detail frosted yang elegan, cocok untuk dekorasi rumah mewah.",
-    features: [
-      "Crystal Glass Premium",
-      "Pola floral etching",
-      "Food-grade & dishwasher safe",
-      "Transparansi tinggi",
-      "Handcrafted quality"
-    ],
-    specifications: {
-      material: "Lead-free Crystal",
-      height: "25cm - 35cm",
-      minOrder: "3 pcs",
-      leadTime: "14-21 hari kerja"
-    }
-  },
-  {
-    id: "6",
-    name: "Corporate Recognition Plaque",
-    type: "award",
-    category: "corporate",
-    price: "Rp 500.000",
-    rating: 5,
-    images: [awardPlaque2, awardPlaque1, awardPlaque3],
-    description: "Plakat pengakuan korporat dengan plate metal yang di-etch detail pencapaian karyawan. Frame kayu elegan untuk setting kantor eksekutif.",
-    features: [
-      "Metal plate precision etching",
-      "Frame kayu premium",
-      "Mounting ready",
-      "Custom text & logo",
-      "Professional packaging"
-    ],
-    specifications: {
-      material: "Brass/Stainless Steel",
-      frameSize: "20cm x 25cm",
-      minOrder: "1 pcs",
-      leadTime: "10-14 hari kerja"
-    }
-  },
-  {
-    id: "7",
-    name: "Industrial Signage Aluminum",
-    type: "metal",
-    category: "industrial",
-    rating: 4.5,
-    images: [metalEtching3, metalEtching1, metalEtching2],
-    description: "Signage industrial aluminum dengan marking teknis presisi dan nomor seri. Brushed metal finish dengan estetika industrial modern yang bersih.",
-    features: [
-      "Aluminum 6061-T6",
-      "Brushed finish",
-      "UV & weather resistant",
-      "Serial numbering available",
-      "Industrial grade quality"
-    ],
-    specifications: {
-      material: "Aluminum 6061-T6",
-      thickness: "1mm - 3mm",
-      minOrder: "50 pcs",
-      leadTime: "7-10 hari kerja"
-    }
-  },
-  {
-    id: "8",
-    name: "Frosted Glass Door Panel",
-    type: "glass",
-    category: "decorative",
-    price: "Rp 1.200.000",
-    rating: 5,
-    images: [glassEtching3, glassEtching1, glassEtching2],
-    description: "Panel kaca pintu dengan pola geometris etching. Kaca frosted translucent dengan etching presisi untuk interior arsitektur modern dan kontemporer mewah.",
-    features: [
-      "Tempered glass 10mm",
-      "Pola geometris custom",
-      "Frosted translucent",
-      "Safety standard certified",
-      "Professional installation"
-    ],
-    specifications: {
-      material: "Tempered Glass",
-      size: "80cm x 200cm",
-      minOrder: "1 pcs",
-      leadTime: "30-45 hari kerja"
-    }
-  },
-  {
-    id: "9",
-    name: "Championship Sports Trophy",
-    type: "award",
-    category: "corporate",
-    price: "Rp 750.000",
-    rating: 5,
-    images: [awardPlaque3, awardPlaque1, awardPlaque2],
-    description: "Trophy olahraga custom dengan logo tim dan detail kejuaraan. Kombinasi metal dan kaca yang dipoles dengan setting podium kemenangan yang dramatis.",
-    features: [
-      "Metal & glass combination",
-      "Custom logo etching",
-      "Polished premium finish",
-      "Championship grade",
-      "Luxury gift box included"
-    ],
-    specifications: {
-      material: "Metal + Crystal Glass",
-      height: "30cm - 45cm",
-      minOrder: "1 pcs",
-      leadTime: "14-21 hari kerja"
-    }
-  },
-  {
-    id: "10",
-    name: "Titanium Aerospace Plate",
-    type: "metal",
-    category: "industrial",
-    price: "Rp 950.000",
-    rating: 5,
-    images: [titaniumAerospace1, metalEtching1, metalEtching2],
-    description: "Plate titanium grade aerospace dengan marking presisi untuk aplikasi high-tech dan industri dirgantara. Material ultra-ringan dengan kekuatan luar biasa.",
-    features: [
-      "Material: Titanium Grade 5",
-      "Laser etching presisi",
-      "Corrosion resistant",
-      "Aerospace certified",
-      "Ultra-lightweight"
-    ],
-    specifications: {
-      material: "Titanium Grade 5 (Ti-6Al-4V)",
-      thickness: "0.8mm - 2mm",
-      minOrder: "5 pcs",
-      leadTime: "21-30 hari kerja"
-    }
-  },
-  {
-    id: "11",
-    name: "Engraved Wine Glass Set",
-    type: "glass",
-    category: "decorative",
-    rating: 4.5,
-    images: [wineGlassSet1, glassEtching1, glassEtching2],
-    description: "Set gelas wine dengan etching monogram elegan. Crystal clear dengan detail frosted sempurna untuk hadiah premium atau koleksi pribadi.",
-    features: [
-      "Set 4 atau 6 gelas",
-      "Monogram custom etching",
-      "Crystal clear glass",
-      "Dishwasher safe",
-      "Luxury gift box"
-    ],
-    specifications: {
-      material: "Lead-free Crystal Glass",
-      capacity: "350ml - 500ml",
-      minOrder: "1 set (4 pcs)",
-      leadTime: "10-14 hari kerja"
-    }
-  },
-  {
-    id: "12",
-    name: "Excellence Award Crystal",
-    type: "award",
-    category: "corporate",
-    price: "Rp 890.000",
-    rating: 5,
-    images: [crystalAward1, awardPlaque1, awardPlaque2],
-    description: "Crystal award prestisius dengan etching 3D dan prismatic effect. Trophy eksklusif untuk penghargaan tertinggi dan pencapaian luar biasa.",
-    features: [
-      "3D etching technology",
-      "Optical crystal premium",
-      "Prismatic light effects",
-      "Crystal clear base",
-      "Velvet presentation case"
-    ],
-    specifications: {
-      material: "Optical Crystal K9",
-      height: "25cm - 35cm",
-      minOrder: "1 pcs",
-      leadTime: "14-21 hari kerja"
-    }
-  },
-  {
-    id: "13",
-    name: "Brass Door Sign Custom",
-    type: "metal",
-    category: "decorative",
-    rating: 4.5,
-    images: [brassDoorSign1, metalEtching2, metalEtching1],
-    description: "Papan nama pintu kuningan dengan border dekoratif ornamental dan teks custom. Finishing glossy yang tahan lama untuk interior dan eksterior.",
-    features: [
-      "Solid brass construction",
-      "Ornamental border design",
-      "Weather resistant coating",
-      "Custom text engraving",
-      "Mounting screws included"
-    ],
-    specifications: {
-      material: "Solid Brass",
-      size: "15cm x 10cm - 30cm x 20cm",
-      minOrder: "1 pcs",
-      leadTime: "7-10 hari kerja"
-    }
-  },
-  {
-    id: "14",
-    name: "Decorative Mirror Frame",
-    type: "glass",
-    category: "decorative",
-    price: "Rp 680.000",
-    rating: 5,
-    images: [mirrorFrame1, glassEtching2, glassEtching3],
-    description: "Frame cermin dengan pola etching art deco geometris. Desain elegant untuk interior luxury dengan detail frosted yang presisi dan simetris.",
-    features: [
-      "Art deco design",
-      "Precision geometric etching",
-      "Beveled mirror edges",
-      "Wall mounting ready",
-      "Modern luxury style"
-    ],
-    specifications: {
-      material: "Mirror Glass + Etched Border",
-      size: "60cm x 80cm - 100cm x 150cm",
-      minOrder: "1 pcs",
-      leadTime: "21-30 hari kerja"
-    }
-  },
-  {
-    id: "15",
-    name: "Retirement Commemoration Plaque",
-    type: "award",
-    category: "corporate",
-    price: "Rp 580.000",
-    rating: 5,
-    images: [retirementPlaque1, awardPlaque2, awardPlaque1],
-    description: "Plakat pensiun dengan foto etching dan teks personalisasi lengkap. Brass plate on premium wood base untuk menghormati dedikasi karir.",
-    features: [
-      "Photo etching capability",
-      "Personalized text",
-      "Premium wood base",
-      "Brass nameplate",
-      "Professional packaging"
-    ],
-    specifications: {
-      material: "Brass Plate + Mahogany Base",
-      size: "20cm x 25cm",
-      minOrder: "1 pcs",
-      leadTime: "14-21 hari kerja"
-    }
-  },
-  {
-    id: "16",
-    name: "Stainless Control Panel",
-    type: "metal",
-    category: "industrial",
-    price: "Rp 420.000",
-    rating: 4.5,
-    images: [controlPanel1, metalEtching3, metalEtching1],
-    description: "Panel kontrol stainless dengan marking tombol dan instruksi teknis. Brushed finish dengan etching tahan lama untuk lingkungan industrial.",
-    features: [
-      "Stainless steel 316",
-      "Button label etching",
-      "UV & chemical resistant",
-      "Custom layout design",
-      "Industrial grade"
-    ],
-    specifications: {
-      material: "Stainless Steel 316",
-      thickness: "1.5mm - 3mm",
-      minOrder: "10 pcs",
-      leadTime: "14-21 hari kerja"
-    }
-  },
-  {
-    id: "17",
-    name: "Bathroom Mirror Etched",
-    type: "glass",
-    category: "decorative",
-    price: "Rp 1.500.000",
-    rating: 5,
-    images: [bathroomMirror1, glassEtching3, glassEtching1],
-    description: "Cermin kamar mandi besar dengan border etching ornamental. Anti-fog coating dan LED backlight ready untuk luxury bathroom.",
-    features: [
-      "Large format mirror",
-      "Ornamental border etching",
-      "Anti-fog coating",
-      "LED backlight compatible",
-      "Professional installation"
-    ],
-    specifications: {
-      material: "Mirror Glass 6mm + Etching",
-      size: "100cm x 150cm - 150cm x 200cm",
-      minOrder: "1 pcs",
-      leadTime: "30-45 hari kerja"
-    }
-  },
-  {
-    id: "18",
-    name: "Lifetime Achievement Trophy",
-    type: "award",
-    category: "corporate",
-    price: "Rp 1.200.000",
-    rating: 5,
-    images: [lifetimeTrophy1, awardPlaque3, awardPlaque1],
-    description: "Trophy prestasi seumur hidup dengan kombinasi premium metal, crystal glass, dan granite base. Ultimate recognition award dengan kemewahan maksimal.",
-    features: [
-      "Metal & crystal combination",
-      "Granite base premium",
-      "24K gold plating option",
-      "3D logo etching",
-      "Luxury wooden case"
-    ],
-    specifications: {
-      material: "Bronze/Crystal + Granite",
-      height: "40cm - 60cm",
-      minOrder: "1 pcs",
-      leadTime: "21-30 hari kerja"
-    }
-  },
-];
+import { RatingStars } from "@/components/ui/rating-stars";
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -492,47 +61,18 @@ const ProductDetail = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const isPreview = searchParams.get('preview') === 'true';
   
-  // Get draft data from sessionStorage if in preview mode
   const draftProduct = isPreview ? JSON.parse(sessionStorage.getItem('productDraft') || 'null') : null;
   const { product: cmsProduct, loading: loadingProduct } = useProductBySlug(slug || '');
-
-  const hardcodedProduct = allProducts.find(p => 
-    p.name.toLowerCase().replace(/\s+/g, '-') === slug
-  );
-
-  // Use draft data in preview mode, otherwise use normal product data
-  // Get reviews for current product
-  const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(slug || '');
   
-  const product = draftProduct || cmsProduct || (hardcodedProduct ? {
-    id: hardcodedProduct.id,
-    name: hardcodedProduct.name,
-    slug: hardcodedProduct.name.toLowerCase().replace(/\s+/g, '-'),
-    description: hardcodedProduct.description,
-    longDescription: hardcodedProduct.features?.join('\n'),
-    images: hardcodedProduct.images.map(img => {
-      if (typeof img === 'string') {
-        // Handle imported images vs string paths differently
-        return img.startsWith('/') ? resolveImageUrl(img, { preview: isPreview }) : img;
-      }
-      return img;
-    }),
-    category: hardcodedProduct.category,
-    tags: [hardcodedProduct.type],
-    material: hardcodedProduct.specifications?.material || hardcodedProduct.type,
-    price: hardcodedProduct.price ? parseInt(hardcodedProduct.price.replace(/\D/g, '')) : 0,
-    currency: "IDR" as const,
-    priceUnit: "per pcs",
-    minOrder: hardcodedProduct.specifications?.minOrder ? parseInt(hardcodedProduct.specifications.minOrder.replace(/\D/g, '')) : 1,
-    specifications: hardcodedProduct.features?.map(f => ({ key: f.split(':')[0], value: f.split(':')[1]?.trim() || f })) || [],
-    customizable: true,
-    inStock: true,
-    leadTime: hardcodedProduct.specifications?.leadTime || "5-7 hari kerja",
-    status: 'published' as const,
-    featured: hardcodedProduct.rating >= 5,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  } : null);
+  const product = draftProduct || cmsProduct;
+  
+  const { reviews: allReviews = [] } = useReviews();
+  const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(product?.id || '');
+  
+  const { products: allProductsForRelated = [] } = useProducts({ 
+    category: product?.category,
+    limit: 4
+  });
   const [reviewSort, setReviewSort] = useState<'rating-high' | 'rating-low' | 'newest' | 'oldest'>('newest');
 
   const sortedReviews = [...productReviews].sort((a, b) => {
@@ -579,6 +119,10 @@ const ProductDetail = () => {
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [slug]);
 
   if (loadingProduct) {
     return (
@@ -739,13 +283,9 @@ const ProductDetail = () => {
     });
   };
 
-  // Get related products based on same category/type
-  const relatedProducts = allProducts
-    .filter(p => 
-      p.id !== product.id && // Exclude current product
-      (p.category === product.category || p.type === product.type) // Same category or type
-    )
-    .slice(0, 3); // Limit to 3 related products
+  const relatedProducts = allProductsForRelated
+    .filter(p => p.id !== product?.id)
+    .slice(0, 3);
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('id-ID', {
@@ -932,19 +472,7 @@ const ProductDetail = () => {
             {/* Product Details & Order Form */}
             <div className="space-y-6">
               <div>
-                <div className="flex items-center gap-2 mb-3">
-                  {[...Array(5)].map((_, idx) => (
-                    <Star
-                      key={idx}
-                      className={`w-5 h-5 ${
-                        idx < Math.floor(averageRating)
-                          ? "fill-primary text-primary"
-                          : "text-muted"
-                      }`}
-                    />
-                  ))}
-                  <span className="text-sm text-muted-foreground">({averageRating.toFixed(1)})</span>
-                </div>
+                <RatingStars rating={averageRating} size="md" className="mb-3" />
 
                 <h1 className="text-4xl font-bold text-foreground mb-4">{product.name}</h1>
                 <p className="text-2xl font-bold text-primary mb-4">{formatPrice(product.price, product.currency)}</p>
@@ -1304,18 +832,7 @@ const ProductDetail = () => {
                 <div className="flex flex-col md:flex-row gap-8 mb-8 pb-8 border-b border-border">
                   <div className="text-center md:text-left">
                     <div className="text-6xl font-bold text-primary mb-2">{averageRating.toFixed(1)}</div>
-                    <div className="flex items-center justify-center md:justify-start gap-1 mb-2">
-                      {[...Array(5)].map((_, idx) => (
-                        <Star
-                          key={idx}
-                          className={`w-5 h-5 ${
-                            idx < Math.floor(averageRating)
-                              ? "fill-primary text-primary"
-                              : "text-muted"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    <RatingStars rating={averageRating} size="md" showValue={false} className="justify-center md:justify-start mb-2" />
                     <p className="text-sm text-muted-foreground">Berdasarkan {sortedReviews.length} ulasan</p>
                   </div>
                   
@@ -1368,18 +885,7 @@ const ProductDetail = () => {
                               )}
                             </div>
                             <div className="flex items-center gap-2 mt-1">
-                              <div className="flex gap-0.5">
-                                {[...Array(5)].map((_, starIdx) => (
-                                  <Star
-                                    key={starIdx}
-                                    className={`w-4 h-4 ${
-                                      starIdx < review.rating
-                                        ? "fill-primary text-primary"
-                                        : "text-muted"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                              <RatingStars rating={review.rating} size="sm" showValue={false} />
                               <span className="text-xs text-muted-foreground">{review.date}</span>
                             </div>
                           </div>
@@ -1403,54 +909,51 @@ const ProductDetail = () => {
               <Card className="p-6 border-border bg-card shadow-xl sticky top-32">
                 <h3 className="text-2xl font-bold text-foreground mb-6">Produk Terkait</h3>
                 <div className="space-y-4">
-                  {relatedProducts.map((relatedProduct) => (
-                    <Card
-                      key={relatedProduct.id}
-                      className="group cursor-pointer overflow-hidden border-border hover:border-primary transition-all duration-300 hover:shadow-lg"
-                      onClick={() => navigate(`/products/${relatedProduct.id}`)}
-                    >
-                      <div className="aspect-video relative overflow-hidden bg-muted">
-                        <img
-                          src={resolveImageUrl(relatedProduct.images[0], { preview: isPreview })}
-                          alt={relatedProduct.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h4 className="font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                          {relatedProduct.name}
-                        </h4>
-                        <div className="flex items-center gap-1 mb-2">
-                          {[...Array(5)].map((_, idx) => (
-                            <Star
-                              key={idx}
-                              className={`w-3 h-3 ${
-                                idx < Math.floor(relatedProduct.rating)
-                                  ? "fill-primary text-primary"
-                                  : "text-muted"
-                              }`}
-                            />
-                          ))}
-                          <span className="text-xs text-muted-foreground ml-1">
-                            ({relatedProduct.rating})
-                          </span>
+                  {relatedProducts.map((relatedProduct) => {
+                    const relatedReviews = allReviews.filter(r => r.productId === relatedProduct.id);
+                    const relatedRating = relatedReviews.length 
+                      ? relatedReviews.reduce((sum, r) => sum + r.rating, 0) / relatedReviews.length 
+                      : 0;
+                    
+                    return (
+                      <Card
+                        key={relatedProduct.id}
+                        className="group cursor-pointer overflow-hidden border-border hover:border-primary transition-all duration-300 hover:shadow-lg"
+                        onClick={() => navigate(`/products/${relatedProduct.slug}`)}
+                      >
+                        <div className="aspect-video relative overflow-hidden bg-muted">
+                          <img
+                            src={resolveImageUrl(relatedProduct.images[0], { preview: isPreview })}
+                            alt={relatedProduct.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {relatedProduct.description}
-                        </p>
-                        <Button
-                          size="sm"
-                          className="w-full mt-3 bg-primary hover:bg-primary/90"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/products/${relatedProduct.id}`);
-                          }}
-                        >
-                          Lihat Detail
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
+                        <div className="p-4">
+                          <h4 className="font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                            {relatedProduct.name}
+                          </h4>
+                          {relatedRating > 0 && (
+                            <div className="mb-2">
+                              <RatingStars rating={relatedRating} size="sm" className="text-xs" showValue={true} />
+                            </div>
+                          )}
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {relatedProduct.description}
+                          </p>
+                          <Button
+                            size="sm"
+                            className="w-full mt-3 bg-primary hover:bg-primary/90"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/products/${relatedProduct.slug}`);
+                            }}
+                          >
+                            Lihat Detail
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
 
                   {relatedProducts.length === 0 && (
                     <div className="text-center py-8">

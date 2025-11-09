@@ -57,7 +57,7 @@ export function Modal({
                 type="button"
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
-                className="bg-background/50 hover:bg-background/70 border-border/50"
+                className="bg-background/50 hover:bg-background/70 border-border/50 hover:text-primary"
               >
                 {cancelLabel}
               </Button>
