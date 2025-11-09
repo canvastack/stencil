@@ -167,11 +167,21 @@ export default function ProductEditor() {
             onClick={() => {
               // Generate a temporary slug for new products
               const previewSlug = formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-');
-              // Use BASE_URL from environment for proper path resolution
-              const baseUrl = import.meta.env.BASE_URL || '/';
-              const cleanBase = baseUrl.replace(/\/+$/, '');
+              const previewPath = `/products/${previewSlug}?preview=true`;
+
+              // Resolve app base: prefer build-time BASE_URL, otherwise infer from current path
+              const getAppBase = () => {
+                const base = import.meta.env.BASE_URL || '/';
+                if (base && base !== '/') return base;
+                const seg = window.location.pathname.split('/').filter(Boolean)[0];
+                return seg ? `/${seg}/` : '/';
+              };
+
+              const appBase = getAppBase();
+              const absoluteUrl = `${window.location.origin}${appBase.replace(/\/+$/,'')}/${previewPath.replace(/^\//,'')}`;
+
               // Open product details page in a new tab with a preview flag
-              window.open(`${cleanBase}/products/${previewSlug}?preview=true`, '_blank');
+              window.open(absoluteUrl, '_blank');
             }}
           >
             <Eye className="mr-2 h-4 w-4" />

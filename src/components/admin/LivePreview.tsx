@@ -112,15 +112,33 @@ export function LivePreview({
   };
 
   const handleOpenExternal = () => {
-    window.open(previewUrl, '_blank');
+    // Open the resolved preview URL in a new tab
+    try {
+      window.open(resolvedPreviewUrl, '_blank');
+    } catch (e) {
+      // Fallback to previewUrl if something goes wrong
+      window.open(previewUrl, '_blank');
+    }
   };
 
   const deviceSize = DEVICE_SIZES[device];
   
-  // Resolve preview URL with base path
-  const resolvedPreviewUrl = previewUrl.startsWith('http') 
-    ? previewUrl 
-    : `${import.meta.env.BASE_URL}${previewUrl.replace(/^\//, '')}`;
+  // Resolve preview URL with base path.
+  // Prefer the build-time BASE_URL, but if it's '/' (root) try to infer the base
+  // from the current pathname so previews opened from /stencil/admin will
+  // correctly point to /stencil/... on GitHub Pages.
+  const getAppBase = () => {
+    const base = import.meta.env.BASE_URL || '/';
+    if (base && base !== '/') return base;
+    // infer first path segment as base (e.g., /stencil/ from /stencil/admin)
+    const seg = window.location.pathname.split('/').filter(Boolean)[0];
+    return seg ? `/${seg}/` : '/';
+  };
+
+  const appBase = getAppBase();
+  const resolvedPreviewUrl = previewUrl.startsWith('http')
+    ? previewUrl
+    : `${window.location.origin}${appBase.replace(/\/+$/,'')}/${previewUrl.replace(/^\//,'')}`;
 
   return (
     <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
