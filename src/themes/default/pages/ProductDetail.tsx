@@ -10,6 +10,9 @@ import {
   Dialog,
   DialogContent,
   DialogClose,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Carousel,
@@ -840,6 +843,10 @@ const ProductDetail = () => {
               {/* Image Magnifier Dialog */}
               <Dialog open={!!magnifiedImage} onOpenChange={() => setMagnifiedImage(null)}>
                 <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
+                  <DialogHeader>
+                    <DialogTitle className="sr-only">Gambar yang Diperbesar</DialogTitle>
+                    <DialogDescription className="sr-only">Detail view dari produk {product.name}</DialogDescription>
+                  </DialogHeader>
                   <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-white/10 p-2 hover:bg-white/20 transition-all">
                     <X className="w-6 h-6 text-white" />
                   </DialogClose>
@@ -858,6 +865,10 @@ const ProductDetail = () => {
               {/* 360 View Dialog */}
               <Dialog open={!!view360} onOpenChange={close360View}>
                 <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
+                  <DialogHeader>
+                    <DialogTitle className="sr-only">Tampilan 360°</DialogTitle>
+                    <DialogDescription className="sr-only">Lihat produk {product.name} dari berbagai sudut</DialogDescription>
+                  </DialogHeader>
                   <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-white/10 p-2 hover:bg-white/20 transition-all">
                     <X className="w-6 h-6 text-white" />
                   </DialogClose>
@@ -1121,6 +1132,10 @@ const ProductDetail = () => {
                   {/* Design File Zoom Dialog */}
                   <Dialog open={!!designFileZoom} onOpenChange={() => setDesignFileZoom(null)}>
                     <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
+                      <DialogHeader>
+                        <DialogTitle className="sr-only">File Design yang Diperbesar</DialogTitle>
+                        <DialogDescription className="sr-only">Tampilan lebih detail dari file design yang diupload</DialogDescription>
+                      </DialogHeader>
                       <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-white/10 p-2 hover:bg-white/20 transition-all">
                         <X className="w-6 h-6 text-white" />
                       </DialogClose>
