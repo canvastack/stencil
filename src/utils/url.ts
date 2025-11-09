@@ -6,9 +6,7 @@ export const getBaseUrl = () => {
 };
 
 export const createUrl = (path: string) => {
-  const baseUrl = getBaseUrl();
-  // Remove leading slash from path if it exists
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  // Combine base URL with path
-  return `${baseUrl}${cleanPath}`;
+  // Since BrowserRouter handles the base path, we just need to ensure
+  // the path starts with a slash for proper routing
+  return path.startsWith('/') ? path : `/${path}`;
 };
