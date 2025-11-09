@@ -17,18 +17,17 @@
       // the correct url will be waiting in the browser's history for
       // the single page app to route accordingly.
       (function(l) {
-        if (l.pathname.endsWith('//')) {
-          // Remove double slash
+        // Check if we have the page parameter in the URL
+        var params = new URLSearchParams(l.search);
+        if (params.has('page')) {
+          var pagePath = params.get('page');
+          // Remove the page parameter and update history
+          params.delete('page');
+          var newSearch = params.toString();
+          var newPath = l.pathname.replace(/\/+$/, '') + pagePath;
+          
           window.history.replaceState(null, null,
-            l.pathname.replace('//', '/') + l.search + l.hash
-          );
-        }
-        if (l.search[1] === '/' ) {
-          var decoded = l.search.slice(1).split('&').map(function(s) { 
-            return s.replace(/~and~/g, '&')
-          }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.replace(/\/+$/, '') + '/' + decoded + l.hash
+            newPath + (newSearch ? '?' + newSearch : '') + l.hash
           );
         }
       }(window.location))

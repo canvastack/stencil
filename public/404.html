@@ -18,15 +18,20 @@
       var l = window.location;
       var cleanPath = l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/');
       
-      // Remove any trailing slashes and construct the redirect URL
+      // Remove any trailing slashes and get base path (e.g., /stencil)
       var basePath = l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/').replace(/\/+$/, '');
-      var redirectPath = cleanPath ? ('/' + cleanPath) : '';
       
-      l.replace(
+      // Create the redirect URL with the page parameter
+      var redirectUrl = 
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        basePath + redirectPath +
-        (l.search ? '?' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
+        basePath + '?page=/' + cleanPath +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+        l.hash;
+      
+      // Only redirect if we're going to a different URL
+      if (redirectUrl !== l.href) {
+        l.replace(redirectUrl);
+      }
       );
     </script>
   </head>
