@@ -1,7 +1,8 @@
 {
-  "pageId": "products",
-  "pageName": "Products Page",
-  "hero": {
+  "id": "page-products-1",
+  "pageSlug": "products",
+  "content": {
+    "hero": {
     "title": {
       "prefix": "Semua",
       "highlight": "Produk",
@@ -114,4 +115,5 @@
       "custom etching"
     ]
   }
+}
 }
