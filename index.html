@@ -21,14 +21,18 @@
         var params = new URLSearchParams(l.search);
         if (params.has('page')) {
           var pagePath = params.get('page');
-          // Remove the page parameter and update history
-          params.delete('page');
-          var newSearch = params.toString();
-          var newPath = l.pathname.replace(/\/+$/, '') + pagePath;
-          
-          window.history.replaceState(null, null,
-            newPath + (newSearch ? '?' + newSearch : '') + l.hash
-          );
+          if (pagePath) {
+            // Remove the page parameter and update history
+            params.delete('page');
+            var newSearch = params.toString();
+            var newPath = (l.pathname + pagePath).replace(/\/+/g, '/');
+            
+            window.history.replaceState(
+              null,
+              null,
+              newPath + (newSearch ? '?' + newSearch : '') + l.hash
+            );
+          }
         }
       }(window.location))
     </script>

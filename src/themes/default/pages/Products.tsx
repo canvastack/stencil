@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getProductDetailPath } from "@/utils/routes";
 
 interface PageContent {
   hero: {
@@ -512,7 +513,7 @@ const Products = () => {
                             
                             <div className="flex gap-3">
                               <Button
-                                onClick={() => navigate(`/products/${product.slug}`)}
+                                onClick={() => navigate(getProductDetailPath(product.slug))}
                                 variant="outline"
                                 className="flex-1 border-primary text-primary hover:bg-primary/10 font-semibold"
                               >
@@ -520,7 +521,7 @@ const Products = () => {
                                 Detail
                               </Button>
                               <Button
-                                onClick={() => navigate(`/products/${product.slug}`)}
+                                onClick={() => navigate(getProductDetailPath(product.slug))}
                                 className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
                               >
                                 <ShoppingCart className="w-4 h-4 mr-2" />
