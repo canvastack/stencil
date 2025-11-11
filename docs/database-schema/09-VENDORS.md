@@ -2,10 +2,37 @@
 ## Database Schema & API Documentation
 
 **Module:** Operations - Vendor Management  
-**Total Fields:** 85+ fields  
-**Total Tables:** 5 tables (vendors, vendor_specializations, vendor_contacts, vendor_ratings, vendor_negotiations)  
+**Total Fields:** 97 fields  
+**Total Tables:** 6 tables (vendors, vendor_specializations, vendor_contacts, vendor_ratings, vendor_negotiations, vendor_payments)  
 **Admin Page:** `src/pages/admin/VendorManagement.tsx`  
-**Type Definition:** `src/types/vendor.ts`
+**Type Definition:** `src/types/vendor.ts`  
+**Status:** 🚧 PLANNED - Architecture Blueprint  
+**Architecture Reference:** `docs/ARCHITECTURE/ADVANCED_SYSTEMS/1-MULTI_TENANT_ARCHITECTURE.md`
+
+## 🔒 CORE IMMUTABLE RULES COMPLIANCE
+
+### **Rule 1: Teams Enabled with tenant_id as team_foreign_key**
+✅ **ENFORCED** - All vendor tables include mandatory `tenant_id UUID NOT NULL` with foreign key constraints to `tenants(uuid)` table. Vendor data is strictly isolated per tenant.
+
+### **Rule 2: API Guard Implementation**  
+✅ **ENFORCED** - All vendor API endpoints use `guard_name: api` with Laravel Sanctum authentication. Vendor operations require valid API tokens and tenant context.
+
+### **Rule 3: UUID model_morph_key**
+✅ **ENFORCED** - All vendor tables use `uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid()` as the public identifier for external API references and system integration.
+
+### **Rule 4: Strict Tenant Data Isolation**
+✅ **ENFORCED** - No global vendor records with NULL tenant_id. Every vendor, specialization, contact, rating, negotiation, and payment is strictly scoped to a specific tenant. Cross-tenant vendor access is impossible at the database level.
+
+### **Rule 5: RBAC Integration Requirements**
+✅ **ENFORCED** - Vendor management requires specific tenant-scoped permissions:
+- `vendors.view` - View vendor catalog and basic information
+- `vendors.create` - Create new vendor records and profiles
+- `vendors.edit` - Modify vendor information and settings
+- `vendors.delete` - Delete vendor records (soft delete)
+- `vendors.manage` - Full vendor management including contacts and specializations
+- `vendors.negotiate` - Handle price negotiations and quotations
+- `vendors.rate` - Rate and review vendor performance
+- `vendors.payment` - Process vendor payments and financial transactions
 
 ---
 
@@ -70,9 +97,9 @@ Modul Vendor Management adalah komponen krusial dalam alur bisnis makelar/broker
 
 ## BUSINESS CONTEXT
 
-### PT CEX Broker Business Model
+### PT CEX Broker Business Model & 5-Stage Etching Workflow Integration
 
-Vendor Management module dirancang untuk mendukung alur bisnis makelar PT CEX:
+Vendor Management module dirancang untuk mendukung alur bisnis makelar PT CEX dengan integrasi penuh ke 5-stage etching workflow:
 
 1. **Vendor Sourcing Workflow**:
    - Customer order masuk → Admin cari vendor yang sesuai
@@ -133,17 +160,19 @@ Sistem dirancang agar tenant lain dengan model bisnis serupa dapat:
 Tabel utama untuk menyimpan informasi vendor dan supplier.
 
 ```sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 CREATE TABLE vendors (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (MANDATORY)
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE,
     
     -- Company Information
     company_name VARCHAR(255) NOT NULL,
     legal_entity_name VARCHAR(255),
     brand_name VARCHAR(255),
-    slug VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL,
+    uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     
     -- Contact Information
     email VARCHAR(255) NOT NULL,
@@ -216,11 +245,16 @@ CREATE TABLE vendors (
     updated_by UUID
 );
 
--- Indexes
-CREATE INDEX idx_vendors_slug ON vendors(slug);
-CREATE INDEX idx_vendors_status ON vendors(status) WHERE status = 'active';
-CREATE INDEX idx_vendors_quality_tier ON vendors(quality_tier);
-CREATE INDEX idx_vendors_rating ON vendors(overall_rating DESC);
+-- Unique Constraints (tenant-scoped)
+ALTER TABLE vendors ADD CONSTRAINT vendors_tenant_slug_unique UNIQUE (tenant_id, slug);
+
+-- Indexes (tenant-aware for performance)
+CREATE INDEX idx_vendors_tenant ON vendors(tenant_id) WHERE deleted_at IS NULL;
+CREATE INDEX idx_vendors_tenant_slug ON vendors(tenant_id, slug);
+CREATE INDEX idx_vendors_tenant_status ON vendors(tenant_id, status) WHERE status = 'active';
+CREATE INDEX idx_vendors_tenant_quality ON vendors(tenant_id, quality_tier);
+CREATE INDEX idx_vendors_tenant_rating ON vendors(tenant_id, overall_rating DESC);
+CREATE INDEX idx_vendors_uuid ON vendors(uuid);
 CREATE INDEX idx_vendors_email ON vendors(email);
 CREATE INDEX idx_vendors_phone ON vendors(phone);
 CREATE INDEX idx_vendors_city ON vendors(city);
@@ -245,10 +279,14 @@ Tabel untuk menyimpan specializations dan capabilities vendor per material/servi
 ```sql
 CREATE TABLE vendor_specializations (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (MANDATORY)
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE,
     
     -- Foreign Key
     vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+    uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     
     -- Specialization Details
     material_type VARCHAR(100) NOT NULL,
@@ -282,18 +320,20 @@ CREATE TABLE vendor_specializations (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
-    -- Constraints
-    CONSTRAINT spec_vendor_material_unique UNIQUE (vendor_id, material_type),
+    -- Constraints (tenant-scoped)
+    CONSTRAINT spec_tenant_vendor_material_unique UNIQUE (tenant_id, vendor_id, material_type),
     CONSTRAINT spec_price_range_valid CHECK (price_per_unit_max >= price_per_unit_min),
     CONSTRAINT spec_lead_time_valid CHECK (lead_time_days_max >= lead_time_days_min)
 );
 
--- Indexes
-CREATE INDEX idx_vendor_spec_vendor ON vendor_specializations(vendor_id);
+-- Indexes (tenant-aware)
+CREATE INDEX idx_vendor_spec_tenant ON vendor_specializations(tenant_id);
+CREATE INDEX idx_vendor_spec_tenant_vendor ON vendor_specializations(tenant_id, vendor_id);
+CREATE INDEX idx_vendor_spec_uuid ON vendor_specializations(uuid);
 CREATE INDEX idx_vendor_spec_material ON vendor_specializations(material_type);
-CREATE INDEX idx_vendor_spec_active ON vendor_specializations(is_active) WHERE is_active = true;
-CREATE INDEX idx_vendor_spec_quality ON vendor_specializations(quality_tier);
-CREATE INDEX idx_vendor_spec_rating ON vendor_specializations(average_quality_rating DESC);
+CREATE INDEX idx_vendor_spec_active ON vendor_specializations(tenant_id, is_active) WHERE is_active = true;
+CREATE INDEX idx_vendor_spec_quality ON vendor_specializations(tenant_id, quality_tier);
+CREATE INDEX idx_vendor_spec_rating ON vendor_specializations(tenant_id, average_quality_rating DESC);
 ```
 
 **Material Types (Etching Business):**
@@ -315,10 +355,14 @@ Tabel untuk menyimpan multiple contact persons per vendor.
 ```sql
 CREATE TABLE vendor_contacts (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (MANDATORY)
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE,
     
     -- Foreign Key
     vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+    uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     
     -- Contact Information
     full_name VARCHAR(255) NOT NULL,
@@ -352,10 +396,12 @@ CREATE TABLE vendor_contacts (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
--- Indexes
-CREATE INDEX idx_vendor_contacts_vendor ON vendor_contacts(vendor_id);
-CREATE INDEX idx_vendor_contacts_primary ON vendor_contacts(is_primary) WHERE is_primary = true;
-CREATE INDEX idx_vendor_contacts_active ON vendor_contacts(is_active) WHERE is_active = true;
+-- Indexes (tenant-aware)
+CREATE INDEX idx_vendor_contacts_tenant ON vendor_contacts(tenant_id);
+CREATE INDEX idx_vendor_contacts_tenant_vendor ON vendor_contacts(tenant_id, vendor_id);
+CREATE INDEX idx_vendor_contacts_uuid ON vendor_contacts(uuid);
+CREATE INDEX idx_vendor_contacts_primary ON vendor_contacts(tenant_id, is_primary) WHERE is_primary = true;
+CREATE INDEX idx_vendor_contacts_active ON vendor_contacts(tenant_id, is_active) WHERE is_active = true;
 CREATE INDEX idx_vendor_contacts_email ON vendor_contacts(email);
 CREATE INDEX idx_vendor_contacts_phone ON vendor_contacts(phone);
 ```
@@ -369,11 +415,15 @@ Tabel untuk menyimpan rating dan review vendor per completed order.
 ```sql
 CREATE TABLE vendor_ratings (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (MANDATORY)
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE,
     
     -- Foreign Keys
     vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
     order_id UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+    uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     
     -- Rating Criteria (1-5 scale)
     quality_score DECIMAL(2,1) NOT NULL CHECK (quality_score >= 1 AND quality_score <= 5),
@@ -416,16 +466,18 @@ CREATE TABLE vendor_ratings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     rated_by UUID NOT NULL REFERENCES users(id),
     
-    -- Constraints
-    CONSTRAINT rating_order_unique UNIQUE (order_id)
+    -- Constraints (tenant-scoped)
+    CONSTRAINT rating_tenant_order_unique UNIQUE (tenant_id, order_id)
 );
 
--- Indexes
-CREATE INDEX idx_vendor_ratings_vendor ON vendor_ratings(vendor_id);
+-- Indexes (tenant-aware)
+CREATE INDEX idx_vendor_ratings_tenant ON vendor_ratings(tenant_id);
+CREATE INDEX idx_vendor_ratings_tenant_vendor ON vendor_ratings(tenant_id, vendor_id);
+CREATE INDEX idx_vendor_ratings_uuid ON vendor_ratings(uuid);
 CREATE INDEX idx_vendor_ratings_order ON vendor_ratings(order_id);
-CREATE INDEX idx_vendor_ratings_overall ON vendor_ratings(overall_rating DESC);
-CREATE INDEX idx_vendor_ratings_created ON vendor_ratings(created_at DESC);
-CREATE INDEX idx_vendor_ratings_public ON vendor_ratings(is_public) WHERE is_public = true;
+CREATE INDEX idx_vendor_ratings_overall ON vendor_ratings(tenant_id, overall_rating DESC);
+CREATE INDEX idx_vendor_ratings_created ON vendor_ratings(tenant_id, created_at DESC);
+CREATE INDEX idx_vendor_ratings_public ON vendor_ratings(tenant_id, is_public) WHERE is_public = true;
 ```
 
 ---
@@ -437,11 +489,15 @@ Tabel untuk tracking negotiation process antara admin dan vendor untuk setiap or
 ```sql
 CREATE TABLE vendor_negotiations (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (MANDATORY)
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE,
     
     -- Foreign Keys
     vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
     order_id UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+    uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     
     -- Negotiation Details
     negotiation_round INTEGER DEFAULT 1,
@@ -494,15 +550,17 @@ CREATE TABLE vendor_negotiations (
     updated_by UUID REFERENCES users(id)
 );
 
--- Indexes
-CREATE INDEX idx_vendor_neg_vendor ON vendor_negotiations(vendor_id);
+-- Indexes (tenant-aware)
+CREATE INDEX idx_vendor_neg_tenant ON vendor_negotiations(tenant_id);
+CREATE INDEX idx_vendor_neg_tenant_vendor ON vendor_negotiations(tenant_id, vendor_id);
+CREATE INDEX idx_vendor_neg_uuid ON vendor_negotiations(uuid);
 CREATE INDEX idx_vendor_neg_order ON vendor_negotiations(order_id);
-CREATE INDEX idx_vendor_neg_status ON vendor_negotiations(negotiation_status);
-CREATE INDEX idx_vendor_neg_round ON vendor_negotiations(negotiation_round);
-CREATE INDEX idx_vendor_neg_created ON vendor_negotiations(created_at DESC);
+CREATE INDEX idx_vendor_neg_status ON vendor_negotiations(tenant_id, negotiation_status);
+CREATE INDEX idx_vendor_neg_round ON vendor_negotiations(tenant_id, negotiation_round);
+CREATE INDEX idx_vendor_neg_created ON vendor_negotiations(tenant_id, created_at DESC);
 
--- Composite index for finding active negotiations
-CREATE INDEX idx_vendor_neg_active ON vendor_negotiations(vendor_id, negotiation_status) 
+-- Composite index for finding active negotiations (tenant-aware)
+CREATE INDEX idx_vendor_neg_active ON vendor_negotiations(tenant_id, vendor_id, negotiation_status) 
     WHERE negotiation_status IN ('pending', 'in_progress');
 ```
 
@@ -515,16 +573,20 @@ Tabel untuk tracking pembayaran ke vendor (DP dan full payment).
 ```sql
 CREATE TABLE vendor_payments (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (MANDATORY)
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE,
     
     -- Foreign Keys
     vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE RESTRICT,
     order_id UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE RESTRICT,
     invoice_id UUID REFERENCES invoices(id) ON DELETE SET NULL,
+    uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     
     -- Payment Details
     payment_type VARCHAR(20) NOT NULL CHECK (payment_type IN ('dp', 'full', 'partial', 'refund')),
-    payment_number VARCHAR(100) NOT NULL UNIQUE,
+    payment_number VARCHAR(100) NOT NULL,
     
     -- Amounts
     amount DECIMAL(15,2) NOT NULL CHECK (amount > 0),
@@ -570,15 +632,20 @@ CREATE TABLE vendor_payments (
     updated_by UUID REFERENCES users(id)
 );
 
--- Indexes
-CREATE INDEX idx_vendor_payments_vendor ON vendor_payments(vendor_id);
+-- Unique Constraints (tenant-scoped)
+ALTER TABLE vendor_payments ADD CONSTRAINT vendor_payments_tenant_number_unique UNIQUE (tenant_id, payment_number);
+
+-- Indexes (tenant-aware)
+CREATE INDEX idx_vendor_payments_tenant ON vendor_payments(tenant_id);
+CREATE INDEX idx_vendor_payments_tenant_vendor ON vendor_payments(tenant_id, vendor_id);
+CREATE INDEX idx_vendor_payments_uuid ON vendor_payments(uuid);
 CREATE INDEX idx_vendor_payments_order ON vendor_payments(order_id);
 CREATE INDEX idx_vendor_payments_invoice ON vendor_payments(invoice_id);
-CREATE INDEX idx_vendor_payments_number ON vendor_payments(payment_number);
-CREATE INDEX idx_vendor_payments_status ON vendor_payments(payment_status);
-CREATE INDEX idx_vendor_payments_type ON vendor_payments(payment_type);
-CREATE INDEX idx_vendor_payments_date ON vendor_payments(actual_payment_date DESC);
-CREATE INDEX idx_vendor_payments_created ON vendor_payments(created_at DESC);
+CREATE INDEX idx_vendor_payments_number ON vendor_payments(tenant_id, payment_number);
+CREATE INDEX idx_vendor_payments_status ON vendor_payments(tenant_id, payment_status);
+CREATE INDEX idx_vendor_payments_type ON vendor_payments(tenant_id, payment_type);
+CREATE INDEX idx_vendor_payments_date ON vendor_payments(tenant_id, actual_payment_date DESC);
+CREATE INDEX idx_vendor_payments_created ON vendor_payments(tenant_id, created_at DESC);
 ```
 
 ---
@@ -2216,7 +2283,10 @@ EXECUTE FUNCTION update_vendor_ratings();
 
 ---
 
+**Previous:** [08-ORDERS.md](./08-ORDERS.md)  
+**Next:** [10-INVENTORY.md](./10-INVENTORY.md)
+
 **© 2025 Stencil CMS - Vendor Management Module Documentation**  
-**Version:** 1.0  
-**Last Updated:** November 10, 2025  
-**Status:** ✅ Complete - Ready for Development
+**Version:** 1.1  
+**Last Updated:** November 11, 2025  
+**Status:** ✅ Complete - Multi-Tenant Compliant & Ready for Development

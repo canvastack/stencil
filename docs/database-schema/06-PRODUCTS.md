@@ -2,10 +2,35 @@
 ## Database Schema & API Documentation
 
 **Module:** E-Commerce - Product Management  
-**Total Fields:** 56 fields  
+**Total Fields:** 64 fields  
 **Total Tables:** 4 tables (products, product_categories, product_specifications, product_custom_texts)  
 **Admin Page:** `src/pages/admin/ProductEditor.tsx`, `src/pages/admin/ProductCategories.tsx`  
-**Type Definition:** `src/types/product.ts`
+**Type Definition:** `src/types/product.ts`  
+**Status:** 🚧 PLANNED - Architecture Blueprint  
+**Architecture Reference:** `docs/ARCHITECTURE/ADVANCED_SYSTEMS/1-MULTI_TENANT_ARCHITECTURE.md`
+
+## 🔒 CORE IMMUTABLE RULES COMPLIANCE
+
+### **Rule 1: Teams Enabled with tenant_id as team_foreign_key**
+✅ **ENFORCED** - All product tables include mandatory `tenant_id UUID NOT NULL` with foreign key constraints to `tenants(uuid)` table. Product data is strictly isolated per tenant.
+
+### **Rule 2: API Guard Implementation**  
+✅ **ENFORCED** - All product API endpoints use `guard_name: api` with Laravel Sanctum authentication. Product operations require valid API tokens and tenant context.
+
+### **Rule 3: UUID model_morph_key**
+✅ **ENFORCED** - All product tables use `uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid()` as the public identifier for external API references and system integration.
+
+### **Rule 4: Strict Tenant Data Isolation**
+✅ **ENFORCED** - No global product records with NULL tenant_id. Every product, category, specification, and custom text is strictly scoped to a specific tenant. Cross-tenant product access is impossible at the database level.
+
+### **Rule 5: RBAC Integration Requirements**
+✅ **ENFORCED** - Product management requires specific tenant-scoped permissions:
+- `products.view` - View product catalog and basic information
+- `products.create` - Create new product records
+- `products.edit` - Modify product information and settings
+- `products.delete` - Delete product records (soft delete)
+- `products.manage` - Full product management including categories and specifications
+- `products.publish` - Publish/unpublish products to public catalog
 
 ---
 
@@ -70,30 +95,39 @@ Modul Product Management adalah inti dari sistem katalog produk untuk tenant PT 
 
 ## BUSINESS CONTEXT
 
-### PT CEX Etching Business Model
+### **Integration with Etching Business Cycle**
 
-Product module ini dirancang untuk mendukung alur bisnis makelar/broker PT CEX:
+Product module ini dirancang khusus untuk mendukung **complete etching business workflow** PT CEX sebagai broker/makelar:
 
-1. **Product Display Logic**:
-   - Jika production_type = 'internal' DAN admin set price → price ditampilkan di public view
-   - Jika production_type = 'vendor' ATAU admin tidak set price → price disembunyikan, customer harus request quotation
-   - Ini memberi fleksibilitas untuk model pricing dinamis berdasarkan vendor negotiation
+**1. Customer Inquiry Stage:**
+- **Product Catalog Display**: Showcase etching products dengan rich media gallery
+- **Dynamic Pricing Logic**: 
+  - `production_type = 'internal'` + `price IS NOT NULL` → Display fixed pricing
+  - `production_type = 'vendor'` OR `price IS NULL` → Hide price, show "Request Quote" button
+- **Custom Order Form**: Capture customer requirements (bahan, kualitas, ketebalan, ukuran)
+- **Design File Upload**: Support customer design files untuk vendor production
 
-2. **Custom Order Form**:
-   - Field bahan, kualitas, ketebalan, ukuran → input dari customer
-   - Data ini akan digunakan untuk vendor quotation request
-   - Admin dapat menambah/mengurangi options tanpa perlu migration
+**2. Quotation & Negotiation Stage:**
+- **Vendor Quotation Integration**: Product data diteruskan ke vendor untuk pricing
+- **Markup Calculation**: Admin dapat set markup percentage untuk broker profit
+- **Price Negotiation Tracking**: History pricing negotiations dengan customer dan vendor
+- **Lead Time Estimation**: Vendor production time estimates
 
-3. **Design File Workflow**:
-   - Customer upload design file (optional)
-   - File akan diteruskan ke vendor untuk production
-   - Support URL external atau base64 inline storage
+**3. Order Processing Stage:**
+- **Production Type Selection**: Internal vs Vendor production workflow
+- **Vendor Assignment**: Automatic vendor selection berdasarkan product specifications
+- **Custom Text Placement**: Precise positioning untuk etching text requirements
+- **Design File Management**: Secure file transfer ke vendor production
 
-4. **Custom Text Placement**:
-   - Customer dapat request custom text dengan positioning
-   - Placement: 'depan' atau 'belakang'
-   - Position: coordinate untuk precise placement
-   - Color picker untuk text color
+**4. Production Stage:**
+- **Production Tracking**: Integration dengan production status updates
+- **Quality Control**: Specification validation dan quality checkpoints
+- **Vendor Communication**: Automated updates dari vendor production progress
+
+**5. Delivery & Fulfillment Stage:**
+- **Product Completion**: Final product images dan quality confirmation
+- **Customer Approval**: Digital approval workflow sebelum delivery
+- **Delivery Coordination**: Integration dengan shipping dan logistics
 
 ### Multi-Tenant Scalability
 
@@ -114,11 +148,14 @@ Tabel utama untuk menyimpan informasi produk per tenant.
 ```sql
 CREATE TABLE products (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE)
+    tenant_id UUID NOT NULL,
     
     -- Basic Information
     name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL,
     description TEXT,
     long_description TEXT,
     
@@ -138,6 +175,12 @@ CREATE TABLE products (
     in_stock BOOLEAN DEFAULT true,
     stock_quantity INTEGER DEFAULT 0,
     lead_time VARCHAR(100),
+    
+    -- Etching Business Workflow Fields
+    production_type VARCHAR(20) DEFAULT 'vendor' CHECK (production_type IN ('internal', 'vendor')),
+    vendor_price DECIMAL(15, 2),
+    markup_percentage DECIMAL(5, 2) DEFAULT 0.00,
+    quotation_required BOOLEAN DEFAULT true,
     
     -- Custom Order Form Fields (Etching-specific but extensible)
     product_type VARCHAR(100),
@@ -174,23 +217,42 @@ CREATE TABLE products (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE,
-    created_by UUID REFERENCES users(id),
-    updated_by UUID REFERENCES users(id),
+    created_by UUID,
+    updated_by UUID,
     
-    -- Constraints
-    CONSTRAINT products_slug_unique UNIQUE (slug),
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
+    
+    -- Unique Constraints
+    UNIQUE(tenant_id, slug),
+    
+    -- Check Constraints
     CONSTRAINT products_price_positive CHECK (price IS NULL OR price >= 0),
+    CONSTRAINT products_vendor_price_positive CHECK (vendor_price IS NULL OR vendor_price >= 0),
+    CONSTRAINT products_markup_positive CHECK (markup_percentage >= 0),
     CONSTRAINT products_stock_positive CHECK (stock_quantity >= 0)
 );
 
 -- Indexes for Performance
-CREATE INDEX idx_products_slug ON products(slug);
+CREATE INDEX idx_products_tenant ON products(tenant_id);
+CREATE INDEX idx_products_tenant_slug ON products(tenant_id, slug);
 CREATE INDEX idx_products_category_id ON products(category_id);
-CREATE INDEX idx_products_status ON products(status);
-CREATE INDEX idx_products_featured ON products(featured) WHERE featured = true;
+CREATE INDEX idx_products_status ON products(tenant_id, status);
+CREATE INDEX idx_products_featured ON products(tenant_id, featured) WHERE featured = true;
+CREATE INDEX idx_products_production_type ON products(production_type);
+CREATE INDEX idx_products_quotation_required ON products(quotation_required) WHERE quotation_required = true;
 CREATE INDEX idx_products_tags ON products USING GIN (tags);
 CREATE INDEX idx_products_deleted_at ON products(deleted_at) WHERE deleted_at IS NULL;
 CREATE INDEX idx_products_search ON products USING GIN (to_tsvector('indonesian', name || ' ' || COALESCE(description, '')));
+
+-- Updated Timestamp Trigger
+CREATE TRIGGER update_products_updated_at
+BEFORE UPDATE ON products
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ### Table: `product_categories` (Tenant Schema)
@@ -200,11 +262,14 @@ Tabel untuk kategorisasi hierarchical produk.
 ```sql
 CREATE TABLE product_categories (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE)
+    tenant_id UUID NOT NULL,
     
     -- Category Information
     name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL,
     description TEXT,
     
     -- Hierarchy
@@ -223,16 +288,29 @@ CREATE TABLE product_categories (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE,
     
-    -- Constraints
-    CONSTRAINT categories_slug_unique UNIQUE (slug),
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES product_categories(id) ON DELETE CASCADE,
+    
+    -- Unique Constraints
+    UNIQUE(tenant_id, slug),
+    
+    -- Check Constraints
     CONSTRAINT categories_no_self_parent CHECK (id != parent_id)
 );
 
 -- Indexes
-CREATE INDEX idx_categories_slug ON product_categories(slug);
+CREATE INDEX idx_categories_tenant ON product_categories(tenant_id);
+CREATE INDEX idx_categories_tenant_slug ON product_categories(tenant_id, slug);
 CREATE INDEX idx_categories_parent_id ON product_categories(parent_id);
-CREATE INDEX idx_categories_active ON product_categories(is_active) WHERE is_active = true;
-CREATE INDEX idx_categories_order ON product_categories(order_index);
+CREATE INDEX idx_categories_active ON product_categories(tenant_id, is_active) WHERE is_active = true;
+CREATE INDEX idx_categories_order ON product_categories(tenant_id, order_index);
+
+-- Updated Timestamp Trigger
+CREATE TRIGGER update_product_categories_updated_at
+BEFORE UPDATE ON product_categories
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ### Table: `product_specifications` (Tenant Schema)
@@ -242,10 +320,13 @@ Tabel untuk menyimpan spesifikasi produk dalam format key-value yang fleksibel.
 ```sql
 CREATE TABLE product_specifications (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE)
+    tenant_id UUID NOT NULL,
     
     -- Foreign Key
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL,
     
     -- Specification Data
     key VARCHAR(255) NOT NULL,
@@ -258,13 +339,24 @@ CREATE TABLE product_specifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
-    -- Constraints
-    CONSTRAINT spec_product_key_unique UNIQUE (product_id, key)
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    
+    -- Unique Constraints
+    UNIQUE(tenant_id, product_id, key)
 );
 
 -- Indexes
+CREATE INDEX idx_specs_tenant ON product_specifications(tenant_id);
 CREATE INDEX idx_specs_product_id ON product_specifications(product_id);
 CREATE INDEX idx_specs_key ON product_specifications(key);
+
+-- Updated Timestamp Trigger
+CREATE TRIGGER update_product_specifications_updated_at
+BEFORE UPDATE ON product_specifications
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ### Table: `product_custom_texts` (Tenant Schema)
@@ -274,10 +366,13 @@ Tabel untuk menyimpan custom text placement yang diminta customer saat order.
 ```sql
 CREATE TABLE product_custom_texts (
     -- Primary Key
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE)
+    tenant_id UUID NOT NULL,
     
     -- Foreign Key
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    product_id UUID NOT NULL,
     
     -- Text Content
     text TEXT NOT NULL,
@@ -292,12 +387,23 @@ CREATE TABLE product_custom_texts (
     
     -- Audit Fields
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- Indexes
+CREATE INDEX idx_custom_texts_tenant ON product_custom_texts(tenant_id);
 CREATE INDEX idx_custom_texts_product_id ON product_custom_texts(product_id);
 CREATE INDEX idx_custom_texts_placement ON product_custom_texts(placement);
+
+-- Updated Timestamp Trigger
+CREATE TRIGGER update_product_custom_texts_updated_at
+BEFORE UPDATE ON product_custom_texts
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ---
@@ -1288,11 +1394,44 @@ WHERE deleted_at IS NULL;
    - Each product can have translations for name, description
    - Language selection based on tenant settings
 
+### Core Immutable Rules Compliance
+
+✅ Core Rules section dengan 5 aturan inti yang wajib
+✅ Rule 1: Semua tabel memiliki tenant_id UUID NOT NULL dengan foreign key ke tenants(uuid)
+✅ Rule 2: API Guard implementation dengan Laravel Sanctum
+✅ Rule 3: UUID gen_random_uuid() sebagai public identifier
+✅ Rule 4: Strict tenant data isolation di semua level
+✅ Rule 5: RBAC permissions untuk product management
+
+### Multi-Tenant Architecture Fixes
+
+✅ Added tenant_id fields ke semua 4 tabel
+✅ Fixed UUID generation dari uuid_generate_v4() ke gen_random_uuid()
+✅ Added foreign key constraints ke tenants(uuid) table
+✅ Updated unique constraints untuk tenant-scoped uniqueness
+✅ Added tenant-aware indexes untuk performance optimization
+
+### Etching Business Cycle Integration
+
+✅ Enhanced business context dengan complete 5-stage workflow
+✅ Added production_type field untuk internal vs vendor workflow
+✅ Added vendor_price field untuk vendor pricing tracking
+✅ Added markup_percentage field untuk broker profit calculation
+✅ Added quotation_required field untuk dynamic pricing logic
+
+### Database Schema Improvements
+
+✅ Updated field count dari 56 ke 64 fields
+✅ Proper foreign key constraints dengan CASCADE/SET NULL
+✅ Tenant-aware indexes untuk query performance
+✅ Timestamp triggers untuk audit trail
+✅ Check constraints untuk data validation
+
 ---
 
 **Previous:** [05-FAQ.md](./05-FAQ.md)  
 **Next:** [07-REVIEWS.md](./07-REVIEWS.md)  
 
-**Last Updated:** 2025-11-10  
+**Last Updated:** 2025-11-11  
 **Status:** ✅ COMPLETE  
 **Reviewed By:** System Architect

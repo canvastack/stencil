@@ -22,7 +22,7 @@ Dokumen ini berisi analisa mendalam dan blueprint lengkap untuk 4 sistem fundame
 - ✅ **Theme Engine (Client-Side)**: Basic ThemeManager dengan dynamic component loading (Implemented)
 - ✅ **UI Components**: shadcn/ui + Tailwind CSS component library (Implemented)
 - 🚧 **Backend API**: Laravel 10 REST/GraphQL API (Planned - This Document)
-- 🚧 **Database**: PostgreSQL/Supabase dengan Row-Level Security (Planned)
+- 🚧 **Database**: PostgreSQL dengan Row-Level Security (Planned)
 - 🚧 **Advanced Systems**: Multi-tenancy, RBAC, Plugin System (Planned)
 
 ### **Architecture Approach**
