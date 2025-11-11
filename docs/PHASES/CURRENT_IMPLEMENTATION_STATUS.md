@@ -508,7 +508,7 @@ stencil/
    - Update documentation to reflect this
    - Mark backend docs as "future plans"
    - Focus on improving frontend features
-   - Consider alternative backend (e.g., Firebase, Supabase)
+   - Consider alternative backend (e.g., Firebase, PostgreSQL)
 
 ### For Stakeholders
 

@@ -489,7 +489,7 @@ From `docs/FRONTEND_STRUCTURE_UPDATE_PLAN.md`:
 ```
 Week 3-4: Create API Service Layer
 Goal: Build API services that can replace mock services
-- Create API service layer with Supabase/PostgreSQL integration
+- Create API service layer with PostgreSQL integration
 - Implement authentication service
 - Implement data fetching services
 - Add error handling and retry logic

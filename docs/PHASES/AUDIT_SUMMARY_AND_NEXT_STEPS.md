@@ -213,7 +213,7 @@ You have **3 options**:
 1. ✅ Update documentation to reflect "frontend prototype" status
 2. ✅ Mark backend docs as "future plans" or "reference architecture"
 3. ✅ Optionally reorganize frontend structure (4-8 weeks)
-4. ✅ Use alternative backend (Firebase, Supabase, Strapi, etc.)
+4. ✅ Use alternative backend (Firebase, PostgreSQL, Strapi, etc.)
 
 **Pros**:
 - No additional development needed
@@ -299,7 +299,7 @@ You have **3 options**:
 3. Create API service layer with mock data
 4. Consider alternative backend:
    - **Firebase**: Authentication, Realtime Database, Hosting
-   - **Supabase**: PostgreSQL, Authentication, Realtime, Storage
+   - **PostgreSQL**: PostgreSQL, Authentication, Realtime, Storage
    - **Strapi**: Headless CMS with admin panel
    - **Directus**: SQL-based headless CMS
    - **Custom REST API**: Simple Express/FastAPI backend

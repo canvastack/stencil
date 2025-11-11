@@ -30,7 +30,7 @@ Dokumen ini berisi analisa mendalam dan blueprint lengkap untuk 4 sistem fundame
 - **Frontend Layer** (React SPA): User interface, client-side routing, state management
 - **API Layer** (Laravel): REST/GraphQL endpoints, business logic orchestration
 - **Domain Layer**: Business rules, entities, use cases (tenant-agnostic)
-- **Infrastructure Layer**: Database, external services, Supabase integration
+- **Infrastructure Layer**: Database, external services, PostgreSQL integration
 
 ### **1. Theme Marketplace Engine** 
 Platform marketplace untuk distribusi, instalasi, dan manajemen themes dengan dukungan internal & external marketplace integration.
@@ -421,11 +421,11 @@ Sophisticated permission system dengan dynamic role assignment, resource-based p
 - **Framework**: Laravel 10+ (PHP 8.2+) - API-First Architecture
 - **API Style**: RESTful + GraphQL (optional)
 - **Authentication**: Laravel Sanctum (SPA authentication)
-- **Database**: PostgreSQL 15+ / Supabase (with JSONB, RLS support)
+- **Database**: PostgreSQL 15+ / PostgreSQL (with JSONB, RLS support)
 - **Cache**: Redis 7+ (theme/plugin/permission caching)
 - **Queue**: Laravel Horizon (async processing)
 - **Search**: Meilisearch / Algolia (marketplace search)
-- **Storage**: Supabase Storage / S3-compatible (theme/plugin assets)
+- **Storage**: PostgreSQL Storage / S3-compatible (theme/plugin assets)
 
 ### Architecture Patterns
 - **Hexagonal Architecture** (Ports & Adapters)
@@ -437,9 +437,9 @@ Sophisticated permission system dengan dynamic role assignment, resource-based p
 
 ### Security (🚧 PLANNED)
 - **Authentication**: Laravel Sanctum (SPA token-based auth)
-- **Authorization**: Custom RBAC (this document) + Supabase RLS
+- **Authorization**: Custom RBAC (this document) + PostgreSQL RLS
 - **Frontend Security**: CORS, XSS protection, CSP headers
-- **Database Security**: Row-Level Security (RLS) in Supabase/PostgreSQL
+- **Database Security**: Row-Level Security (RLS) in PostgreSQL
 - **Encryption**: AES-256 (sensitive data), TLS for API communication
 - **Code Signing**: RSA signatures (plugins/themes verification)
 - **Sandboxing**: Isolated execution environment (plugin runtime)
@@ -457,14 +457,14 @@ Sophisticated permission system dengan dynamic role assignment, resource-based p
 
 ### **Phase 2 (Next): Backend API Foundation** 🚧
 - ⏳ Laravel 10 API setup dengan Sanctum authentication
-- ⏳ Supabase/PostgreSQL connection & configuration
+- ⏳ PostgreSQL connection & configuration
 - ⏳ Core API endpoints (users, auth, base resources)
 - ⏳ Frontend-backend integration layer
 - ⏳ Development environment dengan Docker
 
 ### **Phase 3: Multi-Tenant Architecture** 📋
 - ⏳ Multi-tenant database schema dengan tenant_id
-- ⏳ Supabase Row-Level Security (RLS) policies
+- ⏳ PostgreSQL Row-Level Security (RLS) policies
 - ⏳ Tenant identification middleware (subdomain/domain)
 - ⏳ Tenant provisioning API
 - ⏳ Frontend tenant context management
@@ -474,7 +474,7 @@ Sophisticated permission system dengan dynamic role assignment, resource-based p
 - ⏳ Permission checking API endpoints
 - ⏳ Frontend permission hooks & components
 - ⏳ Role management UI
-- ⏳ Integration dengan Supabase RLS
+- ⏳ Integration dengan PostgreSQL RLS
 
 ### **Phase 5: Theme Marketplace System** 📋
 - ⏳ Server-side theme registry & metadata API

@@ -158,15 +158,15 @@ Dokumen ini menjelaskan **complete integration strategy** untuk 4 advanced syste
 │           INFRASTRUCTURE LAYER                              │
 │                                                             │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Supabase    │  │   Theme      │  │   Plugin     │     │
+│  │  PostgreSQL    │  │   Theme      │  │   Plugin     │     │
 │  │  Tenant      │  │   Storage    │  │   Registry   │     │
-│  │  Repository  │  │  (Supabase)  │  │   Storage    │     │
+│  │  Repository  │  │  (PostgreSQL)  │  │   Storage    │     │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
 │         │                  │                  │             │
 │         └──────────────────┼──────────────────┘             │
 │                            │                                │
 │              ┌─────────────▼────────────┐                  │
-│              │  Supabase/PostgreSQL     │                  │
+│              │  PostgreSQL     │                  │
 │              │  • Row-Level Security    │                  │
 │              │  • Tenant isolation      │                  │
 │              │  • Realtime subscriptions│                  │
@@ -186,7 +186,7 @@ Dokumen ini menjelaskan **complete integration strategy** untuk 4 advanced syste
 | **API** | RBAC Middleware | Permission checking | 🚧 Planned |
 | **API** | Theme Service | Theme registry & metadata | 🚧 Planned |
 | **API** | Plugin Service | Plugin orchestration | 🚧 Planned |
-| **Database** | Supabase RLS | Row-level tenant isolation | 🚧 Planned |
+| **Database** | PostgreSQL RLS | Row-level tenant isolation | 🚧 Planned |
 
 ### Shared Context Pattern
 

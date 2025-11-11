@@ -10,7 +10,7 @@
 > **⚠️ IMPLEMENTATION NOTE**  
 > This document describes the **planned backend multi-tenant architecture**.  
 > **Current**: React SPA (single-tenant) with mock data  
-> **Planned**: Laravel API + Supabase/PostgreSQL with RLS + Frontend tenant context  
+> **Planned**: Laravel API + PostgreSQL with RLS + Frontend tenant context  
 > **Architecture**: API-First with clear Frontend-Backend separation
 
 ---
@@ -253,7 +253,7 @@ Multi-tenancy adalah architectural pattern dimana **single instance aplikasi** m
 
 ## RECOMMENDED ARCHITECTURE
 
-### Decision: **Single Database + tenant_id with Supabase Row-Level Security (RLS)** ✅
+### Decision: **Single Database + tenant_id with PostgreSQL Row-Level Security (RLS)** ✅
 
 **Rationale:**
 
@@ -263,8 +263,8 @@ Multi-tenancy adalah architectural pattern dimana **single instance aplikasi** m
    - Similar resource usage patterns
 
 2. **Cost Optimization**:
-   - Supporting 10,000 tenants on **single Supabase/PostgreSQL instance**
-   - Supabase Free tier untuk development, Pro tier ~$25/month untuk production
+   - Supporting 10,000 tenants on **single PostgreSQL instance**
+   - PostgreSQL Free tier untuk development, Pro tier ~$25/month untuk production
    - vs 10,000 × dedicated databases (~$2M/month)
    - **99% cost savings**
 
@@ -272,37 +272,37 @@ Multi-tenancy adalah architectural pattern dimana **single instance aplikasi** m
    - Single migration untuk schema changes
    - Single backup untuk all tenants
    - Easier to monitor & debug
-   - **Supabase dashboard** untuk database management
+   - **PostgreSQL dashboard** untuk database management
 
 4. **Scalability**:
    - Can support 10,000+ tenants per instance
-   - Horizontal scaling via Supabase read replicas
+   - Horizontal scaling via PostgreSQL read replicas
    - Shard by tenant_id if needed (future)
 
-5. **Security dengan Supabase RLS**:
+5. **Security dengan PostgreSQL RLS**:
    - **Database-level security**: Row-Level Security policies enforced di PostgreSQL
    - **Double protection**: Application-level (Laravel middleware) + Database-level (RLS)
    - **Zero-trust**: Bahkan jika application bug, RLS mencegah cross-tenant access
-   - **Audit logging**: Supabase built-in audit logs
+   - **Audit logging**: PostgreSQL built-in audit logs
 
 **Mitigation for Cons:**
 
 | Risk | Mitigation |
 |------|------------|
-| Noisy Neighbor | Resource quotas, rate limiting, query timeouts, Supabase connection pooling |
-| Security (Data Leakage) | **Supabase Row-Level Security (RLS)** + Laravel middleware + audit logging + automated testing |
-| Schema Changes | Blue-green deployments, feature flags, rollback capability, Supabase migrations |
-| Compliance | Encryption at rest/transit, audit logs, SOC2 Type II certification, Supabase compliance |
+| Noisy Neighbor | Resource quotas, rate limiting, query timeouts, PostgreSQL connection pooling |
+| Security (Data Leakage) | **PostgreSQL Row-Level Security (RLS)** + Laravel middleware + audit logging + automated testing |
+| Schema Changes | Blue-green deployments, feature flags, rollback capability, PostgreSQL migrations |
+| Compliance | Encryption at rest/transit, audit logs, SOC2 Type II certification, PostgreSQL compliance |
 
-### **Supabase RLS Benefits**
+### **PostgreSQL RLS Benefits**
 
-**Why Supabase + RLS is Ideal for This Architecture:**
+**Why PostgreSQL + RLS is Ideal for This Architecture:**
 
 ✅ **Database-Level Isolation**: RLS policies ensure queries automatically filtered by tenant_id  
-✅ **Developer Experience**: Supabase Studio untuk easy RLS policy management  
-✅ **Real-time Capabilities**: Supabase Realtime untuk live updates (future feature)  
-✅ **Storage Integration**: Supabase Storage untuk tenant-scoped file uploads  
-✅ **Authentication Integration**: Can integrate Supabase Auth dengan Laravel Sanctum  
+✅ **Developer Experience**: PostgreSQL Studio untuk easy RLS policy management  
+✅ **Real-time Capabilities**: PostgreSQL Realtime untuk live updates (future feature)  
+✅ **Storage Integration**: PostgreSQL Storage untuk tenant-scoped file uploads  
+✅ **Authentication Integration**: Can integrate PostgreSQL Auth dengan Laravel Sanctum  
 ✅ **Cost Effective**: Free tier generous, Pro tier affordable  
 ✅ **PostgreSQL Native**: Full PostgreSQL 15+ features (JSONB, triggers, functions)
 
@@ -312,7 +312,7 @@ Multi-tenancy adalah architectural pattern dimana **single instance aplikasi** m
 
 ### Architecture Overview
 
-Hexagonal Architecture (Ports & Adapters) dengan **API-First approach** ensures clean separation between frontend (React), backend API (Laravel), dan infrastructure (Supabase), making multi-tenancy transparent to domain layer.
+Hexagonal Architecture (Ports & Adapters) dengan **API-First approach** ensures clean separation between frontend (React), backend API (Laravel), dan infrastructure (PostgreSQL), making multi-tenancy transparent to domain layer.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -356,7 +356,7 @@ Hexagonal Architecture (Ports & Adapters) dengan **API-First approach** ensures 
 │  │  - Extract tenant dari header/subdomain                  │   │
 │  │  - Validate tenant exists & active                       │   │
 │  │  - Set tenant context untuk request lifecycle            │   │
-│  │  - Set Supabase RLS context                              │   │
+│  │  - Set PostgreSQL RLS context                              │   │
 │  └────────────────────┬─────────────────────────────────────┘   │
 │                       │                                          │
 │  ┌────────────────────▼─────────────────────────────────────┐   │
@@ -389,16 +389,16 @@ Hexagonal Architecture (Ports & Adapters) dengan **API-First approach** ensures 
 │  ┌──────────────────────────────────────────────────────────┐    │
 │  │  Tenant-Scoped Repositories (Adapters)                   │    │
 │  │                                                           │    │
-│  │  SupabaseProductRepository implements ProductPort        │    │
-│  │  SupabaseOrderRepository implements OrderPort            │    │
+│  │  PostgreSQLProductRepository implements ProductPort        │    │
+│  │  PostgreSQLOrderRepository implements OrderPort            │    │
 │  │                                                           │    │
 │  │  - Queries automatically scoped by tenant_id             │    │
-│  │  - Supabase RLS policies enforced                        │    │
+│  │  - PostgreSQL RLS policies enforced                        │    │
 │  └────────────────────┬─────────────────────────────────────┘    │
 │                       │                                           │
 │                       ▼                                           │
 │  ┌──────────────────────────────────────────────────────────┐    │
-│  │  DATABASE (Supabase/PostgreSQL)                          │    │
+│  │  DATABASE (PostgreSQL)                          │    │
 │  │                                                           │    │
 │  │  RLS Policies:                                           │    │
 │  │  CREATE POLICY tenant_isolation ON products              │    │
@@ -566,7 +566,7 @@ class IdentifyTenant
         // Set tenant context for this request
         app(TenantContext::class)->setTenant($tenant);
         
-        // Set Supabase RLS context
+        // Set PostgreSQL RLS context
         \DB::statement("SELECT set_config('app.tenant_id', ?, false)", [$tenant->id]);
         
         $response = $next($request);

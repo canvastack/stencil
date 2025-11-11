@@ -9,7 +9,7 @@
 
 > **⚠️ UPDATED CONTEXT**  
 > **Current State**: React 18.3 frontend dengan basic theme engine (Implemented)  
-> **Target State**: Full-stack platform dengan Laravel API + Supabase + Multi-tenant + RBAC  
+> **Target State**: Full-stack platform dengan Laravel API + PostgreSQL + Multi-tenant + RBAC  
 > **Strategy**: Build backend API around existing frontend, progressive enhancement
 
 ---

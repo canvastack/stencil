@@ -140,7 +140,7 @@ Financial system follows **API-First Hexagonal Architecture** principles:
 - CalculateProfitabilityUseCase
 
 **Infrastructure Layer (Adapters):**
-- Database repositories (Supabase/PostgreSQL)
+- Database repositories (PostgreSQL)
 - Payment gateway integrations (Stripe, Midtrans)
 - Accounting system integrations (QuickBooks, Xero)
 - Email notification services

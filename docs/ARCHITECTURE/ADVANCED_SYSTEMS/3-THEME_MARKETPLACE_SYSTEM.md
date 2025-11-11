@@ -347,7 +347,7 @@ my-awesome-theme/
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│      DATABASE (Supabase/PostgreSQL) - 🚧 PLANNED             │
+│      DATABASE (PostgreSQL) - 🚧 PLANNED             │
 │                                                              │
 │  Tables:                                                     │
 │  • themes (registry of all themes)                          │
@@ -474,8 +474,8 @@ class ThemeService
     
     private function getBundleUrl(Theme $theme): string
     {
-        // Return Supabase Storage URL or CDN URL for theme assets
-        return Storage::disk('supabase')->url("themes/{$theme->slug}/bundle.js");
+        // Return PostgreSQL Storage URL or CDN URL for theme assets
+        return Storage::disk('CanvaStencil')->url("themes/{$theme->slug}/bundle.js");
     }
 }
 ```
@@ -1823,7 +1823,7 @@ $themeData = Cache::remember("theme:{$slug}:metadata", 3600, function() use ($sl
 Event::listen(ThemeUpdated::class, function($event) {
     Cache::tags(['theme', $event->theme->slug])->flush();
     
-    // Notify frontend via websocket (Supabase Realtime)
+    // Notify frontend via websocket (PostgreSQL Realtime)
     broadcast(new ThemeCacheInvalidated($event->theme));
 });
 ```

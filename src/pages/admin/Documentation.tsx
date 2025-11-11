@@ -190,7 +190,7 @@ export default function Documentation() {
                   <div>
                     <h4 className="font-semibold">Backend (Recommended)</h4>
                     <ul className="list-disc list-inside space-y-1 ml-4 text-sm">
-                      <li>CanvaStencil Cloud (Supabase)</li>
+                      <li>CanvaStencil Cloud (PostgreSQL)</li>
                       <li>PostgreSQL database</li>
                       <li>Row Level Security (RLS)</li>
                       <li>Edge Functions for API</li>
@@ -266,7 +266,7 @@ const homeContent = getPageContent('home');`}
                 </h4>
                 <ul className="list-disc list-inside space-y-1 ml-4 mt-2 text-sm">
                   <li>Always validate user input on both client and server</li>
-                  <li>Use Row Level Security (RLS) policies in Supabase</li>
+                  <li>Use Row Level Security (RLS) policies in PostgreSQL</li>
                   <li>Never expose API keys in client code</li>
                   <li>Implement proper authentication and authorization</li>
                   <li>Sanitize HTML content before rendering</li>
@@ -350,7 +350,7 @@ const homeContent = getPageContent('home');`}
               <AccordionItem value="faq-8">
                 <AccordionTrigger>How often should I backup the database?</AccordionTrigger>
                 <AccordionContent>
-                  <p>If using CanvaStencil Cloud (Supabase), automatic backups are included. For self-hosted installations, we recommend:</p>
+                  <p>If using CanvaStencil Cloud (PostgreSQL), automatic backups are included. For self-hosted installations, we recommend:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
                     <li>Daily automatic backups</li>
                     <li>Weekly manual verification of backups</li>

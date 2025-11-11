@@ -10,7 +10,7 @@
 > **⚠️ IMPLEMENTATION NOTE**  
 > This document describes the **planned RBAC system architecture**.  
 > **Current**: Frontend dengan basic routing (no RBAC)  
-> **Planned**: Laravel RBAC API + Supabase RLS + React permission hooks  
+> **Planned**: Laravel RBAC API + PostgreSQL RLS + React permission hooks  
 > **Architecture**: API-based permission checking dengan client-side UI enforcement
 
 ---
@@ -218,7 +218,7 @@ products.* (wildcard)
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────────┐
-│         DATABASE (Supabase/PostgreSQL) - PLANNED             │
+│         DATABASE (PostgreSQL) - PLANNED             │
 │                                                              │
 │  ┌────────────────────────────────────────────────────┐     │
 │  │  RBAC Tables (tenant-scoped)                       │     │
