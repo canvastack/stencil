@@ -1,0 +1,1098 @@
+﻿paths:
+  /pages/home:
+    get:
+      tags:
+        - Homepage
+      summary: Get Homepage Content
+      description: |
+        Retrieve complete homepage content including all sections:
+        - Hero carousel with typing animation
+        - Social proof statistics
+        - Process workflow
+        - Why choose us features
+        - Achievements
+        - Services
+        - Testimonials
+        - CTA sections
+        
+        **Note:** Returns only published content for public consumption.
+      operationId: getHomepage
+      security: []
+      responses:
+        '200':
+          description: Homepage content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepagePublicResponse'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /admin/pages/home:
+    get:
+      tags:
+        - Homepage
+      summary: Get Homepage Admin Data
+      description: Get homepage data for admin panel including draft and unpublished content
+      operationId: getHomepageAdmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Homepage admin data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageAdminResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+    
+    put:
+      tags:
+        - Homepage
+      summary: Update Page Settings
+      description: Update homepage page-level settings (title, publish status, etc.)
+      operationId: updateHomepageSettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Home Page"
+                publishStatus:
+                  $ref: '../components/schemas/common.yaml#/PublishStatus'
+                publishedAt:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  example: "2025-01-01T00:00:00Z"
+      responses:
+        '200':
+          description: Page settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Page settings updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/hero:
+    put:
+      tags:
+        - Homepage
+      summary: Update Hero Section
+      description: |
+        Update hero section content including:
+        - Typing animation texts
+        - Carousel images
+        - CTA buttons
+        - Autoplay settings
+      operationId: updateHeroSection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeroSectionInput'
+      responses:
+        '200':
+          description: Hero section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/HeroSection'
+                  message:
+                    type: string
+                    example: "Hero section updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/social-proof:
+    put:
+      tags:
+        - Homepage
+      summary: Update Social Proof Section
+      description: Update social proof statistics and settings
+      operationId: updateSocialProofSection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialProofSectionInput'
+      responses:
+        '200':
+          description: Social proof section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SocialProofSection'
+                  message:
+                    type: string
+                    example: "Social proof section updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/process:
+    put:
+      tags:
+        - Homepage
+      summary: Update Process Section
+      description: Update workflow process steps
+      operationId: updateProcessSection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessSectionInput'
+      responses:
+        '200':
+          description: Process section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProcessSection'
+                  message:
+                    type: string
+                    example: "Process section updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/why-choose-us:
+    put:
+      tags:
+        - Homepage
+      summary: Update Why Choose Us Section
+      description: Update company features and advantages
+      operationId: updateWhyChooseUsSection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhyChooseUsSectionInput'
+      responses:
+        '200':
+          description: Why choose us section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/WhyChooseUsSection'
+                  message:
+                    type: string
+                    example: "Why choose us section updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/achievements:
+    put:
+      tags:
+        - Homepage
+      summary: Update Achievements Section
+      description: Update achievements and certifications
+      operationId: updateAchievementsSection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AchievementsSectionInput'
+      responses:
+        '200':
+          description: Achievements section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AchievementsSection'
+                  message:
+                    type: string
+                    example: "Achievements section updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/services:
+    put:
+      tags:
+        - Homepage
+      summary: Update Services Section
+      description: Update services list
+      operationId: updateServicesSection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServicesSectionInput'
+      responses:
+        '200':
+          description: Services section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ServicesSection'
+                  message:
+                    type: string
+                    example: "Services section updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/testimonials:
+    put:
+      tags:
+        - Homepage
+      summary: Update Testimonials Section
+      description: Update customer testimonials
+      operationId: updateTestimonialsSection
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestimonialsSectionInput'
+      responses:
+        '200':
+          description: Testimonials section updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TestimonialsSection'
+                  message:
+                    type: string
+                    example: "Testimonials section updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/home/cta:
+    put:
+      tags:
+        - Homepage
+      summary: Update CTA Sections
+      description: Update primary and secondary call-to-action sections
+      operationId: updateCTASections
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CTASectionsInput'
+      responses:
+        '200':
+          description: CTA sections updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CTASections'
+                  message:
+                    type: string
+                    example: "CTA sections updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+components:
+  schemas:
+    HomepagePublicResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            page:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 1
+                slug:
+                  type: string
+                  example: "home"
+                title:
+                  type: string
+                  example: "Home Page"
+                publishStatus:
+                  type: string
+                  example: "published"
+            sections:
+              type: object
+              properties:
+                hero:
+                  $ref: '#/components/schemas/HeroSection'
+                socialProof:
+                  $ref: '#/components/schemas/SocialProofSection'
+                process:
+                  $ref: '#/components/schemas/ProcessSection'
+                whyChooseUs:
+                  $ref: '#/components/schemas/WhyChooseUsSection'
+                achievements:
+                  $ref: '#/components/schemas/AchievementsSection'
+                services:
+                  $ref: '#/components/schemas/ServicesSection'
+                testimonials:
+                  $ref: '#/components/schemas/TestimonialsSection'
+                cta:
+                  $ref: '#/components/schemas/CTASections'
+            seo:
+              type: object
+              description: SEO metadata (from Universal SEO System)
+
+    HomepageAdminResponse:
+      allOf:
+        - $ref: '#/components/schemas/HomepagePublicResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                editHistory:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      editedAt:
+                        type: string
+                        format: date-time
+                      editedBy:
+                        type: string
+                      section:
+                        type: string
+                      changes:
+                        type: object
+
+    HeroSection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        typingTexts:
+          type: array
+          items:
+            type: string
+          example: ["Welcome to Our Site", "Quality Products", "Fast Service"]
+        subtitle:
+          type: string
+          example: "Your trusted partner in business"
+        carouselImages:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              imageUrl:
+                type: string
+                format: uri
+                example: "/uploads/hero/slide1.jpg"
+              altText:
+                type: string
+                example: "Hero banner slide 1"
+              displayOrder:
+                type: integer
+                example: 1
+        carouselSettings:
+          type: object
+          properties:
+            autoplayInterval:
+              type: integer
+              example: 5000
+              description: Interval in milliseconds
+            showPauseButton:
+              type: boolean
+              example: true
+        buttons:
+          type: object
+          properties:
+            primary:
+              $ref: '#/components/schemas/ButtonConfig'
+            secondary:
+              $ref: '#/components/schemas/ButtonConfig'
+
+    HeroSectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        typingTexts:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          maxItems: 10
+          example: ["Welcome", "Discover", "Experience"]
+        subtitle:
+          type: string
+          maxLength: 500
+          example: "Your trusted partner"
+        carouselImages:
+          type: array
+          items:
+            type: object
+            required:
+              - imageUrl
+            properties:
+              imageUrl:
+                type: string
+                format: uri
+              altText:
+                type: string
+              displayOrder:
+                type: integer
+        carouselAutoplayInterval:
+          type: integer
+          minimum: 1000
+          maximum: 30000
+          default: 5000
+        carouselShowPauseButton:
+          type: boolean
+          default: true
+        primaryButtonText:
+          type: string
+          maxLength: 100
+        primaryButtonLink:
+          type: string
+          maxLength: 255
+        secondaryButtonText:
+          type: string
+          maxLength: 100
+        secondaryButtonLink:
+          type: string
+          maxLength: 255
+
+    SocialProofSection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Trusted by Thousands"
+        subtitle:
+          type: string
+          example: "Our achievements speak for themselves"
+        stats:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatItem'
+
+    SocialProofSectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+        stats:
+          type: array
+          items:
+            type: object
+            required:
+              - iconName
+              - value
+              - label
+            properties:
+              iconName:
+                type: string
+                example: "Users"
+              value:
+                type: string
+                maxLength: 50
+                example: "2000+"
+              label:
+                type: string
+                maxLength: 100
+                example: "Happy Clients"
+              colorClass:
+                type: string
+                example: "text-blue-500"
+
+    StatItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        iconName:
+          type: string
+          example: "Users"
+          description: Lucide icon name
+        value:
+          type: string
+          example: "2000+"
+        label:
+          type: string
+          example: "Happy Clients"
+        colorClass:
+          type: string
+          example: "text-blue-500"
+
+    ProcessSection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Our Process"
+        subtitle:
+          type: string
+          example: "Simple and effective workflow"
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessStep'
+
+    ProcessSectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+            required:
+              - stepNumber
+              - iconName
+              - title
+            properties:
+              stepNumber:
+                type: integer
+                minimum: 1
+              iconName:
+                type: string
+              title:
+                type: string
+                maxLength: 255
+              description:
+                type: string
+
+    ProcessStep:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        stepNumber:
+          type: integer
+          example: 1
+        iconName:
+          type: string
+          example: "FileText"
+        title:
+          type: string
+          example: "Consultation"
+        description:
+          type: string
+          example: "We discuss your needs and requirements"
+
+    WhyChooseUsSection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Why Choose Us"
+        subtitle:
+          type: string
+          example: "What makes us different"
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureItem'
+
+    WhyChooseUsSectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+        features:
+          type: array
+          items:
+            type: object
+            required:
+              - featureNumber
+              - title
+            properties:
+              featureNumber:
+                type: integer
+                minimum: 1
+              title:
+                type: string
+                maxLength: 255
+              description:
+                type: string
+              colorTheme:
+                type: string
+                enum: [blue, green, orange, purple, red, yellow]
+                default: blue
+
+    FeatureItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        featureNumber:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Quality Assured"
+        description:
+          type: string
+          example: "Premium quality in every product"
+        colorTheme:
+          type: string
+          example: "blue"
+
+    AchievementsSection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Our Achievements"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AchievementItem'
+
+    AchievementsSectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - achievementNumber
+              - iconName
+              - title
+            properties:
+              achievementNumber:
+                type: integer
+                minimum: 1
+              iconName:
+                type: string
+              title:
+                type: string
+                maxLength: 255
+              description:
+                type: string
+              colorTheme:
+                type: string
+                default: blue
+
+    AchievementItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        achievementNumber:
+          type: integer
+          example: 1
+        iconName:
+          type: string
+          example: "Award"
+        title:
+          type: string
+          example: "ISO 9001:2015 Certified"
+        description:
+          type: string
+          example: "International quality management standard"
+        colorTheme:
+          type: string
+          example: "gold"
+
+    ServicesSection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Our Services"
+        subtitle:
+          type: string
+          example: "Comprehensive solutions"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceItem'
+
+    ServicesSectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - serviceNumber
+              - iconName
+              - title
+            properties:
+              serviceNumber:
+                type: integer
+                minimum: 1
+              iconName:
+                type: string
+              title:
+                type: string
+                maxLength: 255
+              description:
+                type: string
+
+    ServiceItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        serviceNumber:
+          type: integer
+          example: 1
+        iconName:
+          type: string
+          example: "Package"
+        title:
+          type: string
+          example: "Laser Etching"
+        description:
+          type: string
+          example: "Precision laser etching service"
+
+    TestimonialsSection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Client Testimonials"
+        subtitle:
+          type: string
+          example: "What our clients say"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestimonialItem'
+
+    TestimonialsSectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - customerName
+              - testimonialContent
+            properties:
+              testimonialNumber:
+                type: integer
+                minimum: 1
+              customerName:
+                type: string
+                maxLength: 255
+              customerRole:
+                type: string
+                maxLength: 255
+              customerCompany:
+                type: string
+                maxLength: 255
+              rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+                default: 5
+              imageUrl:
+                type: string
+                format: uri
+              testimonialContent:
+                type: string
+              isFeatured:
+                type: boolean
+                default: false
+
+    TestimonialItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        testimonialNumber:
+          type: integer
+          example: 1
+        customerName:
+          type: string
+          example: "John Doe"
+        customerRole:
+          type: string
+          example: "CEO"
+        customerCompany:
+          type: string
+          example: "Tech Corp Indonesia"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        imageUrl:
+          type: string
+          format: uri
+          example: "/uploads/testimonials/john.jpg"
+        testimonialContent:
+          type: string
+          example: "Excellent service and quality products!"
+        isFeatured:
+          type: boolean
+          example: true
+
+    CTASections:
+      type: object
+      properties:
+        primary:
+          $ref: '#/components/schemas/CTASection'
+        secondary:
+          $ref: '#/components/schemas/CTASection'
+
+    CTASectionsInput:
+      type: object
+      properties:
+        primary:
+          $ref: '#/components/schemas/CTASectionInput'
+        secondary:
+          $ref: '#/components/schemas/CTASectionInput'
+
+    CTASection:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Ready to Get Started?"
+        subtitle:
+          type: string
+          example: "Contact us today"
+        buttonText:
+          type: string
+          example: "Contact Us"
+        buttonLink:
+          type: string
+          example: "/contact"
+        secondaryButtonText:
+          type: string
+          nullable: true
+          example: "View Portfolio"
+        secondaryButtonLink:
+          type: string
+          nullable: true
+          example: "/products"
+
+    CTASectionInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+        buttonText:
+          type: string
+          maxLength: 100
+        buttonLink:
+          type: string
+          maxLength: 255
+        secondaryButtonText:
+          type: string
+          maxLength: 100
+        secondaryButtonLink:
+          type: string
+          maxLength: 255
+
+    ButtonConfig:
+      type: object
+      properties:
+        text:
+          type: string
+          example: "Get Started"
+        link:
+          type: string
+          example: "/products"

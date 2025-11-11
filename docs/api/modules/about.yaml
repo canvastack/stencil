@@ -1,0 +1,620 @@
+﻿paths:
+  /pages/about:
+    get:
+      tags:
+        - About Us
+      summary: Get About Page Content
+      description: |
+        Retrieve complete About Us page content including:
+        - Hero section
+        - Company profile (founded year, location)
+        - Mission & Vision
+        - Company values
+        - Team members
+        - Company timeline
+        - Certifications & Awards
+      operationId: getAboutPage
+      security: []
+      responses:
+        '200':
+          description: About page content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutPagePublicResponse'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /admin/pages/about:
+    get:
+      tags:
+        - About Us
+      summary: Get About Page Admin Data
+      description: Get about page data for admin panel
+      operationId: getAboutPageAdmin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: About page admin data retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AboutPagePublicResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+
+  /admin/pages/about/company-info:
+    put:
+      tags:
+        - About Us
+      summary: Update Company Information
+      description: Update hero section and basic company profile (founded year, location)
+      operationId: updateCompanyInfo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                heroTitle:
+                  type: string
+                  maxLength: 255
+                  example: "About Our Company"
+                heroSubtitle:
+                  type: string
+                  example: "Building excellence since 2015"
+                foundedYear:
+                  type: integer
+                  minimum: 1900
+                  maximum: 2100
+                  example: 2015
+                location:
+                  type: string
+                  maxLength: 255
+                  example: "Jakarta, Indonesia"
+      responses:
+        '200':
+          description: Company information updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Company information updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/about/mission-vision:
+    put:
+      tags:
+        - About Us
+      summary: Update Mission & Vision
+      description: Update company mission and vision statements
+      operationId: updateMissionVision
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MissionVisionInput'
+      responses:
+        '200':
+          description: Mission and vision updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/MissionVision'
+                  message:
+                    type: string
+                    example: "Mission and vision updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/about/values:
+    put:
+      tags:
+        - About Us
+      summary: Update Company Values
+      description: Update company core values list
+      operationId: updateCompanyValues
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyValuesInput'
+      responses:
+        '200':
+          description: Company values updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CompanyValues'
+                  message:
+                    type: string
+                    example: "Company values updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/pages/about/team:
+    get:
+      tags:
+        - About Us
+      summary: List Team Members
+      description: Get list of all team members (admin view)
+      operationId: listTeamMembers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+      responses:
+        '200':
+          description: Team members retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamMember'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+    
+    post:
+      tags:
+        - About Us
+      summary: Add Team Member
+      description: Add new team member
+      operationId: addTeamMember
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamMemberInput'
+      responses:
+        '201':
+          description: Team member added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TeamMember'
+                  message:
+                    type: string
+                    example: "Team member added successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+    
+    put:
+      tags:
+        - About Us
+      summary: Update Team Members
+      description: Bulk update team members (reorder, update, delete)
+      operationId: updateTeamMembers
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                members:
+                  type: array
+                  items:
+                    allOf:
+                      - $ref: '#/components/schemas/TeamMemberInput'
+                      - type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+      responses:
+        '200':
+          description: Team members updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Team members updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+
+  /admin/pages/about/timeline:
+    put:
+      tags:
+        - About Us
+      summary: Update Company Timeline
+      description: Update company history timeline
+      operationId: updateTimeline
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TimelineItemInput'
+      responses:
+        '200':
+          description: Timeline updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimelineItem'
+                  message:
+                    type: string
+                    example: "Timeline updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+components:
+  schemas:
+    AboutPagePublicResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            page:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 2
+                slug:
+                  type: string
+                  example: "about"
+                title:
+                  type: string
+                  example: "About Us"
+                publishStatus:
+                  type: string
+                  example: "published"
+            hero:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "About Our Company"
+                subtitle:
+                  type: string
+                  example: "Building excellence since 2015"
+            company:
+              type: object
+              properties:
+                foundedYear:
+                  type: integer
+                  example: 2015
+                location:
+                  type: string
+                  example: "Jakarta, Indonesia"
+            missionVision:
+              $ref: '#/components/schemas/MissionVision'
+            values:
+              $ref: '#/components/schemas/CompanyValues'
+            team:
+              type: array
+              items:
+                $ref: '#/components/schemas/TeamMember'
+            timeline:
+              type: array
+              items:
+                $ref: '#/components/schemas/TimelineItem'
+            certifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/Certification'
+            seo:
+              type: object
+              description: SEO metadata from Universal SEO System
+
+    MissionVision:
+      type: object
+      properties:
+        mission:
+          type: object
+          properties:
+            title:
+              type: string
+              example: "Our Mission"
+            statement:
+              type: string
+              example: "To provide exceptional quality products and services"
+        vision:
+          type: object
+          properties:
+            title:
+              type: string
+              example: "Our Vision"
+            statement:
+              type: string
+              example: "To become the leading provider in Southeast Asia"
+
+    MissionVisionInput:
+      type: object
+      properties:
+        missionTitle:
+          type: string
+          maxLength: 255
+          default: "Our Mission"
+        missionStatement:
+          type: string
+        visionTitle:
+          type: string
+          maxLength: 255
+          default: "Our Vision"
+        visionStatement:
+          type: string
+
+    CompanyValues:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        title:
+          type: string
+          example: "Our Core Values"
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              description:
+                type: string
+                example: "Integrity - We conduct business with honesty"
+              displayOrder:
+                type: integer
+                example: 1
+
+    CompanyValuesInput:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: true
+        title:
+          type: string
+          maxLength: 255
+          default: "Our Values"
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - description
+            properties:
+              description:
+                type: string
+
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        position:
+          type: string
+          example: "Chief Executive Officer"
+        bio:
+          type: string
+          example: "John has over 20 years of experience..."
+        photoUrl:
+          type: string
+          format: uri
+          example: "/uploads/team/john-doe.jpg"
+        email:
+          type: string
+          format: email
+          example: "john.doe@company.com"
+        phone:
+          type: string
+          example: "+62 812-3456-7890"
+        linkedinUrl:
+          type: string
+          format: uri
+          example: "https://linkedin.com/in/johndoe"
+        twitterUrl:
+          type: string
+          format: uri
+          example: "https://twitter.com/johndoe"
+        isFeatured:
+          type: boolean
+          example: true
+        displayOrder:
+          type: integer
+          example: 1
+
+    TeamMemberInput:
+      type: object
+      required:
+        - name
+        - position
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          example: "John Doe"
+        position:
+          type: string
+          maxLength: 255
+          example: "CEO"
+        bio:
+          type: string
+        photoUrl:
+          type: string
+          format: uri
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 50
+        linkedinUrl:
+          type: string
+          format: uri
+        twitterUrl:
+          type: string
+          format: uri
+        isFeatured:
+          type: boolean
+          default: false
+        displayOrder:
+          type: integer
+          minimum: 0
+          default: 0
+
+    TimelineItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        year:
+          type: integer
+          example: 2015
+        title:
+          type: string
+          example: "Company Founded"
+        description:
+          type: string
+          example: "Started operations in Jakarta"
+
+    TimelineItemInput:
+      type: object
+      required:
+        - year
+        - title
+      properties:
+        year:
+          type: integer
+          minimum: 1900
+          maximum: 2100
+          example: 2015
+        title:
+          type: string
+          maxLength: 255
+          example: "Company Founded"
+        description:
+          type: string
+
+    Certification:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "ISO 9001:2015"
+        issuer:
+          type: string
+          example: "International Organization for Standardization"
+        issueYear:
+          type: integer
+          example: 2023
+        certificateNumber:
+          type: string
+          example: "ISO-9001-2023-001"
+        certificateUrl:
+          type: string
+          format: uri
+          example: "/documents/iso-certificate.pdf"
+        description:
+          type: string
+          example: "Quality Management System certification"

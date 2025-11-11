@@ -33,3 +33,4 @@ dist_local
 docs/DEVELOPMENTS/
 .backups/
 .zenco*
+*backup*

@@ -1,0 +1,515 @@
+﻿paths:
+  /faq:
+    get:
+      tags:
+        - FAQ
+      summary: Get FAQ Page Content
+      description: |
+        Retrieve FAQ page with all categories and questions.
+        Questions are grouped by categories.
+      operationId: getFAQPage
+      security: []
+      responses:
+        '200':
+          description: FAQ page content retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FAQPageResponse'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+
+  /faq/categories:
+    get:
+      tags:
+        - FAQ
+      summary: List FAQ Categories
+      description: Get list of all FAQ categories with question count
+      operationId: listFAQCategories
+      security: []
+      responses:
+        '200':
+          description: FAQ categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FAQCategory'
+
+  /faq/search:
+    get:
+      tags:
+        - FAQ
+      summary: Search FAQ
+      description: |
+        Full-text search across questions and answers.
+        
+        **Search Features:**
+        - Searches both questions and answers
+        - Relevance scoring
+        - Optional category filtering
+        - Analytics tracking (search queries are logged)
+      operationId: searchFAQ
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+            minLength: 2
+            example: "shipping"
+        - name: categoryId
+          in: query
+          required: false
+          description: Filter by category ID
+          schema:
+            type: integer
+            example: 3
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: string
+                        example: "shipping"
+                      totalResults:
+                        type: integer
+                        example: 5
+                      results:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FAQSearchResult'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /faq/{id}/helpful:
+    post:
+      tags:
+        - FAQ
+      summary: Mark FAQ as Helpful
+      description: |
+        Increment helpful counter for an FAQ item.
+        
+        **Rate Limiting:** Uses IP-based tracking to prevent spam.
+        Users can mark each FAQ helpful only once.
+      operationId: markFAQHelpful
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: FAQ item ID
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Feedback recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Thank you for your feedback"
+                  data:
+                    type: object
+                    properties:
+                      helpfulCount:
+                        type: integer
+                        example: 252
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '429':
+          $ref: '../components/responses/common.yaml#/RateLimitExceeded'
+
+  /admin/faq/categories:
+    get:
+      tags:
+        - FAQ
+      summary: List FAQ Categories (Admin)
+      operationId: adminListFAQCategories
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FAQCategoryAdmin'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+
+    post:
+      tags:
+        - FAQ
+      summary: Create FAQ Category
+      operationId: createFAQCategory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FAQCategoryInput'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FAQCategoryAdmin'
+                  message:
+                    type: string
+                    example: "Category created successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+    put:
+      tags:
+        - FAQ
+      summary: Update FAQ Categories
+      description: Bulk update categories (reorder, update, delete)
+      operationId: updateFAQCategories
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                categories:
+                  type: array
+                  items:
+                    allOf:
+                      - $ref: '#/components/schemas/FAQCategoryInput'
+                      - type: object
+                        properties:
+                          id:
+                            type: integer
+      responses:
+        '200':
+          description: Categories updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Categories updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+
+  /admin/faq/questions:
+    get:
+      tags:
+        - FAQ
+      summary: List FAQ Questions (Admin)
+      operationId: adminListFAQQuestions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+      responses:
+        '200':
+          description: Questions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FAQItemAdmin'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+
+    post:
+      tags:
+        - FAQ
+      summary: Create FAQ Question
+      operationId: createFAQQuestion
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FAQItemInput'
+      responses:
+        '201':
+          description: Question created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/FAQItemAdmin'
+                  message:
+                    type: string
+                    example: "Question created successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+components:
+  schemas:
+    FAQPageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            page:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  example: 4
+                slug:
+                  type: string
+                  example: "faq"
+                title:
+                  type: string
+                  example: "FAQ"
+            hero:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Frequently Asked Questions"
+                subtitle:
+                  type: string
+                  example: "Find answers to common questions"
+            categories:
+              type: array
+              items:
+                $ref: '#/components/schemas/FAQCategoryWithQuestions'
+            cta:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Still have questions?"
+                subtitle:
+                  type: string
+                  example: "Contact our support team"
+                buttonText:
+                  type: string
+                  example: "Contact Us"
+                buttonLink:
+                  type: string
+                  example: "/contact"
+
+    FAQCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        categoryName:
+          type: string
+          example: "General"
+        iconName:
+          type: string
+          example: "HelpCircle"
+        description:
+          type: string
+          example: "General questions about our company"
+        questionCount:
+          type: integer
+          example: 5
+
+    FAQCategoryWithQuestions:
+      allOf:
+        - $ref: '#/components/schemas/FAQCategory'
+        - type: object
+          properties:
+            questions:
+              type: array
+              items:
+                $ref: '#/components/schemas/FAQItem'
+
+    FAQItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: "What are your business hours?"
+        answer:
+          type: string
+          example: "We are open Monday to Friday, 9:00 AM - 5:00 PM"
+        isFeatured:
+          type: boolean
+          example: true
+        viewCount:
+          type: integer
+          example: 245
+        helpfulCount:
+          type: integer
+          example: 189
+
+    FAQSearchResult:
+      allOf:
+        - $ref: '#/components/schemas/FAQItem'
+        - type: object
+          properties:
+            categoryId:
+              type: integer
+              example: 1
+            categoryName:
+              type: string
+              example: "General"
+            relevanceScore:
+              type: number
+              format: float
+              example: 0.95
+              description: Search relevance score (0-1)
+
+    FAQCategoryAdmin:
+      allOf:
+        - $ref: '#/components/schemas/FAQCategory'
+        - type: object
+          properties:
+            displayOrder:
+              type: integer
+              example: 1
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    FAQItemAdmin:
+      allOf:
+        - $ref: '#/components/schemas/FAQItem'
+        - type: object
+          properties:
+            categoryId:
+              type: integer
+              example: 1
+            displayOrder:
+              type: integer
+              example: 1
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    FAQCategoryInput:
+      type: object
+      required:
+        - categoryName
+      properties:
+        categoryName:
+          type: string
+          maxLength: 255
+          example: "General"
+        iconName:
+          type: string
+          maxLength: 100
+          example: "HelpCircle"
+        description:
+          type: string
+        displayOrder:
+          type: integer
+          minimum: 0
+          default: 0
+
+    FAQItemInput:
+      type: object
+      required:
+        - categoryId
+        - question
+        - answer
+      properties:
+        categoryId:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: "What are your business hours?"
+        answer:
+          type: string
+          example: "We are open Monday to Friday, 9:00 AM - 5:00 PM"
+        isFeatured:
+          type: boolean
+          default: false
+        displayOrder:
+          type: integer
+          minimum: 0
+          default: 0

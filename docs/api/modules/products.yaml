@@ -1,0 +1,1050 @@
+﻿openapi: 3.0.3
+info:
+  title: Products Module API
+  version: 1.0.0
+
+paths:
+  /api/v1/products:
+    get:
+      tags:
+        - Products
+      summary: Get all products (Public)
+      description: Retrieve paginated list of published products for public display
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SearchQuery'
+        - $ref: '../components/parameters/common.yaml#/SortQuery'
+        - name: category
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by category ID
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+          description: Minimum price filter
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+          description: Maximum price filter
+        - name: inStock
+          in: query
+          schema:
+            type: boolean
+          description: Filter products in stock only
+      responses:
+        '200':
+          description: List of products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductPublic'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    post:
+      tags:
+        - Products
+      summary: Create new product (Admin)
+      description: Create a new product with full customization options
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductDetail'
+                  message:
+                    type: string
+                    example: Product created successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID (Public)
+      description: Retrieve detailed product information including variations and custom form
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductDetail'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Products
+      summary: Update product (Admin)
+      description: Update existing product information
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdateRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductDetail'
+                  message:
+                    type: string
+                    example: Product updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Products
+      summary: Delete product (Admin)
+      description: Soft delete a product
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/SuccessResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/products:
+    get:
+      tags:
+        - Products
+      summary: Get all products (Admin)
+      description: Retrieve all products including drafts and unpublished
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SearchQuery'
+        - $ref: '../components/parameters/common.yaml#/SortQuery'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, archived]
+          description: Filter by publish status
+      responses:
+        '200':
+          description: List of products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductAdmin'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/products/categories:
+    get:
+      tags:
+        - Product Categories
+      summary: Get all product categories (Public)
+      description: Retrieve hierarchical list of product categories
+      parameters:
+        - name: parent
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by parent category ID (null for root categories)
+      responses:
+        '200':
+          description: List of categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductCategory'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    post:
+      tags:
+        - Product Categories
+      summary: Create new category (Admin)
+      description: Create a new product category
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductCategory'
+                  message:
+                    type: string
+                    example: Category created successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/products/categories/{id}:
+    get:
+      tags:
+        - Product Categories
+      summary: Get category by ID (Public)
+      description: Retrieve category details with subcategories
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductCategory'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Product Categories
+      summary: Update category (Admin)
+      description: Update existing category information
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductCategory'
+                  message:
+                    type: string
+                    example: Category updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Product Categories
+      summary: Delete category (Admin)
+      description: Delete a product category (must be empty)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/SuccessResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          description: Category cannot be deleted (has products or subcategories)
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/products/{id}/variations:
+    get:
+      tags:
+        - Product Variations
+      summary: Get product variations (Public)
+      description: Retrieve all variations for a specific product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product variations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductVariation'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    post:
+      tags:
+        - Product Variations
+      summary: Create product variation (Admin)
+      description: Add a new variation to an existing product
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariationRequest'
+      responses:
+        '201':
+          description: Variation created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductVariation'
+                  message:
+                    type: string
+                    example: Variation created successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/products/variations/{variationId}:
+    put:
+      tags:
+        - Product Variations
+      summary: Update product variation (Admin)
+      description: Update an existing product variation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: variationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariationRequest'
+      responses:
+        '200':
+          description: Variation updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductVariation'
+                  message:
+                    type: string
+                    example: Variation updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Product Variations
+      summary: Delete product variation (Admin)
+      description: Delete a product variation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: variationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Variation deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/SuccessResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+components:
+  schemas:
+    ProductPublic:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        name:
+          type: string
+          example: Sticker Custom A3
+        slug:
+          type: string
+          example: sticker-custom-a3
+        description:
+          type: string
+          example: Sticker vinyl berkualitas tinggi dengan customisasi penuh
+        shortDescription:
+          type: string
+          example: Sticker vinyl premium quality
+        price:
+          type: number
+          format: float
+          example: 50000
+        salePrice:
+          type: number
+          format: float
+          nullable: true
+          example: 45000
+        thumbnail:
+          $ref: '../components/schemas/common.yaml#/ImageMeta'
+        category:
+          type: object
+          properties:
+            id:
+              $ref: '../components/schemas/common.yaml#/UUID'
+            name:
+              type: string
+              example: Sticker & Label
+        inStock:
+          type: boolean
+          example: true
+        stockQuantity:
+          type: integer
+          example: 100
+        rating:
+          type: object
+          properties:
+            average:
+              type: number
+              format: float
+              example: 4.5
+            count:
+              type: integer
+              example: 24
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/ProductPublic'
+        - type: object
+          properties:
+            longDescription:
+              $ref: '../components/schemas/common.yaml#/RichText'
+            images:
+              type: array
+              items:
+                $ref: '../components/schemas/common.yaml#/ImageMeta'
+            specifications:
+              type: object
+              additionalProperties: true
+              example:
+                material: Vinyl
+                finish: Glossy
+                durability: 2-3 years outdoor
+            customFormFields:
+              type: array
+              items:
+                $ref: '#/components/schemas/CustomFormField'
+            variations:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductVariation'
+            seo:
+              type: object
+              properties:
+                metaTitle:
+                  type: string
+                metaDescription:
+                  type: string
+                keywords:
+                  type: array
+                  items:
+                    type: string
+            relatedProducts:
+              type: array
+              items:
+                type: string
+                format: uuid
+            updatedAt:
+              type: string
+              format: date-time
+
+    ProductAdmin:
+      allOf:
+        - $ref: '#/components/schemas/ProductDetail'
+        - type: object
+          properties:
+            status:
+              $ref: '../components/schemas/common.yaml#/PublishStatus'
+            sku:
+              type: string
+              example: STK-A3-001
+            barcode:
+              type: string
+              nullable: true
+            costPrice:
+              type: number
+              format: float
+              example: 30000
+            views:
+              type: integer
+              example: 1250
+            sales:
+              type: integer
+              example: 87
+
+    ProductCreateRequest:
+      type: object
+      required:
+        - name
+        - categoryId
+        - price
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 255
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        categoryId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        shortDescription:
+          type: string
+          maxLength: 500
+        longDescription:
+          type: object
+        price:
+          type: number
+          format: float
+          minimum: 0
+        salePrice:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+        sku:
+          type: string
+        barcode:
+          type: string
+          nullable: true
+        costPrice:
+          type: number
+          format: float
+          minimum: 0
+        stockQuantity:
+          type: integer
+          minimum: 0
+        thumbnail:
+          type: string
+          format: uri
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        specifications:
+          type: object
+          additionalProperties: true
+        customFormFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomFormField'
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+        seo:
+          type: object
+          properties:
+            metaTitle:
+              type: string
+            metaDescription:
+              type: string
+            keywords:
+              type: array
+              items:
+                type: string
+
+    ProductUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 255
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        categoryId:
+          type: string
+          format: uuid
+        description:
+          type: string
+        shortDescription:
+          type: string
+          maxLength: 500
+        longDescription:
+          type: object
+        price:
+          type: number
+          format: float
+          minimum: 0
+        salePrice:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+        sku:
+          type: string
+        barcode:
+          type: string
+          nullable: true
+        costPrice:
+          type: number
+          format: float
+          minimum: 0
+        stockQuantity:
+          type: integer
+          minimum: 0
+        thumbnail:
+          type: string
+          format: uri
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+        specifications:
+          type: object
+          additionalProperties: true
+        customFormFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/CustomFormField'
+        status:
+          type: string
+          enum: [draft, published, archived]
+        seo:
+          type: object
+          properties:
+            metaTitle:
+              type: string
+            metaDescription:
+              type: string
+            keywords:
+              type: array
+              items:
+                type: string
+
+    CustomFormField:
+      type: object
+      required:
+        - name
+        - label
+        - type
+      properties:
+        name:
+          type: string
+          example: material
+        label:
+          type: string
+          example: Pilih Material
+        type:
+          type: string
+          enum: [select, radio, checkbox, text, number, file]
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+              priceModifier:
+                type: number
+                format: float
+          example:
+            - value: vinyl
+              label: Vinyl
+              priceModifier: 0
+            - value: chromo
+              label: Chromo
+              priceModifier: 5000
+        required:
+          type: boolean
+          default: false
+        order:
+          type: integer
+          default: 0
+
+    ProductCategory:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        name:
+          type: string
+          example: Sticker & Label
+        slug:
+          type: string
+          example: sticker-label
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+          example: sticker-icon.svg
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        order:
+          type: integer
+          default: 0
+        productsCount:
+          type: integer
+          example: 15
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductCategory'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        order:
+          type: integer
+          default: 0
+
+    ProductVariation:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        productId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Size A3 - Material Vinyl
+        sku:
+          type: string
+          example: STK-A3-VINYL
+        price:
+          type: number
+          format: float
+          example: 55000
+        salePrice:
+          type: number
+          format: float
+          nullable: true
+        stockQuantity:
+          type: integer
+          example: 50
+        attributes:
+          type: object
+          additionalProperties: true
+          example:
+            size: A3
+            material: Vinyl
+        image:
+          type: string
+          format: uri
+          nullable: true
+        isDefault:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    VariationRequest:
+      type: object
+      required:
+        - name
+        - price
+        - attributes
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 255
+        sku:
+          type: string
+        price:
+          type: number
+          format: float
+          minimum: 0
+        salePrice:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+        stockQuantity:
+          type: integer
+          minimum: 0
+        attributes:
+          type: object
+          additionalProperties: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+        isDefault:
+          type: boolean
+          default: false

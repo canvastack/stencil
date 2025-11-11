@@ -1,0 +1,760 @@
+﻿openapi: 3.0.3
+info:
+  title: Order Management Module API
+  version: 1.0.0
+
+paths:
+  /api/v1/orders:
+    post:
+      tags:
+        - Orders
+      summary: Create new order
+      description: Customer creates a new order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderDetail'
+                  message:
+                    type: string
+                    example: Order created successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/orders/my:
+    get:
+      tags:
+        - Orders
+      summary: Get my orders
+      description: Retrieve current user's orders
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, cancelled]
+          description: Filter by order status
+      responses:
+        '200':
+          description: Orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/orders/{id}:
+    get:
+      tags:
+        - Orders
+      summary: Get order by ID
+      description: Retrieve order details (customer can only see their own)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderDetail'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/orders/{id}/cancel:
+    post:
+      tags:
+        - Orders
+      summary: Cancel order
+      description: Customer cancels their order (only if status is pending)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Order'
+                  message:
+                    type: string
+                    example: Order cancelled successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          description: Cannot cancel order in current status
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/orders:
+    get:
+      tags:
+        - Orders
+      summary: Get all orders (Admin)
+      description: Retrieve paginated list of all orders
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SearchQuery'
+        - $ref: '../components/parameters/common.yaml#/SortQuery'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, cancelled, refunded]
+          description: Filter by order status
+        - name: paymentStatus
+          in: query
+          schema:
+            type: string
+            enum: [pending, paid, failed, refunded]
+          description: Filter by payment status
+        - name: customerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by customer ID
+      responses:
+        '200':
+          description: Orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderAdmin'
+                  meta:
+                    allOf:
+                      - $ref: '../components/schemas/common.yaml#/PaginationMeta'
+                      - type: object
+                        properties:
+                          statistics:
+                            $ref: '#/components/schemas/OrderStatistics'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/orders/{id}:
+    put:
+      tags:
+        - Orders
+      summary: Update order (Admin)
+      description: Update order status and information
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdateRequest'
+      responses:
+        '200':
+          description: Order updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderAdmin'
+                  message:
+                    type: string
+                    example: Order updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/orders/{id}/status:
+    patch:
+      tags:
+        - Orders
+      summary: Update order status (Admin)
+      description: Change order status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [pending, processing, completed, cancelled, refunded]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderAdmin'
+                  message:
+                    type: string
+                    example: Order status updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/orders/{id}/payment:
+    patch:
+      tags:
+        - Orders
+      summary: Update payment status (Admin)
+      description: Update order payment status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentStatus
+              properties:
+                paymentStatus:
+                  type: string
+                  enum: [pending, paid, failed, refunded]
+                paymentMethod:
+                  type: string
+                paymentProof:
+                  type: string
+                  format: uri
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Payment status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderAdmin'
+                  message:
+                    type: string
+                    example: Payment status updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/orders/{id}/notes:
+    post:
+      tags:
+        - Orders
+      summary: Add order note (Admin)
+      description: Add internal note to order
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - note
+              properties:
+                note:
+                  type: string
+                  minLength: 1
+      responses:
+        '201':
+          description: Note added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/OrderNote'
+                  message:
+                    type: string
+                    example: Note added successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        orderNumber:
+          type: string
+          example: ORD-2025-00001
+        status:
+          type: string
+          enum: [pending, processing, completed, cancelled, refunded]
+          example: processing
+        paymentStatus:
+          type: string
+          enum: [pending, paid, failed, refunded]
+          example: paid
+        subtotal:
+          type: number
+          format: float
+          example: 250000
+        discount:
+          type: number
+          format: float
+          example: 25000
+        tax:
+          type: number
+          format: float
+          example: 22500
+        shippingCost:
+          type: number
+          format: float
+          example: 15000
+        total:
+          type: number
+          format: float
+          example: 262500
+        itemsCount:
+          type: integer
+          example: 3
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/Order'
+        - type: object
+          properties:
+            customer:
+              type: object
+              properties:
+                id:
+                  $ref: '../components/schemas/common.yaml#/UUID'
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderItem'
+            shippingAddress:
+              $ref: '#/components/schemas/Address'
+            billingAddress:
+              $ref: '#/components/schemas/Address'
+            paymentMethod:
+              type: string
+              example: bank_transfer
+            paymentProof:
+              type: string
+              format: uri
+              nullable: true
+            notes:
+              type: string
+              nullable: true
+            timeline:
+              type: array
+              items:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+                  note:
+                    type: string
+                    nullable: true
+
+    OrderAdmin:
+      allOf:
+        - $ref: '#/components/schemas/OrderDetail'
+        - type: object
+          properties:
+            internalNotes:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderNote'
+            ipAddress:
+              type: string
+              example: 192.168.1.1
+            userAgent:
+              type: string
+
+    OrderCreateRequest:
+      type: object
+      required:
+        - items
+        - shippingAddress
+        - paymentMethod
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: string
+                format: uuid
+              variationId:
+                type: string
+                format: uuid
+                nullable: true
+              quantity:
+                type: integer
+                minimum: 1
+              customizations:
+                type: object
+                additionalProperties: true
+        shippingAddress:
+          $ref: '#/components/schemas/AddressRequest'
+        billingAddress:
+          $ref: '#/components/schemas/AddressRequest'
+        paymentMethod:
+          type: string
+          example: bank_transfer
+        notes:
+          type: string
+          nullable: true
+        couponCode:
+          type: string
+          nullable: true
+
+    OrderUpdateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, processing, completed, cancelled, refunded]
+        paymentStatus:
+          type: string
+          enum: [pending, paid, failed, refunded]
+        paymentMethod:
+          type: string
+        paymentProof:
+          type: string
+          format: uri
+        shippingAddress:
+          $ref: '#/components/schemas/AddressRequest'
+        billingAddress:
+          $ref: '#/components/schemas/AddressRequest'
+        notes:
+          type: string
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        product:
+          type: object
+          properties:
+            id:
+              $ref: '../components/schemas/common.yaml#/UUID'
+            name:
+              type: string
+            sku:
+              type: string
+            thumbnail:
+              type: string
+              format: uri
+        variation:
+          type: object
+          nullable: true
+          properties:
+            id:
+              $ref: '../components/schemas/common.yaml#/UUID'
+            name:
+              type: string
+        quantity:
+          type: integer
+          example: 2
+        unitPrice:
+          type: number
+          format: float
+          example: 50000
+        subtotal:
+          type: number
+          format: float
+          example: 100000
+        customizations:
+          type: object
+          additionalProperties: true
+          example:
+            material: Vinyl
+            size: A3
+
+    Address:
+      type: object
+      properties:
+        recipientName:
+          type: string
+          example: John Doe
+        phone:
+          type: string
+          example: "+62812345678"
+        address:
+          type: string
+          example: Jl. Sudirman No. 123
+        city:
+          type: string
+          example: Jakarta
+        province:
+          type: string
+          example: DKI Jakarta
+        postalCode:
+          type: string
+          example: "12345"
+        country:
+          type: string
+          example: Indonesia
+
+    AddressRequest:
+      type: object
+      required:
+        - recipientName
+        - phone
+        - address
+        - city
+        - province
+      properties:
+        recipientName:
+          type: string
+          minLength: 2
+        phone:
+          type: string
+        address:
+          type: string
+          minLength: 10
+        city:
+          type: string
+        province:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+          default: Indonesia
+
+    OrderNote:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        note:
+          type: string
+        author:
+          type: object
+          properties:
+            id:
+              $ref: '../components/schemas/common.yaml#/UUID'
+            name:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderStatistics:
+      type: object
+      properties:
+        totalOrders:
+          type: integer
+          example: 1250
+        pendingOrders:
+          type: integer
+          example: 45
+        processingOrders:
+          type: integer
+          example: 23
+        completedOrders:
+          type: integer
+          example: 1150
+        totalRevenue:
+          type: number
+          format: float
+          example: 125000000

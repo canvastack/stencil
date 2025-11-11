@@ -1,0 +1,393 @@
+﻿paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User Login
+      description: |
+        Authenticate user and receive Bearer token.
+        
+        **Flow:**
+        1. Submit credentials (email + password)
+        2. Server validates credentials
+        3. Server resolves tenant context via tenant_user pivot
+        4. Server generates Laravel Sanctum token
+        5. Token contains: user_id, tenant_id, role
+        
+        **Multi-Tenant Context:**
+        - User can belong to multiple tenants
+        - Login to specific tenant requires tenant selection
+        - Token is scoped to single tenant
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "admin@stencilcms.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "SecurePassword123!"
+                tenantId:
+                  type: string
+                  format: uuid
+                  description: Optional - specify tenant if user has multiple tenants
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                remember:
+                  type: boolean
+                  default: false
+                  description: Create long-lived token (30 days vs 24 hours)
+                  example: false
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: "1|abcdefghijklmnopqrstuvwxyz1234567890"
+                        description: Bearer token for API authentication
+                      tokenType:
+                        type: string
+                        example: "Bearer"
+                      expiresIn:
+                        type: integer
+                        example: 86400
+                        description: Token expiration in seconds (24h = 86400s)
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          uuid:
+                            type: string
+                            format: uuid
+                            example: "550e8400-e29b-41d4-a716-446655440000"
+                          name:
+                            type: string
+                            example: "John Doe"
+                          email:
+                            type: string
+                            example: "admin@stencilcms.com"
+                          avatar:
+                            type: string
+                            nullable: true
+                            example: "/uploads/avatars/john-doe.jpg"
+                      tenant:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          uuid:
+                            type: string
+                            format: uuid
+                            example: "550e8400-e29b-41d4-a716-446655440000"
+                          name:
+                            type: string
+                            example: "PT Custom Etching Xenial"
+                          slug:
+                            type: string
+                            example: "pt-cex"
+                          domain:
+                            type: string
+                            nullable: true
+                            example: "ptcex.stencilcms.com"
+                      role:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: "admin"
+                          displayName:
+                            type: string
+                            example: "Administrator"
+                          permissions:
+                            type: array
+                            items:
+                              type: string
+                            example:
+                              - "pages.view"
+                              - "pages.create"
+                              - "pages.edit"
+                              - "pages.delete"
+                  message:
+                    type: string
+                    example: "Login successful"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: "INVALID_CREDENTIALS"
+                      message:
+                        type: string
+                        example: "Invalid email or password"
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: User Registration
+      description: |
+        Register new user account.
+        
+        **Note:** Registration creates user but does NOT assign to tenant.
+        Tenant assignment requires super-admin approval or invitation flow.
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - passwordConfirmation
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 255
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: Must contain uppercase, lowercase, number, and special character
+                  example: "SecurePassword123!"
+                passwordConfirmation:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "SecurePassword123!"
+                phone:
+                  type: string
+                  nullable: true
+                  example: "+62812345678"
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 123
+                          uuid:
+                            type: string
+                            format: uuid
+                          name:
+                            type: string
+                            example: "John Doe"
+                          email:
+                            type: string
+                            example: "john.doe@example.com"
+                  message:
+                    type: string
+                    example: "Registration successful. Please verify your email."
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User Logout
+      description: |
+        Revoke current Bearer token.
+        
+        **Note:** This only revokes the current token. User may have other
+        active tokens from different devices.
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Logout successful"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get Current User
+      description: |
+        Get authenticated user's profile information including:
+        - User details
+        - Current tenant context
+        - Assigned role and permissions
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      uuid:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                        example: "John Doe"
+                      email:
+                        type: string
+                        example: "admin@stencilcms.com"
+                      avatar:
+                        type: string
+                        nullable: true
+                        example: "/uploads/avatars/john-doe.jpg"
+                      tenant:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          uuid:
+                            type: string
+                            format: uuid
+                          name:
+                            type: string
+                            example: "PT Custom Etching Xenial"
+                          slug:
+                            type: string
+                            example: "pt-cex"
+                      role:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: "admin"
+                          displayName:
+                            type: string
+                            example: "Administrator"
+                          permissions:
+                            type: array
+                            items:
+                              type: string
+                            example:
+                              - "pages.view"
+                              - "pages.create"
+                              - "pages.edit"
+                              - "pages.delete"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        uuid:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+          example: "/uploads/avatars/john-doe.jpg"
+        phone:
+          type: string
+          nullable: true
+          example: "+62812345678"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

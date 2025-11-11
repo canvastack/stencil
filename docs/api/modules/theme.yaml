@@ -1,0 +1,495 @@
+﻿openapi: 3.0.3
+info:
+  title: Theme Settings Module API
+  version: 1.0.0
+
+paths:
+  /api/v1/theme/current:
+    get:
+      tags:
+        - Theme
+      summary: Get current theme settings (Public)
+      description: Retrieve active theme configuration for frontend
+      responses:
+        '200':
+          description: Theme settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ThemePublic'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/theme:
+    get:
+      tags:
+        - Theme
+      summary: Get theme settings (Admin)
+      description: Retrieve complete theme configuration
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Theme settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ThemeSettings'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Theme
+      summary: Update theme settings (Admin)
+      description: Update theme configuration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThemeUpdateRequest'
+      responses:
+        '200':
+          description: Theme updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ThemeSettings'
+                  message:
+                    type: string
+                    example: Theme updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/theme/reset:
+    post:
+      tags:
+        - Theme
+      summary: Reset theme to defaults (Admin)
+      description: Reset all theme settings to default values
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Theme reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ThemeSettings'
+                  message:
+                    type: string
+                    example: Theme reset to defaults successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/theme/presets:
+    get:
+      tags:
+        - Theme
+      summary: Get theme presets (Admin)
+      description: Retrieve available theme presets/templates
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Theme presets retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ThemePreset'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/theme/presets/{id}/apply:
+    post:
+      tags:
+        - Theme
+      summary: Apply theme preset (Admin)
+      description: Apply a preset theme configuration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Preset applied successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ThemeSettings'
+                  message:
+                    type: string
+                    example: Theme preset applied successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/theme/custom-css:
+    get:
+      tags:
+        - Theme
+      summary: Get custom CSS (Admin)
+      description: Retrieve custom CSS code
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Custom CSS retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      css:
+                        type: string
+                        example: ".custom-class { color: red; }"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Theme
+      summary: Update custom CSS (Admin)
+      description: Update custom CSS code
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - css
+              properties:
+                css:
+                  type: string
+      responses:
+        '200':
+          description: Custom CSS updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Custom CSS updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+components:
+  schemas:
+    ThemePublic:
+      type: object
+      properties:
+        colors:
+          type: object
+          properties:
+            primary:
+              type: string
+              example: "#2563eb"
+            secondary:
+              type: string
+              example: "#64748b"
+            accent:
+              type: string
+              example: "#f59e0b"
+            background:
+              type: string
+              example: "#ffffff"
+            text:
+              type: string
+              example: "#1e293b"
+        fonts:
+          type: object
+          properties:
+            heading:
+              type: string
+              example: "Inter, sans-serif"
+            body:
+              type: string
+              example: "Inter, sans-serif"
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        favicon:
+          type: string
+          format: uri
+          nullable: true
+
+    ThemeSettings:
+      allOf:
+        - $ref: '#/components/schemas/ThemePublic'
+        - type: object
+          properties:
+            layout:
+              type: object
+              properties:
+                containerWidth:
+                  type: string
+                  enum: ["1280px", "1440px", "1920px", "full"]
+                  example: "1440px"
+                headerStyle:
+                  type: string
+                  enum: [classic, modern, minimal]
+                  example: modern
+                footerStyle:
+                  type: string
+                  enum: [simple, detailed, minimal]
+                  example: detailed
+            typography:
+              type: object
+              properties:
+                headingSize:
+                  type: object
+                  properties:
+                    h1:
+                      type: string
+                      example: "3rem"
+                    h2:
+                      type: string
+                      example: "2.5rem"
+                    h3:
+                      type: string
+                      example: "2rem"
+                bodySize:
+                  type: string
+                  example: "1rem"
+                lineHeight:
+                  type: number
+                  format: float
+                  example: 1.6
+            spacing:
+              type: object
+              properties:
+                sectionPadding:
+                  type: string
+                  example: "4rem"
+                elementSpacing:
+                  type: string
+                  example: "2rem"
+            buttons:
+              type: object
+              properties:
+                borderRadius:
+                  type: string
+                  example: "0.5rem"
+                style:
+                  type: string
+                  enum: [solid, outline, ghost]
+                  example: solid
+            features:
+              type: object
+              properties:
+                darkMode:
+                  type: boolean
+                  example: false
+                animations:
+                  type: boolean
+                  example: true
+                parallax:
+                  type: boolean
+                  example: false
+            customCSS:
+              type: string
+              nullable: true
+            updatedAt:
+              type: string
+              format: date-time
+
+    ThemeUpdateRequest:
+      type: object
+      properties:
+        colors:
+          type: object
+          properties:
+            primary:
+              type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"
+            secondary:
+              type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"
+            accent:
+              type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"
+            background:
+              type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"
+            text:
+              type: string
+              pattern: "^#[0-9A-Fa-f]{6}$"
+        fonts:
+          type: object
+          properties:
+            heading:
+              type: string
+            body:
+              type: string
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        favicon:
+          type: string
+          format: uri
+          nullable: true
+        layout:
+          type: object
+          properties:
+            containerWidth:
+              type: string
+              enum: ["1280px", "1440px", "1920px", "full"]
+            headerStyle:
+              type: string
+              enum: [classic, modern, minimal]
+            footerStyle:
+              type: string
+              enum: [simple, detailed, minimal]
+        typography:
+          type: object
+          properties:
+            headingSize:
+              type: object
+              properties:
+                h1:
+                  type: string
+                h2:
+                  type: string
+                h3:
+                  type: string
+            bodySize:
+              type: string
+            lineHeight:
+              type: number
+              format: float
+        spacing:
+          type: object
+          properties:
+            sectionPadding:
+              type: string
+            elementSpacing:
+              type: string
+        buttons:
+          type: object
+          properties:
+            borderRadius:
+              type: string
+            style:
+              type: string
+              enum: [solid, outline, ghost]
+        features:
+          type: object
+          properties:
+            darkMode:
+              type: boolean
+            animations:
+              type: boolean
+            parallax:
+              type: boolean
+
+    ThemePreset:
+      type: object
+      properties:
+        id:
+          type: string
+          example: modern-blue
+        name:
+          type: string
+          example: Modern Blue
+        description:
+          type: string
+          example: Clean and modern theme with blue accent
+        preview:
+          type: string
+          format: uri
+        settings:
+          $ref: '#/components/schemas/ThemePublic'

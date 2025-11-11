@@ -1,0 +1,688 @@
+﻿paths:
+  /seo:
+    get:
+      tags:
+        - SEO
+      summary: Get SEO Metadata for Frontend
+      description: |
+        Retrieve SEO metadata for a specific page/item for frontend rendering.
+        
+        **Fallback Hierarchy:**
+        1. Custom SEO for specific page/item (if exists)
+        2. Default/Global SEO settings
+        3. System defaults
+        
+        **Query Options:**
+        - By URL: `?url=/about`
+        - By Type & ID: `?type=page&id=2`
+      operationId: getSEOMetadata
+      security: []
+      parameters:
+        - name: url
+          in: query
+          description: Page URL path
+          schema:
+            type: string
+            example: "/about"
+        - name: type
+          in: query
+          description: Content type (page, product, category, etc.)
+          schema:
+            type: string
+            example: "page"
+        - name: id
+          in: query
+          description: Content ID
+          schema:
+            type: integer
+            example: 2
+      responses:
+        '200':
+          description: SEO metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SEOMetadataResponse'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+
+  /sitemap.xml:
+    get:
+      tags:
+        - SEO
+      summary: Get XML Sitemap
+      description: |
+        Generate and retrieve XML sitemap for search engines.
+        
+        **Includes:**
+        - All published pages
+        - All active products
+        - All public categories
+        - Priority and changefreq settings
+      operationId: getSitemap
+      security: []
+      responses:
+        '200':
+          description: XML sitemap
+          content:
+            application/xml:
+              schema:
+                type: string
+              example: |
+                <?xml version="1.0" encoding="UTF-8"?>
+                <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+                  <url>
+                    <loc>https://stencilcms.com/</loc>
+                    <lastmod>2025-01-01</lastmod>
+                    <changefreq>daily</changefreq>
+                    <priority>1.0</priority>
+                  </url>
+                  <url>
+                    <loc>https://stencilcms.com/about</loc>
+                    <lastmod>2025-01-01</lastmod>
+                    <changefreq>monthly</changefreq>
+                    <priority>0.8</priority>
+                  </url>
+                </urlset>
+
+  /robots.txt:
+    get:
+      tags:
+        - SEO
+      summary: Get Robots.txt
+      description: |
+        Generate robots.txt file for search engine crawlers.
+        
+        **Generated from:**
+        - Default robots settings
+        - Sitemap URL
+        - Custom crawl directives
+      operationId: getRobotsTxt
+      security: []
+      responses:
+        '200':
+          description: Robots.txt content
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                User-agent: *
+                Allow: /
+                Disallow: /admin/
+                Disallow: /api/
+                
+                Sitemap: https://stencilcms.com/sitemap.xml
+
+  /admin/seo/settings:
+    get:
+      tags:
+        - SEO
+      summary: Get Default SEO Settings
+      description: Get global/default SEO settings
+      operationId: getDefaultSEOSettings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Default SEO settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DefaultSEOSettings'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+
+    put:
+      tags:
+        - SEO
+      summary: Update Default SEO Settings
+      description: Update global/default SEO settings that apply to all pages
+      operationId: updateDefaultSEOSettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DefaultSEOSettingsInput'
+      responses:
+        '200':
+          description: Default SEO settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DefaultSEOSettings'
+                  message:
+                    type: string
+                    example: "Default SEO settings updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+  /admin/seo/{type}/{id}:
+    get:
+      tags:
+        - SEO
+      summary: Get SEO for Specific Item
+      description: Get custom SEO metadata for a specific page/product/category
+      operationId: getItemSEO
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          description: Content type
+          schema:
+            type: string
+            enum: [page, product, category, post]
+            example: "page"
+        - name: id
+          in: path
+          required: true
+          description: Content ID
+          schema:
+            type: integer
+            example: 2
+      responses:
+        '200':
+          description: SEO metadata retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SEOMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+
+    put:
+      tags:
+        - SEO
+      summary: Update SEO for Specific Item
+      description: Create or update custom SEO metadata for a specific page/product/category
+      operationId: updateItemSEO
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [page, product, category, post]
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SEOMetaInput'
+      responses:
+        '200':
+          description: SEO metadata updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SEOMeta'
+                  message:
+                    type: string
+                    example: "SEO metadata updated successfully"
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+
+    delete:
+      tags:
+        - SEO
+      summary: Delete Custom SEO
+      description: |
+        Delete custom SEO metadata for an item.
+        After deletion, the item will use default SEO settings.
+      operationId: deleteItemSEO
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [page, product, category, post]
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: SEO metadata deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Custom SEO deleted. Item will now use default SEO settings."
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+
+components:
+  schemas:
+    SEOMetadataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            title:
+              type: string
+              example: "About Us - Stencil CMS"
+              description: Page title (max 60 chars recommended)
+            metaDescription:
+              type: string
+              example: "Learn about our company, mission, and team"
+              description: Meta description (max 160 chars recommended)
+            metaKeywords:
+              type: array
+              items:
+                type: string
+              example: ["about", "company", "team"]
+            canonicalUrl:
+              type: string
+              format: uri
+              example: "https://stencilcms.com/about"
+            robots:
+              type: string
+              example: "index, follow"
+            openGraph:
+              $ref: '#/components/schemas/OpenGraphMeta'
+            twitter:
+              $ref: '#/components/schemas/TwitterCardMeta'
+            schema:
+              type: object
+              description: Schema.org JSON-LD data
+              example:
+                "@context": "https://schema.org"
+                "@type": "Organization"
+                "name": "Stencil CMS"
+            source:
+              type: string
+              enum: [custom, default, system]
+              example: "custom"
+              description: Source of SEO data (custom/default/system)
+
+    DefaultSEOSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        siteName:
+          type: string
+          example: "Stencil CMS"
+        defaultMetaTitle:
+          type: string
+          example: "{page} | {siteName}"
+          description: Template with variables
+        defaultMetaDescription:
+          type: string
+          example: "Leading CMS platform for multi-tenant applications"
+        defaultMetaKeywords:
+          type: string
+          example: "cms, multi-tenant, laravel, react"
+        openGraph:
+          type: object
+          properties:
+            type:
+              type: string
+              example: "website"
+            siteName:
+              type: string
+              example: "Stencil CMS"
+            defaultImageUrl:
+              type: string
+              format: uri
+              example: "/images/og-default.jpg"
+            locale:
+              type: string
+              example: "id_ID"
+        twitter:
+          type: object
+          properties:
+            cardType:
+              type: string
+              enum: [summary, summary_large_image]
+              example: "summary_large_image"
+            site:
+              type: string
+              example: "@stencilcms"
+            creator:
+              type: string
+              example: "@stencilcms"
+        schemaOrg:
+          type: object
+          properties:
+            type:
+              type: string
+              example: "Organization"
+            data:
+              type: object
+              description: Complete schema.org JSON-LD
+        robots:
+          type: object
+          properties:
+            default:
+              type: string
+              example: "index, follow"
+            allowSearchEngines:
+              type: boolean
+              example: true
+        canonicalBaseUrl:
+          type: string
+          format: uri
+          example: "https://stencilcms.com"
+        verification:
+          type: object
+          properties:
+            googleSiteVerification:
+              type: string
+              example: "abc123xyz"
+            bingSiteVerification:
+              type: string
+              example: "def456uvw"
+        socialMedia:
+          type: object
+          properties:
+            facebook:
+              type: string
+              format: uri
+            instagram:
+              type: string
+              format: uri
+            twitter:
+              type: string
+              format: uri
+            linkedin:
+              type: string
+              format: uri
+            youtube:
+              type: string
+              format: uri
+
+    DefaultSEOSettingsInput:
+      type: object
+      properties:
+        siteName:
+          type: string
+          maxLength: 255
+        defaultMetaTitle:
+          type: string
+          maxLength: 255
+        defaultMetaDescription:
+          type: string
+        defaultMetaKeywords:
+          type: string
+        openGraph:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [website, article, product]
+            siteName:
+              type: string
+            defaultImageUrl:
+              type: string
+              format: uri
+            locale:
+              type: string
+              enum: [id_ID, en_US]
+        twitter:
+          type: object
+          properties:
+            cardType:
+              type: string
+              enum: [summary, summary_large_image]
+            site:
+              type: string
+            creator:
+              type: string
+        schemaOrg:
+          type: object
+          properties:
+            type:
+              type: string
+            data:
+              type: object
+        robots:
+          type: object
+          properties:
+            default:
+              type: string
+            allowSearchEngines:
+              type: boolean
+        canonicalBaseUrl:
+          type: string
+          format: uri
+        verification:
+          type: object
+          properties:
+            googleSiteVerification:
+              type: string
+            bingSiteVerification:
+              type: string
+        socialMedia:
+          type: object
+          properties:
+            facebook:
+              type: string
+              format: uri
+            instagram:
+              type: string
+              format: uri
+            twitter:
+              type: string
+              format: uri
+            linkedin:
+              type: string
+              format: uri
+            youtube:
+              type: string
+              format: uri
+
+    SEOMeta:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        seoMetableType:
+          type: string
+          example: "App\\Models\\Page"
+        seoMetableId:
+          type: integer
+          example: 2
+        metaTitle:
+          type: string
+          maxLength: 60
+          example: "About Us - Company Name"
+        metaDescription:
+          type: string
+          maxLength: 160
+          example: "Learn about our company history and mission"
+        metaKeywords:
+          type: string
+          example: "about, company, team"
+        openGraph:
+          $ref: '#/components/schemas/OpenGraphMeta'
+        twitter:
+          $ref: '#/components/schemas/TwitterCardMeta'
+        canonicalUrl:
+          type: string
+          format: uri
+          example: "https://stencilcms.com/about"
+        robots:
+          type: string
+          example: "index, follow"
+        schemaType:
+          type: string
+          example: "Organization"
+        schemaData:
+          type: object
+          description: Page-specific schema.org data
+        customMetaTags:
+          type: object
+          description: Additional custom meta tags as key-value pairs
+        isEnabled:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SEOMetaInput:
+      type: object
+      properties:
+        metaTitle:
+          type: string
+          maxLength: 60
+        metaDescription:
+          type: string
+          maxLength: 160
+        metaKeywords:
+          type: string
+        ogTitle:
+          type: string
+          maxLength: 60
+        ogDescription:
+          type: string
+          maxLength: 160
+        ogImageUrl:
+          type: string
+          format: uri
+        ogType:
+          type: string
+          enum: [website, article, product]
+        twitterTitle:
+          type: string
+          maxLength: 60
+        twitterDescription:
+          type: string
+          maxLength: 160
+        twitterImageUrl:
+          type: string
+          format: uri
+        twitterCardType:
+          type: string
+          enum: [summary, summary_large_image]
+        canonicalUrl:
+          type: string
+          format: uri
+        robots:
+          type: string
+          pattern: '^(index|noindex), (follow|nofollow)$'
+          example: "index, follow"
+        schemaType:
+          type: string
+        schemaData:
+          type: object
+        customMetaTags:
+          type: object
+        isEnabled:
+          type: boolean
+          default: true
+
+    OpenGraphMeta:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "About Us - Stencil CMS"
+        description:
+          type: string
+          example: "Learn about our company"
+        image:
+          type: string
+          format: uri
+          example: "/images/og-about.jpg"
+        type:
+          type: string
+          example: "website"
+        url:
+          type: string
+          format: uri
+          example: "https://stencilcms.com/about"
+        siteName:
+          type: string
+          example: "Stencil CMS"
+        locale:
+          type: string
+          example: "id_ID"
+
+    TwitterCardMeta:
+      type: object
+      properties:
+        card:
+          type: string
+          enum: [summary, summary_large_image]
+          example: "summary_large_image"
+        title:
+          type: string
+          example: "About Us - Stencil CMS"
+        description:
+          type: string
+          example: "Learn about our company"
+        image:
+          type: string
+          format: uri
+          example: "/images/twitter-about.jpg"
+        site:
+          type: string
+          example: "@stencilcms"
+        creator:
+          type: string
+          example: "@stencilcms"

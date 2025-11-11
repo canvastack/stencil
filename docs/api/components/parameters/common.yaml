@@ -1,0 +1,196 @@
+PageQuery:
+  name: page
+  in: query
+  description: Page number for pagination
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    default: 1
+    example: 1
+
+PerPageQuery:
+  name: perPage
+  in: query
+  description: Number of items per page
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 100
+    default: 15
+    example: 15
+
+SearchQuery:
+  name: search
+  in: query
+  description: Search query string (searches across relevant fields)
+  required: false
+  schema:
+    type: string
+    minLength: 1
+    maxLength: 255
+    example: "laser etching"
+
+SortQuery:
+  name: sort
+  in: query
+  description: |
+    Sort field and order. Format: `field:order`
+    
+    **Examples:**
+    - `createdAt:desc` - Sort by creation date, newest first
+    - `title:asc` - Sort by title alphabetically
+    - `displayOrder:asc` - Sort by display order
+  required: false
+  schema:
+    type: string
+    pattern: '^[a-zA-Z_]+:(asc|desc)$'
+    example: "createdAt:desc"
+
+FilterQuery:
+  name: filter
+  in: query
+  description: |
+    Filter criteria. Format: `field:operator:value`
+    
+    **Operators:**
+    - `eq` - Equals
+    - `ne` - Not equals
+    - `gt` - Greater than
+    - `gte` - Greater than or equal
+    - `lt` - Less than
+    - `lte` - Less than or equal
+    - `like` - Contains (case-insensitive)
+    - `in` - In array (comma-separated values)
+    
+    **Examples:**
+    - `status:eq:active`
+    - `publishStatus:eq:published`
+    - `createdAt:gte:2025-01-01`
+  required: false
+  schema:
+    type: array
+    items:
+      type: string
+    example:
+      - "status:eq:active"
+      - "publishStatus:eq:published"
+
+TenantIdHeader:
+  name: X-Tenant-ID
+  in: header
+  description: |
+    Tenant ID for multi-tenant context switching.
+    
+    **Note:** This header is typically set automatically by the middleware
+    based on the authenticated user's tenant association. Manually setting
+    this header requires super-admin privileges.
+  required: false
+  schema:
+    type: string
+    format: uuid
+    example: "550e8400-e29b-41d4-a716-446655440000"
+
+AcceptLanguageHeader:
+  name: Accept-Language
+  in: header
+  description: |
+    Preferred language for response content.
+    
+    **Supported languages:**
+    - `id-ID` - Indonesian (Bahasa Indonesia)
+    - `en-US` - English (United States)
+  required: false
+  schema:
+    type: string
+    enum:
+      - id-ID
+      - en-US
+    default: id-ID
+    example: "id-ID"
+
+UUIDPathParam:
+  name: uuid
+  in: path
+  description: UUID identifier of the resource
+  required: true
+  schema:
+    type: string
+    format: uuid
+    example: "550e8400-e29b-41d4-a716-446655440000"
+
+IDPathParam:
+  name: id
+  in: path
+  description: Numeric ID of the resource
+  required: true
+  schema:
+    type: integer
+    minimum: 1
+    example: 123
+
+SlugPathParam:
+  name: slug
+  in: path
+  description: URL-friendly slug identifier
+  required: true
+  schema:
+    type: string
+    pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+    example: "about-us"
+
+StatusFilter:
+  name: status
+  in: query
+  description: Filter by status
+  required: false
+  schema:
+    type: string
+    enum:
+      - active
+      - inactive
+    example: "active"
+
+PublishStatusFilter:
+  name: publishStatus
+  in: query
+  description: Filter by publication status
+  required: false
+  schema:
+    type: string
+    enum:
+      - draft
+      - published
+      - archived
+    example: "published"
+
+DateFromQuery:
+  name: dateFrom
+  in: query
+  description: Filter records created from this date (inclusive)
+  required: false
+  schema:
+    type: string
+    format: date
+    example: "2025-01-01"
+
+DateToQuery:
+  name: dateTo
+  in: query
+  description: Filter records created until this date (inclusive)
+  required: false
+  schema:
+    type: string
+    format: date
+    example: "2025-12-31"
+
+IncludeDeletedQuery:
+  name: includeDeleted
+  in: query
+  description: Include soft-deleted records in the response
+  required: false
+  schema:
+    type: boolean
+    default: false
+    example: false

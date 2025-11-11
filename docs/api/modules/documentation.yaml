@@ -1,0 +1,622 @@
+﻿openapi: 3.0.3
+info:
+  title: Documentation & Help Center Module API
+  version: 1.0.0
+
+paths:
+  /api/v1/docs/articles:
+    get:
+      tags:
+        - Documentation
+      summary: Get all help articles (Public)
+      description: Retrieve published help articles
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SearchQuery'
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category slug
+      responses:
+        '200':
+          description: Articles retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Article'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/docs/articles/{slug}:
+    get:
+      tags:
+        - Documentation
+      summary: Get article by slug (Public)
+      description: Retrieve article details
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Article retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ArticleDetail'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/docs/categories:
+    get:
+      tags:
+        - Documentation
+      summary: Get all categories (Public)
+      description: Retrieve documentation categories
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DocCategory'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/docs/search:
+    get:
+      tags:
+        - Documentation
+      summary: Search documentation (Public)
+      description: Full-text search across articles
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 3
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchResult'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/docs/articles:
+    get:
+      tags:
+        - Documentation
+      summary: Get all articles (Admin)
+      description: Retrieve all articles including drafts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SearchQuery'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, archived]
+      responses:
+        '200':
+          description: Articles retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ArticleAdmin'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    post:
+      tags:
+        - Documentation
+      summary: Create article (Admin)
+      description: Create a new help article
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+      responses:
+        '201':
+          description: Article created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ArticleAdmin'
+                  message:
+                    type: string
+                    example: Article created successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/docs/articles/{id}:
+    put:
+      tags:
+        - Documentation
+      summary: Update article (Admin)
+      description: Update existing article
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticleRequest'
+      responses:
+        '200':
+          description: Article updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ArticleAdmin'
+                  message:
+                    type: string
+                    example: Article updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Documentation
+      summary: Delete article (Admin)
+      description: Delete a help article
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Article deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/SuccessResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/docs/categories:
+    get:
+      tags:
+        - Documentation
+      summary: Get all categories (Admin)
+      description: Retrieve all documentation categories
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DocCategoryAdmin'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    post:
+      tags:
+        - Documentation
+      summary: Create category (Admin)
+      description: Create a new documentation category
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DocCategoryAdmin'
+                  message:
+                    type: string
+                    example: Category created successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/docs/categories/{id}:
+    put:
+      tags:
+        - Documentation
+      summary: Update category (Admin)
+      description: Update documentation category
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DocCategoryAdmin'
+                  message:
+                    type: string
+                    example: Category updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Documentation
+      summary: Delete category (Admin)
+      description: Delete a documentation category
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/SuccessResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          description: Category has articles
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+components:
+  schemas:
+    Article:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        title:
+          type: string
+          example: How to create a product
+        slug:
+          type: string
+          example: how-to-create-product
+        excerpt:
+          type: string
+          example: Learn how to add products to your store
+        category:
+          type: object
+          properties:
+            slug:
+              type: string
+            name:
+              type: string
+        viewCount:
+          type: integer
+          example: 152
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ArticleDetail:
+      allOf:
+        - $ref: '#/components/schemas/Article'
+        - type: object
+          properties:
+            content:
+              $ref: '../components/schemas/common.yaml#/RichText'
+            relatedArticles:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    $ref: '../components/schemas/common.yaml#/UUID'
+                  title:
+                    type: string
+                  slug:
+                    type: string
+
+    ArticleAdmin:
+      allOf:
+        - $ref: '#/components/schemas/ArticleDetail'
+        - type: object
+          properties:
+            status:
+              $ref: '../components/schemas/common.yaml#/PublishStatus'
+            author:
+              type: object
+              properties:
+                id:
+                  $ref: '../components/schemas/common.yaml#/UUID'
+                name:
+                  type: string
+
+    ArticleRequest:
+      type: object
+      required:
+        - title
+        - content
+        - categoryId
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 255
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        excerpt:
+          type: string
+          maxLength: 500
+        content:
+          type: object
+        categoryId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+        relatedArticleIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    DocCategory:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        name:
+          type: string
+          example: Getting Started
+        slug:
+          type: string
+          example: getting-started
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        articlesCount:
+          type: integer
+          example: 12
+
+    DocCategoryAdmin:
+      allOf:
+        - $ref: '#/components/schemas/DocCategory'
+        - type: object
+          properties:
+            order:
+              type: integer
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    CategoryRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        order:
+          type: integer
+          default: 0
+
+    SearchResult:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        title:
+          type: string
+        slug:
+          type: string
+        excerpt:
+          type: string
+        category:
+          type: object
+          properties:
+            name:
+              type: string
+        highlights:
+          type: array
+          items:
+            type: string
+          description: Matched text snippets
+        relevance:
+          type: number
+          format: float
+          description: Search relevance score

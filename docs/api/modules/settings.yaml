@@ -1,0 +1,680 @@
+﻿openapi: 3.0.3
+info:
+  title: General Settings Module API
+  version: 1.0.0
+
+paths:
+  /api/v1/settings/public:
+    get:
+      tags:
+        - Settings
+      summary: Get public settings
+      description: Retrieve publicly accessible settings (site info, social links, etc.)
+      responses:
+        '200':
+          description: Public settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PublicSettings'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/settings:
+    get:
+      tags:
+        - Settings
+      summary: Get all settings (Admin)
+      description: Retrieve complete system settings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AllSettings'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Settings
+      summary: Update settings (Admin)
+      description: Update system settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingsUpdateRequest'
+      responses:
+        '200':
+          description: Settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/AllSettings'
+                  message:
+                    type: string
+                    example: Settings updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/settings/site:
+    get:
+      tags:
+        - Settings
+      summary: Get site settings (Admin)
+      description: Retrieve site configuration
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Site settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SiteSettings'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Settings
+      summary: Update site settings (Admin)
+      description: Update site configuration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteSettings'
+      responses:
+        '200':
+          description: Site settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SiteSettings'
+                  message:
+                    type: string
+                    example: Site settings updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/settings/email:
+    get:
+      tags:
+        - Settings
+      summary: Get email settings (Admin)
+      description: Retrieve email/SMTP configuration
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Email settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/EmailSettings'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Settings
+      summary: Update email settings (Admin)
+      description: Update email/SMTP configuration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailSettings'
+      responses:
+        '200':
+          description: Email settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/EmailSettings'
+                  message:
+                    type: string
+                    example: Email settings updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/settings/email/test:
+    post:
+      tags:
+        - Settings
+      summary: Test email settings (Admin)
+      description: Send a test email to verify SMTP configuration
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipient
+              properties:
+                recipient:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Test email sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Test email sent successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          description: Failed to send test email
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+
+  /api/v1/admin/settings/integrations:
+    get:
+      tags:
+        - Settings
+      summary: Get integration settings (Admin)
+      description: Retrieve third-party integration settings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Integration settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/IntegrationSettings'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Settings
+      summary: Update integration settings (Admin)
+      description: Update third-party integration settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationSettings'
+      responses:
+        '200':
+          description: Integration settings updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/IntegrationSettings'
+                  message:
+                    type: string
+                    example: Integration settings updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/settings/maintenance:
+    get:
+      tags:
+        - Settings
+      summary: Get maintenance mode status (Admin)
+      description: Check if maintenance mode is enabled
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Maintenance mode status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      message:
+                        type: string
+                        nullable: true
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Settings
+      summary: Toggle maintenance mode (Admin)
+      description: Enable or disable maintenance mode
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+                message:
+                  type: string
+                  nullable: true
+                  example: Site is under maintenance. We'll be back soon!
+      responses:
+        '200':
+          description: Maintenance mode updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Maintenance mode enabled
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/settings/cache/clear:
+    post:
+      tags:
+        - Settings
+      summary: Clear cache (Admin)
+      description: Clear application cache
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [all, views, config, routes, api]
+                  default: all
+      responses:
+        '200':
+          description: Cache cleared successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Cache cleared successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+components:
+  schemas:
+    PublicSettings:
+      type: object
+      properties:
+        site:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Stencil CMS
+            tagline:
+              type: string
+              example: Professional Printing Services
+            description:
+              type: string
+        contact:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+            address:
+              type: string
+        social:
+          type: object
+          properties:
+            facebook:
+              type: string
+              format: uri
+              nullable: true
+            instagram:
+              type: string
+              format: uri
+              nullable: true
+            twitter:
+              type: string
+              format: uri
+              nullable: true
+            linkedin:
+              type: string
+              format: uri
+              nullable: true
+
+    AllSettings:
+      allOf:
+        - $ref: '#/components/schemas/PublicSettings'
+        - type: object
+          properties:
+            email:
+              $ref: '#/components/schemas/EmailSettings'
+            integrations:
+              $ref: '#/components/schemas/IntegrationSettings'
+            maintenance:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                message:
+                  type: string
+                  nullable: true
+
+    SiteSettings:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        tagline:
+          type: string
+          maxLength: 255
+          nullable: true
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+        timezone:
+          type: string
+          example: Asia/Jakarta
+        dateFormat:
+          type: string
+          example: Y-m-d
+        timeFormat:
+          type: string
+          example: H:i:s
+        social:
+          type: object
+          properties:
+            facebook:
+              type: string
+              format: uri
+              nullable: true
+            instagram:
+              type: string
+              format: uri
+              nullable: true
+            twitter:
+              type: string
+              format: uri
+              nullable: true
+            linkedin:
+              type: string
+              format: uri
+              nullable: true
+            youtube:
+              type: string
+              format: uri
+              nullable: true
+
+    EmailSettings:
+      type: object
+      properties:
+        driver:
+          type: string
+          enum: [smtp, sendmail, mailgun, ses]
+          example: smtp
+        fromAddress:
+          type: string
+          format: email
+          example: noreply@example.com
+        fromName:
+          type: string
+          example: Stencil CMS
+        smtp:
+          type: object
+          properties:
+            host:
+              type: string
+              example: smtp.gmail.com
+            port:
+              type: integer
+              example: 587
+            username:
+              type: string
+            password:
+              type: string
+              format: password
+            encryption:
+              type: string
+              enum: [tls, ssl, none]
+              example: tls
+
+    IntegrationSettings:
+      type: object
+      properties:
+        analytics:
+          type: object
+          properties:
+            googleAnalyticsId:
+              type: string
+              nullable: true
+              example: G-XXXXXXXXXX
+            facebookPixelId:
+              type: string
+              nullable: true
+            enabled:
+              type: boolean
+              default: false
+        payment:
+          type: object
+          properties:
+            stripe:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                publishableKey:
+                  type: string
+                  nullable: true
+                secretKey:
+                  type: string
+                  nullable: true
+            midtrans:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                clientKey:
+                  type: string
+                  nullable: true
+                serverKey:
+                  type: string
+                  nullable: true
+                isProduction:
+                  type: boolean
+                  default: false
+        maps:
+          type: object
+          properties:
+            googleMapsApiKey:
+              type: string
+              nullable: true
+        whatsapp:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            phoneNumber:
+              type: string
+              nullable: true
+            message:
+              type: string
+              nullable: true
+
+    SettingsUpdateRequest:
+      type: object
+      properties:
+        site:
+          $ref: '#/components/schemas/SiteSettings'
+        email:
+          $ref: '#/components/schemas/EmailSettings'
+        integrations:
+          $ref: '#/components/schemas/IntegrationSettings'

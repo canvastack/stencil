@@ -1,0 +1,493 @@
+﻿openapi: 3.0.3
+info:
+  title: Vendor Management Module API
+  version: 1.0.0
+
+paths:
+  /api/v1/admin/vendors:
+    get:
+      tags:
+        - Vendor Management
+      summary: Get all vendors (Admin)
+      description: Retrieve paginated list of all vendors
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SearchQuery'
+        - $ref: '../components/parameters/common.yaml#/SortQuery'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+          description: Filter by vendor status
+      responses:
+        '200':
+          description: Vendors retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vendor'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    post:
+      tags:
+        - Vendor Management
+      summary: Create new vendor (Admin)
+      description: Create a new vendor profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorRequest'
+      responses:
+        '201':
+          description: Vendor created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/VendorDetail'
+                  message:
+                    type: string
+                    example: Vendor created successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/vendors/{id}:
+    get:
+      tags:
+        - Vendor Management
+      summary: Get vendor by ID (Admin)
+      description: Retrieve detailed vendor information
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Vendor retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/VendorDetail'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Vendor Management
+      summary: Update vendor (Admin)
+      description: Update vendor information
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorRequest'
+      responses:
+        '200':
+          description: Vendor updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/VendorDetail'
+                  message:
+                    type: string
+                    example: Vendor updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Vendor Management
+      summary: Delete vendor (Admin)
+      description: Soft delete a vendor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Vendor deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/SuccessResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/vendors/{id}/products:
+    get:
+      tags:
+        - Vendor Management
+      summary: Get vendor products (Admin)
+      description: Retrieve all products from specific vendor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+      responses:
+        '200':
+          description: Vendor products retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          $ref: '../components/schemas/common.yaml#/UUID'
+                        name:
+                          type: string
+                        sku:
+                          type: string
+                        price:
+                          type: number
+                          format: float
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/vendors/{id}/orders:
+    get:
+      tags:
+        - Vendor Management
+      summary: Get vendor purchase orders (Admin)
+      description: Retrieve all purchase orders from specific vendor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, completed]
+      responses:
+        '200':
+          description: Purchase orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PurchaseOrder'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+components:
+  schemas:
+    Vendor:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        name:
+          type: string
+          example: PT Percetakan Maju
+        companyName:
+          type: string
+          example: PT Percetakan Maju Jaya
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          example: "+62215551234"
+        status:
+          type: string
+          enum: [active, inactive]
+          example: active
+        rating:
+          type: number
+          format: float
+          nullable: true
+          example: 4.5
+        totalOrders:
+          type: integer
+          example: 45
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    VendorDetail:
+      allOf:
+        - $ref: '#/components/schemas/Vendor'
+        - type: object
+          properties:
+            address:
+              type: object
+              properties:
+                street:
+                  type: string
+                city:
+                  type: string
+                province:
+                  type: string
+                postalCode:
+                  type: string
+                country:
+                  type: string
+            contactPerson:
+              type: object
+              properties:
+                name:
+                  type: string
+                position:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+            bankAccount:
+              type: object
+              properties:
+                bankName:
+                  type: string
+                accountNumber:
+                  type: string
+                accountName:
+                  type: string
+            taxNumber:
+              type: string
+              nullable: true
+            website:
+              type: string
+              format: uri
+              nullable: true
+            notes:
+              type: string
+              nullable: true
+            productsCount:
+              type: integer
+              example: 120
+
+    VendorRequest:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 255
+        companyName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            province:
+              type: string
+            postalCode:
+              type: string
+            country:
+              type: string
+              default: Indonesia
+        contactPerson:
+          type: object
+          properties:
+            name:
+              type: string
+            position:
+              type: string
+            phone:
+              type: string
+            email:
+              type: string
+              format: email
+        bankAccount:
+          type: object
+          properties:
+            bankName:
+              type: string
+            accountNumber:
+              type: string
+            accountName:
+              type: string
+        taxNumber:
+          type: string
+          nullable: true
+        website:
+          type: string
+          format: uri
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, inactive]
+          default: active
+
+    PurchaseOrder:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        poNumber:
+          type: string
+          example: PO-2025-00001
+        status:
+          type: string
+          enum: [pending, approved, rejected, completed]
+          example: approved
+        totalAmount:
+          type: number
+          format: float
+          example: 5000000
+        itemsCount:
+          type: integer
+          example: 5
+        requestedBy:
+          type: object
+          properties:
+            id:
+              $ref: '../components/schemas/common.yaml#/UUID'
+            name:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

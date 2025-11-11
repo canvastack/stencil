@@ -1,0 +1,657 @@
+﻿openapi: 3.0.3
+info:
+  title: Reviews Module API
+  version: 1.0.0
+
+paths:
+  /api/v1/products/{productId}/reviews:
+    get:
+      tags:
+        - Reviews
+      summary: Get product reviews (Public)
+      description: Retrieve all approved reviews for a specific product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SortQuery'
+        - name: rating
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Filter by star rating
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReviewPublic'
+                  meta:
+                    allOf:
+                      - $ref: '../components/schemas/common.yaml#/PaginationMeta'
+                      - type: object
+                        properties:
+                          ratingsSummary:
+                            $ref: '#/components/schemas/RatingsSummary'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    post:
+      tags:
+        - Reviews
+      summary: Submit product review
+      description: Customer submits a review for a product (requires authentication)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewSubmitRequest'
+      responses:
+        '201':
+          description: Review submitted successfully (pending approval)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReviewDetail'
+                  message:
+                    type: string
+                    example: Review submitted successfully. It will be visible after admin approval.
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '429':
+          $ref: '../components/responses/common.yaml#/RateLimitExceeded'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/reviews/{id}:
+    get:
+      tags:
+        - Reviews
+      summary: Get review by ID (Public)
+      description: Retrieve a single review detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Review retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReviewDetail'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    put:
+      tags:
+        - Reviews
+      summary: Update review
+      description: Customer updates their own review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdateRequest'
+      responses:
+        '200':
+          description: Review updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReviewDetail'
+                  message:
+                    type: string
+                    example: Review updated successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Reviews
+      summary: Delete review
+      description: Customer deletes their own review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Review deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/SuccessResponse'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/reviews/{id}/helpful:
+    post:
+      tags:
+        - Reviews
+      summary: Mark review as helpful
+      description: Vote if a review was helpful or not
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - helpful
+              properties:
+                helpful:
+                  type: boolean
+                  description: true for helpful, false for not helpful
+      responses:
+        '200':
+          description: Vote recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      helpfulCount:
+                        type: integer
+                        example: 15
+                      notHelpfulCount:
+                        type: integer
+                        example: 2
+                  message:
+                    type: string
+                    example: Thank you for your feedback
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          description: Already voted
+          content:
+            application/json:
+              schema:
+                $ref: '../components/schemas/common.yaml#/ErrorResponse'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/reviews:
+    get:
+      tags:
+        - Reviews
+      summary: Get all reviews (Admin)
+      description: Retrieve all reviews including pending approval
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../components/parameters/common.yaml#/PageQuery'
+        - $ref: '../components/parameters/common.yaml#/PerPageQuery'
+        - $ref: '../components/parameters/common.yaml#/SearchQuery'
+        - $ref: '../components/parameters/common.yaml#/SortQuery'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+          description: Filter by review status
+        - name: rating
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Filter by star rating
+        - name: productId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by product ID
+      responses:
+        '200':
+          description: Reviews retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReviewAdmin'
+                  meta:
+                    $ref: '../components/schemas/common.yaml#/PaginationMeta'
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/reviews/{id}/approve:
+    post:
+      tags:
+        - Reviews
+      summary: Approve review (Admin)
+      description: Approve a pending review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Review approved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReviewAdmin'
+                  message:
+                    type: string
+                    example: Review approved successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/reviews/{id}/reject:
+    post:
+      tags:
+        - Reviews
+      summary: Reject review (Admin)
+      description: Reject a pending review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for rejection
+      responses:
+        '200':
+          description: Review rejected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReviewAdmin'
+                  message:
+                    type: string
+                    example: Review rejected successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+  /api/v1/admin/reviews/{id}/response:
+    post:
+      tags:
+        - Reviews
+      summary: Add admin response to review (Admin)
+      description: Admin responds to a customer review
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - response
+              properties:
+                response:
+                  type: string
+                  minLength: 10
+                  maxLength: 1000
+      responses:
+        '200':
+          description: Response added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ReviewAdmin'
+                  message:
+                    type: string
+                    example: Response added successfully
+        '401':
+          $ref: '../components/responses/common.yaml#/Unauthorized'
+        '403':
+          $ref: '../components/responses/common.yaml#/Forbidden'
+        '404':
+          $ref: '../components/responses/common.yaml#/NotFound'
+        '422':
+          $ref: '../components/responses/common.yaml#/ValidationError'
+        '500':
+          $ref: '../components/responses/common.yaml#/ServerError'
+
+components:
+  schemas:
+    ReviewPublic:
+      type: object
+      properties:
+        id:
+          $ref: '../components/schemas/common.yaml#/UUID'
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        title:
+          type: string
+          example: Excellent product!
+        comment:
+          type: string
+          example: Very satisfied with the quality and service
+        author:
+          type: object
+          properties:
+            name:
+              type: string
+              example: John Doe
+            avatar:
+              type: string
+              format: uri
+              nullable: true
+        verifiedPurchase:
+          type: boolean
+          example: true
+        images:
+          type: array
+          items:
+            $ref: '../components/schemas/common.yaml#/ImageMeta'
+        helpfulCount:
+          type: integer
+          example: 12
+        notHelpfulCount:
+          type: integer
+          example: 1
+        adminResponse:
+          type: object
+          nullable: true
+          properties:
+            response:
+              type: string
+            respondedBy:
+              type: string
+            respondedAt:
+              type: string
+              format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    ReviewDetail:
+      allOf:
+        - $ref: '#/components/schemas/ReviewPublic'
+        - type: object
+          properties:
+            product:
+              type: object
+              properties:
+                id:
+                  $ref: '../components/schemas/common.yaml#/UUID'
+                name:
+                  type: string
+                thumbnail:
+                  type: string
+                  format: uri
+            updatedAt:
+              type: string
+              format: date-time
+
+    ReviewAdmin:
+      allOf:
+        - $ref: '#/components/schemas/ReviewDetail'
+        - type: object
+          properties:
+            status:
+              type: string
+              enum: [pending, approved, rejected]
+              example: approved
+            author:
+              type: object
+              properties:
+                id:
+                  $ref: '../components/schemas/common.yaml#/UUID'
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                avatar:
+                  type: string
+                  format: uri
+                  nullable: true
+            rejectionReason:
+              type: string
+              nullable: true
+            ipAddress:
+              type: string
+              example: 192.168.1.1
+            userAgent:
+              type: string
+
+    ReviewSubmitRequest:
+      type: object
+      required:
+        - rating
+        - title
+        - comment
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+        comment:
+          type: string
+          minLength: 20
+          maxLength: 1000
+        images:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: uri
+
+    ReviewUpdateRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        title:
+          type: string
+          minLength: 5
+          maxLength: 100
+        comment:
+          type: string
+          minLength: 20
+          maxLength: 1000
+        images:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: uri
+
+    RatingsSummary:
+      type: object
+      properties:
+        average:
+          type: number
+          format: float
+          example: 4.5
+        totalReviews:
+          type: integer
+          example: 128
+        distribution:
+          type: object
+          properties:
+            5:
+              type: integer
+              example: 80
+            4:
+              type: integer
+              example: 30
+            3:
+              type: integer
+              example: 10
+            2:
+              type: integer
+              example: 5
+            1:
+              type: integer
+              example: 3
