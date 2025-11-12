@@ -1,0 +1,1495 @@
+# Settings Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for Enterprise Settings Management System (185+ fields, 12 tables)
+# Multi-tenant configuration platform with templates, validation, security, and analytics
+
+# ================================================================
+# CORE SETTINGS ENTITIES
+# ================================================================
+
+# Site Settings Entity (General site configuration)
+SiteSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - site_name
+        - site_url
+        - contact_email
+        - timezone
+      properties:
+        # Site Identity
+        site_name:
+          type: string
+          maxLength: 255
+          minLength: 3
+          description: Site/company name
+          example: "PT Custom Etching Xenial"
+        site_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Primary site URL
+          example: "https://ptcex.com"
+        site_description:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: SEO meta description
+          example: "Leading custom etching services in Indonesia"
+
+        # Contact Information
+        contact_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Main contact email address
+          example: "contact@ptcex.com"
+        contact_phone:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: Contact phone number
+          example: "+6281234567890"
+        contact_address:
+          type: string
+          nullable: true
+          description: Physical business address
+          example: "Jl. Industri No. 123, Jakarta 12345"
+
+        # Visual Branding
+        logo_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: Logo image URL
+          example: "https://cdn.ptcex.com/logo.png"
+        favicon_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: Favicon URL
+          example: "https://cdn.ptcex.com/favicon.ico"
+
+        # Maintenance Mode
+        is_maintenance_mode:
+          type: boolean
+          default: false
+          description: Site maintenance mode status
+          example: false
+        maintenance_message:
+          type: string
+          nullable: true
+          description: Custom maintenance message
+          example: "We are upgrading our systems. Please check back in 1 hour."
+
+        # Localization
+        timezone:
+          type: string
+          maxLength: 100
+          default: "Asia/Jakarta"
+          description: Site timezone (IANA timezone)
+          example: "Asia/Jakarta"
+
+        # Social Media Links
+        social_links:
+          type: object
+          nullable: true
+          description: Social media profiles (JSONB)
+          properties:
+            facebook:
+              type: string
+              format: uri
+              example: "https://facebook.com/ptcex"
+            instagram:
+              type: string
+              format: uri
+              example: "https://instagram.com/ptcex"
+            twitter:
+              type: string
+              format: uri
+              example: "https://twitter.com/ptcex"
+            linkedin:
+              type: string
+              format: uri
+              example: "https://linkedin.com/company/ptcex"
+            youtube:
+              type: string
+              format: uri
+              example: "https://youtube.com/@ptcex"
+            whatsapp:
+              type: string
+              example: "+6281234567890"
+          additionalProperties: true
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional site metadata
+          additionalProperties: true
+          example:
+            seo_keywords: "etching, custom, manufacturing"
+            business_category: "Manufacturing"
+
+# Email Settings Entity (Email service configuration)
+EmailSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - provider
+        - from_email
+        - from_name
+        - daily_limit
+      properties:
+        # Provider Configuration
+        provider:
+          type: string
+          enum: ["smtp", "sendgrid", "mailgun"]
+          default: "smtp"
+          description: Email service provider
+          example: "smtp"
+        is_enabled:
+          type: boolean
+          default: true
+          description: Email service enabled status
+          example: true
+
+        # Sender Configuration
+        from_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Default sender email address
+          example: "noreply@ptcex.com"
+        from_name:
+          type: string
+          maxLength: 255
+          minLength: 2
+          description: Default sender display name
+          example: "PT Custom Etching Xenial"
+        reply_to_email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 255
+          description: Reply-to email address
+          example: "support@ptcex.com"
+
+        # Provider-specific Configuration
+        smtp_config:
+          type: object
+          nullable: true
+          description: SMTP server configuration
+          properties:
+            host:
+              type: string
+              example: "smtp.gmail.com"
+            port:
+              type: integer
+              example: 587
+            encryption:
+              type: string
+              enum: ["tls", "ssl", "none"]
+              example: "tls"
+            username:
+              type: string
+              example: "noreply@ptcex.com"
+            password:
+              type: string
+              writeOnly: true
+              description: Encrypted password
+            timeout:
+              type: integer
+              default: 30
+              example: 30
+          additionalProperties: false
+
+        sendgrid_config:
+          type: object
+          nullable: true
+          description: SendGrid API configuration
+          properties:
+            api_key:
+              type: string
+              writeOnly: true
+              description: SendGrid API key
+            template_engine:
+              type: string
+              default: "handlebars"
+            webhook_url:
+              type: string
+              format: uri
+          additionalProperties: false
+
+        mailgun_config:
+          type: object
+          nullable: true
+          description: Mailgun API configuration
+          properties:
+            domain:
+              type: string
+              example: "mg.ptcex.com"
+            api_key:
+              type: string
+              writeOnly: true
+              description: Mailgun API key
+            region:
+              type: string
+              enum: ["us", "eu"]
+              default: "us"
+            webhook_url:
+              type: string
+              format: uri
+          additionalProperties: false
+
+        # Notification Preferences
+        notification_preferences:
+          type: object
+          nullable: true
+          description: Email notification toggles
+          properties:
+            new_orders:
+              type: boolean
+              default: true
+              description: Send email for new orders
+            new_reviews:
+              type: boolean
+              default: true
+              description: Send email for new reviews
+            contact_submissions:
+              type: boolean
+              default: true
+              description: Send email for contact form submissions
+            low_stock_alerts:
+              type: boolean
+              default: true
+              description: Send email for low stock alerts
+            system_updates:
+              type: boolean
+              default: false
+              description: Send email for system updates
+            weekly_reports:
+              type: boolean
+              default: true
+              description: Send weekly analytics reports
+          additionalProperties: true
+
+        # Rate Limiting
+        daily_limit:
+          type: integer
+          minimum: 1
+          default: 1000
+          description: Daily email sending limit
+          example: 1000
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional email configuration
+          additionalProperties: true
+
+# Payment Settings Entity (Payment gateway configuration)
+PaymentSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - provider
+        - currency
+        - accepted_methods
+      properties:
+        # Provider Configuration
+        provider:
+          type: string
+          enum: ["midtrans", "xendit", "stripe"]
+          default: "midtrans"
+          description: Payment gateway provider
+          example: "midtrans"
+        is_enabled:
+          type: boolean
+          default: true
+          description: Payment processing enabled
+          example: true
+        is_production:
+          type: boolean
+          default: false
+          description: Production mode (vs sandbox)
+          example: false
+
+        # Currency Configuration
+        currency:
+          type: string
+          maxLength: 10
+          default: "IDR"
+          description: Default currency (ISO code)
+          example: "IDR"
+
+        # Payment Methods
+        accepted_methods:
+          type: object
+          description: Enabled payment methods
+          properties:
+            cash:
+              type: boolean
+              default: true
+              description: Cash payments accepted
+            credit_card:
+              type: boolean
+              default: true
+              description: Credit/debit cards accepted
+            e_wallet:
+              type: boolean
+              default: true
+              description: E-wallet payments (GoPay, OVO, etc.)
+            bank_transfer:
+              type: boolean
+              default: true
+              description: Bank transfer accepted
+            qris:
+              type: boolean
+              default: true
+              description: QRIS payments accepted
+          additionalProperties: true
+
+        # Provider-specific Configuration
+        midtrans_config:
+          type: object
+          nullable: true
+          description: Midtrans configuration
+          properties:
+            server_key:
+              type: string
+              writeOnly: true
+              description: Midtrans server key (encrypted)
+            client_key:
+              type: string
+              description: Midtrans client key
+              example: "Mid-client-xxxxxxxxxxxx"
+            merchant_id:
+              type: string
+              description: Merchant ID
+              example: "MERCHANT123"
+            sandbox_mode:
+              type: boolean
+              default: true
+              description: Sandbox mode enabled
+            enabled_payments:
+              type: array
+              items:
+                type: string
+              description: Enabled payment channels
+              example: ["credit_card", "gopay", "shopeepay", "qris"]
+          additionalProperties: false
+
+        xendit_config:
+          type: object
+          nullable: true
+          description: Xendit configuration
+          properties:
+            secret_key:
+              type: string
+              writeOnly: true
+              description: Xendit secret key
+            public_key:
+              type: string
+              description: Xendit public key
+            callback_token:
+              type: string
+              writeOnly: true
+              description: Callback verification token
+            webhook_url:
+              type: string
+              format: uri
+              description: Webhook URL
+          additionalProperties: false
+
+        stripe_config:
+          type: object
+          nullable: true
+          description: Stripe configuration
+          properties:
+            secret_key:
+              type: string
+              writeOnly: true
+              description: Stripe secret key
+            publishable_key:
+              type: string
+              description: Stripe publishable key
+            webhook_secret:
+              type: string
+              writeOnly: true
+              description: Webhook signing secret
+            account_id:
+              type: string
+              nullable: true
+              description: Connected account ID
+          additionalProperties: false
+
+        # Callback URLs
+        callback_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: Payment callback URL
+          example: "https://ptcex.com/api/payments/callback"
+        return_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: Payment return URL
+          example: "https://ptcex.com/payment-success"
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional payment configuration
+          additionalProperties: true
+
+# Analytics Settings Entity (Analytics and tracking configuration)
+AnalyticsSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      properties:
+        # Google Analytics
+        google_analytics_id:
+          type: string
+          nullable: true
+          maxLength: 50
+          pattern: '^G-[A-Z0-9]+$'
+          description: Google Analytics 4 Measurement ID
+          example: "G-XXXXXXXXXX"
+        google_tag_manager_id:
+          type: string
+          nullable: true
+          maxLength: 50
+          pattern: '^GTM-[A-Z0-9]+$'
+          description: Google Tag Manager Container ID
+          example: "GTM-XXXXXXX"
+
+        # Social Media Pixels
+        facebook_pixel_id:
+          type: string
+          nullable: true
+          maxLength: 50
+          pattern: '^[0-9]+$'
+          description: Facebook Pixel ID
+          example: "1234567890123456"
+
+        # Custom Scripts
+        custom_scripts:
+          type: object
+          nullable: true
+          description: Custom tracking scripts
+          properties:
+            header:
+              type: string
+              nullable: true
+              description: Scripts to include in HTML head
+              example: "<script>/* Custom header script */</script>"
+            body:
+              type: string
+              nullable: true
+              description: Scripts to include in HTML body
+              example: "<script>/* Custom body script */</script>"
+            footer:
+              type: string
+              nullable: true
+              description: Scripts to include before closing body tag
+              example: "<!-- Custom footer HTML -->"
+          additionalProperties: true
+
+        # Tracking Configuration
+        is_tracking_enabled:
+          type: boolean
+          default: true
+          description: Enable/disable all tracking
+          example: true
+
+        tracked_events:
+          type: object
+          nullable: true
+          description: Event tracking configuration
+          properties:
+            page_views:
+              type: boolean
+              default: true
+            purchases:
+              type: boolean
+              default: true
+            form_submissions:
+              type: boolean
+              default: true
+            downloads:
+              type: boolean
+              default: true
+            outbound_links:
+              type: boolean
+              default: false
+            scroll_tracking:
+              type: boolean
+              default: false
+          additionalProperties: true
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional analytics configuration
+          additionalProperties: true
+
+# Integration Settings Entity (Third-party integrations)
+IntegrationSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      properties:
+        # WhatsApp Business Integration
+        whatsapp_business_number:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: WhatsApp Business phone number
+          example: "+6281234567890"
+        whatsapp_default_message:
+          type: string
+          nullable: true
+          description: Default WhatsApp message template
+          example: "Hi! I'm interested in your etching services. Could you please provide more information?"
+
+        # File Storage Configuration
+        storage_provider:
+          type: string
+          enum: ["local", "s3", "cloudinary", "google_cloud"]
+          default: "local"
+          description: File storage provider
+          example: "s3"
+        storage_config:
+          type: object
+          nullable: true
+          description: Storage provider configuration
+          oneOf:
+            - title: "AWS S3 Configuration"
+              properties:
+                bucket:
+                  type: string
+                  example: "my-tenant-bucket"
+                region:
+                  type: string
+                  example: "ap-southeast-1"
+                access_key_id:
+                  type: string
+                  writeOnly: true
+                secret_access_key:
+                  type: string
+                  writeOnly: true
+                endpoint:
+                  type: string
+                  format: uri
+                  example: "https://s3.ap-southeast-1.amazonaws.com"
+            - title: "Cloudinary Configuration"
+              properties:
+                cloud_name:
+                  type: string
+                  example: "my-cloud"
+                api_key:
+                  type: string
+                api_secret:
+                  type: string
+                  writeOnly: true
+                secure:
+                  type: boolean
+                  default: true
+            - title: "Google Cloud Storage Configuration"
+              properties:
+                project_id:
+                  type: string
+                  example: "my-project-123"
+                bucket:
+                  type: string
+                  example: "my-tenant-bucket"
+                key_file_path:
+                  type: string
+                  writeOnly: true
+          additionalProperties: true
+
+        # CDN Configuration
+        cdn_enabled:
+          type: boolean
+          default: false
+          description: CDN acceleration enabled
+          example: false
+        cdn_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: CDN base URL
+          example: "https://cdn.ptcex.com"
+
+        # API Configuration
+        api_rate_limit:
+          type: integer
+          minimum: 1
+          default: 1000
+          description: API requests per hour limit
+          example: 1000
+
+        # Webhook Configuration
+        webhook_urls:
+          type: object
+          nullable: true
+          description: Webhook endpoint URLs
+          properties:
+            order_created:
+              type: string
+              format: uri
+              example: "https://external-system.com/webhooks/order-created"
+            payment_completed:
+              type: string
+              format: uri
+              example: "https://external-system.com/webhooks/payment-completed"
+            inventory_low:
+              type: string
+              format: uri
+              example: "https://external-system.com/webhooks/inventory-low"
+          additionalProperties: true
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional integration configuration
+          additionalProperties: true
+
+# Backup Settings Entity (Backup and recovery configuration)
+BackupSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - schedule
+        - retention_days
+        - retention_weekly
+        - retention_monthly
+        - backup_storage
+      properties:
+        # Backup Configuration
+        is_enabled:
+          type: boolean
+          default: true
+          description: Automated backup enabled
+          example: true
+
+        # Schedule Configuration
+        schedule:
+          type: string
+          enum: ["hourly", "daily", "weekly", "monthly"]
+          default: "daily"
+          description: Backup frequency
+          example: "daily"
+        backup_time:
+          type: string
+          format: time
+          default: "02:00:00"
+          description: Scheduled backup time
+          example: "02:00:00"
+
+        # Retention Policy
+        retention_days:
+          type: integer
+          minimum: 1
+          default: 30
+          description: Daily backup retention (days)
+          example: 30
+        retention_weekly:
+          type: integer
+          minimum: 1
+          default: 4
+          description: Weekly backup retention (weeks)
+          example: 4
+        retention_monthly:
+          type: integer
+          minimum: 1
+          default: 12
+          description: Monthly backup retention (months)
+          example: 12
+
+        # Storage Configuration
+        backup_storage:
+          type: string
+          enum: ["local", "s3", "google_cloud", "azure"]
+          default: "local"
+          description: Backup storage location
+          example: "local"
+        storage_path:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Storage path or bucket name
+          example: "/backups/tenant-xxx"
+
+        # Backup Scope
+        include_database:
+          type: boolean
+          default: true
+          description: Include database in backup
+          example: true
+        include_media:
+          type: boolean
+          default: true
+          description: Include media files in backup
+          example: true
+
+        # Last Backup Information
+        last_backup_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last successful backup timestamp
+          example: "2025-11-12T02:00:00Z"
+        last_backup_status:
+          type: string
+          nullable: true
+          enum: ["success", "failed", "in_progress"]
+          description: Last backup operation status
+          example: "success"
+        last_backup_size:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Last backup size in bytes
+          example: 52428800
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional backup configuration
+          additionalProperties: true
+
+# ================================================================
+# ADVANCED SETTINGS ENTITIES
+# ================================================================
+
+# Settings Template Entity (Pre-configured settings templates)
+SettingsTemplate:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - name
+        - category
+        - template_data
+      properties:
+        # Template Identification
+        name:
+          type: string
+          maxLength: 255
+          description: Template name
+          example: "Etching Business Starter"
+        description:
+          type: string
+          nullable: true
+          description: Template description
+          example: "Pre-configured settings for custom etching businesses"
+        category:
+          type: string
+          enum: ["business_type", "industry", "custom", "system"]
+          description: Template category
+          example: "business_type"
+        subcategory:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Template subcategory
+          example: "etching"
+
+        # Template Scope
+        is_global:
+          type: boolean
+          default: false
+          description: Global template (vs tenant-specific)
+          example: true
+
+        # Template Configuration
+        template_data:
+          type: object
+          description: Complete settings configuration
+          example:
+            site_settings:
+              timezone: "Asia/Jakarta"
+              social_links:
+                whatsapp: "+6281234567890"
+            email_settings:
+              provider: "smtp"
+              daily_limit: 1000
+            payment_settings:
+              provider: "midtrans"
+              currency: "IDR"
+              accepted_methods:
+                cash: true
+                bank_transfer: true
+          additionalProperties: true
+
+        required_fields:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Fields that must be customized
+          example: ["site_settings.site_name", "site_settings.contact_email"]
+
+        optional_fields:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Fields that can be customized
+          example: ["site_settings.logo_url", "email_settings.from_name"]
+
+        # Validation and Compatibility
+        validation_rules:
+          type: object
+          nullable: true
+          description: Template validation rules
+          additionalProperties: true
+
+        compatibility_requirements:
+          type: object
+          nullable: true
+          description: System requirements for template
+          properties:
+            min_version:
+              type: string
+              example: "1.0.0"
+            required_features:
+              type: array
+              items:
+                type: string
+              example: ["multi_tenant", "payments"]
+            supported_regions:
+              type: array
+              items:
+                type: string
+              example: ["Indonesia", "Malaysia"]
+          additionalProperties: true
+
+        # Template Metadata
+        version:
+          type: string
+          maxLength: 20
+          default: "1.0.0"
+          description: Template version (semantic versioning)
+          example: "1.2.0"
+        author_id:
+          type: integer
+          nullable: true
+          description: Template author user ID
+          example: 123
+
+        # Status and Visibility
+        is_active:
+          type: boolean
+          default: true
+          description: Template is active and available
+          example: true
+        is_featured:
+          type: boolean
+          default: false
+          description: Featured template (promoted in UI)
+          example: false
+
+        # Usage Statistics
+        usage_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times template has been used
+          example: 245
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time template was applied
+          example: "2025-11-10T14:30:00Z"
+
+        # Visual and Documentation
+        preview_image_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: Template preview image
+          example: "https://cdn.ptcex.com/templates/etching-preview.png"
+        documentation_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+          description: Template documentation URL
+          example: "https://docs.ptcex.com/templates/etching-setup"
+
+        # Categorization
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Template tags for search and categorization
+          example: ["etching", "manufacturing", "indonesia", "starter"]
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional template metadata
+          additionalProperties: true
+
+# Settings Validation Result Entity
+SettingsValidationResult:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - validation_type
+        - settings_table
+        - validation_started_at
+        - status
+      properties:
+        # Validation Context
+        validation_type:
+          type: string
+          enum: ["configuration", "template", "import", "change", "scheduled"]
+          description: Type of validation performed
+          example: "configuration"
+        settings_table:
+          type: string
+          maxLength: 100
+          description: Settings table that was validated
+          example: "site_settings"
+        settings_id:
+          type: integer
+          nullable: true
+          description: Specific settings record ID
+          example: 123
+        template_id:
+          type: integer
+          nullable: true
+          description: Template ID if validating template
+          example: 456
+
+        # Validation Execution
+        validation_started_at:
+          type: string
+          format: date-time
+          description: Validation start timestamp
+          example: "2025-11-12T10:00:00Z"
+        validation_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Validation completion timestamp
+          example: "2025-11-12T10:02:30Z"
+        validation_duration_ms:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Validation duration in milliseconds
+          example: 2500
+
+        # Validation Results
+        status:
+          type: string
+          enum: ["passed", "failed", "warning", "in_progress", "cancelled"]
+          description: Overall validation status
+          example: "passed"
+        overall_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Overall validation score (0-100)
+          example: 85.5
+
+        # Detailed Results
+        validation_rules_checked:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of validation rules checked
+          example: 15
+        validation_rules_passed:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of rules that passed
+          example: 12
+        validation_rules_failed:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of rules that failed
+          example: 1
+        validation_rules_warnings:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of rules with warnings
+          example: 2
+
+        # Issues and Recommendations
+        critical_issues:
+          type: array
+          items:
+            type: object
+            properties:
+              rule:
+                type: string
+                example: "email_config_validation"
+              message:
+                type: string
+                example: "SMTP host is unreachable"
+              field:
+                type: string
+                example: "smtp_config.host"
+              severity:
+                type: string
+                enum: ["critical", "high", "medium", "low"]
+                example: "critical"
+          nullable: true
+          description: Critical validation failures
+        
+        warnings:
+          type: array
+          items:
+            type: object
+            properties:
+              rule:
+                type: string
+                example: "logo_url_accessibility"
+              message:
+                type: string
+                example: "Logo URL is not publicly accessible"
+              field:
+                type: string
+                example: "logo_url"
+              severity:
+                type: string
+                enum: ["warning", "info"]
+                example: "warning"
+          nullable: true
+          description: Validation warnings
+
+        recommendations:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+                example: "performance"
+              title:
+                type: string
+                example: "Enable CDN for faster image loading"
+              description:
+                type: string
+                example: "Consider enabling CDN to improve site performance"
+              impact:
+                type: string
+                enum: ["low", "medium", "high"]
+                example: "medium"
+              effort:
+                type: string
+                enum: ["low", "medium", "high"]
+                example: "low"
+          nullable: true
+          description: Improvement recommendations
+
+        # Performance and Security Impact
+        performance_impact:
+          type: string
+          enum: ["low", "medium", "high"]
+          nullable: true
+          description: Performance impact assessment
+          example: "medium"
+        security_impact:
+          type: string
+          enum: ["low", "medium", "high", "critical"]
+          nullable: true
+          description: Security impact assessment
+          example: "low"
+
+        # Validation Configuration
+        validation_config:
+          type: object
+          nullable: true
+          description: Configuration used for validation
+          additionalProperties: true
+
+        validation_results:
+          type: object
+          nullable: true
+          description: Detailed validation results
+          additionalProperties: true
+
+        # Auto-fix Capabilities
+        auto_fix_available:
+          type: boolean
+          default: false
+          description: Whether automatic fixes are available
+          example: false
+        auto_fix_suggestions:
+          type: array
+          items:
+            type: object
+            properties:
+              issue_id:
+                type: string
+                example: "smtp_port_incorrect"
+              fix_description:
+                type: string
+                example: "Change SMTP port from 465 to 587 for TLS"
+              risk_level:
+                type: string
+                enum: ["low", "medium", "high"]
+                example: "low"
+              automated:
+                type: boolean
+                example: true
+          nullable: true
+          description: Automatic fix suggestions
+
+        # Additional Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional validation metadata
+          additionalProperties: true
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# Site Settings Input Schema
+SiteSettingsInput:
+  type: object
+  required:
+    - site_name
+    - site_url
+    - contact_email
+  properties:
+    site_name:
+      type: string
+      maxLength: 255
+      minLength: 3
+      description: Site/company name
+      example: "PT Custom Etching Xenial"
+    site_url:
+      type: string
+      format: uri
+      maxLength: 500
+      description: Primary site URL
+      example: "https://ptcex.com"
+    site_description:
+      type: string
+      nullable: true
+      maxLength: 1000
+      description: SEO meta description
+      example: "Leading custom etching services in Indonesia"
+    contact_email:
+      type: string
+      format: email
+      maxLength: 255
+      description: Main contact email address
+      example: "contact@ptcex.com"
+    contact_phone:
+      type: string
+      nullable: true
+      maxLength: 50
+      description: Contact phone number
+      example: "+6281234567890"
+    contact_address:
+      type: string
+      nullable: true
+      description: Physical business address
+      example: "Jl. Industri No. 123, Jakarta 12345"
+    logo_url:
+      type: string
+      format: uri
+      nullable: true
+      maxLength: 500
+      description: Logo image URL
+      example: "https://cdn.ptcex.com/logo.png"
+    favicon_url:
+      type: string
+      format: uri
+      nullable: true
+      maxLength: 500
+      description: Favicon URL
+      example: "https://cdn.ptcex.com/favicon.ico"
+    is_maintenance_mode:
+      type: boolean
+      description: Site maintenance mode status
+      example: false
+    maintenance_message:
+      type: string
+      nullable: true
+      description: Custom maintenance message
+      example: "We are upgrading our systems. Please check back in 1 hour."
+    timezone:
+      type: string
+      maxLength: 100
+      description: Site timezone (IANA timezone)
+      example: "Asia/Jakarta"
+    social_links:
+      type: object
+      nullable: true
+      description: Social media profiles
+      additionalProperties: true
+    metadata:
+      type: object
+      nullable: true
+      description: Additional site metadata
+      additionalProperties: true
+
+# Email Settings Input Schema
+EmailSettingsInput:
+  type: object
+  required:
+    - provider
+    - from_email
+    - from_name
+  properties:
+    provider:
+      type: string
+      enum: ["smtp", "sendgrid", "mailgun"]
+      description: Email service provider
+      example: "smtp"
+    is_enabled:
+      type: boolean
+      description: Email service enabled status
+      example: true
+    from_email:
+      type: string
+      format: email
+      maxLength: 255
+      description: Default sender email address
+      example: "noreply@ptcex.com"
+    from_name:
+      type: string
+      maxLength: 255
+      minLength: 2
+      description: Default sender display name
+      example: "PT Custom Etching Xenial"
+    reply_to_email:
+      type: string
+      format: email
+      nullable: true
+      maxLength: 255
+      description: Reply-to email address
+      example: "support@ptcex.com"
+    smtp_config:
+      type: object
+      nullable: true
+      description: SMTP server configuration
+      additionalProperties: false
+    sendgrid_config:
+      type: object
+      nullable: true
+      description: SendGrid API configuration
+      additionalProperties: false
+    mailgun_config:
+      type: object
+      nullable: true
+      description: Mailgun API configuration
+      additionalProperties: false
+    notification_preferences:
+      type: object
+      nullable: true
+      description: Email notification toggles
+      additionalProperties: true
+    daily_limit:
+      type: integer
+      minimum: 1
+      description: Daily email sending limit
+      example: 1000
+    metadata:
+      type: object
+      nullable: true
+      description: Additional email configuration
+      additionalProperties: true
+
+# Settings Dashboard Response Schema
+SettingsDashboard:
+  type: object
+  properties:
+    overview:
+      type: object
+      properties:
+        total_settings:
+          type: integer
+          description: Total configured settings
+          example: 6
+        active_configurations:
+          type: integer
+          description: Active configuration count
+          example: 5
+        validation_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Overall validation score
+          example: 92.5
+        security_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Overall security score
+          example: 88.0
+        last_updated:
+          type: string
+          format: date-time
+          description: Last configuration update
+          example: "2025-11-12T14:30:00Z"
+    categories:
+      type: array
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            example: "Site Settings"
+          status:
+            type: string
+            enum: ["configured", "partial", "missing"]
+            example: "configured"
+          last_updated:
+            type: string
+            format: date-time
+            example: "2025-11-10T10:00:00Z"
+          validation_score:
+            type: number
+            format: float
+            example: 95.0
+      description: Settings categories status
+    recent_changes:
+      type: array
+      items:
+        type: object
+        properties:
+          settings_table:
+            type: string
+            example: "email_settings"
+          change_type:
+            type: string
+            enum: ["create", "update", "delete"]
+            example: "update"
+          changed_fields:
+            type: array
+            items:
+              type: string
+            example: ["daily_limit", "notification_preferences"]
+          changed_at:
+            type: string
+            format: date-time
+            example: "2025-11-12T09:30:00Z"
+          changed_by:
+            type: string
+            example: "admin@ptcex.com"
+      description: Recent configuration changes
+    health_checks:
+      type: array
+      items:
+        type: object
+        properties:
+          check_name:
+            type: string
+            example: "Email Configuration"
+          status:
+            type: string
+            enum: ["healthy", "warning", "critical"]
+            example: "healthy"
+          last_checked:
+            type: string
+            format: date-time
+            example: "2025-11-12T15:00:00Z"
+          message:
+            type: string
+            example: "All email providers are working correctly"
+      description: System health checks
+    alerts:
+      type: array
+      items:
+        type: object
+        properties:
+          alert_type:
+            type: string
+            example: "validation_failure"
+          severity:
+            type: string
+            enum: ["info", "warning", "critical"]
+            example: "warning"
+          message:
+            type: string
+            example: "Payment gateway test failed"
+          created_at:
+            type: string
+            format: date-time
+            example: "2025-11-12T08:00:00Z"
+          acknowledged:
+            type: boolean
+            example: false
+      description: System alerts and notifications
+
+# Settings Test Connection Response
+SettingsTestResult:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: Test connection successful
+      example: true
+    provider:
+      type: string
+      description: Tested provider
+      example: "smtp"
+    test_type:
+      type: string
+      description: Type of test performed
+      example: "connection"
+    response_time_ms:
+      type: integer
+      description: Response time in milliseconds
+      example: 234
+    message:
+      type: string
+      description: Test result message
+      example: "SMTP connection successful"
+    details:
+      type: object
+      nullable: true
+      description: Additional test details
+      additionalProperties: true
+    tested_at:
+      type: string
+      format: date-time
+      description: Test execution timestamp
+      example: "2025-11-12T14:30:00Z"

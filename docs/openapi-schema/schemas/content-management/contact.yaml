@@ -1,0 +1,891 @@
+# Contact Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for Contact Management System (150+ fields, 7 tables)
+
+# Contact Page Main Data Container
+ContactPageData:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      properties:
+        page:
+          $ref: '#/PageBasicInfo'
+        hero:
+          $ref: '#/ContactHeroSection'
+        contactInfo:
+          $ref: '#/ContactInfoSection'
+        form:
+          $ref: '#/ContactForm'
+        map:
+          $ref: '#/MapConfiguration'
+        quickContacts:
+          type: array
+          items:
+            $ref: '#/QuickContactItem'
+
+# Page Basic Information
+PageBasicInfo:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - slug
+        - title
+      properties:
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+          maxLength: 100
+          description: URL-friendly page identifier
+          example: "contact"
+        title:
+          type: string
+          maxLength: 255
+          description: Page title for SEO and navigation
+          example: "Contact Us"
+        metaDescription:
+          type: string
+          maxLength: 500
+          description: SEO meta description
+          example: "Get in touch with our team for inquiries and support"
+        isActive:
+          type: boolean
+          default: true
+          description: Whether the page is published
+
+# Contact Hero Section Entity
+ContactHeroSection:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - type: object
+      required:
+        - page_id
+        - title
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the contact page
+        title:
+          type: string
+          maxLength: 255
+          description: Main hero title
+          example: "Get in Touch"
+        subtitle:
+          type: string
+          maxLength: 500
+          description: Hero subtitle or description
+          example: "We're here to help you succeed"
+          nullable: true
+        backgroundImage:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Hero background image URL
+          example: "/images/contact-hero.jpg"
+          nullable: true
+        overlay_opacity:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.5
+          description: Background overlay opacity
+        text_alignment:
+          type: string
+          enum: ['left', 'center', 'right']
+          default: 'center'
+          description: Text alignment for hero content
+
+# Contact Information Section Entity
+ContactInfoSection:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - page_id
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the contact page
+        enabled:
+          type: boolean
+          default: true
+          description: Whether contact info section is displayed
+        items:
+          type: array
+          description: List of contact information items
+          items:
+            $ref: '#/ContactInfoItem'
+
+# Individual Contact Information Item Entity
+ContactInfoItem:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - contact_info_section_id
+        - title
+        - content
+      properties:
+        contact_info_section_id:
+          type: string
+          format: uuid
+          description: Reference to the contact info section
+        iconName:
+          type: string
+          maxLength: 50
+          description: Icon name for the contact item
+          example: "MapPin"
+        title:
+          type: string
+          maxLength: 255
+          description: Contact item title
+          example: "Our Address"
+        content:
+          type: string
+          maxLength: 1000
+          description: Contact item content (supports multiline)
+          example: "Jl. Sudirman No. 123\nJakarta Pusat 10250"
+        displayOrder:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order for sorting
+        isVisible:
+          type: boolean
+          default: true
+          description: Whether this item is visible
+
+# Contact Form Entity
+ContactForm:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - type: object
+      required:
+        - page_id
+        - title
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the contact page
+        enabled:
+          type: boolean
+          default: true
+          description: Whether the form is active
+        title:
+          type: string
+          maxLength: 255
+          description: Form title displayed to users
+          example: "Send us a Message"
+        subtitle:
+          type: string
+          maxLength: 500
+          description: Form subtitle or description
+          example: "Fill out the form below and we'll get back to you"
+          nullable: true
+        successMessage:
+          type: string
+          maxLength: 500
+          description: Message shown after successful submission
+          example: "Thank you! We will contact you soon."
+        submitButtonText:
+          type: string
+          maxLength: 50
+          default: "Send Message"
+          description: Submit button text
+        recaptcha_enabled:
+          type: boolean
+          default: false
+          description: Whether reCAPTCHA is enabled
+        notification_emails:
+          type: array
+          items:
+            type: string
+            format: email
+          description: Email addresses to notify on form submission
+        fields:
+          type: array
+          description: Dynamic form field configuration
+          items:
+            $ref: '#/ContactFormField'
+
+# Contact Form Field Entity
+ContactFormField:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - form_id
+        - fieldName
+        - fieldType
+        - fieldLabel
+      properties:
+        form_id:
+          type: string
+          format: uuid
+          description: Reference to the contact form
+        fieldName:
+          type: string
+          pattern: '^[a-zA-Z][a-zA-Z0-9_]*$'
+          maxLength: 50
+          description: Form field name attribute (must be valid identifier)
+          example: "name"
+        fieldType:
+          type: string
+          description: HTML input field type
+          enum: [text, email, tel, textarea, select, checkbox, radio, file, url, number, date, password]
+          example: "text"
+        fieldLabel:
+          type: string
+          maxLength: 255
+          description: Display label for the field
+          example: "Full Name"
+        placeholder:
+          type: string
+          maxLength: 255
+          description: Placeholder text
+          example: "Enter your full name"
+          nullable: true
+        helpText:
+          type: string
+          maxLength: 500
+          description: Help text shown below the field
+          nullable: true
+        isRequired:
+          type: boolean
+          default: false
+          description: Whether the field is mandatory
+        isVisible:
+          type: boolean
+          default: true
+          description: Whether the field is visible
+        validationRules:
+          type: object
+          description: Field validation configuration
+          properties:
+            minLength:
+              type: integer
+              minimum: 0
+              description: Minimum character length
+            maxLength:
+              type: integer
+              minimum: 1
+              description: Maximum character length
+            pattern:
+              type: string
+              description: Regular expression pattern for validation
+            min:
+              type: number
+              description: Minimum numeric value
+            max:
+              type: number
+              description: Maximum numeric value
+            fileTypes:
+              type: array
+              items:
+                type: string
+              description: Allowed file types for file fields
+            maxFileSize:
+              type: integer
+              description: Maximum file size in bytes
+          example:
+            minLength: 3
+            maxLength: 100
+        options:
+          type: array
+          description: Options for select, checkbox, or radio fields
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+              selected:
+                type: boolean
+                default: false
+          example:
+            - value: "general"
+              label: "General Inquiry"
+              selected: false
+            - value: "product"
+              label: "Product Question"
+              selected: false
+        displayOrder:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Field display order
+        column_span:
+          type: integer
+          minimum: 1
+          maximum: 12
+          default: 12
+          description: Bootstrap column span (1-12)
+
+# Map Configuration Entity
+MapConfiguration:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - page_id
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the contact page
+        enabled:
+          type: boolean
+          default: true
+          description: Whether map is displayed
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Map center latitude
+          example: -6.2088
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Map center longitude
+          example: 106.8456
+        zoomLevel:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 15
+          description: Default map zoom level
+        markerTitle:
+          type: string
+          maxLength: 255
+          description: Location marker title
+          example: "Our Jakarta Office"
+          nullable: true
+        markerDescription:
+          type: string
+          maxLength: 500
+          description: Location marker description
+          nullable: true
+        mapStyle:
+          type: string
+          enum: ['roadmap', 'satellite', 'hybrid', 'terrain']
+          default: 'roadmap'
+          description: Google Maps style
+        show_controls:
+          type: boolean
+          default: true
+          description: Whether to show map controls
+
+# Quick Contact Item Entity
+QuickContactItem:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - page_id
+        - contactType
+        - contactLabel
+        - contactValue
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the contact page
+        contactType:
+          type: string
+          description: Type of contact method
+          enum: [whatsapp, telegram, line, phone, email, website, facebook, instagram, twitter, linkedin, other]
+          example: "whatsapp"
+        contactLabel:
+          type: string
+          maxLength: 255
+          description: Display label for the contact method
+          example: "Chat via WhatsApp"
+        contactValue:
+          type: string
+          maxLength: 255
+          description: Contact value (phone, email, URL, etc.)
+          example: "6281234567890"
+        iconName:
+          type: string
+          maxLength: 50
+          description: Icon name for the contact method
+          example: "MessageCircle"
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Custom color for the contact button
+          example: "#25D366"
+          nullable: true
+        enabled:
+          type: boolean
+          default: true
+          description: Whether this quick contact is active
+        displayOrder:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order for sorting
+        open_in_new_tab:
+          type: boolean
+          default: true
+          description: Whether to open contact link in new tab
+
+# Contact Form Submission Entity
+ContactSubmission:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - form_id
+        - submission_data
+        - submitter_ip
+      properties:
+        form_id:
+          type: string
+          format: uuid
+          description: ID of the form that was submitted
+        submission_data:
+          type: object
+          description: The submitted form data (JSON)
+          additionalProperties: true
+          example:
+            name: "John Doe"
+            email: "john@example.com"
+            subject: "Product Inquiry"
+            message: "I need more information about your services"
+        status:
+          type: string
+          description: Current submission status
+          enum: [new, read, replied, archived, spam]
+          default: "new"
+          example: "new"
+        submitter_ip:
+          type: string
+          format: ipv4
+          description: IP address of the submitter
+          example: "192.168.1.100"
+        user_agent:
+          type: string
+          maxLength: 500
+          description: User agent string of the submitter
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          nullable: true
+        referer_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Referring URL
+          nullable: true
+        source:
+          type: string
+          maxLength: 100
+          description: Submission source (web, mobile, api, etc.)
+          default: "web"
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: "normal"
+          description: Submission priority level
+        assigned_to:
+          type: string
+          format: uuid
+          description: User assigned to handle this submission
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          description: Tags for categorization
+        replied_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when submission was replied to
+        reply_message:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Admin reply message
+        replied_by:
+          type: string
+          format: uuid
+          description: User who replied to this submission
+          nullable: true
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when submission was archived
+        spam_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Spam probability score (0-1)
+          nullable: true
+
+# Input Schemas for API Operations
+
+# Contact Form Submission Input
+ContactFormSubmissionInput:
+  type: object
+  required:
+    - formData
+  properties:
+    formData:
+      type: object
+      description: Dynamic form data based on form field configuration
+      additionalProperties: true
+      minProperties: 1
+      example:
+        name: "John Doe"
+        email: "john@example.com"
+        phone: "+62 812-3456-7890"
+        subject: "Product Inquiry"
+        message: "I would like to know more about your services and pricing."
+    recaptchaToken:
+      type: string
+      minLength: 10
+      description: reCAPTCHA verification token (if enabled)
+      example: "03AGdBq25..."
+    source:
+      type: string
+      maxLength: 100
+      description: Submission source identifier
+      example: "contact_page"
+
+# Contact Page Update Input
+ContactPageUpdateInput:
+  type: object
+  properties:
+    hero:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          example: "Get in Touch with Us"
+        subtitle:
+          type: string
+          maxLength: 500
+          example: "We're here to help you succeed"
+        backgroundImage:
+          type: string
+          format: uri
+          maxLength: 500
+          example: "/images/new-contact-hero.jpg"
+        overlay_opacity:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+        text_alignment:
+          type: string
+          enum: ['left', 'center', 'right']
+    contactInfo:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          example: true
+        items:
+          type: array
+          maxItems: 20
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Existing item ID (omit for new items)
+              iconName:
+                type: string
+                maxLength: 50
+              title:
+                type: string
+                minLength: 1
+                maxLength: 255
+              content:
+                type: string
+                minLength: 1
+                maxLength: 1000
+              displayOrder:
+                type: integer
+                minimum: 0
+              isVisible:
+                type: boolean
+    form:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        subtitle:
+          type: string
+          maxLength: 500
+        successMessage:
+          type: string
+          minLength: 1
+          maxLength: 500
+        submitButtonText:
+          type: string
+          maxLength: 50
+        recaptcha_enabled:
+          type: boolean
+        notification_emails:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            format: email
+        fields:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            required:
+              - fieldName
+              - fieldType
+              - fieldLabel
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Existing field ID (omit for new fields)
+              fieldName:
+                type: string
+                pattern: '^[a-zA-Z][a-zA-Z0-9_]*$'
+                maxLength: 50
+              fieldType:
+                type: string
+                enum: [text, email, tel, textarea, select, checkbox, radio, file, url, number, date, password]
+              fieldLabel:
+                type: string
+                minLength: 1
+                maxLength: 255
+              placeholder:
+                type: string
+                maxLength: 255
+              helpText:
+                type: string
+                maxLength: 500
+              isRequired:
+                type: boolean
+              isVisible:
+                type: boolean
+              validationRules:
+                type: object
+              options:
+                type: array
+                maxItems: 100
+                items:
+                  type: object
+                  properties:
+                    value:
+                      type: string
+                      maxLength: 100
+                    label:
+                      type: string
+                      maxLength: 255
+                    selected:
+                      type: boolean
+              displayOrder:
+                type: integer
+                minimum: 0
+              column_span:
+                type: integer
+                minimum: 1
+                maximum: 12
+    map:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+        zoomLevel:
+          type: integer
+          minimum: 1
+          maximum: 20
+        markerTitle:
+          type: string
+          maxLength: 255
+        markerDescription:
+          type: string
+          maxLength: 500
+        mapStyle:
+          type: string
+          enum: ['roadmap', 'satellite', 'hybrid', 'terrain']
+        show_controls:
+          type: boolean
+    quickContacts:
+      type: array
+      maxItems: 20
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+            description: Existing item ID (omit for new items)
+          contactType:
+            type: string
+            enum: [whatsapp, telegram, line, phone, email, website, facebook, instagram, twitter, linkedin, other]
+          contactLabel:
+            type: string
+            minLength: 1
+            maxLength: 255
+          contactValue:
+            type: string
+            minLength: 1
+            maxLength: 255
+          iconName:
+            type: string
+            maxLength: 50
+          color:
+            type: string
+            pattern: '^#[0-9A-Fa-f]{6}$'
+          enabled:
+            type: boolean
+          displayOrder:
+            type: integer
+            minimum: 0
+          open_in_new_tab:
+            type: boolean
+
+# Contact Submission Update Input
+ContactSubmissionUpdateInput:
+  type: object
+  required:
+    - status
+  properties:
+    status:
+      type: string
+      description: New submission status
+      enum: [new, read, replied, archived, spam]
+      example: "replied"
+    priority:
+      type: string
+      enum: [low, normal, high, urgent]
+      description: Submission priority level
+    assigned_to:
+      type: string
+      format: uuid
+      description: User to assign this submission to
+    tags:
+      type: array
+      maxItems: 10
+      items:
+        type: string
+        maxLength: 50
+      description: Tags for categorization
+    reply_message:
+      type: string
+      maxLength: 2000
+      description: Admin reply message (required when status is 'replied')
+      example: "Thank you for your inquiry. We have sent detailed information to your email."
+    internal_notes:
+      type: string
+      maxLength: 1000
+      description: Internal notes (not visible to submitter)
+
+# Contact Form Field Input
+ContactFormFieldInput:
+  type: object
+  required:
+    - fieldName
+    - fieldType
+    - fieldLabel
+  properties:
+    fieldName:
+      type: string
+      pattern: '^[a-zA-Z][a-zA-Z0-9_]*$'
+      maxLength: 50
+      description: Form field name attribute
+    fieldType:
+      type: string
+      enum: [text, email, tel, textarea, select, checkbox, radio, file, url, number, date, password]
+      description: HTML input field type
+    fieldLabel:
+      type: string
+      minLength: 1
+      maxLength: 255
+      description: Display label for the field
+    placeholder:
+      type: string
+      maxLength: 255
+      description: Placeholder text
+    helpText:
+      type: string
+      maxLength: 500
+      description: Help text shown below the field
+    isRequired:
+      type: boolean
+      default: false
+      description: Whether the field is mandatory
+    isVisible:
+      type: boolean
+      default: true
+      description: Whether the field is visible
+    validationRules:
+      type: object
+      description: Field validation configuration
+    options:
+      type: array
+      maxItems: 100
+      items:
+        type: object
+        properties:
+          value:
+            type: string
+            maxLength: 100
+          label:
+            type: string
+            maxLength: 255
+          selected:
+            type: boolean
+            default: false
+      description: Options for select, checkbox, or radio fields
+    displayOrder:
+      type: integer
+      minimum: 0
+      default: 0
+      description: Field display order
+    column_span:
+      type: integer
+      minimum: 1
+      maximum: 12
+      default: 12
+      description: Bootstrap column span (1-12)

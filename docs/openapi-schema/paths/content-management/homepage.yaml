@@ -1,0 +1,731 @@
+# Homepage API Endpoints for Stencil CMS
+# Complete CRUD operations for Homepage Management System
+
+# Pages Collection Endpoints
+
+/pages:
+  get:
+    tags:
+      - Content Management
+    summary: List all pages
+    description: |
+      Retrieve a paginated list of all pages within the current tenant.
+      Supports filtering by page type, status, and full-text search.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
+      - $ref: '../../components/parameters.yaml#/OrderParam'
+      - $ref: '../../components/parameters.yaml#/SearchParam'
+      - name: page_type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [home, about, contact, faq, custom]
+        description: Filter by page type
+        example: "home"
+      - name: publish_status
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [draft, review, scheduled, published, archived]
+        description: Filter by publish status
+        example: "published"
+      - name: template_id
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+        description: Filter by template
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: include
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [sections, analytics, template, seo_meta]
+        style: form
+        explode: false
+        description: Include related data
+        example: ["sections", "analytics"]
+    responses:
+      '200':
+        description: Pages retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/pagination.yaml#/PaginatedResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        items:
+                          type: array
+                          items:
+                            $ref: '../../schemas/content-management/homepage.yaml#/Page'
+            examples:
+              success:
+                summary: Successful page listing
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                        slug: "homepage"
+                        title: "Welcome to Acme Etching"
+                        page_type: "home"
+                        publish_status: "published"
+                        published_at: "2025-11-12T10:00:00Z"
+                        created_at: "2025-11-10T08:00:00Z"
+                        updated_at: "2025-11-12T09:30:00Z"
+                    pagination:
+                      current_page: 1
+                      per_page: 15
+                      total: 25
+                      last_page: 2
+                  message: "Pages retrieved successfully"
+                  meta:
+                    timestamp: "2025-11-12T13:00:00Z"
+                    request_id: "req_123456789"
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+  post:
+    tags:
+      - Content Management
+    summary: Create new page
+    description: |
+      Create a new page within the current tenant. 
+      Requires 'pages.create' permission.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/homepage.yaml#/CreatePageRequest'
+          examples:
+            basic_page:
+              summary: Basic page creation
+              value:
+                title: "New Homepage"
+                slug: "new-homepage"
+                page_type: "home"
+                publish_status: "draft"
+                meta_title: "New Homepage - Acme Etching"
+                meta_description: "Welcome to our new homepage featuring our latest services"
+            with_template:
+              summary: Page creation with template
+              value:
+                title: "Manufacturing Homepage"
+                slug: "manufacturing-home"
+                page_type: "home"
+                template_id: "550e8400-e29b-41d4-a716-446655440000"
+                publish_status: "draft"
+    responses:
+      '201':
+        description: Page created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/homepage.yaml#/Page'
+            examples:
+              created:
+                summary: Successfully created page
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                    slug: "new-homepage"
+                    title: "New Homepage"
+                    page_type: "home"
+                    publish_status: "draft"
+                    created_at: "2025-11-12T13:00:00Z"
+                    updated_at: "2025-11-12T13:00:00Z"
+                  message: "Page created successfully"
+                  meta:
+                    timestamp: "2025-11-12T13:00:00Z"
+                    request_id: "req_123456789"
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
+
+# Individual Page Endpoints
+
+/pages/{id}:
+  get:
+    tags:
+      - Content Management
+    summary: Get page by ID
+    description: |
+      Retrieve a single page by its UUID.
+      Requires 'pages.view' permission.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Page UUID
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: include
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [sections, analytics, template, seo_meta, version_history]
+        style: form
+        explode: false
+        description: Include related data
+        example: ["sections", "analytics"]
+    responses:
+      '200':
+        description: Page retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/homepage.yaml#/Page'
+            examples:
+              success:
+                summary: Page with sections included
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                    slug: "homepage"
+                    title: "Welcome to Acme Etching"
+                    page_type: "home"
+                    publish_status: "published"
+                    sections:
+                      - id: "section_1"
+                        section_type: "hero"
+                        title: "Premium Etching Services"
+                        sort_order: 1
+                        content_data:
+                          title: "Professional Etching Services"
+                          description: "Transform your ideas into reality"
+                          primary_cta:
+                            text: "Get Quote"
+                            url: "/quote"
+                            style: "primary"
+                    analytics:
+                      views:
+                        total: 15420
+                        unique: 12350
+                        today: 145
+                  message: "Page retrieved successfully"
+                  meta:
+                    timestamp: "2025-11-12T13:00:00Z"
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+  put:
+    tags:
+      - Content Management
+    summary: Update page
+    description: |
+      Update an existing page.
+      Requires 'pages.edit' permission.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Page UUID
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/homepage.yaml#/UpdatePageRequest'
+          examples:
+            update_title:
+              summary: Update page title and status
+              value:
+                title: "Updated Homepage Title"
+                publish_status: "published"
+                version_notes: "Updated title and published"
+            schedule_publish:
+              summary: Schedule page for publishing
+              value:
+                publish_status: "scheduled"
+                scheduled_at: "2025-11-15T09:00:00Z"
+                version_notes: "Scheduled for go-live"
+    responses:
+      '200':
+        description: Page updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/homepage.yaml#/Page'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+  delete:
+    tags:
+      - Content Management
+    summary: Delete page
+    description: |
+      Soft delete a page (moves to archived status).
+      Requires 'pages.delete' permission.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Page UUID
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+        description: Force hard delete (permanent)
+    responses:
+      '200':
+        description: Page deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+            examples:
+              soft_delete:
+                summary: Soft delete (archived)
+                value:
+                  success: true
+                  data: null
+                  message: "Page archived successfully"
+                  meta:
+                    timestamp: "2025-11-12T13:00:00Z"
+              hard_delete:
+                summary: Hard delete (permanent)
+                value:
+                  success: true
+                  data: null
+                  message: "Page deleted permanently"
+                  meta:
+                    timestamp: "2025-11-12T13:00:00Z"
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+# Page Sections Endpoints
+
+/pages/{id}/sections:
+  get:
+    tags:
+      - Content Management
+    summary: Get page sections
+    description: |
+      Retrieve all sections for a specific page, ordered by sort_order.
+      Requires 'pages.view' permission.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Page UUID
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: section_type
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [hero, social_proof, process, why_choose_us, achievements, services, testimonials, cta]
+        description: Filter by section type
+      - name: visibility
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [visible, hidden, scheduled]
+        description: Filter by visibility status
+        default: "visible"
+    responses:
+      '200':
+        description: Sections retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/homepage.yaml#/PageSection'
+
+  post:
+    tags:
+      - Content Management
+    summary: Add section to page
+    description: |
+      Add a new section to a page.
+      Requires 'pages.edit' permission.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Page UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - section_type
+              - title
+            properties:
+              section_type:
+                type: string
+                enum: [hero, social_proof, process, why_choose_us, achievements, services, testimonials, cta]
+              title:
+                type: string
+                maxLength: 255
+              subtitle:
+                type: string
+                nullable: true
+                maxLength: 500
+              content_data:
+                type: object
+                additionalProperties: true
+              sort_order:
+                type: integer
+                minimum: 0
+              visibility:
+                type: string
+                enum: [visible, hidden, scheduled]
+                default: "visible"
+          examples:
+            hero_section:
+              summary: Add hero section
+              value:
+                section_type: "hero"
+                title: "Welcome to Our Services"
+                sort_order: 1
+                content_data:
+                  title: "Premium Etching Services"
+                  description: "Transform your ideas into reality"
+                  primary_cta:
+                    text: "Get Started"
+                    url: "/contact"
+                    style: "primary"
+    responses:
+      '201':
+        description: Section added successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/homepage.yaml#/PageSection'
+
+# Page Analytics Endpoint
+
+/pages/{id}/analytics:
+  get:
+    tags:
+      - Content Management
+    summary: Get page analytics
+    description: |
+      Retrieve analytics data for a specific page.
+      Requires 'pages.analytics' permission.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Page UUID
+      - name: period
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [today, week, month, quarter, year, custom]
+          default: "month"
+        description: Analytics period
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+        description: Start date for custom period
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date
+        description: End date for custom period
+    responses:
+      '200':
+        description: Analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/homepage.yaml#/PageAnalytics'
+
+# Page Templates Endpoints
+
+/page-templates:
+  get:
+    tags:
+      - Content Management
+    summary: List page templates
+    description: |
+      Retrieve available page templates.
+      Public endpoint - no authentication required.
+    parameters:
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [manufacturing, services, corporate, creative, ecommerce, portfolio]
+        description: Filter by template category
+      - name: is_premium
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: Filter by premium status
+    responses:
+      '200':
+        description: Templates retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/pagination.yaml#/PaginatedResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        items:
+                          type: array
+                          items:
+                            $ref: '../../schemas/content-management/homepage.yaml#/PageTemplate'
+
+/page-templates/{id}:
+  get:
+    tags:
+      - Content Management
+    summary: Get template by ID
+    description: |
+      Retrieve a specific page template with full template data.
+      Public endpoint - no authentication required.
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Template UUID
+    responses:
+      '200':
+        description: Template retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/homepage.yaml#/PageTemplate'
+
+# Bulk Operations
+
+/pages/bulk:
+  post:
+    tags:
+      - Content Management
+    summary: Bulk page operations
+    description: |
+      Perform bulk operations on multiple pages.
+      Requires appropriate permissions based on operation.
+    security:
+      - bearerAuth: []
+      - tenantHeader: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - action
+              - page_ids
+            properties:
+              action:
+                type: string
+                enum: [publish, unpublish, archive, delete, duplicate]
+                description: Bulk action to perform
+              page_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                description: Array of page UUIDs
+                maxItems: 50
+              options:
+                type: object
+                description: Action-specific options
+                properties:
+                  publish_at:
+                    type: string
+                    format: date-time
+                    description: Schedule publish time (for publish action)
+                  duplicate_suffix:
+                    type: string
+                    description: Suffix for duplicated pages
+                    default: " (Copy)"
+          examples:
+            bulk_publish:
+              summary: Bulk publish pages
+              value:
+                action: "publish"
+                page_ids: ["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
+            bulk_archive:
+              summary: Bulk archive pages
+              value:
+                action: "archive"
+                page_ids: ["550e8400-e29b-41d4-a716-446655440000"]
+    responses:
+      '200':
+        description: Bulk operation completed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        successful:
+                          type: array
+                          items:
+                            type: string
+                            format: uuid
+                          description: Successfully processed page IDs
+                        failed:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              page_id:
+                                type: string
+                                format: uuid
+                              error:
+                                type: string
+                          description: Failed operations with reasons
+                        summary:
+                          type: object
+                          properties:
+                            total:
+                              type: integer
+                            successful:
+                              type: integer
+                            failed:
+                              type: integer

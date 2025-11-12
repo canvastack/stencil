@@ -1,0 +1,820 @@
+# About Us Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for About Us Management System (80+ fields, 10 tables)
+
+# About Hero Section Entity
+AboutHero:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - $ref: '../common/base.yaml#/VersionedEntity'
+    - type: object
+      required:
+        - page_id
+        - title
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the About page
+        title:
+          type: string
+          maxLength: 255
+          description: Main hero title
+          example: "About Our Company"
+        subtitle:
+          type: string
+          description: Hero subtitle text
+          example: "Leading innovation in etching industry since 2015"
+          nullable: true
+        background_image_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Background image URL
+          nullable: true
+        background_video_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Background video URL for dynamic hero
+          nullable: true
+        overlay_opacity:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.5
+          description: Background overlay opacity (0.0 - 1.0)
+        text_alignment:
+          type: string
+          enum: ['left', 'center', 'right']
+          default: 'center'
+          description: Text alignment in hero section
+        vertical_position:
+          type: string
+          enum: ['top', 'center', 'bottom']
+          default: 'center'
+          description: Vertical position of text content
+        cta_text:
+          type: string
+          maxLength: 100
+          description: Call-to-action button text
+          example: "Learn More"
+          nullable: true
+        cta_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Call-to-action button URL
+          nullable: true
+        cta_style:
+          type: string
+          enum: ['primary', 'secondary', 'outline']
+          default: 'primary'
+          description: Button style variant
+        alt_text:
+          type: string
+          maxLength: 255
+          description: Alternative text for accessibility
+          nullable: true
+
+# Company Profile Entity
+CompanyProfile:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - $ref: '../common/base.yaml#/VersionedEntity'
+    - type: object
+      required:
+        - page_id
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the About page
+        founded_year:
+          type: integer
+          minimum: 1800
+          maximum: 2025
+          description: Year the company was founded
+          example: 2015
+          nullable: true
+        location:
+          type: string
+          maxLength: 255
+          description: Company headquarters location
+          example: "Jakarta, Indonesia"
+          nullable: true
+        company_size:
+          type: string
+          enum: ['startup', 'small', 'medium', 'large', 'enterprise']
+          description: Company size category
+          nullable: true
+        industry:
+          type: string
+          maxLength: 100
+          description: Industry sector
+          example: "Custom Etching & Manufacturing"
+          nullable: true
+        website_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Official company website
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          description: Primary contact phone number
+          nullable: true
+        email:
+          type: string
+          maxLength: 255
+          format: email
+          description: Primary contact email
+          nullable: true
+        address_line1:
+          type: string
+          maxLength: 255
+          description: First line of address
+          nullable: true
+        address_line2:
+          type: string
+          maxLength: 255
+          description: Second line of address
+          nullable: true
+        city:
+          type: string
+          maxLength: 100
+          description: City name
+          nullable: true
+        state_province:
+          type: string
+          maxLength: 100
+          description: State or province
+          nullable: true
+        postal_code:
+          type: string
+          maxLength: 20
+          description: Postal or ZIP code
+          nullable: true
+        country:
+          type: string
+          maxLength: 100
+          description: Country name
+          nullable: true
+        registration_number:
+          type: string
+          maxLength: 100
+          description: Business registration number
+          nullable: true
+        tax_id:
+          type: string
+          maxLength: 100
+          description: Tax identification number (NPWP)
+          nullable: true
+        linkedin_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: LinkedIn company page URL
+          nullable: true
+        twitter_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Twitter/X company profile URL
+          nullable: true
+        facebook_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Facebook company page URL
+          nullable: true
+        instagram_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Instagram company profile URL
+          nullable: true
+        youtube_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: YouTube company channel URL
+          nullable: true
+        logo_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Company logo URL
+          nullable: true
+        logo_alt_text:
+          type: string
+          maxLength: 255
+          description: Logo alternative text for accessibility
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional flexible company data
+          default: {}
+
+# Mission & Vision Entity
+MissionVision:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - $ref: '../common/base.yaml#/VersionedEntity'
+    - type: object
+      required:
+        - page_id
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the About page
+        mission_title:
+          type: string
+          maxLength: 255
+          default: "Our Mission"
+          description: Mission section title
+          nullable: true
+        mission_statement:
+          type: string
+          description: Company mission statement
+          example: "To provide exceptional custom etching solutions that exceed customer expectations through innovation and quality craftsmanship."
+          nullable: true
+        mission_icon:
+          type: string
+          maxLength: 100
+          description: Icon class or URL for mission section
+          nullable: true
+        mission_image_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Mission section background or illustration image
+          nullable: true
+        vision_title:
+          type: string
+          maxLength: 255
+          default: "Our Vision"
+          description: Vision section title
+          nullable: true
+        vision_statement:
+          type: string
+          description: Company vision statement
+          example: "To be the leading provider of custom etching solutions in Southeast Asia, recognized for innovation, quality, and customer satisfaction."
+          nullable: true
+        vision_icon:
+          type: string
+          maxLength: 100
+          description: Icon class or URL for vision section
+          nullable: true
+        vision_image_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Vision section background or illustration image
+          nullable: true
+        layout_style:
+          type: string
+          enum: ['side-by-side', 'stacked', 'tabs', 'cards']
+          default: 'side-by-side'
+          description: Display layout option
+        background_color:
+          type: string
+          maxLength: 20
+          description: Custom background color (hex, rgb, etc.)
+          nullable: true
+        text_color:
+          type: string
+          maxLength: 20
+          description: Custom text color
+          nullable: true
+        translations:
+          type: object
+          additionalProperties: true
+          description: Multi-language translations
+          default: {}
+        mission_alt_text:
+          type: string
+          maxLength: 255
+          description: Mission image alternative text
+          nullable: true
+        vision_alt_text:
+          type: string
+          maxLength: 255
+          description: Vision image alternative text
+          nullable: true
+        show_mission:
+          type: boolean
+          default: true
+          description: Show/hide mission section
+        show_vision:
+          type: boolean
+          default: true
+          description: Show/hide vision section
+
+# Company Values Entity
+CompanyValues:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - type: object
+      required:
+        - page_id
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the About page
+        title:
+          type: string
+          maxLength: 255
+          default: "Our Values"
+          description: Values section title
+          nullable: true
+
+# Individual Company Value Item
+CompanyValueItem:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/OrderableEntity'
+    - type: object
+      required:
+        - values_section_id
+        - value_description
+      properties:
+        values_section_id:
+          type: string
+          format: uuid
+          description: Reference to the CompanyValues section
+        value_description:
+          type: string
+          description: Company value description
+          example: "Integrity in everything we do"
+        value_icon:
+          type: string
+          maxLength: 100
+          description: Icon class or URL for this value
+          nullable: true
+        value_color:
+          type: string
+          maxLength: 20
+          description: Custom color for this value
+          nullable: true
+
+# Team Member Entity
+TeamMember:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/OrderableEntity'
+    - type: object
+      required:
+        - page_id
+        - name
+        - position
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the About page
+        name:
+          type: string
+          maxLength: 255
+          description: Team member full name
+          example: "John Doe"
+        position:
+          type: string
+          maxLength: 255
+          description: Job title or position
+          example: "Chief Executive Officer"
+        bio:
+          type: string
+          description: Biography or description
+          example: "John has over 15 years of experience in the manufacturing industry..."
+          nullable: true
+        photo_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Profile photo URL
+          nullable: true
+        email:
+          type: string
+          maxLength: 255
+          format: email
+          description: Contact email address
+          nullable: true
+        phone:
+          type: string
+          maxLength: 50
+          description: Contact phone number
+          nullable: true
+        linkedin_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: LinkedIn profile URL
+          nullable: true
+        twitter_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Twitter/X profile URL
+          nullable: true
+        is_featured:
+          type: boolean
+          default: false
+          description: Show in featured/leadership section
+        department:
+          type: string
+          maxLength: 100
+          description: Department or team
+          example: "Leadership"
+          nullable: true
+        years_experience:
+          type: integer
+          minimum: 0
+          description: Years of experience
+          nullable: true
+
+# Company Timeline Event
+TimelineEvent:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/OrderableEntity'
+    - type: object
+      required:
+        - page_id
+        - year
+        - title
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the About page
+        year:
+          type: integer
+          minimum: 1800
+          maximum: 2030
+          description: Year of the milestone
+          example: 2015
+        title:
+          type: string
+          maxLength: 255
+          description: Milestone title
+          example: "Company Founded"
+        description:
+          type: string
+          description: Detailed description of the milestone
+          example: "Stencil CMS was founded in Jakarta with a vision to revolutionize custom etching solutions."
+          nullable: true
+        image_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: Image associated with this milestone
+          nullable: true
+        milestone_type:
+          type: string
+          enum: ['founding', 'expansion', 'achievement', 'partnership', 'product_launch', 'other']
+          default: 'other'
+          description: Type of milestone for categorization
+        importance_level:
+          type: string
+          enum: ['low', 'medium', 'high', 'critical']
+          default: 'medium'
+          description: Importance level for display priority
+
+# Certification or Award
+Certification:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/OrderableEntity'
+    - type: object
+      required:
+        - page_id
+        - name
+        - issuer
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the About page
+        name:
+          type: string
+          maxLength: 255
+          description: Certification or award name
+          example: "ISO 9001:2015 Quality Management System"
+        issuer:
+          type: string
+          maxLength: 255
+          description: Issuing organization
+          example: "International Organization for Standardization"
+        issue_year:
+          type: integer
+          minimum: 1900
+          maximum: 2030
+          description: Year the certification was received
+          example: 2020
+          nullable: true
+        certificate_number:
+          type: string
+          maxLength: 100
+          description: Certificate ID or number
+          nullable: true
+        certificate_url:
+          type: string
+          maxLength: 500
+          format: uri
+          description: URL to certificate document (PDF or image)
+          nullable: true
+        description:
+          type: string
+          description: Additional description or details
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          description: Certificate expiry date
+          nullable: true
+        certification_type:
+          type: string
+          enum: ['iso', 'industry', 'government', 'award', 'accreditation', 'other']
+          default: 'other'
+          description: Type of certification
+        status:
+          type: string
+          enum: ['active', 'expired', 'pending_renewal', 'suspended']
+          default: 'active'
+          description: Current certification status
+
+# Content Versioning for About Module
+AboutContentVersion:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - content_type
+        - content_id
+        - version_number
+        - content_data
+        - created_by
+      properties:
+        content_type:
+          type: string
+          enum: ['hero', 'company', 'mission_vision', 'values', 'team', 'timeline', 'certifications']
+          description: Type of content being versioned
+        content_id:
+          type: string
+          format: uuid
+          description: ID of the original content record
+        version_number:
+          type: integer
+          minimum: 1
+          description: Version number (incremental)
+        version_name:
+          type: string
+          maxLength: 100
+          description: Optional version label
+          example: "Launch Version"
+          nullable: true
+        is_current:
+          type: boolean
+          default: false
+          description: Whether this is the current active version
+        content_data:
+          type: object
+          additionalProperties: true
+          description: Complete content snapshot
+        change_summary:
+          type: string
+          description: Summary of changes in this version
+          nullable: true
+        change_type:
+          type: string
+          enum: ['create', 'update', 'delete', 'restore']
+          default: 'update'
+          description: Type of change
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional version metadata
+          default: {}
+
+# Multi-language Translation Support
+AboutTranslation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - content_type
+        - content_id
+        - field_name
+        - language_code
+        - locale
+        - translated_text
+      properties:
+        content_type:
+          type: string
+          enum: ['hero', 'company', 'mission_vision', 'values', 'team', 'timeline', 'certifications']
+          description: Type of content being translated
+        content_id:
+          type: string
+          format: uuid
+          description: ID of the content record
+        field_name:
+          type: string
+          maxLength: 100
+          description: Name of the field being translated
+          example: "title"
+        language_code:
+          type: string
+          maxLength: 10
+          pattern: "^[a-z]{2}$"
+          description: ISO 639-1 language code
+          example: "id"
+        country_code:
+          type: string
+          maxLength: 10
+          pattern: "^[A-Z]{2}$"
+          description: ISO 3166-1 country code
+          example: "ID"
+          nullable: true
+        locale:
+          type: string
+          maxLength: 20
+          pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+          description: Combined locale identifier
+          example: "id-ID"
+        translated_text:
+          type: string
+          description: The translated content
+        translation_status:
+          type: string
+          enum: ['draft', 'review', 'approved', 'published']
+          default: 'draft'
+          description: Translation workflow status
+        translator_id:
+          type: string
+          format: uuid
+          description: ID of the translator user
+          nullable: true
+        reviewer_id:
+          type: string
+          format: uuid
+          description: ID of the reviewer user
+          nullable: true
+        quality_score:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 10.0
+          description: Translation quality score
+          nullable: true
+
+# API Response Models
+AboutPageComplete:
+  type: object
+  properties:
+    hero:
+      $ref: '#/AboutHero'
+      nullable: true
+    company:
+      $ref: '#/CompanyProfile'
+      nullable: true
+    mission_vision:
+      $ref: '#/MissionVision'
+      nullable: true
+    values:
+      type: object
+      properties:
+        section:
+          $ref: '#/CompanyValues'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/CompanyValueItem'
+          default: []
+    team_members:
+      type: array
+      items:
+        $ref: '#/TeamMember'
+      default: []
+    timeline:
+      type: array
+      items:
+        $ref: '#/TimelineEvent'
+      default: []
+    certifications:
+      type: array
+      items:
+        $ref: '#/Certification'
+      default: []
+    page_metadata:
+      $ref: '../common/base.yaml#/PageMetadata'
+
+AboutPageSummary:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    title:
+      type: string
+      example: "About Us"
+    company_name:
+      type: string
+      example: "Stencil CMS"
+    founded_year:
+      type: integer
+      example: 2015
+      nullable: true
+    location:
+      type: string
+      example: "Jakarta, Indonesia"
+      nullable: true
+    team_count:
+      type: integer
+      example: 25
+    certifications_count:
+      type: integer
+      example: 3
+    last_updated:
+      type: string
+      format: date-time
+    is_published:
+      type: boolean
+      default: true
+
+# Bulk Operations
+AboutBulkOperation:
+  type: object
+  required:
+    - operation
+    - items
+  properties:
+    operation:
+      type: string
+      enum: ['create', 'update', 'delete', 'publish', 'unpublish']
+      description: Bulk operation type
+    items:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          data:
+            type: object
+            additionalProperties: true
+      minItems: 1
+      maxItems: 100
+    options:
+      type: object
+      properties:
+        validate_before_save:
+          type: boolean
+          default: true
+        create_version:
+          type: boolean
+          default: false
+        notification_settings:
+          type: object
+          additionalProperties: true
+
+AboutBulkResult:
+  type: object
+  properties:
+    success_count:
+      type: integer
+      minimum: 0
+    error_count:
+      type: integer
+      minimum: 0
+    results:
+      type: array
+      items:
+        type: object
+        properties:
+          item_id:
+            type: string
+            format: uuid
+          status:
+            type: string
+            enum: ['success', 'error', 'skipped']
+          message:
+            type: string
+            nullable: true
+          data:
+            type: object
+            additionalProperties: true
+            nullable: true
+    processing_time_ms:
+      type: integer
+      minimum: 0

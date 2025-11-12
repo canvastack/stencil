@@ -1,0 +1,1140 @@
+# Financial Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for Financial Management System (120+ fields, 10 tables)
+# Multi-tenant financial management with comprehensive reporting and analytics
+
+# ================================================================
+# CORE FINANCIAL ENTITIES
+# ================================================================
+
+# Financial Transaction Entity
+FinancialTransaction:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - transaction_type
+        - transaction_category
+        - amount
+        - base_amount
+        - description
+        - transaction_date
+        - status
+        - created_by
+      properties:
+        # Transaction Core Details
+        transaction_type:
+          type: string
+          enum: ["income", "expense", "transfer", "adjustment"]
+          description: Type of financial transaction
+          example: "income"
+        transaction_category:
+          type: string
+          maxLength: 100
+          description: Business category of transaction
+          example: "custom_etching_services"
+        
+        # Amount and Currency
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+          description: Transaction amount in original currency
+          example: 1500000.00
+        currency:
+          type: string
+          maxLength: 10
+          default: "IDR"
+          description: Currency code (ISO 4217)
+          example: "IDR"
+        exchange_rate:
+          type: number
+          format: decimal
+          default: 1.0000
+          description: Exchange rate to base currency
+          example: 1.0000
+        base_amount:
+          type: number
+          format: decimal
+          description: Amount converted to base currency
+          example: 1500000.00
+        
+        # Transaction Information
+        description:
+          type: string
+          description: Detailed transaction description
+          example: "Custom etching service for premium glass panels - Project #1234"
+        reference_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: External reference number
+          example: "INV-2025-001"
+        
+        # Dates
+        transaction_date:
+          type: string
+          format: date
+          description: Transaction execution date
+          example: "2025-11-12"
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: Due date for payment (if applicable)
+          example: "2025-11-27"
+        
+        # Status and Approval
+        status:
+          type: string
+          enum: ["pending", "approved", "rejected", "cancelled", "completed"]
+          default: "pending"
+          description: Current transaction status
+          example: "approved"
+        
+        # Relationships
+        account_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Chart of accounts reference
+          example: 1001
+        category_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Financial category reference
+          example: 101
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated project/order reference
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Customer reference (for income transactions)
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        vendor_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Vendor reference (for expense transactions)
+          example: "987fcdeb-51d2-43b1-9876-543210fedcba"
+        purchase_order_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Purchase order reference
+          example: "456e7890-a12b-34c5-d678-901234567890"
+        
+        # Payment Details
+        payment_method:
+          type: string
+          maxLength: 50
+          nullable: true
+          enum: ["cash", "bank_transfer", "credit_card", "debit_card", "check", "digital_wallet", "other"]
+          description: Method of payment
+          example: "bank_transfer"
+        payment_reference:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Payment gateway or bank reference
+          example: "TRX-20251112-001"
+        
+        # Tax Information
+        tax_amount:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Tax amount (VAT/GST)
+          example: 150000.00
+        tax_rate:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Applied tax rate percentage
+          example: 11.00
+        
+        # Approval Workflow
+        created_by:
+          type: integer
+          format: int64
+          description: User who created the transaction
+          example: 1
+        approved_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User who approved the transaction
+          example: 2
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Approval timestamp
+          example: "2025-11-12T14:30:00Z"
+        
+        # Additional Data
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              file_name:
+                type: string
+              file_url:
+                type: string
+                format: uri
+              file_size:
+                type: integer
+              mime_type:
+                type: string
+          description: Receipt and document attachments
+          example: 
+            - file_name: "receipt-001.pdf"
+              file_url: "https://storage.example.com/receipts/receipt-001.pdf"
+              file_size: 245760
+              mime_type: "application/pdf"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional transaction metadata (JSONB)
+          example:
+            payment_gateway: "midtrans"
+            gateway_reference: "TRX123456"
+            notes: "Rush order completed ahead of schedule"
+
+# Revenue Record Entity
+RevenueRecord:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - transaction_id
+        - revenue_type
+        - revenue_source
+        - gross_amount
+        - net_amount
+        - customer_id
+        - recognition_date
+      properties:
+        # Core Relationships
+        transaction_id:
+          type: integer
+          format: int64
+          description: Reference to parent financial transaction
+          example: 1001
+        
+        # Revenue Classification
+        revenue_type:
+          type: string
+          enum: ["product_sale", "service_fee", "consultation", "rush_order", "maintenance", "other"]
+          description: Type of revenue stream
+          example: "service_fee"
+        revenue_source:
+          type: string
+          maxLength: 100
+          description: Source of revenue (detailed category)
+          example: "custom_glass_etching"
+        
+        # Financial Amounts
+        gross_amount:
+          type: number
+          format: decimal
+          description: Gross revenue before deductions
+          example: 1500000.00
+        discount_amount:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Applied discount amount
+          example: 75000.00
+        tax_amount:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Tax amount included in revenue
+          example: 150000.00
+        net_amount:
+          type: number
+          format: decimal
+          description: Net revenue after discounts and taxes
+          example: 1275000.00
+        
+        # Business Relationships
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated project reference
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        customer_id:
+          type: string
+          format: uuid
+          description: Customer who paid for the service
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        order_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Related order reference
+          example: "789e0123-c45d-67e8-f901-234567890abc"
+        
+        # Revenue Recognition
+        recognition_date:
+          type: string
+          format: date
+          description: Date when revenue is recognized
+          example: "2025-11-12"
+        billing_period_start:
+          type: string
+          format: date
+          nullable: true
+          description: Start of billing period (for recurring revenue)
+          example: "2025-11-01"
+        billing_period_end:
+          type: string
+          format: date
+          nullable: true
+          description: End of billing period (for recurring revenue)
+          example: "2025-11-30"
+        
+        # Recurring Revenue
+        is_recurring:
+          type: boolean
+          default: false
+          description: Whether this is recurring revenue
+          example: false
+        recurring_frequency:
+          type: string
+          enum: ["weekly", "monthly", "quarterly", "annually"]
+          nullable: true
+          description: Frequency for recurring revenue
+          example: null
+        
+        # Profitability Analysis
+        cost_of_goods_sold:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Direct costs associated with this revenue
+          example: 600000.00
+        gross_profit:
+          type: number
+          format: decimal
+          readOnly: true
+          description: Calculated gross profit (net_amount - COGS)
+          example: 675000.00
+        profit_margin:
+          type: number
+          format: decimal
+          readOnly: true
+          description: Calculated profit margin percentage
+          example: 52.94
+        
+        # Additional Data
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional revenue metadata
+          example:
+            sales_person: "John Doe"
+            commission_rate: 5.0
+            region: "Jakarta"
+
+# Expense Record Entity
+ExpenseRecord:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - transaction_id
+        - expense_type
+        - expense_category
+        - amount
+        - total_amount
+        - expense_date
+        - created_by
+      properties:
+        # Core Relationships
+        transaction_id:
+          type: integer
+          format: int64
+          description: Reference to parent financial transaction
+          example: 2001
+        
+        # Expense Classification
+        expense_type:
+          type: string
+          enum: ["materials", "labor", "equipment", "utilities", "marketing", "administrative", "other"]
+          description: Type of expense
+          example: "materials"
+        expense_category:
+          type: string
+          maxLength: 100
+          description: Detailed expense category
+          example: "glass_plates_premium"
+        
+        # Financial Amounts
+        amount:
+          type: number
+          format: decimal
+          description: Base expense amount
+          example: 800000.00
+        tax_amount:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Tax amount for this expense
+          example: 88000.00
+        total_amount:
+          type: number
+          format: decimal
+          description: Total amount including taxes
+          example: 888000.00
+        
+        # Business Relationships
+        vendor_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Vendor who provided goods/services
+          example: "987fcdeb-51d2-43b1-9876-543210fedcba"
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Project this expense is allocated to
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        
+        # Expense Details
+        expense_date:
+          type: string
+          format: date
+          description: Date when expense was incurred
+          example: "2025-11-10"
+        
+        # Billing and Reimbursement
+        is_billable:
+          type: boolean
+          default: false
+          description: Whether expense can be billed to customer
+          example: false
+        is_reimbursable:
+          type: boolean
+          default: false
+          description: Whether expense is reimbursable
+          example: false
+        
+        # Documentation
+        receipt_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Receipt or invoice number
+          example: "RCP-20251110-001"
+        receipt_attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              file_name:
+                type: string
+              file_url:
+                type: string
+                format: uri
+              file_size:
+                type: integer
+              mime_type:
+                type: string
+          description: Receipt and document attachments
+          
+        # Project Allocation
+        allocation_percentage:
+          type: number
+          format: decimal
+          default: 100.00
+          minimum: 0.01
+          maximum: 100.00
+          description: Percentage of expense allocated to project
+          example: 100.00
+        allocated_amount:
+          type: number
+          format: decimal
+          readOnly: true
+          description: Calculated allocated amount
+          example: 888000.00
+        
+        # Approval Workflow
+        approval_status:
+          type: string
+          enum: ["pending", "approved", "rejected", "cancelled"]
+          default: "pending"
+          description: Expense approval status
+          example: "approved"
+        approved_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User who approved the expense
+          example: 2
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Expense approval timestamp
+          example: "2025-11-10T16:45:00Z"
+        
+        # Audit Information
+        created_by:
+          type: integer
+          format: int64
+          description: User who created this expense record
+          example: 1
+        
+        # Additional Data
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional expense metadata
+          example:
+            department: "production"
+            cost_center: "CC-PROD-001"
+
+# Financial Report Entity
+FinancialReport:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - report_name
+        - report_type
+        - report_period_start
+        - report_period_end
+        - generated_by
+        - report_data
+      properties:
+        # Report Identification
+        report_name:
+          type: string
+          maxLength: 255
+          description: Name/title of the financial report
+          example: "Monthly P&L Report - November 2025"
+        report_type:
+          type: string
+          enum: ["profit_loss", "balance_sheet", "cash_flow", "budget_variance", "project_profitability", "custom"]
+          description: Type of financial report
+          example: "profit_loss"
+        
+        # Report Period
+        report_period_start:
+          type: string
+          format: date
+          description: Start date of reporting period
+          example: "2025-11-01"
+        report_period_end:
+          type: string
+          format: date
+          description: End date of reporting period
+          example: "2025-11-30"
+        
+        # Generation Information
+        generated_by:
+          type: string
+          format: uuid
+          description: User who generated the report
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        generated_at:
+          type: string
+          format: date-time
+          description: Report generation timestamp
+          example: "2025-12-01T09:00:00Z"
+        generation_time_seconds:
+          type: number
+          format: decimal
+          nullable: true
+          description: Time taken to generate report (in seconds)
+          example: 3.456
+        
+        # Report Content
+        report_data:
+          type: object
+          description: Main report data in JSON format
+          example:
+            total_revenue: 15000000.00
+            total_expenses: 8500000.00
+            net_profit: 6500000.00
+            profit_margin: 43.33
+            top_customers:
+              - name: "PT. ABC Company"
+                revenue: 5000000.00
+            expense_breakdown:
+              materials: 4000000.00
+              labor: 3000000.00
+              utilities: 1500000.00
+        report_summary:
+          type: object
+          nullable: true
+          description: Executive summary of the report
+          example:
+            key_metrics:
+              revenue_growth: "15.2%"
+              expense_ratio: "56.67%"
+              top_performing_category: "custom_etching_services"
+            insights:
+              - "Revenue increased by 15.2% compared to previous month"
+              - "Material costs slightly higher due to premium glass demand"
+        
+        # Report Status
+        status:
+          type: string
+          enum: ["generating", "generated", "failed", "archived"]
+          default: "generated"
+          description: Report generation/processing status
+          example: "generated"
+        
+        # Access Control
+        is_public:
+          type: boolean
+          default: false
+          description: Whether report is accessible to all tenant users
+          example: false
+        shared_with:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of user IDs who have access to this report
+          example: ["123e4567-e89b-12d3-a456-426614174000", "789e0123-c45d-67e8-f901-234567890abc"]
+        
+        # Export Information
+        export_formats:
+          type: array
+          items:
+            type: string
+            enum: ["pdf", "excel", "csv", "json"]
+          description: Available export formats
+          example: ["pdf", "excel", "csv"]
+        last_exported_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last export timestamp
+          example: "2025-12-01T10:30:00Z"
+        export_count:
+          type: integer
+          default: 0
+          description: Number of times report has been exported
+          example: 3
+        
+        # Report Configuration
+        filters_applied:
+          type: object
+          nullable: true
+          description: Filters and parameters used to generate report
+          example:
+            customer_ids: ["123e4567-e89b-12d3-a456-426614174000"]
+            project_ids: ["550e8400-e29b-41d4-a716-446655440000"]
+            categories: ["custom_etching_services", "consultation"]
+        custom_parameters:
+          type: object
+          default: {}
+          description: Custom report parameters and settings
+          example:
+            include_tax_breakdown: true
+            show_profit_margins: true
+            group_by_customer: true
+        
+        # Archive Information
+        archived_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Report archival timestamp
+          example: null
+
+# Budget Plan Entity
+BudgetPlan:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - budget_name
+        - budget_type
+        - fiscal_year
+        - period_start
+        - period_end
+        - total_revenue_budget
+        - total_expense_budget
+        - budget_breakdown
+      properties:
+        # Budget Identification
+        budget_name:
+          type: string
+          maxLength: 255
+          description: Name of the budget plan
+          example: "FY 2025 Annual Budget"
+        budget_type:
+          type: string
+          enum: ["annual", "quarterly", "monthly", "project", "department"]
+          description: Type of budget plan
+          example: "annual"
+        
+        # Budget Period
+        fiscal_year:
+          type: integer
+          description: Fiscal year for this budget
+          example: 2025
+        period_start:
+          type: string
+          format: date
+          description: Budget period start date
+          example: "2025-01-01"
+        period_end:
+          type: string
+          format: date
+          description: Budget period end date
+          example: "2025-12-31"
+        
+        # Budget Totals
+        total_revenue_budget:
+          type: number
+          format: decimal
+          description: Total budgeted revenue
+          example: 180000000.00
+        total_expense_budget:
+          type: number
+          format: decimal
+          description: Total budgeted expenses
+          example: 120000000.00
+        net_profit_budget:
+          type: number
+          format: decimal
+          readOnly: true
+          description: Calculated net profit budget
+          example: 60000000.00
+        
+        # Detailed Budget Breakdown
+        budget_breakdown:
+          type: object
+          description: Detailed budget breakdown by category
+          example:
+            revenue:
+              custom_etching: 120000000.00
+              consultation: 36000000.00
+              rush_orders: 24000000.00
+            expenses:
+              materials: 48000000.00
+              labor: 36000000.00
+              utilities: 18000000.00
+              marketing: 12000000.00
+              administrative: 6000000.00
+        
+        # Budget Status
+        status:
+          type: string
+          enum: ["draft", "submitted", "approved", "active", "completed", "cancelled"]
+          default: "draft"
+          description: Current budget status
+          example: "approved"
+        
+        # Approval Workflow
+        submitted_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User who submitted the budget
+          example: 1
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Budget submission timestamp
+          example: "2025-12-15T14:30:00Z"
+        approved_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User who approved the budget
+          example: 2
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Budget approval timestamp
+          example: "2025-12-20T09:15:00Z"
+        
+        # Variance Tracking
+        actual_revenue:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Actual revenue achieved against budget
+          example: 85000000.00
+        actual_expenses:
+          type: number
+          format: decimal
+          default: 0.00
+          description: Actual expenses incurred against budget
+          example: 55000000.00
+        revenue_variance:
+          type: number
+          format: decimal
+          readOnly: true
+          description: Revenue variance (actual - budget)
+          example: -95000000.00
+        expense_variance:
+          type: number
+          format: decimal
+          readOnly: true
+          description: Expense variance (actual - budget)
+          example: -65000000.00
+        
+        # Additional Information
+        notes:
+          type: string
+          nullable: true
+          description: Additional budget notes and assumptions
+          example: "Budget assumes 15% growth in custom etching services based on market analysis"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional budget metadata
+          example:
+            approval_committee: ["CFO", "CEO", "Operations Manager"]
+            review_frequency: "monthly"
+
+# Tax Record Entity
+TaxRecord:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - tax_period_start
+        - tax_period_end
+        - tax_type
+        - tax_rate
+        - taxable_amount
+        - tax_amount
+        - status
+      properties:
+        # Tax Period
+        tax_period_start:
+          type: string
+          format: date
+          description: Start of tax period
+          example: "2025-11-01"
+        tax_period_end:
+          type: string
+          format: date
+          description: End of tax period
+          example: "2025-11-30"
+        
+        # Tax Classification
+        tax_type:
+          type: string
+          enum: ["VAT", "income_tax", "withholding_tax", "local_tax", "other"]
+          description: Type of tax
+          example: "VAT"
+        tax_jurisdiction:
+          type: string
+          maxLength: 100
+          description: Tax jurisdiction or authority
+          example: "Indonesia - DJP"
+        
+        # Tax Calculation
+        tax_rate:
+          type: number
+          format: decimal
+          description: Applied tax rate percentage
+          example: 11.00
+        taxable_amount:
+          type: number
+          format: decimal
+          description: Total taxable amount for the period
+          example: 15000000.00
+        tax_amount:
+          type: number
+          format: decimal
+          description: Calculated tax amount
+          example: 1650000.00
+        
+        # Tax Status
+        status:
+          type: string
+          enum: ["calculated", "filed", "paid", "overdue", "disputed"]
+          description: Tax record status
+          example: "paid"
+        
+        # Filing Information
+        filing_due_date:
+          type: string
+          format: date
+          nullable: true
+          description: Tax filing due date
+          example: "2025-12-20"
+        filed_date:
+          type: string
+          format: date
+          nullable: true
+          description: Actual filing date
+          example: "2025-12-18"
+        payment_due_date:
+          type: string
+          format: date
+          nullable: true
+          description: Tax payment due date
+          example: "2025-12-25"
+        payment_date:
+          type: string
+          format: date
+          nullable: true
+          description: Actual payment date
+          example: "2025-12-22"
+        
+        # Reference Information
+        tax_reference_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Government-issued tax reference number
+          example: "TAX-2025-11-001234"
+        payment_reference:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Payment reference number
+          example: "PAY-TAX-20251222-001"
+        
+        # Additional Data
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional tax metadata
+          example:
+            tax_officer: "John Smith"
+            audit_notes: "Standard VAT calculation for November 2025"
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# Create Transaction Input
+FinancialTransactionCreateInput:
+  type: object
+  required:
+    - transaction_type
+    - transaction_category
+    - amount
+    - description
+    - transaction_date
+  properties:
+    transaction_type:
+      $ref: '#/FinancialTransaction/properties/transaction_type'
+    transaction_category:
+      $ref: '#/FinancialTransaction/properties/transaction_category'
+    amount:
+      $ref: '#/FinancialTransaction/properties/amount'
+    currency:
+      $ref: '#/FinancialTransaction/properties/currency'
+    description:
+      $ref: '#/FinancialTransaction/properties/description'
+    reference_number:
+      $ref: '#/FinancialTransaction/properties/reference_number'
+    transaction_date:
+      $ref: '#/FinancialTransaction/properties/transaction_date'
+    due_date:
+      $ref: '#/FinancialTransaction/properties/due_date'
+    project_id:
+      $ref: '#/FinancialTransaction/properties/project_id'
+    customer_id:
+      $ref: '#/FinancialTransaction/properties/customer_id'
+    vendor_id:
+      $ref: '#/FinancialTransaction/properties/vendor_id'
+    payment_method:
+      $ref: '#/FinancialTransaction/properties/payment_method'
+    tax_rate:
+      $ref: '#/FinancialTransaction/properties/tax_rate'
+    attachments:
+      $ref: '#/FinancialTransaction/properties/attachments'
+    metadata:
+      $ref: '#/FinancialTransaction/properties/metadata'
+
+# Update Transaction Input
+FinancialTransactionUpdateInput:
+  allOf:
+    - $ref: '#/FinancialTransactionCreateInput'
+    - type: object
+      properties:
+        status:
+          $ref: '#/FinancialTransaction/properties/status'
+
+# Budget Plan Create Input
+BudgetPlanCreateInput:
+  type: object
+  required:
+    - budget_name
+    - budget_type
+    - fiscal_year
+    - period_start
+    - period_end
+    - total_revenue_budget
+    - total_expense_budget
+    - budget_breakdown
+  properties:
+    budget_name:
+      $ref: '#/BudgetPlan/properties/budget_name'
+    budget_type:
+      $ref: '#/BudgetPlan/properties/budget_type'
+    fiscal_year:
+      $ref: '#/BudgetPlan/properties/fiscal_year'
+    period_start:
+      $ref: '#/BudgetPlan/properties/period_start'
+    period_end:
+      $ref: '#/BudgetPlan/properties/period_end'
+    total_revenue_budget:
+      $ref: '#/BudgetPlan/properties/total_revenue_budget'
+    total_expense_budget:
+      $ref: '#/BudgetPlan/properties/total_expense_budget'
+    budget_breakdown:
+      $ref: '#/BudgetPlan/properties/budget_breakdown'
+    notes:
+      $ref: '#/BudgetPlan/properties/notes'
+    metadata:
+      $ref: '#/BudgetPlan/properties/metadata'
+
+# Financial Report Generate Input
+FinancialReportGenerateInput:
+  type: object
+  required:
+    - report_name
+    - report_type
+    - report_period_start
+    - report_period_end
+  properties:
+    report_name:
+      $ref: '#/FinancialReport/properties/report_name'
+    report_type:
+      $ref: '#/FinancialReport/properties/report_type'
+    report_period_start:
+      $ref: '#/FinancialReport/properties/report_period_start'
+    report_period_end:
+      $ref: '#/FinancialReport/properties/report_period_end'
+    filters_applied:
+      $ref: '#/FinancialReport/properties/filters_applied'
+    custom_parameters:
+      $ref: '#/FinancialReport/properties/custom_parameters'
+    export_formats:
+      $ref: '#/FinancialReport/properties/export_formats'
+
+# ================================================================
+# RESPONSE SCHEMAS
+# ================================================================
+
+# Financial Transaction List Response
+FinancialTransactionListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseListResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/FinancialTransaction'
+
+# Budget Plan List Response
+BudgetPlanListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseListResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/BudgetPlan'
+
+# Financial Report List Response
+FinancialReportListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseListResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/FinancialReport'
+
+# Financial Analytics Response
+FinancialAnalyticsResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: object
+      properties:
+        summary:
+          type: object
+          properties:
+            total_revenue:
+              type: number
+              format: decimal
+              example: 15000000.00
+            total_expenses:
+              type: number
+              format: decimal
+              example: 8500000.00
+            net_profit:
+              type: number
+              format: decimal
+              example: 6500000.00
+            profit_margin:
+              type: number
+              format: decimal
+              example: 43.33
+        trends:
+          type: object
+          properties:
+            revenue_growth:
+              type: number
+              format: decimal
+              example: 15.2
+            expense_growth:
+              type: number
+              format: decimal
+              example: 8.5
+            profit_growth:
+              type: number
+              format: decimal
+              example: 25.8
+        top_customers:
+          type: array
+          items:
+            type: object
+            properties:
+              customer_id:
+                type: string
+                format: uuid
+              customer_name:
+                type: string
+              total_revenue:
+                type: number
+                format: decimal
+        expense_breakdown:
+          type: object
+          additionalProperties:
+            type: number
+            format: decimal
+    message:
+      type: string
+      example: "Financial analytics retrieved successfully"

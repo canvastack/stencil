@@ -1,0 +1,283 @@
+# ============================================================================
+# Common Schema Components for Stencil CMS OpenAPI Specification
+# ============================================================================
+# This file contains reusable schema definitions for common response structures
+
+# Error Response Schemas
+# ============================================================================
+
+ValidationErrorResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Validation failed"
+        details:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Field-specific validation errors
+          example:
+            email:
+              - "The email field is required."
+            password:
+              - "The password must be at least 8 characters."
+              - "The password must contain at least one uppercase letter."
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-01-01T12:00:00Z"
+  required:
+    - success
+    - error
+    - meta
+
+# Common Base Schemas
+# ============================================================================
+
+BaseResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      description: Indicates if the request was successful
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of the response
+      required:
+        - timestamp
+  required:
+    - success
+    - meta
+
+SuccessResponse:
+  allOf:
+    - $ref: '#/BaseResponse'
+    - type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          description: Success message
+        data:
+          type: object
+          description: Response data (varies by endpoint)
+
+ErrorResponse:
+  allOf:
+    - $ref: '#/BaseResponse'
+    - type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Error code
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: object
+              description: Additional error details (optional)
+          required:
+            - code
+            - message
+      required:
+        - error
+
+# Pagination Schemas
+# ============================================================================
+
+PaginationMeta:
+  type: object
+  properties:
+    page:
+      type: integer
+      minimum: 1
+      description: Current page number
+      example: 1
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+      description: Number of items per page
+      example: 20
+    total:
+      type: integer
+      minimum: 0
+      description: Total number of items
+      example: 150
+    totalPages:
+      type: integer
+      minimum: 0
+      description: Total number of pages
+      example: 8
+    hasNext:
+      type: boolean
+      description: Whether there are more pages
+      example: true
+    hasPrev:
+      type: boolean
+      description: Whether there are previous pages
+      example: false
+  required:
+    - page
+    - limit
+    - total
+    - totalPages
+    - hasNext
+    - hasPrev
+
+PaginatedResponse:
+  allOf:
+    - $ref: '#/SuccessResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              description: Array of items for current page
+            pagination:
+              $ref: '#/PaginationMeta'
+          required:
+            - items
+            - pagination
+
+# Multi-tenant Schemas
+# ============================================================================
+
+TenantInfo:
+  type: object
+  properties:
+    tenant_id:
+      type: string
+      format: uuid
+      description: Unique tenant identifier
+      example: "123e4567-e89b-12d3-a456-426614174000"
+    tenant_name:
+      type: string
+      description: Display name of the tenant
+      example: "Acme Corporation"
+  required:
+    - tenant_id
+    - tenant_name
+
+# Audit Trail Schemas
+# ============================================================================
+
+AuditInfo:
+  type: object
+  properties:
+    created_at:
+      type: string
+      format: date-time
+      description: When the record was created
+      example: "2025-01-01T12:00:00Z"
+    updated_at:
+      type: string
+      format: date-time
+      description: When the record was last updated
+      example: "2025-01-01T12:30:00Z"
+    created_by:
+      type: string
+      format: uuid
+      description: ID of the user who created the record
+      example: "123e4567-e89b-12d3-a456-426614174001"
+    updated_by:
+      type: string
+      format: uuid
+      description: ID of the user who last updated the record
+      example: "123e4567-e89b-12d3-a456-426614174001"
+    version:
+      type: integer
+      minimum: 1
+      description: Version number for optimistic locking
+      example: 1
+    is_deleted:
+      type: boolean
+      description: Soft delete flag
+      example: false
+  required:
+    - created_at
+    - updated_at
+    - created_by
+    - updated_by
+    - version
+    - is_deleted
+
+# Translation Schemas
+# ============================================================================
+
+TranslationStatus:
+  type: string
+  enum:
+    - draft
+    - in_review
+    - approved
+    - published
+  description: Status of the translation
+  example: "published"
+
+BaseTranslation:
+  type: object
+  properties:
+    language_code:
+      type: string
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+      description: ISO 639-1 language code (with optional ISO 3166-1 country code)
+      example: "en-US"
+    status:
+      $ref: '#/TranslationStatus'
+    translated_by:
+      type: string
+      format: uuid
+      description: ID of the user who created the translation
+      example: "123e4567-e89b-12d3-a456-426614174002"
+    translated_at:
+      type: string
+      format: date-time
+      description: When the translation was created
+      example: "2025-01-01T12:00:00Z"
+    reviewed_by:
+      type: string
+      format: uuid
+      nullable: true
+      description: ID of the user who reviewed the translation
+      example: "123e4567-e89b-12d3-a456-426614174003"
+    reviewed_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: When the translation was reviewed
+      example: "2025-01-01T12:15:00Z"
+  required:
+    - language_code
+    - status
+    - translated_by
+    - translated_at

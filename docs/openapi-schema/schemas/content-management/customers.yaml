@@ -1,0 +1,1277 @@
+# Customer Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for Customer Relationship Management (120+ fields, 6 tables)
+# Multi-tenant CRM with comprehensive customer lifecycle management
+
+# ================================================================
+# CORE CUSTOMER ENTITIES
+# ================================================================
+
+# Main Customer Entity (Multi-tenant Schema - CRM Core)
+Customer:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - customer_code
+        - customer_number
+        - name
+        - phone
+        - customer_type
+        - status
+        - customer_stage
+      properties:
+        # Unique Identifiers
+        uuid:
+          type: string
+          format: uuid
+          description: Immutable UUID for model morphing (CORE RULE compliance)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+          readOnly: true
+        customer_code:
+          type: string
+          maxLength: 50
+          description: Unique customer code (tenant-scoped)
+          example: "CUST-2025-0001"
+        customer_number:
+          type: integer
+          description: Sequential customer number (tenant-scoped)
+          example: 1
+
+        # Basic Information
+        name:
+          type: string
+          maxLength: 255
+          description: Customer name or company name
+          example: "PT Tech Solutions Indonesia"
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Primary email contact
+          example: "contact@techsolutions.id"
+        phone:
+          type: string
+          maxLength: 50
+          description: Primary phone number
+          example: "+62 21 5678 9012"
+        mobile_phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Mobile phone number
+          example: "+62 812 3456 7890"
+
+        # Customer Classification
+        customer_type:
+          type: string
+          enum: [individual, business]
+          default: individual
+          description: Customer classification type
+          example: "business"
+        status:
+          type: string
+          enum: [active, inactive, blocked]
+          default: active
+          description: Customer status
+          example: "active"
+        customer_stage:
+          type: string
+          enum: [prospect, lead, customer, advocate]
+          default: prospect
+          description: Customer lifecycle stage
+          example: "customer"
+
+        # Business Information (for business customers)
+        company:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Company name (for business customers)
+          example: "PT Tech Solutions Indonesia"
+        company_legal_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Legal company name
+          example: "PT Tech Solutions Indonesia Tbk"
+        tax_id:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Tax identification number (NPWP)
+          example: "01.234.567.8-901.000"
+        business_license:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Business license number
+          example: "NIB-1234567890123"
+        business_license_file_url:
+          type: string
+          nullable: true
+          description: Business license file URL
+          example: "https://storage.ptcex.com/licenses/business_license_001.pdf"
+
+        # Primary Contact (for business customers)
+        primary_contact_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Primary contact person name
+          example: "John Doe"
+        primary_contact_email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Primary contact email
+          example: "john.doe@techsolutions.id"
+        primary_contact_phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Primary contact phone
+          example: "+62 812 9876 5432"
+
+        # Company Details
+        website:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Company website URL
+          example: "https://techsolutions.id"
+        industry:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Industry sector
+          example: "Technology"
+        company_size:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Company size category
+          example: "50-100 employees"
+        annual_revenue:
+          type: number
+          format: decimal
+          nullable: true
+          description: Annual revenue amount
+          example: 5000000000
+
+        # Financial Terms
+        credit_limit:
+          type: number
+          format: decimal
+          default: 0
+          description: Customer credit limit
+          example: 100000000
+        payment_terms:
+          type: string
+          maxLength: 50
+          default: cash
+          description: Payment terms agreement
+          example: "Net 30"
+        currency:
+          type: string
+          maxLength: 3
+          default: IDR
+          description: Preferred currency code
+          example: "IDR"
+
+        # Customer Analytics
+        total_orders:
+          type: integer
+          default: 0
+          description: Total number of orders placed
+          example: 15
+          readOnly: true
+        total_spent:
+          type: number
+          format: decimal
+          default: 0
+          description: Total amount spent (lifetime value)
+          example: 25500000
+          readOnly: true
+        average_order_value:
+          type: number
+          format: decimal
+          default: 0
+          description: Average order value
+          example: 1700000
+          readOnly: true
+        lifetime_value:
+          type: number
+          format: decimal
+          default: 0
+          description: Customer lifetime value calculation
+          example: 30000000
+          readOnly: true
+
+        # Date Tracking
+        first_order_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date of first order
+          example: "2024-01-15T10:30:00Z"
+          readOnly: true
+        last_order_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date of last order
+          example: "2025-11-10T14:45:00Z"
+          readOnly: true
+        last_contact_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last interaction date
+          example: "2025-11-12T16:20:00Z"
+
+        # Acquisition & Referrals
+        acquisition_source:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: How customer was acquired
+          example: "Google Ads"
+        acquisition_cost:
+          type: number
+          format: decimal
+          nullable: true
+          description: Customer acquisition cost
+          example: 250000
+        referred_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: Customer ID who referred this customer
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+        # Loyalty Program
+        loyalty_points:
+          type: integer
+          default: 0
+          description: Current loyalty points balance
+          example: 1500
+        loyalty_tier:
+          type: string
+          maxLength: 20
+          default: bronze
+          description: Loyalty tier level
+          example: "gold"
+
+        # Tags & Notes
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Customer tags for categorization
+          example: ["VIP", "Enterprise", "Priority"]
+        notes:
+          type: string
+          nullable: true
+          description: Public notes about customer
+          example: "Prefers email communication"
+        internal_notes:
+          type: string
+          nullable: true
+          description: Internal notes (not visible to customer)
+          example: "Requires additional approval for credit terms"
+
+        # Special Flags
+        is_vip:
+          type: boolean
+          default: false
+          description: VIP customer flag
+          example: true
+        is_blacklisted:
+          type: boolean
+          default: false
+          description: Blacklisted customer flag
+          example: false
+        blacklist_reason:
+          type: string
+          nullable: true
+          description: Reason for blacklisting
+          example: "Payment defaults"
+
+        # Extensibility
+        metadata:
+          type: object
+          description: Additional customer metadata (JSON)
+          example: 
+            preferred_delivery_time: "morning"
+            special_requirements: "fragile handling"
+
+# Customer Address Entity (Multi-address support)
+CustomerAddress:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - customer_id
+        - address_type
+        - address_line_1
+        - city
+        - country
+      properties:
+        # Identifiers
+        uuid:
+          type: string
+          format: uuid
+          description: Immutable UUID for model morphing
+          example: "550e8400-e29b-41d4-a716-446655440001"
+          readOnly: true
+        customer_id:
+          type: string
+          format: uuid
+          description: Reference to parent customer
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Address Classification
+        address_type:
+          type: string
+          enum: [billing, shipping, warehouse, office]
+          default: shipping
+          description: Type of address
+          example: "shipping"
+        address_label:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Custom address label
+          example: "Main Office"
+
+        # Contact Information
+        contact_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Contact person at this address
+          example: "Jane Smith"
+        contact_phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Contact phone at this address
+          example: "+62 21 8765 4321"
+
+        # Address Details
+        address_line_1:
+          type: string
+          maxLength: 500
+          description: Primary address line
+          example: "Jl. Sudirman Kav 52-53"
+        address_line_2:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Secondary address line
+          example: "SCBD Lot 11A"
+        city:
+          type: string
+          maxLength: 100
+          description: City name
+          example: "Jakarta Selatan"
+        state_province:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: State or province
+          example: "DKI Jakarta"
+        postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Postal/ZIP code
+          example: "12190"
+        country:
+          type: string
+          maxLength: 100
+          default: Indonesia
+          description: Country name
+          example: "Indonesia"
+
+        # Geographic Coordinates
+        latitude:
+          type: number
+          format: decimal
+          nullable: true
+          description: Geographic latitude
+          example: -6.2088
+        longitude:
+          type: number
+          format: decimal
+          nullable: true
+          description: Geographic longitude
+          example: 106.8456
+        location_data:
+          type: object
+          nullable: true
+          description: Additional location metadata
+          example:
+            google_place_id: "ChIJAWGGGxQaGy4RaACAAA"
+            district: "Setiabudi"
+
+        # Address Flags
+        is_default:
+          type: boolean
+          default: false
+          description: Default address flag
+          example: true
+        is_active:
+          type: boolean
+          default: true
+          description: Active address flag
+          example: true
+
+        # Delivery Information
+        delivery_instructions:
+          type: string
+          nullable: true
+          description: Special delivery instructions
+          example: "Ring bell twice, security at front desk"
+
+# Customer Segment Entity (Customer segmentation for marketing)
+CustomerSegment:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - segment_name
+        - segment_code
+        - segment_type
+      properties:
+        # Segment Identity
+        segment_name:
+          type: string
+          maxLength: 100
+          description: Human-readable segment name
+          example: "High Value Customers"
+        segment_code:
+          type: string
+          maxLength: 50
+          description: Unique segment code (tenant-scoped)
+          example: "HVC_2025"
+        description:
+          type: string
+          nullable: true
+          description: Segment description
+          example: "Customers with lifetime value > 50M IDR"
+
+        # Segment Configuration
+        segment_type:
+          type: string
+          enum: [manual, auto, rfm]
+          default: manual
+          description: How segment is managed
+          example: "auto"
+        rules:
+          type: object
+          nullable: true
+          description: Automated segmentation rules (JSON)
+          example:
+            conditions:
+              - field: "lifetime_value"
+                operator: ">"
+                value: 50000000
+              - field: "status"
+                operator: "="
+                value: "active"
+
+        # Segment Analytics
+        customer_count:
+          type: integer
+          default: 0
+          description: Number of customers in segment
+          example: 125
+          readOnly: true
+        total_revenue:
+          type: number
+          format: decimal
+          default: 0
+          description: Total revenue from segment
+          example: 8750000000
+          readOnly: true
+
+        # Segment Status
+        is_active:
+          type: boolean
+          default: true
+          description: Active segment flag
+          example: true
+
+        # Audit Fields
+        created_by:
+          type: string
+          format: uuid
+          description: User who created the segment
+          example: "550e8400-e29b-41d4-a716-446655440002"
+
+# Customer Interaction Entity (Interaction tracking)
+CustomerInteraction:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - customer_id
+        - interaction_type
+        - interaction_date
+      properties:
+        # References
+        customer_id:
+          type: string
+          format: uuid
+          description: Reference to customer
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Interaction Details
+        interaction_type:
+          type: string
+          maxLength: 50
+          description: Type of interaction
+          example: "phone_call"
+        interaction_channel:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Communication channel used
+          example: "phone"
+        subject:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Interaction subject/title
+          example: "Quotation Follow-up"
+        description:
+          type: string
+          nullable: true
+          description: Detailed interaction description
+          example: "Discussed project requirements and timeline"
+        outcome:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Interaction outcome
+          example: "Quote approved, proceeding to order"
+
+        # Timing
+        interaction_date:
+          type: string
+          format: date-time
+          description: When interaction occurred
+          example: "2025-11-12T14:30:00Z"
+        duration_minutes:
+          type: integer
+          nullable: true
+          description: Interaction duration in minutes
+          example: 45
+
+        # Staff Assignment
+        contacted_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: Staff member who handled interaction
+          example: "550e8400-e29b-41d4-a716-446655440003"
+
+        # Follow-up Management
+        follow_up_required:
+          type: boolean
+          default: false
+          description: Requires follow-up action
+          example: true
+        follow_up_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Scheduled follow-up date
+          example: "2025-11-15T10:00:00Z"
+        follow_up_notes:
+          type: string
+          nullable: true
+          description: Follow-up notes
+          example: "Send updated pricing sheet"
+
+        # Extensibility
+        metadata:
+          type: object
+          description: Additional interaction metadata
+          example:
+            call_recording_url: "https://recordings.ptcex.com/call_001.mp3"
+            sentiment_score: 0.8
+
+# Customer Notes Entity (Note-taking and activity log)
+CustomerNote:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - customer_id
+        - note_type
+        - content
+      properties:
+        # References
+        customer_id:
+          type: string
+          format: uuid
+          description: Reference to customer
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Note Details
+        note_type:
+          type: string
+          maxLength: 50
+          description: Type of note
+          example: "general"
+        title:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Note title/subject
+          example: "Payment Terms Discussion"
+        content:
+          type: string
+          description: Note content
+          example: "Customer agreed to Net 30 payment terms for orders above 10M IDR"
+
+        # Note Properties
+        is_public:
+          type: boolean
+          default: false
+          description: Visible to customer (customer portal)
+          example: false
+        is_important:
+          type: boolean
+          default: false
+          description: Important note flag
+          example: true
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+          default: medium
+          description: Note priority level
+          example: "high"
+
+        # Reminder System
+        reminder_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Reminder date for this note
+          example: "2025-12-01T09:00:00Z"
+        is_completed:
+          type: boolean
+          default: false
+          description: Completed action flag
+          example: false
+
+        # Tags & Categories
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Note tags
+          example: ["payment", "urgent"]
+
+# Customer Loyalty Entity (Loyalty program management)
+CustomerLoyalty:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - customer_id
+        - loyalty_tier
+      properties:
+        # References
+        customer_id:
+          type: string
+          format: uuid
+          description: Reference to customer
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Loyalty Status
+        loyalty_tier:
+          type: string
+          enum: [bronze, silver, gold, platinum]
+          default: bronze
+          description: Current loyalty tier
+          example: "gold"
+        points_balance:
+          type: integer
+          default: 0
+          description: Current points balance
+          example: 2500
+        points_earned_total:
+          type: integer
+          default: 0
+          description: Total points earned (lifetime)
+          example: 15000
+        points_redeemed_total:
+          type: integer
+          default: 0
+          description: Total points redeemed (lifetime)
+          example: 12500
+
+        # Tier Qualifications
+        tier_qualification_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: When current tier was achieved
+          example: "2025-06-15T10:00:00Z"
+        tier_expiry_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: When tier expires (if applicable)
+          example: "2026-06-15T23:59:59Z"
+        next_tier:
+          type: string
+          nullable: true
+          description: Next achievable tier
+          example: "platinum"
+        points_to_next_tier:
+          type: integer
+          nullable: true
+          description: Points needed for next tier
+          example: 2500
+
+        # Referral Tracking
+        referrals_made:
+          type: integer
+          default: 0
+          description: Number of successful referrals
+          example: 3
+        referral_rewards_earned:
+          type: number
+          format: decimal
+          default: 0
+          description: Total referral rewards earned
+          example: 750000
+
+        # Special Dates
+        last_activity_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last loyalty activity date
+          example: "2025-11-10T16:30:00Z"
+        birthday:
+          type: string
+          format: date
+          nullable: true
+          description: Customer birthday (for birthday rewards)
+          example: "1985-07-22"
+        anniversary_date:
+          type: string
+          format: date
+          nullable: true
+          description: Customer anniversary date
+          example: "2024-01-15"
+
+        # Program Settings
+        is_active:
+          type: boolean
+          default: true
+          description: Active in loyalty program
+          example: true
+        preferences:
+          type: object
+          nullable: true
+          description: Loyalty program preferences
+          example:
+            email_notifications: true
+            sms_notifications: false
+            birthday_rewards: true
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# Customer Creation Input
+CustomerCreateInput:
+  type: object
+  required:
+    - name
+    - phone
+    - customer_type
+  properties:
+    # Basic Information
+    name:
+      type: string
+      maxLength: 255
+      description: Customer name or company name
+      example: "PT Tech Solutions Indonesia"
+    email:
+      type: string
+      format: email
+      maxLength: 255
+      nullable: true
+      description: Primary email contact
+      example: "contact@techsolutions.id"
+    phone:
+      type: string
+      maxLength: 50
+      description: Primary phone number
+      example: "+62 21 5678 9012"
+    mobile_phone:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Mobile phone number
+      example: "+62 812 3456 7890"
+
+    # Customer Classification
+    customer_type:
+      type: string
+      enum: [individual, business]
+      description: Customer classification type
+      example: "business"
+
+    # Business Information (conditional)
+    company:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Company name (for business customers)
+      example: "PT Tech Solutions Indonesia"
+    tax_id:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Tax identification number (NPWP)
+      example: "01.234.567.8-901.000"
+    primary_contact_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Primary contact person name
+      example: "John Doe"
+    primary_contact_email:
+      type: string
+      format: email
+      maxLength: 255
+      nullable: true
+      description: Primary contact email
+      example: "john.doe@techsolutions.id"
+
+    # Additional Information
+    website:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Company website URL
+      example: "https://techsolutions.id"
+    industry:
+      type: string
+      maxLength: 100
+      nullable: true
+      description: Industry sector
+      example: "Technology"
+    acquisition_source:
+      type: string
+      maxLength: 100
+      nullable: true
+      description: How customer was acquired
+      example: "Google Ads"
+    tags:
+      type: array
+      items:
+        type: string
+      nullable: true
+      description: Customer tags for categorization
+      example: ["Enterprise", "Priority"]
+    notes:
+      type: string
+      nullable: true
+      description: Public notes about customer
+      example: "Prefers email communication"
+
+# Customer Update Input
+CustomerUpdateInput:
+  type: object
+  properties:
+    # Allow partial updates of most fields
+    name:
+      type: string
+      maxLength: 255
+      description: Customer name or company name
+      example: "PT Tech Solutions Indonesia"
+    email:
+      type: string
+      format: email
+      maxLength: 255
+      nullable: true
+      description: Primary email contact
+      example: "contact@techsolutions.id"
+    phone:
+      type: string
+      maxLength: 50
+      description: Primary phone number
+      example: "+62 21 5678 9012"
+    mobile_phone:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Mobile phone number
+      example: "+62 812 3456 7890"
+    status:
+      type: string
+      enum: [active, inactive, blocked]
+      description: Customer status
+      example: "active"
+    customer_stage:
+      type: string
+      enum: [prospect, lead, customer, advocate]
+      description: Customer lifecycle stage
+      example: "customer"
+    company:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Company name
+      example: "PT Tech Solutions Indonesia"
+    tax_id:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Tax identification number
+      example: "01.234.567.8-901.000"
+    credit_limit:
+      type: number
+      format: decimal
+      description: Customer credit limit
+      example: 100000000
+    payment_terms:
+      type: string
+      maxLength: 50
+      description: Payment terms agreement
+      example: "Net 30"
+    tags:
+      type: array
+      items:
+        type: string
+      nullable: true
+      description: Customer tags
+      example: ["VIP", "Enterprise"]
+    notes:
+      type: string
+      nullable: true
+      description: Public notes about customer
+      example: "Updated contact preferences"
+    internal_notes:
+      type: string
+      nullable: true
+      description: Internal notes
+      example: "Requires management approval for large orders"
+    is_vip:
+      type: boolean
+      description: VIP customer flag
+      example: true
+
+# Customer Address Input
+CustomerAddressInput:
+  type: object
+  required:
+    - address_type
+    - address_line_1
+    - city
+    - country
+  properties:
+    address_type:
+      type: string
+      enum: [billing, shipping, warehouse, office]
+      description: Type of address
+      example: "shipping"
+    address_label:
+      type: string
+      maxLength: 100
+      nullable: true
+      description: Custom address label
+      example: "Main Office"
+    contact_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Contact person at this address
+      example: "Jane Smith"
+    contact_phone:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Contact phone at this address
+      example: "+62 21 8765 4321"
+    address_line_1:
+      type: string
+      maxLength: 500
+      description: Primary address line
+      example: "Jl. Sudirman Kav 52-53"
+    address_line_2:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Secondary address line
+      example: "SCBD Lot 11A"
+    city:
+      type: string
+      maxLength: 100
+      description: City name
+      example: "Jakarta Selatan"
+    state_province:
+      type: string
+      maxLength: 100
+      nullable: true
+      description: State or province
+      example: "DKI Jakarta"
+    postal_code:
+      type: string
+      maxLength: 20
+      nullable: true
+      description: Postal/ZIP code
+      example: "12190"
+    country:
+      type: string
+      maxLength: 100
+      default: Indonesia
+      description: Country name
+      example: "Indonesia"
+    is_default:
+      type: boolean
+      default: false
+      description: Set as default address
+      example: true
+    delivery_instructions:
+      type: string
+      nullable: true
+      description: Special delivery instructions
+      example: "Ring bell twice, security at front desk"
+
+# Customer Response (with relationships)
+CustomerResponse:
+  allOf:
+    - $ref: '#/Customer'
+    - type: object
+      properties:
+        # Related Data
+        addresses:
+          type: array
+          items:
+            $ref: '#/CustomerAddress'
+          description: Customer addresses
+        primary_address:
+          $ref: '#/CustomerAddress'
+          nullable: true
+          description: Primary/default address
+        recent_interactions:
+          type: array
+          items:
+            $ref: '#/CustomerInteraction'
+          description: Recent interactions (last 10)
+        loyalty_info:
+          $ref: '#/CustomerLoyalty'
+          nullable: true
+          description: Loyalty program information
+        segments:
+          type: array
+          items:
+            $ref: '#/CustomerSegment'
+          description: Customer segments
+
+# Customer List Response
+CustomerListResponse:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/Customer'
+    meta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        total_pages:
+          type: integer
+          example: 8
+        has_more:
+          type: boolean
+          example: true
+    filters:
+      type: object
+      properties:
+        customer_type:
+          type: string
+          example: "business"
+        status:
+          type: string
+          example: "active"
+        customer_stage:
+          type: string
+          example: "customer"
+        search:
+          type: string
+          example: "tech"
+
+# Customer Analytics Response
+CustomerAnalyticsResponse:
+  type: object
+  properties:
+    customer_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    
+    # Order Analytics
+    orders_summary:
+      type: object
+      properties:
+        total_orders:
+          type: integer
+          example: 15
+        completed_orders:
+          type: integer
+          example: 12
+        pending_orders:
+          type: integer
+          example: 2
+        cancelled_orders:
+          type: integer
+          example: 1
+        first_order_date:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:30:00Z"
+        last_order_date:
+          type: string
+          format: date-time
+          example: "2025-11-10T14:45:00Z"
+    
+    # Financial Analytics
+    revenue_summary:
+      type: object
+      properties:
+        lifetime_value:
+          type: number
+          format: decimal
+          example: 25500000
+        total_spent:
+          type: number
+          format: decimal
+          example: 25500000
+        average_order_value:
+          type: number
+          format: decimal
+          example: 1700000
+        outstanding_balance:
+          type: number
+          format: decimal
+          example: 0
+        credit_utilization:
+          type: number
+          format: decimal
+          example: 0.15
+    
+    # RFM Analysis
+    rfm_analysis:
+      type: object
+      properties:
+        recency_score:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 4
+        frequency_score:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        monetary_score:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 4
+        rfm_segment:
+          type: string
+          example: "Champions"
+        segment_description:
+          type: string
+          example: "Best customers. Buy recently, frequently, and spend the most"
+    
+    # Interaction Summary
+    interactions_summary:
+      type: object
+      properties:
+        total_interactions:
+          type: integer
+          example: 28
+        last_interaction_date:
+          type: string
+          format: date-time
+          example: "2025-11-12T16:20:00Z"
+        interaction_frequency:
+          type: number
+          format: decimal
+          example: 2.5
+        avg_response_time_hours:
+          type: number
+          format: decimal
+          example: 4.5
+
+# ================================================================
+# ERROR SCHEMAS
+# ================================================================
+
+CustomerNotFoundError:
+  type: object
+  properties:
+    error:
+      type: string
+      example: "Customer not found"
+    message:
+      type: string
+      example: "Customer with ID 550e8400-e29b-41d4-a716-446655440000 not found"
+    code:
+      type: string
+      example: "CUSTOMER_NOT_FOUND"
+
+CustomerValidationError:
+  type: object
+  properties:
+    error:
+      type: string
+      example: "Validation failed"
+    message:
+      type: string
+      example: "The given data was invalid"
+    errors:
+      type: object
+      properties:
+        email:
+          type: array
+          items:
+            type: string
+          example: ["The email field must be a valid email address"]
+        phone:
+          type: array
+          items:
+            type: string
+          example: ["The phone field is required"]
+    code:
+      type: string
+      example: "VALIDATION_ERROR"

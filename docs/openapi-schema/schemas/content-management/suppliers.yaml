@@ -1,0 +1,2218 @@
+# Suppliers Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for Supplier Management System (156+ fields, 4 tables)
+# Multi-tenant supplier relationship management for future internal production
+
+# ================================================================
+# CORE SUPPLIER ENTITIES
+# ================================================================
+
+# Main Supplier Entity (Master Supplier Information)
+Supplier:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - supplier_code
+        - supplier_name
+        - supplier_type
+        - primary_email
+        - primary_phone
+      properties:
+        # Supplier Identification
+        supplier_code:
+          type: string
+          maxLength: 100
+          description: Unique supplier code within tenant
+          example: "SUP-2025-001"
+        supplier_name:
+          type: string
+          maxLength: 255
+          description: Supplier business name
+          example: "Steel Indonesia Manufacturing"
+        supplier_type:
+          type: string
+          maxLength: 50
+          enum: ["material", "service", "equipment", "consumable", "packaging"]
+          default: "material"
+          description: Type of supplier based on products/services offered
+          example: "material"
+
+        # Company Information
+        company_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Official registered company name
+          example: "PT Steel Indonesia Manufacturing"
+        legal_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Legal entity name for contracts
+          example: "PT Steel Indonesia Manufacturing"
+        registration_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Business registration number
+          example: "001234567890123"
+        tax_id:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Tax identification number (NPWP)
+          example: "01.234.567.8-901.000"
+
+        # Contact Information
+        primary_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Primary contact email address
+          example: "sales@steelindonesia.com"
+        primary_phone:
+          type: string
+          maxLength: 50
+          description: Primary contact phone number
+          example: "+62218901234"
+        website:
+          type: string
+          format: uri
+          maxLength: 255
+          nullable: true
+          description: Company website URL
+          example: "https://www.steelindonesia.com"
+
+        # Address Information
+        address_line_1:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Primary address line
+          example: "Jl. Industri Raya No. 123"
+        address_line_2:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Secondary address line
+          example: "Kawasan Industri Jababeka"
+        city:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: City name
+          example: "Bekasi"
+        state_province:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: State or province name
+          example: "Jawa Barat"
+        postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Postal/ZIP code
+          example: "17530"
+        country:
+          type: string
+          maxLength: 100
+          default: "Indonesia"
+          description: Country name
+          example: "Indonesia"
+
+        # Business Details
+        business_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Type of business operations
+          example: "Manufacturing"
+        industry_sector:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Industry sector classification
+          example: "Steel & Metal Processing"
+        company_size:
+          type: string
+          enum: ["micro", "small", "medium", "large", "enterprise"]
+          nullable: true
+          description: Company size classification
+          example: "medium"
+        years_in_business:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Number of years in business
+          example: 15
+
+        # Financial Information
+        currency:
+          type: string
+          maxLength: 3
+          default: "IDR"
+          description: Default currency for transactions (ISO 4217)
+          example: "IDR"
+        payment_terms:
+          type: string
+          maxLength: 100
+          default: "NET 30"
+          description: Standard payment terms
+          example: "NET 30"
+        credit_limit:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Credit limit amount
+          example: 500000000.00
+
+        # Bank Account Details
+        bank_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Bank name for payments
+          example: "Bank Mandiri"
+        bank_account_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Bank account number
+          example: "1234567890"
+        bank_account_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Account holder name
+          example: "PT Steel Indonesia Manufacturing"
+        bank_swift_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: SWIFT/BIC code for international transfers
+          example: "BMRIIDJA"
+
+        # Supplier Classification
+        supplier_category:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Business category classification
+          example: "Raw Materials"
+        supplier_tier:
+          type: string
+          enum: ["strategic", "preferred", "standard", "conditional"]
+          default: "standard"
+          description: Supplier tier classification based on relationship
+          example: "preferred"
+        risk_level:
+          type: string
+          enum: ["low", "medium", "high", "critical"]
+          default: "medium"
+          description: Business risk assessment level
+          example: "low"
+
+        # Performance Metrics
+        overall_rating:
+          type: number
+          format: decimal
+          minimum: 1.00
+          maximum: 5.00
+          default: 5.00
+          description: Overall supplier rating (1-5 scale)
+          example: 4.50
+        quality_rating:
+          type: number
+          format: decimal
+          minimum: 1.00
+          maximum: 5.00
+          default: 5.00
+          description: Product/service quality rating
+          example: 4.80
+        delivery_rating:
+          type: number
+          format: decimal
+          minimum: 1.00
+          maximum: 5.00
+          default: 5.00
+          description: Delivery performance rating
+          example: 4.20
+        service_rating:
+          type: number
+          format: decimal
+          minimum: 1.00
+          maximum: 5.00
+          default: 5.00
+          description: Customer service rating
+          example: 4.60
+        cost_rating:
+          type: number
+          format: decimal
+          minimum: 1.00
+          maximum: 5.00
+          default: 5.00
+          description: Cost competitiveness rating
+          example: 4.30
+
+        # Certifications & Compliance
+        iso_certifications:
+          type: array
+          items:
+            type: string
+          description: List of ISO certifications
+          example: ["ISO 9001:2015", "ISO 14001:2015"]
+        quality_certifications:
+          type: array
+          items:
+            type: string
+          description: Quality management certifications
+          example: ["SNI 07-0052-2006", "ASTM A36"]
+        environmental_certifications:
+          type: array
+          items:
+            type: string
+          description: Environmental compliance certifications
+          example: ["AMDAL", "UKL-UPL"]
+        compliance_status:
+          type: string
+          enum: ["compliant", "non_compliant", "under_review"]
+          default: "compliant"
+          description: Overall compliance status
+          example: "compliant"
+
+        # Capabilities
+        production_capacity:
+          type: string
+          nullable: true
+          description: Production capacity information
+          example: "1000 tons/month steel plates"
+        lead_time_days:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Standard lead time in days
+          example: 14
+        minimum_order_value:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Minimum order value required
+          example: 10000000.00
+        maximum_order_value:
+          type: number
+          format: decimal
+          minimum: 0
+          nullable: true
+          description: Maximum order value capacity
+          example: 1000000000.00
+
+        # Status & Flags
+        is_active:
+          type: boolean
+          default: true
+          description: Whether supplier is currently active
+          example: true
+        is_approved:
+          type: boolean
+          default: false
+          description: Whether supplier is approved for business
+          example: true
+        is_preferred:
+          type: boolean
+          default: false
+          description: Whether supplier is in preferred list
+          example: false
+        is_strategic:
+          type: boolean
+          default: false
+          description: Whether supplier is strategic partner
+          example: false
+
+        # Approval Workflow
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of user who approved supplier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Approval timestamp
+          example: "2025-11-10T14:30:00Z"
+        approval_notes:
+          type: string
+          nullable: true
+          description: Approval process notes
+          example: "Approved after successful audit and quality assessment"
+
+        # Contract Information
+        contract_start_date:
+          type: string
+          format: date
+          nullable: true
+          description: Contract start date
+          example: "2025-01-01"
+        contract_end_date:
+          type: string
+          format: date
+          nullable: true
+          description: Contract end date
+          example: "2025-12-31"
+        contract_terms:
+          type: string
+          nullable: true
+          description: Contract terms and conditions
+          example: "Annual contract with quarterly reviews"
+
+        # Notes & Comments
+        internal_notes:
+          type: string
+          nullable: true
+          description: Internal notes for staff reference
+          example: "Reliable supplier, good pricing, sometimes delays in delivery"
+        public_notes:
+          type: string
+          nullable: true
+          description: Public notes visible to supplier
+          example: "Please confirm delivery schedules in advance"
+
+        # Relationships (populated by joins)
+        contacts:
+          type: array
+          items:
+            $ref: '#/SupplierContact'
+          description: Supplier contact persons
+          readOnly: true
+        products:
+          type: array
+          items:
+            $ref: '#/SupplierProduct'
+          description: Supplier product catalog
+          readOnly: true
+        quotations:
+          type: array
+          items:
+            $ref: '#/SupplierQuotation'
+          description: Recent quotations from supplier
+          readOnly: true
+
+# Supplier Contact Person Entity
+SupplierContact:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - supplier_id
+        - contact_name
+        - contact_type
+      properties:
+        # Supplier Reference
+        supplier_id:
+          type: string
+          format: uuid
+          description: Reference to the supplier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Contact Information
+        contact_name:
+          type: string
+          maxLength: 255
+          description: Full name of contact person
+          example: "Budi Santoso"
+        job_title:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Job title or position
+          example: "Sales Manager"
+        department:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Department or division
+          example: "Sales & Marketing"
+
+        # Contact Details
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Email address
+          example: "budi.santoso@steelindonesia.com"
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Office phone number
+          example: "+62218901234"
+        mobile:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Mobile phone number
+          example: "+6281234567890"
+        extension:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Phone extension
+          example: "123"
+
+        # Contact Role
+        contact_type:
+          type: string
+          enum: ["primary", "sales", "technical", "finance", "quality", "logistics", "general"]
+          default: "general"
+          description: Type of contact role
+          example: "sales"
+        is_primary:
+          type: boolean
+          default: false
+          description: Whether this is the primary contact
+          example: true
+
+        # Communication Preferences
+        preferred_contact_method:
+          type: string
+          enum: ["email", "phone", "mobile", "whatsapp"]
+          default: "email"
+          description: Preferred communication method
+          example: "email"
+        communication_language:
+          type: string
+          maxLength: 10
+          default: "id"
+          description: Preferred communication language (ISO 639-1)
+          example: "id"
+        timezone:
+          type: string
+          maxLength: 50
+          default: "Asia/Jakarta"
+          description: Contact person timezone
+          example: "Asia/Jakarta"
+
+        # Availability
+        working_hours:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Working hours information
+          example: "08:00-17:00 WIB"
+        available_days:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Available days
+          example: "Monday to Friday"
+
+        # Authorization Level
+        can_approve_quotes:
+          type: boolean
+          default: false
+          description: Can approve quotations
+          example: true
+        can_receive_pos:
+          type: boolean
+          default: false
+          description: Can receive purchase orders
+          example: true
+        can_handle_payments:
+          type: boolean
+          default: false
+          description: Can handle payment matters
+          example: false
+        authorization_limit:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Authorization limit amount
+          example: 100000000.00
+
+        # Status
+        is_active:
+          type: boolean
+          default: true
+          description: Whether contact is currently active
+          example: true
+
+        # Notes
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes about contact person
+          example: "Responds quickly to emails, prefers morning calls"
+
+        # Relationship (populated by joins)
+        supplier:
+          $ref: '#/Supplier'
+          description: Supplier information
+          readOnly: true
+
+# Supplier Product Catalog Entity
+SupplierProduct:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - supplier_id
+        - supplier_product_code
+        - supplier_product_name
+        - unit_price
+        - unit_of_measure
+      properties:
+        # Supplier & Product References
+        supplier_id:
+          type: string
+          format: uuid
+          description: Reference to the supplier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        inventory_item_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Link to internal inventory item
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Product Identification
+        supplier_product_code:
+          type: string
+          maxLength: 100
+          description: Supplier's product code/SKU
+          example: "ST-A36-10MM"
+        supplier_product_name:
+          type: string
+          maxLength: 255
+          description: Product name from supplier
+          example: "Steel Plate A36 - 10mm Thickness"
+        description:
+          type: string
+          nullable: true
+          description: Product description
+          example: "High quality carbon steel plate suitable for structural applications"
+
+        # Product Specifications
+        category:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Product category
+          example: "Steel Plates"
+        subcategory:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Product subcategory
+          example: "Carbon Steel"
+        material_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Material type
+          example: "Carbon Steel"
+        material_grade:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Material grade specification
+          example: "ASTM A36"
+        specifications:
+          type: object
+          additionalProperties: true
+          description: Technical specifications (JSONB)
+          example:
+            thickness: "10mm"
+            width: "1200mm"
+            length: "2400mm"
+            tensile_strength: "400-550 MPa"
+
+        # Pricing Information
+        unit_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per unit
+          example: 15000.00
+        currency:
+          type: string
+          maxLength: 3
+          default: "IDR"
+          description: Price currency (ISO 4217)
+          example: "IDR"
+        price_valid_from:
+          type: string
+          format: date
+          description: Price validity start date
+          example: "2025-01-01"
+        price_valid_to:
+          type: string
+          format: date
+          nullable: true
+          description: Price validity end date
+          example: "2025-12-31"
+
+        # Volume Pricing Tiers
+        price_breaks:
+          type: array
+          items:
+            type: object
+            properties:
+              quantity:
+                type: number
+                format: decimal
+              unit_price:
+                type: number
+                format: decimal
+          description: Volume pricing tiers
+          example:
+            - quantity: 100
+              unit_price: 15000.00
+            - quantity: 500
+              unit_price: 14500.00
+            - quantity: 1000
+              unit_price: 14000.00
+        minimum_order_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 1
+          description: Minimum order quantity
+          example: 50.00
+        maximum_order_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          nullable: true
+          description: Maximum order quantity
+          example: 10000.00
+
+        # Lead Time & Availability
+        lead_time_days:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Lead time in days
+          example: 7
+        availability_status:
+          type: string
+          enum: ["available", "limited", "discontinued", "special_order", "out_of_stock"]
+          default: "available"
+          description: Current availability status
+          example: "available"
+        stock_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          nullable: true
+          description: Available stock quantity
+          example: 5000.00
+
+        # Quality Information
+        quality_grade:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Quality grade classification
+          example: "Grade A"
+        quality_certifications:
+          type: array
+          items:
+            type: string
+          description: Quality certifications for this product
+          example: ["SNI 07-0052-2006", "ASTM A36"]
+        quality_standards:
+          type: array
+          items:
+            type: string
+          description: Applicable quality standards
+          example: ["ASTM A36", "JIS G3101"]
+
+        # Packaging & Shipping
+        unit_of_measure:
+          type: string
+          maxLength: 50
+          description: Unit of measurement
+          example: "kg"
+        package_size:
+          type: number
+          format: decimal
+          nullable: true
+          description: Package/bundle size
+          example: 2000.00
+        package_unit:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Package unit
+          example: "kg"
+        weight_per_unit:
+          type: number
+          format: decimal
+          nullable: true
+          description: Weight per unit in kg
+          example: 94.20
+        dimensions_length:
+          type: number
+          format: decimal
+          nullable: true
+          description: Length in cm
+          example: 240.00
+        dimensions_width:
+          type: number
+          format: decimal
+          nullable: true
+          description: Width in cm
+          example: 120.00
+        dimensions_height:
+          type: number
+          format: decimal
+          nullable: true
+          description: Height in cm
+          example: 1.00
+
+        # Supplier Performance for this Product
+        quality_rating:
+          type: number
+          format: decimal
+          minimum: 1.00
+          maximum: 5.00
+          default: 5.00
+          description: Quality rating for this product
+          example: 4.80
+        delivery_rating:
+          type: number
+          format: decimal
+          minimum: 1.00
+          maximum: 5.00
+          default: 5.00
+          description: Delivery performance rating for this product
+          example: 4.50
+
+        # Status & Flags
+        is_active:
+          type: boolean
+          default: true
+          description: Whether product is currently available
+          example: true
+        is_preferred:
+          type: boolean
+          default: false
+          description: Whether this is a preferred product
+          example: false
+        is_strategic:
+          type: boolean
+          default: false
+          description: Whether this is a strategic product
+          example: false
+
+        # Last Purchase Information
+        last_purchase_date:
+          type: string
+          format: date
+          nullable: true
+          description: Last purchase date
+          example: "2025-10-15"
+        last_purchase_price:
+          type: number
+          format: decimal
+          nullable: true
+          description: Last purchase price
+          example: 14800.00
+        last_purchase_quantity:
+          type: number
+          format: decimal
+          nullable: true
+          description: Last purchase quantity
+          example: 1000.00
+
+        # Notes
+        supplier_notes:
+          type: string
+          nullable: true
+          description: Notes from supplier about product
+          example: "Special pricing available for orders >1000kg"
+        internal_notes:
+          type: string
+          nullable: true
+          description: Internal notes about product
+          example: "Good quality, reliable delivery times"
+
+        # Relationships (populated by joins)
+        supplier:
+          $ref: '#/Supplier'
+          description: Supplier information
+          readOnly: true
+
+# Supplier Quotation Entity
+SupplierQuotation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - quotation_number
+        - supplier_id
+        - quotation_title
+        - quotation_items
+        - status
+      properties:
+        # Quotation Identification
+        quotation_number:
+          type: string
+          maxLength: 100
+          description: Unique quotation number
+          example: "QUO-2025-001"
+        rfq_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Request for Quotation reference number
+          example: "RFQ-2025-001"
+
+        # Supplier Reference
+        supplier_id:
+          type: string
+          format: uuid
+          description: Reference to the supplier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Quotation Details
+        quotation_title:
+          type: string
+          maxLength: 255
+          description: Title or subject of quotation
+          example: "Steel Plates for Q1 2025 Production"
+        description:
+          type: string
+          nullable: true
+          description: Detailed description of quotation
+          example: "Quotation for various steel plates required for Q1 2025 production schedule"
+
+        # Quotation Items
+        quotation_items:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type: string
+                format: uuid
+              supplier_product_code:
+                type: string
+              product_name:
+                type: string
+              quantity:
+                type: number
+                format: decimal
+              unit_price:
+                type: number
+                format: decimal
+              total_price:
+                type: number
+                format: decimal
+              unit_of_measure:
+                type: string
+              specifications:
+                type: object
+                additionalProperties: true
+              lead_time_days:
+                type: integer
+              notes:
+                type: string
+          description: Array of quoted items with details
+          example:
+            - product_id: "123e4567-e89b-12d3-a456-426614174000"
+              supplier_product_code: "ST-A36-10MM"
+              product_name: "Steel Plate A36 - 10mm"
+              quantity: 1000
+              unit_price: 14500.00
+              total_price: 14500000.00
+              unit_of_measure: "kg"
+              lead_time_days: 7
+              specifications:
+                thickness: "10mm"
+                grade: "ASTM A36"
+
+        # Pricing Summary
+        subtotal:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Subtotal amount before tax and shipping
+          example: 145000000.00
+        tax_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Tax amount (PPN)
+          example: 14500000.00
+        shipping_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Shipping/delivery cost
+          example: 2000000.00
+        total_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Total quotation amount
+          example: 161500000.00
+        currency:
+          type: string
+          maxLength: 3
+          default: "IDR"
+          description: Currency for all amounts (ISO 4217)
+          example: "IDR"
+
+        # Terms & Conditions
+        payment_terms:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Payment terms offered
+          example: "50% DP, 50% before delivery"
+        delivery_terms:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Delivery terms and conditions
+          example: "FOB Supplier Warehouse"
+        validity_period_days:
+          type: integer
+          minimum: 1
+          default: 30
+          description: Quotation validity period in days
+          example: 30
+        lead_time_days:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Overall lead time for complete order
+          example: 14
+
+        # Quotation Status
+        status:
+          type: string
+          enum: ["draft", "sent", "received", "under_review", "approved", "rejected", "expired", "cancelled"]
+          default: "draft"
+          description: Current status of quotation
+          example: "received"
+
+        # Important Dates
+        requested_date:
+          type: string
+          format: date
+          description: Date when quotation was requested
+          example: "2025-11-01"
+        response_due_date:
+          type: string
+          format: date
+          nullable: true
+          description: Due date for supplier response
+          example: "2025-11-08"
+        quotation_date:
+          type: string
+          format: date
+          nullable: true
+          description: Date when supplier provided quotation
+          example: "2025-11-05"
+        valid_until_date:
+          type: string
+          format: date
+          nullable: true
+          description: Quotation expiry date
+          example: "2025-12-05"
+
+        # Approval Workflow
+        reviewed_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who reviewed the quotation
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Review timestamp
+          example: "2025-11-06T10:00:00Z"
+        review_notes:
+          type: string
+          nullable: true
+          description: Review comments and notes
+          example: "Pricing is competitive, lead time acceptable"
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who approved the quotation
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Approval timestamp
+          example: "2025-11-07T14:30:00Z"
+        approval_notes:
+          type: string
+          nullable: true
+          description: Approval decision notes
+          example: "Approved for immediate PO generation"
+
+        # Comparison & Evaluation
+        evaluation_score:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Evaluation score (0-100)
+          example: 85.50
+        evaluation_notes:
+          type: string
+          nullable: true
+          description: Evaluation criteria and notes
+          example: "Good pricing, excellent quality record, delivery time could be better"
+        rank_position:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Ranking position among competing quotes
+          example: 2
+
+        # Communication
+        email_sent:
+          type: boolean
+          default: false
+          description: Whether RFQ email was sent to supplier
+          example: true
+        email_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Email send timestamp
+          example: "2025-11-01T09:00:00Z"
+        follow_up_required:
+          type: boolean
+          default: false
+          description: Whether follow-up is needed
+          example: false
+        follow_up_date:
+          type: string
+          format: date
+          nullable: true
+          description: Scheduled follow-up date
+          example: "2025-11-10"
+
+        # Attachments
+        attachment_urls:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: URLs of attached documents
+          example: ["https://cdn.example.com/quotes/quo-2025-001-details.pdf"]
+
+        # Notes
+        supplier_notes:
+          type: string
+          nullable: true
+          description: Notes from supplier with quotation
+          example: "Special pricing valid for orders placed before Dec 31"
+        internal_notes:
+          type: string
+          nullable: true
+          description: Internal notes for evaluation
+          example: "Compare with ABC Steel quotation, consider delivery timeline"
+
+        # Relationship (populated by joins)
+        supplier:
+          $ref: '#/Supplier'
+          description: Supplier information
+          readOnly: true
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# Supplier Create Input
+SupplierCreateInput:
+  type: object
+  required:
+    - supplier_code
+    - supplier_name
+    - supplier_type
+    - primary_email
+    - primary_phone
+  properties:
+    supplier_code:
+      type: string
+      maxLength: 100
+      description: Unique supplier code
+      example: "SUP-2025-001"
+    supplier_name:
+      type: string
+      maxLength: 255
+      description: Supplier business name
+      example: "Steel Indonesia Manufacturing"
+    supplier_type:
+      type: string
+      enum: ["material", "service", "equipment", "consumable", "packaging"]
+      description: Type of supplier
+      example: "material"
+    company_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Steel Indonesia Manufacturing"
+    legal_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Steel Indonesia Manufacturing"
+    registration_number:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "001234567890123"
+    tax_id:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "01.234.567.8-901.000"
+    primary_email:
+      type: string
+      format: email
+      maxLength: 255
+      example: "sales@steelindonesia.com"
+    primary_phone:
+      type: string
+      maxLength: 50
+      example: "+62218901234"
+    website:
+      type: string
+      format: uri
+      maxLength: 255
+      nullable: true
+      example: "https://www.steelindonesia.com"
+    address_line_1:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Jl. Industri Raya No. 123"
+    address_line_2:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Kawasan Industri Jababeka"
+    city:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Bekasi"
+    state_province:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Jawa Barat"
+    postal_code:
+      type: string
+      maxLength: 20
+      nullable: true
+      example: "17530"
+    country:
+      type: string
+      maxLength: 100
+      default: "Indonesia"
+      example: "Indonesia"
+    business_type:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Manufacturing"
+    industry_sector:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Steel & Metal Processing"
+    company_size:
+      type: string
+      enum: ["micro", "small", "medium", "large", "enterprise"]
+      nullable: true
+      example: "medium"
+    years_in_business:
+      type: integer
+      minimum: 0
+      nullable: true
+      example: 15
+    currency:
+      type: string
+      maxLength: 3
+      default: "IDR"
+      example: "IDR"
+    payment_terms:
+      type: string
+      maxLength: 100
+      default: "NET 30"
+      example: "NET 30"
+    credit_limit:
+      type: number
+      format: decimal
+      minimum: 0
+      default: 0
+      example: 500000000.00
+    bank_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Bank Mandiri"
+    bank_account_number:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "1234567890"
+    bank_account_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Steel Indonesia Manufacturing"
+    bank_swift_code:
+      type: string
+      maxLength: 20
+      nullable: true
+      example: "BMRIIDJA"
+    supplier_category:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Raw Materials"
+    supplier_tier:
+      type: string
+      enum: ["strategic", "preferred", "standard", "conditional"]
+      default: "standard"
+      example: "preferred"
+    risk_level:
+      type: string
+      enum: ["low", "medium", "high", "critical"]
+      default: "medium"
+      example: "low"
+    iso_certifications:
+      type: array
+      items:
+        type: string
+      example: ["ISO 9001:2015", "ISO 14001:2015"]
+    quality_certifications:
+      type: array
+      items:
+        type: string
+      example: ["SNI 07-0052-2006", "ASTM A36"]
+    environmental_certifications:
+      type: array
+      items:
+        type: string
+      example: ["AMDAL", "UKL-UPL"]
+    production_capacity:
+      type: string
+      nullable: true
+      example: "1000 tons/month steel plates"
+    lead_time_days:
+      type: integer
+      minimum: 0
+      default: 0
+      example: 14
+    minimum_order_value:
+      type: number
+      format: decimal
+      minimum: 0
+      default: 0
+      example: 10000000.00
+    maximum_order_value:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      example: 1000000000.00
+    contract_start_date:
+      type: string
+      format: date
+      nullable: true
+      example: "2025-01-01"
+    contract_end_date:
+      type: string
+      format: date
+      nullable: true
+      example: "2025-12-31"
+    contract_terms:
+      type: string
+      nullable: true
+      example: "Annual contract with quarterly reviews"
+    internal_notes:
+      type: string
+      nullable: true
+      example: "Reliable supplier, good pricing, sometimes delays in delivery"
+    public_notes:
+      type: string
+      nullable: true
+      example: "Please confirm delivery schedules in advance"
+
+# Supplier Update Input
+SupplierUpdateInput:
+  type: object
+  properties:
+    supplier_name:
+      type: string
+      maxLength: 255
+      example: "Steel Indonesia Manufacturing"
+    supplier_type:
+      type: string
+      enum: ["material", "service", "equipment", "consumable", "packaging"]
+      example: "material"
+    company_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Steel Indonesia Manufacturing"
+    legal_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Steel Indonesia Manufacturing"
+    registration_number:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "001234567890123"
+    tax_id:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "01.234.567.8-901.000"
+    primary_email:
+      type: string
+      format: email
+      maxLength: 255
+      example: "sales@steelindonesia.com"
+    primary_phone:
+      type: string
+      maxLength: 50
+      example: "+62218901234"
+    website:
+      type: string
+      format: uri
+      maxLength: 255
+      nullable: true
+      example: "https://www.steelindonesia.com"
+    address_line_1:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Jl. Industri Raya No. 123"
+    address_line_2:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Kawasan Industri Jababeka"
+    city:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Bekasi"
+    state_province:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Jawa Barat"
+    postal_code:
+      type: string
+      maxLength: 20
+      nullable: true
+      example: "17530"
+    country:
+      type: string
+      maxLength: 100
+      example: "Indonesia"
+    business_type:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Manufacturing"
+    industry_sector:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Steel & Metal Processing"
+    company_size:
+      type: string
+      enum: ["micro", "small", "medium", "large", "enterprise"]
+      nullable: true
+      example: "medium"
+    years_in_business:
+      type: integer
+      minimum: 0
+      nullable: true
+      example: 15
+    currency:
+      type: string
+      maxLength: 3
+      example: "IDR"
+    payment_terms:
+      type: string
+      maxLength: 100
+      example: "NET 30"
+    credit_limit:
+      type: number
+      format: decimal
+      minimum: 0
+      example: 500000000.00
+    bank_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Bank Mandiri"
+    bank_account_number:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "1234567890"
+    bank_account_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Steel Indonesia Manufacturing"
+    bank_swift_code:
+      type: string
+      maxLength: 20
+      nullable: true
+      example: "BMRIIDJA"
+    supplier_category:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Raw Materials"
+    supplier_tier:
+      type: string
+      enum: ["strategic", "preferred", "standard", "conditional"]
+      example: "preferred"
+    risk_level:
+      type: string
+      enum: ["low", "medium", "high", "critical"]
+      example: "low"
+    overall_rating:
+      type: number
+      format: decimal
+      minimum: 1.00
+      maximum: 5.00
+      example: 4.50
+    quality_rating:
+      type: number
+      format: decimal
+      minimum: 1.00
+      maximum: 5.00
+      example: 4.80
+    delivery_rating:
+      type: number
+      format: decimal
+      minimum: 1.00
+      maximum: 5.00
+      example: 4.20
+    service_rating:
+      type: number
+      format: decimal
+      minimum: 1.00
+      maximum: 5.00
+      example: 4.60
+    cost_rating:
+      type: number
+      format: decimal
+      minimum: 1.00
+      maximum: 5.00
+      example: 4.30
+    iso_certifications:
+      type: array
+      items:
+        type: string
+      example: ["ISO 9001:2015", "ISO 14001:2015"]
+    quality_certifications:
+      type: array
+      items:
+        type: string
+      example: ["SNI 07-0052-2006", "ASTM A36"]
+    environmental_certifications:
+      type: array
+      items:
+        type: string
+      example: ["AMDAL", "UKL-UPL"]
+    compliance_status:
+      type: string
+      enum: ["compliant", "non_compliant", "under_review"]
+      example: "compliant"
+    production_capacity:
+      type: string
+      nullable: true
+      example: "1000 tons/month steel plates"
+    lead_time_days:
+      type: integer
+      minimum: 0
+      example: 14
+    minimum_order_value:
+      type: number
+      format: decimal
+      minimum: 0
+      example: 10000000.00
+    maximum_order_value:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      example: 1000000000.00
+    is_active:
+      type: boolean
+      example: true
+    is_approved:
+      type: boolean
+      example: true
+    is_preferred:
+      type: boolean
+      example: false
+    is_strategic:
+      type: boolean
+      example: false
+    approval_notes:
+      type: string
+      nullable: true
+      example: "Approved after successful audit and quality assessment"
+    contract_start_date:
+      type: string
+      format: date
+      nullable: true
+      example: "2025-01-01"
+    contract_end_date:
+      type: string
+      format: date
+      nullable: true
+      example: "2025-12-31"
+    contract_terms:
+      type: string
+      nullable: true
+      example: "Annual contract with quarterly reviews"
+    internal_notes:
+      type: string
+      nullable: true
+      example: "Reliable supplier, good pricing, sometimes delays in delivery"
+    public_notes:
+      type: string
+      nullable: true
+      example: "Please confirm delivery schedules in advance"
+
+# Supplier Contact Create Input
+SupplierContactCreateInput:
+  type: object
+  required:
+    - supplier_id
+    - contact_name
+    - contact_type
+  properties:
+    supplier_id:
+      type: string
+      format: uuid
+      description: Reference to the supplier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    contact_name:
+      type: string
+      maxLength: 255
+      example: "Budi Santoso"
+    job_title:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Sales Manager"
+    department:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Sales & Marketing"
+    email:
+      type: string
+      format: email
+      maxLength: 255
+      nullable: true
+      example: "budi.santoso@steelindonesia.com"
+    phone:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "+62218901234"
+    mobile:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "+6281234567890"
+    extension:
+      type: string
+      maxLength: 20
+      nullable: true
+      example: "123"
+    contact_type:
+      type: string
+      enum: ["primary", "sales", "technical", "finance", "quality", "logistics", "general"]
+      example: "sales"
+    is_primary:
+      type: boolean
+      default: false
+      example: true
+    preferred_contact_method:
+      type: string
+      enum: ["email", "phone", "mobile", "whatsapp"]
+      default: "email"
+      example: "email"
+    communication_language:
+      type: string
+      maxLength: 10
+      default: "id"
+      example: "id"
+    timezone:
+      type: string
+      maxLength: 50
+      default: "Asia/Jakarta"
+      example: "Asia/Jakarta"
+    working_hours:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "08:00-17:00 WIB"
+    available_days:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Monday to Friday"
+    can_approve_quotes:
+      type: boolean
+      default: false
+      example: true
+    can_receive_pos:
+      type: boolean
+      default: false
+      example: true
+    can_handle_payments:
+      type: boolean
+      default: false
+      example: false
+    authorization_limit:
+      type: number
+      format: decimal
+      minimum: 0
+      default: 0
+      example: 100000000.00
+    notes:
+      type: string
+      nullable: true
+      example: "Responds quickly to emails, prefers morning calls"
+
+# Supplier Product Create Input
+SupplierProductCreateInput:
+  type: object
+  required:
+    - supplier_id
+    - supplier_product_code
+    - supplier_product_name
+    - unit_price
+    - unit_of_measure
+  properties:
+    supplier_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    inventory_item_id:
+      type: string
+      format: uuid
+      nullable: true
+      example: "123e4567-e89b-12d3-a456-426614174000"
+    supplier_product_code:
+      type: string
+      maxLength: 100
+      example: "ST-A36-10MM"
+    supplier_product_name:
+      type: string
+      maxLength: 255
+      example: "Steel Plate A36 - 10mm Thickness"
+    description:
+      type: string
+      nullable: true
+      example: "High quality carbon steel plate suitable for structural applications"
+    category:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Steel Plates"
+    subcategory:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Carbon Steel"
+    material_type:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Carbon Steel"
+    material_grade:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "ASTM A36"
+    specifications:
+      type: object
+      additionalProperties: true
+      example:
+        thickness: "10mm"
+        width: "1200mm"
+        length: "2400mm"
+        tensile_strength: "400-550 MPa"
+    unit_price:
+      type: number
+      format: decimal
+      minimum: 0
+      example: 15000.00
+    currency:
+      type: string
+      maxLength: 3
+      default: "IDR"
+      example: "IDR"
+    price_valid_from:
+      type: string
+      format: date
+      example: "2025-01-01"
+    price_valid_to:
+      type: string
+      format: date
+      nullable: true
+      example: "2025-12-31"
+    price_breaks:
+      type: array
+      items:
+        type: object
+        properties:
+          quantity:
+            type: number
+            format: decimal
+          unit_price:
+            type: number
+            format: decimal
+      example:
+        - quantity: 100
+          unit_price: 15000.00
+        - quantity: 500
+          unit_price: 14500.00
+    minimum_order_quantity:
+      type: number
+      format: decimal
+      minimum: 0
+      default: 1
+      example: 50.00
+    maximum_order_quantity:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      example: 10000.00
+    lead_time_days:
+      type: integer
+      minimum: 0
+      default: 0
+      example: 7
+    availability_status:
+      type: string
+      enum: ["available", "limited", "discontinued", "special_order", "out_of_stock"]
+      default: "available"
+      example: "available"
+    stock_quantity:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      example: 5000.00
+    quality_grade:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "Grade A"
+    quality_certifications:
+      type: array
+      items:
+        type: string
+      example: ["SNI 07-0052-2006", "ASTM A36"]
+    quality_standards:
+      type: array
+      items:
+        type: string
+      example: ["ASTM A36", "JIS G3101"]
+    unit_of_measure:
+      type: string
+      maxLength: 50
+      example: "kg"
+    package_size:
+      type: number
+      format: decimal
+      nullable: true
+      example: 2000.00
+    package_unit:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "kg"
+    weight_per_unit:
+      type: number
+      format: decimal
+      nullable: true
+      example: 94.20
+    dimensions_length:
+      type: number
+      format: decimal
+      nullable: true
+      example: 240.00
+    dimensions_width:
+      type: number
+      format: decimal
+      nullable: true
+      example: 120.00
+    dimensions_height:
+      type: number
+      format: decimal
+      nullable: true
+      example: 1.00
+    supplier_notes:
+      type: string
+      nullable: true
+      example: "Special pricing available for orders >1000kg"
+    internal_notes:
+      type: string
+      nullable: true
+      example: "Good quality, reliable delivery times"
+
+# Supplier Quotation Create Input
+SupplierQuotationCreateInput:
+  type: object
+  required:
+    - quotation_number
+    - supplier_id
+    - quotation_title
+    - quotation_items
+  properties:
+    quotation_number:
+      type: string
+      maxLength: 100
+      example: "QUO-2025-001"
+    rfq_number:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "RFQ-2025-001"
+    supplier_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    quotation_title:
+      type: string
+      maxLength: 255
+      example: "Steel Plates for Q1 2025 Production"
+    description:
+      type: string
+      nullable: true
+      example: "Quotation for various steel plates required for Q1 2025 production schedule"
+    quotation_items:
+      type: array
+      items:
+        type: object
+        properties:
+          product_id:
+            type: string
+            format: uuid
+          supplier_product_code:
+            type: string
+          product_name:
+            type: string
+          quantity:
+            type: number
+            format: decimal
+          unit_price:
+            type: number
+            format: decimal
+          total_price:
+            type: number
+            format: decimal
+          unit_of_measure:
+            type: string
+          specifications:
+            type: object
+            additionalProperties: true
+          lead_time_days:
+            type: integer
+          notes:
+            type: string
+      example:
+        - product_id: "123e4567-e89b-12d3-a456-426614174000"
+          supplier_product_code: "ST-A36-10MM"
+          product_name: "Steel Plate A36 - 10mm"
+          quantity: 1000
+          unit_price: 14500.00
+          total_price: 14500000.00
+          unit_of_measure: "kg"
+          lead_time_days: 7
+    payment_terms:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "50% DP, 50% before delivery"
+    delivery_terms:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "FOB Supplier Warehouse"
+    validity_period_days:
+      type: integer
+      minimum: 1
+      default: 30
+      example: 30
+    lead_time_days:
+      type: integer
+      minimum: 0
+      default: 0
+      example: 14
+    response_due_date:
+      type: string
+      format: date
+      nullable: true
+      example: "2025-11-08"
+    supplier_notes:
+      type: string
+      nullable: true
+      example: "Special pricing valid for orders placed before Dec 31"
+    internal_notes:
+      type: string
+      nullable: true
+      example: "Compare with ABC Steel quotation, consider delivery timeline"
+
+# ================================================================
+# COLLECTION RESPONSES
+# ================================================================
+
+# Supplier List Response
+SupplierListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/Supplier'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Supplier Contact List Response
+SupplierContactListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/SupplierContact'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Supplier Product List Response
+SupplierProductListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/SupplierProduct'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Supplier Quotation List Response
+SupplierQuotationListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/SupplierQuotation'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# ================================================================
+# ANALYTICS & REPORTING SCHEMAS
+# ================================================================
+
+# Supplier Performance Report
+SupplierPerformanceReport:
+  type: object
+  properties:
+    supplier_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    supplier_name:
+      type: string
+      example: "Steel Indonesia Manufacturing"
+    period_start:
+      type: string
+      format: date
+      example: "2025-01-01"
+    period_end:
+      type: string
+      format: date
+      example: "2025-12-31"
+    total_quotations:
+      type: integer
+      example: 25
+    approved_quotations:
+      type: integer
+      example: 18
+    quotation_approval_rate:
+      type: number
+      format: decimal
+      example: 72.00
+    total_order_value:
+      type: number
+      format: decimal
+      example: 2500000000.00
+    average_order_value:
+      type: number
+      format: decimal
+      example: 138888888.89
+    on_time_deliveries:
+      type: integer
+      example: 16
+    total_deliveries:
+      type: integer
+      example: 18
+    on_time_delivery_rate:
+      type: number
+      format: decimal
+      example: 88.89
+    quality_issues:
+      type: integer
+      example: 1
+    quality_issue_rate:
+      type: number
+      format: decimal
+      example: 5.56
+    average_lead_time_days:
+      type: number
+      format: decimal
+      example: 12.5
+    cost_competitiveness_rank:
+      type: integer
+      example: 3
+    overall_performance_score:
+      type: number
+      format: decimal
+      example: 85.50
+
+# Supplier Statistics Summary
+SupplierStatistics:
+  type: object
+  properties:
+    total_suppliers:
+      type: integer
+      example: 45
+    active_suppliers:
+      type: integer
+      example: 38
+    approved_suppliers:
+      type: integer
+      example: 35
+    strategic_suppliers:
+      type: integer
+      example: 8
+    preferred_suppliers:
+      type: integer
+      example: 15
+    suppliers_by_type:
+      type: object
+      properties:
+        material:
+          type: integer
+          example: 25
+        service:
+          type: integer
+          example: 8
+        equipment:
+          type: integer
+          example: 7
+        consumable:
+          type: integer
+          example: 3
+        packaging:
+          type: integer
+          example: 2
+    suppliers_by_tier:
+      type: object
+      properties:
+        strategic:
+          type: integer
+          example: 8
+        preferred:
+          type: integer
+          example: 15
+        standard:
+          type: integer
+          example: 12
+        conditional:
+          type: integer
+          example: 3
+    average_ratings:
+      type: object
+      properties:
+        overall_rating:
+          type: number
+          format: decimal
+          example: 4.25
+        quality_rating:
+          type: number
+          format: decimal
+          example: 4.40
+        delivery_rating:
+          type: number
+          format: decimal
+          example: 4.10
+        service_rating:
+          type: number
+          format: decimal
+          example: 4.35
+        cost_rating:
+          type: number
+          format: decimal
+          example: 4.15
+    total_quotations_this_month:
+      type: integer
+      example: 48
+    total_quotations_last_month:
+      type: integer
+      example: 42
+    quotation_growth_rate:
+      type: number
+      format: decimal
+      example: 14.29

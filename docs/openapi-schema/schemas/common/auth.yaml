@@ -1,0 +1,533 @@
+# Authentication & Authorization Schemas for Stencil CMS
+# JWT-based authentication with multi-tenant RBAC support
+
+# JWT Token Schema
+JWTToken:
+  type: object
+  required:
+    - access_token
+    - token_type
+    - expires_in
+  properties:
+    access_token:
+      type: string
+      description: JWT access token
+      example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ"
+    token_type:
+      type: string
+      const: "Bearer"
+      description: Token type (always Bearer for JWT)
+    expires_in:
+      type: integer
+      description: Token expiration time in seconds from now
+      example: 3600
+    refresh_token:
+      type: string
+      nullable: true
+      description: Refresh token for obtaining new access tokens
+      example: "def502...refresh_token_here"
+    scope:
+      type: string
+      description: Token scope/permissions
+      example: "read write admin"
+
+# JWT Token Payload (decoded)
+JWTPayload:
+  type: object
+  required:
+    - sub
+    - tenant_id
+    - iat
+    - exp
+  properties:
+    sub:
+      type: string
+      format: uuid
+      description: Subject (User ID)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant ID for multi-tenant isolation
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    iat:
+      type: integer
+      description: Issued at (Unix timestamp)
+      example: 1699876800
+    exp:
+      type: integer
+      description: Expiration time (Unix timestamp)
+      example: 1699880400
+    jti:
+      type: string
+      description: JWT ID (unique identifier)
+      example: "jwt_123456789"
+    roles:
+      type: array
+      items:
+        type: string
+      description: User roles within the tenant
+      example: ["admin", "content_manager"]
+    permissions:
+      type: array
+      items:
+        type: string
+      description: Specific permissions granted
+      example: ["pages.create", "pages.edit", "users.manage"]
+    name:
+      type: string
+      description: User display name
+      example: "John Doe"
+    email:
+      type: string
+      format: email
+      description: User email address
+      example: "john.doe@example.com"
+
+# Login Request Schema
+LoginRequest:
+  type: object
+  required:
+    - email
+    - password
+    - tenant_id
+  properties:
+    email:
+      type: string
+      format: email
+      description: User email address
+      example: "admin@stencil.com"
+      maxLength: 255
+    password:
+      type: string
+      format: password
+      description: User password
+      example: "SecurePassword123!"
+      minLength: 8
+      maxLength: 255
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant UUID for multi-tenant login
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    remember_me:
+      type: boolean
+      default: false
+      description: Extended token expiration (if enabled)
+    device_name:
+      type: string
+      description: Device/client name for token identification
+      example: "Admin Dashboard - Chrome on Windows"
+      maxLength: 255
+
+# Login Response Schema
+LoginResponse:
+  type: object
+  required:
+    - success
+    - data
+    - message
+    - meta
+  properties:
+    success:
+      type: boolean
+      const: true
+    data:
+      type: object
+      required:
+        - token
+        - user
+        - tenant
+      properties:
+        token:
+          $ref: '#/JWTToken'
+        user:
+          $ref: '#/AuthenticatedUser'
+        tenant:
+          $ref: '#/TenantInfo'
+        permissions:
+          type: array
+          items:
+            type: string
+          description: User permissions within this tenant
+          example: ["pages.create", "pages.edit", "users.view"]
+        roles:
+          type: array
+          items:
+            type: string
+          description: User roles within this tenant
+          example: ["admin", "content_manager"]
+    message:
+      type: string
+      example: "Login successful"
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+        login_at:
+          type: string
+          format: date-time
+          description: Login timestamp
+        expires_at:
+          type: string
+          format: date-time
+          description: Token expiration timestamp
+
+# Authenticated User Schema
+AuthenticatedUser:
+  type: object
+  required:
+    - id
+    - name
+    - email
+    - status
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: User unique identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    name:
+      type: string
+      description: User full name
+      example: "John Doe"
+    email:
+      type: string
+      format: email
+      description: User email address
+      example: "john.doe@example.com"
+    avatar:
+      type: string
+      format: uri
+      nullable: true
+      description: User avatar image URL
+      example: "https://cdn.example.com/avatars/john-doe.jpg"
+    status:
+      type: string
+      enum: [active, inactive, suspended]
+      description: User account status
+      example: "active"
+    email_verified_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Email verification timestamp
+      example: "2025-11-12T10:00:00Z"
+    last_login_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Last login timestamp
+      example: "2025-11-12T13:00:00Z"
+    created_at:
+      type: string
+      format: date-time
+      description: Account creation timestamp
+      example: "2025-01-01T00:00:00Z"
+
+# Tenant Information Schema
+TenantInfo:
+  type: object
+  required:
+    - id
+    - name
+    - slug
+    - status
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Tenant unique identifier
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    name:
+      type: string
+      description: Tenant display name
+      example: "Acme Manufacturing"
+    slug:
+      type: string
+      description: Tenant URL slug
+      example: "acme-manufacturing"
+      pattern: "^[a-z0-9-]+$"
+    logo:
+      type: string
+      format: uri
+      nullable: true
+      description: Tenant logo URL
+      example: "https://cdn.example.com/tenants/acme-logo.png"
+    status:
+      type: string
+      enum: [active, suspended, trial, expired]
+      description: Tenant account status
+      example: "active"
+    subscription_plan:
+      type: string
+      description: Current subscription plan
+      example: "professional"
+    features:
+      type: array
+      items:
+        type: string
+      description: Enabled features for this tenant
+      example: ["multi_user", "custom_theming", "api_access"]
+
+# Logout Request Schema
+LogoutRequest:
+  type: object
+  properties:
+    everywhere:
+      type: boolean
+      default: false
+      description: Logout from all devices/sessions
+
+# Logout Response Schema
+LogoutResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      const: true
+    message:
+      type: string
+      example: "Logged out successfully"
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        logout_at:
+          type: string
+          format: date-time
+
+# Token Refresh Request Schema
+RefreshTokenRequest:
+  type: object
+  required:
+    - refresh_token
+  properties:
+    refresh_token:
+      type: string
+      description: Refresh token for obtaining new access token
+      example: "def502...refresh_token_here"
+
+# Token Validation Response Schema
+TokenValidationResponse:
+  type: object
+  required:
+    - valid
+    - payload
+  properties:
+    valid:
+      type: boolean
+      description: Whether the token is valid
+      example: true
+    payload:
+      $ref: '#/JWTPayload'
+    expires_in:
+      type: integer
+      description: Seconds until token expires
+      example: 1800
+
+# Password Reset Request Schema
+PasswordResetRequest:
+  type: object
+  required:
+    - email
+    - tenant_id
+  properties:
+    email:
+      type: string
+      format: email
+      description: User email address
+      example: "user@example.com"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant context for password reset
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+# Password Reset Confirmation Schema
+PasswordResetConfirm:
+  type: object
+  required:
+    - email
+    - token
+    - password
+    - password_confirmation
+  properties:
+    email:
+      type: string
+      format: email
+      description: User email address
+      example: "user@example.com"
+    token:
+      type: string
+      description: Password reset token
+      example: "reset_token_123456789"
+    password:
+      type: string
+      format: password
+      description: New password
+      minLength: 8
+      maxLength: 255
+    password_confirmation:
+      type: string
+      format: password
+      description: Password confirmation (must match password)
+      minLength: 8
+      maxLength: 255
+
+# Role Schema
+Role:
+  type: object
+  required:
+    - id
+    - name
+    - tenant_id
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Role unique identifier
+      example: "role_550e8400-e29b-41d4-a716-446655440000"
+    name:
+      type: string
+      description: Role name
+      example: "admin"
+    display_name:
+      type: string
+      description: Human-readable role name
+      example: "Administrator"
+    description:
+      type: string
+      nullable: true
+      description: Role description
+      example: "Full system access with all permissions"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant this role belongs to
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    permissions:
+      type: array
+      items:
+        type: string
+      description: Permissions granted by this role
+      example: ["users.create", "users.edit", "pages.manage"]
+    is_default:
+      type: boolean
+      description: Whether this is a default role for new users
+      example: false
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+# Permission Schema
+Permission:
+  type: object
+  required:
+    - id
+    - name
+    - guard_name
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Permission unique identifier
+      example: "perm_550e8400-e29b-41d4-a716-446655440000"
+    name:
+      type: string
+      description: Permission name (dot notation)
+      example: "pages.create"
+      pattern: "^[a-z_]+\\.[a-z_]+$"
+    display_name:
+      type: string
+      description: Human-readable permission name
+      example: "Create Pages"
+    description:
+      type: string
+      nullable: true
+      description: Permission description
+      example: "Allows creating new pages and content"
+    guard_name:
+      type: string
+      const: "api"
+      description: Guard name (always 'api' for API permissions)
+    module:
+      type: string
+      description: Module this permission belongs to
+      example: "pages"
+    action:
+      type: string
+      description: Action this permission allows
+      example: "create"
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+# User Permissions Summary
+UserPermissionsSummary:
+  type: object
+  properties:
+    roles:
+      type: array
+      items:
+        $ref: '#/Role'
+      description: User roles within current tenant
+    permissions:
+      type: array
+      items:
+        type: string
+      description: All effective permissions (from roles + direct assignments)
+      example: ["pages.create", "pages.edit", "users.view", "settings.manage"]
+    direct_permissions:
+      type: array
+      items:
+        type: string
+      description: Permissions directly assigned to user (not from roles)
+      example: ["special_feature.access"]
+
+# Multi-tenant User Association
+TenantUserAssociation:
+  type: object
+  required:
+    - user_id
+    - tenant_id
+    - roles
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: User ID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant ID
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    roles:
+      type: array
+      items:
+        type: string
+      description: User roles within this tenant
+      example: ["admin", "content_manager"]
+    joined_at:
+      type: string
+      format: date-time
+      description: When user joined this tenant
+      example: "2025-01-01T00:00:00Z"
+    status:
+      type: string
+      enum: [active, suspended, invited]
+      description: User status within this tenant
+      example: "active"

@@ -1,0 +1,453 @@
+# Error Response Schemas for Stencil CMS
+# Comprehensive error handling with standardized formats
+
+# Base Error Response Schema
+ErrorResponse:
+  type: object
+  required:
+    - success
+    - error
+    - meta
+  properties:
+    success:
+      type: boolean
+      const: false
+      description: Indicates failed operation
+    error:
+      $ref: '#/ErrorDetail'
+    meta:
+      $ref: '#/ErrorMeta'
+
+# Detailed Error Information
+ErrorDetail:
+  type: object
+  required:
+    - code
+    - message
+  properties:
+    code:
+      type: string
+      description: Machine-readable error code for programmatic handling
+      enum:
+        # Client Errors (4xx)
+        - VALIDATION_ERROR
+        - AUTHENTICATION_ERROR
+        - AUTHORIZATION_ERROR
+        - NOT_FOUND_ERROR
+        - CONFLICT_ERROR
+        - RATE_LIMIT_ERROR
+        - TENANT_ISOLATION_ERROR
+        - FORBIDDEN_ERROR
+        - BAD_REQUEST_ERROR
+        - UNPROCESSABLE_ENTITY_ERROR
+        # Server Errors (5xx)
+        - INTERNAL_SERVER_ERROR
+        - DATABASE_ERROR
+        - EXTERNAL_SERVICE_ERROR
+        - TIMEOUT_ERROR
+        - MAINTENANCE_ERROR
+      example: "VALIDATION_ERROR"
+    message:
+      type: string
+      description: Human-readable error message
+      example: "Validation failed for the provided data"
+    details:
+      oneOf:
+        - $ref: '#/ValidationErrors'
+        - $ref: '#/GenericErrorDetails'
+        - $ref: '#/AuthenticationErrorDetails'
+        - $ref: '#/AuthorizationErrorDetails'
+        - $ref: '#/RateLimitErrorDetails'
+        - $ref: '#/TenantIsolationErrorDetails'
+    trace_id:
+      type: string
+      description: Internal trace ID for debugging
+      example: "trace_abc123def456"
+    documentation_url:
+      type: string
+      format: uri
+      description: URL to relevant documentation
+      example: "https://docs.stencil.com/errors/validation"
+
+# Error Response Metadata
+ErrorMeta:
+  type: object
+  required:
+    - timestamp
+    - request_id
+  properties:
+    timestamp:
+      type: string
+      format: date-time
+      description: Error occurrence timestamp
+      example: "2025-11-12T13:00:00Z"
+    request_id:
+      type: string
+      description: Unique request identifier for debugging
+      example: "req_123456789abcdef"
+    tenant_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Current tenant context (if available)
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    user_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Current user context (if authenticated)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    endpoint:
+      type: string
+      description: API endpoint where error occurred
+      example: "POST /api/v1/pages"
+    user_agent:
+      type: string
+      description: Client user agent
+      example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+# Validation Error Details
+ValidationErrors:
+  type: object
+  description: Field-specific validation errors
+  additionalProperties:
+    type: array
+    items:
+      type: string
+    description: Array of error messages for this field
+  example:
+    name: 
+      - "The name field is required"
+      - "The name must be at least 3 characters"
+    email:
+      - "The email field must be a valid email address"
+    tenant_id:
+      - "The selected tenant is invalid"
+
+# Generic Error Details
+GenericErrorDetails:
+  type: object
+  properties:
+    reason:
+      type: string
+      description: Specific reason for the error
+      example: "Resource not found"
+    context:
+      type: object
+      description: Additional context information
+      additionalProperties: true
+      example:
+        resource_type: "page"
+        resource_id: "550e8400-e29b-41d4-a716-446655440000"
+
+# Authentication Error Details
+AuthenticationErrorDetails:
+  type: object
+  properties:
+    reason:
+      type: string
+      enum:
+        - TOKEN_MISSING
+        - TOKEN_INVALID
+        - TOKEN_EXPIRED
+        - TOKEN_BLACKLISTED
+        - CREDENTIALS_INVALID
+      description: Specific authentication failure reason
+      example: "TOKEN_EXPIRED"
+    expired_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Token expiration time (if applicable)
+      example: "2025-11-12T12:00:00Z"
+    login_url:
+      type: string
+      format: uri
+      description: URL to login endpoint
+      example: "/api/v1/auth/login"
+
+# Authorization Error Details
+AuthorizationErrorDetails:
+  type: object
+  properties:
+    reason:
+      type: string
+      enum:
+        - INSUFFICIENT_PERMISSIONS
+        - ROLE_REQUIRED
+        - TENANT_ACCESS_DENIED
+        - RESOURCE_OWNERSHIP_REQUIRED
+      description: Specific authorization failure reason
+      example: "INSUFFICIENT_PERMISSIONS"
+    required_permission:
+      type: string
+      nullable: true
+      description: Permission required for this action
+      example: "pages.create"
+    user_permissions:
+      type: array
+      items:
+        type: string
+      description: Current user permissions
+      example: ["pages.view", "pages.edit"]
+    required_role:
+      type: string
+      nullable: true
+      description: Role required for this action
+      example: "admin"
+    user_roles:
+      type: array
+      items:
+        type: string
+      description: Current user roles
+      example: ["editor", "content_manager"]
+
+# Rate Limiting Error Details
+RateLimitErrorDetails:
+  type: object
+  properties:
+    limit:
+      type: integer
+      description: Request limit per time window
+      example: 100
+    remaining:
+      type: integer
+      description: Remaining requests in current window
+      example: 0
+    reset_time:
+      type: string
+      format: date-time
+      description: When the rate limit resets
+      example: "2025-11-12T14:00:00Z"
+    retry_after:
+      type: integer
+      description: Seconds to wait before retrying
+      example: 3600
+
+# Tenant Isolation Error Details
+TenantIsolationErrorDetails:
+  type: object
+  properties:
+    reason:
+      type: string
+      enum:
+        - TENANT_MISMATCH
+        - CROSS_TENANT_ACCESS_DENIED
+        - TENANT_SUSPENDED
+        - TENANT_NOT_FOUND
+      description: Specific tenant isolation violation
+      example: "CROSS_TENANT_ACCESS_DENIED"
+    requested_tenant:
+      type: string
+      format: uuid
+      description: Tenant ID that was requested
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    user_tenant:
+      type: string
+      format: uuid
+      description: User's actual tenant ID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+# Specific Error Response Types
+
+# 400 Bad Request Error
+BadRequestError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "BAD_REQUEST_ERROR"
+            message:
+              example: "The request could not be understood by the server"
+
+# 401 Unauthorized Error
+UnauthorizedError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "AUTHENTICATION_ERROR"
+            message:
+              example: "Authentication required to access this resource"
+            details:
+              $ref: '#/AuthenticationErrorDetails'
+
+# 403 Forbidden Error
+ForbiddenError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "AUTHORIZATION_ERROR"
+            message:
+              example: "Insufficient permissions to access this resource"
+            details:
+              $ref: '#/AuthorizationErrorDetails'
+
+# 404 Not Found Error
+NotFoundError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "NOT_FOUND_ERROR"
+            message:
+              example: "The requested resource was not found"
+            details:
+              $ref: '#/GenericErrorDetails'
+
+# 409 Conflict Error
+ConflictError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "CONFLICT_ERROR"
+            message:
+              example: "The request conflicts with the current state of the resource"
+
+# 422 Validation Error
+ValidationError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "VALIDATION_ERROR"
+            message:
+              example: "The given data was invalid"
+            details:
+              $ref: '#/ValidationErrors'
+
+# 429 Rate Limit Error
+RateLimitError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "RATE_LIMIT_ERROR"
+            message:
+              example: "Too many requests. Please slow down"
+            details:
+              $ref: '#/RateLimitErrorDetails'
+
+# 500 Internal Server Error
+InternalServerError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "INTERNAL_SERVER_ERROR"
+            message:
+              example: "An unexpected error occurred. Please try again later"
+            details:
+              type: object
+              properties:
+                incident_id:
+                  type: string
+                  description: Internal incident tracking ID
+                  example: "incident_abc123"
+
+# Database Error (503 or 500)
+DatabaseError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "DATABASE_ERROR"
+            message:
+              example: "Database connection error. Please try again later"
+
+# Service Unavailable Error (503)
+ServiceUnavailableError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "MAINTENANCE_ERROR"
+            message:
+              example: "Service temporarily unavailable for maintenance"
+            details:
+              type: object
+              properties:
+                maintenance_end:
+                  type: string
+                  format: date-time
+                  description: Expected end of maintenance
+                  example: "2025-11-12T15:00:00Z"
+
+# Timeout Error (408 or 504)
+TimeoutError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "TIMEOUT_ERROR"
+            message:
+              example: "Request timeout. The server took too long to respond"
+            details:
+              type: object
+              properties:
+                timeout_duration:
+                  type: integer
+                  description: Timeout duration in seconds
+                  example: 30
+
+# Multi-tenant Specific Error
+TenantIsolationError:
+  allOf:
+    - $ref: '#/ErrorResponse'
+    - type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              const: "TENANT_ISOLATION_ERROR"
+            message:
+              example: "Cross-tenant access is not permitted"
+            details:
+              $ref: '#/TenantIsolationErrorDetails'

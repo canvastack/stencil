@@ -1,0 +1,1118 @@
+# Reviews Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for Review Management System (65+ fields, 5 tables)
+
+# Review Main Entity - Complete review data and metadata
+Review:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - product_id
+        - reviewer_name
+        - reviewer_email
+        - rating
+        - comment
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          description: Product being reviewed (FK to products.id)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        order_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Purchase order for verified purchase tracking (FK to purchase_orders.id)
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Registered user who wrote review (FK to users.id, NULL for guest reviews)
+          example: "7cb8c920-8ead-22e2-91c5-11d05fd430c8"
+        
+        # Reviewer Information
+        reviewer_name:
+          type: string
+          maxLength: 255
+          description: Display name of the reviewer
+          example: "Budi Santoso"
+        reviewer_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Reviewer email for notifications (not displayed publicly)
+          example: "budi.santoso@email.com"
+        reviewer_avatar_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Profile picture URL for the reviewer
+          example: "https://cdn.example.com/avatars/budi-santoso.jpg"
+        
+        # Review Content
+        rating:
+          type: number
+          format: float
+          minimum: 0.5
+          maximum: 5.0
+          multipleOf: 0.5
+          description: Star rating with half-star support (0.5, 1.0, 1.5, ..., 5.0)
+          example: 4.5
+        title:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Review headline or summary
+          example: "Produk Berkualitas Tinggi dengan Detail Presisi"
+        comment:
+          type: string
+          minLength: 10
+          maxLength: 5000
+          description: Detailed review text content
+          example: "Sangat puas dengan hasil etching yang didapatkan. Detail presisi dan kualitas material sangat baik. Proses pemesanan mudah dan pengiriman cepat."
+        pros:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Positive aspects highlighted by reviewer
+          example: "Detail sangat presisi, material berkualitas tinggi, packaging aman, customer service responsif"
+        cons:
+          type: string
+          maxLength: 2000
+          nullable: true
+          description: Negative aspects or areas for improvement
+          example: "Harga sedikit mahal dibanding kompetitor, waktu produksi agak lama"
+        
+        # Verification & Privacy
+        is_verified_purchase:
+          type: boolean
+          default: false
+          description: True if review is from a verified purchase (automatically set based on order_id)
+          example: true
+        is_anonymous:
+          type: boolean
+          default: false
+          description: True if reviewer wants to remain anonymous (display as 'Anonymous Buyer')
+          example: false
+        
+        # Approval & Moderation
+        approval_status:
+          type: string
+          enum: [pending, approved, rejected, spam]
+          default: pending
+          description: Current moderation status of the review
+          example: "approved"
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: Admin user who approved/rejected the review (FK to users.id)
+          example: "8dc9d030-9fbe-33f3-a2d6-22e16fd430c8"
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when review was approved/rejected
+          example: "2024-01-16T09:15:00Z"
+        rejection_reason:
+          type: string
+          nullable: true
+          description: Admin explanation for rejection
+          example: "Review contains inappropriate language and violates community guidelines"
+        
+        # Featured Review
+        is_featured:
+          type: boolean
+          default: false
+          description: True if review is featured prominently on product page
+          example: false
+        featured_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when review was marked as featured
+          example: null
+        
+        # Engagement Metrics (Denormalized for Performance)
+        helpful_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of 'helpful' votes (denormalized from review_helpful_votes)
+          example: 15
+        unhelpful_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of 'unhelpful' votes (denormalized from review_helpful_votes)
+          example: 2
+        reply_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total number of admin/vendor replies (denormalized from review_replies)
+          example: 1
+        
+        # Edit History
+        is_edited:
+          type: boolean
+          default: false
+          description: True if review has been edited by the reviewer
+          example: false
+        edited_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last edit timestamp
+          example: null
+        edit_history:
+          type: array
+          nullable: true
+          description: History of review edits
+          items:
+            type: object
+            properties:
+              version:
+                type: integer
+                description: Edit version number
+                example: 1
+              comment:
+                type: string
+                description: Previous comment content
+                example: "Sangat puas dengan hasil etching..."
+              rating:
+                type: number
+                format: float
+                description: Previous rating value
+                example: 4.0
+              edited_at:
+                type: string
+                format: date-time
+                description: Edit timestamp
+                example: "2024-01-15T16:30:00Z"
+              reason:
+                type: string
+                nullable: true
+                description: Reason for edit
+                example: "Fixed typo and updated rating after extended use"
+        
+        # Reporting & Spam Detection
+        reported_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times review has been reported (denormalized from review_reports)
+          example: 0
+        
+        # Flexible Metadata Storage
+        metadata:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Flexible JSONB storage for additional review data
+          properties:
+            purchase_date:
+              type: string
+              format: date
+              description: Date of product purchase
+              example: "2024-01-10"
+            device_type:
+              type: string
+              description: Device used for review submission
+              example: "mobile"
+            location:
+              type: string
+              description: Reviewer location (city/country)
+              example: "Jakarta, Indonesia"
+            sentiment_score:
+              type: number
+              format: float
+              minimum: -1.0
+              maximum: 1.0
+              description: AI-calculated sentiment analysis score
+              example: 0.75
+            usage_duration:
+              type: string
+              description: How long reviewer used the product
+              example: "2 weeks"
+            recommendation_score:
+              type: integer
+              minimum: 1
+              maximum: 10
+              description: Likelihood to recommend (NPS style)
+              example: 9
+          example:
+            purchase_date: "2024-01-10"
+            device_type: "mobile"
+            location: "Jakarta, Indonesia"
+            sentiment_score: 0.75
+            usage_duration: "2 weeks"
+            recommendation_score: 9
+        
+        # Relations (populated via joins)
+        images:
+          type: array
+          readOnly: true
+          description: Review images (populated from review_images table)
+          items:
+            $ref: '#/ReviewImage'
+        replies:
+          type: array
+          readOnly: true
+          description: Admin/vendor replies (populated from review_replies table)
+          items:
+            $ref: '#/ReviewReply'
+        helpful_votes:
+          type: array
+          readOnly: true
+          description: Helpful votes (populated from review_helpful_votes table)
+          items:
+            $ref: '#/ReviewHelpfulVote'
+        reports:
+          type: array
+          readOnly: true
+          description: User reports (populated from review_reports table)
+          items:
+            $ref: '#/ReviewReport'
+
+# Review Create Input (for POST /reviews)
+ReviewCreateInput:
+  type: object
+  required:
+    - product_id
+    - rating
+    - comment
+    - reviewer_name
+    - reviewer_email
+  properties:
+    product_id:
+      type: string
+      format: uuid
+      description: Product being reviewed
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    order_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Purchase order ID for verification (optional)
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    
+    # Reviewer Information (required for guest reviews)
+    reviewer_name:
+      type: string
+      minLength: 2
+      maxLength: 255
+      description: Full name of the reviewer
+      example: "Budi Santoso"
+    reviewer_email:
+      type: string
+      format: email
+      maxLength: 255
+      description: Email address for notifications
+      example: "budi.santoso@email.com"
+    
+    # Review Content
+    rating:
+      type: number
+      format: float
+      minimum: 0.5
+      maximum: 5.0
+      multipleOf: 0.5
+      description: Star rating (0.5 - 5.0 in 0.5 increments)
+      example: 4.5
+    title:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Review title or headline
+      example: "Excellent Product Quality"
+    comment:
+      type: string
+      minLength: 10
+      maxLength: 5000
+      description: Detailed review content (minimum 10 characters)
+      example: "Very satisfied with the etching quality. Precision is excellent and material is high-grade."
+    pros:
+      type: string
+      maxLength: 2000
+      nullable: true
+      description: Positive aspects
+      example: "High precision, quality materials, fast delivery"
+    cons:
+      type: string
+      maxLength: 2000
+      nullable: true
+      description: Areas for improvement
+      example: "Slightly expensive compared to competitors"
+    
+    # Privacy Options
+    is_anonymous:
+      type: boolean
+      default: false
+      description: Hide reviewer name (show as 'Anonymous Buyer')
+      example: false
+    
+    # Image Attachments
+    images:
+      type: array
+      maxItems: 5
+      nullable: true
+      description: Review images (max 5 images)
+      items:
+        type: object
+        required:
+          - image_url
+        properties:
+          image_url:
+            type: string
+            format: uri
+            maxLength: 500
+            description: Uploaded image URL
+            example: "https://cdn.example.com/reviews/image-123.jpg"
+          caption:
+            type: string
+            maxLength: 255
+            nullable: true
+            description: Image caption
+            example: "Product in actual use"
+          alt_text:
+            type: string
+            maxLength: 255
+            nullable: true
+            description: Alt text for accessibility
+            example: "Custom etched brass plate mounted on wood"
+
+# Review Update Input (for PUT /reviews/{id})
+ReviewUpdateInput:
+  type: object
+  properties:
+    rating:
+      type: number
+      format: float
+      minimum: 0.5
+      maximum: 5.0
+      multipleOf: 0.5
+      description: Updated star rating
+      example: 5.0
+    title:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Updated review title
+      example: "Updated: Outstanding Quality After Extended Use"
+    comment:
+      type: string
+      minLength: 10
+      maxLength: 5000
+      description: Updated review content
+      example: "After using the product for 3 weeks, I can confirm the quality is outstanding..."
+    pros:
+      type: string
+      maxLength: 2000
+      nullable: true
+      description: Updated positive aspects
+      example: "Durability confirmed, easy installation, excellent customer support"
+    cons:
+      type: string
+      maxLength: 2000
+      nullable: true
+      description: Updated negative aspects
+      example: "Initial setup instructions could be clearer"
+    edit_reason:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Reason for editing the review
+      example: "Updated rating and added long-term usage experience"
+
+# Review Image Entity
+ReviewImage:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - review_id
+        - image_url
+      properties:
+        review_id:
+          type: string
+          format: uuid
+          description: Parent review ID (FK to reviews.id)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        
+        # Image URLs and Metadata
+        image_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Full-size image URL
+          example: "https://cdn.example.com/reviews/review-123-img-1.jpg"
+        thumbnail_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Optimized thumbnail URL (200x200px)
+          example: "https://cdn.example.com/reviews/thumbnails/review-123-img-1-thumb.jpg"
+        
+        # File Metadata
+        file_size:
+          type: integer
+          nullable: true
+          description: File size in bytes
+          example: 2048576
+        mime_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: MIME type of the image
+          example: "image/jpeg"
+        width:
+          type: integer
+          nullable: true
+          description: Image width in pixels
+          example: 1200
+        height:
+          type: integer
+          nullable: true
+          description: Image height in pixels
+          example: 800
+        
+        # Display and SEO
+        display_order:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Sort order for image gallery
+          example: 1
+        alt_text:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Alt text for accessibility and SEO
+          example: "Custom etched brass nameplate with intricate design details"
+        caption:
+          type: string
+          nullable: true
+          description: Image caption or description
+          example: "Final product showing precision etching detail"
+        is_primary:
+          type: boolean
+          default: false
+          description: True if this is the primary review image for thumbnails
+          example: true
+
+# Review Reply Entity (Admin/Vendor Responses)
+ReviewReply:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - review_id
+        - user_id
+        - user_type
+        - reply_text
+      properties:
+        review_id:
+          type: string
+          format: uuid
+          description: Parent review ID (FK to reviews.id)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        parent_reply_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent reply for nested threads (FK to review_replies.id)
+          example: null
+        user_id:
+          type: string
+          format: uuid
+          description: User who posted the reply (FK to users.id)
+          example: "7cb8c920-8ead-22e2-91c5-11d05fd430c8"
+        user_type:
+          type: string
+          enum: [admin, vendor, customer_service]
+          description: Type of user posting the reply
+          example: "admin"
+        
+        # Reply Content
+        reply_text:
+          type: string
+          minLength: 5
+          maxLength: 2000
+          description: Reply content text
+          example: "Thank you for your detailed review! We're thrilled that you're satisfied with the precision and quality. Your feedback helps us continue improving our services."
+        
+        # Reply Metadata
+        is_official:
+          type: boolean
+          default: true
+          description: True for official brand responses (shows official badge)
+          example: true
+        is_edited:
+          type: boolean
+          default: false
+          description: True if reply has been edited
+          example: false
+        edited_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last edit timestamp
+          example: null
+        
+        # Relations
+        user:
+          type: object
+          readOnly: true
+          nullable: true
+          description: Reply author information (populated via join)
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "7cb8c920-8ead-22e2-91c5-11d05fd430c8"
+            name:
+              type: string
+              example: "Customer Support Team"
+            avatar_url:
+              type: string
+              format: uri
+              nullable: true
+              example: "https://cdn.example.com/avatars/admin-avatar.jpg"
+            role:
+              type: string
+              example: "admin"
+
+# Review Reply Create Input
+ReviewReplyCreateInput:
+  type: object
+  required:
+    - review_id
+    - reply_text
+  properties:
+    review_id:
+      type: string
+      format: uuid
+      description: ID of the review being replied to
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    parent_reply_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: ID of parent reply for nested responses
+      example: null
+    reply_text:
+      type: string
+      minLength: 5
+      maxLength: 2000
+      description: Reply content (minimum 5 characters)
+      example: "Thank you for your feedback! We appreciate your detailed review and are glad you're satisfied with our product quality."
+    is_official:
+      type: boolean
+      default: true
+      description: Mark as official brand response
+      example: true
+
+# Review Helpful Vote Entity
+ReviewHelpfulVote:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - review_id
+        - vote_type
+      properties:
+        review_id:
+          type: string
+          format: uuid
+          description: Review being voted on (FK to reviews.id)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Registered user who voted (FK to users.id, NULL for guests)
+          example: "7cb8c920-8ead-22e2-91c5-11d05fd430c8"
+        
+        # Vote Information
+        vote_type:
+          type: string
+          enum: [helpful, unhelpful]
+          description: Type of vote cast
+          example: "helpful"
+        
+        # Guest Tracking (for anonymous votes)
+        ip_address:
+          type: string
+          maxLength: 45
+          nullable: true
+          description: Voter IP address (IPv4/IPv6) for guest vote tracking
+          example: "192.168.1.100"
+        user_agent:
+          type: string
+          nullable: true
+          description: Browser user agent for fingerprinting
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+# Review Helpful Vote Input
+ReviewHelpfulVoteInput:
+  type: object
+  required:
+    - vote_type
+  properties:
+    vote_type:
+      type: string
+      enum: [helpful, unhelpful]
+      description: Vote type (helpful or unhelpful)
+      example: "helpful"
+
+# Review Report Entity
+ReviewReport:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - review_id
+        - report_reason
+      properties:
+        review_id:
+          type: string
+          format: uuid
+          description: Review being reported (FK to reviews.id)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        reported_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who submitted the report (FK to users.id, NULL for guests)
+          example: "8dc9d030-9fbe-33f3-a2d6-22e16fd430c8"
+        
+        # Report Details
+        report_reason:
+          type: string
+          enum: [spam, offensive_language, fake_review, irrelevant, personal_information, copyright, other]
+          description: Reason for reporting the review
+          example: "spam"
+        report_details:
+          type: string
+          maxLength: 1000
+          nullable: true
+          description: Additional explanation from the reporter
+          example: "This review appears to be promoting competitor products and contains suspicious links"
+        
+        # Reporter Tracking
+        ip_address:
+          type: string
+          maxLength: 45
+          nullable: true
+          description: Reporter IP address for tracking
+          example: "192.168.1.150"
+        
+        # Moderation Status
+        status:
+          type: string
+          enum: [pending, under_review, resolved, dismissed]
+          default: pending
+          description: Current status of the report
+          example: "pending"
+        reviewed_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: Admin who handled the report (FK to users.id)
+          example: null
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp when report was reviewed
+          example: null
+        resolution_note:
+          type: string
+          nullable: true
+          description: Admin notes on report resolution
+          example: null
+
+# Review Report Create Input
+ReviewReportCreateInput:
+  type: object
+  required:
+    - review_id
+    - report_reason
+  properties:
+    review_id:
+      type: string
+      format: uuid
+      description: ID of the review being reported
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    report_reason:
+      type: string
+      enum: [spam, offensive_language, fake_review, irrelevant, personal_information, copyright, other]
+      description: Primary reason for the report
+      example: "spam"
+    report_details:
+      type: string
+      maxLength: 1000
+      nullable: true
+      description: Optional additional details about the report
+      example: "This review contains promotional content for competitor products"
+
+# Product Review Statistics (Aggregate Data)
+ProductReviewStats:
+  type: object
+  properties:
+    product_id:
+      type: string
+      format: uuid
+      description: Product identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    
+    # Overall Statistics
+    total_reviews:
+      type: integer
+      minimum: 0
+      description: Total number of approved reviews
+      example: 127
+    average_rating:
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 5.0
+      description: Average rating across all approved reviews
+      example: 4.6
+    
+    # Rating Distribution
+    rating_distribution:
+      type: object
+      description: Count of reviews by rating (1-5 stars)
+      properties:
+        "5":
+          type: integer
+          description: Number of 5-star reviews
+          example: 85
+        "4":
+          type: integer
+          description: Number of 4-star reviews  
+          example: 30
+        "3":
+          type: integer
+          description: Number of 3-star reviews
+          example: 8
+        "2":
+          type: integer
+          description: Number of 2-star reviews
+          example: 3
+        "1":
+          type: integer
+          description: Number of 1-star reviews
+          example: 1
+      example:
+        "5": 85
+        "4": 30
+        "3": 8
+        "2": 3
+        "1": 1
+    
+    # Verification Statistics
+    verified_purchase_count:
+      type: integer
+      minimum: 0
+      description: Number of verified purchase reviews
+      example: 98
+    verified_purchase_percentage:
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 100.0
+      description: Percentage of verified purchase reviews
+      example: 78.5
+    
+    # Photo Review Statistics
+    photo_review_count:
+      type: integer
+      minimum: 0
+      description: Number of reviews with images
+      example: 53
+    photo_review_percentage:
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 100.0
+      description: Percentage of reviews with photos
+      example: 42.0
+    
+    # Engagement Statistics
+    total_helpful_votes:
+      type: integer
+      minimum: 0
+      description: Sum of all helpful votes across reviews
+      example: 342
+    featured_review_count:
+      type: integer
+      minimum: 0
+      description: Number of featured reviews
+      example: 3
+    
+    # Recent Activity
+    recent_review_count:
+      type: integer
+      minimum: 0
+      description: Number of reviews in last 30 days
+      example: 12
+    last_review_date:
+      type: string
+      format: date-time
+      nullable: true
+      description: Date of most recent review
+      example: "2024-01-15T14:20:00Z"
+
+# Review List Response with Pagination
+ReviewListResponse:
+  type: object
+  properties:
+    reviews:
+      type: array
+      items:
+        $ref: '#/Review'
+      description: List of reviews matching the query
+    stats:
+      $ref: '#/ProductReviewStats'
+      nullable: true
+      description: Product review statistics (included when filtering by product_id)
+    pagination:
+      $ref: '../common/base.yaml#/PaginationMeta'
+      description: Pagination metadata
+
+# Review Filters (for API query parameters)
+ReviewFilters:
+  type: object
+  properties:
+    product_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Filter by specific product
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    rating:
+      type: number
+      format: float
+      minimum: 0.5
+      maximum: 5.0
+      nullable: true
+      description: Filter by specific rating
+      example: 5.0
+    rating_min:
+      type: number
+      format: float
+      minimum: 0.5
+      maximum: 5.0
+      nullable: true
+      description: Minimum rating filter
+      example: 4.0
+    rating_max:
+      type: number
+      format: float
+      minimum: 0.5
+      maximum: 5.0
+      nullable: true
+      description: Maximum rating filter
+      example: 5.0
+    verified_only:
+      type: boolean
+      nullable: true
+      description: Show only verified purchase reviews
+      example: true
+    with_images:
+      type: boolean
+      nullable: true
+      description: Show only reviews with images
+      example: true
+    approval_status:
+      type: string
+      enum: [pending, approved, rejected, spam]
+      nullable: true
+      description: Filter by approval status (admin only)
+      example: "approved"
+    sort:
+      type: string
+      enum: [recent, helpful, highest_rating, lowest_rating, oldest]
+      default: recent
+      description: Sort order for results
+      example: "helpful"
+    search:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Search in review title and comment
+      example: "quality precision"
+
+# Review Moderation Input (Admin Actions)
+ReviewModerationInput:
+  type: object
+  required:
+    - action
+  properties:
+    action:
+      type: string
+      enum: [approve, reject, mark_spam, feature, unfeature]
+      description: Moderation action to take
+      example: "approve"
+    rejection_reason:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Required when action is 'reject' or 'mark_spam'
+      example: "Review contains inappropriate language that violates community guidelines"
+    admin_notes:
+      type: string
+      maxLength: 1000
+      nullable: true
+      description: Internal admin notes (not shown to users)
+      example: "Verified with legal team before approval"
+
+# Review Bulk Action Input (Admin Mass Operations)
+ReviewBulkActionInput:
+  type: object
+  required:
+    - review_ids
+    - action
+  properties:
+    review_ids:
+      type: array
+      minItems: 1
+      maxItems: 100
+      items:
+        type: string
+        format: uuid
+      description: List of review IDs to apply action to (max 100)
+      example: ["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
+    action:
+      type: string
+      enum: [approve, reject, mark_spam, delete, feature, unfeature]
+      description: Bulk action to perform
+      example: "approve"
+    rejection_reason:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Reason for bulk rejection (required for reject/mark_spam actions)
+      example: "Bulk rejection for spam content detected"
+
+# Review Analytics Summary
+ReviewAnalyticsSummary:
+  type: object
+  properties:
+    # Overall Platform Statistics
+    total_reviews:
+      type: integer
+      minimum: 0
+      description: Total reviews across all products
+      example: 1547
+    approved_reviews:
+      type: integer
+      minimum: 0
+      description: Total approved reviews
+      example: 1398
+    pending_reviews:
+      type: integer
+      minimum: 0
+      description: Reviews awaiting moderation
+      example: 127
+    rejected_reviews:
+      type: integer
+      minimum: 0
+      description: Rejected reviews
+      example: 22
+    
+    # Quality Metrics
+    average_rating_platform:
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 5.0
+      description: Platform-wide average rating
+      example: 4.4
+    verified_purchase_rate:
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 100.0
+      description: Percentage of verified purchase reviews
+      example: 73.2
+    photo_review_rate:
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 100.0
+      description: Percentage of reviews with images
+      example: 38.5
+    
+    # Engagement Metrics
+    total_helpful_votes:
+      type: integer
+      minimum: 0
+      description: Total helpful votes across all reviews
+      example: 8743
+    reply_rate:
+      type: number
+      format: float
+      minimum: 0.0
+      maximum: 100.0
+      description: Percentage of reviews with admin replies
+      example: 24.8
+    
+    # Time-based Statistics
+    reviews_last_30_days:
+      type: integer
+      minimum: 0
+      description: Reviews submitted in last 30 days
+      example: 156
+    reviews_last_7_days:
+      type: integer
+      minimum: 0
+      description: Reviews submitted in last 7 days
+      example: 43
+    avg_response_time_hours:
+      type: number
+      format: float
+      minimum: 0.0
+      description: Average admin response time in hours
+      example: 18.5
+
+# Common Pagination Schema for Reviews
+PaginationMeta:
+  type: object
+  properties:
+    current_page:
+      type: integer
+      minimum: 1
+      description: Current page number
+      example: 1
+    total_pages:
+      type: integer
+      minimum: 1
+      description: Total number of pages
+      example: 7
+    total_records:
+      type: integer
+      minimum: 0
+      description: Total number of records
+      example: 127
+    per_page:
+      type: integer
+      minimum: 1
+      maximum: 100
+      description: Records per page
+      example: 20
+    has_next_page:
+      type: boolean
+      description: Whether there is a next page
+      example: true
+    has_previous_page:
+      type: boolean
+      description: Whether there is a previous page
+      example: false

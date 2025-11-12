@@ -1,0 +1,392 @@
+# Pagination Schemas for Stencil CMS
+# Comprehensive pagination support with Laravel-style pagination
+
+# Core Pagination Metadata
+PaginationMeta:
+  type: object
+  required:
+    - current_page
+    - per_page
+    - total
+    - last_page
+  properties:
+    current_page:
+      type: integer
+      minimum: 1
+      description: Current page number
+      example: 1
+    per_page:
+      type: integer
+      minimum: 1
+      maximum: 100
+      description: Items per page
+      example: 15
+    total:
+      type: integer
+      minimum: 0
+      description: Total number of items across all pages
+      example: 150
+    last_page:
+      type: integer
+      minimum: 1
+      description: Last page number
+      example: 10
+    from:
+      type: integer
+      minimum: 0
+      nullable: true
+      description: First item number on current page
+      example: 1
+    to:
+      type: integer
+      minimum: 0
+      nullable: true
+      description: Last item number on current page
+      example: 15
+    path:
+      type: string
+      description: Base URL for pagination
+      example: "/api/v1/pages"
+    first_page_url:
+      type: string
+      format: uri
+      description: First page URL
+      example: "/api/v1/pages?page=1"
+    last_page_url:
+      type: string
+      format: uri
+      description: Last page URL
+      example: "/api/v1/pages?page=10"
+    next_page_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Next page URL (null if on last page)
+      example: "/api/v1/pages?page=2"
+    prev_page_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Previous page URL (null if on first page)
+      example: null
+    has_more_pages:
+      type: boolean
+      description: Whether there are more pages available
+      example: true
+
+# Pagination Links (for more detailed navigation)
+PaginationLinks:
+  type: object
+  properties:
+    first:
+      type: string
+      format: uri
+      description: URL to first page
+      example: "/api/v1/pages?page=1"
+    last:
+      type: string
+      format: uri
+      description: URL to last page
+      example: "/api/v1/pages?page=10"
+    prev:
+      type: string
+      format: uri
+      nullable: true
+      description: URL to previous page
+      example: null
+    next:
+      type: string
+      format: uri
+      nullable: true
+      description: URL to next page
+      example: "/api/v1/pages?page=2"
+    self:
+      type: string
+      format: uri
+      description: URL to current page
+      example: "/api/v1/pages?page=1"
+
+# Enhanced Pagination Meta (with additional statistics)
+EnhancedPaginationMeta:
+  allOf:
+    - $ref: '#/PaginationMeta'
+    - type: object
+      properties:
+        links:
+          $ref: '#/PaginationLinks'
+        showing_from:
+          type: integer
+          description: First item number being displayed
+          example: 1
+        showing_to:
+          type: integer
+          description: Last item number being displayed
+          example: 15
+        showing_total:
+          type: integer
+          description: Total items being shown on current page
+          example: 15
+        page_size_options:
+          type: array
+          description: Available page size options
+          items:
+            type: integer
+          example: [10, 15, 25, 50, 100]
+        total_pages:
+          type: integer
+          description: Total number of pages (alias for last_page)
+          example: 10
+
+# Simple Pagination (for cursor-based or infinite scroll)
+SimplePagination:
+  type: object
+  required:
+    - has_next_page
+    - has_previous_page
+  properties:
+    has_next_page:
+      type: boolean
+      description: Whether there are more items after current page
+      example: true
+    has_previous_page:
+      type: boolean
+      description: Whether there are items before current page
+      example: false
+    next_cursor:
+      type: string
+      nullable: true
+      description: Cursor for next page (for cursor-based pagination)
+      example: "eyJpZCI6IjEwMCIsImNyZWF0ZWRfYXQiOiIyMDI1LTExLTEyVDEzOjAwOjAwWiJ9"
+    previous_cursor:
+      type: string
+      nullable: true
+      description: Cursor for previous page
+      example: null
+    per_page:
+      type: integer
+      description: Items per page
+      example: 15
+
+# Paginated Response Template
+PaginatedResponse:
+  type: object
+  required:
+    - success
+    - data
+    - message
+    - meta
+  properties:
+    success:
+      type: boolean
+      const: true
+      description: Indicates successful operation
+    data:
+      type: object
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          description: Array of items for current page
+          items:
+            type: object
+            description: Individual item (schema varies by endpoint)
+        pagination:
+          $ref: '#/PaginationMeta'
+    message:
+      type: string
+      description: Human-readable success message
+      example: "Data retrieved successfully"
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Response generation timestamp
+          example: "2025-11-12T13:00:00Z"
+        request_id:
+          type: string
+          description: Unique request identifier
+          example: "req_123456789abcdef"
+        tenant_id:
+          type: string
+          format: uuid
+          description: Current tenant context
+          example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+        execution_time:
+          type: number
+          format: float
+          description: Query execution time in milliseconds
+          example: 150.25
+        total_count:
+          type: integer
+          description: Total count across all pages (may differ from pagination.total)
+          example: 150
+
+# Enhanced Paginated Response (with search/filter metadata)
+EnhancedPaginatedResponse:
+  allOf:
+    - $ref: '#/PaginatedResponse'
+    - type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            search:
+              type: object
+              description: Applied search parameters
+              properties:
+                query:
+                  type: string
+                  description: Search query used
+                  example: "etching services"
+                fields:
+                  type: array
+                  description: Fields searched
+                  items:
+                    type: string
+                  example: ["title", "description", "content"]
+                results_count:
+                  type: integer
+                  description: Number of search results
+                  example: 25
+            filters:
+              type: object
+              description: Applied filters
+              additionalProperties:
+                oneOf:
+                  - type: string
+                  - type: array
+                    items:
+                      type: string
+              example:
+                status: "active"
+                category: ["web", "mobile"]
+                date_range: "last_month"
+            sort:
+              type: object
+              description: Applied sorting
+              properties:
+                field:
+                  type: string
+                  description: Field being sorted by
+                  example: "created_at"
+                direction:
+                  type: string
+                  enum: [asc, desc]
+                  description: Sort direction
+                  example: "desc"
+
+# Pagination Query Parameters Schema
+PaginationParams:
+  type: object
+  properties:
+    page:
+      type: integer
+      minimum: 1
+      default: 1
+      description: Page number
+      example: 1
+    per_page:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 15
+      description: Items per page
+      example: 15
+    sort:
+      type: string
+      default: "created_at"
+      description: Field to sort by
+      example: "name"
+    order:
+      type: string
+      enum: [asc, desc]
+      default: "desc"
+      description: Sort direction
+      example: "asc"
+
+# Cursor-based Pagination Parameters
+CursorPaginationParams:
+  type: object
+  properties:
+    cursor:
+      type: string
+      description: Cursor for pagination (base64 encoded)
+      example: "eyJpZCI6IjEwMCIsImNyZWF0ZWRfYXQiOiIyMDI1LTExLTEyVDEzOjAwOjAwWiJ9"
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 15
+      description: Maximum items to return
+      example: 15
+    direction:
+      type: string
+      enum: [forward, backward]
+      default: "forward"
+      description: Pagination direction
+      example: "forward"
+
+# Offset-based Pagination Parameters (alternative to page-based)
+OffsetPaginationParams:
+  type: object
+  properties:
+    offset:
+      type: integer
+      minimum: 0
+      default: 0
+      description: Number of items to skip
+      example: 0
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 15
+      description: Maximum items to return
+      example: 15
+
+# Search and Filter Parameters (commonly used with pagination)
+SearchFilterParams:
+  type: object
+  properties:
+    search:
+      type: string
+      description: Full-text search query
+      example: "etching services"
+    search_fields:
+      type: array
+      description: Specific fields to search in
+      items:
+        type: string
+      example: ["title", "description"]
+    filters:
+      type: object
+      description: Field-specific filters
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
+      example:
+        status: "active"
+        category: ["manufacturing", "design"]
+    date_from:
+      type: string
+      format: date
+      description: Filter items created/updated after this date
+      example: "2025-01-01"
+    date_to:
+      type: string
+      format: date
+      description: Filter items created/updated before this date
+      example: "2025-12-31"
+
+# Complete Pagination Request Parameters
+CompletePaginationParams:
+  allOf:
+    - $ref: '#/PaginationParams'
+    - $ref: '#/SearchFilterParams'

@@ -1,0 +1,414 @@
+# Common Parameters for Stencil CMS API
+# Reusable parameter definitions
+
+# Pagination Parameters
+PageParam:
+  name: page
+  in: query
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    default: 1
+  description: Page number for pagination
+  example: 1
+
+PerPageParam:
+  name: per_page
+  in: query
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 100
+    default: 15
+  description: Number of items per page
+  example: 15
+
+# Sorting Parameters
+SortParam:
+  name: sort
+  in: query
+  required: false
+  schema:
+    type: string
+    default: "created_at"
+  description: Field to sort by
+  example: "name"
+
+OrderParam:
+  name: order
+  in: query
+  required: false
+  schema:
+    type: string
+    enum: [asc, desc]
+    default: "desc"
+  description: Sort direction
+  example: "asc"
+
+# Search Parameters
+SearchParam:
+  name: search
+  in: query
+  required: false
+  schema:
+    type: string
+  description: Full-text search query
+  example: "etching services"
+
+# Filter Parameters
+StatusParam:
+  name: status
+  in: query
+  required: false
+  schema:
+    type: string
+  description: Filter by status
+  example: "active"
+
+DateFromParam:
+  name: date_from
+  in: query
+  required: false
+  schema:
+    type: string
+    format: date
+  description: Filter items created/updated after this date
+  example: "2025-01-01"
+
+DateToParam:
+  name: date_to
+  in: query
+  required: false
+  schema:
+    type: string
+    format: date
+  description: Filter items created/updated before this date
+  example: "2025-12-31"
+
+# Multi-tenant Parameters
+TenantHeader:
+  name: X-Tenant-ID
+  in: header
+  required: true
+  schema:
+    type: string
+    format: uuid
+  description: Tenant UUID for multi-tenant isolation
+  example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+TenantParam:
+  name: tenant_id
+  in: path
+  required: true
+  schema:
+    type: string
+    format: uuid
+  description: Tenant UUID
+  example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+# Resource ID Parameters
+UUIDParam:
+  name: id
+  in: path
+  required: true
+  schema:
+    type: string
+    format: uuid
+  description: Resource UUID
+  example: "550e8400-e29b-41d4-a716-446655440000"
+
+# Include Related Data Parameter
+IncludeParam:
+  name: include
+  in: query
+  required: false
+  schema:
+    type: array
+    items:
+      type: string
+  style: form
+  explode: false
+  description: Include related data in response
+  example: ["sections", "analytics"]
+
+# Bulk Operation Parameters
+BulkIdsParam:
+  name: ids
+  in: query
+  required: true
+  schema:
+    type: array
+    items:
+      type: string
+      format: uuid
+    maxItems: 100
+  style: form
+  explode: false
+  description: Array of resource UUIDs for bulk operations
+  example: ["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
+
+# File Upload Parameters
+FileTypeParam:
+  name: file_type
+  in: query
+  required: false
+  schema:
+    type: string
+    enum: [image, document, video, audio, archive]
+  description: Filter by file type
+  example: "image"
+
+MaxFileSizeParam:
+  name: max_size
+  in: query
+  required: false
+  schema:
+    type: integer
+    minimum: 0
+    maximum: 104857600  # 100MB
+  description: Maximum file size in bytes
+  example: 5242880  # 5MB
+
+# Content-specific Parameters
+CategoryParam:
+  name: category
+  in: query
+  required: false
+  schema:
+    type: string
+  description: Filter by category
+  example: "manufacturing"
+
+TagsParam:
+  name: tags
+  in: query
+  required: false
+  schema:
+    type: array
+    items:
+      type: string
+  style: form
+  explode: false
+  description: Filter by tags
+  example: ["etching", "laser", "precision"]
+
+# Analytics Parameters
+PeriodParam:
+  name: period
+  in: query
+  required: false
+  schema:
+    type: string
+    enum: [today, yesterday, week, last_week, month, last_month, quarter, last_quarter, year, last_year, custom]
+    default: "month"
+  description: Analytics time period
+  example: "month"
+
+MetricParam:
+  name: metrics
+  in: query
+  required: false
+  schema:
+    type: array
+    items:
+      type: string
+      enum: [views, unique_views, bounce_rate, time_on_page, conversions, clicks]
+  style: form
+  explode: false
+  description: Specific metrics to include
+  example: ["views", "conversions"]
+
+# Locale Parameters
+LocaleParam:
+  name: locale
+  in: query
+  required: false
+  schema:
+    type: string
+    pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+    default: "en"
+  description: Content locale (ISO 639-1 with optional country code)
+  example: "en-US"
+
+FallbackLocaleParam:
+  name: fallback_locale
+  in: query
+  required: false
+  schema:
+    type: string
+    pattern: "^[a-z]{2}(-[A-Z]{2})?$"
+    default: "en"
+  description: Fallback locale if content not available in requested locale
+  example: "en"
+
+# Version Control Parameters
+VersionParam:
+  name: version
+  in: query
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+  description: Specific version number to retrieve
+  example: 2
+
+CompareVersionParam:
+  name: compare_with
+  in: query
+  required: false
+  schema:
+    type: integer
+    minimum: 1
+  description: Version to compare against
+  example: 1
+
+# Advanced Filtering Parameters
+FilterParam:
+  name: filter
+  in: query
+  required: false
+  schema:
+    type: object
+    additionalProperties: true
+  style: deepObject
+  explode: true
+  description: Advanced filtering options
+  example:
+    status: "published"
+    category: "manufacturing"
+    created_after: "2025-01-01"
+
+# Content Type Parameters
+ContentTypeParam:
+  name: content_type
+  in: query
+  required: false
+  schema:
+    type: string
+    enum: [page, post, product, event, news, gallery]
+  description: Filter by content type
+  example: "page"
+
+# Publishing Parameters
+PublishStatusParam:
+  name: publish_status
+  in: query
+  required: false
+  schema:
+    type: string
+    enum: [draft, review, scheduled, published, archived]
+  description: Filter by publish status
+  example: "published"
+
+# User/Author Parameters
+AuthorParam:
+  name: author_id
+  in: query
+  required: false
+  schema:
+    type: string
+    format: uuid
+  description: Filter by author/creator
+  example: "550e8400-e29b-41d4-a716-446655440000"
+
+# Template Parameters
+TemplateParam:
+  name: template_id
+  in: query
+  required: false
+  schema:
+    type: string
+    format: uuid
+  description: Filter by template
+  example: "550e8400-e29b-41d4-a716-446655440000"
+
+# Feature Flags Parameters
+FeaturesParam:
+  name: features
+  in: query
+  required: false
+  schema:
+    type: array
+    items:
+      type: string
+  style: form
+  explode: false
+  description: Filter by enabled features
+  example: ["seo_enabled", "analytics_enabled"]
+
+# Rate Limiting Parameters
+RateLimitParam:
+  name: X-Rate-Limit-Remaining
+  in: header
+  required: false
+  schema:
+    type: integer
+  description: Remaining API calls in current window
+  example: 95
+
+# Cache Control Parameters
+CacheControlParam:
+  name: Cache-Control
+  in: header
+  required: false
+  schema:
+    type: string
+  description: Cache control directives
+  example: "max-age=300, public"
+
+ETagParam:
+  name: If-None-Match
+  in: header
+  required: false
+  schema:
+    type: string
+  description: ETag for conditional requests
+  example: "W/\"686897696a7c876b7e\""
+
+# Export/Import Parameters
+ExportFormatParam:
+  name: format
+  in: query
+  required: false
+  schema:
+    type: string
+    enum: [json, csv, xlsx, xml]
+    default: "json"
+  description: Export format
+  example: "json"
+
+FieldsParam:
+  name: fields
+  in: query
+  required: false
+  schema:
+    type: array
+    items:
+      type: string
+  style: form
+  explode: false
+  description: Specific fields to include in response
+  example: ["id", "title", "status", "created_at"]
+
+# Validation Parameters
+ValidateOnlyParam:
+  name: validate_only
+  in: query
+  required: false
+  schema:
+    type: boolean
+    default: false
+  description: Only validate request without saving
+  example: false
+
+DryRunParam:
+  name: dry_run
+  in: query
+  required: false
+  schema:
+    type: boolean
+    default: false
+  description: Simulate operation without executing
+  example: false

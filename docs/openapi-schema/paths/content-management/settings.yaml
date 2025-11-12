@@ -1,0 +1,1885 @@
+openapi: 3.1.0
+info:
+  title: Settings Management API
+  version: 1.0.0
+paths:
+  # ================================================================
+  # SETTINGS DASHBOARD & OVERVIEW
+  # ================================================================
+  /settings/dashboard:
+    get:
+      tags:
+        - Settings Dashboard
+      summary: Get Settings Dashboard
+      description: |
+        Retrieve comprehensive settings dashboard with overview, health checks, and recent activity.
+        
+        **Features:**
+        - Overall configuration status
+        - Validation and security scores
+        - Recent changes and activity
+        - System health checks
+        - Active alerts and notifications
+      operationId: getSettingsDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Settings dashboard retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsDashboard'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/health:
+    get:
+      tags:
+        - Settings Dashboard
+      summary: Get Settings Health Status
+      description: |
+        Check overall health status of all settings configurations.
+      operationId: getSettingsHealth
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Settings health status retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          overall_health:
+                            type: string
+                            enum: ["healthy", "warning", "critical"]
+                            example: "healthy"
+                          category_health:
+                            type: object
+                            additionalProperties:
+                              type: string
+                              enum: ["healthy", "warning", "critical"]
+                            example:
+                              site_settings: "healthy"
+                              email_settings: "warning"
+                              payment_settings: "healthy"
+                          issues:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                category:
+                                  type: string
+                                  example: "email_settings"
+                                severity:
+                                  type: string
+                                  enum: ["warning", "critical"]
+                                  example: "warning"
+                                message:
+                                  type: string
+                                  example: "Daily email limit reached"
+                          recommendations:
+                            type: array
+                            items:
+                              type: string
+                            example: ["Consider increasing daily email limit", "Verify payment gateway credentials"]
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SITE SETTINGS ENDPOINTS
+  # ================================================================
+  /settings/site:
+    get:
+      tags:
+        - Site Settings
+      summary: Get Site Settings
+      description: |
+        Retrieve current site settings configuration including company information, 
+        branding, maintenance mode, and social media links.
+      operationId: getSiteSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Site settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SiteSettings'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Site settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "SITE_SETTINGS_NOT_FOUND"
+                  message: "Site settings not configured for this tenant"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Site Settings
+      summary: Update Site Settings
+      description: |
+        Update site settings configuration with validation and automatic backup.
+        
+        **Features:**
+        - Real-time validation of URLs and email formats
+        - Automatic logo and favicon validation
+        - Social media link verification
+        - Maintenance mode management
+      operationId: updateSiteSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/settings.yaml#/SiteSettingsInput'
+            examples:
+              basic_update:
+                summary: Basic site information update
+                value:
+                  site_name: "PT Custom Etching Xenial"
+                  site_url: "https://ptcex.com"
+                  site_description: "Leading custom etching services in Indonesia"
+                  contact_email: "contact@ptcex.com"
+                  contact_phone: "+6281234567890"
+                  timezone: "Asia/Jakarta"
+                  social_links:
+                    facebook: "https://facebook.com/ptcex"
+                    instagram: "https://instagram.com/ptcex"
+                    whatsapp: "+6281234567890"
+              maintenance_mode:
+                summary: Enable maintenance mode
+                value:
+                  site_name: "PT Custom Etching Xenial"
+                  site_url: "https://ptcex.com"
+                  contact_email: "contact@ptcex.com"
+                  is_maintenance_mode: true
+                  maintenance_message: "We are upgrading our systems. Please check back in 2 hours."
+      responses:
+        '200':
+          description: Site settings updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SiteSettings'
+                      message:
+                        type: string
+                        example: "Site settings updated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '409':
+          description: Site URL already in use
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "SITE_URL_EXISTS"
+                  message: "Site URL is already in use by another tenant"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # EMAIL SETTINGS ENDPOINTS
+  # ================================================================
+  /settings/email:
+    get:
+      tags:
+        - Email Settings
+      summary: Get Email Settings
+      description: |
+        Retrieve current email service configuration including provider settings,
+        notification preferences, and usage limits.
+      operationId: getEmailSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Email settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/EmailSettings'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Email settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "EMAIL_SETTINGS_NOT_FOUND"
+                  message: "Email settings not configured for this tenant"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Email Settings
+      summary: Update Email Settings
+      description: |
+        Update email service configuration with provider validation and connection testing.
+        
+        **Features:**
+        - Provider credential validation
+        - SMTP connection testing
+        - Email template configuration
+        - Notification preference management
+        - Daily limit enforcement
+      operationId: updateEmailSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/settings.yaml#/EmailSettingsInput'
+            examples:
+              smtp_config:
+                summary: SMTP provider configuration
+                value:
+                  provider: "smtp"
+                  is_enabled: true
+                  from_email: "noreply@ptcex.com"
+                  from_name: "PT Custom Etching Xenial"
+                  reply_to_email: "support@ptcex.com"
+                  smtp_config:
+                    host: "smtp.gmail.com"
+                    port: 587
+                    encryption: "tls"
+                    username: "noreply@ptcex.com"
+                    password: "app_password_here"
+                  notification_preferences:
+                    new_orders: true
+                    new_reviews: true
+                    contact_submissions: true
+                    low_stock_alerts: true
+                    system_updates: false
+                  daily_limit: 1000
+              sendgrid_config:
+                summary: SendGrid provider configuration
+                value:
+                  provider: "sendgrid"
+                  is_enabled: true
+                  from_email: "noreply@ptcex.com"
+                  from_name: "PT Custom Etching Xenial"
+                  sendgrid_config:
+                    api_key: "SG.xxxxxxxxxxxxxxxxxxxxx"
+                    template_engine: "handlebars"
+                  daily_limit: 5000
+      responses:
+        '200':
+          description: Email settings updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/EmailSettings'
+                      message:
+                        type: string
+                        example: "Email settings updated and tested successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '422':
+          description: Email provider connection failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "EMAIL_CONNECTION_FAILED"
+                  message: "Unable to connect to SMTP server. Please check your credentials."
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/email/test:
+    post:
+      tags:
+        - Email Settings
+      summary: Test Email Configuration
+      description: |
+        Test email provider connection and send a test email to verify configuration.
+      operationId: testEmailSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                test_email:
+                  type: string
+                  format: email
+                  description: Email address to send test email to
+                  example: "admin@ptcex.com"
+                test_type:
+                  type: string
+                  enum: ["connection", "send_email"]
+                  default: "connection"
+                  description: Type of test to perform
+                  example: "send_email"
+              required:
+                - test_email
+      responses:
+        '200':
+          description: Email test completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsTestResult'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '422':
+          description: Email test failed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsTestResult'
+              example:
+                success: false
+                data:
+                  success: false
+                  provider: "smtp"
+                  test_type: "connection"
+                  response_time_ms: 5000
+                  message: "Connection timeout - unable to reach SMTP server"
+                  tested_at: "2025-11-12T14:30:00Z"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # PAYMENT SETTINGS ENDPOINTS
+  # ================================================================
+  /settings/payment:
+    get:
+      tags:
+        - Payment Settings
+      summary: Get Payment Settings
+      description: |
+        Retrieve current payment gateway configuration including provider settings,
+        supported methods, and currency configuration.
+      operationId: getPaymentSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Payment settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/PaymentSettings'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Payment settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Payment Settings
+      summary: Update Payment Settings
+      description: |
+        Update payment gateway configuration with credential validation and testing.
+        
+        **Features:**
+        - Payment provider credential validation
+        - Currency support verification
+        - Production mode requirements
+        - Payment method configuration
+      operationId: updatePaymentSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - provider
+                - currency
+                - accepted_methods
+              properties:
+                provider:
+                  type: string
+                  enum: ["midtrans", "xendit", "stripe"]
+                  description: Payment gateway provider
+                  example: "midtrans"
+                is_enabled:
+                  type: boolean
+                  description: Payment processing enabled
+                  example: true
+                is_production:
+                  type: boolean
+                  description: Production mode (vs sandbox)
+                  example: false
+                currency:
+                  type: string
+                  maxLength: 10
+                  description: Default currency (ISO code)
+                  example: "IDR"
+                accepted_methods:
+                  type: object
+                  description: Enabled payment methods
+                  additionalProperties: true
+                  example:
+                    cash: true
+                    credit_card: true
+                    e_wallet: true
+                    bank_transfer: true
+                    qris: true
+                midtrans_config:
+                  type: object
+                  nullable: true
+                  description: Midtrans configuration
+                  additionalProperties: false
+                xendit_config:
+                  type: object
+                  nullable: true
+                  description: Xendit configuration
+                  additionalProperties: false
+                stripe_config:
+                  type: object
+                  nullable: true
+                  description: Stripe configuration
+                  additionalProperties: false
+                callback_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Payment callback URL
+                  example: "https://ptcex.com/api/payments/callback"
+                return_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Payment return URL
+                  example: "https://ptcex.com/payment-success"
+                metadata:
+                  type: object
+                  nullable: true
+                  description: Additional payment configuration
+                  additionalProperties: true
+            examples:
+              midtrans_config:
+                summary: Midtrans payment gateway setup
+                value:
+                  provider: "midtrans"
+                  is_enabled: true
+                  is_production: false
+                  currency: "IDR"
+                  accepted_methods:
+                    cash: true
+                    credit_card: true
+                    e_wallet: true
+                    bank_transfer: true
+                    qris: true
+                  midtrans_config:
+                    server_key: "SB-Mid-server-xxxxxxxxxxxxxxx"
+                    client_key: "SB-Mid-client-xxxxxxxxxxxxxxx"
+                    merchant_id: "MERCHANT123"
+                    sandbox_mode: true
+                    enabled_payments: ["credit_card", "gopay", "shopeepay", "qris"]
+                  callback_url: "https://ptcex.com/api/payments/midtrans/callback"
+                  return_url: "https://ptcex.com/payment-success"
+      responses:
+        '200':
+          description: Payment settings updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/PaymentSettings'
+                      message:
+                        type: string
+                        example: "Payment settings updated and validated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '422':
+          description: Payment provider validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "PAYMENT_VALIDATION_FAILED"
+                  message: "Invalid payment gateway credentials provided"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/payment/test:
+    post:
+      tags:
+        - Payment Settings
+      summary: Test Payment Gateway Configuration
+      description: |
+        Test payment gateway connection and validate credentials.
+      operationId: testPaymentSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Payment gateway test completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsTestResult'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '422':
+          description: Payment gateway test failed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsTestResult'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # ANALYTICS SETTINGS ENDPOINTS
+  # ================================================================
+  /settings/analytics:
+    get:
+      tags:
+        - Analytics Settings
+      summary: Get Analytics Settings
+      description: |
+        Retrieve current analytics and tracking configuration including Google Analytics,
+        Facebook Pixel, and custom scripts.
+      operationId: getAnalyticsSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Analytics settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/AnalyticsSettings'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Analytics settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Analytics Settings
+      summary: Update Analytics Settings
+      description: |
+        Update analytics and tracking configuration with script validation.
+      operationId: updateAnalyticsSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                google_analytics_id:
+                  type: string
+                  nullable: true
+                  pattern: '^G-[A-Z0-9]+$'
+                  description: Google Analytics 4 Measurement ID
+                  example: "G-XXXXXXXXXX"
+                google_tag_manager_id:
+                  type: string
+                  nullable: true
+                  pattern: '^GTM-[A-Z0-9]+$'
+                  description: Google Tag Manager Container ID
+                  example: "GTM-XXXXXXX"
+                facebook_pixel_id:
+                  type: string
+                  nullable: true
+                  pattern: '^[0-9]+$'
+                  description: Facebook Pixel ID
+                  example: "1234567890123456"
+                custom_scripts:
+                  type: object
+                  nullable: true
+                  description: Custom tracking scripts
+                  additionalProperties: true
+                is_tracking_enabled:
+                  type: boolean
+                  description: Enable/disable all tracking
+                  example: true
+                tracked_events:
+                  type: object
+                  nullable: true
+                  description: Event tracking configuration
+                  additionalProperties: true
+                metadata:
+                  type: object
+                  nullable: true
+                  description: Additional analytics configuration
+                  additionalProperties: true
+            examples:
+              full_analytics_setup:
+                summary: Complete analytics configuration
+                value:
+                  google_analytics_id: "G-1234567890"
+                  google_tag_manager_id: "GTM-ABC123"
+                  facebook_pixel_id: "1234567890123456"
+                  is_tracking_enabled: true
+                  tracked_events:
+                    page_views: true
+                    purchases: true
+                    form_submissions: true
+                    downloads: true
+                    outbound_links: false
+                    scroll_tracking: false
+                  custom_scripts:
+                    header: "<script>console.log('Custom analytics loaded');</script>"
+      responses:
+        '200':
+          description: Analytics settings updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/AnalyticsSettings'
+                      message:
+                        type: string
+                        example: "Analytics settings updated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # INTEGRATION SETTINGS ENDPOINTS
+  # ================================================================
+  /settings/integrations:
+    get:
+      tags:
+        - Integration Settings
+      summary: Get Integration Settings
+      description: |
+        Retrieve current third-party integration configuration including WhatsApp Business,
+        file storage, CDN, and webhook settings.
+      operationId: getIntegrationSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Integration settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/IntegrationSettings'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Integration settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Integration Settings
+      summary: Update Integration Settings
+      description: |
+        Update third-party integration configuration with validation and testing.
+      operationId: updateIntegrationSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                whatsapp_business_number:
+                  type: string
+                  nullable: true
+                  description: WhatsApp Business phone number
+                  example: "+6281234567890"
+                whatsapp_default_message:
+                  type: string
+                  nullable: true
+                  description: Default WhatsApp message template
+                  example: "Hi! I'm interested in your etching services."
+                storage_provider:
+                  type: string
+                  enum: ["local", "s3", "cloudinary", "google_cloud"]
+                  description: File storage provider
+                  example: "s3"
+                storage_config:
+                  type: object
+                  nullable: true
+                  description: Storage provider configuration
+                  additionalProperties: true
+                cdn_enabled:
+                  type: boolean
+                  description: CDN acceleration enabled
+                  example: false
+                cdn_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: CDN base URL
+                  example: "https://cdn.ptcex.com"
+                api_rate_limit:
+                  type: integer
+                  minimum: 1
+                  description: API requests per hour limit
+                  example: 1000
+                webhook_urls:
+                  type: object
+                  nullable: true
+                  description: Webhook endpoint URLs
+                  additionalProperties: true
+                metadata:
+                  type: object
+                  nullable: true
+                  description: Additional integration configuration
+                  additionalProperties: true
+            examples:
+              s3_storage_config:
+                summary: AWS S3 storage configuration
+                value:
+                  storage_provider: "s3"
+                  storage_config:
+                    bucket: "ptcex-files"
+                    region: "ap-southeast-1"
+                    access_key_id: "AKIA..."
+                    secret_access_key: "secret_key_here"
+                  cdn_enabled: true
+                  cdn_url: "https://cdn.ptcex.com"
+                  whatsapp_business_number: "+6281234567890"
+                  whatsapp_default_message: "Hi! I'm interested in your etching services. Could you provide more info?"
+                  api_rate_limit: 2000
+                  webhook_urls:
+                    order_created: "https://external-crm.com/webhooks/order-created"
+                    payment_completed: "https://external-crm.com/webhooks/payment-completed"
+      responses:
+        '200':
+          description: Integration settings updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/IntegrationSettings'
+                      message:
+                        type: string
+                        example: "Integration settings updated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # BACKUP SETTINGS ENDPOINTS
+  # ================================================================
+  /settings/backup:
+    get:
+      tags:
+        - Backup Settings
+      summary: Get Backup Settings
+      description: |
+        Retrieve current backup configuration including schedule, retention policy,
+        and backup history.
+      operationId: getBackupSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Backup settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/BackupSettings'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Backup settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Backup Settings
+      summary: Update Backup Settings
+      description: |
+        Update backup configuration including schedule and retention policies.
+      operationId: updateBackupSettings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - schedule
+                - retention_days
+                - retention_weekly
+                - retention_monthly
+                - backup_storage
+              properties:
+                is_enabled:
+                  type: boolean
+                  description: Automated backup enabled
+                  example: true
+                schedule:
+                  type: string
+                  enum: ["hourly", "daily", "weekly", "monthly"]
+                  description: Backup frequency
+                  example: "daily"
+                backup_time:
+                  type: string
+                  format: time
+                  description: Scheduled backup time
+                  example: "02:00:00"
+                retention_days:
+                  type: integer
+                  minimum: 1
+                  description: Daily backup retention (days)
+                  example: 30
+                retention_weekly:
+                  type: integer
+                  minimum: 1
+                  description: Weekly backup retention (weeks)
+                  example: 4
+                retention_monthly:
+                  type: integer
+                  minimum: 1
+                  description: Monthly backup retention (months)
+                  example: 12
+                backup_storage:
+                  type: string
+                  enum: ["local", "s3", "google_cloud", "azure"]
+                  description: Backup storage location
+                  example: "local"
+                storage_path:
+                  type: string
+                  nullable: true
+                  description: Storage path or bucket name
+                  example: "/backups/tenant-xxx"
+                include_database:
+                  type: boolean
+                  description: Include database in backup
+                  example: true
+                include_media:
+                  type: boolean
+                  description: Include media files in backup
+                  example: true
+                metadata:
+                  type: object
+                  nullable: true
+                  description: Additional backup configuration
+                  additionalProperties: true
+            examples:
+              daily_backup_config:
+                summary: Daily backup with 30-day retention
+                value:
+                  is_enabled: true
+                  schedule: "daily"
+                  backup_time: "02:00:00"
+                  retention_days: 30
+                  retention_weekly: 4
+                  retention_monthly: 12
+                  backup_storage: "local"
+                  storage_path: "/backups/ptcex"
+                  include_database: true
+                  include_media: true
+      responses:
+        '200':
+          description: Backup settings updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/BackupSettings'
+                      message:
+                        type: string
+                        example: "Backup settings updated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/backup/manual:
+    post:
+      tags:
+        - Backup Settings
+      summary: Trigger Manual Backup
+      description: |
+        Trigger an immediate manual backup operation.
+      operationId: triggerManualBackup
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                include_database:
+                  type: boolean
+                  default: true
+                  description: Include database in backup
+                  example: true
+                include_media:
+                  type: boolean
+                  default: true
+                  description: Include media files in backup
+                  example: true
+                backup_name:
+                  type: string
+                  nullable: true
+                  description: Custom backup name
+                  example: "manual_backup_before_update"
+      responses:
+        '202':
+          description: Manual backup initiated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          backup_id:
+                            type: string
+                            example: "backup_20251112_143000"
+                          status:
+                            type: string
+                            example: "in_progress"
+                          estimated_duration:
+                            type: integer
+                            description: Estimated duration in seconds
+                            example: 300
+                      message:
+                        type: string
+                        example: "Manual backup initiated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '409':
+          description: Backup already in progress
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "BACKUP_IN_PROGRESS"
+                  message: "A backup operation is already in progress"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SETTINGS TEMPLATES ENDPOINTS
+  # ================================================================
+  /settings/templates:
+    get:
+      tags:
+        - Settings Templates
+      summary: List Settings Templates
+      description: |
+        Retrieve available settings templates with filtering and search capabilities.
+      operationId: listSettingsTemplates
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageQuery'
+        - $ref: '../../components/parameters.yaml#/PerPageQuery'
+        - name: category
+          in: query
+          description: Filter by template category
+          schema:
+            type: string
+            enum: ["business_type", "industry", "custom", "system"]
+          example: "business_type"
+        - name: subcategory
+          in: query
+          description: Filter by template subcategory
+          schema:
+            type: string
+          example: "etching"
+        - name: is_global
+          in: query
+          description: Filter by global/tenant-specific templates
+          schema:
+            type: boolean
+          example: true
+        - name: is_featured
+          in: query
+          description: Filter by featured templates
+          schema:
+            type: boolean
+          example: true
+        - name: search
+          in: query
+          description: Search in template name and description
+          schema:
+            type: string
+          example: "etching"
+      responses:
+        '200':
+          description: Settings templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/settings.yaml#/SettingsTemplate'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Settings Templates
+      summary: Create Settings Template
+      description: |
+        Create a new settings template from current configuration or custom data.
+      operationId: createSettingsTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - category
+                - template_data
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  description: Template name
+                  example: "Custom Etching Business Starter"
+                description:
+                  type: string
+                  nullable: true
+                  description: Template description
+                  example: "Optimized settings for custom etching businesses in Indonesia"
+                category:
+                  type: string
+                  enum: ["business_type", "industry", "custom"]
+                  description: Template category
+                  example: "custom"
+                subcategory:
+                  type: string
+                  nullable: true
+                  description: Template subcategory
+                  example: "etching"
+                template_data:
+                  type: object
+                  description: Complete settings configuration
+                  additionalProperties: true
+                required_fields:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: Fields that must be customized
+                optional_fields:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: Fields that can be customized
+                is_featured:
+                  type: boolean
+                  default: false
+                  description: Featured template
+                  example: false
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: Template tags
+                  example: ["etching", "manufacturing", "starter"]
+                preview_image_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Template preview image
+                documentation_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Template documentation
+            examples:
+              create_from_current:
+                summary: Create template from current settings
+                value:
+                  name: "My Custom Etching Setup"
+                  description: "Template based on our successful etching business configuration"
+                  category: "custom"
+                  subcategory: "etching"
+                  template_data:
+                    site_settings:
+                      timezone: "Asia/Jakarta"
+                      social_links:
+                        whatsapp: "+6281234567890"
+                    email_settings:
+                      provider: "smtp"
+                      daily_limit: 1000
+                    payment_settings:
+                      provider: "midtrans"
+                      currency: "IDR"
+                  required_fields: ["site_settings.site_name", "site_settings.contact_email"]
+                  tags: ["etching", "custom", "indonesia"]
+      responses:
+        '201':
+          description: Settings template created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsTemplate'
+                      message:
+                        type: string
+                        example: "Settings template created successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/templates/{template_id}:
+    get:
+      tags:
+        - Settings Templates
+      summary: Get Settings Template
+      description: |
+        Retrieve a specific settings template by ID.
+      operationId: getSettingsTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: template_id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Settings template retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsTemplate'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Settings template not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Settings Templates
+      summary: Update Settings Template
+      description: |
+        Update an existing settings template.
+      operationId: updateSettingsTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: template_id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  description: Template name
+                description:
+                  type: string
+                  nullable: true
+                  description: Template description
+                template_data:
+                  type: object
+                  description: Complete settings configuration
+                  additionalProperties: true
+                required_fields:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: Fields that must be customized
+                optional_fields:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: Fields that can be customized
+                is_active:
+                  type: boolean
+                  description: Template is active
+                is_featured:
+                  type: boolean
+                  description: Featured template
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: Template tags
+                preview_image_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Template preview image
+                documentation_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Template documentation
+      responses:
+        '200':
+          description: Settings template updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsTemplate'
+                      message:
+                        type: string
+                        example: "Settings template updated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          description: Settings template not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Settings Templates
+      summary: Delete Settings Template
+      description: |
+        Delete a settings template. Only non-system templates can be deleted.
+      operationId: deleteSettingsTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: template_id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Settings template deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Settings template deleted successfully"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          description: Settings template not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '409':
+          description: Cannot delete system template
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "CANNOT_DELETE_SYSTEM_TEMPLATE"
+                  message: "System templates cannot be deleted"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/templates/{template_id}/apply:
+    post:
+      tags:
+        - Settings Templates
+      summary: Apply Settings Template
+      description: |
+        Apply a settings template to the current tenant with customization options.
+      operationId: applySettingsTemplate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: template_id
+          in: path
+          required: true
+          description: Template ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customizations:
+                  type: object
+                  description: Custom values for required and optional fields
+                  additionalProperties: true
+                  example:
+                    site_settings.site_name: "My Custom Etching Business"
+                    site_settings.contact_email: "contact@myetchingbiz.com"
+                    site_settings.logo_url: "https://mycdn.com/logo.png"
+                merge_strategy:
+                  type: string
+                  enum: ["replace", "merge", "preserve_existing"]
+                  default: "replace"
+                  description: How to handle existing settings
+                  example: "merge"
+                create_backup:
+                  type: boolean
+                  default: true
+                  description: Create backup before applying template
+                  example: true
+                validate_before_apply:
+                  type: boolean
+                  default: true
+                  description: Validate configuration before applying
+                  example: true
+            examples:
+              apply_etching_template:
+                summary: Apply etching business template with customizations
+                value:
+                  customizations:
+                    site_settings.site_name: "Jakarta Custom Etching"
+                    site_settings.site_url: "https://jakartaetching.com"
+                    site_settings.contact_email: "info@jakartaetching.com"
+                    site_settings.contact_phone: "+6281234567890"
+                    email_settings.from_name: "Jakarta Custom Etching"
+                    payment_settings.midtrans_config.merchant_id: "MYMERCHANT123"
+                  merge_strategy: "merge"
+                  create_backup: true
+                  validate_before_apply: true
+      responses:
+        '200':
+          description: Settings template applied successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          applied_template_id:
+                            type: string
+                            format: uuid
+                            example: "550e8400-e29b-41d4-a716-446655440000"
+                          backup_created:
+                            type: boolean
+                            example: true
+                          backup_id:
+                            type: string
+                            nullable: true
+                            example: "backup_20251112_143000"
+                          validation_passed:
+                            type: boolean
+                            example: true
+                          settings_updated:
+                            type: array
+                            items:
+                              type: string
+                            example: ["site_settings", "email_settings", "payment_settings"]
+                          customizations_applied:
+                            type: integer
+                            example: 6
+                      message:
+                        type: string
+                        example: "Settings template applied successfully with customizations"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          description: Settings template not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '422':
+          description: Template validation failed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          validation_errors:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                field:
+                                  type: string
+                                  example: "site_settings.site_name"
+                                message:
+                                  type: string
+                                  example: "Site name is required"
+                                severity:
+                                  type: string
+                                  enum: ["error", "warning"]
+                                  example: "error"
+                      message:
+                        type: string
+                        example: "Template validation failed. Please fix the errors and try again."
+              example:
+                success: false
+                data:
+                  validation_errors:
+                    - field: "site_settings.site_name"
+                      message: "Site name is required"
+                      severity: "error"
+                    - field: "site_settings.contact_email"
+                      message: "Contact email is required"
+                      severity: "error"
+                message: "Template validation failed. Please provide required customizations."
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SETTINGS VALIDATION ENDPOINTS
+  # ================================================================
+  /settings/validation:
+    post:
+      tags:
+        - Settings Validation
+      summary: Validate Settings Configuration
+      description: |
+        Run comprehensive validation on current settings configuration.
+      operationId: validateSettingsConfiguration
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                validation_type:
+                  type: string
+                  enum: ["configuration", "template", "change"]
+                  default: "configuration"
+                  description: Type of validation to perform
+                  example: "configuration"
+                settings_tables:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  description: Specific tables to validate (null = all)
+                  example: ["site_settings", "email_settings"]
+                include_recommendations:
+                  type: boolean
+                  default: true
+                  description: Include optimization recommendations
+                  example: true
+                check_integrations:
+                  type: boolean
+                  default: true
+                  description: Test integration connections
+                  example: true
+      responses:
+        '200':
+          description: Validation completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsValidationResult'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/validation/results:
+    get:
+      tags:
+        - Settings Validation
+      summary: Get Validation Results
+      description: |
+        Retrieve validation results with filtering options.
+      operationId: getValidationResults
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageQuery'
+        - $ref: '../../components/parameters.yaml#/PerPageQuery'
+        - name: validation_type
+          in: query
+          description: Filter by validation type
+          schema:
+            type: string
+            enum: ["configuration", "template", "import", "change", "scheduled"]
+          example: "configuration"
+        - name: status
+          in: query
+          description: Filter by validation status
+          schema:
+            type: string
+            enum: ["passed", "failed", "warning", "in_progress"]
+          example: "passed"
+        - name: settings_table
+          in: query
+          description: Filter by settings table
+          schema:
+            type: string
+          example: "email_settings"
+      responses:
+        '200':
+          description: Validation results retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/settings.yaml#/SettingsValidationResult'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /settings/validation/{validation_id}:
+    get:
+      tags:
+        - Settings Validation
+      summary: Get Validation Result
+      description: |
+        Retrieve a specific validation result by ID.
+      operationId: getValidationResult
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: validation_id
+          in: path
+          required: true
+          description: Validation result ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validation result retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/settings.yaml#/SettingsValidationResult'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '404':
+          description: Validation result not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'

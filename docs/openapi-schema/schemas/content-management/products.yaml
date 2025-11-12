@@ -1,0 +1,881 @@
+# Products Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for Product Management System (68+ fields, 4 tables)
+# Enterprise-grade multi-tenant product catalog with full etching/vendor workflow
+
+# Main Products Data Container
+ProductsPageData:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/Product'
+        categories:
+          type: array
+          items:
+            $ref: '#/ProductCategory'
+        summary:
+          $ref: '#/ProductsSummary'
+        filters:
+          $ref: '#/ProductsFilters'
+
+# Products Summary Statistics
+ProductsSummary:
+  type: object
+  properties:
+    total_products:
+      type: integer
+      description: Total number of products
+      example: 150
+    products_by_status:
+      type: object
+      additionalProperties:
+        type: integer
+      description: Count of products by status
+      example:
+        draft: 25
+        published: 120
+        archived: 5
+    products_by_category:
+      type: object
+      additionalProperties:
+        type: integer
+      description: Count of products by category
+    total_value:
+      type: number
+      format: decimal
+      description: Total inventory value
+      example: 12500000.00
+    out_of_stock_count:
+      type: integer
+      description: Number of out-of-stock products
+      example: 8
+
+# Product Filters Configuration
+ProductsFilters:
+  type: object
+  properties:
+    categories:
+      type: array
+      items:
+        $ref: '#/CategoryFilter'
+    status_options:
+      type: array
+      items:
+        type: string
+        enum: [draft, published, archived]
+    production_types:
+      type: array
+      items:
+        type: string
+        enum: [internal, vendor]
+    price_ranges:
+      type: array
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+          min:
+            type: number
+          max:
+            type: number
+
+# Main Product Entity
+Product:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - name
+        - slug
+      properties:
+        # Basic Information
+        name:
+          type: string
+          maxLength: 255
+          description: Product name
+          example: "Custom Etched Brass Plate"
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9-]+$'
+          description: SEO-friendly URL slug
+          example: "custom-etched-brass-plate"
+        description:
+          type: string
+          maxLength: 500
+          description: Short description for catalog display
+          example: "Premium brass plate with custom etching for awards and signage"
+          nullable: true
+        long_description:
+          type: string
+          description: Full HTML description with rich formatting
+          example: "<p>Premium brass plate with <strong>precision etching</strong> technology...</p>"
+          nullable: true
+
+        # Media
+        images:
+          type: array
+          items:
+            type: string
+            format: uri
+            maxLength: 500
+          description: Array of product image URLs
+          example: [
+            "https://cdn.example.com/brass-plate-1.jpg",
+            "https://cdn.example.com/brass-plate-2.jpg"
+          ]
+        featured_image:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Primary product image URL
+          example: "https://cdn.example.com/brass-plate-featured.jpg"
+          nullable: true
+
+        # Categorization
+        category_id:
+          type: string
+          format: uuid
+          description: Reference to product category
+          nullable: true
+        category:
+          $ref: '#/ProductCategory'
+          description: Category information (populated)
+        tags:
+          type: array
+          items:
+            type: string
+          description: Product tags for search and filtering
+          example: ["brass", "etching", "custom", "awards"]
+
+        # Pricing & Stock
+        price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Product price (nullable for vendor production)
+          example: 150000.00
+          nullable: true
+        currency:
+          type: string
+          maxLength: 3
+          pattern: '^[A-Z]{3}$'
+          default: "IDR"
+          description: ISO 4217 currency code
+          example: "IDR"
+        price_unit:
+          type: string
+          maxLength: 50
+          default: "per pcs"
+          description: Price unit description
+          example: "per pcs"
+        min_order:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Minimum order quantity
+        in_stock:
+          type: boolean
+          default: true
+          description: Stock availability flag
+        stock_quantity:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Current stock quantity
+        lead_time:
+          type: string
+          maxLength: 100
+          description: Production/delivery lead time
+          example: "3-5 hari kerja"
+          nullable: true
+
+        # Production Workflow (Etching Business)
+        production_type:
+          type: string
+          enum: [internal, vendor]
+          default: vendor
+          description: Production method for business workflow
+        vendor_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Vendor quoted price (for broker margin calculation)
+          example: 120000.00
+          nullable: true
+        markup_percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 0.00
+          description: Broker markup percentage
+          example: 25.00
+        quotation_required:
+          type: boolean
+          default: true
+          description: Whether product requires quotation process
+
+        # Custom Order Form Fields (Etching-specific but extensible)
+        product_type:
+          type: string
+          maxLength: 100
+          description: Product type classification
+          example: "Plakat"
+          nullable: true
+        size:
+          type: string
+          maxLength: 100
+          description: Default product size
+          example: "20x30cm"
+          nullable: true
+        
+        # Material Options (Bahan)
+        bahan:
+          type: string
+          maxLength: 100
+          description: Primary material
+          example: "Kuningan"
+          nullable: true
+        bahan_options:
+          type: array
+          items:
+            type: string
+          description: Available material options
+          example: ["Kuningan", "Akrilik", "Tembaga", "Stainless Steel"]
+        
+        # Quality Options (Kualitas)
+        kualitas:
+          type: string
+          maxLength: 100
+          default: "standard"
+          description: Default quality level
+          example: "premium"
+        kualitas_options:
+          type: array
+          items:
+            type: string
+          description: Available quality options
+          example: ["standard", "premium"]
+        
+        # Thickness Options (Ketebalan)
+        ketebalan:
+          type: string
+          maxLength: 100
+          default: "1mm"
+          description: Default thickness
+          example: "2mm"
+        ketebalan_options:
+          type: array
+          items:
+            type: string
+          description: Available thickness options
+          example: ["1mm", "2mm", "3mm", "5mm"]
+        
+        # Size Options (Ukuran)
+        ukuran:
+          type: string
+          maxLength: 100
+          default: "15x20"
+          description: Default dimensions
+          example: "20x30"
+        ukuran_options:
+          type: array
+          items:
+            type: string
+          description: Available size options
+          example: ["15x20", "20x30", "25x35", "30x40"]
+        
+        # Design Configuration
+        warna_background:
+          type: string
+          maxLength: 7
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          default: "#FFFFFF"
+          description: Default background color (HEX)
+        design_file_url:
+          type: string
+          format: uri
+          description: Default design file URL
+          nullable: true
+
+        # Customization System
+        customizable:
+          type: boolean
+          default: false
+          description: Whether product supports custom options
+        custom_options:
+          type: array
+          items:
+            $ref: '#/CustomOption'
+          description: Dynamic custom form options configuration
+
+        # Specifications (populated from separate table)
+        specifications:
+          type: array
+          items:
+            $ref: '#/ProductSpecification'
+          description: Product specifications list
+
+        # Custom Texts (populated from separate table)
+        custom_texts:
+          type: array
+          items:
+            $ref: '#/ProductCustomText'
+          description: Custom text placement templates
+
+        # SEO
+        seo_title:
+          type: string
+          maxLength: 255
+          description: SEO title (defaults to name if not set)
+          example: "Custom Etched Brass Plate - Premium Quality | PT CEX"
+          nullable: true
+        seo_description:
+          type: string
+          maxLength: 500
+          description: SEO meta description
+          example: "Premium custom brass plates with precision etching. Perfect for awards, signage, and corporate gifts."
+          nullable: true
+        seo_keywords:
+          type: array
+          items:
+            type: string
+          description: SEO keywords array
+          example: ["brass plate", "custom etching", "awards", "signage"]
+
+        # Status & Visibility
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: draft
+          description: Publication status
+        featured:
+          type: boolean
+          default: false
+          description: Featured product flag
+        is_public:
+          type: boolean
+          default: true
+          description: Public visibility flag
+
+        # WYSIWYG Notes
+        notes_wysiwyg:
+          type: string
+          description: Rich text internal notes (HTML)
+          nullable: true
+
+# Product Category Entity
+ProductCategory:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - name
+        - slug
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Category name
+          example: "Plakat & Awards"
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9-]+$'
+          description: SEO-friendly URL slug
+          example: "plakat-awards"
+        description:
+          type: string
+          description: Category description
+          example: "Custom awards, trophies, and recognition plaques"
+          nullable: true
+
+        # Hierarchy
+        parent_id:
+          type: string
+          format: uuid
+          description: Parent category ID for hierarchy
+          nullable: true
+        parent:
+          $ref: '#/ProductCategory'
+          description: Parent category information
+        children:
+          type: array
+          items:
+            $ref: '#/ProductCategory'
+          description: Child categories
+
+        # Display
+        image:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Category image URL
+          nullable: true
+        icon:
+          type: string
+          maxLength: 100
+          description: Icon name or class
+          example: "Award"
+          nullable: true
+        order_index:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order for sorting
+
+        # Status
+        is_active:
+          type: boolean
+          default: true
+          description: Category active status
+
+        # Statistics
+        product_count:
+          type: integer
+          description: Number of products in this category
+          readOnly: true
+
+# Product Specification Entity
+ProductSpecification:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - product_id
+        - key
+        - value
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          description: Reference to the product
+        key:
+          type: string
+          maxLength: 255
+          description: Specification name
+          example: "Material"
+        value:
+          type: string
+          description: Specification value
+          example: "Premium Grade Brass"
+        order_index:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order for sorting
+
+# Product Custom Text Entity
+ProductCustomText:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - product_id
+        - text
+        - placement
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          description: Reference to the product
+        text:
+          type: string
+          description: Custom text content
+          example: "PENGHARGAAN TERBAIK"
+        placement:
+          type: string
+          enum: [depan, belakang]
+          description: Text placement location
+          example: "depan"
+        position:
+          type: string
+          maxLength: 100
+          description: Coordinate position (x,y format)
+          example: "100,50"
+          nullable: true
+        color:
+          type: string
+          maxLength: 7
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          default: "#000000"
+          description: Text color (HEX format)
+        order_index:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order for sorting
+
+# Custom Option Configuration Schema
+CustomOption:
+  type: object
+  required:
+    - name
+    - label
+    - type
+  properties:
+    name:
+      type: string
+      maxLength: 50
+      pattern: '^[a-zA-Z][a-zA-Z0-9_]*$'
+      description: Field name (must be valid identifier)
+      example: "warna_text"
+    label:
+      type: string
+      maxLength: 255
+      description: Display label
+      example: "Warna Text"
+    type:
+      type: string
+      enum: [text, number, select, color, boolean, file]
+      description: Input field type
+      example: "color"
+    required:
+      type: boolean
+      default: false
+      description: Whether field is mandatory
+    default:
+      description: Default value (type varies)
+      example: "#000000"
+    options:
+      type: array
+      items:
+        type: string
+      description: Options for select type fields
+      example: ["Arial", "Times New Roman", "Calibri"]
+    validation:
+      type: object
+      description: Field validation rules
+      properties:
+        min:
+          type: number
+          description: Minimum value (for number type)
+        max:
+          type: number
+          description: Maximum value (for number type)
+        minLength:
+          type: integer
+          description: Minimum text length
+        maxLength:
+          type: integer
+          description: Maximum text length
+        pattern:
+          type: string
+          description: Regular expression pattern
+        fileTypes:
+          type: array
+          items:
+            type: string
+          description: Allowed file types
+        maxFileSize:
+          type: integer
+          description: Maximum file size in bytes
+
+# Category Filter Helper Schema
+CategoryFilter:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    product_count:
+      type: integer
+    children:
+      type: array
+      items:
+        $ref: '#/CategoryFilter'
+
+# Request/Response Schemas
+
+# Create Product Request
+CreateProductRequest:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Product name
+    slug:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9-]+$'
+      description: URL slug (auto-generated if not provided)
+    description:
+      type: string
+      maxLength: 500
+    long_description:
+      type: string
+    category_id:
+      type: string
+      format: uuid
+    tags:
+      type: array
+      items:
+        type: string
+    images:
+      type: array
+      items:
+        type: string
+        format: uri
+    price:
+      type: number
+      format: decimal
+      minimum: 0
+    currency:
+      type: string
+      maxLength: 3
+      default: "IDR"
+    production_type:
+      type: string
+      enum: [internal, vendor]
+      default: vendor
+    bahan_options:
+      type: array
+      items:
+        type: string
+    kualitas_options:
+      type: array
+      items:
+        type: string
+    ketebalan_options:
+      type: array
+      items:
+        type: string
+    ukuran_options:
+      type: array
+      items:
+        type: string
+    custom_options:
+      type: array
+      items:
+        $ref: '#/CustomOption'
+    specifications:
+      type: array
+      items:
+        type: object
+        properties:
+          key:
+            type: string
+          value:
+            type: string
+    status:
+      type: string
+      enum: [draft, published]
+      default: draft
+
+# Update Product Request
+UpdateProductRequest:
+  allOf:
+    - $ref: '#/CreateProductRequest'
+    - type: object
+      properties:
+        status:
+          type: string
+          enum: [draft, published, archived]
+
+# Product List Query Parameters
+ProductListQuery:
+  type: object
+  properties:
+    page:
+      type: integer
+      minimum: 1
+      default: 1
+    per_page:
+      type: integer
+      minimum: 1
+      maximum: 100
+      default: 20
+    search:
+      type: string
+      description: Search in name, description, tags
+    category_id:
+      type: string
+      format: uuid
+    status:
+      type: string
+      enum: [draft, published, archived]
+    featured:
+      type: boolean
+    in_stock:
+      type: boolean
+    production_type:
+      type: string
+      enum: [internal, vendor]
+    price_min:
+      type: number
+      format: decimal
+    price_max:
+      type: number
+      format: decimal
+    sort:
+      type: string
+      enum: [name, price, created_at, updated_at, stock_quantity]
+      default: created_at
+    order:
+      type: string
+      enum: [asc, desc]
+      default: desc
+
+# Public Product Display (Customer-facing)
+PublicProduct:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    slug:
+      type: string
+    description:
+      type: string
+    long_description:
+      type: string
+    images:
+      type: array
+      items:
+        type: string
+        format: uri
+    featured_image:
+      type: string
+      format: uri
+    category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+    tags:
+      type: array
+      items:
+        type: string
+    # Price visibility based on business rules
+    price_display:
+      type: object
+      properties:
+        show_price:
+          type: boolean
+        price:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        price_unit:
+          type: string
+        quotation_required:
+          type: boolean
+    min_order:
+      type: integer
+    in_stock:
+      type: boolean
+    lead_time:
+      type: string
+    # Available options for customer selection
+    customization_options:
+      type: object
+      properties:
+        bahan_options:
+          type: array
+          items:
+            type: string
+        kualitas_options:
+          type: array
+          items:
+            type: string
+        ketebalan_options:
+          type: array
+          items:
+            type: string
+        ukuran_options:
+          type: array
+          items:
+            type: string
+        custom_options:
+          type: array
+          items:
+            $ref: '#/CustomOption'
+    specifications:
+      type: array
+      items:
+        type: object
+        properties:
+          key:
+            type: string
+          value:
+            type: string
+    seo_title:
+      type: string
+    seo_description:
+      type: string
+
+# Bulk Actions Request
+BulkProductRequest:
+  type: object
+  required:
+    - action
+    - product_ids
+  properties:
+    action:
+      type: string
+      enum: [publish, unpublish, archive, delete, restore, feature, unfeature]
+    product_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      minItems: 1
+
+# Category Requests
+CreateCategoryRequest:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+      maxLength: 255
+    slug:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9-]+$'
+    description:
+      type: string
+    parent_id:
+      type: string
+      format: uuid
+    image:
+      type: string
+      format: uri
+    icon:
+      type: string
+    order_index:
+      type: integer
+      minimum: 0
+
+UpdateCategoryRequest:
+  allOf:
+    - $ref: '#/CreateCategoryRequest'
+    - type: object
+      properties:
+        is_active:
+          type: boolean

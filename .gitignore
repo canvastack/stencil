@@ -28,6 +28,8 @@ dist_local
 *.bak
 *.tmp
 *.orig*
+*.qod*
+*.vscode
 
 # Ignore docs/DEVELOPMENTS folder
 docs/DEVELOPMENTS/

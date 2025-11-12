@@ -1,0 +1,1976 @@
+# Inventory Management Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for Inventory Management System (180+ fields, 8 tables)
+# Enterprise-grade multi-tenant inventory management with etching business workflow integration
+
+# Main Inventory Data Container
+InventoryPageData:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/InventoryItem'
+        locations:
+          type: array
+          items:
+            $ref: '#/InventoryLocation'
+        summary:
+          $ref: '#/InventorySummary'
+        alerts:
+          type: array
+          items:
+            $ref: '#/InventoryAlert'
+
+# Inventory Summary Statistics
+InventorySummary:
+  type: object
+  properties:
+    total_items:
+      type: integer
+      description: Total number of inventory items
+      example: 450
+    total_locations:
+      type: integer
+      description: Total number of storage locations
+      example: 8
+    items_by_type:
+      type: object
+      additionalProperties:
+        type: integer
+      description: Count of items by type
+      example:
+        material: 280
+        consumable: 95
+        tool: 45
+        finished_good: 30
+    total_inventory_value:
+      type: number
+      format: decimal
+      description: Total inventory valuation
+      example: 125750000.00
+    low_stock_alerts:
+      type: integer
+      description: Number of items below reorder point
+      example: 12
+    out_of_stock_count:
+      type: integer
+      description: Number of out-of-stock items
+      example: 3
+    pending_movements:
+      type: integer
+      description: Number of pending inventory movements
+      example: 5
+
+# Main Inventory Item Entity
+InventoryItem:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - item_code
+        - item_name
+        - category
+        - unit_of_measure
+      properties:
+        # Item Identification
+        item_code:
+          type: string
+          maxLength: 100
+          description: Unique item identifier code
+          example: "MTL-BRASS-001"
+        item_name:
+          type: string
+          maxLength: 255
+          description: Item display name
+          example: "Brass Sheet 2mm Thickness"
+        description:
+          type: string
+          description: Detailed item description
+          example: "High-grade brass sheet for etching applications, 2mm thickness"
+          nullable: true
+        
+        # Categorization
+        category:
+          type: string
+          maxLength: 100
+          description: Primary item category
+          example: "Raw Materials"
+        subcategory:
+          type: string
+          maxLength: 100
+          description: Secondary categorization
+          example: "Metals"
+          nullable: true
+        item_type:
+          type: string
+          enum: [material, consumable, tool, finished_good, work_in_progress]
+          default: material
+          description: Item classification type
+          example: "material"
+        
+        # Physical Specifications
+        unit_of_measure:
+          type: string
+          maxLength: 50
+          description: Base unit for inventory tracking
+          example: "kg"
+        weight_per_unit:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Weight per unit in kg
+          example: 15.75
+          nullable: true
+        dimensions_length:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Length in cm
+          example: 100.0
+          nullable: true
+        dimensions_width:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Width in cm
+          example: 60.0
+          nullable: true
+        dimensions_height:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Height/thickness in cm
+          example: 0.2
+          nullable: true
+        volume_per_unit:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Volume per unit in cubic cm
+          example: 1200.0
+          nullable: true
+        
+        # Etching-Specific Properties
+        material_type:
+          type: string
+          maxLength: 100
+          description: Material type for etching business
+          example: "Brass"
+          nullable: true
+        material_grade:
+          type: string
+          maxLength: 50
+          description: Quality grade specification
+          example: "C36000"
+          nullable: true
+        thickness:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Material thickness in mm
+          example: 2.0
+          nullable: true
+        finish:
+          type: string
+          maxLength: 100
+          description: Surface finish specification
+          example: "Polished"
+          nullable: true
+        color:
+          type: string
+          maxLength: 50
+          description: Item color
+          example: "Golden"
+          nullable: true
+        
+        # Inventory Control Flags
+        is_serialized:
+          type: boolean
+          default: false
+          description: Whether item requires serial number tracking
+        is_batch_tracked:
+          type: boolean
+          default: false
+          description: Whether item uses batch/lot tracking
+        is_expirable:
+          type: boolean
+          default: false
+          description: Whether item has expiration date
+        shelf_life_days:
+          type: integer
+          minimum: 0
+          description: Shelf life in days
+          example: 365
+          nullable: true
+        
+        # Stock Levels
+        current_stock:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Current available stock quantity
+          example: 125.50
+        available_stock:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Stock available for allocation
+          example: 100.00
+        reserved_stock:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Stock reserved for orders/production
+          example: 25.50
+        on_order_stock:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Stock on order from suppliers
+          example: 50.00
+        
+        # Reorder Management
+        minimum_stock_level:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Minimum stock before reorder alert
+          example: 20.00
+        maximum_stock_level:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Maximum stock capacity
+          example: 500.00
+          nullable: true
+        reorder_point:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Stock level that triggers reorder
+          example: 30.00
+        reorder_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Standard reorder quantity
+          example: 100.00
+        economic_order_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Calculated optimal order quantity
+          example: 150.00
+          nullable: true
+        
+        # Cost Information
+        standard_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Standard cost per unit
+          example: 45000.00
+        average_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Weighted average cost
+          example: 47500.00
+        last_purchase_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Most recent purchase cost
+          example: 50000.00
+        current_market_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Current market price
+          example: 52000.00
+          nullable: true
+        
+        # Valuation Method
+        valuation_method:
+          type: string
+          enum: [FIFO, LIFO, AVERAGE, STANDARD]
+          default: FIFO
+          description: Inventory valuation method
+          example: "FIFO"
+        
+        # Quality Control
+        quality_grade:
+          type: string
+          maxLength: 50
+          description: Quality grade classification
+          example: "Grade A"
+          nullable: true
+        inspection_required:
+          type: boolean
+          default: false
+          description: Whether incoming items require inspection
+        quarantine_required:
+          type: boolean
+          default: false
+          description: Whether items need quarantine period
+        
+        # Supplier Information
+        primary_supplier_id:
+          type: string
+          format: uuid
+          description: Reference to primary supplier
+          nullable: true
+        supplier_part_number:
+          type: string
+          maxLength: 100
+          description: Supplier's part number
+          example: "BRASS-2MM-100X60"
+          nullable: true
+        lead_time_days:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Lead time from supplier in days
+          example: 7
+        
+        # Status & Flags
+        is_active:
+          type: boolean
+          default: true
+          description: Whether item is actively used
+        is_discontinued:
+          type: boolean
+          default: false
+          description: Whether item is discontinued
+        is_hazardous:
+          type: boolean
+          default: false
+          description: Whether item is hazardous material
+        hazard_classification:
+          type: string
+          maxLength: 100
+          description: Hazard classification code
+          example: "MSDS-001"
+          nullable: true
+        
+        # Storage Requirements
+        storage_temperature_min:
+          type: number
+          format: decimal
+          description: Minimum storage temperature in Celsius
+          example: 15.0
+          nullable: true
+        storage_temperature_max:
+          type: number
+          format: decimal
+          description: Maximum storage temperature in Celsius
+          example: 35.0
+          nullable: true
+        storage_humidity_max:
+          type: number
+          format: decimal
+          description: Maximum storage humidity percentage
+          example: 60.0
+          nullable: true
+        special_storage_requirements:
+          type: string
+          description: Special storage instructions
+          example: "Store in dry, ventilated area away from direct sunlight"
+          nullable: true
+        
+        # Metadata
+        barcode:
+          type: string
+          maxLength: 100
+          description: Item barcode
+          example: "1234567890123"
+          nullable: true
+        qr_code:
+          type: string
+          maxLength: 255
+          description: QR code data
+          nullable: true
+        image_url:
+          type: string
+          format: uri
+          description: Item image URL
+          example: "https://cdn.example.com/inventory/brass-sheet.jpg"
+          nullable: true
+        technical_specifications:
+          type: object
+          description: Technical specifications in JSON format
+          additionalProperties: true
+          example:
+            tensile_strength: "370 MPa"
+            density: "8.5 g/cm³"
+            melting_point: "900°C"
+          nullable: true
+        custom_fields:
+          type: object
+          description: Custom field data
+          additionalProperties: true
+          default: {}
+          example:
+            supplier_catalog_page: "45"
+            last_quality_check: "2024-01-15"
+
+# Inventory Location Entity
+InventoryLocation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - location_code
+        - location_name
+      properties:
+        # Location Identification
+        location_code:
+          type: string
+          maxLength: 50
+          description: Unique location identifier
+          example: "WH-01-A-01"
+        location_name:
+          type: string
+          maxLength: 255
+          description: Location display name
+          example: "Main Warehouse - Section A - Bay 01"
+        description:
+          type: string
+          description: Location description
+          example: "Primary storage for raw materials"
+          nullable: true
+        
+        # Location Hierarchy
+        parent_location_id:
+          type: string
+          format: uuid
+          description: Parent location reference
+          nullable: true
+        location_level:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Hierarchy level (1=warehouse, 2=section, 3=bay)
+          example: 3
+        location_path:
+          type: string
+          maxLength: 500
+          description: Full hierarchical path
+          example: "/Main Warehouse/Section A/Bay 01"
+          nullable: true
+        
+        # Location Type
+        location_type:
+          type: string
+          enum: [warehouse, production, quality_control, shipping, receiving, quarantine, scrap]
+          default: warehouse
+          description: Type of storage location
+          example: "warehouse"
+        
+        # Physical Address
+        address_line_1:
+          type: string
+          maxLength: 255
+          description: Primary address line
+          example: "Jl. Industri No. 123"
+          nullable: true
+        address_line_2:
+          type: string
+          maxLength: 255
+          description: Secondary address line
+          example: "Kawasan Industri MM2100"
+          nullable: true
+        city:
+          type: string
+          maxLength: 100
+          description: City name
+          example: "Bekasi"
+          nullable: true
+        state_province:
+          type: string
+          maxLength: 100
+          description: State or province
+          example: "Jawa Barat"
+          nullable: true
+        postal_code:
+          type: string
+          maxLength: 20
+          description: Postal/ZIP code
+          example: "17520"
+          nullable: true
+        country:
+          type: string
+          maxLength: 100
+          default: "Indonesia"
+          description: Country name
+          example: "Indonesia"
+        
+        # Capacity Management
+        total_capacity:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total storage capacity
+          example: 1000.00
+          nullable: true
+        used_capacity:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Currently used capacity
+          example: 650.50
+        available_capacity:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Available capacity (calculated)
+          example: 349.50
+          readOnly: true
+        capacity_unit:
+          type: string
+          maxLength: 20
+          default: "cubic_meter"
+          description: Unit for capacity measurement
+          example: "cubic_meter"
+        
+        # Environmental Conditions
+        temperature_controlled:
+          type: boolean
+          default: false
+          description: Whether location has temperature control
+        temperature_min:
+          type: number
+          format: decimal
+          description: Minimum temperature in Celsius
+          example: 18.0
+          nullable: true
+        temperature_max:
+          type: number
+          format: decimal
+          description: Maximum temperature in Celsius
+          example: 25.0
+          nullable: true
+        humidity_controlled:
+          type: boolean
+          default: false
+          description: Whether location has humidity control
+        humidity_max:
+          type: number
+          format: decimal
+          description: Maximum humidity percentage
+          example: 50.0
+          nullable: true
+        
+        # Security & Access
+        security_level:
+          type: string
+          enum: [low, standard, high, restricted]
+          default: standard
+          description: Security access level
+          example: "standard"
+        access_restrictions:
+          type: string
+          description: Access restriction notes
+          example: "Authorized personnel only. ID card required."
+          nullable: true
+        
+        # Operational Status
+        is_active:
+          type: boolean
+          default: true
+          description: Whether location is operational
+        is_receiving_enabled:
+          type: boolean
+          default: true
+          description: Whether location accepts incoming items
+        is_shipping_enabled:
+          type: boolean
+          default: true
+          description: Whether location allows outbound shipments
+        
+        # Contact Information
+        manager_name:
+          type: string
+          maxLength: 255
+          description: Location manager name
+          example: "Andi Wijaya"
+          nullable: true
+        manager_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Manager email address
+          example: "andi.wijaya@example.com"
+          nullable: true
+        manager_phone:
+          type: string
+          maxLength: 50
+          description: Manager phone number
+          example: "+628123456789"
+          nullable: true
+        
+        # Custom Fields
+        custom_fields:
+          type: object
+          description: Location-specific custom data
+          additionalProperties: true
+          default: {}
+          example:
+            zone_classification: "A"
+            last_inspection_date: "2024-01-15"
+
+# Inventory Movement Entity
+InventoryMovement:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - movement_number
+        - movement_type
+        - item_id
+        - quantity
+      properties:
+        # Movement Identification
+        movement_number:
+          type: string
+          maxLength: 100
+          description: Unique movement identifier
+          example: "MOV-2024-001-0001"
+        movement_type:
+          type: string
+          enum: [receipt, issue, transfer, adjustment, production_consumption, production_output, return, scrap]
+          description: Type of inventory movement
+          example: "receipt"
+        
+        # Item & Location References
+        item_id:
+          type: string
+          format: uuid
+          description: Reference to inventory item
+        item:
+          $ref: '#/InventoryItem'
+          description: Item information (populated)
+        from_location_id:
+          type: string
+          format: uuid
+          description: Source location
+          nullable: true
+        from_location:
+          $ref: '#/InventoryLocation'
+          description: Source location info (populated)
+          nullable: true
+        to_location_id:
+          type: string
+          format: uuid
+          description: Destination location
+          nullable: true
+        to_location:
+          $ref: '#/InventoryLocation'
+          description: Destination location info (populated)
+          nullable: true
+        
+        # Movement Details
+        quantity:
+          type: number
+          format: decimal
+          description: Movement quantity (positive for inbound, negative for outbound)
+          example: 50.00
+        unit_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Cost per unit
+          example: 45000.00
+        total_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total movement cost (calculated)
+          example: 2250000.00
+          readOnly: true
+        
+        # Batch/Serial Tracking
+        batch_number:
+          type: string
+          maxLength: 100
+          description: Batch/lot number
+          example: "BATCH-2024-001"
+          nullable: true
+        serial_number:
+          type: string
+          maxLength: 100
+          description: Serial number
+          example: "SN-20240115-001"
+          nullable: true
+        expiry_date:
+          type: string
+          format: date
+          description: Expiry date for batch
+          example: "2025-01-15"
+          nullable: true
+        
+        # Reference Documents
+        reference_type:
+          type: string
+          maxLength: 50
+          description: Type of reference document
+          example: "purchase_order"
+          nullable: true
+        reference_id:
+          type: string
+          format: uuid
+          description: Reference document ID
+          nullable: true
+        reference_number:
+          type: string
+          maxLength: 100
+          description: Reference document number
+          example: "PO-2024-001"
+          nullable: true
+        
+        # Movement Reason & Notes
+        reason_code:
+          type: string
+          maxLength: 50
+          description: Standardized reason code
+          example: "PURCHASE_RECEIPT"
+          nullable: true
+        notes:
+          type: string
+          description: Movement notes
+          example: "Received from supplier ABC Corp as per PO-2024-001"
+          nullable: true
+        
+        # Quality Control
+        quality_status:
+          type: string
+          enum: [pending, approved, rejected, quarantine]
+          default: approved
+          description: Quality control status
+          example: "approved"
+        quality_notes:
+          type: string
+          description: Quality control notes
+          nullable: true
+        
+        # Approval Workflow
+        status:
+          type: string
+          enum: [pending, approved, rejected, cancelled]
+          default: pending
+          description: Movement approval status
+          example: "approved"
+        approved_by:
+          type: string
+          format: uuid
+          description: User who approved the movement
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          description: Approval timestamp
+          nullable: true
+        
+        # Movement Date
+        movement_date:
+          type: string
+          format: date-time
+          description: When the movement occurred
+          example: "2024-01-15T09:30:00Z"
+
+# Inventory Adjustment Entity
+InventoryAdjustment:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - adjustment_number
+        - adjustment_type
+        - item_id
+        - location_id
+        - book_quantity
+        - physical_quantity
+        - reason_code
+      properties:
+        # Adjustment Identification
+        adjustment_number:
+          type: string
+          maxLength: 100
+          description: Unique adjustment identifier
+          example: "ADJ-2024-001-0001"
+        adjustment_type:
+          type: string
+          enum: [cycle_count, physical_count, shrinkage, damage, obsolete, correction, write_off]
+          description: Type of adjustment
+          example: "cycle_count"
+        
+        # Item & Location References
+        item_id:
+          type: string
+          format: uuid
+          description: Reference to inventory item
+        item:
+          $ref: '#/InventoryItem'
+          description: Item information (populated)
+        location_id:
+          type: string
+          format: uuid
+          description: Location where adjustment occurred
+        location:
+          $ref: '#/InventoryLocation'
+          description: Location information (populated)
+        
+        # Adjustment Details
+        book_quantity:
+          type: number
+          format: decimal
+          description: System recorded quantity
+          example: 100.00
+        physical_quantity:
+          type: number
+          format: decimal
+          description: Physically counted quantity
+          example: 95.50
+        adjustment_quantity:
+          type: number
+          format: decimal
+          description: Difference (physical - book)
+          example: -4.50
+          readOnly: true
+        
+        # Cost Impact
+        unit_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Unit cost for adjustment
+          example: 45000.00
+        total_cost_impact:
+          type: number
+          format: decimal
+          description: Total financial impact
+          example: -202500.00
+          readOnly: true
+        
+        # Batch/Serial Tracking
+        batch_number:
+          type: string
+          maxLength: 100
+          description: Batch number if applicable
+          nullable: true
+        serial_number:
+          type: string
+          maxLength: 100
+          description: Serial number if applicable
+          nullable: true
+        
+        # Adjustment Reason
+        reason_code:
+          type: string
+          maxLength: 50
+          description: Standardized reason code
+          example: "CYCLE_COUNT_VARIANCE"
+        reason_description:
+          type: string
+          description: Detailed reason description
+          example: "Physical count differs from system records during monthly cycle count"
+          nullable: true
+        root_cause_analysis:
+          type: string
+          description: Root cause analysis notes
+          nullable: true
+        
+        # Approval Workflow
+        status:
+          type: string
+          enum: [pending, approved, rejected, cancelled]
+          default: pending
+          description: Adjustment approval status
+        approved_by:
+          type: string
+          format: uuid
+          description: User who approved the adjustment
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          description: Approval timestamp
+          nullable: true
+        approval_notes:
+          type: string
+          description: Approval notes
+          nullable: true
+        
+        # Count Details
+        count_date:
+          type: string
+          format: date-time
+          description: When the count was performed
+          example: "2024-01-15T14:00:00Z"
+        counted_by:
+          type: string
+          format: uuid
+          description: User who performed the count
+        verified_by:
+          type: string
+          format: uuid
+          description: User who verified the count
+          nullable: true
+
+# Inventory Alert Entity
+InventoryAlert:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - alert_type
+        - item_id
+        - alert_title
+        - alert_message
+      properties:
+        # Alert Type & Priority
+        alert_type:
+          type: string
+          enum: [low_stock, out_of_stock, overstock, expiry_warning, expired, slow_moving, dead_stock, quality_issue]
+          description: Type of inventory alert
+          example: "low_stock"
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+          default: medium
+          description: Alert priority level
+          example: "high"
+        
+        # Item & Location References
+        item_id:
+          type: string
+          format: uuid
+          description: Reference to inventory item
+        item:
+          $ref: '#/InventoryItem'
+          description: Item information (populated)
+        location_id:
+          type: string
+          format: uuid
+          description: Location if location-specific
+          nullable: true
+        location:
+          $ref: '#/InventoryLocation'
+          description: Location information (populated)
+          nullable: true
+        
+        # Alert Details
+        alert_title:
+          type: string
+          maxLength: 255
+          description: Alert title/summary
+          example: "Low Stock Alert: Brass Sheet 2mm"
+        alert_message:
+          type: string
+          description: Detailed alert message
+          example: "Current stock (15.5 kg) is below reorder point (20.0 kg). Consider placing purchase order."
+        current_stock:
+          type: number
+          format: decimal
+          description: Current stock level when alert triggered
+          example: 15.5
+          nullable: true
+        threshold_value:
+          type: number
+          format: decimal
+          description: Threshold that triggered the alert
+          example: 20.0
+          nullable: true
+        
+        # Alert Triggers
+        trigger_condition:
+          type: string
+          maxLength: 100
+          description: Condition that triggered alert
+          example: "current_stock <= reorder_point"
+          nullable: true
+        trigger_value:
+          type: number
+          format: decimal
+          description: Value that triggered the condition
+          example: 15.5
+          nullable: true
+        
+        # Status & Resolution
+        status:
+          type: string
+          enum: [active, acknowledged, resolved, dismissed]
+          default: active
+          description: Current alert status
+        acknowledged_by:
+          type: string
+          format: uuid
+          description: User who acknowledged the alert
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          description: Acknowledgment timestamp
+          nullable: true
+        resolved_by:
+          type: string
+          format: uuid
+          description: User who resolved the alert
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          description: Resolution timestamp
+          nullable: true
+        resolution_notes:
+          type: string
+          description: Notes on how alert was resolved
+          nullable: true
+        
+        # Auto-Resolution
+        auto_resolve:
+          type: boolean
+          default: false
+          description: Whether alert can auto-resolve
+        auto_resolve_condition:
+          type: string
+          maxLength: 100
+          description: Condition for auto-resolution
+          example: "current_stock > reorder_point"
+          nullable: true
+        
+        # Notification Settings
+        notification_sent:
+          type: boolean
+          default: false
+          description: Whether notification has been sent
+        notification_sent_at:
+          type: string
+          format: date-time
+          description: Notification sent timestamp
+          nullable: true
+        notification_recipients:
+          type: array
+          items:
+            type: string
+            format: email
+          description: Email addresses notified
+          example: ["manager@example.com", "procurement@example.com"]
+        
+        # Escalation
+        escalation_level:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Current escalation level
+        escalated_at:
+          type: string
+          format: date-time
+          description: Last escalation timestamp
+          nullable: true
+        escalated_to:
+          type: string
+          format: uuid
+          description: User escalated to
+          nullable: true
+
+# Inventory Count Session Entity
+InventoryCount:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - count_number
+        - count_name
+        - count_type
+        - scheduled_date
+        - count_supervisor
+      properties:
+        # Count Session Identification
+        count_number:
+          type: string
+          maxLength: 100
+          description: Unique count session identifier
+          example: "COUNT-2024-01-001"
+        count_name:
+          type: string
+          maxLength: 255
+          description: Count session name
+          example: "Monthly Cycle Count - January 2024"
+        count_type:
+          type: string
+          enum: [full_physical, cycle_count, spot_check, abc_analysis, annual_count]
+          description: Type of inventory count
+          example: "cycle_count"
+        
+        # Scope Definition
+        location_id:
+          type: string
+          format: uuid
+          description: Specific location to count
+          nullable: true
+        location:
+          $ref: '#/InventoryLocation'
+          description: Location information (populated)
+          nullable: true
+        item_category:
+          type: string
+          maxLength: 100
+          description: Category filter for items to count
+          example: "Raw Materials"
+          nullable: true
+        item_type:
+          type: string
+          maxLength: 50
+          description: Type filter for items to count
+          nullable: true
+        include_zero_stock:
+          type: boolean
+          default: false
+          description: Whether to include zero-stock items
+        
+        # Count Schedule
+        scheduled_date:
+          type: string
+          format: date
+          description: Scheduled count date
+          example: "2024-01-15"
+        start_date:
+          type: string
+          format: date
+          description: Actual start date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          description: Completion date
+          nullable: true
+        
+        # Count Team
+        count_supervisor:
+          type: string
+          format: uuid
+          description: Count session supervisor
+        count_team:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Team members assigned to count
+          example: ["user-1", "user-2", "user-3"]
+        
+        # Count Progress
+        status:
+          type: string
+          enum: [planned, in_progress, completed, cancelled, on_hold]
+          default: planned
+          description: Count session status
+        total_items_to_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total number of items to count
+          example: 150
+        items_counted:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of items already counted
+          example: 120
+        items_with_variances:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of items with count variances
+          example: 8
+        completion_percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          description: Count completion percentage (calculated)
+          example: 80.0
+          readOnly: true
+        
+        # Count Results
+        total_book_value:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Total book value of counted items
+          example: 5750000.00
+        total_physical_value:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Total physical value of counted items
+          example: 5640000.00
+        total_variance_value:
+          type: number
+          format: decimal
+          description: Total variance value (physical - book)
+          example: -110000.00
+          readOnly: true
+        variance_percentage:
+          type: number
+          format: decimal
+          description: Variance as percentage of book value
+          example: -1.91
+          readOnly: true
+        
+        # Count Instructions
+        count_instructions:
+          type: string
+          description: Instructions for count team
+          example: "Count all items in designated areas. Report any damaged items separately."
+          nullable: true
+        special_requirements:
+          type: string
+          description: Special requirements or precautions
+          nullable: true
+        
+        # Approval & Sign-off
+        approved_by:
+          type: string
+          format: uuid
+          description: User who approved count results
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          description: Approval timestamp
+          nullable: true
+        approval_notes:
+          type: string
+          description: Approval notes
+          nullable: true
+
+# Inventory Reservation Entity
+InventoryReservation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - reservation_number
+        - reservation_type
+        - item_id
+        - location_id
+        - reserved_quantity
+        - reference_type
+        - reference_id
+        - required_date
+      properties:
+        # Reservation Identification
+        reservation_number:
+          type: string
+          maxLength: 100
+          description: Unique reservation identifier
+          example: "RES-2024-001-0001"
+        reservation_type:
+          type: string
+          enum: [sales_order, production_order, transfer_order, quality_hold, manual_hold]
+          description: Type of reservation
+          example: "sales_order"
+        
+        # Item & Location References
+        item_id:
+          type: string
+          format: uuid
+          description: Reference to inventory item
+        item:
+          $ref: '#/InventoryItem'
+          description: Item information (populated)
+        location_id:
+          type: string
+          format: uuid
+          description: Location where stock is reserved
+        location:
+          $ref: '#/InventoryLocation'
+          description: Location information (populated)
+        
+        # Reservation Details
+        reserved_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Quantity reserved
+          example: 25.00
+        allocated_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Quantity already allocated/used
+          example: 10.00
+        remaining_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Remaining reserved quantity
+          example: 15.00
+          readOnly: true
+        
+        # Batch/Serial Tracking
+        batch_number:
+          type: string
+          maxLength: 100
+          description: Specific batch reserved
+          nullable: true
+        serial_numbers:
+          type: array
+          items:
+            type: string
+          description: Array of serial numbers reserved
+          nullable: true
+        
+        # Reference Document
+        reference_type:
+          type: string
+          maxLength: 50
+          description: Type of document causing reservation
+          example: "sales_order"
+        reference_id:
+          type: string
+          format: uuid
+          description: Reference document ID
+        reference_number:
+          type: string
+          maxLength: 100
+          description: Reference document number
+          example: "SO-2024-001"
+          nullable: true
+        reference_line_number:
+          type: integer
+          minimum: 1
+          description: Line number in reference document
+          example: 1
+          nullable: true
+        
+        # Reservation Timing
+        reservation_date:
+          type: string
+          format: date-time
+          description: When reservation was created
+          example: "2024-01-10T08:00:00Z"
+        required_date:
+          type: string
+          format: date
+          description: Date when stock is required
+          example: "2024-01-20"
+        expiry_date:
+          type: string
+          format: date
+          description: When reservation expires if not used
+          nullable: true
+        
+        # Priority & Status
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+          description: Reservation priority
+          example: "high"
+        status:
+          type: string
+          enum: [active, partial, fulfilled, cancelled, expired]
+          default: active
+          description: Reservation status
+        
+        # Auto-Release Settings
+        auto_release:
+          type: boolean
+          default: true
+          description: Whether reservation auto-releases
+        auto_release_days:
+          type: integer
+          minimum: 1
+          default: 30
+          description: Days until auto-release
+        
+        # Fulfillment Tracking
+        fulfilled_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Quantity fulfilled/consumed
+          example: 10.00
+        fulfilled_date:
+          type: string
+          format: date-time
+          description: Fulfillment timestamp
+          nullable: true
+        fulfilled_by:
+          type: string
+          format: uuid
+          description: User who fulfilled reservation
+          nullable: true
+        
+        # Cancellation/Release
+        cancelled_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Quantity cancelled/released
+          example: 0.00
+        cancelled_date:
+          type: string
+          format: date-time
+          description: Cancellation timestamp
+          nullable: true
+        cancelled_by:
+          type: string
+          format: uuid
+          description: User who cancelled reservation
+          nullable: true
+        cancellation_reason:
+          type: string
+          description: Reason for cancellation
+          nullable: true
+        
+        # Notes
+        reservation_notes:
+          type: string
+          description: Additional reservation notes
+          nullable: true
+
+# Inventory Supplier Entity
+InventorySupplier:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - item_id
+        - supplier_id
+        - unit_price
+      properties:
+        # Item & Supplier References
+        item_id:
+          type: string
+          format: uuid
+          description: Reference to inventory item
+        item:
+          $ref: '#/InventoryItem'
+          description: Item information (populated)
+        supplier_id:
+          type: string
+          format: uuid
+          description: Reference to vendor/supplier
+        
+        # Supplier Item Information
+        supplier_part_number:
+          type: string
+          maxLength: 100
+          description: Supplier's part number
+          example: "BRASS-2MM-100X60"
+          nullable: true
+        supplier_item_name:
+          type: string
+          maxLength: 255
+          description: Supplier's item name
+          example: "Brass Sheet 2mm - 100x60cm"
+          nullable: true
+        supplier_description:
+          type: string
+          description: Supplier's item description
+          nullable: true
+        
+        # Pricing Information
+        unit_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per unit from supplier
+          example: 50000.00
+        currency:
+          type: string
+          maxLength: 3
+          pattern: '^[A-Z]{3}$'
+          default: "IDR"
+          description: ISO 4217 currency code
+        price_valid_from:
+          type: string
+          format: date
+          description: Price validity start date
+          example: "2024-01-01"
+        price_valid_to:
+          type: string
+          format: date
+          description: Price validity end date
+          nullable: true
+        minimum_order_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 1
+          description: Minimum order quantity
+          example: 10.00
+        price_break_quantities:
+          type: object
+          description: Quantity-based pricing tiers
+          additionalProperties:
+            type: number
+            format: decimal
+          example:
+            "50": 48000.00
+            "100": 45000.00
+            "200": 42000.00
+          nullable: true
+        
+        # Lead Time & Availability
+        lead_time_days:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Lead time in days
+          example: 7
+        availability_status:
+          type: string
+          enum: [available, limited, discontinued, special_order]
+          default: available
+          description: Item availability from supplier
+        
+        # Supplier Priority
+        is_primary_supplier:
+          type: boolean
+          default: false
+          description: Whether this is the primary supplier
+        supplier_priority:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Supplier priority ranking
+        
+        # Quality & Performance Ratings
+        quality_rating:
+          type: number
+          format: decimal
+          minimum: 1.0
+          maximum: 5.0
+          default: 5.0
+          description: Quality rating (1-5 scale)
+          example: 4.5
+        delivery_rating:
+          type: number
+          format: decimal
+          minimum: 1.0
+          maximum: 5.0
+          default: 5.0
+          description: Delivery performance rating (1-5 scale)
+          example: 4.8
+        service_rating:
+          type: number
+          format: decimal
+          minimum: 1.0
+          maximum: 5.0
+          default: 5.0
+          description: Service quality rating (1-5 scale)
+          example: 4.2
+        overall_rating:
+          type: number
+          format: decimal
+          minimum: 1.0
+          maximum: 5.0
+          description: Overall supplier rating (calculated average)
+          example: 4.5
+          readOnly: true
+        
+        # Terms & Conditions
+        payment_terms:
+          type: string
+          maxLength: 100
+          description: Payment terms from supplier
+          example: "Net 30 days"
+          nullable: true
+        shipping_terms:
+          type: string
+          maxLength: 100
+          description: Shipping/delivery terms
+          example: "FOB Warehouse"
+          nullable: true
+        warranty_terms:
+          type: string
+          description: Warranty terms and conditions
+          nullable: true
+        
+        # Status & Approval
+        is_active:
+          type: boolean
+          default: true
+          description: Whether supplier relationship is active
+        is_approved:
+          type: boolean
+          default: false
+          description: Whether supplier is approved for procurement
+        approved_by:
+          type: string
+          format: uuid
+          description: User who approved supplier
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          description: Approval timestamp
+          nullable: true
+        
+        # Last Purchase Information
+        last_purchase_date:
+          type: string
+          format: date
+          description: Date of last purchase
+          nullable: true
+        last_purchase_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price of last purchase
+          nullable: true
+        last_purchase_quantity:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Quantity of last purchase
+          nullable: true
+        
+        # Notes
+        supplier_notes:
+          type: string
+          description: Notes from supplier
+          nullable: true
+        internal_notes:
+          type: string
+          description: Internal notes about supplier
+          nullable: true
+
+# Input Schemas for Create/Update Operations
+# ================================================
+
+# Create Inventory Item Input
+InventoryItemCreateInput:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseCreateEntity'
+    - type: object
+      required:
+        - item_code
+        - item_name
+        - category
+        - unit_of_measure
+      properties:
+        item_code:
+          type: string
+          maxLength: 100
+          example: "MTL-BRASS-001"
+        item_name:
+          type: string
+          maxLength: 255
+          example: "Brass Sheet 2mm Thickness"
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+          maxLength: 100
+          example: "Raw Materials"
+        subcategory:
+          type: string
+          maxLength: 100
+          nullable: true
+        item_type:
+          type: string
+          enum: [material, consumable, tool, finished_good, work_in_progress]
+          default: material
+        unit_of_measure:
+          type: string
+          maxLength: 50
+          example: "kg"
+        material_type:
+          type: string
+          maxLength: 100
+          nullable: true
+        thickness:
+          type: number
+          format: decimal
+          nullable: true
+        minimum_stock_level:
+          type: number
+          format: decimal
+          default: 0
+        reorder_point:
+          type: number
+          format: decimal
+          default: 0
+        standard_cost:
+          type: number
+          format: decimal
+          default: 0
+        is_active:
+          type: boolean
+          default: true
+
+# Update Inventory Item Input
+InventoryItemUpdateInput:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseUpdateEntity'
+    - type: object
+      properties:
+        item_name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        category:
+          type: string
+          maxLength: 100
+        subcategory:
+          type: string
+          maxLength: 100
+          nullable: true
+        minimum_stock_level:
+          type: number
+          format: decimal
+        reorder_point:
+          type: number
+          format: decimal
+        standard_cost:
+          type: number
+          format: decimal
+        is_active:
+          type: boolean
+
+# Create Inventory Movement Input
+InventoryMovementCreateInput:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseCreateEntity'
+    - type: object
+      required:
+        - movement_type
+        - item_id
+        - quantity
+      properties:
+        movement_type:
+          type: string
+          enum: [receipt, issue, transfer, adjustment, production_consumption, production_output, return, scrap]
+        item_id:
+          type: string
+          format: uuid
+        from_location_id:
+          type: string
+          format: uuid
+          nullable: true
+        to_location_id:
+          type: string
+          format: uuid
+          nullable: true
+        quantity:
+          type: number
+          format: decimal
+        unit_cost:
+          type: number
+          format: decimal
+          default: 0
+        batch_number:
+          type: string
+          maxLength: 100
+          nullable: true
+        serial_number:
+          type: string
+          maxLength: 100
+          nullable: true
+        reference_type:
+          type: string
+          maxLength: 50
+          nullable: true
+        reference_id:
+          type: string
+          format: uuid
+          nullable: true
+        reference_number:
+          type: string
+          maxLength: 100
+          nullable: true
+        reason_code:
+          type: string
+          maxLength: 50
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+# Create Location Input
+InventoryLocationCreateInput:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseCreateEntity'
+    - type: object
+      required:
+        - location_code
+        - location_name
+      properties:
+        location_code:
+          type: string
+          maxLength: 50
+          example: "WH-01-A-01"
+        location_name:
+          type: string
+          maxLength: 255
+          example: "Main Warehouse - Section A - Bay 01"
+        description:
+          type: string
+          nullable: true
+        parent_location_id:
+          type: string
+          format: uuid
+          nullable: true
+        location_type:
+          type: string
+          enum: [warehouse, production, quality_control, shipping, receiving, quarantine, scrap]
+          default: warehouse
+        total_capacity:
+          type: number
+          format: decimal
+          nullable: true
+        is_active:
+          type: boolean
+          default: true
+
+# Bulk Operations Input Schemas
+# ===============================
+
+# Bulk Stock Update Input
+BulkStockUpdateInput:
+  type: object
+  required:
+    - updates
+  properties:
+    updates:
+      type: array
+      items:
+        type: object
+        required:
+          - item_id
+          - new_quantity
+        properties:
+          item_id:
+            type: string
+            format: uuid
+          location_id:
+            type: string
+            format: uuid
+            nullable: true
+          new_quantity:
+            type: number
+            format: decimal
+          reason:
+            type: string
+            maxLength: 255
+            example: "Physical count adjustment"
+
+# Low Stock Report Output
+LowStockReport:
+  type: object
+  properties:
+    items:
+      type: array
+      items:
+        type: object
+        properties:
+          item:
+            $ref: '#/InventoryItem'
+          current_stock:
+            type: number
+            format: decimal
+          reorder_point:
+            type: number
+            format: decimal
+          shortage:
+            type: number
+            format: decimal
+          suggested_order_quantity:
+            type: number
+            format: decimal
+          primary_supplier:
+            type: object
+            properties:
+              supplier_id:
+                type: string
+                format: uuid
+              supplier_name:
+                type: string
+              unit_price:
+                type: number
+                format: decimal
+              lead_time_days:
+                type: integer
+    summary:
+      type: object
+      properties:
+        total_items:
+          type: integer
+        total_shortage_value:
+          type: number
+          format: decimal
+        average_lead_time:
+          type: number
+          format: decimal
+
+# Response Schemas
+# ================
+
+# Inventory Dashboard Response
+InventoryDashboardResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      example: "Inventory dashboard data retrieved successfully"
+    data:
+      $ref: '#/InventoryPageData'
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        tenant_id:
+          type: string
+          format: uuid
+        cache_expires:
+          type: string
+          format: date-time

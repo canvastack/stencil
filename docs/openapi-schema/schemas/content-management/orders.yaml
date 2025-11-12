@@ -1,0 +1,2376 @@
+# Orders Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for Order Management System (164+ fields, 7 tables)
+# Enterprise-grade multi-tenant order management with full broker/vendor workflow
+
+# Main Order Data Container
+OrdersPageData:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/PurchaseOrder'
+        summary:
+          $ref: '#/OrdersSummary'
+        filters:
+          $ref: '#/OrdersFilters'
+
+# Orders Summary Statistics
+OrdersSummary:
+  type: object
+  properties:
+    total_orders:
+      type: integer
+      description: Total number of orders
+      example: 1250
+    orders_by_status:
+      type: object
+      additionalProperties:
+        type: integer
+      description: Count of orders by status
+      example:
+        new: 25
+        in_production: 45
+        completed: 1180
+    total_revenue:
+      type: number
+      format: decimal
+      description: Total revenue from all orders
+      example: 245750000.00
+    pending_payments:
+      type: number
+      format: decimal
+      description: Total pending customer payments
+      example: 15750000.00
+    profitability:
+      type: object
+      properties:
+        total_profit:
+          type: number
+          format: decimal
+          example: 62500000.00
+        average_margin:
+          type: number
+          format: decimal
+          example: 25.42
+
+# Purchase Order Main Entity
+PurchaseOrder:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - order_code
+        - customer_name
+        - customer_email
+        - customer_phone
+        - total_amount
+        - shipping_address
+      properties:
+        # Order Identification
+        order_code:
+          type: string
+          maxLength: 50
+          pattern: '^ORD-\d{4}-\d{2}-\d{4}$'
+          description: Auto-generated order code
+          example: "ORD-2025-01-0001"
+        order_number:
+          type: integer
+          description: Sequential order number
+          example: 1
+        
+        # Customer Information
+        customer_id:
+          type: string
+          format: uuid
+          description: Reference to customer record
+        customer_name:
+          type: string
+          maxLength: 255
+          description: Customer full name
+          example: "Budi Santoso"
+        customer_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Customer email address
+          example: "budi@example.com"
+        customer_phone:
+          type: string
+          maxLength: 50
+          pattern: '^(\+62|08)[0-9]{8,12}$'
+          description: Indonesian phone number format
+          example: "+628123456789"
+        customer_company:
+          type: string
+          maxLength: 255
+          description: Company name for business customers
+          example: "PT Example Indonesia"
+          nullable: true
+        customer_type:
+          type: string
+          enum: [individual, business]
+          default: individual
+          description: Type of customer
+          
+        # Vendor Information
+        vendor_id:
+          type: string
+          format: uuid
+          description: Assigned vendor for production
+          nullable: true
+        vendor_name:
+          type: string
+          maxLength: 255
+          description: Vendor company name
+          nullable: true
+        assigned_at:
+          type: string
+          format: date-time
+          description: When vendor was assigned
+          nullable: true
+          
+        # Production Details
+        production_type:
+          type: string
+          enum: [internal, vendor]
+          default: vendor
+          description: Production method
+        production_status:
+          type: string
+          maxLength: 50
+          default: pending
+          description: Current production stage
+          example: "material_preparation"
+          
+        # Order Status
+        status:
+          type: string
+          enum: [
+            new, sourcing_vendor, vendor_negotiation, customer_quotation,
+            waiting_customer_approval, waiting_payment, payment_received,
+            in_production, design_finalization, material_preparation,
+            etching_process, finishing, quality_control, quality_check_passed,
+            revision_required, production_complete, ready_to_ship, shipped,
+            in_transit, out_for_delivery, delivered, completed, cancelled,
+            refunded, on_hold
+          ]
+          default: new
+          description: Current order status
+          
+        # Payment Status
+        payment_status:
+          type: string
+          enum: [unpaid, awaiting_verification, partially_paid, paid, refunded, cancelled]
+          default: unpaid
+          description: Payment processing status
+        accounting_status:
+          type: string
+          enum: [pending, account_payable, account_receivable, fully_settled]
+          default: pending
+          description: Accounting classification
+          
+        # Order Items Summary
+        total_items:
+          type: integer
+          default: 0
+          description: Number of different items
+        total_quantity:
+          type: integer
+          default: 0
+          description: Total quantity of all items
+          
+        # Customer Pricing
+        subtotal:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Subtotal before tax and fees
+          example: 1750000.00
+        tax_rate:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 11.00
+          description: Tax rate percentage (PPN)
+        tax_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Calculated tax amount
+          example: 192500.00
+        shipping_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Shipping charges
+          example: 50000.00
+        discount_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total discount applied
+          example: 0.00
+        additional_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Additional fees or charges
+          example: 25000.00
+        total_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Final total amount
+          example: 2017500.00
+        currency:
+          type: string
+          maxLength: 3
+          default: IDR
+          description: Currency code
+          
+        # Vendor Pricing (for profitability)
+        vendor_subtotal:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Subtotal from vendor
+          example: 1400000.00
+          nullable: true
+        vendor_total:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total cost to vendor
+          example: 1400000.00
+          nullable: true
+        vendor_currency:
+          type: string
+          maxLength: 3
+          default: IDR
+          description: Vendor currency
+          
+        # Profitability
+        markup_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Profit markup amount
+          example: 350000.00
+        markup_percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Markup percentage
+          example: 25.00
+        profit_amount:
+          type: number
+          format: decimal
+          description: Calculated profit
+          example: 617500.00
+        profit_margin:
+          type: number
+          format: decimal
+          description: Profit margin percentage
+          example: 30.61
+          
+        # Payment Tracking
+        dp_percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 50.00
+          description: Down payment percentage
+        dp_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Down payment amount
+          example: 1008750.00
+        paid_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total amount paid
+          example: 1008750.00
+        remaining_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Remaining balance
+          example: 1008750.00
+          
+        # Shipping Address
+        shipping_address:
+          type: string
+          description: Complete shipping address
+          example: "Jl. Sudirman No. 123, Blok A-5"
+        shipping_city:
+          type: string
+          maxLength: 100
+          description: Shipping city
+          example: "Jakarta Pusat"
+        shipping_province:
+          type: string
+          maxLength: 100
+          description: Shipping province
+          example: "DKI Jakarta"
+        shipping_postal_code:
+          type: string
+          maxLength: 20
+          description: Postal code
+          example: "10110"
+        shipping_country:
+          type: string
+          maxLength: 100
+          default: Indonesia
+          description: Shipping country
+          
+        # Billing Address
+        billing_address:
+          type: string
+          description: Billing address
+          nullable: true
+        billing_city:
+          type: string
+          maxLength: 100
+          nullable: true
+        billing_province:
+          type: string
+          maxLength: 100
+          nullable: true
+        billing_postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+        billing_country:
+          type: string
+          maxLength: 100
+          default: Indonesia
+          nullable: true
+        billing_same_as_shipping:
+          type: boolean
+          default: true
+          description: Use shipping address for billing
+          
+        # Timeline
+        order_date:
+          type: string
+          format: date-time
+          description: When order was created
+        customer_approval_date:
+          type: string
+          format: date-time
+          description: When customer approved quotation
+          nullable: true
+        payment_received_date:
+          type: string
+          format: date-time
+          description: When payment was received
+          nullable: true
+        production_start_date:
+          type: string
+          format: date-time
+          description: When production started
+          nullable: true
+        estimated_completion_date:
+          type: string
+          format: date
+          description: Estimated completion date
+          nullable: true
+        actual_completion_date:
+          type: string
+          format: date
+          description: Actual completion date
+          nullable: true
+        shipped_date:
+          type: string
+          format: date-time
+          description: When order was shipped
+          nullable: true
+        delivered_date:
+          type: string
+          format: date-time
+          description: When order was delivered
+          nullable: true
+        completed_date:
+          type: string
+          format: date-time
+          description: When order was completed
+          nullable: true
+        cancelled_date:
+          type: string
+          format: date-time
+          description: When order was cancelled
+          nullable: true
+          
+        # Design & Files
+        design_files:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              filename:
+                type: string
+              size:
+                type: integer
+              uploaded_at:
+                type: string
+                format: date-time
+          description: Customer design files
+          default: []
+        has_design_files:
+          type: boolean
+          default: false
+          description: Whether order includes design files
+          
+        # Notes & Communication
+        customer_notes:
+          type: string
+          description: Notes from customer
+          nullable: true
+        internal_notes:
+          type: string
+          description: Internal team notes
+          nullable: true
+        admin_notes:
+          type: string
+          description: Admin specific notes
+          nullable: true
+        cancellation_reason:
+          type: string
+          description: Reason for cancellation
+          nullable: true
+        rejection_reason:
+          type: string
+          description: Reason for rejection
+          nullable: true
+          
+        # Quality Control
+        qc_status:
+          type: string
+          maxLength: 50
+          description: Quality control status
+          nullable: true
+        qc_notes:
+          type: string
+          description: QC inspector notes
+          nullable: true
+        qc_passed:
+          type: boolean
+          default: false
+          description: Whether QC passed
+        qc_checked_at:
+          type: string
+          format: date-time
+          description: When QC was performed
+          nullable: true
+        qc_checked_by:
+          type: string
+          format: uuid
+          description: User who performed QC
+          nullable: true
+          
+        # Quotation References
+        customer_quotation_id:
+          type: string
+          format: uuid
+          description: Active customer quotation
+          nullable: true
+        vendor_quotation_id:
+          type: string
+          format: uuid
+          description: Accepted vendor quotation
+          nullable: true
+        quotation_version:
+          type: integer
+          default: 1
+          description: Current quotation version
+        quotation_valid_until:
+          type: string
+          format: date
+          description: Quotation expiry date
+          nullable: true
+          
+        # Tags & Classification
+        tags:
+          type: array
+          items:
+            type: string
+          description: Order tags for organization
+          default: []
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+          default: normal
+          description: Order priority level
+        is_rush_order:
+          type: boolean
+          default: false
+          description: Rush order with expedited handling
+        rush_fee:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Additional rush order fee
+          example: 100000.00
+          
+        # Integration
+        external_id:
+          type: string
+          maxLength: 255
+          description: External system identifier
+          nullable: true
+        external_source:
+          type: string
+          maxLength: 100
+          description: Source system name
+          nullable: true
+        integration_data:
+          type: object
+          description: Additional integration metadata
+          nullable: true
+
+# Order Items Entity
+OrderItem:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - purchase_order_id
+        - product_name
+        - quantity
+        - unit_price
+        - subtotal
+      properties:
+        # Order Reference
+        purchase_order_id:
+          type: string
+          format: uuid
+          description: Reference to parent order
+          
+        # Product Information
+        product_id:
+          type: string
+          format: uuid
+          description: Reference to product catalog
+          nullable: true
+        product_name:
+          type: string
+          maxLength: 255
+          description: Product name
+          example: "Custom Etched Brass Plate"
+        product_sku:
+          type: string
+          maxLength: 100
+          description: Product SKU code
+          nullable: true
+        product_slug:
+          type: string
+          maxLength: 255
+          description: Product URL slug
+          nullable: true
+          
+        # Quantity & Pricing
+        quantity:
+          type: integer
+          minimum: 1
+          description: Item quantity
+          example: 5
+        unit_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price per unit
+          example: 350000.00
+        subtotal:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Line total (quantity × unit_price)
+          example: 1750000.00
+          
+        # Vendor Pricing
+        vendor_unit_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Vendor price per unit
+          example: 280000.00
+          nullable: true
+        vendor_subtotal:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Vendor line total
+          example: 1400000.00
+          nullable: true
+          
+        # Etching Customization
+        bahan:
+          type: string
+          maxLength: 100
+          description: Material type
+          example: "Kuningan"
+          nullable: true
+        kualitas:
+          type: string
+          maxLength: 100
+          default: standard
+          description: Quality level
+          example: "premium"
+          nullable: true
+        ketebalan:
+          type: string
+          maxLength: 100
+          description: Material thickness
+          example: "2mm"
+          nullable: true
+        ukuran:
+          type: string
+          maxLength: 100
+          description: Dimensions
+          example: "30cm x 20cm"
+          nullable: true
+        warna_background:
+          type: string
+          maxLength: 7
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Background color (hex)
+          example: "#FFFFFF"
+          nullable: true
+        warna_text:
+          type: string
+          maxLength: 7
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Text color (hex)
+          example: "#000000"
+          nullable: true
+          
+        # Custom Text Configuration
+        custom_text:
+          type: string
+          description: Custom text to be etched
+          example: "Best Employee 2025"
+          nullable: true
+        custom_text_placement:
+          type: string
+          maxLength: 50
+          description: Text placement position
+          example: "center"
+          nullable: true
+        custom_text_position:
+          type: object
+          description: Precise text positioning
+          nullable: true
+        custom_text_font:
+          type: string
+          maxLength: 100
+          description: Font family
+          example: "Arial Bold"
+          nullable: true
+        custom_text_size:
+          type: integer
+          description: Font size
+          example: 16
+          nullable: true
+          
+        # Design Files
+        design_file_url:
+          type: string
+          format: uri
+          description: Design file URL
+          nullable: true
+        design_file_name:
+          type: string
+          maxLength: 255
+          description: Original filename
+          nullable: true
+        design_file_size:
+          type: integer
+          description: File size in bytes
+          nullable: true
+        design_notes:
+          type: string
+          description: Design specific notes
+          nullable: true
+          
+        # Flexible Customization
+        customization:
+          type: object
+          description: Additional custom requirements
+          default: {}
+        specifications:
+          type: object
+          description: Technical specifications
+          default: {}
+          
+        # Item Notes
+        notes:
+          type: string
+          description: Item specific notes
+          nullable: true
+        internal_notes:
+          type: string
+          description: Internal production notes
+          nullable: true
+          
+        # Status
+        item_status:
+          type: string
+          maxLength: 50
+          default: pending
+          description: Individual item status
+        is_custom:
+          type: boolean
+          default: false
+          description: Whether item requires customization
+        requires_design_approval:
+          type: boolean
+          default: false
+          description: Needs design approval
+        design_approved:
+          type: boolean
+          default: false
+          description: Design has been approved
+        design_approved_at:
+          type: string
+          format: date-time
+          description: When design was approved
+          nullable: true
+        design_approved_by:
+          type: string
+          format: uuid
+          description: User who approved design
+          nullable: true
+
+# Order Quotations Entity
+OrderQuotation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - purchase_order_id
+        - quotation_type
+        - quotation_number
+        - base_price
+        - quantity
+        - subtotal
+        - total_amount
+        - estimated_lead_time_days
+      properties:
+        # Order Reference
+        purchase_order_id:
+          type: string
+          format: uuid
+          description: Reference to parent order
+          
+        # Quotation Type & Identification
+        quotation_type:
+          type: string
+          enum: [vendor, customer]
+          description: Quote type - vendor quote or customer quote
+        quotation_number:
+          type: string
+          maxLength: 50
+          pattern: '^(VQ|CQ)-\d{4}-\d{2}-\d{4}$'
+          description: Auto-generated quotation number
+          example: "VQ-2025-01-0001"
+        version:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Quotation version number
+          
+        # Party Information
+        vendor_id:
+          type: string
+          format: uuid
+          description: Vendor providing quote
+          nullable: true
+        vendor_name:
+          type: string
+          maxLength: 255
+          description: Vendor company name
+          nullable: true
+        customer_id:
+          type: string
+          format: uuid
+          description: Customer receiving quote
+          nullable: true
+        customer_name:
+          type: string
+          maxLength: 255
+          description: Customer name
+          nullable: true
+          
+        # Pricing Details
+        base_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Base unit price
+          example: 280000.00
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity quoted
+          example: 5
+        subtotal:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Base subtotal
+          example: 1400000.00
+          
+        # Additional Costs
+        material_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Material costs
+          example: 200000.00
+        labor_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Labor costs
+          example: 150000.00
+        overhead_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Overhead allocation
+          example: 50000.00
+        shipping_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Shipping charges
+          example: 50000.00
+        rush_fee:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Rush order surcharge
+          example: 100000.00
+          
+        # Tax & Discounts
+        tax_rate:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 11.00
+          description: Tax rate percentage
+        tax_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Calculated tax
+          example: 192500.00
+        discount_percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          description: Discount percentage
+          example: 5.00
+        discount_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total discount amount
+          example: 87500.00
+          
+        # Total
+        total_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Final quoted amount
+          example: 1955000.00
+        currency:
+          type: string
+          maxLength: 3
+          default: IDR
+          description: Currency code
+          
+        # Markup (Customer Quotations)
+        markup_type:
+          type: string
+          enum: [percentage, fixed]
+          description: Type of markup calculation
+          nullable: true
+        markup_value:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Markup value (% or fixed amount)
+          example: 25.00
+          nullable: true
+        markup_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Calculated markup amount
+          example: 350000.00
+          nullable: true
+          
+        # Lead Time
+        estimated_lead_time_days:
+          type: integer
+          minimum: 1
+          description: Production lead time
+          example: 10
+        estimated_start_date:
+          type: string
+          format: date
+          description: Estimated start date
+          nullable: true
+        estimated_completion_date:
+          type: string
+          format: date
+          description: Estimated completion date
+          nullable: true
+          
+        # Terms & Conditions
+        payment_terms:
+          type: string
+          description: Payment terms and conditions
+          example: "DP 50%, balance on delivery"
+          nullable: true
+        payment_method_allowed:
+          type: array
+          items:
+            type: string
+            enum: [cash, bank_transfer, credit_card, ewallet]
+          default: ["cash", "bank_transfer"]
+          description: Accepted payment methods
+        dp_required:
+          type: boolean
+          default: true
+          description: Down payment required
+        dp_percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 50.00
+          description: Required DP percentage
+        dp_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Calculated DP amount
+          example: 977500.00
+          nullable: true
+          
+        # Validity
+        valid_from:
+          type: string
+          format: date
+          description: Quote valid from date
+        valid_until:
+          type: string
+          format: date
+          description: Quote expiry date
+          
+        # Status & Workflow
+        status:
+          type: string
+          enum: [draft, sent, pending_review, approved, rejected, expired, cancelled, superseded]
+          default: draft
+          description: Current quotation status
+          
+        # Approval Tracking
+        sent_at:
+          type: string
+          format: date-time
+          description: When quote was sent
+          nullable: true
+        sent_by:
+          type: string
+          format: uuid
+          description: User who sent quote
+          nullable: true
+        reviewed_at:
+          type: string
+          format: date-time
+          description: When quote was reviewed
+          nullable: true
+        reviewed_by:
+          type: string
+          format: uuid
+          description: User who reviewed
+          nullable: true
+        approved_at:
+          type: string
+          format: date-time
+          description: When quote was approved
+          nullable: true
+        approved_by:
+          type: string
+          format: uuid
+          description: User who approved
+          nullable: true
+        rejected_at:
+          type: string
+          format: date-time
+          description: When quote was rejected
+          nullable: true
+        rejected_by:
+          type: string
+          format: uuid
+          description: User who rejected
+          nullable: true
+        rejection_reason:
+          type: string
+          description: Reason for rejection
+          nullable: true
+          
+        # Notes & Documentation
+        notes:
+          type: string
+          description: Quotation notes
+          nullable: true
+        internal_notes:
+          type: string
+          description: Internal team notes
+          nullable: true
+        terms_conditions:
+          type: string
+          description: Detailed terms and conditions
+          nullable: true
+          
+        # Attachments
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              filename:
+                type: string
+              size:
+                type: integer
+              uploaded_at:
+                type: string
+                format: date-time
+          default: []
+          description: Quote attachments
+          
+        # Version Control
+        previous_version_id:
+          type: string
+          format: uuid
+          description: Previous quotation version
+          nullable: true
+        superseded_by_id:
+          type: string
+          format: uuid
+          description: Newer version that superseded this
+          nullable: true
+
+# Order Negotiations Entity
+OrderNegotiation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - purchase_order_id
+        - vendor_id
+        - negotiation_round
+        - negotiation_type
+        - offered_price
+        - offered_lead_time_days
+      properties:
+        # Order Reference
+        purchase_order_id:
+          type: string
+          format: uuid
+          description: Reference to parent order
+        vendor_id:
+          type: string
+          format: uuid
+          description: Vendor in negotiation
+        quotation_id:
+          type: string
+          format: uuid
+          description: Related quotation
+          nullable: true
+          
+        # Negotiation Details
+        negotiation_round:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Round number in negotiation
+        negotiation_type:
+          type: string
+          enum: [initial_request, vendor_response, counter_offer, final_offer, acceptance, rejection]
+          description: Type of negotiation communication
+          
+        # Pricing Offered
+        offered_price:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Price offered in this round
+          example: 280000.00
+        offered_lead_time_days:
+          type: integer
+          minimum: 1
+          description: Lead time offered
+          example: 10
+        minimum_quantity:
+          type: integer
+          minimum: 1
+          description: Minimum order quantity
+          nullable: true
+          
+        # Comparison with Previous
+        previous_price:
+          type: number
+          format: decimal
+          description: Previous round price
+          nullable: true
+        price_difference:
+          type: number
+          format: decimal
+          description: Price change from previous
+          nullable: true
+        price_change_percentage:
+          type: number
+          format: decimal
+          description: Percentage price change
+          nullable: true
+          
+        # Terms
+        payment_terms:
+          type: string
+          description: Payment terms offered
+          nullable: true
+        special_conditions:
+          type: string
+          description: Special conditions or requirements
+          nullable: true
+          
+        # Status
+        status:
+          type: string
+          enum: [pending, sent, received, accepted, rejected, countered, expired]
+          default: pending
+          description: Current negotiation status
+          
+        # Response Tracking
+        response_deadline:
+          type: string
+          format: date-time
+          description: Response deadline
+          nullable: true
+        responded_at:
+          type: string
+          format: date-time
+          description: When response was received
+          nullable: true
+        response_message:
+          type: string
+          description: Response message content
+          nullable: true
+          
+        # Decision
+        decision:
+          type: string
+          enum: [accepted, rejected, countered, pending]
+          description: Final decision on this round
+          nullable: true
+        decision_reason:
+          type: string
+          description: Reason for decision
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          description: When decision was made
+          nullable: true
+        decided_by:
+          type: string
+          format: uuid
+          description: User who made decision
+          nullable: true
+          
+        # Communication
+        sent_via:
+          type: string
+          enum: [email, phone, whatsapp, in_person, system]
+          default: email
+          description: Communication method used
+        communication_log:
+          type: string
+          description: Log of communication
+          nullable: true
+          
+        # Attachments
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              filename:
+                type: string
+              size:
+                type: integer
+              uploaded_at:
+                type: string
+                format: date-time
+          default: []
+          description: Negotiation attachments
+          
+        # Notes
+        notes:
+          type: string
+          description: General notes
+          nullable: true
+        internal_notes:
+          type: string
+          description: Internal team notes
+          nullable: true
+        vendor_notes:
+          type: string
+          description: Notes from vendor
+          nullable: true
+
+# Order Payments Entity
+OrderPayment:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - purchase_order_id
+        - payment_type
+        - payment_for
+        - invoice_number
+        - amount
+        - payment_method
+      properties:
+        # Order Reference
+        purchase_order_id:
+          type: string
+          format: uuid
+          description: Reference to parent order
+          
+        # Payment Classification
+        payment_type:
+          type: string
+          enum: [customer_payment, vendor_payment]
+          description: Direction of payment
+        payment_for:
+          type: string
+          enum: [dp, full, remaining, refund, adjustment]
+          description: What payment is for
+          
+        # Invoice Reference
+        invoice_number:
+          type: string
+          maxLength: 50
+          pattern: '^(INV|VINV)-\d{4}-\d{2}-\d{4}$'
+          description: Invoice number
+          example: "INV-2025-01-0001"
+        quotation_id:
+          type: string
+          format: uuid
+          description: Related quotation
+          nullable: true
+          
+        # Party Information
+        customer_id:
+          type: string
+          format: uuid
+          description: Customer making payment
+          nullable: true
+        customer_name:
+          type: string
+          maxLength: 255
+          description: Customer name
+          nullable: true
+        vendor_id:
+          type: string
+          format: uuid
+          description: Vendor receiving payment
+          nullable: true
+        vendor_name:
+          type: string
+          maxLength: 255
+          description: Vendor name
+          nullable: true
+          
+        # Payment Details
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+          description: Payment amount
+          example: 1008750.00
+        currency:
+          type: string
+          maxLength: 3
+          default: IDR
+          description: Currency code
+          
+        # Payment Method
+        payment_method:
+          type: string
+          enum: [cash, bank_transfer, credit_card, debit_card, ewallet, midtrans, xendit, stripe, paypal, other]
+          description: Method of payment
+        payment_gateway:
+          type: string
+          maxLength: 100
+          description: Payment gateway provider
+          nullable: true
+        gateway_transaction_id:
+          type: string
+          maxLength: 255
+          description: Gateway transaction ID
+          nullable: true
+        gateway_response:
+          type: object
+          description: Full gateway response data
+          nullable: true
+          
+        # Bank Transfer Details
+        bank_name:
+          type: string
+          maxLength: 100
+          description: Bank name for transfers
+          nullable: true
+        bank_account_number:
+          type: string
+          maxLength: 100
+          description: Account number
+          nullable: true
+        bank_account_holder:
+          type: string
+          maxLength: 255
+          description: Account holder name
+          nullable: true
+        transfer_reference:
+          type: string
+          maxLength: 255
+          description: Bank transfer reference
+          nullable: true
+          
+        # Payment Proof
+        proof_of_payment_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Payment proof document URL
+          nullable: true
+        proof_uploaded_at:
+          type: string
+          format: date-time
+          description: When proof was uploaded
+          nullable: true
+        proof_uploaded_by:
+          type: string
+          format: uuid
+          description: User who uploaded proof
+          nullable: true
+          
+        # Status
+        status:
+          type: string
+          enum: [pending, awaiting_verification, verified, processing, completed, failed, cancelled, refunded]
+          default: pending
+          description: Payment status
+          
+        # Timeline
+        payment_date:
+          type: string
+          format: date-time
+          description: When payment was made
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          description: Payment due date
+          nullable: true
+        verified_at:
+          type: string
+          format: date-time
+          description: When payment was verified
+          nullable: true
+        verified_by:
+          type: string
+          format: uuid
+          description: User who verified payment
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          description: When payment was completed
+          nullable: true
+        failed_at:
+          type: string
+          format: date-time
+          description: When payment failed
+          nullable: true
+        failure_reason:
+          type: string
+          description: Reason for payment failure
+          nullable: true
+          
+        # Verification
+        verification_notes:
+          type: string
+          description: Verification notes
+          nullable: true
+        verification_status:
+          type: string
+          maxLength: 50
+          default: pending
+          description: Verification status
+        requires_manual_verification:
+          type: boolean
+          default: false
+          description: Requires manual verification
+        auto_verified:
+          type: boolean
+          default: false
+          description: Automatically verified
+          
+        # Refund Information
+        refund_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Amount refunded
+          nullable: true
+        refund_date:
+          type: string
+          format: date-time
+          description: When refund was processed
+          nullable: true
+        refund_reason:
+          type: string
+          description: Reason for refund
+          nullable: true
+        refund_by:
+          type: string
+          format: uuid
+          description: User who processed refund
+          nullable: true
+          
+        # Notes
+        notes:
+          type: string
+          description: Payment notes
+          nullable: true
+        internal_notes:
+          type: string
+          description: Internal processing notes
+          nullable: true
+        customer_notes:
+          type: string
+          description: Notes from customer
+          nullable: true
+          
+        # Receipt
+        receipt_number:
+          type: string
+          maxLength: 50
+          description: Receipt number
+          nullable: true
+        receipt_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Receipt document URL
+          nullable: true
+        receipt_sent_at:
+          type: string
+          format: date-time
+          description: When receipt was sent
+          nullable: true
+          
+        # Accounting Integration
+        accounting_entry_id:
+          type: string
+          maxLength: 100
+          description: Accounting system entry ID
+          nullable: true
+        accounting_synced_at:
+          type: string
+          format: date-time
+          description: When synced to accounting
+          nullable: true
+        accounting_status:
+          type: string
+          maxLength: 50
+          description: Accounting processing status
+          nullable: true
+
+# Order Shipments Entity
+OrderShipment:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - purchase_order_id
+        - shipment_number
+        - courier_name
+        - shipping_address
+        - shipping_contact_name
+        - shipping_contact_phone
+      properties:
+        # Order Reference
+        purchase_order_id:
+          type: string
+          format: uuid
+          description: Reference to parent order
+          
+        # Shipment Identification
+        shipment_number:
+          type: string
+          maxLength: 50
+          pattern: '^SHIP-\d{4}-\d{2}-\d{4}$'
+          description: Auto-generated shipment number
+          example: "SHIP-2025-01-0001"
+        tracking_number:
+          type: string
+          maxLength: 255
+          description: Courier tracking number (resi)
+          nullable: true
+          
+        # Shipping Provider
+        courier_name:
+          type: string
+          maxLength: 100
+          description: Courier company name
+          example: "JNE"
+        courier_service:
+          type: string
+          maxLength: 100
+          description: Service type
+          example: "REG"
+          nullable: true
+        courier_phone:
+          type: string
+          maxLength: 50
+          description: Courier contact number
+          nullable: true
+          
+        # Shipping Method
+        shipping_method:
+          type: string
+          enum: [standard, express, same_day, next_day, pickup, courier]
+          default: standard
+          description: Shipping method used
+          
+        # Package Details
+        package_count:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Number of packages
+        weight_kg:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total weight in kg
+          nullable: true
+        dimensions_cm:
+          type: string
+          maxLength: 50
+          description: Package dimensions
+          nullable: true
+        special_handling:
+          type: string
+          description: Special handling instructions
+          nullable: true
+          
+        # Pickup Address
+        pickup_address:
+          type: string
+          description: Pickup address
+          nullable: true
+        pickup_contact_name:
+          type: string
+          maxLength: 255
+          description: Pickup contact person
+          nullable: true
+        pickup_contact_phone:
+          type: string
+          maxLength: 50
+          description: Pickup contact phone
+          nullable: true
+        pickup_notes:
+          type: string
+          description: Pickup instructions
+          nullable: true
+          
+        # Shipping Address
+        shipping_address:
+          type: string
+          description: Delivery address
+        shipping_city:
+          type: string
+          maxLength: 100
+          description: Delivery city
+          nullable: true
+        shipping_province:
+          type: string
+          maxLength: 100
+          description: Delivery province
+          nullable: true
+        shipping_postal_code:
+          type: string
+          maxLength: 20
+          description: Postal code
+          nullable: true
+        shipping_country:
+          type: string
+          maxLength: 100
+          default: Indonesia
+          description: Delivery country
+        shipping_contact_name:
+          type: string
+          maxLength: 255
+          description: Delivery contact person
+        shipping_contact_phone:
+          type: string
+          maxLength: 50
+          description: Delivery contact phone
+        shipping_notes:
+          type: string
+          description: Delivery instructions
+          nullable: true
+          
+        # Costs
+        shipping_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Shipping charges
+          example: 50000.00
+        insurance_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Insurance cost
+          example: 25000.00
+        additional_fee:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Additional fees
+          example: 10000.00
+        total_cost:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Total shipping cost
+          example: 85000.00
+        currency:
+          type: string
+          maxLength: 3
+          default: IDR
+          description: Currency code
+        paid_by:
+          type: string
+          enum: [sender, recipient, third_party]
+          description: Who pays shipping cost
+          nullable: true
+          
+        # Status
+        status:
+          type: string
+          enum: [preparing, ready_to_ship, picked_up, in_transit, out_for_delivery, delivered, failed_delivery, returned, cancelled]
+          default: preparing
+          description: Current shipment status
+          
+        # Timeline
+        prepared_at:
+          type: string
+          format: date-time
+          description: When package was prepared
+          nullable: true
+        shipped_at:
+          type: string
+          format: date-time
+          description: When package was shipped
+          nullable: true
+        picked_up_at:
+          type: string
+          format: date-time
+          description: When courier picked up
+          nullable: true
+        estimated_delivery_date:
+          type: string
+          format: date
+          description: Estimated delivery date
+          nullable: true
+        actual_delivery_date:
+          type: string
+          format: date
+          description: Actual delivery date
+          nullable: true
+        delivered_at:
+          type: string
+          format: date-time
+          description: When package was delivered
+          nullable: true
+        cancelled_at:
+          type: string
+          format: date-time
+          description: When shipment was cancelled
+          nullable: true
+          
+        # Delivery Confirmation
+        delivered_to:
+          type: string
+          maxLength: 255
+          description: Person who received package
+          nullable: true
+        delivery_signature_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Delivery signature URL
+          nullable: true
+        delivery_photo_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Delivery photo URL
+          nullable: true
+        delivery_notes:
+          type: string
+          description: Delivery notes
+          nullable: true
+        received_by:
+          type: string
+          format: uuid
+          description: User who confirmed receipt
+          nullable: true
+          
+        # POD (Proof of Delivery)
+        pod_url:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Proof of delivery document
+          nullable: true
+        pod_uploaded_at:
+          type: string
+          format: date-time
+          description: When POD was uploaded
+          nullable: true
+        pod_verified:
+          type: boolean
+          default: false
+          description: POD has been verified
+        pod_verified_at:
+          type: string
+          format: date-time
+          description: When POD was verified
+          nullable: true
+          
+        # Tracking Updates
+        last_tracking_update:
+          type: string
+          format: date-time
+          description: Last tracking update
+          nullable: true
+        last_tracking_status:
+          type: string
+          maxLength: 255
+          description: Last tracking status
+          nullable: true
+        last_tracking_location:
+          type: string
+          maxLength: 255
+          description: Last known location
+          nullable: true
+        tracking_history:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              status:
+                type: string
+              location:
+                type: string
+              description:
+                type: string
+          default: []
+          description: Complete tracking history
+          
+        # Issues
+        has_issues:
+          type: boolean
+          default: false
+          description: Shipment has issues
+        issue_type:
+          type: string
+          maxLength: 100
+          description: Type of issue
+          nullable: true
+        issue_description:
+          type: string
+          description: Issue description
+          nullable: true
+        issue_resolved:
+          type: boolean
+          default: false
+          description: Issue has been resolved
+        issue_resolved_at:
+          type: string
+          format: date-time
+          description: When issue was resolved
+          nullable: true
+          
+        # Return/Exchange
+        is_return:
+          type: boolean
+          default: false
+          description: Is return shipment
+        return_reason:
+          type: string
+          description: Return reason
+          nullable: true
+        return_approved_by:
+          type: string
+          format: uuid
+          description: User who approved return
+          nullable: true
+          
+        # Notes
+        notes:
+          type: string
+          description: General shipment notes
+          nullable: true
+        internal_notes:
+          type: string
+          description: Internal team notes
+          nullable: true
+        customer_notes:
+          type: string
+          description: Customer delivery notes
+          nullable: true
+        courier_notes:
+          type: string
+          description: Courier notes
+          nullable: true
+          
+        # Integration
+        courier_api_response:
+          type: object
+          description: Courier API response data
+          nullable: true
+        external_shipment_id:
+          type: string
+          maxLength: 255
+          description: Courier's shipment ID
+          nullable: true
+
+# Order Status History Entity
+OrderStatusHistory:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - purchase_order_id
+        - to_status
+        - changed_at
+      properties:
+        # Order Reference
+        purchase_order_id:
+          type: string
+          format: uuid
+          description: Reference to parent order
+          
+        # Status Change
+        from_status:
+          type: string
+          maxLength: 50
+          description: Previous status
+          nullable: true
+        to_status:
+          type: string
+          maxLength: 50
+          description: New status
+        status_type:
+          type: string
+          enum: [order_status, payment_status, production_status, shipping_status, qc_status]
+          default: order_status
+          description: Type of status being tracked
+          
+        # Change Details
+        change_reason:
+          type: string
+          description: Reason for status change
+          nullable: true
+        change_notes:
+          type: string
+          description: Additional notes about change
+          nullable: true
+        automatic_change:
+          type: boolean
+          default: false
+          description: Was change automatic
+        triggered_by_event:
+          type: string
+          maxLength: 100
+          description: System event that triggered change
+          nullable: true
+          
+        # Related Records
+        related_payment_id:
+          type: string
+          format: uuid
+          description: Related payment record
+          nullable: true
+        related_shipment_id:
+          type: string
+          format: uuid
+          description: Related shipment record
+          nullable: true
+        related_quotation_id:
+          type: string
+          format: uuid
+          description: Related quotation record
+          nullable: true
+          
+        # Metadata
+        metadata:
+          type: object
+          description: Additional change metadata
+          default: {}
+          
+        # Notification
+        notification_sent:
+          type: boolean
+          default: false
+          description: Notification was sent
+        notification_sent_at:
+          type: string
+          format: date-time
+          description: When notification was sent
+          nullable: true
+        notification_recipients:
+          type: object
+          description: Who was notified
+          nullable: true
+          
+        # Attachments
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              filename:
+                type: string
+              size:
+                type: integer
+              uploaded_at:
+                type: string
+                format: date-time
+          default: []
+          description: Status change attachments
+          
+        # Change Attribution
+        changed_at:
+          type: string
+          format: date-time
+          description: When change occurred
+        changed_by:
+          type: string
+          format: uuid
+          description: User who made change
+          nullable: true
+        changed_by_name:
+          type: string
+          maxLength: 255
+          description: Name of user who made change
+          nullable: true
+          
+        # Duration Tracking
+        time_in_previous_status_seconds:
+          type: integer
+          minimum: 0
+          description: Time spent in previous status
+          nullable: true
+
+# Orders Filters for Admin Interface
+OrdersFilters:
+  type: object
+  properties:
+    status:
+      type: array
+      items:
+        type: string
+      description: Filter by order status
+    payment_status:
+      type: array
+      items:
+        type: string
+      description: Filter by payment status
+    production_type:
+      type: array
+      items:
+        type: string
+        enum: [internal, vendor]
+      description: Filter by production type
+    customer_id:
+      type: string
+      format: uuid
+      description: Filter by specific customer
+    vendor_id:
+      type: string
+      format: uuid
+      description: Filter by specific vendor
+    date_from:
+      type: string
+      format: date
+      description: Orders from date
+    date_to:
+      type: string
+      format: date
+      description: Orders to date
+    priority:
+      type: array
+      items:
+        type: string
+        enum: [low, normal, high, urgent]
+      description: Filter by priority
+    search:
+      type: string
+      description: Search order code, customer name, email, phone
+    tags:
+      type: array
+      items:
+        type: string
+      description: Filter by tags
+
+# Create Order Request
+CreateOrderRequest:
+  type: object
+  required:
+    - customer
+    - items
+    - shipping_address
+  properties:
+    customer:
+      type: object
+      required:
+        - name
+        - email
+        - phone
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          description: Existing customer ID
+          nullable: true
+        name:
+          type: string
+          maxLength: 255
+          description: Customer full name
+        email:
+          type: string
+          format: email
+          description: Customer email
+        phone:
+          type: string
+          pattern: '^(\+62|08)[0-9]{8,12}$'
+          description: Customer phone number
+        company:
+          type: string
+          maxLength: 255
+          description: Company name for business customers
+          nullable: true
+        type:
+          type: string
+          enum: [individual, business]
+          default: individual
+          description: Customer type
+    items:
+      type: array
+      minItems: 1
+      items:
+        type: object
+        required:
+          - product_name
+          - quantity
+        properties:
+          product_id:
+            type: string
+            format: uuid
+            description: Product catalog reference
+            nullable: true
+          product_name:
+            type: string
+            maxLength: 255
+            description: Product name
+          quantity:
+            type: integer
+            minimum: 1
+            description: Item quantity
+          customization:
+            type: object
+            description: Custom requirements
+            properties:
+              bahan:
+                type: string
+                example: "Kuningan"
+              kualitas:
+                type: string
+                example: "premium"
+              ketebalan:
+                type: string
+                example: "2mm"
+              ukuran:
+                type: string
+                example: "30cm x 20cm"
+              warna_background:
+                type: string
+                pattern: '^#[0-9A-Fa-f]{6}$'
+              custom_text:
+                type: string
+              custom_text_placement:
+                type: string
+          design_file_url:
+            type: string
+            format: uri
+            description: Customer design file
+            nullable: true
+    shipping_address:
+      type: object
+      required:
+        - address
+      properties:
+        address:
+          type: string
+          description: Complete address
+        city:
+          type: string
+          maxLength: 100
+        province:
+          type: string
+          maxLength: 100
+        postal_code:
+          type: string
+          maxLength: 20
+        country:
+          type: string
+          maxLength: 100
+          default: Indonesia
+    billing_address:
+      type: object
+      description: Billing address (optional)
+      properties:
+        address:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+        same_as_shipping:
+          type: boolean
+          default: true
+    customer_notes:
+      type: string
+      description: Notes from customer
+      nullable: true
+    priority:
+      type: string
+      enum: [low, normal, high, urgent]
+      default: normal
+      description: Order priority
+    tags:
+      type: array
+      items:
+        type: string
+      description: Order tags
+      default: []
+
+# Update Order Status Request
+UpdateOrderStatusRequest:
+  type: object
+  required:
+    - status
+  properties:
+    status:
+      type: string
+      description: New order status
+    notes:
+      type: string
+      description: Reason for status change
+      nullable: true
+    notify_customer:
+      type: boolean
+      default: false
+      description: Send notification to customer
+    notify_vendor:
+      type: boolean
+      default: false
+      description: Send notification to vendor
+
+# Create Quotation Request
+CreateQuotationRequest:
+  type: object
+  required:
+    - quotation_type
+    - base_price
+    - quantity
+    - estimated_lead_time_days
+  properties:
+    quotation_type:
+      type: string
+      enum: [vendor, customer]
+      description: Type of quotation
+    vendor_id:
+      type: string
+      format: uuid
+      description: Vendor for vendor quotations
+      nullable: true
+    customer_id:
+      type: string
+      format: uuid
+      description: Customer for customer quotations
+      nullable: true
+    base_price:
+      type: number
+      format: decimal
+      minimum: 0
+      description: Base unit price
+    quantity:
+      type: integer
+      minimum: 1
+      description: Quantity quoted
+    estimated_lead_time_days:
+      type: integer
+      minimum: 1
+      description: Lead time in days
+    markup_type:
+      type: string
+      enum: [percentage, fixed]
+      description: Markup calculation method
+      nullable: true
+    markup_value:
+      type: number
+      format: decimal
+      minimum: 0
+      description: Markup value
+      nullable: true
+    payment_terms:
+      type: string
+      description: Payment terms
+      nullable: true
+    valid_until:
+      type: string
+      format: date
+      description: Quote expiry date
+    notes:
+      type: string
+      description: Quotation notes
+      nullable: true
+
+# Profitability Report Response
+ProfitabilityReport:
+  type: object
+  properties:
+    order_code:
+      type: string
+      description: Order reference
+    customer_revenue:
+      type: object
+      properties:
+        subtotal:
+          type: number
+          format: decimal
+        tax_amount:
+          type: number
+          format: decimal
+        shipping_cost:
+          type: number
+          format: decimal
+        total_amount:
+          type: number
+          format: decimal
+    vendor_costs:
+      type: object
+      properties:
+        subtotal:
+          type: number
+          format: decimal
+        shipping_cost:
+          type: number
+          format: decimal
+        total_amount:
+          type: number
+          format: decimal
+    additional_costs:
+      type: object
+      properties:
+        packaging:
+          type: number
+          format: decimal
+        handling:
+          type: number
+          format: decimal
+        other:
+          type: number
+          format: decimal
+        total:
+          type: number
+          format: decimal
+    profitability:
+      type: object
+      properties:
+        gross_profit:
+          type: number
+          format: decimal
+        profit_margin_percentage:
+          type: number
+          format: decimal
+        roi_percentage:
+          type: number
+          format: decimal

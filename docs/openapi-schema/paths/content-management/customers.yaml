@@ -1,0 +1,1737 @@
+openapi: 3.1.0
+info:
+  title: Customer Management API
+  version: 1.0.0
+paths:
+  # ================================================================
+  # CUSTOMER MANAGEMENT ENDPOINTS
+  # ================================================================
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: List Customers
+      description: |
+        Retrieve a paginated list of customers with filtering and search capabilities.
+        
+        **Features:**
+        - Multi-tenant isolation (tenant-scoped data)
+        - Advanced filtering by type, status, stage
+        - Full-text search across name, email, phone, company
+        - RFM segmentation support
+        - Sort by various customer metrics
+      operationId: listCustomers
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+          example: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Number of customers per page
+          example: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+          description: Search across customer name, email, phone, company
+          example: "tech"
+        - name: customer_type
+          in: query
+          schema:
+            type: string
+            enum: [individual, business]
+          description: Filter by customer type
+          example: "business"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, blocked]
+          description: Filter by customer status
+          example: "active"
+        - name: customer_stage
+          in: query
+          schema:
+            type: string
+            enum: [prospect, lead, customer, advocate]
+          description: Filter by customer lifecycle stage
+          example: "customer"
+        - name: is_vip
+          in: query
+          schema:
+            type: boolean
+          description: Filter VIP customers only
+          example: true
+        - name: loyalty_tier
+          in: query
+          schema:
+            type: string
+            enum: [bronze, silver, gold, platinum]
+          description: Filter by loyalty tier
+          example: "gold"
+        - name: tags
+          in: query
+          schema:
+            type: string
+          description: Filter by tags (comma-separated)
+          example: "VIP,Enterprise"
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [name, created_at, last_order_date, total_spent, total_orders]
+            default: created_at
+          description: Sort field
+          example: "total_spent"
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Sort order
+          example: "desc"
+      responses:
+        '200':
+          description: Customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerListResponse'
+              examples:
+                business_customers:
+                  summary: Business customers list
+                  value:
+                    data:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                        customer_code: "CUST-2025-0001"
+                        customer_number: 1
+                        name: "PT Tech Solutions Indonesia"
+                        email: "contact@techsolutions.id"
+                        phone: "+62 21 5678 9012"
+                        customer_type: "business"
+                        status: "active"
+                        customer_stage: "customer"
+                        company: "PT Tech Solutions Indonesia"
+                        total_orders: 15
+                        total_spent: 25500000
+                        is_vip: true
+                        loyalty_tier: "gold"
+                        created_at: "2024-01-15T10:30:00Z"
+                        updated_at: "2025-11-12T14:30:00Z"
+                    meta:
+                      current_page: 1
+                      per_page: 20
+                      total: 150
+                      total_pages: 8
+                      has_more: true
+                    filters:
+                      customer_type: "business"
+                      status: "active"
+        '400':
+          $ref: '../../components/responses.yaml#/BadRequest'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+    post:
+      tags:
+        - Customers
+      summary: Create Customer
+      description: |
+        Create a new customer record with automatic code generation.
+        
+        **Features:**
+        - Automatic customer code generation (CUST-YYYY-NNNN)
+        - Tenant isolation (customer scoped to current tenant)
+        - Business vs Individual customer support
+        - Email validation and duplicate prevention
+        - Automatic loyalty program enrollment
+      operationId: createCustomer
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/customers.yaml#/CustomerCreateInput'
+            examples:
+              business_customer:
+                summary: Business customer creation
+                value:
+                  name: "PT Digital Innovations"
+                  email: "contact@digitalinnovations.id"
+                  phone: "+62 21 8765 4321"
+                  mobile_phone: "+62 812 9876 5432"
+                  customer_type: "business"
+                  company: "PT Digital Innovations"
+                  tax_id: "02.345.678.9-012.000"
+                  primary_contact_name: "Jane Doe"
+                  primary_contact_email: "jane.doe@digitalinnovations.id"
+                  website: "https://digitalinnovations.id"
+                  industry: "Technology"
+                  acquisition_source: "Website Contact Form"
+                  tags: ["Enterprise", "Technology"]
+                  notes: "Interested in custom etching solutions"
+              individual_customer:
+                summary: Individual customer creation
+                value:
+                  name: "John Smith"
+                  email: "john.smith@email.com"
+                  phone: "+62 812 1234 5678"
+                  customer_type: "individual"
+                  acquisition_source: "Google Ads"
+                  tags: ["Retail"]
+                  notes: "Prefers WhatsApp communication"
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerResponse'
+              examples:
+                created_customer:
+                  summary: Successfully created customer
+                  value:
+                    success: true
+                    message: "Customer created successfully"
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      uuid: "550e8400-e29b-41d4-a716-446655440000"
+                      tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      customer_code: "CUST-2025-0003"
+                      customer_number: 3
+                      name: "PT Digital Innovations"
+                      email: "contact@digitalinnovations.id"
+                      phone: "+62 21 8765 4321"
+                      customer_type: "business"
+                      status: "active"
+                      customer_stage: "prospect"
+                      company: "PT Digital Innovations"
+                      tax_id: "02.345.678.9-012.000"
+                      is_vip: false
+                      loyalty_tier: "bronze"
+                      loyalty_points: 0
+                      total_orders: 0
+                      total_spent: 0
+                      created_at: "2025-11-12T18:00:00Z"
+                      updated_at: "2025-11-12T18:00:00Z"
+                      addresses: []
+                      loyalty_info: null
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerValidationError'
+              examples:
+                validation_error:
+                  summary: Validation error example
+                  value:
+                    error: "Validation failed"
+                    message: "The given data was invalid"
+                    errors:
+                      email: ["The email field must be a valid email address"]
+                      phone: ["The phone field is required"]
+                    code: "VALIDATION_ERROR"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '409':
+          description: Duplicate customer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Duplicate customer"
+                  message:
+                    type: string
+                    example: "Customer with this email already exists"
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  /customers/{id}:
+    get:
+      tags:
+        - Customers
+      summary: Get Customer Details
+      description: |
+        Retrieve detailed customer information including addresses, recent interactions, loyalty info, and analytics.
+        
+        **Includes:**
+        - Complete customer profile
+        - All customer addresses
+        - Recent interactions (last 10)
+        - Loyalty program information
+        - Customer segments
+        - Basic analytics summary
+      operationId: getCustomer
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: include
+          in: query
+          schema:
+            type: string
+          description: Include related data (comma-separated)
+          example: "addresses,interactions,loyalty,segments"
+      responses:
+        '200':
+          description: Customer details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerResponse'
+              examples:
+                customer_detail:
+                  summary: Complete customer details
+                  value:
+                    success: true
+                    message: "Customer retrieved successfully"
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      customer_code: "CUST-2025-0001"
+                      name: "PT Tech Solutions Indonesia"
+                      email: "contact@techsolutions.id"
+                      customer_type: "business"
+                      status: "active"
+                      customer_stage: "customer"
+                      total_orders: 15
+                      total_spent: 25500000
+                      is_vip: true
+                      loyalty_tier: "gold"
+                      addresses:
+                        - id: "address-001"
+                          address_type: "billing"
+                          address_line_1: "Jl. Sudirman Kav 52-53"
+                          city: "Jakarta Selatan"
+                          is_default: true
+                      recent_interactions:
+                        - id: "interaction-001"
+                          interaction_type: "phone_call"
+                          subject: "Quotation Follow-up"
+                          interaction_date: "2025-11-12T14:30:00Z"
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+    put:
+      tags:
+        - Customers
+      summary: Update Customer
+      description: |
+        Update customer information with partial update support.
+        
+        **Features:**
+        - Partial updates (only provided fields updated)
+        - Status transitions (prospect → lead → customer → advocate)
+        - VIP status management
+        - Credit limit adjustments
+        - Multi-tenant security
+      operationId: updateCustomer
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/customers.yaml#/CustomerUpdateInput'
+            examples:
+              status_update:
+                summary: Update customer status to VIP
+                value:
+                  status: "active"
+                  customer_stage: "advocate"
+                  is_vip: true
+                  credit_limit: 500000000
+                  payment_terms: "Net 30"
+                  notes: "Upgraded to VIP status - high value customer"
+              contact_update:
+                summary: Update contact information
+                value:
+                  email: "newemail@techsolutions.id"
+                  mobile_phone: "+62 812 9999 8888"
+                  primary_contact_name: "Jane Smith"
+                  primary_contact_email: "jane.smith@techsolutions.id"
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/Customer'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerValidationError'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+    delete:
+      tags:
+        - Customers
+      summary: Delete Customer
+      description: |
+        Soft delete a customer record. Customer data is preserved but marked as deleted.
+        
+        **Notes:**
+        - Soft delete only (data preserved for audit)
+        - Cannot delete customers with active orders
+        - Requires appropriate permissions
+        - Multi-tenant security enforced
+      operationId: deleteCustomer
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Customer deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/responses.yaml#/SuccessResponse'
+              examples:
+                deleted_customer:
+                  summary: Customer deletion success
+                  value:
+                    success: true
+                    message: "Customer deleted successfully"
+                    data: null
+        '400':
+          description: Cannot delete customer with active orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Cannot delete customer"
+                  message:
+                    type: string
+                    example: "Customer has active orders and cannot be deleted"
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  # ================================================================
+  # CUSTOMER ADDRESS ENDPOINTS
+  # ================================================================
+  /customers/{id}/addresses:
+    get:
+      tags:
+        - Customer Addresses
+      summary: List Customer Addresses
+      description: |
+        Retrieve all addresses for a specific customer.
+        
+        **Features:**
+        - Multi-address support per customer
+        - Address type filtering (billing, shipping, warehouse, office)
+        - Default address identification
+        - Geographic data included
+      operationId: listCustomerAddresses
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: address_type
+          in: query
+          schema:
+            type: string
+            enum: [billing, shipping, warehouse, office]
+          description: Filter by address type
+          example: "shipping"
+        - name: is_default
+          in: query
+          schema:
+            type: boolean
+          description: Filter default addresses only
+          example: true
+      responses:
+        '200':
+          description: Customer addresses retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/customers.yaml#/CustomerAddress'
+              examples:
+                customer_addresses:
+                  summary: Customer addresses list
+                  value:
+                    success: true
+                    message: "Addresses retrieved successfully"
+                    data:
+                      - id: "address-001"
+                        customer_id: "550e8400-e29b-41d4-a716-446655440000"
+                        address_type: "billing"
+                        address_label: "Head Office"
+                        address_line_1: "Jl. Sudirman Kav 52-53"
+                        city: "Jakarta Selatan"
+                        country: "Indonesia"
+                        is_default: true
+                        is_active: true
+                      - id: "address-002"
+                        customer_id: "550e8400-e29b-41d4-a716-446655440000"
+                        address_type: "shipping"
+                        address_label: "Warehouse"
+                        address_line_1: "Jl. Industri Raya No. 15"
+                        city: "Tangerang"
+                        country: "Indonesia"
+                        is_default: false
+                        is_active: true
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+    post:
+      tags:
+        - Customer Addresses
+      summary: Add Customer Address
+      description: |
+        Add a new address to a customer's address book.
+        
+        **Features:**
+        - Multiple address types support
+        - Automatic default address management
+        - Geographic coordinate support
+        - Address validation
+      operationId: addCustomerAddress
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/customers.yaml#/CustomerAddressInput'
+            examples:
+              shipping_address:
+                summary: Add shipping address
+                value:
+                  address_type: "shipping"
+                  address_label: "Secondary Warehouse"
+                  contact_name: "John Doe"
+                  contact_phone: "+62 21 8888 9999"
+                  address_line_1: "Jl. Industri Selatan No. 25"
+                  address_line_2: "Blok C-15"
+                  city: "Bekasi"
+                  state_province: "Jawa Barat"
+                  postal_code: "17530"
+                  country: "Indonesia"
+                  delivery_instructions: "Call before delivery, loading dock at back"
+              billing_address:
+                summary: Add billing address
+                value:
+                  address_type: "billing"
+                  address_label: "Finance Department"
+                  address_line_1: "Jl. Kebon Sirih No. 71"
+                  city: "Jakarta Pusat"
+                  postal_code: "10340"
+                  country: "Indonesia"
+                  is_default: true
+      responses:
+        '201':
+          description: Address added successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerAddress'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerValidationError'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  /customers/{id}/addresses/{addressId}:
+    put:
+      tags:
+        - Customer Addresses
+      summary: Update Customer Address
+      description: |
+        Update an existing customer address.
+        
+        **Features:**
+        - Partial update support
+        - Default address management
+        - Address validation
+        - Geographic coordinate updates
+      operationId: updateCustomerAddress
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Address ID
+          example: "address-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/customers.yaml#/CustomerAddressInput'
+            examples:
+              update_address:
+                summary: Update address details
+                value:
+                  address_line_1: "Jl. Sudirman Kav 52-53 (Updated)"
+                  contact_name: "Jane Smith"
+                  contact_phone: "+62 21 7777 8888"
+                  delivery_instructions: "New delivery instructions: Use service elevator"
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerAddress'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerValidationError'
+        '404':
+          description: Customer or address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Address not found"
+                  message:
+                    type: string
+                    example: "Address with ID address-001 not found for this customer"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+    delete:
+      tags:
+        - Customer Addresses
+      summary: Delete Customer Address
+      description: |
+        Delete a customer address. Default addresses cannot be deleted if they are the only address.
+        
+        **Rules:**
+        - Cannot delete the only address for a customer
+        - If deleting default address, another will be auto-promoted
+        - Soft delete with audit trail
+      operationId: deleteCustomerAddress
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Address ID
+          example: "address-002"
+      responses:
+        '200':
+          description: Address deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/responses.yaml#/SuccessResponse'
+        '400':
+          description: Cannot delete address
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Cannot delete address"
+                  message:
+                    type: string
+                    example: "Cannot delete the only address for this customer"
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Address not found"
+                  message:
+                    type: string
+                    example: "Address with ID address-002 not found"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  # ================================================================
+  # CUSTOMER ANALYTICS ENDPOINTS
+  # ================================================================
+  /customers/{id}/analytics:
+    get:
+      tags:
+        - Customer Analytics
+      summary: Get Customer Analytics
+      description: |
+        Retrieve comprehensive analytics for a customer including RFM analysis, 
+        order history, revenue metrics, and interaction patterns.
+        
+        **Analytics Included:**
+        - Order summary and trends
+        - Revenue and lifetime value
+        - RFM segmentation analysis
+        - Interaction frequency patterns
+        - Customer journey insights
+      operationId: getCustomerAnalytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y, all]
+            default: all
+          description: Analysis period
+          example: "1y"
+      responses:
+        '200':
+          description: Customer analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerAnalyticsResponse'
+              examples:
+                customer_analytics:
+                  summary: Customer analytics example
+                  value:
+                    success: true
+                    message: "Analytics retrieved successfully"
+                    data:
+                      customer_id: "550e8400-e29b-41d4-a716-446655440000"
+                      orders_summary:
+                        total_orders: 15
+                        completed_orders: 12
+                        pending_orders: 2
+                        cancelled_orders: 1
+                        first_order_date: "2024-01-15T10:30:00Z"
+                        last_order_date: "2025-11-10T14:45:00Z"
+                      revenue_summary:
+                        lifetime_value: 25500000
+                        total_spent: 25500000
+                        average_order_value: 1700000
+                        outstanding_balance: 0
+                        credit_utilization: 0.15
+                      rfm_analysis:
+                        recency_score: 4
+                        frequency_score: 5
+                        monetary_score: 4
+                        rfm_segment: "Champions"
+                        segment_description: "Best customers. Buy recently, frequently, and spend the most"
+                      interactions_summary:
+                        total_interactions: 28
+                        last_interaction_date: "2025-11-12T16:20:00Z"
+                        interaction_frequency: 2.5
+                        avg_response_time_hours: 4.5
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  # ================================================================
+  # CUSTOMER INTERACTION ENDPOINTS
+  # ================================================================
+  /customers/{id}/interactions:
+    get:
+      tags:
+        - Customer Interactions
+      summary: List Customer Interactions
+      description: |
+        Retrieve interaction history for a customer with filtering and pagination.
+        
+        **Features:**
+        - Complete interaction timeline
+        - Filter by interaction type and channel
+        - Follow-up tracking
+        - Staff assignment visibility
+        - Chronological ordering
+      operationId: listCustomerInteractions
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+          example: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Items per page
+          example: 20
+        - name: interaction_type
+          in: query
+          schema:
+            type: string
+          description: Filter by interaction type
+          example: "phone_call"
+        - name: interaction_channel
+          in: query
+          schema:
+            type: string
+          description: Filter by communication channel
+          example: "phone"
+        - name: follow_up_required
+          in: query
+          schema:
+            type: boolean
+          description: Filter interactions requiring follow-up
+          example: true
+        - name: contacted_by
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by staff member who handled interaction
+          example: "staff-uuid-001"
+      responses:
+        '200':
+          description: Customer interactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Interactions retrieved successfully"
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../schemas/content-management/customers.yaml#/CustomerInteraction'
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        example: 1
+                      per_page:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 28
+                      total_pages:
+                        type: integer
+                        example: 2
+              examples:
+                customer_interactions:
+                  summary: Customer interactions list
+                  value:
+                    success: true
+                    message: "Interactions retrieved successfully"
+                    data:
+                      - id: "interaction-001"
+                        customer_id: "550e8400-e29b-41d4-a716-446655440000"
+                        interaction_type: "phone_call"
+                        interaction_channel: "phone"
+                        subject: "Quotation Follow-up"
+                        description: "Discussed project requirements and timeline"
+                        outcome: "Quote approved, proceeding to order"
+                        interaction_date: "2025-11-12T14:30:00Z"
+                        duration_minutes: 45
+                        follow_up_required: false
+                      - id: "interaction-002"
+                        customer_id: "550e8400-e29b-41d4-a716-446655440000"
+                        interaction_type: "email"
+                        interaction_channel: "email"
+                        subject: "Project Specifications Clarification"
+                        description: "Customer requested additional details on etching process"
+                        interaction_date: "2025-11-10T09:15:00Z"
+                        follow_up_required: true
+                        follow_up_date: "2025-11-15T10:00:00Z"
+                    meta:
+                      current_page: 1
+                      per_page: 20
+                      total: 28
+                      total_pages: 2
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+    post:
+      tags:
+        - Customer Interactions
+      summary: Log Customer Interaction
+      description: |
+        Record a new customer interaction (call, email, meeting, etc.).
+        
+        **Features:**
+        - Multiple interaction types and channels
+        - Follow-up scheduling
+        - Outcome tracking
+        - Duration logging
+        - Staff assignment
+      operationId: logCustomerInteraction
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Customer ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - interaction_type
+                - interaction_date
+              properties:
+                interaction_type:
+                  type: string
+                  maxLength: 50
+                  description: Type of interaction
+                  example: "phone_call"
+                interaction_channel:
+                  type: string
+                  maxLength: 50
+                  nullable: true
+                  description: Communication channel used
+                  example: "phone"
+                subject:
+                  type: string
+                  maxLength: 255
+                  nullable: true
+                  description: Interaction subject/title
+                  example: "Order Status Inquiry"
+                description:
+                  type: string
+                  nullable: true
+                  description: Detailed interaction description
+                  example: "Customer called to inquire about order #ORD-2025-0015 delivery status"
+                outcome:
+                  type: string
+                  maxLength: 100
+                  nullable: true
+                  description: Interaction outcome
+                  example: "Provided tracking information, customer satisfied"
+                interaction_date:
+                  type: string
+                  format: date-time
+                  description: When interaction occurred
+                  example: "2025-11-12T15:30:00Z"
+                duration_minutes:
+                  type: integer
+                  nullable: true
+                  description: Interaction duration in minutes
+                  example: 15
+                follow_up_required:
+                  type: boolean
+                  default: false
+                  description: Requires follow-up action
+                  example: false
+                follow_up_date:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: Scheduled follow-up date
+                  example: null
+                follow_up_notes:
+                  type: string
+                  nullable: true
+                  description: Follow-up notes
+                  example: null
+            examples:
+              phone_call:
+                summary: Phone call interaction
+                value:
+                  interaction_type: "phone_call"
+                  interaction_channel: "phone"
+                  subject: "Order Status Inquiry"
+                  description: "Customer called to inquire about order #ORD-2025-0015 delivery status. Provided tracking information and expected delivery date."
+                  outcome: "Information provided, customer satisfied"
+                  interaction_date: "2025-11-12T15:30:00Z"
+                  duration_minutes: 15
+                  follow_up_required: false
+              email_follow_up:
+                summary: Email with follow-up required
+                value:
+                  interaction_type: "email"
+                  interaction_channel: "email"
+                  subject: "New Project Quotation Request"
+                  description: "Customer sent detailed project specifications via email. Requires technical review and quotation preparation."
+                  outcome: "Specifications received, needs quotation"
+                  interaction_date: "2025-11-12T10:00:00Z"
+                  follow_up_required: true
+                  follow_up_date: "2025-11-14T09:00:00Z"
+                  follow_up_notes: "Prepare detailed quotation with material specifications"
+      responses:
+        '201':
+          description: Interaction logged successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerInteraction'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerValidationError'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerNotFoundError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  # ================================================================
+  # CUSTOMER SEARCH AND ADVANCED OPERATIONS
+  # ================================================================
+  /customers/search:
+    get:
+      tags:
+        - Customers
+      summary: Advanced Customer Search
+      description: |
+        Perform advanced search across customer records with multiple criteria.
+        
+        **Search Capabilities:**
+        - Full-text search across multiple fields
+        - Advanced filtering combinations
+        - Geographic proximity search
+        - Custom field searches
+        - Export capabilities
+      operationId: searchCustomers
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 255
+          description: Search query (searches name, email, phone, company)
+          example: "tech solutions"
+        - name: advanced_search
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Enable advanced search mode
+          example: true
+        - name: fields
+          in: query
+          schema:
+            type: string
+          description: Comma-separated fields to search in
+          example: "name,email,company"
+        - name: location
+          in: query
+          schema:
+            type: string
+          description: Search by location (city, state, country)
+          example: "Jakarta"
+        - name: radius_km
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+          description: Search radius in kilometers (requires lat/lng)
+          example: 50
+        - name: lat
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Latitude for proximity search
+          example: -6.2088
+        - name: lng
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Longitude for proximity search
+          example: 106.8456
+        - name: export_format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv, excel]
+            default: json
+          description: Export format for results
+          example: "csv"
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerListResponse'
+            text/csv:
+              schema:
+                type: string
+                example: |
+                  id,name,email,phone,customer_type,status,total_orders,total_spent
+                  550e8400-e29b-41d4-a716-446655440000,PT Tech Solutions,contact@techsolutions.id,+62215678901,business,active,15,25500000
+        '400':
+          $ref: '../../components/responses.yaml#/BadRequest'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  # ================================================================
+  # BULK OPERATIONS
+  # ================================================================
+  /customers/bulk:
+    post:
+      tags:
+        - Customer Bulk Operations
+      summary: Bulk Customer Operations
+      description: |
+        Perform bulk operations on multiple customers (update, delete, tag management).
+        
+        **Supported Operations:**
+        - Bulk status updates
+        - Bulk tag assignment/removal
+        - Bulk customer stage updates
+        - Bulk VIP status changes
+        - Bulk export
+      operationId: bulkCustomerOperations
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - operation
+                - customer_ids
+              properties:
+                operation:
+                  type: string
+                  enum: [update_status, update_stage, add_tags, remove_tags, update_vip, export]
+                  description: Bulk operation to perform
+                  example: "update_status"
+                customer_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: Array of customer IDs to operate on
+                  example: ["customer-001", "customer-002", "customer-003"]
+                data:
+                  type: object
+                  description: Operation-specific data
+                  example:
+                    status: "active"
+                    notes: "Bulk activation performed"
+            examples:
+              bulk_status_update:
+                summary: Bulk status update
+                value:
+                  operation: "update_status"
+                  customer_ids: ["customer-001", "customer-002"]
+                  data:
+                    status: "active"
+                    notes: "Re-activated after payment resolution"
+              bulk_tag_assignment:
+                summary: Bulk tag assignment
+                value:
+                  operation: "add_tags"
+                  customer_ids: ["customer-001", "customer-002", "customer-003"]
+                  data:
+                    tags: ["Q4-2025", "High-Priority"]
+      responses:
+        '200':
+          description: Bulk operation completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Bulk operation completed successfully"
+                  results:
+                    type: object
+                    properties:
+                      processed:
+                        type: integer
+                        example: 3
+                      succeeded:
+                        type: integer
+                        example: 2
+                      failed:
+                        type: integer
+                        example: 1
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            customer_id:
+                              type: string
+                              example: "customer-003"
+                            error:
+                              type: string
+                              example: "Customer not found"
+        '400':
+          $ref: '../../components/responses.yaml#/BadRequest'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  # ================================================================
+  # CUSTOMER SEGMENTATION ENDPOINTS
+  # ================================================================
+  /customer-segments:
+    get:
+      tags:
+        - Customer Segmentation
+      summary: List Customer Segments
+      description: |
+        Retrieve all customer segments with customer counts and revenue data.
+        
+        **Features:**
+        - Segment performance metrics
+        - Customer count per segment
+        - Revenue analysis per segment
+        - Active/inactive segment filtering
+      operationId: listCustomerSegments
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: segment_type
+          in: query
+          schema:
+            type: string
+            enum: [manual, auto, rfm]
+          description: Filter by segment type
+          example: "rfm"
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status
+          example: true
+      responses:
+        '200':
+          description: Customer segments retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/customers.yaml#/CustomerSegment'
+              examples:
+                customer_segments:
+                  summary: Customer segments list
+                  value:
+                    success: true
+                    message: "Segments retrieved successfully"
+                    data:
+                      - id: "segment-001"
+                        segment_name: "High Value Customers"
+                        segment_code: "HVC_2025"
+                        segment_type: "auto"
+                        customer_count: 125
+                        total_revenue: 8750000000
+                        is_active: true
+                      - id: "segment-002"
+                        segment_name: "VIP Customers"
+                        segment_code: "VIP_2025"
+                        segment_type: "manual"
+                        customer_count: 45
+                        total_revenue: 5200000000
+                        is_active: true
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+    post:
+      tags:
+        - Customer Segmentation
+      summary: Create Customer Segment
+      description: |
+        Create a new customer segment with rules for automatic population.
+        
+        **Segment Types:**
+        - Manual: Manually assigned customers
+        - Auto: Rule-based automatic assignment
+        - RFM: Recency, Frequency, Monetary analysis-based
+      operationId: createCustomerSegment
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - segment_name
+                - segment_code
+                - segment_type
+              properties:
+                segment_name:
+                  type: string
+                  maxLength: 100
+                  description: Human-readable segment name
+                  example: "Premium Customers Q4 2025"
+                segment_code:
+                  type: string
+                  maxLength: 50
+                  description: Unique segment code
+                  example: "PREMIUM_Q4_2025"
+                description:
+                  type: string
+                  nullable: true
+                  description: Segment description
+                  example: "Customers with high lifetime value and recent activity"
+                segment_type:
+                  type: string
+                  enum: [manual, auto, rfm]
+                  description: How segment is managed
+                  example: "auto"
+                rules:
+                  type: object
+                  nullable: true
+                  description: Automated segmentation rules (for auto/rfm types)
+                  example:
+                    conditions:
+                      - field: "lifetime_value"
+                        operator: ">"
+                        value: 100000000
+                      - field: "last_order_date"
+                        operator: ">="
+                        value: "2025-09-01"
+            examples:
+              rfm_segment:
+                summary: RFM-based segment
+                value:
+                  segment_name: "Champions"
+                  segment_code: "RFM_CHAMPIONS"
+                  description: "Best customers - recent, frequent, high-value"
+                  segment_type: "rfm"
+                  rules:
+                    rfm_criteria:
+                      recency_min: 4
+                      frequency_min: 4
+                      monetary_min: 4
+              auto_segment:
+                summary: Auto-rule segment
+                value:
+                  segment_name: "High Value Recent"
+                  segment_code: "HV_RECENT_2025"
+                  description: "High-value customers with recent activity"
+                  segment_type: "auto"
+                  rules:
+                    conditions:
+                      - field: "lifetime_value"
+                        operator: ">"
+                        value: 50000000
+                      - field: "last_order_date"
+                        operator: ">="
+                        value: "2025-10-01"
+      responses:
+        '201':
+          description: Customer segment created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerSegment'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/customers.yaml#/CustomerValidationError'
+        '409':
+          description: Segment code already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Segment code already exists"
+                  message:
+                    type: string
+                    example: "A segment with code HV_RECENT_2025 already exists"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
+
+  /customer-segments/{id}/customers:
+    get:
+      tags:
+        - Customer Segmentation
+      summary: List Customers in Segment
+      description: |
+        Retrieve all customers belonging to a specific segment.
+        
+        **Features:**
+        - Paginated customer list within segment
+        - Customer details with segment relevance
+        - Performance metrics per customer
+        - Export capabilities
+      operationId: listSegmentCustomers
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Segment ID
+          example: "segment-001"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+          example: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Customers per page
+          example: 20
+      responses:
+        '200':
+          description: Segment customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/responses.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/customers.yaml#/Customer'
+                      segment_info:
+                        $ref: '../../schemas/content-management/customers.yaml#/CustomerSegment'
+        '404':
+          description: Segment not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Segment not found"
+                  message:
+                    type: string
+                    example: "Customer segment with ID segment-001 not found"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/InternalServerError'
