@@ -1,13 +1,19 @@
-# PRODUCT MANAGEMENT MODULE
-## Database Schema & API Documentation
+# PRODUCT MANAGEMENT ENGINE SCHEMA
+## Enterprise-Grade Multi-Tenant Product Management System
 
-**Module:** E-Commerce - Product Management  
-**Total Fields:** 64 fields  
+**Module:** E-Commerce - Product Management Engine  
+**Total Fields:** 68 fields (Updated after audit)  
 **Total Tables:** 4 tables (products, product_categories, product_specifications, product_custom_texts)  
-**Admin Page:** `src/pages/admin/ProductEditor.tsx`, `src/pages/admin/ProductCategories.tsx`  
+**Admin Pages:** `src/pages/admin/ProductEditor.tsx`, `src/pages/admin/ProductList.tsx`, `src/pages/admin/ProductCategories.tsx`  
 **Type Definition:** `src/types/product.ts`  
-**Status:** 🚧 PLANNED - Architecture Blueprint  
-**Architecture Reference:** `docs/ARCHITECTURE/ADVANCED_SYSTEMS/1-MULTI_TENANT_ARCHITECTURE.md`
+**Status:** 🔄 **AUDIT COMPLETED - CRITICAL UPDATES REQUIRED**  
+**Architecture Reference:** `docs/ARCHITECTURE/ADVANCED_SYSTEMS/1-MULTI_TENANT_ARCHITECTURE.md`  
+**Business Integration:** `docs/DEVELOPMENTS/PLAN/BUSINESS_HEXAGONAL_PLAN/BUSINESS_CYCLE_PLAN.md`
+
+> **⚠️ CRITICAL AUDIT FINDINGS**  
+> **Status**: Documentation vs Implementation **MISMATCH DETECTED**  
+> **Action Required**: Immediate schema and code updates needed for enterprise compliance  
+> **Priority**: **HIGH** - Core tenant isolation and business workflow missing
 
 ## 🔒 CORE IMMUTABLE RULES COMPLIANCE
 
@@ -36,17 +42,107 @@
 
 ## TABLE OF CONTENTS
 
-1. [Overview](#overview)
-2. [Business Context](#business-context)
-3. [Database Schema](#database-schema)
-4. [Relationship Diagram](#relationship-diagram)
-5. [Field Specifications](#field-specifications)
-6. [Business Rules](#business-rules)
-7. [API Endpoints](#api-endpoints)
-8. [Admin UI Features](#admin-ui-features)
-9. [Sample Data](#sample-data)
-10. [Migration Script](#migration-script)
-11. [Performance Indexes](#performance-indexes)
+1. [🚨 Critical Audit Findings](#-critical-audit-findings)
+2. [Overview](#overview)
+3. [Business Context](#business-context)
+4. [Database Schema](#database-schema)
+5. [Relationship Diagram](#relationship-diagram)
+6. [Field Specifications](#field-specifications)
+7. [Business Rules](#business-rules)
+8. [API Endpoints](#api-endpoints)
+9. [Admin UI Features](#admin-ui-features)
+10. [Sample Data](#sample-data)
+11. [Migration Script](#migration-script)
+12. [Performance Indexes](#performance-indexes)
+13. [🔧 Required Fixes & Implementation Plan](#-required-fixes--implementation-plan)
+
+---
+
+## 🚨 CRITICAL AUDIT FINDINGS
+
+### **AUDIT SUMMARY**
+**Date**: November 12, 2025  
+**Auditor**: System Architect AI  
+**Scope**: Complete documentation vs implementation analysis  
+**Status**: **CRITICAL MISMATCHES FOUND**
+
+### **🔴 CRITICAL ISSUES IDENTIFIED**
+
+#### **1. CORE IMMUTABLE RULES VIOLATIONS**
+
+**❌ ISSUE #1: Missing Tenant Isolation**
+- **Claim**: "All product tables include mandatory `tenant_id UUID NOT NULL`"
+- **Reality**: Migration script **DOES NOT** include `tenant_id` fields
+- **Impact**: **ZERO tenant data isolation** - all tenants share same data
+- **Risk Level**: **CRITICAL** - Data leakage between tenants
+
+**❌ ISSUE #2: UUID Function Inconsistency**
+- **Documentation**: Uses `gen_random_uuid()` (PostgreSQL 13+)
+- **Migration Script**: Uses `uuid_generate_v4()` (requires uuid-ossp extension)
+- **Impact**: Deployment failures, inconsistent UUID generation
+- **Risk Level**: **HIGH** - Production deployment issues
+
+#### **2. MULTI-TENANT ARCHITECTURE GAPS**
+
+**❌ ISSUE #3: Frontend Tenant Context Missing**
+- **Current**: ProductEditor/ProductList have no tenant awareness
+- **Required**: Tenant context provider and tenant-scoped API calls
+- **Impact**: Cannot operate in multi-tenant environment
+- **Risk Level**: **CRITICAL** - System unusable for multi-tenancy
+
+**❌ ISSUE #4: RBAC Integration Missing**
+- **Claim**: "Product management requires specific tenant-scoped permissions"
+- **Reality**: No permission checking in frontend or API layer
+- **Impact**: No access control, security vulnerabilities
+- **Risk Level**: **HIGH** - Security breach potential
+
+#### **3. BUSINESS WORKFLOW INTEGRATION GAPS**
+
+**❌ ISSUE #5: Production Type Logic Missing**
+- **Schema**: Has `production_type`, `vendor_price`, `markup_percentage` fields
+- **Frontend**: No UI for vendor vs internal production workflow
+- **Impact**: Core business logic not implemented
+- **Risk Level**: **HIGH** - Business requirements not met
+
+**❌ ISSUE #6: Quotation System Missing**
+- **Schema**: Has `quotation_required` field
+- **Frontend**: No quotation workflow implementation
+- **Impact**: Broker business model not supported
+- **Risk Level**: **HIGH** - Primary business use case broken
+
+#### **4. HEXAGONAL ARCHITECTURE VIOLATIONS**
+
+**❌ ISSUE #7: Direct Database Access**
+- **Current**: Frontend directly calls mock data services
+- **Required**: Domain → Application → Infrastructure layer separation
+- **Impact**: Tight coupling, not scalable or testable
+- **Risk Level**: **MEDIUM** - Architecture debt
+
+### **📊 COMPLIANCE SCORECARD**
+
+| Component | Documented | Implemented | Status |
+|-----------|------------|-------------|---------|
+| **Tenant Isolation** | ✅ | ❌ | **FAILED** |
+| **RBAC Integration** | ✅ | ❌ | **FAILED** |
+| **Business Workflow** | ✅ | ❌ | **FAILED** |
+| **UUID Consistency** | ✅ | ❌ | **FAILED** |
+| **Multi-Tenant API** | ✅ | ❌ | **FAILED** |
+| **Hexagonal Architecture** | ✅ | ❌ | **FAILED** |
+| **Basic CRUD** | ✅ | ✅ | **PASSED** |
+| **UI Components** | ✅ | ✅ | **PASSED** |
+
+**Overall Compliance**: **25%** (2/8 components)  
+**Enterprise Readiness**: **NOT READY**
+
+### **🎯 IMMEDIATE ACTION REQUIRED**
+
+1. **Fix tenant_id implementation** in all tables
+2. **Standardize UUID generation** across all schemas
+3. **Implement tenant context** in frontend
+4. **Add RBAC permission checking** 
+5. **Build production type workflow** UI
+6. **Create quotation system** integration
+7. **Refactor to Hexagonal Architecture** pattern
 
 ---
 
@@ -1099,20 +1195,25 @@ INSERT INTO product_custom_texts (product_id, text, placement, position, color, 
 ## MIGRATION SCRIPT
 
 ```sql
--- Migration: Create products module tables
--- Description: Tenant-specific product management tables
--- Date: 2025-11-10
+-- Migration: Create products module tables (CORRECTED)
+-- Description: Multi-tenant product management tables with proper tenant isolation
+-- Date: 2025-11-12 (Updated after audit)
+-- Status: CRITICAL FIXES APPLIED
 
 BEGIN;
 
 -- Enable UUID extension if not exists
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Table: product_categories
+-- Table: product_categories (FIXED: Added tenant_id)
 CREATE TABLE IF NOT EXISTS product_categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE - FIXED)
+    tenant_id UUID NOT NULL,
+    
     name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL,
     description TEXT,
     parent_id UUID REFERENCES product_categories(id) ON DELETE CASCADE,
     image VARCHAR(500),
@@ -1122,15 +1223,25 @@ CREATE TABLE IF NOT EXISTS product_categories (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT categories_slug_unique UNIQUE (slug),
+    
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES product_categories(id) ON DELETE CASCADE,
+    
+    -- Unique Constraints (FIXED: Tenant-scoped)
+    UNIQUE(tenant_id, slug),
     CONSTRAINT categories_no_self_parent CHECK (id != parent_id)
 );
 
--- Table: products
+-- Table: products (FIXED: Added tenant_id)
 CREATE TABLE IF NOT EXISTS products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE - FIXED)
+    tenant_id UUID NOT NULL,
+    
     name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) NOT NULL UNIQUE,
+    slug VARCHAR(255) NOT NULL,
     description TEXT,
     long_description TEXT,
     images JSONB DEFAULT '[]'::jsonb,
@@ -1170,56 +1281,92 @@ CREATE TABLE IF NOT EXISTS products (
     deleted_at TIMESTAMP WITH TIME ZONE,
     created_by UUID,
     updated_by UUID,
-    CONSTRAINT products_slug_unique UNIQUE (slug),
+    
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE - FIXED)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES product_categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
+    
+    -- Unique Constraints (FIXED: Tenant-scoped)
+    UNIQUE(tenant_id, slug),
+    
+    -- Check Constraints
     CONSTRAINT products_price_positive CHECK (price IS NULL OR price >= 0),
+    CONSTRAINT products_vendor_price_positive CHECK (vendor_price IS NULL OR vendor_price >= 0),
+    CONSTRAINT products_markup_positive CHECK (markup_percentage >= 0),
     CONSTRAINT products_stock_positive CHECK (stock_quantity >= 0)
 );
 
--- Table: product_specifications
+-- Table: product_specifications (FIXED: Added tenant_id)
 CREATE TABLE IF NOT EXISTS product_specifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE - FIXED)
+    tenant_id UUID NOT NULL,
+    
+    product_id UUID NOT NULL,
     key VARCHAR(255) NOT NULL,
     value TEXT NOT NULL,
     order_index INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT spec_product_key_unique UNIQUE (product_id, key)
+    
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE - FIXED)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    
+    -- Unique Constraints (FIXED: Tenant-scoped)
+    UNIQUE(tenant_id, product_id, key)
 );
 
--- Table: product_custom_texts
+-- Table: product_custom_texts (FIXED: Added tenant_id)
 CREATE TABLE IF NOT EXISTS product_custom_texts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    -- Multi-Tenant Isolation (CORE RULE COMPLIANCE - FIXED)
+    tenant_id UUID NOT NULL,
+    
+    product_id UUID NOT NULL,
     text TEXT NOT NULL,
     placement VARCHAR(20) NOT NULL CHECK (placement IN ('depan', 'belakang')),
     position VARCHAR(100),
     color VARCHAR(7) DEFAULT '#000000',
     order_index INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Foreign Key Constraints (CORE RULE COMPLIANCE - FIXED)
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
--- Indexes for product_categories
-CREATE INDEX IF NOT EXISTS idx_categories_slug ON product_categories(slug);
+-- Indexes for product_categories (FIXED: Tenant-aware)
+CREATE INDEX IF NOT EXISTS idx_categories_tenant ON product_categories(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_categories_tenant_slug ON product_categories(tenant_id, slug);
 CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON product_categories(parent_id);
-CREATE INDEX IF NOT EXISTS idx_categories_active ON product_categories(is_active) WHERE is_active = true;
-CREATE INDEX IF NOT EXISTS idx_categories_order ON product_categories(order_index);
+CREATE INDEX IF NOT EXISTS idx_categories_active ON product_categories(tenant_id, is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_categories_order ON product_categories(tenant_id, order_index);
 
--- Indexes for products
-CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+-- Indexes for products (FIXED: Tenant-aware)
+CREATE INDEX IF NOT EXISTS idx_products_tenant ON products(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_products_tenant_slug ON products(tenant_id, slug);
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
-CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
-CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured) WHERE featured = true;
+CREATE INDEX IF NOT EXISTS idx_products_status ON products(tenant_id, status);
+CREATE INDEX IF NOT EXISTS idx_products_featured ON products(tenant_id, featured) WHERE featured = true;
+CREATE INDEX IF NOT EXISTS idx_products_production_type ON products(production_type);
+CREATE INDEX IF NOT EXISTS idx_products_quotation_required ON products(quotation_required) WHERE quotation_required = true;
 CREATE INDEX IF NOT EXISTS idx_products_tags ON products USING GIN (tags);
 CREATE INDEX IF NOT EXISTS idx_products_deleted_at ON products(deleted_at) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_products_search ON products USING GIN (to_tsvector('indonesian', name || ' ' || COALESCE(description, '')));
 
--- Indexes for product_specifications
+-- Indexes for product_specifications (FIXED: Tenant-aware)
+CREATE INDEX IF NOT EXISTS idx_specs_tenant ON product_specifications(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_specs_product_id ON product_specifications(product_id);
 CREATE INDEX IF NOT EXISTS idx_specs_key ON product_specifications(key);
 
--- Indexes for product_custom_texts
+-- Indexes for product_custom_texts (FIXED: Tenant-aware)
+CREATE INDEX IF NOT EXISTS idx_custom_texts_tenant ON product_custom_texts(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_custom_texts_product_id ON product_custom_texts(product_id);
 CREATE INDEX IF NOT EXISTS idx_custom_texts_placement ON product_custom_texts(placement);
 
@@ -1429,9 +1576,246 @@ WHERE deleted_at IS NULL;
 
 ---
 
+---
+
+## 🔧 REQUIRED FIXES & IMPLEMENTATION PLAN
+
+### **PHASE 1: CRITICAL DATABASE FIXES (Priority: URGENT)**
+
+#### **1.1 Fix Migration Script**
+```sql
+-- Apply corrected migration script above
+-- Key changes:
+-- ✅ Added tenant_id UUID NOT NULL to all tables
+-- ✅ Fixed UUID generation to gen_random_uuid()
+-- ✅ Added proper foreign key constraints
+-- ✅ Updated unique constraints to be tenant-scoped
+-- ✅ Added tenant-aware indexes
+```
+
+#### **1.2 Update Existing Schema (If Already Deployed)**
+```sql
+-- Migration to add tenant_id to existing tables
+ALTER TABLE product_categories ADD COLUMN tenant_id UUID;
+ALTER TABLE products ADD COLUMN tenant_id UUID;
+ALTER TABLE product_specifications ADD COLUMN tenant_id UUID;
+ALTER TABLE product_custom_texts ADD COLUMN tenant_id UUID;
+
+-- Add foreign key constraints
+ALTER TABLE product_categories ADD CONSTRAINT fk_categories_tenant 
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE;
+ALTER TABLE products ADD CONSTRAINT fk_products_tenant 
+    FOREIGN KEY (tenant_id) REFERENCES tenants(uuid) ON DELETE CASCADE;
+-- ... (repeat for all tables)
+
+-- Update unique constraints to be tenant-scoped
+ALTER TABLE product_categories DROP CONSTRAINT categories_slug_unique;
+ALTER TABLE product_categories ADD CONSTRAINT categories_tenant_slug_unique 
+    UNIQUE(tenant_id, slug);
+-- ... (repeat for all tables)
+```
+
+### **PHASE 2: FRONTEND TENANT INTEGRATION (Priority: HIGH)**
+
+#### **2.1 Add Tenant Context Provider**
+```typescript
+// src/contexts/TenantContext.tsx
+interface TenantContextType {
+  tenantId: string;
+  tenantSlug: string;
+  tenantConfig: TenantConfig;
+}
+
+export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Extract tenant from subdomain/domain
+  // Provide tenant context to all components
+};
+```
+
+#### **2.2 Update Product Types**
+```typescript
+// src/types/product.ts - ADD tenant fields
+export interface Product {
+  id: string;
+  tenant_id: string; // ADD THIS
+  // ... existing fields
+}
+
+export interface ProductCategory {
+  id: string;
+  tenant_id: string; // ADD THIS
+  // ... existing fields
+}
+```
+
+#### **2.3 Update API Services**
+```typescript
+// src/services/api/products.ts - ADD tenant-aware calls
+export async function getProducts(tenantId: string): Promise<Product[]> {
+  const response = await apiClient.get(`/tenants/${tenantId}/products`);
+  return response.data;
+}
+
+export async function createProduct(tenantId: string, data: Partial<Product>): Promise<Product> {
+  const response = await apiClient.post(`/tenants/${tenantId}/products`, data);
+  return response.data;
+}
+```
+
+### **PHASE 3: RBAC INTEGRATION (Priority: HIGH)**
+
+#### **3.1 Add Permission Checking**
+```typescript
+// src/hooks/usePermissions.ts
+export function usePermissions() {
+  const { user, tenantId } = useAuth();
+  
+  return {
+    canViewProducts: hasPermission(user, tenantId, 'products.view'),
+    canCreateProducts: hasPermission(user, tenantId, 'products.create'),
+    canEditProducts: hasPermission(user, tenantId, 'products.edit'),
+    canDeleteProducts: hasPermission(user, tenantId, 'products.delete'),
+    canManageProducts: hasPermission(user, tenantId, 'products.manage'),
+  };
+}
+```
+
+#### **3.2 Update ProductEditor with Permissions**
+```typescript
+// src/pages/admin/ProductEditor.tsx - ADD permission checks
+export default function ProductEditor() {
+  const { canEditProducts, canCreateProducts } = usePermissions();
+  
+  if (!canEditProducts && !canCreateProducts) {
+    return <AccessDenied />;
+  }
+  
+  // ... rest of component
+}
+```
+
+### **PHASE 4: BUSINESS WORKFLOW INTEGRATION (Priority: HIGH)**
+
+#### **4.1 Add Production Type Workflow UI**
+```typescript
+// Add to ProductEditor.tsx
+<TabsContent value="production" className="space-y-4">
+  <Card className="p-6 space-y-4">
+    <div className="space-y-2">
+      <Label>Production Type</Label>
+      <Select 
+        value={formData.production_type} 
+        onValueChange={(v) => setFormData({ ...formData, production_type: v })}
+      >
+        <SelectItem value="vendor">Vendor Production (Broker)</SelectItem>
+        <SelectItem value="internal">Internal Production</SelectItem>
+      </Select>
+    </div>
+    
+    {formData.production_type === 'vendor' && (
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Vendor Price</Label>
+          <Input 
+            type="number" 
+            value={formData.vendor_price}
+            onChange={(e) => setFormData({ ...formData, vendor_price: parseFloat(e.target.value) })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Markup Percentage</Label>
+          <Input 
+            type="number" 
+            value={formData.markup_percentage}
+            onChange={(e) => setFormData({ ...formData, markup_percentage: parseFloat(e.target.value) })}
+          />
+        </div>
+      </div>
+    )}
+  </Card>
+</TabsContent>
+```
+
+#### **4.2 Add Quotation System Integration**
+```typescript
+// src/components/admin/QuotationManager.tsx
+export function QuotationManager({ productId }: { productId: string }) {
+  // Handle quotation requests
+  // Vendor price negotiation
+  // Customer quotation generation
+  // Markup calculation
+}
+```
+
+### **PHASE 5: HEXAGONAL ARCHITECTURE REFACTOR (Priority: MEDIUM)**
+
+#### **5.1 Create Domain Layer**
+```typescript
+// src/domain/product/entities/Product.ts
+export class Product {
+  constructor(
+    public readonly id: ProductId,
+    public readonly tenantId: TenantId,
+    public readonly name: string,
+    // ... other properties
+  ) {}
+  
+  public calculateFinalPrice(vendorPrice: number, markupPercentage: number): number {
+    return vendorPrice * (1 + markupPercentage / 100);
+  }
+}
+```
+
+#### **5.2 Create Application Layer**
+```typescript
+// src/application/product/usecases/CreateProductUseCase.ts
+export class CreateProductUseCase {
+  constructor(
+    private productRepository: ProductRepositoryInterface,
+    private tenantRepository: TenantRepositoryInterface
+  ) {}
+  
+  async execute(command: CreateProductCommand): Promise<Product> {
+    // Validate tenant exists
+    // Create product entity
+    // Save via repository
+    // Return created product
+  }
+}
+```
+
+### **IMPLEMENTATION TIMELINE**
+
+| Phase | Duration | Priority | Dependencies |
+|-------|----------|----------|--------------|
+| **Phase 1: Database Fixes** | 1-2 days | URGENT | None |
+| **Phase 2: Frontend Tenant** | 3-5 days | HIGH | Phase 1 |
+| **Phase 3: RBAC Integration** | 2-3 days | HIGH | Phase 2 |
+| **Phase 4: Business Workflow** | 5-7 days | HIGH | Phase 2, 3 |
+| **Phase 5: Hexagonal Refactor** | 7-10 days | MEDIUM | Phase 1-4 |
+
+**Total Estimated Time**: 18-27 days  
+**Critical Path**: Phase 1 → Phase 2 → Phase 3 → Phase 4
+
+### **VALIDATION CHECKLIST**
+
+After implementation, verify:
+
+- [ ] **Tenant Isolation**: Products are properly isolated per tenant
+- [ ] **RBAC**: Permission checking works for all product operations
+- [ ] **Business Workflow**: Production type logic functions correctly
+- [ ] **API Consistency**: All endpoints are tenant-aware
+- [ ] **Database Integrity**: Foreign key constraints prevent data corruption
+- [ ] **Performance**: Tenant-aware indexes provide good query performance
+- [ ] **UI/UX**: All admin interfaces work with tenant context
+- [ ] **Testing**: Unit and integration tests cover multi-tenant scenarios
+
+---
+
 **Previous:** [05-FAQ.md](./05-FAQ.md)  
 **Next:** [07-REVIEWS.md](./07-REVIEWS.md)  
 
-**Last Updated:** 2025-11-11  
-**Status:** ✅ COMPLETE  
-**Reviewed By:** System Architect
+**Last Updated:** 2025-11-12 (AUDIT COMPLETED)  
+**Status:** 🔄 **CRITICAL UPDATES REQUIRED**  
+**Reviewed By:** System Architect AI  
+**Compliance Level**: 25% (2/8 components) - **ENTERPRISE NOT READY**
