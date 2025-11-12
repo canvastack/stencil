@@ -140,6 +140,9 @@ CREATE TABLE example_table (
     -- Primary Key
     id BIGSERIAL PRIMARY KEY,
     
+    -- Multi-Tenant Isolation (MANDATORY)
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE,
+    
     -- Optional UUID for public-facing IDs
     uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     
@@ -151,7 +154,10 @@ CREATE TABLE example_table (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes
+-- Multi-Tenant Indexes (MANDATORY)
+CREATE INDEX idx_example_table_tenant_id ON example_table(tenant_id);
+
+-- Standard Indexes
 CREATE INDEX idx_example_table_created_at ON example_table(created_at);
 CREATE INDEX idx_example_table_deleted_at ON example_table(deleted_at);
 
@@ -204,12 +210,13 @@ FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 ### Indexing Strategy
 
 **Always Index:**
-1. Foreign keys
-2. Status fields
-3. Date fields used in queries
-4. Fields used in WHERE clauses
-5. Fields used in ORDER BY
-6. Polymorphic type+id combinations
+1. **tenant_id (MANDATORY)** - Critical for multi-tenant data isolation
+2. Foreign keys
+3. Status fields
+4. Date fields used in queries
+5. Fields used in WHERE clauses
+6. Fields used in ORDER BY
+7. Polymorphic type+id combinations
 
 **Index Types:**
 ```sql
@@ -779,6 +786,68 @@ public function down()
     Schema::dropIfExists('users');
 }
 ```
+
+---
+
+## 🚨 MULTI-TENANT ARCHITECTURE REQUIREMENTS
+
+### **MANDATORY IMPLEMENTATION RULES**
+
+> **⚠️ CRITICAL**: All database tables and API endpoints MUST implement these multi-tenant isolation requirements. Non-compliance will result in **data leakage** and **security vulnerabilities**.
+
+#### **Rule 1: Tenant Isolation at Database Level**
+```sql
+-- ALL tables must include tenant_id field
+tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE
+
+-- Row Level Security (RLS) policies MANDATORY
+ALTER TABLE {table_name} ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON {table_name}
+  USING (tenant_id = current_setting('app.current_tenant_id')::UUID);
+```
+
+#### **Rule 2: API Authentication & Tenant Context**
+```php
+// All API endpoints MUST verify tenant access
+Route::middleware(['auth:sanctum', 'tenant.context'])->group(function () {
+    // Tenant-scoped routes only
+});
+
+// Controllers MUST scope queries by tenant
+$products = Product::where('tenant_id', auth()->user()->current_tenant_id)->get();
+```
+
+#### **Rule 3: Frontend Tenant Awareness**
+```typescript
+// React components MUST include tenant context
+const { currentTenant } = useTenantContext();
+
+// API calls MUST include tenant headers
+const response = await api.get('/products', {
+  headers: { 'X-Tenant-ID': currentTenant.uuid }
+});
+```
+
+#### **Rule 4: No Global Data Exception**
+```sql
+-- FORBIDDEN: Tables without tenant_id
+CREATE TABLE bad_table (
+    id BIGSERIAL PRIMARY KEY,
+    -- MISSING: tenant_id field - WILL CAUSE DATA LEAKAGE
+);
+
+-- REQUIRED: All tables must have tenant isolation
+CREATE TABLE good_table (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id UUID NOT NULL REFERENCES tenants(uuid) ON DELETE CASCADE, -- MANDATORY
+    -- rest of fields...
+);
+```
+
+### **IMPLEMENTATION STATUS WARNING**
+
+> **🔴 CURRENT STATUS**: Documentation standards updated but **ZERO IMPLEMENTATION** in actual database schema.  
+> **ACTION REQUIRED**: All existing tables need immediate `tenant_id` field addition and RLS policy implementation.
 
 ---
 

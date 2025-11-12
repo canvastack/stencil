@@ -2814,4 +2814,4 @@ const translations = await getTranslations(language, {
 
 **Last Updated:** 2025-11-11  
 **Status:** ✅ COMPLETE  
-**Reviewed By:** System Architect
+**Reviewed By:** CanvaStack Stencil
