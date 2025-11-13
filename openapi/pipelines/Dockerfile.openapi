@@ -1,0 +1,56 @@
+# OpenAPI Specification CI/CD Docker Image
+FROM node:18-alpine
+
+# Install system dependencies
+RUN apk add --no-cache git curl
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY openapi/package*.json ./
+
+# Install Node.js dependencies
+RUN npm install yaml swagger-ui-dist
+
+# Copy OpenAPI specification files
+COPY openapi/ .
+
+# Create entrypoint script
+RUN echo '#!/bin/sh' > /entrypoint.sh && \
+    echo 'set -e' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo 'echo "🚀 Starting OpenAPI CI/CD Pipeline"' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo '# Run validation' >> /entrypoint.sh && \
+    echo 'echo "📋 Running YAML validation..."' >> /entrypoint.sh && \
+    echo 'node tools/validate-all.js || exit 1' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo 'echo "🔍 Running comprehensive validation..."' >> /entrypoint.sh && \
+    echo 'node validate-pipeline.cjs || exit 1' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo '# Run performance tests' >> /entrypoint.sh && \
+    echo 'echo "⚡ Running performance tests..."' >> /entrypoint.sh && \
+    echo 'node performance-test.cjs || exit 1' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo '# Run security audit' >> /entrypoint.sh && \
+    echo 'echo "🛡️ Running security audit..."' >> /entrypoint.sh && \
+    echo 'node security-audit.cjs || exit 1' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo '# Generate documentation' >> /entrypoint.sh && \
+    echo 'echo "📚 Generating documentation..."' >> /entrypoint.sh && \
+    echo 'node generate-docs.cjs || exit 1' >> /entrypoint.sh && \
+    echo 'node generate-postman.cjs || exit 1' >> /entrypoint.sh && \
+    echo '' >> /entrypoint.sh && \
+    echo 'echo "✅ OpenAPI CI/CD Pipeline completed successfully!"' >> /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD test -f generated/validation-report.json || exit 1
+
+# Expose port for documentation server
+EXPOSE 8080
+
+# Set entrypoint
+ENTRYPOINT ["/entrypoint.sh"]

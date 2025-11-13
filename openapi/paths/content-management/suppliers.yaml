@@ -1,0 +1,1836 @@
+openapi: 3.1.0
+info:
+  title: Suppliers Management API
+  version: 1.0.0
+paths:
+  # ================================================================
+  # SUPPLIER MANAGEMENT ENDPOINTS
+  # ================================================================
+  /suppliers:
+    get:
+      tags:
+        - Supplier Management
+      summary: List Suppliers
+      description: |
+        Retrieve paginated list of suppliers with advanced filtering and search capabilities.
+        
+        **Admin Features:**
+        - Search by name, code, company name
+        - Filter by type, tier, status, approval status
+        - Sort by multiple fields including ratings
+        - Export functionality
+        - Tenant-scoped results
+        - Future feature for internal production planning
+      operationId: listSuppliers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          description: Search in supplier name, code, company name
+          schema:
+            type: string
+            maxLength: 255
+          example: "Steel Indonesia"
+        - name: supplier_type
+          in: query
+          description: Filter by supplier type
+          schema:
+            type: string
+            enum: [material, service, equipment, consumable, packaging]
+          example: "material"
+        - name: supplier_tier
+          in: query
+          description: Filter by supplier tier
+          schema:
+            type: string
+            enum: [strategic, preferred, standard, conditional]
+          example: "preferred"
+        - name: is_active
+          in: query
+          description: Filter by active status
+          schema:
+            type: boolean
+          example: true
+        - name: is_approved
+          in: query
+          description: Filter by approval status
+          schema:
+            type: boolean
+          example: true
+        - name: risk_level
+          in: query
+          description: Filter by risk assessment level
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+          example: "low"
+        - name: city
+          in: query
+          description: Filter by city location
+          schema:
+            type: string
+          example: "Jakarta"
+        - name: country
+          in: query
+          description: Filter by country
+          schema:
+            type: string
+          example: "Indonesia"
+        - name: min_rating
+          in: query
+          description: Filter by minimum overall rating
+          schema:
+            type: number
+            format: decimal
+            minimum: 1.00
+            maximum: 5.00
+          example: 4.00
+        - name: industry_sector
+          in: query
+          description: Filter by industry sector
+          schema:
+            type: string
+          example: "Steel & Metal Processing"
+        - name: created_from
+          in: query
+          description: Filter suppliers created after this date
+          schema:
+            type: string
+            format: date
+          example: "2025-01-01"
+        - name: created_to
+          in: query
+          description: Filter suppliers created before this date
+          schema:
+            type: string
+            format: date
+          example: "2025-12-31"
+      responses:
+        '200':
+          description: Suppliers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierListResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Supplier Management
+      summary: Create New Supplier
+      description: |
+        Create a new supplier record with complete business information.
+        
+        **Future Internal Production Feature:**
+        - Designed for raw material suppliers
+        - Supports comprehensive supplier evaluation
+        - Multi-contact management
+        - Product catalog integration
+        - Quotation management workflow
+      operationId: createSupplier
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierCreateInput'
+            examples:
+              steel_supplier:
+                summary: Steel manufacturing supplier
+                value:
+                  supplier_code: "SUP-2025-001"
+                  supplier_name: "Steel Indonesia Manufacturing"
+                  supplier_type: "material"
+                  company_name: "PT Steel Indonesia Manufacturing"
+                  registration_number: "001234567890123"
+                  tax_id: "01.234.567.8-901.000"
+                  primary_email: "sales@steelindonesia.com"
+                  primary_phone: "+62218901234"
+                  website: "https://www.steelindonesia.com"
+                  address_line_1: "Jl. Industri Raya No. 123"
+                  city: "Bekasi"
+                  state_province: "Jawa Barat"
+                  country: "Indonesia"
+                  business_type: "Manufacturing"
+                  industry_sector: "Steel & Metal Processing"
+                  company_size: "medium"
+                  years_in_business: 15
+                  supplier_tier: "preferred"
+                  risk_level: "low"
+                  iso_certifications: ["ISO 9001:2015", "ISO 14001:2015"]
+                  production_capacity: "1000 tons/month steel plates"
+                  lead_time_days: 14
+                  minimum_order_value: 10000000.00
+      responses:
+        '201':
+          description: Supplier created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+                      message:
+                        type: string
+                        example: "Supplier created successfully and pending approval"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '409':
+          description: Supplier code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "SUPPLIER_CODE_EXISTS"
+                  message: "Supplier code already exists in this tenant"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /suppliers/{supplier_id}:
+    get:
+      tags:
+        - Supplier Management
+      summary: Get Supplier Details
+      description: |
+        Retrieve detailed information about a specific supplier including relationships.
+        
+        **Included Relations:**
+        - Contact persons list
+        - Product catalog summary
+        - Recent quotations
+        - Performance metrics
+      operationId: getSupplier
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: include
+          in: query
+          description: Include related data (comma-separated)
+          schema:
+            type: string
+            enum: [contacts, products, quotations, all]
+          example: "contacts,products"
+      responses:
+        '200':
+          description: Supplier details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Supplier Management
+      summary: Update Supplier Information
+      description: |
+        Update supplier information including business details, ratings, and classifications.
+        
+        **Update Features:**
+        - Partial updates supported
+        - Automatic audit trail
+        - Rating recalculation
+        - Approval status management
+      operationId: updateSupplier
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierUpdateInput'
+            examples:
+              update_rating:
+                summary: Update supplier performance ratings
+                value:
+                  quality_rating: 4.80
+                  delivery_rating: 4.20
+                  service_rating: 4.60
+                  cost_rating: 4.30
+                  supplier_tier: "preferred"
+              update_contact_info:
+                summary: Update contact information
+                value:
+                  primary_email: "newsales@steelindonesia.com"
+                  primary_phone: "+62218901235"
+                  website: "https://www.steelindonesia.co.id"
+      responses:
+        '200':
+          description: Supplier updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+                      message:
+                        type: string
+                        example: "Supplier information updated successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Supplier Management
+      summary: Delete Supplier
+      description: |
+        Soft delete supplier record. This action is reversible and maintains referential integrity.
+        
+        **Delete Behavior:**
+        - Soft delete (sets deleted_at timestamp)
+        - Maintains historical quotations
+        - Cascades to contacts and products
+        - Audit trail preserved
+      operationId: deleteSupplier
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: reason
+          in: query
+          description: Reason for deletion
+          schema:
+            type: string
+            maxLength: 255
+          example: "Supplier no longer in business"
+      responses:
+        '200':
+          description: Supplier deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Supplier deleted successfully"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '409':
+          description: Cannot delete supplier with active quotations
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "SUPPLIER_HAS_ACTIVE_QUOTATIONS"
+                  message: "Cannot delete supplier with active quotations"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SUPPLIER CONTACTS ENDPOINTS
+  # ================================================================
+  /suppliers/{supplier_id}/contacts:
+    get:
+      tags:
+        - Supplier Contacts
+      summary: List Supplier Contacts
+      description: |
+        Retrieve all contact persons for a specific supplier.
+        
+        **Contact Features:**
+        - Multiple contacts per supplier
+        - Role-based contact types
+        - Authorization levels
+        - Communication preferences
+      operationId: listSupplierContacts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: contact_type
+          in: query
+          description: Filter by contact type
+          schema:
+            type: string
+            enum: [primary, sales, technical, finance, quality, logistics, general]
+          example: "sales"
+        - name: is_active
+          in: query
+          description: Filter by active status
+          schema:
+            type: boolean
+          example: true
+      responses:
+        '200':
+          description: Supplier contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContactListResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Supplier Contacts
+      summary: Add Supplier Contact
+      description: |
+        Add a new contact person to a supplier.
+        
+        **Contact Management:**
+        - Automatic primary contact assignment
+        - Authorization level configuration
+        - Communication preference setup
+      operationId: createSupplierContact
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContactCreateInput'
+            examples:
+              sales_contact:
+                summary: Sales contact person
+                value:
+                  supplier_id: "550e8400-e29b-41d4-a716-446655440000"
+                  contact_name: "Budi Santoso"
+                  job_title: "Sales Manager"
+                  department: "Sales & Marketing"
+                  email: "budi.santoso@steelindonesia.com"
+                  phone: "+62218901234"
+                  mobile: "+6281234567890"
+                  contact_type: "sales"
+                  is_primary: true
+                  can_approve_quotes: true
+                  can_receive_pos: true
+                  authorization_limit: 100000000.00
+      responses:
+        '201':
+          description: Supplier contact created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContact'
+                      message:
+                        type: string
+                        example: "Supplier contact added successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /suppliers/{supplier_id}/contacts/{contact_id}:
+    get:
+      tags:
+        - Supplier Contacts
+      summary: Get Contact Details
+      description: |
+        Retrieve detailed information about a specific supplier contact.
+      operationId: getSupplierContact
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: contact_id
+          in: path
+          required: true
+          description: Contact UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Supplier contact details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContact'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Supplier Contacts
+      summary: Update Contact Information
+      description: |
+        Update supplier contact person information and authorization levels.
+      operationId: updateSupplierContact
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: contact_id
+          in: path
+          required: true
+          description: Contact UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContactCreateInput'
+      responses:
+        '200':
+          description: Contact updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContact'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Supplier Contacts
+      summary: Delete Contact
+      description: |
+        Remove a contact person from supplier. Primary contact cannot be deleted unless another is designated.
+      operationId: deleteSupplierContact
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: contact_id
+          in: path
+          required: true
+          description: Contact UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Contact deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Contact deleted successfully"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '409':
+          description: Cannot delete primary contact
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "CANNOT_DELETE_PRIMARY_CONTACT"
+                  message: "Cannot delete primary contact. Please designate another primary contact first."
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SUPPLIER PRODUCTS ENDPOINTS  
+  # ================================================================
+  /suppliers/{supplier_id}/products:
+    get:
+      tags:
+        - Supplier Products
+      summary: List Supplier Products
+      description: |
+        Retrieve product catalog for a specific supplier with pricing and specifications.
+        
+        **Product Catalog Features:**
+        - Material specifications
+        - Volume pricing tiers
+        - Quality certifications
+        - Lead time information
+        - Stock availability
+      operationId: listSupplierProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - name: search
+          in: query
+          description: Search in product name, code, description
+          schema:
+            type: string
+            maxLength: 255
+          example: "Steel Plate"
+        - name: category
+          in: query
+          description: Filter by product category
+          schema:
+            type: string
+          example: "Steel Plates"
+        - name: material_type
+          in: query
+          description: Filter by material type
+          schema:
+            type: string
+          example: "Carbon Steel"
+        - name: availability_status
+          in: query
+          description: Filter by availability status
+          schema:
+            type: string
+            enum: [available, limited, discontinued, special_order, out_of_stock]
+          example: "available"
+        - name: is_active
+          in: query
+          description: Filter by active status
+          schema:
+            type: boolean
+          example: true
+        - name: min_price
+          in: query
+          description: Filter by minimum unit price
+          schema:
+            type: number
+            format: decimal
+          example: 10000.00
+        - name: max_price
+          in: query
+          description: Filter by maximum unit price
+          schema:
+            type: number
+            format: decimal
+          example: 50000.00
+      responses:
+        '200':
+          description: Supplier products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProductListResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Supplier Products
+      summary: Add Product to Supplier Catalog
+      description: |
+        Add a new product to supplier's catalog with complete specifications and pricing.
+        
+        **Product Information:**
+        - Technical specifications
+        - Pricing tiers and volume discounts
+        - Quality certifications
+        - Packaging and shipping details
+        - Lead time and availability
+      operationId: createSupplierProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProductCreateInput'
+            examples:
+              steel_plate:
+                summary: Steel plate product
+                value:
+                  supplier_id: "550e8400-e29b-41d4-a716-446655440000"
+                  supplier_product_code: "ST-A36-10MM"
+                  supplier_product_name: "Steel Plate A36 - 10mm Thickness"
+                  description: "High quality carbon steel plate suitable for structural applications"
+                  category: "Steel Plates"
+                  subcategory: "Carbon Steel"
+                  material_type: "Carbon Steel"
+                  material_grade: "ASTM A36"
+                  specifications:
+                    thickness: "10mm"
+                    width: "1200mm"
+                    length: "2400mm"
+                    tensile_strength: "400-550 MPa"
+                  unit_price: 15000.00
+                  unit_of_measure: "kg"
+                  minimum_order_quantity: 50.00
+                  lead_time_days: 7
+                  quality_certifications: ["SNI 07-0052-2006", "ASTM A36"]
+                  price_breaks:
+                    - quantity: 100
+                      unit_price: 15000.00
+                    - quantity: 500
+                      unit_price: 14500.00
+                    - quantity: 1000
+                      unit_price: 14000.00
+      responses:
+        '201':
+          description: Product added to supplier catalog successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProduct'
+                      message:
+                        type: string
+                        example: "Product added to supplier catalog successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '409':
+          description: Product code already exists for this supplier
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "PRODUCT_CODE_EXISTS"
+                  message: "Product code already exists for this supplier"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /suppliers/{supplier_id}/products/{product_id}:
+    get:
+      tags:
+        - Supplier Products
+      summary: Get Product Details
+      description: |
+        Retrieve detailed information about a specific product from supplier catalog.
+      operationId: getSupplierProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: product_id
+          in: path
+          required: true
+          description: Product UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Product details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProduct'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Supplier Products
+      summary: Update Product Information
+      description: |
+        Update product specifications, pricing, and availability information.
+      operationId: updateSupplierProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: product_id
+          in: path
+          required: true
+          description: Product UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProductCreateInput'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProduct'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Supplier Products
+      summary: Remove Product from Catalog
+      description: |
+        Remove product from supplier catalog. This is a soft delete to maintain historical data.
+      operationId: deleteSupplierProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: product_id
+          in: path
+          required: true
+          description: Product UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Product removed from catalog successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Product removed from supplier catalog"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SUPPLIER QUOTATIONS ENDPOINTS
+  # ================================================================
+  /suppliers/quotations:
+    get:
+      tags:
+        - Supplier Quotations
+      summary: List All Quotations
+      description: |
+        Retrieve paginated list of quotations from all suppliers with advanced filtering.
+        
+        **Quotation Management Features:**
+        - Multi-supplier comparison
+        - Status tracking workflow
+        - Evaluation and scoring
+        - Approval workflow
+        - Email notifications
+      operationId: listSupplierQuotations
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          description: Search in quotation title, number, RFQ number
+          schema:
+            type: string
+            maxLength: 255
+          example: "Steel Plates Q1"
+        - name: supplier_id
+          in: query
+          description: Filter by specific supplier
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: status
+          in: query
+          description: Filter by quotation status
+          schema:
+            type: string
+            enum: [draft, sent, received, under_review, approved, rejected, expired, cancelled]
+          example: "received"
+        - name: rfq_number
+          in: query
+          description: Filter by RFQ number
+          schema:
+            type: string
+          example: "RFQ-2025-001"
+        - name: requested_from
+          in: query
+          description: Filter quotations requested after this date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-01"
+        - name: requested_to
+          in: query
+          description: Filter quotations requested before this date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-30"
+        - name: min_amount
+          in: query
+          description: Filter by minimum total amount
+          schema:
+            type: number
+            format: decimal
+          example: 10000000.00
+        - name: max_amount
+          in: query
+          description: Filter by maximum total amount
+          schema:
+            type: number
+            format: decimal
+          example: 1000000000.00
+      responses:
+        '200':
+          description: Quotations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotationListResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Supplier Quotations
+      summary: Create New Quotation Request
+      description: |
+        Create a new quotation request (RFQ) to be sent to suppliers.
+        
+        **RFQ Features:**
+        - Multi-item quotation requests
+        - Automatic supplier selection
+        - Email notification to suppliers
+        - Response tracking
+        - Comparison workflow
+      operationId: createSupplierQuotation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotationCreateInput'
+            examples:
+              steel_quotation:
+                summary: Steel plates quotation request
+                value:
+                  quotation_number: "QUO-2025-001"
+                  rfq_number: "RFQ-2025-001"
+                  supplier_id: "550e8400-e29b-41d4-a716-446655440000"
+                  quotation_title: "Steel Plates for Q1 2025 Production"
+                  description: "Quotation for various steel plates required for Q1 2025 production schedule"
+                  quotation_items:
+                    - product_id: "123e4567-e89b-12d3-a456-426614174000"
+                      supplier_product_code: "ST-A36-10MM"
+                      product_name: "Steel Plate A36 - 10mm"
+                      quantity: 1000
+                      unit_of_measure: "kg"
+                      lead_time_days: 7
+                      specifications:
+                        thickness: "10mm"
+                        grade: "ASTM A36"
+                  payment_terms: "50% DP, 50% before delivery"
+                  delivery_terms: "FOB Supplier Warehouse"
+                  validity_period_days: 30
+                  lead_time_days: 14
+                  response_due_date: "2025-11-08"
+      responses:
+        '201':
+          description: Quotation request created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+                      message:
+                        type: string
+                        example: "Quotation request created and will be sent to supplier"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /suppliers/quotations/{quotation_id}:
+    get:
+      tags:
+        - Supplier Quotations
+      summary: Get Quotation Details
+      description: |
+        Retrieve detailed information about a specific quotation including all items and evaluation data.
+      operationId: getSupplierQuotation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: quotation_id
+          in: path
+          required: true
+          description: Quotation UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Quotation details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Supplier Quotations
+      summary: Update Quotation
+      description: |
+        Update quotation information, evaluation scores, and approval status.
+      operationId: updateSupplierQuotation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: quotation_id
+          in: path
+          required: true
+          description: Quotation UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotationCreateInput'
+      responses:
+        '200':
+          description: Quotation updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Supplier Quotations
+      summary: Delete Quotation
+      description: |
+        Cancel and delete quotation request. This action is reversible through soft delete.
+      operationId: deleteSupplierQuotation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: quotation_id
+          in: path
+          required: true
+          description: Quotation UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Quotation deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Quotation deleted successfully"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SUPPLIER EVALUATION & APPROVAL ENDPOINTS
+  # ================================================================
+  /suppliers/{supplier_id}/approve:
+    post:
+      tags:
+        - Supplier Management
+      summary: Approve Supplier
+      description: |
+        Approve a supplier for business operations after evaluation and verification.
+        
+        **Approval Process:**
+        - Document verification
+        - Quality assessment
+        - Business evaluation
+        - Authorization levels
+        - Contract preparation
+      operationId: approveSupplier
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - approval_notes
+              properties:
+                approval_notes:
+                  type: string
+                  description: Notes about the approval decision
+                  example: "Supplier has been thoroughly evaluated and meets all our quality and business requirements. Approved for raw material procurement."
+                supplier_tier:
+                  type: string
+                  enum: [strategic, preferred, standard, conditional]
+                  description: Assign supplier tier upon approval
+                  example: "preferred"
+                credit_limit:
+                  type: number
+                  format: decimal
+                  minimum: 0
+                  description: Set credit limit for approved supplier
+                  example: 500000000.00
+      responses:
+        '200':
+          description: Supplier approved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+                      message:
+                        type: string
+                        example: "Supplier approved successfully and is now active for business operations"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '409':
+          description: Supplier already approved
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "SUPPLIER_ALREADY_APPROVED"
+                  message: "This supplier is already approved for business operations"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /suppliers/quotations/{quotation_id}/evaluate:
+    post:
+      tags:
+        - Supplier Quotations
+      summary: Evaluate Quotation
+      description: |
+        Evaluate and score a supplier quotation based on multiple criteria.
+        
+        **Evaluation Criteria:**
+        - Price competitiveness
+        - Quality standards
+        - Delivery timeline
+        - Supplier reputation
+        - Technical specifications
+        - Terms and conditions
+      operationId: evaluateSupplierQuotation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: quotation_id
+          in: path
+          required: true
+          description: Quotation UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - evaluation_score
+                - evaluation_notes
+              properties:
+                evaluation_score:
+                  type: number
+                  format: decimal
+                  minimum: 0
+                  maximum: 100
+                  description: Overall evaluation score (0-100)
+                  example: 85.50
+                evaluation_notes:
+                  type: string
+                  description: Detailed evaluation notes and criteria breakdown
+                  example: "Good pricing (90/100), excellent quality record (95/100), delivery time could be better (70/100), terms acceptable (85/100). Overall solid quotation."
+                rank_position:
+                  type: integer
+                  minimum: 1
+                  description: Ranking position among competing quotes
+                  example: 2
+                recommendation:
+                  type: string
+                  enum: [approve, reject, negotiate, request_revision]
+                  description: Evaluation recommendation
+                  example: "approve"
+      responses:
+        '200':
+          description: Quotation evaluated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+                      message:
+                        type: string
+                        example: "Quotation evaluation completed successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # REPORTING & ANALYTICS ENDPOINTS
+  # ================================================================
+  /suppliers/statistics:
+    get:
+      tags:
+        - Supplier Analytics
+      summary: Get Supplier Statistics
+      description: |
+        Retrieve comprehensive supplier statistics and KPIs for dashboard and reporting.
+        
+        **Statistics Include:**
+        - Total suppliers by status and tier
+        - Average performance ratings
+        - Quotation activity metrics
+        - Approval rates and trends
+        - Geographic distribution
+      operationId: getSupplierStatistics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: period
+          in: query
+          description: Statistics period
+          schema:
+            type: string
+            enum: [current_month, last_month, current_quarter, last_quarter, current_year]
+          example: "current_month"
+      responses:
+        '200':
+          description: Supplier statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierStatistics'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /suppliers/{supplier_id}/performance-report:
+    get:
+      tags:
+        - Supplier Analytics
+      summary: Get Supplier Performance Report
+      description: |
+        Generate comprehensive performance report for a specific supplier.
+        
+        **Report Includes:**
+        - Quotation performance metrics
+        - Order fulfillment statistics
+        - Quality and delivery ratings
+        - Cost competitiveness analysis
+        - Trend analysis over time
+      operationId: getSupplierPerformanceReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: supplier_id
+          in: path
+          required: true
+          description: Supplier UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: period_start
+          in: query
+          description: Report period start date
+          schema:
+            type: string
+            format: date
+          example: "2025-01-01"
+        - name: period_end
+          in: query
+          description: Report period end date
+          schema:
+            type: string
+            format: date
+          example: "2025-12-31"
+      responses:
+        '200':
+          description: Performance report generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierPerformanceReport'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # BULK OPERATIONS ENDPOINTS
+  # ================================================================
+  /suppliers/bulk/export:
+    get:
+      tags:
+        - Supplier Management
+      summary: Export Suppliers Data
+      description: |
+        Export supplier data in various formats (CSV, Excel, PDF) for reporting and analysis.
+        
+        **Export Features:**
+        - Multiple format support
+        - Customizable field selection
+        - Filtered export based on search criteria
+        - Include related data (contacts, products)
+      operationId: exportSuppliers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: format
+          in: query
+          description: Export format
+          schema:
+            type: string
+            enum: [csv, xlsx, pdf]
+            default: csv
+          example: "xlsx"
+        - name: fields
+          in: query
+          description: Comma-separated list of fields to include
+          schema:
+            type: string
+          example: "supplier_name,supplier_type,primary_email,overall_rating,is_approved"
+        - name: include_contacts
+          in: query
+          description: Include contact information
+          schema:
+            type: boolean
+            default: false
+          example: true
+        - name: include_products
+          in: query
+          description: Include product catalog
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: filters
+          in: query
+          description: JSON string of filters to apply
+          schema:
+            type: string
+          example: '{"supplier_type":"material","is_approved":true}'
+      responses:
+        '200':
+          description: Export file generated successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /suppliers/bulk/import:
+    post:
+      tags:
+        - Supplier Management
+      summary: Import Suppliers Data
+      description: |
+        Bulk import supplier data from CSV or Excel files.
+        
+        **Import Features:**
+        - CSV and Excel file support
+        - Data validation and error reporting
+        - Duplicate detection and handling
+        - Preview before actual import
+        - Progress tracking for large files
+      operationId: importSuppliers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: validate_only
+          in: query
+          description: Only validate data without importing
+          schema:
+            type: boolean
+            default: false
+          example: true
+        - name: update_existing
+          in: query
+          description: Update existing suppliers with matching codes
+          schema:
+            type: boolean
+            default: false
+          example: false
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV or Excel file containing supplier data
+                mapping:
+                  type: string
+                  description: JSON string mapping file columns to supplier fields
+                  example: '{"Company Name":"supplier_name","Email":"primary_email","Phone":"primary_phone"}'
+      responses:
+        '200':
+          description: Import completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          total_rows:
+                            type: integer
+                            example: 150
+                          successful_imports:
+                            type: integer
+                            example: 145
+                          failed_imports:
+                            type: integer
+                            example: 5
+                          errors:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                row:
+                                  type: integer
+                                field:
+                                  type: string
+                                message:
+                                  type: string
+                            example:
+                              - row: 3
+                                field: "primary_email"
+                                message: "Invalid email format"
+                              - row: 7
+                                field: "supplier_code"
+                                message: "Supplier code already exists"
+                      message:
+                        type: string
+                        example: "Import completed: 145 suppliers imported successfully, 5 failed"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "FILE_TOO_LARGE"
+                  message: "File size exceeds maximum limit of 10MB"
+        '422':
+          description: Unsupported file format
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+              example:
+                success: false
+                error:
+                  code: "UNSUPPORTED_FORMAT"
+                  message: "Only CSV and Excel (.xlsx) files are supported"
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'

@@ -1,0 +1,1879 @@
+# Plugin Marketplace System Schemas for Stencil CMS
+# Complete OpenAPI schemas for Plugin System (285+ fields, 12 tables)
+# Hybrid execution model with frontend & backend plugins, marketplace integration
+
+# ================================================================
+# CORE PLUGIN ENTITIES
+# ================================================================
+
+# Main Plugin Registry Entity
+Plugin:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - name
+        - slug
+        - version
+        - description
+        - author
+        - plugin_type
+        - execution_model
+        - status
+      properties:
+        # Plugin Identification
+        name:
+          type: string
+          maxLength: 255
+          description: Plugin display name
+          example: "Stripe Payment Gateway"
+        slug:
+          type: string
+          maxLength: 255
+          description: Unique plugin identifier (URL-safe)
+          example: "stripe-payment-gateway"
+        description:
+          type: string
+          description: Plugin description and purpose
+          example: "Accept credit card payments via Stripe API with 3D Secure support"
+        short_description:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Brief plugin description for marketplace listings
+          example: "Secure credit card payments with Stripe"
+
+        # Version Management
+        version:
+          type: string
+          maxLength: 50
+          pattern: '^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'
+          description: Semantic version (semver)
+          example: "1.2.3"
+        changelog:
+          type: object
+          additionalProperties: true
+          description: Version changelog (JSONB)
+          example:
+            "1.2.3": "Fixed webhook validation bug"
+            "1.2.2": "Added Apple Pay support"
+
+        # Author Information
+        author:
+          type: string
+          maxLength: 255
+          description: Plugin author/vendor name
+          example: "PT Custom Etching Xenial"
+        author_email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Author contact email
+          example: "developer@ptcex.com"
+        author_website:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Author website URL
+          example: "https://ptcex.com"
+
+        # Plugin Architecture
+        plugin_type:
+          type: string
+          enum: ["payment", "shipping", "analytics", "crm", "theme", "widget", "integration", "utility", "marketing", "security"]
+          description: Plugin category type
+          example: "payment"
+        execution_model:
+          type: string
+          enum: ["frontend", "backend", "hybrid"]
+          description: Where plugin executes
+          example: "backend"
+        entry_point:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Main plugin file path
+          example: "src/index.ts"
+
+        # Compatibility
+        min_stencil_version:
+          type: string
+          maxLength: 50
+          description: Minimum Stencil CMS version
+          example: "2.0.0"
+        max_stencil_version:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Maximum compatible Stencil version
+          example: "2.9.x"
+        php_requirements:
+          type: object
+          description: PHP version and extensions (JSONB)
+          example:
+            version: ">=8.1"
+            extensions: ["curl", "json", "openssl"]
+        dependencies:
+          type: array
+          items:
+            type: string
+          description: Required plugin dependencies
+          example: ["payment-core", "webhook-handler"]
+
+        # Plugin Status
+        status:
+          type: string
+          enum: ["draft", "under_review", "approved", "published", "deprecated", "banned"]
+          default: "draft"
+          description: Plugin marketplace status
+          example: "published"
+        is_featured:
+          type: boolean
+          default: false
+          description: Featured plugin in marketplace
+          example: false
+        is_premium:
+          type: boolean
+          default: false
+          description: Paid premium plugin
+          example: true
+
+        # Marketplace Information
+        price:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Plugin price (null for free)
+          example: 49.99
+        license_type:
+          type: string
+          enum: ["free", "single_site", "multi_site", "unlimited", "subscription"]
+          default: "free"
+          description: License type
+          example: "single_site"
+        subscription_price:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Monthly subscription price
+          example: 9.99
+
+        # Media & Assets
+        icon_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Plugin icon URL
+          example: "https://cdn.ptcex.com/plugins/stripe/icon.png"
+        banner_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Plugin banner image URL
+          example: "https://cdn.ptcex.com/plugins/stripe/banner.png"
+        screenshots:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Plugin screenshot URLs
+          example: ["https://cdn.ptcex.com/plugins/stripe/screen1.png"]
+
+        # Documentation & Support
+        documentation_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Plugin documentation URL
+          example: "https://docs.ptcex.com/plugins/stripe"
+        support_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Plugin support URL
+          example: "https://support.ptcex.com/plugins/stripe"
+        repository_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Source code repository URL
+          example: "https://github.com/ptcex/stripe-plugin"
+
+        # Security & Validation
+        signature:
+          type: string
+          nullable: true
+          description: Plugin digital signature for verification
+          writeOnly: true
+        checksum:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Plugin file checksum (SHA-256)
+          example: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        is_verified:
+          type: boolean
+          default: false
+          description: Plugin verified by platform team
+          example: true
+
+        # Statistics
+        download_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total download count
+          example: 1250
+        install_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Active installation count
+          example: 450
+        rating_average:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          nullable: true
+          description: Average rating (0-5)
+          example: 4.7
+        rating_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total rating count
+          example: 125
+
+        # Metadata
+        tags:
+          type: array
+          items:
+            type: string
+          description: Plugin tags for search
+          example: ["payment", "stripe", "credit-card", "3d-secure"]
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional plugin metadata (JSONB)
+          example:
+            supported_currencies: ["USD", "EUR", "IDR"]
+            webhook_endpoints: ["/stripe/webhook"]
+
+# Plugin Installation Entity (Per-Tenant)
+PluginInstallation:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - plugin_id
+        - status
+        - installed_version
+      properties:
+        plugin_id:
+          type: string
+          format: uuid
+          description: Reference to plugin
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Installation Status
+        status:
+          type: string
+          enum: ["installed", "activated", "deactivated", "updating", "error", "uninstalled"]
+          default: "installed"
+          description: Current installation status
+          example: "activated"
+        installed_version:
+          type: string
+          maxLength: 50
+          description: Installed plugin version
+          example: "1.2.3"
+        available_version:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Latest available version
+          example: "1.2.4"
+
+        # License & Purchase
+        license_key:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: License key for premium plugins
+          writeOnly: true
+        purchase_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Purchase transaction reference
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        license_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: License expiry date
+          example: "2026-11-12T00:00:00Z"
+
+        # Health Monitoring
+        last_health_check:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last health check timestamp
+          example: "2025-11-12T14:30:00Z"
+        health_status:
+          type: string
+          enum: ["healthy", "warning", "error", "unknown"]
+          default: "unknown"
+          description: Plugin health status
+          example: "healthy"
+        error_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Error count since activation
+          example: 0
+        last_error:
+          type: string
+          nullable: true
+          description: Last error message
+          example: null
+
+        # Performance Metrics
+        cpu_usage_avg:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Average CPU usage percentage
+          example: 2.5
+        memory_usage_avg:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Average memory usage (MB)
+          example: 15.2
+        api_calls_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total API calls made
+          example: 1250
+
+        # Configuration
+        auto_update:
+          type: boolean
+          default: true
+          description: Enable automatic updates
+          example: true
+        is_enabled:
+          type: boolean
+          default: true
+          description: Plugin enabled status
+          example: true
+
+        # Installation Notes
+        installation_notes:
+          type: string
+          nullable: true
+          description: Installation notes or comments
+          example: "Configured for production environment"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Installation-specific metadata
+          example:
+            installation_method: "marketplace"
+            installer_user_id: "admin-123"
+
+# Plugin Settings Entity (Tenant-Specific Configuration)
+PluginSetting:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - plugin_installation_id
+        - key
+        - value
+      properties:
+        plugin_installation_id:
+          type: string
+          format: uuid
+          description: Reference to plugin installation
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Setting Configuration
+        key:
+          type: string
+          maxLength: 255
+          description: Setting key name
+          example: "stripe_api_key"
+        value:
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: object
+          description: Setting value (flexible type)
+          example: "sk_live_..."
+        value_type:
+          type: string
+          enum: ["string", "number", "boolean", "json", "encrypted"]
+          description: Value data type
+          example: "encrypted"
+
+        # Setting Metadata
+        category:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Setting category group
+          example: "authentication"
+        description:
+          type: string
+          nullable: true
+          description: Setting description
+          example: "Stripe secret API key for processing payments"
+        
+        # Validation
+        is_required:
+          type: boolean
+          default: false
+          description: Whether setting is required
+          example: true
+        validation_rules:
+          type: object
+          nullable: true
+          description: Validation rules (JSONB)
+          example:
+            min_length: 20
+            pattern: "^sk_live_"
+
+        # Security
+        is_encrypted:
+          type: boolean
+          default: false
+          description: Whether value is encrypted
+          example: true
+        is_sensitive:
+          type: boolean
+          default: false
+          description: Sensitive data (hide in UI)
+          example: true
+
+        # Environment
+        environment:
+          type: string
+          enum: ["all", "development", "staging", "production"]
+          default: "all"
+          description: Environment scope
+          example: "production"
+
+# Plugin Hook Registration Entity
+PluginHook:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - plugin_installation_id
+        - hook_name
+        - hook_type
+        - callback_function
+        - priority
+      properties:
+        plugin_installation_id:
+          type: string
+          format: uuid
+          description: Reference to plugin installation
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Hook Definition
+        hook_name:
+          type: string
+          maxLength: 255
+          description: Hook name (e.g., order.created)
+          example: "order.created"
+        hook_type:
+          type: string
+          enum: ["action", "filter"]
+          description: Hook type
+          example: "action"
+        callback_function:
+          type: string
+          maxLength: 255
+          description: Callback function name
+          example: "handleOrderCreated"
+
+        # Hook Configuration
+        priority:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Execution priority (1-100)
+          example: 10
+        parameters:
+          type: object
+          nullable: true
+          description: Hook parameters schema (JSONB)
+          example:
+            accepts: ["order", "customer"]
+            returns: "void"
+
+        # Status & Performance
+        is_active:
+          type: boolean
+          default: true
+          description: Hook active status
+          example: true
+        execution_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total execution count
+          example: 450
+        avg_execution_time:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Average execution time (ms)
+          example: 12.5
+        last_executed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last execution timestamp
+          example: "2025-11-12T14:30:00Z"
+
+        # Error Handling
+        error_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Error count
+          example: 0
+        last_error:
+          type: string
+          nullable: true
+          description: Last error message
+          example: null
+
+        # Conditions
+        conditions:
+          type: object
+          nullable: true
+          description: Hook execution conditions (JSONB)
+          example:
+            tenant_type: "premium"
+            order_amount: ">= 100"
+
+# Plugin Event Log Entity
+PluginEvent:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - plugin_installation_id
+        - event_type
+        - event_data
+        - triggered_at
+      properties:
+        plugin_installation_id:
+          type: string
+          format: uuid
+          description: Reference to plugin installation
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Event Information
+        event_type:
+          type: string
+          enum: ["hook_executed", "error_occurred", "setting_changed", "health_check", "performance_warning"]
+          description: Type of event
+          example: "hook_executed"
+        event_data:
+          type: object
+          description: Event payload data (JSONB)
+          example:
+            hook_name: "order.created"
+            execution_time: 15.2
+            parameters: {"order_id": "ORD-123"}
+
+        # Event Context
+        triggered_at:
+          type: string
+          format: date-time
+          description: When event occurred
+          example: "2025-11-12T14:30:00Z"
+        triggered_by:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Event trigger source
+          example: "webhook"
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who triggered event
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Event Severity
+        severity:
+          type: string
+          enum: ["debug", "info", "warning", "error", "critical"]
+          default: "info"
+          description: Event severity level
+          example: "info"
+        message:
+          type: string
+          nullable: true
+          description: Human-readable message
+          example: "Order created hook executed successfully"
+
+        # Performance
+        execution_time:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Execution time in milliseconds
+          example: 15.2
+        memory_usage:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Memory usage in MB
+          example: 2.1
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional event metadata
+          example:
+            request_id: "req-123"
+            ip_address: "192.168.1.100"
+
+# ================================================================
+# MARKETPLACE & MONETIZATION ENTITIES
+# ================================================================
+
+# Plugin Marketplace Listing Entity
+PluginMarketplaceListing:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - plugin_id
+        - title
+        - pricing_model
+        - status
+      properties:
+        plugin_id:
+          type: string
+          format: uuid
+          description: Reference to plugin
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Listing Information
+        title:
+          type: string
+          maxLength: 255
+          description: Marketplace listing title
+          example: "Stripe Payment Gateway Pro"
+        subtitle:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Listing subtitle
+          example: "Accept payments securely with advanced features"
+        description:
+          type: string
+          description: Detailed listing description (HTML allowed)
+          example: "<p>Complete payment solution with 3D Secure...</p>"
+
+        # Pricing & Monetization
+        pricing_model:
+          type: string
+          enum: ["free", "one_time", "subscription", "freemium", "usage_based"]
+          description: Pricing model
+          example: "one_time"
+        base_price:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Base price in USD
+          example: 49.99
+        subscription_monthly:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Monthly subscription price
+          example: 9.99
+        subscription_yearly:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Yearly subscription price
+          example: 99.99
+        free_trial_days:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Free trial duration in days
+          example: 14
+
+        # Listing Status
+        status:
+          type: string
+          enum: ["draft", "pending_review", "approved", "published", "suspended", "rejected"]
+          default: "draft"
+          description: Listing status
+          example: "published"
+        featured_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: Featured listing expiry
+          example: "2025-12-31T23:59:59Z"
+
+        # SEO & Marketing
+        seo_title:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: SEO title
+          example: "Stripe Payment Gateway - Accept Credit Cards Securely"
+        seo_description:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: SEO meta description
+          example: "Accept credit card payments with Stripe integration"
+        keywords:
+          type: array
+          items:
+            type: string
+          description: SEO keywords
+          example: ["stripe", "payment", "credit card", "checkout"]
+
+        # Media & Assets
+        logo_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Plugin logo URL
+          example: "https://cdn.ptcex.com/plugins/stripe/logo.png"
+        gallery_images:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Gallery image URLs
+          example: ["https://cdn.ptcex.com/plugins/stripe/gallery1.png"]
+        video_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Demo video URL
+          example: "https://youtube.com/watch?v=demo123"
+
+        # Analytics
+        view_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Listing view count
+          example: 2500
+        conversion_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: View to install conversion rate
+          example: 0.15
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional listing metadata
+          example:
+            commission_rate: 0.30
+            vendor_payout_method: "stripe"
+
+# Plugin Purchase Entity
+PluginPurchase:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - plugin_id
+        - purchase_type
+        - amount
+        - currency
+        - status
+      properties:
+        plugin_id:
+          type: string
+          format: uuid
+          description: Reference to plugin
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        marketplace_listing_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to marketplace listing
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Purchase Information
+        purchase_type:
+          type: string
+          enum: ["one_time", "subscription", "trial", "upgrade", "renewal"]
+          description: Type of purchase
+          example: "one_time"
+        amount:
+          type: number
+          format: float
+          minimum: 0
+          description: Purchase amount
+          example: 49.99
+        currency:
+          type: string
+          maxLength: 3
+          pattern: '^[A-Z]{3}$'
+          description: Currency code (ISO 4217)
+          example: "USD"
+        discount_amount:
+          type: number
+          format: float
+          minimum: 0
+          default: 0
+          description: Discount applied
+          example: 5.00
+
+        # Payment Information
+        payment_method:
+          type: string
+          enum: ["stripe", "paypal", "bank_transfer", "credits"]
+          description: Payment method used
+          example: "stripe"
+        payment_reference:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: External payment reference
+          example: "pi_1234567890"
+        transaction_fee:
+          type: number
+          format: float
+          minimum: 0
+          default: 0
+          description: Transaction processing fee
+          example: 1.75
+
+        # Purchase Status
+        status:
+          type: string
+          enum: ["pending", "completed", "failed", "refunded", "cancelled"]
+          default: "pending"
+          description: Purchase status
+          example: "completed"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Purchase completion timestamp
+          example: "2025-11-12T14:30:00Z"
+        refunded_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Refund timestamp
+          example: null
+        refund_amount:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Refunded amount
+          example: null
+
+        # License Information
+        license_key:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Generated license key
+          writeOnly: true
+        license_starts_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: License start date
+          example: "2025-11-12T14:30:00Z"
+        license_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: License expiry date
+          example: "2026-11-12T14:30:00Z"
+
+        # Commission & Revenue
+        vendor_payout:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Amount paid to vendor
+          example: 34.99
+        platform_commission:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Platform commission
+          example: 14.00
+        commission_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: Commission rate applied
+          example: 0.30
+
+        # Purchase Context
+        user_id:
+          type: string
+          format: uuid
+          description: User who made purchase
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        ip_address:
+          type: string
+          maxLength: 45
+          nullable: true
+          description: Purchase IP address
+          example: "192.168.1.100"
+        user_agent:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: User agent string
+          example: "Mozilla/5.0..."
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional purchase metadata
+          example:
+            coupon_code: "SAVE10"
+            affiliate_id: "partner123"
+
+# ================================================================
+# SECURITY & VALIDATION ENTITIES
+# ================================================================
+
+# Plugin API Key Entity (For External Services)
+PluginApiKey:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - plugin_installation_id
+        - key_name
+        - key_hash
+        - permissions
+      properties:
+        plugin_installation_id:
+          type: string
+          format: uuid
+          description: Reference to plugin installation
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # API Key Information
+        key_name:
+          type: string
+          maxLength: 255
+          description: Human-readable key name
+          example: "Stripe Production Key"
+        key_hash:
+          type: string
+          maxLength: 255
+          description: Hashed API key value
+          writeOnly: true
+        key_prefix:
+          type: string
+          maxLength: 10
+          description: Key prefix for identification
+          example: "sk_live_"
+
+        # Permissions & Scope
+        permissions:
+          type: array
+          items:
+            type: string
+          description: API key permissions
+          example: ["payments.create", "payments.read", "webhooks.receive"]
+        rate_limit:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Requests per minute limit
+          example: 100
+
+        # Key Status
+        is_active:
+          type: boolean
+          default: true
+          description: Key active status
+          example: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Key expiry date
+          example: "2026-11-12T00:00:00Z"
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last usage timestamp
+          example: "2025-11-12T13:45:00Z"
+
+        # Usage Statistics
+        usage_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total usage count
+          example: 1250
+        monthly_usage:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Current month usage
+          example: 150
+
+        # Environment & Context
+        environment:
+          type: string
+          enum: ["development", "staging", "production"]
+          description: Environment scope
+          example: "production"
+        allowed_ips:
+          type: array
+          items:
+            type: string
+          description: Allowed IP addresses
+          example: ["192.168.1.0/24", "10.0.0.100"]
+
+# Plugin File Entity (For Package Management)
+PluginFile:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - plugin_id
+        - version
+        - file_path
+        - file_type
+        - file_size
+        - checksum
+      properties:
+        plugin_id:
+          type: string
+          format: uuid
+          description: Reference to plugin
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # File Information
+        version:
+          type: string
+          maxLength: 50
+          description: Plugin version this file belongs to
+          example: "1.2.3"
+        file_path:
+          type: string
+          maxLength: 500
+          description: File path within plugin package
+          example: "src/payment-gateway.ts"
+        file_type:
+          type: string
+          enum: ["source", "asset", "config", "documentation", "test", "build"]
+          description: Type of file
+          example: "source"
+        file_size:
+          type: integer
+          minimum: 0
+          description: File size in bytes
+          example: 15432
+
+        # Security & Integrity
+        checksum:
+          type: string
+          maxLength: 255
+          description: File checksum (SHA-256)
+          example: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        mime_type:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: File MIME type
+          example: "application/typescript"
+
+        # Storage Information
+        storage_path:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Actual storage path
+          writeOnly: true
+        is_binary:
+          type: boolean
+          default: false
+          description: Whether file is binary
+          example: false
+        is_executable:
+          type: boolean
+          default: false
+          description: Whether file is executable
+          example: false
+
+        # Content Analysis
+        line_count:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Number of lines (for text files)
+          example: 245
+        complexity_score:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Code complexity score
+          example: 15.5
+
+# Plugin Validation Result Entity
+PluginValidationResult:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - plugin_id
+        - validation_type
+        - status
+        - checked_at
+      properties:
+        plugin_id:
+          type: string
+          format: uuid
+          description: Reference to plugin
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        plugin_version:
+          type: string
+          maxLength: 50
+          description: Plugin version validated
+          example: "1.2.3"
+
+        # Validation Information
+        validation_type:
+          type: string
+          enum: ["syntax", "security", "performance", "compatibility", "quality", "malware"]
+          description: Type of validation performed
+          example: "security"
+        status:
+          type: string
+          enum: ["passed", "warning", "failed", "skipped"]
+          description: Validation result status
+          example: "passed"
+        score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Validation score (0-100)
+          example: 95.5
+
+        # Validation Details
+        checked_at:
+          type: string
+          format: date-time
+          description: When validation was performed
+          example: "2025-11-12T14:30:00Z"
+        checked_by:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Validator identifier
+          example: "automated_scanner_v2.1"
+
+        # Results & Issues
+        issues_found:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+                enum: ["low", "medium", "high", "critical"]
+              message:
+                type: string
+              file:
+                type: string
+                nullable: true
+              line:
+                type: integer
+                nullable: true
+          description: Issues found during validation
+        recommendations:
+          type: array
+          items:
+            type: string
+          description: Improvement recommendations
+          example: ["Consider adding input validation", "Use secure random generators"]
+
+        # Metadata
+        validator_version:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Validator version used
+          example: "2.1.0"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional validation metadata
+          example:
+            scan_duration: 45.2
+            rules_checked: 150
+
+# Plugin Security Scan Entity
+PluginSecurityScan:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - plugin_id
+        - scan_type
+        - status
+        - scanned_at
+      properties:
+        plugin_id:
+          type: string
+          format: uuid
+          description: Reference to plugin
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        plugin_version:
+          type: string
+          maxLength: 50
+          description: Plugin version scanned
+          example: "1.2.3"
+
+        # Scan Information
+        scan_type:
+          type: string
+          enum: ["malware", "vulnerability", "dependency", "code_analysis", "behavioral"]
+          description: Type of security scan
+          example: "malware"
+        status:
+          type: string
+          enum: ["clean", "suspicious", "malware", "error", "pending"]
+          description: Scan result status
+          example: "clean"
+        risk_level:
+          type: string
+          enum: ["low", "medium", "high", "critical"]
+          nullable: true
+          description: Risk level assessment
+          example: "low"
+
+        # Scan Execution
+        scanned_at:
+          type: string
+          format: date-time
+          description: When scan was performed
+          example: "2025-11-12T14:30:00Z"
+        scanner_id:
+          type: string
+          maxLength: 255
+          description: Scanner identifier
+          example: "clamav_v1.2.1"
+        scan_duration:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Scan duration in seconds
+          example: 12.5
+
+        # Scan Results
+        threats_found:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: ["virus", "trojan", "backdoor", "suspicious_code", "vulnerability"]
+              name:
+                type: string
+              file:
+                type: string
+                nullable: true
+              severity:
+                type: string
+                enum: ["low", "medium", "high", "critical"]
+              description:
+                type: string
+                nullable: true
+          description: Security threats found
+        vulnerabilities:
+          type: array
+          items:
+            type: object
+            properties:
+              cve_id:
+                type: string
+                nullable: true
+              severity:
+                type: string
+                enum: ["low", "medium", "high", "critical"]
+              description:
+                type: string
+              fix_available:
+                type: boolean
+                default: false
+          description: Known vulnerabilities found
+
+        # Scan Context
+        false_positive:
+          type: boolean
+          default: false
+          description: Marked as false positive
+          example: false
+        quarantined:
+          type: boolean
+          default: false
+          description: Plugin quarantined due to scan
+          example: false
+        whitelist_reason:
+          type: string
+          nullable: true
+          description: Reason for whitelisting
+          example: null
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional scan metadata
+          example:
+            files_scanned: 45
+            signatures_used: 125000
+
+# Plugin Analytics Entity
+PluginAnalytics:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - plugin_installation_id
+        - event_date
+        - event_type
+        - event_count
+      properties:
+        plugin_installation_id:
+          type: string
+          format: uuid
+          description: Reference to plugin installation
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Analytics Data
+        event_date:
+          type: string
+          format: date
+          description: Date of analytics data
+          example: "2025-11-12"
+        event_type:
+          type: string
+          enum: ["activation", "usage", "error", "hook_execution", "api_call", "performance"]
+          description: Type of event tracked
+          example: "usage"
+        event_count:
+          type: integer
+          minimum: 0
+          description: Number of events
+          example: 150
+
+        # Metrics
+        total_duration:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Total duration for timed events (ms)
+          example: 1250.5
+        average_duration:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Average duration (ms)
+          example: 12.5
+        success_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: Success rate (0-1)
+          example: 0.98
+
+        # Resource Usage
+        cpu_usage:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Average CPU usage percentage
+          example: 2.5
+        memory_usage:
+          type: number
+          format: float
+          minimum: 0
+          nullable: true
+          description: Average memory usage (MB)
+          example: 15.2
+        api_quota_used:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: API quota consumed
+          example: 450
+
+        # Context
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: User associated with events
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        ip_address:
+          type: string
+          maxLength: 45
+          nullable: true
+          description: IP address for events
+          example: "192.168.1.100"
+
+        # Additional Data
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional analytics metadata
+          example:
+            browser: "Chrome/118.0"
+            device_type: "desktop"
+            referrer: "admin-dashboard"
+
+# ================================================================
+# INPUT/OUTPUT DTOs
+# ================================================================
+
+# Plugin Create Input
+PluginCreateInput:
+  type: object
+  required:
+    - name
+    - slug
+    - description
+    - author
+    - plugin_type
+    - execution_model
+    - version
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Plugin display name
+      example: "Stripe Payment Gateway"
+    slug:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9-]+$'
+      description: Unique plugin identifier (auto-generated if not provided)
+      example: "stripe-payment-gateway"
+    description:
+      type: string
+      description: Plugin description and purpose
+      example: "Accept credit card payments via Stripe API"
+    short_description:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Brief plugin description
+      example: "Secure credit card payments with Stripe"
+    author:
+      type: string
+      maxLength: 255
+      description: Plugin author/vendor name
+      example: "PT Custom Etching Xenial"
+    author_email:
+      type: string
+      format: email
+      nullable: true
+      description: Author contact email
+      example: "developer@ptcex.com"
+    plugin_type:
+      type: string
+      enum: ["payment", "shipping", "analytics", "crm", "theme", "widget", "integration", "utility", "marketing", "security"]
+      description: Plugin category type
+      example: "payment"
+    execution_model:
+      type: string
+      enum: ["frontend", "backend", "hybrid"]
+      description: Where plugin executes
+      example: "backend"
+    version:
+      type: string
+      maxLength: 50
+      pattern: '^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'
+      description: Semantic version
+      example: "1.0.0"
+    min_stencil_version:
+      type: string
+      maxLength: 50
+      description: Minimum Stencil CMS version
+      example: "2.0.0"
+    dependencies:
+      type: array
+      items:
+        type: string
+      description: Required plugin dependencies
+      example: ["payment-core"]
+    tags:
+      type: array
+      items:
+        type: string
+      description: Plugin tags for search
+      example: ["payment", "stripe", "credit-card"]
+
+# Plugin Update Input
+PluginUpdateInput:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Plugin display name
+    description:
+      type: string
+      description: Plugin description
+    short_description:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Brief description
+    author_email:
+      type: string
+      format: email
+      nullable: true
+      description: Author contact email
+    version:
+      type: string
+      maxLength: 50
+      pattern: '^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'
+      description: New version
+    changelog:
+      type: object
+      additionalProperties: true
+      description: Version changelog
+    status:
+      type: string
+      enum: ["draft", "under_review", "approved", "published", "deprecated"]
+      description: Plugin status
+    tags:
+      type: array
+      items:
+        type: string
+      description: Plugin tags
+
+# Plugin Installation Input
+PluginInstallationInput:
+  type: object
+  required:
+    - plugin_id
+  properties:
+    plugin_id:
+      type: string
+      format: uuid
+      description: Plugin to install
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    license_key:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: License key (for premium plugins)
+      writeOnly: true
+    auto_update:
+      type: boolean
+      default: true
+      description: Enable automatic updates
+      example: true
+    installation_notes:
+      type: string
+      nullable: true
+      description: Installation notes
+      example: "Production environment setup"
+
+# Plugin Setting Input
+PluginSettingInput:
+  type: object
+  required:
+    - key
+    - value
+  properties:
+    key:
+      type: string
+      maxLength: 255
+      description: Setting key name
+      example: "stripe_api_key"
+    value:
+      oneOf:
+        - type: string
+        - type: number
+        - type: boolean
+        - type: object
+      description: Setting value
+      example: "sk_live_..."
+    category:
+      type: string
+      maxLength: 100
+      nullable: true
+      description: Setting category
+      example: "authentication"
+    description:
+      type: string
+      nullable: true
+      description: Setting description
+      example: "Stripe secret API key"
+    is_required:
+      type: boolean
+      default: false
+      description: Whether setting is required
+      example: true
+    is_encrypted:
+      type: boolean
+      default: false
+      description: Whether to encrypt value
+      example: true
+    environment:
+      type: string
+      enum: ["all", "development", "staging", "production"]
+      default: "all"
+      description: Environment scope
+      example: "production"
+
+# ================================================================
+# RESPONSE DTOs
+# ================================================================
+
+# Plugin List Response
+PluginListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/PaginatedResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/Plugin'
+        meta:
+          allOf:
+            - $ref: '../common/base.yaml#/PaginationMeta'
+            - type: object
+              properties:
+                total_by_type:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                  description: Plugin count by type
+                  example:
+                    payment: 15
+                    shipping: 8
+                    analytics: 12
+                total_by_status:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                  description: Plugin count by status
+                  example:
+                    published: 25
+                    draft: 10
+
+# Plugin Installation Response
+PluginInstallationResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/PluginInstallation'
+        plugin:
+          $ref: '#/Plugin'
+
+# Plugin Analytics Response
+PluginAnalyticsResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            daily_stats:
+              type: array
+              items:
+                $ref: '#/PluginAnalytics'
+            summary:
+              type: object
+              properties:
+                total_events:
+                  type: integer
+                  example: 5250
+                average_performance:
+                  type: number
+                  format: float
+                  example: 12.5
+                success_rate:
+                  type: number
+                  format: float
+                  example: 0.98
+                top_events:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      event_type:
+                        type: string
+                        example: "hook_execution"
+                      count:
+                        type: integer
+                        example: 1250
+
+# Marketplace Listing Response
+MarketplaceListingResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/PaginatedResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/PluginMarketplaceListing'
+              - type: object
+                properties:
+                  plugin:
+                    $ref: '#/Plugin'
+                  purchase_count:
+                    type: integer
+                    description: Total purchase count
+                    example: 450
+        filters:
+          type: object
+          properties:
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "payment"
+                  count:
+                    type: integer
+                    example: 15
+            price_ranges:
+              type: array
+              items:
+                type: object
+                properties:
+                  range:
+                    type: string
+                    example: "0-50"
+                  count:
+                    type: integer
+                    example: 25
+
+# Plugin Health Check Response
+PluginHealthResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            overall_health:
+              type: string
+              enum: ["healthy", "warning", "error"]
+              example: "healthy"
+            plugins:
+              type: array
+              items:
+                type: object
+                properties:
+                  plugin_id:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  plugin_name:
+                    type: string
+                    example: "Stripe Payment Gateway"
+                  health_status:
+                    type: string
+                    enum: ["healthy", "warning", "error"]
+                    example: "healthy"
+                  last_check:
+                    type: string
+                    format: date-time
+                    example: "2025-11-12T14:30:00Z"
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example: []

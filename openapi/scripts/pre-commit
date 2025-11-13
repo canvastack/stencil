@@ -1,0 +1,43 @@
+#!/bin/bash
+# Pre-commit hook for OpenAPI specification validation
+
+set -e
+
+echo "🔍 Running OpenAPI pre-commit checks..."
+
+cd openapi
+
+# Check if any YAML files changed
+if git diff --cached --name-only | grep -q "\.yaml$"; then
+    echo "📋 YAML files detected, running validation..."
+    
+    # Run YAML validation
+    echo "⚡ Validating YAML syntax..."
+    if ! node tools/validate-all.js; then
+        echo "❌ YAML validation failed!"
+        exit 1
+    fi
+    
+    # Run quick security check
+    echo "🛡️ Running security check..."
+    if ! node security-audit.cjs; then
+        echo "❌ Security audit failed!"
+        exit 1
+    fi
+    
+    # Check security score
+    SECURITY_SCORE=$(node -e "
+        const report = JSON.parse(require('fs').readFileSync('generated/security-audit.json', 'utf8'));
+        console.log(report.summary.overallScore);
+    ")
+    
+    if [ "$SECURITY_SCORE" -lt 30 ]; then
+        echo "❌ Security score too low: $SECURITY_SCORE/100"
+        echo "Please address critical security issues before committing."
+        exit 1
+    fi
+    
+    echo "✅ Pre-commit checks passed!"
+else
+    echo "ℹ️ No YAML files changed, skipping OpenAPI validation"
+fi

@@ -1,0 +1,1629 @@
+# Theme Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for Advanced Theme System (200+ fields, 12 tables)
+# Multi-tenant theme engine with marketplace, customization, and security
+
+# ================================================================
+# CORE THEME ENTITIES
+# ================================================================
+
+# Main Theme Entity (Global Registry)
+Theme:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - slug
+        - name
+        - version
+        - author_name
+        - compatibility_stencil_version
+      properties:
+        # Theme Identity
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9-]+$'
+          description: Unique theme identifier (URL-friendly)
+          example: "etching-professional"
+        name:
+          type: string
+          maxLength: 255
+          description: Display name of the theme
+          example: "Etching Professional"
+        description:
+          type: string
+          nullable: true
+          description: Detailed theme description
+          example: "Professional theme designed for etching businesses with integrated workflow support"
+        version:
+          type: string
+          maxLength: 50
+          pattern: '^\d+\.\d+\.\d+$'
+          description: Semantic version (MAJOR.MINOR.PATCH)
+          example: "1.2.3"
+
+        # Author Information
+        author_name:
+          type: string
+          maxLength: 255
+          description: Theme author name
+          example: "Stencil Team"
+        author_email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Author email address
+          example: "themes@stencilcms.com"
+        author_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Author website URL
+          example: "https://stencilcms.com"
+
+        # Compatibility
+        compatibility_stencil_version:
+          type: string
+          maxLength: 50
+          description: Minimum Stencil CMS version required
+          example: ">=2.0.0"
+        compatibility_react_version:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: React version compatibility
+          example: ">=18.0.0"
+
+        # Support Information
+        support_email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Support contact email
+          example: "support@stencilcms.com"
+        support_docs_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Documentation URL
+          example: "https://docs.stencilcms.com/themes/etching-professional"
+        support_forum_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Support forum URL
+          example: "https://community.stencilcms.com/themes"
+
+        # Pricing
+        pricing_type:
+          type: string
+          enum: ["free", "paid", "subscription"]
+          default: "free"
+          description: Pricing model for the theme
+          example: "paid"
+        pricing_price:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 9999.99
+          nullable: true
+          description: Theme price (if paid)
+          example: 79.99
+        pricing_currency:
+          type: string
+          maxLength: 3
+          pattern: '^[A-Z]{3}$'
+          default: "USD"
+          description: Price currency (ISO 4217)
+          example: "USD"
+        pricing_license:
+          type: string
+          maxLength: 50
+          default: "single-site"
+          enum: ["single-site", "multi-site", "unlimited"]
+          description: License type
+          example: "single-site"
+
+        # Classification
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          description: Theme tags for categorization
+          example: ["business", "ecommerce", "professional"]
+        categories:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          description: Theme categories
+          example: ["business", "manufacturing"]
+
+        # Visual Assets
+        screenshots:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+                format: uri
+              caption:
+                type: string
+                maxLength: 255
+              order:
+                type: integer
+                minimum: 1
+          description: Theme screenshots for preview
+          example:
+            - url: "https://cdn.stencilcms.com/themes/etching/screenshot1.jpg"
+              caption: "Homepage"
+              order: 1
+        demo_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Live demo URL
+          example: "https://demo.stencilcms.com/etching-professional"
+
+        # Features
+        features:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+          description: Theme feature list
+          example: ["Responsive Design", "Dark Mode", "Custom CSS", "Live Customizer"]
+
+        # Status Flags
+        is_official:
+          type: boolean
+          default: false
+          description: Official Stencil theme flag
+          example: true
+        is_active:
+          type: boolean
+          default: true
+          description: Theme availability status
+          example: true
+        is_featured:
+          type: boolean
+          default: false
+          description: Featured theme in marketplace
+          example: false
+
+        # Customizer Configuration
+        customizer_settings_schema:
+          type: object
+          nullable: true
+          description: JSON Schema for theme customization settings
+          example:
+            type: "object"
+            properties:
+              primary_color:
+                type: "string"
+                pattern: "^#[0-9A-Fa-f]{6}$"
+                default: "#3b82f6"
+
+        # Statistics
+        download_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total download count
+          example: 2847
+        rating_average:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+          default: 0.00
+          description: Average user rating (0-5)
+          example: 4.75
+        rating_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of ratings
+          example: 123
+
+        # Package Information
+        package_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Download URL for theme package
+          example: "https://cdn.stencilcms.com/themes/etching-professional-v1.2.3.zip"
+        package_size_bytes:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Package size in bytes
+          example: 5242880
+        package_checksum:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: SHA-256 checksum for package verification
+          example: "a1b2c3d4e5f6..."
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional theme metadata
+          example:
+            business_type: "etching"
+            target_industry: "manufacturing"
+
+# Theme Installation Entity (Tenant-scoped)
+ThemeInstallation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - theme_id
+        - installed_version
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the installed theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Status
+        is_active:
+          type: boolean
+          default: false
+          description: Whether this theme is currently active
+          example: true
+
+        # Version Management
+        installed_version:
+          type: string
+          maxLength: 50
+          description: Currently installed theme version
+          example: "1.2.3"
+        available_version:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Latest available version (if update available)
+          example: "1.3.0"
+
+        # Timestamps
+        installation_date:
+          type: string
+          format: date-time
+          description: When theme was installed
+          example: "2025-11-12T10:30:00Z"
+        activation_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: When theme was last activated
+          example: "2025-11-12T14:45:00Z"
+        last_update_check:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time system checked for updates
+          example: "2025-11-13T08:00:00Z"
+
+        # Settings
+        auto_update_enabled:
+          type: boolean
+          default: false
+          description: Whether automatic updates are enabled
+          example: false
+
+        # User Tracking
+        installed_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who installed this theme
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        activated_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who activated this theme
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Status Tracking
+        installation_status:
+          type: string
+          enum: ["installing", "installed", "failed", "updating", "uninstalling"]
+          default: "installed"
+          description: Current installation status
+          example: "installed"
+
+        # Notes
+        notes:
+          type: string
+          nullable: true
+          description: Admin notes about this installation
+          example: "Customized for corporate branding"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Installation metadata
+          example:
+            installation_method: "marketplace"
+            custom_modifications: true
+
+# Theme Settings Entity (Tenant-scoped Customizations)
+ThemeSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - theme_id
+        - settings_data
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Configuration
+        settings_data:
+          type: object
+          description: Theme customization settings (JSON)
+          example:
+            primary_color: "#1e40af"
+            secondary_color: "#dc2626"
+            font_family: "Montserrat"
+            container_width: 1280
+            enable_dark_mode: true
+
+        # Custom Code
+        custom_css:
+          type: string
+          nullable: true
+          description: Custom CSS code for theme modifications
+          example: |
+            .hero-section {
+              background: linear-gradient(45deg, #1e40af, #dc2626);
+            }
+        custom_js:
+          type: string
+          nullable: true
+          description: Custom JavaScript code
+          example: |
+            // Custom analytics tracking
+            gtag('config', 'GA_MEASUREMENT_ID');
+
+# Theme Marketplace Listing Entity
+ThemeMarketplaceListing:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - theme_id
+        - status
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Status Management
+        status:
+          type: string
+          enum: ["pending", "approved", "rejected", "suspended"]
+          default: "pending"
+          description: Marketplace review status
+          example: "approved"
+        is_published:
+          type: boolean
+          default: false
+          description: Whether theme is published in marketplace
+          example: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Publication timestamp
+          example: "2025-11-10T12:00:00Z"
+
+        # Review Process
+        submission_notes:
+          type: string
+          nullable: true
+          description: Notes provided during submission
+          example: "Theme designed for etching businesses with full workflow integration"
+        review_notes:
+          type: string
+          nullable: true
+          description: Review feedback from marketplace team
+          example: "Approved after minor security fixes"
+        reviewed_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reviewer user ID
+          example: "789e0123-e45b-67c8-a901-234567890abc"
+        reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Review completion timestamp
+          example: "2025-11-11T16:30:00Z"
+
+        # Sales Metrics
+        total_sales:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total number of sales
+          example: 247
+        total_revenue:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0.00
+          description: Total revenue generated
+          example: 19753.00
+
+        # Vendor Information
+        commission_rate:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 25.00
+          description: Platform commission percentage
+          example: 25.00
+        vendor_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Theme vendor/developer user ID
+          example: "456e7890-a123-45b6-c789-012345678def"
+        vendor_payout_info:
+          type: object
+          nullable: true
+          description: Vendor payment information
+          example:
+            payment_method: "paypal"
+            paypal_email: "vendor@example.com"
+
+        # Promotional Assets
+        promotional_banner_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Promotional banner image URL
+          example: "https://cdn.stencilcms.com/promos/etching-banner.jpg"
+        promotional_video_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Promotional video URL
+          example: "https://youtube.com/watch?v=abc123"
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Marketplace metadata
+          example:
+            featured_until: "2025-12-31"
+            promotion_code: "LAUNCH50"
+
+# Theme Purchase Entity (Transaction Records)
+ThemePurchase:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - theme_id
+        - price_paid
+        - currency
+        - purchased_by
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to purchased theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Purchase Details
+        purchase_date:
+          type: string
+          format: date-time
+          description: Transaction timestamp
+          example: "2025-11-12T10:30:00Z"
+        price_paid:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Amount paid for the theme
+          example: 79.99
+        currency:
+          type: string
+          maxLength: 3
+          pattern: '^[A-Z]{3}$'
+          description: Currency code (ISO 4217)
+          example: "USD"
+
+        # Payment Information
+        payment_method:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Payment method used
+          example: "credit_card"
+        payment_transaction_id:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: External payment processor transaction ID
+          example: "txn_1234567890abcdef"
+        payment_status:
+          type: string
+          enum: ["pending", "completed", "failed", "refunded"]
+          default: "completed"
+          description: Payment processing status
+          example: "completed"
+
+        # License Information
+        license_type:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: License type purchased
+          example: "single-site"
+        license_valid_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: License expiry (for subscription themes)
+          example: "2026-11-12T10:30:00Z"
+
+        # User Reference
+        purchased_by:
+          type: string
+          format: uuid
+          description: User who made the purchase
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Invoice Details
+        invoice_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Generated invoice number
+          example: "INV-2025-001234"
+        invoice_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Invoice download URL
+          example: "https://invoices.stencilcms.com/inv-001234.pdf"
+
+        # Refund Information
+        refund_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Refund processing date
+          example: null
+        refund_reason:
+          type: string
+          nullable: true
+          description: Reason for refund
+          example: null
+        refund_amount:
+          type: number
+          format: decimal
+          nullable: true
+          description: Refunded amount
+          example: null
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Purchase metadata
+          example:
+            discount_code: "LAUNCH50"
+            original_price: 99.99
+
+# Theme License Entity
+ThemeLicense:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - purchase_id
+        - license_key
+        - status
+      properties:
+        purchase_id:
+          type: string
+          format: uuid
+          description: Reference to the purchase transaction
+          example: "789e0123-e45b-67c8-a901-234567890abc"
+
+        # License Key
+        license_key:
+          type: string
+          maxLength: 255
+          description: Unique license key
+          example: "ETCHING-PRO-2025-ABCD1234-EFGH5678"
+
+        # Status
+        status:
+          type: string
+          enum: ["active", "suspended", "expired", "revoked"]
+          default: "active"
+          description: License status
+          example: "active"
+
+        # Activation Limits
+        activations_limit:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Maximum allowed activations
+          example: 1
+        activations_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Current activation count
+          example: 1
+
+        # Validity Period
+        valid_from:
+          type: string
+          format: date-time
+          description: License valid from date
+          example: "2025-11-12T10:30:00Z"
+        valid_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: License expiry date (null = lifetime)
+          example: null
+
+        # Last Check Information
+        last_check_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last license validation check
+          example: "2025-11-13T09:15:00Z"
+        last_check_ip:
+          type: string
+          maxLength: 45
+          nullable: true
+          description: IP address of last check
+          example: "192.168.1.100"
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: License metadata
+          example:
+            activation_domains: ["ptcex.com"]
+
+# Theme Version Entity
+ThemeVersion:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - theme_id
+        - version
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Version Information
+        version:
+          type: string
+          maxLength: 50
+          pattern: '^\d+\.\d+\.\d+$'
+          description: Semantic version number
+          example: "1.3.0"
+
+        # Release Information
+        release_date:
+          type: string
+          format: date-time
+          description: Version release date
+          example: "2025-11-13T10:00:00Z"
+        release_notes:
+          type: string
+          nullable: true
+          description: Release notes and changelog
+          example: "Added dark mode support and improved performance"
+
+        # Changes
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: ["feature", "bugfix", "security", "breaking"]
+              description:
+                type: string
+          description: Structured changelog
+          example:
+            - type: "feature"
+              description: "Added dark mode toggle"
+            - type: "bugfix"
+              description: "Fixed responsive layout issues"
+
+        # Package Information
+        package_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Download URL for this version
+          example: "https://cdn.stencilcms.com/themes/etching-professional-v1.3.0.zip"
+        package_checksum:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Package integrity checksum
+          example: "sha256:a1b2c3d4e5f6..."
+
+        # Version Flags
+        is_stable:
+          type: boolean
+          default: true
+          description: Whether this is a stable release
+          example: true
+        is_security_update:
+          type: boolean
+          default: false
+          description: Contains security fixes
+          example: false
+        is_breaking_change:
+          type: boolean
+          default: false
+          description: Contains breaking changes
+          example: false
+
+        # Compatibility
+        min_stencil_version:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Minimum required Stencil version
+          example: "2.0.0"
+        max_stencil_version:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Maximum supported Stencil version
+          example: null
+
+        # Statistics
+        download_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Downloads of this specific version
+          example: 456
+
+        # Creator
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who created this version
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+# Theme File Entity (File Management)
+ThemeFile:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - theme_id
+        - file_path
+        - file_name
+        - file_type
+        - file_size
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        tenant_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Tenant ID (for customized files)
+          example: "456e7890-a123-45b6-c789-012345678def"
+
+        # File Information
+        file_path:
+          type: string
+          maxLength: 500
+          description: File path within theme structure
+          example: "/components/Header.tsx"
+        file_name:
+          type: string
+          maxLength: 255
+          description: File name with extension
+          example: "Header.tsx"
+        file_type:
+          type: string
+          maxLength: 50
+          description: File type/extension
+          example: "tsx"
+        file_size:
+          type: integer
+          minimum: 0
+          description: File size in bytes
+          example: 2048
+
+        # Content
+        content:
+          type: string
+          nullable: true
+          description: File content (for text files)
+          example: "import React from 'react';\n\nexport default function Header() {..."
+        content_hash:
+          type: string
+          maxLength: 64
+          nullable: true
+          description: SHA-256 hash of file content
+          example: "e3b0c44298fc1c149afbf4c8996fb924..."
+
+        # Metadata
+        language:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Programming language (for syntax highlighting)
+          example: "typescript"
+        is_binary:
+          type: boolean
+          default: false
+          description: Whether file is binary
+          example: false
+
+# Theme Validation Result Entity
+ThemeValidationResult:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - theme_id
+        - version
+        - validation_type
+        - is_valid
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the validated theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        version:
+          type: string
+          maxLength: 50
+          description: Theme version that was validated
+          example: "1.3.0"
+
+        # Validation Details
+        validation_type:
+          type: string
+          enum: ["structure", "security", "performance", "accessibility", "compatibility"]
+          description: Type of validation performed
+          example: "security"
+        is_valid:
+          type: boolean
+          description: Whether validation passed
+          example: true
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 0
+          description: Validation score (0-100)
+          example: 95
+
+        # Results
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              severity:
+                type: string
+                enum: ["critical", "high", "medium", "low"]
+              file_path:
+                type: string
+              line_number:
+                type: integer
+          description: Validation errors found
+          example: []
+        warnings:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              file_path:
+                type: string
+              line_number:
+                type: integer
+          description: Validation warnings
+          example:
+            - code: "PERFORMANCE_WARNING"
+              message: "Large image file detected"
+              file_path: "/assets/hero-bg.jpg"
+
+        # Metrics
+        scan_duration:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Validation duration in milliseconds
+          example: 2500
+        scanned_files:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Number of files scanned
+          example: 47
+
+        # Creator
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who initiated validation
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+# Theme Security Scan Entity
+ThemeSecurityScan:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - theme_id
+        - scan_type
+        - severity
+        - finding_type
+        - description
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the scanned theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        validation_result_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated validation result
+          example: "789e0123-e45b-67c8-a901-234567890abc"
+
+        # Scan Information
+        scan_type:
+          type: string
+          enum: ["malware", "vulnerability", "dependency", "code_injection", "xss", "csrf"]
+          description: Type of security scan
+          example: "vulnerability"
+        severity:
+          type: string
+          enum: ["critical", "high", "medium", "low", "info"]
+          description: Severity level of finding
+          example: "medium"
+
+        # Finding Details
+        finding_type:
+          type: string
+          maxLength: 100
+          description: Specific type of security finding
+          example: "Outdated dependency"
+        description:
+          type: string
+          description: Detailed description of the finding
+          example: "React version 17.0.1 has known security vulnerabilities. Update to 18.2.0+"
+        file_path:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: File where finding was detected
+          example: "/package.json"
+        line_number:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Line number of the finding
+          example: 15
+
+        # Remediation
+        remediation:
+          type: string
+          nullable: true
+          description: Recommended fix or remediation steps
+          example: "Update React to version 18.2.0 or later"
+        false_positive:
+          type: boolean
+          default: false
+          description: Whether this finding is a false positive
+          example: false
+
+# Theme Installation Log Entity
+ThemeInstallationLog:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - theme_id
+        - action
+        - status
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        installation_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to theme installation
+          example: "789e0123-e45b-67c8-a901-234567890abc"
+
+        # Action Details
+        action:
+          type: string
+          enum: ["install", "uninstall", "activate", "deactivate", "update", "rollback"]
+          description: Action being performed
+          example: "install"
+        status:
+          type: string
+          enum: ["started", "in_progress", "completed", "failed", "cancelled"]
+          description: Current action status
+          example: "completed"
+
+        # Progress Information
+        stage:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Current stage of the action
+          example: "extracting_files"
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 0
+          description: Progress percentage
+          example: 100
+        message:
+          type: string
+          nullable: true
+          description: Progress or status message
+          example: "Theme installed successfully"
+        error_details:
+          type: string
+          nullable: true
+          description: Error details (if status is failed)
+          example: null
+
+        # Timing
+        started_at:
+          type: string
+          format: date-time
+          description: Action start timestamp
+          example: "2025-11-12T10:30:00Z"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Action completion timestamp
+          example: "2025-11-12T10:31:15Z"
+        duration:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Duration in seconds
+          example: 75
+
+        # User
+        performed_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who performed the action
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Action metadata
+          example:
+            backup_created: true
+            files_extracted: 42
+
+# Theme Hook Entity
+ThemeHook:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - theme_id
+        - hook_name
+        - hook_type
+        - trigger_event
+        - handler_code
+      properties:
+        theme_id:
+          type: string
+          format: uuid
+          description: Reference to the theme
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        tenant_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Tenant ID (for tenant-specific hooks)
+          example: "456e7890-a123-45b6-c789-012345678def"
+
+        # Hook Definition
+        hook_name:
+          type: string
+          maxLength: 100
+          description: Unique hook identifier
+          example: "after_theme_activation"
+        hook_type:
+          type: string
+          enum: ["lifecycle", "event", "filter", "action"]
+          description: Type of hook
+          example: "lifecycle"
+        trigger_event:
+          type: string
+          maxLength: 100
+          description: Event that triggers this hook
+          example: "theme:activated"
+        execution_order:
+          type: integer
+          default: 10
+          description: Execution order (lower = earlier)
+          example: 10
+
+        # Handler Code
+        handler_code:
+          type: string
+          description: JavaScript code to execute
+          example: |
+            console.log('Theme activated:', theme.name);
+            // Custom initialization logic here
+        is_active:
+          type: boolean
+          default: true
+          description: Whether hook is active
+          example: true
+
+        # Execution Statistics
+        execution_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times hook has executed
+          example: 12
+        last_executed:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last execution timestamp
+          example: "2025-11-12T14:45:00Z"
+        average_execution_time:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Average execution time in milliseconds
+          example: 25
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# Theme Creation Input
+ThemeCreateInput:
+  type: object
+  required:
+    - slug
+    - name
+    - version
+    - author_name
+    - compatibility_stencil_version
+  properties:
+    slug:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9-]+$'
+      description: Unique theme identifier
+      example: "my-business-theme"
+    name:
+      type: string
+      maxLength: 255
+      description: Theme display name
+      example: "My Business Theme"
+    description:
+      type: string
+      nullable: true
+      description: Theme description
+      example: "A professional theme for business websites"
+    version:
+      type: string
+      maxLength: 50
+      pattern: '^\d+\.\d+\.\d+$'
+      description: Initial version
+      example: "1.0.0"
+    author_name:
+      type: string
+      maxLength: 255
+      description: Author name
+      example: "John Doe"
+    author_email:
+      type: string
+      format: email
+      maxLength: 255
+      nullable: true
+      description: Author email
+      example: "john@example.com"
+    author_url:
+      type: string
+      format: uri
+      maxLength: 500
+      nullable: true
+      description: Author website
+      example: "https://johndoe.com"
+    compatibility_stencil_version:
+      type: string
+      maxLength: 50
+      description: Minimum Stencil version
+      example: ">=2.0.0"
+    pricing_type:
+      type: string
+      enum: ["free", "paid", "subscription"]
+      default: "free"
+      description: Pricing model
+      example: "paid"
+    pricing_price:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      description: Theme price
+      example: 49.99
+    tags:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      description: Theme tags
+      example: ["business", "professional"]
+    categories:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      description: Theme categories
+      example: ["business"]
+    customizer_settings_schema:
+      type: object
+      nullable: true
+      description: Settings schema
+      example:
+        type: "object"
+        properties:
+          primary_color:
+            type: "string"
+            default: "#3b82f6"
+
+# Theme Update Input
+ThemeUpdateInput:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Theme display name
+      example: "Updated Business Theme"
+    description:
+      type: string
+      nullable: true
+      description: Theme description
+      example: "Updated professional theme for business websites"
+    version:
+      type: string
+      maxLength: 50
+      pattern: '^\d+\.\d+\.\d+$'
+      description: Updated version
+      example: "1.1.0"
+    author_email:
+      type: string
+      format: email
+      maxLength: 255
+      nullable: true
+      description: Author email
+      example: "john.doe@example.com"
+    pricing_price:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      description: Updated price
+      example: 59.99
+    tags:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      description: Updated tags
+      example: ["business", "professional", "ecommerce"]
+    is_featured:
+      type: boolean
+      description: Featured status
+      example: true
+    customizer_settings_schema:
+      type: object
+      nullable: true
+      description: Updated settings schema
+      example:
+        type: "object"
+        properties:
+          primary_color:
+            type: "string"
+            default: "#1e40af"
+
+# Theme Installation Input
+ThemeInstallationInput:
+  type: object
+  required:
+    - theme_id
+  properties:
+    theme_id:
+      type: string
+      format: uuid
+      description: Theme to install
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    auto_update_enabled:
+      type: boolean
+      default: false
+      description: Enable automatic updates
+      example: true
+    notes:
+      type: string
+      nullable: true
+      description: Installation notes
+      example: "Installing for corporate rebrand project"
+
+# Theme Settings Input
+ThemeSettingsInput:
+  type: object
+  required:
+    - settings_data
+  properties:
+    settings_data:
+      type: object
+      description: Theme customization settings
+      example:
+        primary_color: "#1e40af"
+        secondary_color: "#dc2626"
+        font_family: "Inter"
+        container_width: 1280
+    custom_css:
+      type: string
+      nullable: true
+      description: Custom CSS
+      example: |
+        .custom-header {
+          background: linear-gradient(45deg, #1e40af, #dc2626);
+        }
+    custom_js:
+      type: string
+      nullable: true
+      description: Custom JavaScript
+      example: |
+        // Custom tracking code
+        gtag('config', 'GA_MEASUREMENT_ID');
+
+# Theme Search Input
+ThemeSearchInput:
+  type: object
+  properties:
+    search:
+      type: string
+      maxLength: 255
+      description: Search in name, description, tags
+      example: "business professional"
+    pricing_type:
+      type: string
+      enum: ["free", "paid", "subscription"]
+      description: Filter by pricing type
+      example: "paid"
+    categories:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      description: Filter by categories
+      example: ["business", "ecommerce"]
+    tags:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      description: Filter by tags
+      example: ["professional"]
+    is_official:
+      type: boolean
+      description: Filter official themes only
+      example: true
+    is_featured:
+      type: boolean
+      description: Filter featured themes only
+      example: false
+    min_rating:
+      type: number
+      format: decimal
+      minimum: 0
+      maximum: 5
+      description: Minimum rating filter
+      example: 4.0
+    price_min:
+      type: number
+      format: decimal
+      minimum: 0
+      description: Minimum price filter
+      example: 0
+    price_max:
+      type: number
+      format: decimal
+      minimum: 0
+      description: Maximum price filter
+      example: 100
+
+# Theme List Response
+ThemeListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/PaginatedResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/Theme'
+        filters:
+          type: object
+          properties:
+            categories:
+              type: array
+              items:
+                type: string
+              description: Available categories for filtering
+            tags:
+              type: array
+              items:
+                type: string
+              description: Available tags for filtering
+            price_range:
+              type: object
+              properties:
+                min:
+                  type: number
+                  format: decimal
+                max:
+                  type: number
+                  format: decimal
+              description: Price range for filtering
+
+# Theme Details Response
+ThemeDetailsResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          allOf:
+            - $ref: '#/Theme'
+            - type: object
+              properties:
+                installation:
+                  $ref: '#/ThemeInstallation'
+                  nullable: true
+                  description: Installation info for current tenant
+                settings:
+                  $ref: '#/ThemeSettings'
+                  nullable: true
+                  description: Current theme settings
+                versions:
+                  type: array
+                  items:
+                    $ref: '#/ThemeVersion'
+                  description: Available versions
+                marketplace_listing:
+                  $ref: '#/ThemeMarketplaceListing'
+                  nullable: true
+                  description: Marketplace information
+
+# Installation Status Response
+InstallationStatusResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            installation_id:
+              type: string
+              format: uuid
+              description: Installation ID
+              example: "789e0123-e45b-67c8-a901-234567890abc"
+            status:
+              type: string
+              enum: ["installing", "installed", "failed", "updating", "uninstalling"]
+              description: Installation status
+              example: "installed"
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+              description: Progress percentage
+              example: 100
+            message:
+              type: string
+              nullable: true
+              description: Status message
+              example: "Installation completed successfully"
+            logs:
+              type: array
+              items:
+                $ref: '#/ThemeInstallationLog'
+              description: Installation logs

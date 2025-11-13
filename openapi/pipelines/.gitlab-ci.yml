@@ -1,0 +1,93 @@
+stages:
+  - validate
+  - test
+  - security
+  - generate
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+
+.node_template: &node_template
+  image: node:$NODE_VERSION
+  before_script:
+    - cd openapi
+    - npm install yaml swagger-ui-dist
+
+validate:yaml:
+  <<: *node_template
+  stage: validate
+  script:
+    - node tools/validate-all.js
+    - node validate-pipeline.cjs
+  artifacts:
+    reports:
+      junit: generated/validation-report.json
+    paths:
+      - openapi/generated/validation-report.*
+    expire_in: 30 days
+  rules:
+    - changes:
+        - openapi/**/*
+
+performance:test:
+  <<: *node_template
+  stage: test
+  script:
+    - node performance-test.cjs
+  artifacts:
+    paths:
+      - openapi/generated/performance-report.*
+    expire_in: 7 days
+  rules:
+    - changes:
+        - openapi/**/*
+
+security:audit:
+  <<: *node_template
+  stage: security
+  script:
+    - node security-audit.cjs
+    - |
+      SECURITY_SCORE=$(node -e "
+        const report = JSON.parse(require('fs').readFileSync('generated/security-audit.json', 'utf8'));
+        console.log(report.summary.overallScore);
+      ")
+      echo "Security Score: $SECURITY_SCORE"
+      if [ "$SECURITY_SCORE" -lt 60 ]; then
+        echo "Security score is below acceptable threshold"
+        exit 1
+      fi
+  artifacts:
+    paths:
+      - openapi/generated/security-audit.*
+    expire_in: 7 days
+  rules:
+    - changes:
+        - openapi/**/*
+
+generate:docs:
+  <<: *node_template
+  stage: generate
+  script:
+    - node generate-docs.cjs
+    - node generate-postman.cjs
+  artifacts:
+    paths:
+      - openapi/generated/
+    expire_in: 7 days
+  only:
+    - main
+
+deploy:pages:
+  stage: deploy
+  script:
+    - mkdir public
+    - cp -r openapi/generated/* public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+  dependencies:
+    - generate:docs

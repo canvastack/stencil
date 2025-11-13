@@ -1,0 +1,1226 @@
+# Documentation & Help Center Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for Documentation System (95+ fields, 6 tables)
+# Multi-tenant knowledge management with version control and help desk integration
+
+# ================================================================
+# CORE DOCUMENTATION ENTITIES
+# ================================================================
+
+# Main Documentation Article Entity
+DocumentationArticle:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - title
+        - slug
+        - content
+        - content_type
+        - status
+        - visibility
+        - author_id
+      properties:
+        # Content Information
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to documentation category
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        
+        title:
+          type: string
+          maxLength: 500
+          description: Article title
+          example: "How to Design Custom Etching Files for Metal Products"
+        
+        slug:
+          type: string
+          maxLength: 500
+          description: URL-friendly slug (unique per tenant)
+          example: "how-to-design-custom-etching-files"
+        
+        excerpt:
+          type: string
+          nullable: true
+          description: Short summary or description
+          example: "Complete guide on preparing design files for metal etching processes"
+        
+        content:
+          type: string
+          description: Main article content
+          example: "## Introduction\n\nCustom etching requires proper file preparation..."
+        
+        content_type:
+          type: string
+          enum: ["markdown", "html", "rich_text"]
+          default: "markdown"
+          description: Content format type
+          example: "markdown"
+        
+        # Article Status & Visibility
+        status:
+          type: string
+          enum: ["draft", "review", "approved", "published", "archived"]
+          default: "draft"
+          description: Article publication status
+          example: "published"
+        
+        visibility:
+          type: string
+          enum: ["private", "internal", "public", "customer"]
+          default: "private"
+          description: Access visibility level
+          example: "customer"
+        
+        # Media & SEO
+        featured_image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+          nullable: true
+          description: Featured image URL
+          example: "https://cdn.ptcex.com/docs/etching-guide-featured.jpg"
+        
+        meta_title:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: SEO meta title
+          example: "Complete Etching Design Guide | PT Custom Etching Xenial"
+        
+        meta_description:
+          type: string
+          nullable: true
+          description: SEO meta description
+          example: "Learn how to prepare design files for custom metal etching. Professional tips and requirements for perfect etching results."
+        
+        meta_keywords:
+          type: string
+          nullable: true
+          description: SEO keywords (comma-separated)
+          example: "etching design, metal etching, custom engraving, file preparation"
+        
+        # Article Metrics
+        reading_time:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Estimated reading time in minutes
+          example: 8
+        
+        difficulty_level:
+          type: string
+          enum: ["beginner", "intermediate", "advanced", "expert"]
+          default: "beginner"
+          description: Technical difficulty level
+          example: "intermediate"
+        
+        view_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total view count
+          example: 245
+        
+        like_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of likes received
+          example: 18
+        
+        helpful_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Helpful votes count
+          example: 32
+        
+        # Article Organization
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Article tags for organization
+          example: ["design", "etching", "tutorial", "metal-work"]
+        
+        related_articles:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: Related article UUIDs
+          example: ["123e4567-e89b-12d3-a456-426614174000", "987fcdeb-51a2-43d1-9f4b-123456789abc"]
+        
+        # Author & Review Information
+        author_id:
+          type: string
+          format: uuid
+          description: Article author user ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        
+        reviewer_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Article reviewer user ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        
+        published_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User who published the article
+          example: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+        
+        # Publishing Information
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Publication timestamp
+          example: "2025-11-12T14:30:00Z"
+        
+        last_reviewed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last review timestamp
+          example: "2025-11-10T09:15:00Z"
+
+# Documentation Category Entity (Hierarchical)
+DocumentationCategory:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - name
+        - slug
+        - created_by
+      properties:
+        # Hierarchy
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent category UUID for hierarchy
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        
+        # Category Information
+        name:
+          type: string
+          maxLength: 255
+          description: Category name
+          example: "Technical Guides"
+        
+        slug:
+          type: string
+          maxLength: 255
+          description: URL-friendly slug (unique per tenant)
+          example: "technical-guides"
+        
+        description:
+          type: string
+          nullable: true
+          description: Category description
+          example: "Comprehensive technical documentation for etching processes and procedures"
+        
+        # Display Properties
+        icon:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Icon identifier (e.g., lucide icon name)
+          example: "book-open"
+        
+        color:
+          type: string
+          maxLength: 7
+          nullable: true
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Category color (hex code)
+          example: "#3B82F6"
+        
+        # Organization
+        sort_order:
+          type: integer
+          default: 0
+          description: Display sort order
+          example: 10
+        
+        # Visibility
+        is_visible:
+          type: boolean
+          default: true
+          description: Whether category is visible
+          example: true
+        
+        is_featured:
+          type: boolean
+          default: false
+          description: Whether category is featured
+          example: false
+        
+        # Metrics
+        article_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of articles in this category
+          example: 15
+        
+        # Additional Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional category metadata (JSONB)
+          example:
+            access_level: "customer"
+            requires_auth: false
+            max_articles: 100
+        
+        # Creation Info
+        created_by:
+          type: string
+          format: uuid
+          description: User who created the category
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+# Documentation Version Control Entity
+DocumentationVersion:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - article_id
+        - version_number
+        - title
+        - content
+        - change_type
+        - created_by
+      properties:
+        # Version Information
+        article_id:
+          type: string
+          format: uuid
+          description: Reference to the documentation article
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        
+        version_number:
+          type: string
+          maxLength: 20
+          description: Version number (semantic versioning)
+          example: "2.1.0"
+        
+        title:
+          type: string
+          maxLength: 500
+          description: Article title at this version
+          example: "How to Design Custom Etching Files for Metal Products (Updated)"
+        
+        content:
+          type: string
+          description: Article content snapshot
+          example: "## Introduction\n\nCustom etching requires proper file preparation... [Updated section on file formats]"
+        
+        # Change Information
+        change_summary:
+          type: string
+          nullable: true
+          description: Summary of changes made in this version
+          example: "Added new section on SVG file requirements and updated material specifications"
+        
+        change_type:
+          type: string
+          enum: ["major", "minor", "patch", "hotfix"]
+          description: Type of changes made
+          example: "minor"
+        
+        # Creation Information
+        created_by:
+          type: string
+          format: uuid
+          description: User who created this version
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+# Help Ticket Entity (Customer Support Integration)
+HelpTicket:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - ticket_number
+        - subject
+        - description
+        - customer_email
+        - customer_name
+        - priority
+        - status
+      properties:
+        # Ticket Information
+        ticket_number:
+          type: string
+          maxLength: 50
+          description: Unique ticket identifier
+          example: "PTCEX-2025-0001"
+        
+        subject:
+          type: string
+          maxLength: 500
+          description: Ticket subject line
+          example: "Help with metal etching design file preparation"
+        
+        description:
+          type: string
+          description: Detailed ticket description
+          example: "I need assistance with preparing my logo design file for metal etching. The file seems to have issues with line thickness..."
+        
+        # Priority & Status
+        priority:
+          type: string
+          enum: ["low", "medium", "high", "urgent"]
+          default: "medium"
+          description: Ticket priority level
+          example: "medium"
+        
+        status:
+          type: string
+          enum: ["open", "in_progress", "waiting_customer", "resolved", "closed"]
+          default: "open"
+          description: Current ticket status
+          example: "in_progress"
+        
+        category:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Ticket category
+          example: "Technical Support"
+        
+        # Customer Information
+        customer_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to customer if registered
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        
+        customer_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Customer email address
+          example: "customer@example.com"
+        
+        customer_name:
+          type: string
+          maxLength: 255
+          description: Customer full name
+          example: "John Smith"
+        
+        # Assignment
+        assigned_to:
+          type: string
+          format: uuid
+          nullable: true
+          description: Assigned support staff user ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        
+        # Documentation Integration
+        related_articles:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: Related documentation article UUIDs
+          example: ["987fcdeb-51a2-43d1-9f4b-123456789abc"]
+        
+        suggested_articles:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+          description: AI-suggested helpful articles
+          example: ["123e4567-e89b-12d3-a456-426614174000", "456e7890-f12b-34c5-d678-901234567890"]
+        
+        # Resolution Information
+        resolution:
+          type: string
+          nullable: true
+          description: Ticket resolution details
+          example: "Provided step-by-step guide for file preparation and recommended using Adobe Illustrator for vector conversion."
+        
+        resolution_time:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Resolution time in minutes
+          example: 120
+        
+        # Customer Feedback
+        satisfaction_rating:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 5
+          description: Customer satisfaction rating (1-5 scale)
+          example: 5
+        
+        satisfaction_feedback:
+          type: string
+          nullable: true
+          description: Customer feedback text
+          example: "Very helpful response, resolved my issue quickly!"
+        
+        # Metadata
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Ticket tags for organization
+          example: ["design", "file-preparation", "technical"]
+        
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional ticket metadata (JSONB)
+          example:
+            source: "website_form"
+            user_agent: "Mozilla/5.0..."
+            ip_address: "192.168.1.100"
+
+# Knowledge Base Entity
+KnowledgeBase:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - title
+        - slug
+        - content
+        - kb_type
+        - status
+        - created_by
+      properties:
+        # Knowledge Base Information
+        title:
+          type: string
+          maxLength: 500
+          description: Knowledge base entry title
+          example: "Metal Etching Material Properties and Characteristics"
+        
+        slug:
+          type: string
+          maxLength: 500
+          description: URL-friendly slug
+          example: "metal-etching-material-properties"
+        
+        content:
+          type: string
+          description: Knowledge base content
+          example: "## Material Types\n\n### Stainless Steel\n- Excellent for detailed etching\n- Corrosion resistant..."
+        
+        # Knowledge Base Type
+        kb_type:
+          type: string
+          enum: ["faq", "guide", "procedure", "specification", "troubleshooting"]
+          description: Type of knowledge base entry
+          example: "specification"
+        
+        # Status & Visibility
+        status:
+          type: string
+          enum: ["draft", "published", "archived"]
+          default: "draft"
+          description: Publication status
+          example: "published"
+        
+        is_featured:
+          type: boolean
+          default: false
+          description: Whether entry is featured
+          example: true
+        
+        # Organization
+        category:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Knowledge base category
+          example: "Materials"
+        
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Knowledge base tags
+          example: ["materials", "specifications", "stainless-steel"]
+        
+        # Metrics
+        view_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total view count
+          example: 156
+        
+        helpful_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Helpful votes count
+          example: 23
+        
+        # Additional Information
+        external_url:
+          type: string
+          format: uri
+          nullable: true
+          description: External reference URL
+          example: "https://materials.example.com/stainless-steel-guide"
+        
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              url:
+                type: string
+                format: uri
+              size:
+                type: integer
+              mime_type:
+                type: string
+          nullable: true
+          description: File attachments
+          example: 
+            - name: "material-spec-sheet.pdf"
+              url: "https://cdn.ptcex.com/kb/attachments/material-spec.pdf"
+              size: 2048576
+              mime_type: "application/pdf"
+        
+        # Creation Information
+        created_by:
+          type: string
+          format: uuid
+          description: User who created the entry
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+# User Guide Entity (Interactive Tutorials)
+UserGuide:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - title
+        - slug
+        - guide_type
+        - status
+        - steps
+        - created_by
+      properties:
+        # Guide Information
+        title:
+          type: string
+          maxLength: 500
+          description: User guide title
+          example: "Step-by-Step Order Placement Tutorial"
+        
+        slug:
+          type: string
+          maxLength: 500
+          description: URL-friendly slug
+          example: "step-by-step-order-placement"
+        
+        description:
+          type: string
+          nullable: true
+          description: Guide description
+          example: "Complete walkthrough for placing custom etching orders through our website"
+        
+        # Guide Type
+        guide_type:
+          type: string
+          enum: ["tutorial", "walkthrough", "checklist", "workflow"]
+          description: Type of user guide
+          example: "tutorial"
+        
+        # Status & Visibility
+        status:
+          type: string
+          enum: ["draft", "published", "archived"]
+          default: "draft"
+          description: Publication status
+          example: "published"
+        
+        is_interactive:
+          type: boolean
+          default: false
+          description: Whether guide has interactive elements
+          example: true
+        
+        # Guide Structure
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              step_number:
+                type: integer
+                minimum: 1
+              title:
+                type: string
+                maxLength: 255
+              content:
+                type: string
+              image_url:
+                type: string
+                format: uri
+                nullable: true
+              video_url:
+                type: string
+                format: uri
+                nullable: true
+              is_optional:
+                type: boolean
+                default: false
+              estimated_time:
+                type: integer
+                nullable: true
+          description: Guide steps
+          example:
+            - step_number: 1
+              title: "Select Product Category"
+              content: "Choose the type of etching product you want to order from our catalog"
+              image_url: "https://cdn.ptcex.com/guides/step1-select-category.jpg"
+              is_optional: false
+              estimated_time: 2
+        
+        # Guide Metrics
+        completion_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Guide completion rate percentage
+          example: 87.5
+        
+        average_completion_time:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Average completion time in minutes
+          example: 15
+        
+        # Organization
+        category:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Guide category
+          example: "Order Process"
+        
+        difficulty_level:
+          type: string
+          enum: ["easy", "medium", "hard"]
+          default: "easy"
+          description: Guide difficulty level
+          example: "easy"
+        
+        target_audience:
+          type: string
+          enum: ["all", "customers", "vendors", "staff"]
+          default: "all"
+          description: Target audience for the guide
+          example: "customers"
+        
+        # Prerequisites
+        prerequisites:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Required prerequisites
+          example: ["Account registration", "Design file ready"]
+        
+        # Metadata
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Guide tags
+          example: ["orders", "tutorial", "customers"]
+        
+        # Creation Information
+        created_by:
+          type: string
+          format: uuid
+          description: User who created the guide
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# Article Create/Update Input
+DocumentationArticleInput:
+  type: object
+  required:
+    - title
+    - content
+    - content_type
+    - status
+    - visibility
+  properties:
+    category_id:
+      type: string
+      format: uuid
+      nullable: true
+    title:
+      type: string
+      maxLength: 500
+      example: "Advanced Etching Techniques for Precision Results"
+    slug:
+      type: string
+      maxLength: 500
+      nullable: true
+      example: "advanced-etching-techniques-precision-results"
+    excerpt:
+      type: string
+      nullable: true
+      example: "Master advanced techniques for achieving precision in metal etching projects"
+    content:
+      type: string
+      example: "## Advanced Etching Techniques\n\nThis guide covers..."
+    content_type:
+      type: string
+      enum: ["markdown", "html", "rich_text"]
+      default: "markdown"
+    status:
+      type: string
+      enum: ["draft", "review", "approved", "published", "archived"]
+      default: "draft"
+    visibility:
+      type: string
+      enum: ["private", "internal", "public", "customer"]
+      default: "private"
+    featured_image_url:
+      type: string
+      format: uri
+      nullable: true
+    meta_title:
+      type: string
+      maxLength: 500
+      nullable: true
+    meta_description:
+      type: string
+      nullable: true
+    meta_keywords:
+      type: string
+      nullable: true
+    difficulty_level:
+      type: string
+      enum: ["beginner", "intermediate", "advanced", "expert"]
+      default: "beginner"
+    tags:
+      type: array
+      items:
+        type: string
+      nullable: true
+    related_articles:
+      type: array
+      items:
+        type: string
+        format: uuid
+      nullable: true
+
+# Category Input Schema
+DocumentationCategoryInput:
+  type: object
+  required:
+    - name
+    - slug
+  properties:
+    parent_id:
+      type: string
+      format: uuid
+      nullable: true
+    name:
+      type: string
+      maxLength: 255
+      example: "Technical Documentation"
+    slug:
+      type: string
+      maxLength: 255
+      example: "technical-documentation"
+    description:
+      type: string
+      nullable: true
+      example: "Comprehensive technical guides and specifications"
+    icon:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "book-open"
+    color:
+      type: string
+      maxLength: 7
+      nullable: true
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      example: "#3B82F6"
+    sort_order:
+      type: integer
+      default: 0
+    is_visible:
+      type: boolean
+      default: true
+    is_featured:
+      type: boolean
+      default: false
+    metadata:
+      type: object
+      additionalProperties: true
+      nullable: true
+
+# Help Ticket Input Schema
+HelpTicketInput:
+  type: object
+  required:
+    - subject
+    - description
+    - customer_email
+    - customer_name
+  properties:
+    subject:
+      type: string
+      maxLength: 500
+      example: "Need help with design file requirements"
+    description:
+      type: string
+      example: "I'm having trouble understanding the file format requirements for my etching project..."
+    priority:
+      type: string
+      enum: ["low", "medium", "high", "urgent"]
+      default: "medium"
+    category:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Technical Support"
+    customer_id:
+      type: string
+      format: uuid
+      nullable: true
+    customer_email:
+      type: string
+      format: email
+      maxLength: 255
+      example: "customer@example.com"
+    customer_name:
+      type: string
+      maxLength: 255
+      example: "John Smith"
+    tags:
+      type: array
+      items:
+        type: string
+      nullable: true
+      example: ["technical", "design"]
+
+# ================================================================
+# RESPONSE SCHEMAS
+# ================================================================
+
+# Documentation Article Response
+DocumentationArticleResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/DocumentationArticle'
+
+# Articles List Response
+DocumentationArticlesResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/DocumentationArticle'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Category Response
+DocumentationCategoryResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/DocumentationCategory'
+
+# Categories List Response
+DocumentationCategoriesResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/DocumentationCategory'
+
+# Help Ticket Response
+HelpTicketResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/HelpTicket'
+
+# Help Tickets List Response
+HelpTicketsResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/HelpTicket'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Knowledge Base Response
+KnowledgeBaseResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/KnowledgeBase'
+
+# Knowledge Base List Response
+KnowledgeBaseListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/KnowledgeBase'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# User Guide Response
+UserGuideResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/UserGuide'
+
+# User Guides List Response
+UserGuidesResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/UserGuide'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Documentation Analytics Response
+DocumentationAnalyticsResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            # Article Metrics
+            articles:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+                  example: 156
+                published_count:
+                  type: integer
+                  example: 142
+                draft_count:
+                  type: integer
+                  example: 14
+                total_views:
+                  type: integer
+                  example: 12450
+                average_rating:
+                  type: number
+                  format: float
+                  example: 4.2
+            
+            # Category Metrics
+            categories:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+                  example: 25
+                most_popular:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      name:
+                        type: string
+                      article_count:
+                        type: integer
+                      view_count:
+                        type: integer
+            
+            # Help Ticket Metrics
+            tickets:
+              type: object
+              properties:
+                total_count:
+                  type: integer
+                  example: 89
+                open_count:
+                  type: integer
+                  example: 12
+                resolved_count:
+                  type: integer
+                  example: 77
+                average_resolution_time:
+                  type: integer
+                  description: Average resolution time in hours
+                  example: 24
+                satisfaction_rating:
+                  type: number
+                  format: float
+                  example: 4.6
+            
+            # Knowledge Base Metrics
+            knowledge_base:
+              type: object
+              properties:
+                total_entries:
+                  type: integer
+                  example: 67
+                most_helpful:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      title:
+                        type: string
+                      helpful_count:
+                        type: integer
+            
+            # Popular Search Terms
+            search_analytics:
+              type: object
+              properties:
+                top_searches:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      query:
+                        type: string
+                      count:
+                        type: integer
+                      results_found:
+                        type: integer
+                  example:
+                    - query: "file preparation"
+                      count: 245
+                      results_found: 12
+                    - query: "metal etching"
+                      count: 198
+                      results_found: 18
+
+# Search Results Response
+DocumentationSearchResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: ["article", "category", "knowledge_base", "user_guide"]
+                  id:
+                    type: string
+                    format: uuid
+                  title:
+                    type: string
+                  excerpt:
+                    type: string
+                  url:
+                    type: string
+                  relevance_score:
+                    type: number
+                    format: float
+            search_meta:
+              type: object
+              properties:
+                query:
+                  type: string
+                total_results:
+                  type: integer
+                search_time:
+                  type: number
+                  format: float
+                  description: Search time in milliseconds
+                suggestions:
+                  type: array
+                  items:
+                    type: string

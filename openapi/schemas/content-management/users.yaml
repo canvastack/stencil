@@ -1,0 +1,1214 @@
+# Users & RBAC Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for User Management System (180+ fields, 9 tables)
+# Multi-tenant RBAC with advanced permissions and security
+
+# ================================================================
+# CORE USER ENTITIES
+# ================================================================
+
+# Main User Entity (Landlord Schema - Central Authentication)
+User:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - email
+        - password
+        - name
+        - status
+      properties:
+        # Authentication Fields
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Unique email address for authentication (PII - encrypted at rest)
+          example: "user@ptcex.com"
+          x-sensitive: true
+          x-pii: true
+        password:
+          type: string
+          maxLength: 255
+          description: Hashed password (bcrypt)
+          writeOnly: true
+          example: "password123"
+          x-sensitive: true
+          x-encryption: "bcrypt"
+        email_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Email verification timestamp
+          example: "2025-11-12T10:30:00Z"
+
+        # Profile Information
+        name:
+          type: string
+          maxLength: 255
+          description: Full name of the user
+          example: "John Doe"
+        first_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: First name
+          example: "John"
+        last_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Last name
+          example: "Doe"
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Profile picture URL
+          example: "https://cdn.example.com/avatars/user123.jpg"
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Phone number
+          example: "+62812345678"
+
+        # User Preferences
+        language:
+          type: string
+          maxLength: 10
+          default: "id"
+          description: UI language preference (ISO 639-1)
+          example: "en"
+        timezone:
+          type: string
+          maxLength: 100
+          default: "Asia/Jakarta"
+          description: User timezone
+          example: "Asia/Jakarta"
+        date_format:
+          type: string
+          maxLength: 50
+          default: "DD/MM/YYYY"
+          description: Date display format
+          example: "DD/MM/YYYY"
+        time_format:
+          type: string
+          maxLength: 10
+          default: "24h"
+          enum: ["12h", "24h"]
+          description: Time display format
+          example: "24h"
+
+        # Security Features
+        two_factor_secret:
+          type: string
+          nullable: true
+          description: 2FA secret key (encrypted)
+          writeOnly: true
+        two_factor_enabled:
+          type: boolean
+          default: false
+          description: Whether 2FA is enabled
+          example: false
+        two_factor_recovery_codes:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Recovery codes for 2FA
+          writeOnly: true
+
+        # Account Status
+        status:
+          type: string
+          enum: ["active", "inactive", "suspended", "banned"]
+          default: "active"
+          description: Current account status
+          example: "active"
+        is_email_verified:
+          type: boolean
+          default: false
+          description: Email verification status
+          example: true
+        is_platform_admin:
+          type: boolean
+          default: false
+          description: Platform super admin flag
+          example: false
+
+        # Security Tracking
+        failed_login_attempts:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Failed login attempt counter
+          example: 0
+        locked_until:
+          type: string
+          format: date-time
+          nullable: true
+          description: Account lockout expiry time
+          example: null
+        last_login_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last successful login timestamp
+          example: "2025-11-12T09:15:00Z"
+        last_login_ip:
+          type: string
+          maxLength: 45
+          nullable: true
+          description: Last login IP address
+          example: "192.168.1.100"
+        last_activity_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last activity timestamp
+          example: "2025-11-12T14:30:00Z"
+
+        # Password Management
+        password_changed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last password change timestamp
+          example: "2025-10-15T10:00:00Z"
+        must_change_password:
+          type: boolean
+          default: false
+          description: Force password change on next login
+          example: false
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional user metadata (JSONB)
+          example:
+            department: "IT"
+            employee_id: "EMP001"
+
+# Tenant User Relationship (Many-to-Many with Roles)
+TenantUser:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Reference to the user
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # User Status in Tenant
+        status:
+          type: string
+          enum: ["active", "inactive", "suspended"]
+          default: "active"
+          description: User status within this tenant
+          example: "active"
+        is_owner:
+          type: boolean
+          default: false
+          description: Whether user is tenant owner
+          example: false
+
+        # Invitation System
+        invited_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of user who sent the invitation
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        invitation_accepted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When invitation was accepted
+          example: "2025-11-10T14:30:00Z"
+        invitation_token:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Invitation token (for email links)
+          writeOnly: true
+        invitation_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Invitation expiry time
+          example: "2025-11-20T14:30:00Z"
+
+        # Access Control
+        can_access_admin_panel:
+          type: boolean
+          default: true
+          description: Whether user can access admin panel
+          example: true
+        ip_whitelist:
+          type: array
+          items:
+            type: string
+          description: Allowed IP addresses (empty = no restriction)
+          example: ["192.168.1.0/24", "10.0.0.100"]
+
+        # Notes and Metadata
+        notes:
+          type: string
+          nullable: true
+          description: Admin notes about this user assignment
+          example: "Finance team lead - has budget approval rights"
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional tenant-specific metadata
+          example:
+            department: "Finance"
+            cost_center: "FIN-001"
+
+# ================================================================
+# ROLE & PERMISSION ENTITIES
+# ================================================================
+
+# Role Entity (Multi-tenant with Hierarchy)
+Role:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - code
+        - name
+        - scope
+      properties:
+        # Role Identification
+        code:
+          type: string
+          maxLength: 100
+          description: Unique role code (per tenant)
+          example: "finance_manager"
+        name:
+          type: string
+          maxLength: 255
+          description: Display name of the role
+          example: "Finance Manager"
+        description:
+          type: string
+          nullable: true
+          description: Role description and purpose
+          example: "Manages financial operations and budget approvals"
+
+        # Role Hierarchy
+        parent_role_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent role for permission inheritance
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        level:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Hierarchy level (0 = top level)
+          example: 2
+
+        # Scope and Behavior
+        scope:
+          type: string
+          enum: ["platform", "tenant", "hybrid"]
+          default: "tenant"
+          description: Role scope (platform = global, tenant = per-tenant)
+          example: "tenant"
+        is_system:
+          type: boolean
+          default: false
+          description: System role (cannot be deleted)
+          example: false
+        is_default:
+          type: boolean
+          default: false
+          description: Default role for new tenant users
+          example: false
+        is_assignable:
+          type: boolean
+          default: true
+          description: Whether role can be assigned to users
+          example: true
+
+        # Display Properties
+        color:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Badge color (hex or name)
+          example: "#28a745"
+        icon:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Icon identifier
+          example: "shield-check"
+        badge:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Badge text
+          example: "MANAGER"
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional role metadata
+          example:
+            max_users: 50
+            requires_approval: true
+
+# Permission Entity
+Permission:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - code
+        - name
+        - scope
+      properties:
+        # Permission Identification
+        code:
+          type: string
+          maxLength: 100
+          description: Unique permission code (e.g., products.create)
+          example: "products.create"
+        name:
+          type: string
+          maxLength: 255
+          description: Human-readable permission name
+          example: "Create Products"
+        description:
+          type: string
+          nullable: true
+          description: Detailed permission description
+          example: "Allows creating new products in the catalog"
+
+        # Categorization
+        category:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Main permission category
+          example: "E-Commerce"
+        subcategory:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Sub-category for organization
+          example: "Product Management"
+
+        # Resource and Action
+        resource_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Resource type this permission applies to
+          example: "Product"
+        action:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Action verb (create, read, update, delete)
+          example: "create"
+
+        # Permission Scope
+        scope:
+          type: string
+          enum: ["platform", "tenant", "global"]
+          default: "tenant"
+          description: Permission scope
+          example: "tenant"
+
+        # Permission Flags
+        is_system:
+          type: boolean
+          default: false
+          description: System permission (immutable)
+          example: false
+        is_dangerous:
+          type: boolean
+          default: false
+          description: Dangerous operation requiring confirmation
+          example: false
+        requires_verification:
+          type: boolean
+          default: false
+          description: Requires 2FA verification
+          example: false
+
+        # Display Organization
+        group_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Permission group for UI organization
+          example: "Product Management"
+        order_index:
+          type: integer
+          default: 0
+          description: Display order within group
+          example: 10
+
+        # Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional permission metadata
+          example:
+            ui_section: "catalog"
+            help_text: "Create new products for sale"
+
+# ================================================================
+# RELATIONSHIP ENTITIES
+# ================================================================
+
+# Role-Permission Assignment
+RolePermission:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - role_id
+        - permission_id
+      properties:
+        role_id:
+          type: string
+          format: uuid
+          description: Reference to the role
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        permission_id:
+          type: string
+          format: uuid
+          description: Reference to the permission
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Permission Modifiers
+        is_granted:
+          type: boolean
+          default: true
+          description: Whether permission is granted or explicitly denied
+          example: true
+        conditions:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Conditional permission rules (JSONB)
+          example:
+            time_restrictions:
+              start: "09:00"
+              end: "17:00"
+            ip_restrictions: ["192.168.1.0/24"]
+
+# User-Role Assignment (Tenant Scoped)
+UserRole:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - user_id
+        - role_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Reference to the user
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        role_id:
+          type: string
+          format: uuid
+          description: Reference to the role
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Temporal Access
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Role assignment start time
+          example: "2025-11-12T00:00:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Role assignment expiry time
+          example: "2026-11-12T00:00:00Z"
+
+# Direct User Permission (Override Role Permissions)
+UserPermission:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - user_id
+        - permission_id
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Reference to the user
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        permission_id:
+          type: string
+          format: uuid
+          description: Reference to the permission
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Permission Modifiers
+        is_granted:
+          type: boolean
+          default: true
+          description: Whether permission is granted or denied
+          example: true
+        conditions:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Conditional permission rules
+          example:
+            resource_ids: ["product-123", "product-456"]
+
+        # Temporal Access
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Permission start time
+          example: "2025-11-12T00:00:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Permission expiry time
+          example: "2025-12-12T00:00:00Z"
+
+        # Audit Information
+        reason:
+          type: string
+          nullable: true
+          description: Reason for granting this direct permission
+          example: "Temporary access for project ABC"
+
+# Resource-Level Access Control (Object-Level Permissions)
+ResourcePermission:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - resource_type
+        - resource_id
+        - subject_type
+        - subject_id
+        - permission_code
+      properties:
+        # Resource Identification (Polymorphic)
+        resource_type:
+          type: string
+          maxLength: 255
+          description: Type of resource (e.g., Product, Order)
+          example: "Product"
+        resource_id:
+          type: string
+          format: uuid
+          description: ID of the specific resource
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Subject (User or Role)
+        subject_type:
+          type: string
+          enum: ["user", "role"]
+          description: Type of subject being granted permission
+          example: "user"
+        subject_id:
+          type: string
+          format: uuid
+          description: ID of the user or role
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Permission Details
+        permission_code:
+          type: string
+          maxLength: 100
+          description: Permission code (e.g., edit, delete)
+          example: "edit"
+        is_granted:
+          type: boolean
+          default: true
+          description: Whether permission is granted or denied
+          example: true
+
+        # Conditions
+        conditions:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional permission conditions
+          example:
+            valid_until: "2025-12-31T23:59:59Z"
+            approved_by: "manager-user-id"
+
+# Permission Groups (UI Organization)
+PermissionGroup:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          maxLength: 100
+          description: Unique group code
+          example: "ecommerce"
+        name:
+          type: string
+          maxLength: 255
+          description: Display name of the group
+          example: "E-Commerce Management"
+        description:
+          type: string
+          nullable: true
+          description: Group description
+          example: "Permissions related to product catalog and orders"
+
+        # Display Properties
+        icon:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Group icon identifier
+          example: "shopping-cart"
+        color:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Group color (hex)
+          example: "#007bff"
+        order_index:
+          type: integer
+          default: 0
+          description: Display order
+          example: 10
+
+# ================================================================
+# COMPOSITE & RESPONSE ENTITIES
+# ================================================================
+
+# Complete User Profile with Relationships
+UserProfile:
+  allOf:
+    - $ref: '#/User'
+    - type: object
+      properties:
+        tenants:
+          type: array
+          description: List of tenants user belongs to
+          items:
+            type: object
+            properties:
+              tenant_id:
+                type: string
+                format: uuid
+                example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              tenant_name:
+                type: string
+                example: "PT Custom Etching Xenial"
+              status:
+                type: string
+                enum: ["active", "inactive", "suspended"]
+                example: "active"
+              is_owner:
+                type: boolean
+                example: false
+              roles:
+                type: array
+                items:
+                  $ref: '#/Role'
+        effective_permissions:
+          type: array
+          description: Calculated effective permissions for current tenant
+          items:
+            type: object
+            properties:
+              permission_code:
+                type: string
+                example: "products.create"
+              permission_name:
+                type: string
+                example: "Create Products"
+              granted_by:
+                type: string
+                enum: ["role", "direct", "resource"]
+                example: "role"
+              source:
+                type: string
+                example: "finance_manager role"
+
+# Role with Permissions and User Count
+RoleDetail:
+  allOf:
+    - $ref: '#/Role'
+    - type: object
+      properties:
+        permissions:
+          type: array
+          description: Permissions assigned to this role
+          items:
+            allOf:
+              - $ref: '#/Permission'
+              - type: object
+                properties:
+                  is_granted:
+                    type: boolean
+                    description: Whether permission is granted or denied
+                    example: true
+                  conditions:
+                    type: object
+                    nullable: true
+                    description: Permission conditions
+        user_count:
+          type: integer
+          description: Number of users assigned to this role
+          example: 15
+          readOnly: true
+        parent_role:
+          $ref: '#/Role'
+          nullable: true
+          description: Parent role details (if any)
+        child_roles:
+          type: array
+          description: Child roles that inherit from this role
+          items:
+            $ref: '#/Role'
+
+# Permission with Usage Statistics
+PermissionDetail:
+  allOf:
+    - $ref: '#/Permission'
+    - type: object
+      properties:
+        role_count:
+          type: integer
+          description: Number of roles that have this permission
+          example: 8
+          readOnly: true
+        user_count:
+          type: integer
+          description: Number of users with this permission (direct + role)
+          example: 23
+          readOnly: true
+        group:
+          $ref: '#/PermissionGroup'
+          nullable: true
+          description: Permission group details
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# User Creation Input
+UserCreateInput:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseCreateEntity'
+    - type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: User email address
+          example: "newuser@ptcex.com"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 255
+          description: User password (plain text - will be hashed)
+          example: "SecurePass123!"
+        name:
+          type: string
+          maxLength: 255
+          description: Full name
+          example: "Jane Smith"
+        first_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: First name
+          example: "Jane"
+        last_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Last name
+          example: "Smith"
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Phone number
+          example: "+62812345678"
+        language:
+          type: string
+          maxLength: 10
+          default: "id"
+          description: Language preference
+          example: "en"
+        timezone:
+          type: string
+          maxLength: 100
+          default: "Asia/Jakarta"
+          description: User timezone
+          example: "Asia/Jakarta"
+        send_invitation:
+          type: boolean
+          default: true
+          description: Whether to send email invitation
+          example: true
+
+# User Update Input
+UserUpdateInput:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseUpdateEntity'
+    - type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Full name
+          example: "Jane Smith Updated"
+        first_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: First name
+          example: "Jane"
+        last_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Last name
+          example: "Smith"
+        avatar_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Avatar URL
+          example: "https://cdn.example.com/avatars/new-avatar.jpg"
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Phone number
+          example: "+62812345679"
+        language:
+          type: string
+          maxLength: 10
+          description: Language preference
+          example: "en"
+        timezone:
+          type: string
+          maxLength: 100
+          description: User timezone
+          example: "Asia/Singapore"
+        status:
+          type: string
+          enum: ["active", "inactive", "suspended", "banned"]
+          description: Account status
+          example: "active"
+
+# Role Creation Input
+RoleCreateInput:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseCreateEntity'
+    - type: object
+      required:
+        - code
+        - name
+        - scope
+      properties:
+        code:
+          type: string
+          maxLength: 100
+          pattern: '^[a-z][a-z0-9_]*$'
+          description: Unique role code (lowercase, underscore)
+          example: "product_manager"
+        name:
+          type: string
+          maxLength: 255
+          description: Display name
+          example: "Product Manager"
+        description:
+          type: string
+          nullable: true
+          description: Role description
+          example: "Manages product catalog and specifications"
+        parent_role_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent role ID for inheritance
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        scope:
+          type: string
+          enum: ["platform", "tenant", "hybrid"]
+          default: "tenant"
+          description: Role scope
+          example: "tenant"
+        color:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Badge color
+          example: "#17a2b8"
+        icon:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Icon name
+          example: "box"
+        permission_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of permission IDs to assign
+          example: ["550e8400-e29b-41d4-a716-446655440000"]
+
+# Tenant User Assignment Input
+TenantUserAssignInput:
+  type: object
+  required:
+    - user_id
+    - role_ids
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: User ID to assign to tenant
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    role_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      description: Role IDs to assign to user
+      example: ["123e4567-e89b-12d3-a456-426614174000"]
+    can_access_admin_panel:
+      type: boolean
+      default: true
+      description: Admin panel access
+      example: true
+    notes:
+      type: string
+      nullable: true
+      description: Assignment notes
+      example: "Temporary access for project X"
+    send_invitation:
+      type: boolean
+      default: true
+      description: Send email invitation
+      example: true
+
+# Permission Check Input
+PermissionCheckInput:
+  type: object
+  required:
+    - permission_code
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: User ID (if not current user)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    permission_code:
+      type: string
+      maxLength: 100
+      description: Permission code to check
+      example: "products.create"
+    resource_type:
+      type: string
+      maxLength: 255
+      nullable: true
+      description: Resource type for object-level check
+      example: "Product"
+    resource_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Resource ID for object-level check
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+# Permission Check Result
+PermissionCheckResult:
+  type: object
+  properties:
+    has_permission:
+      type: boolean
+      description: Whether user has the requested permission
+      example: true
+    granted_by:
+      type: string
+      enum: ["role", "direct", "resource", "inheritance"]
+      nullable: true
+      description: How permission was granted
+      example: "role"
+    source:
+      type: string
+      nullable: true
+      description: Source of permission (role name, etc.)
+      example: "product_manager"
+    conditions:
+      type: object
+      nullable: true
+      description: Permission conditions (if any)
+      example:
+        time_restricted: true
+        valid_until: "2025-12-31T23:59:59Z"
+
+# Bulk User Operation Input
+BulkUserOperationInput:
+  type: object
+  required:
+    - user_ids
+    - action
+  properties:
+    user_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      minItems: 1
+      description: List of user IDs to operate on
+      example: ["550e8400-e29b-41d4-a716-446655440000"]
+    action:
+      type: string
+      enum: ["activate", "deactivate", "suspend", "delete", "verify_email"]
+      description: Action to perform
+      example: "activate"
+    reason:
+      type: string
+      nullable: true
+      description: Reason for bulk operation
+      example: "Monthly user cleanup"
+
+# Authentication Response
+AuthResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+          example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9..."
+        token_type:
+          type: string
+          example: "Bearer"
+        expires_in:
+          type: integer
+          description: Token expiry time in seconds
+          example: 3600
+        user:
+          $ref: '#/UserProfile'
+        tenants:
+          type: array
+          description: Available tenants for this user
+          items:
+            type: object
+            properties:
+              tenant_id:
+                type: string
+                format: uuid
+                example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              tenant_name:
+                type: string
+                example: "PT Custom Etching Xenial"
+              is_owner:
+                type: boolean
+                example: false
+              roles:
+                type: array
+                items:
+                  type: string
+                example: ["finance_manager"]
+
+# User Statistics
+UserStatistics:
+  type: object
+  properties:
+    total_users:
+      type: integer
+      description: Total number of users
+      example: 156
+    active_users:
+      type: integer
+      description: Number of active users
+      example: 142
+    verified_users:
+      type: integer
+      description: Number of email verified users
+      example: 138
+    platform_admins:
+      type: integer
+      description: Number of platform administrators
+      example: 3
+    users_by_status:
+      type: object
+      properties:
+        active:
+          type: integer
+          example: 142
+        inactive:
+          type: integer
+          example: 8
+        suspended:
+          type: integer
+          example: 4
+        banned:
+          type: integer
+          example: 2
+    recent_registrations:
+      type: integer
+      description: New users in last 30 days
+      example: 12
+    login_activity:
+      type: object
+      properties:
+        last_24h:
+          type: integer
+          example: 89
+        last_7d:
+          type: integer
+          example: 134
+        last_30d:
+          type: integer
+          example: 148

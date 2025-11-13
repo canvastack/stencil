@@ -1,0 +1,1651 @@
+# Vendors Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for Vendor Management System (97+ fields, 6 tables)
+# Multi-tenant RBAC with enterprise vendor management
+
+# ================================================================
+# CORE VENDOR ENTITIES
+# ================================================================
+
+# Main Vendor Entity (Tenant Schema - Multi-tenant Vendor Management)
+Vendor:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - company_name
+        - email
+        - phone
+        - address
+        - slug
+        - status
+      properties:
+        # Company Information
+        company_name:
+          type: string
+          maxLength: 255
+          description: Official company name
+          example: "PT Etching Indo Prima"
+        legal_entity_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Legal entity name if different from company name
+          example: "PT Etching Indo Prima Tbk"
+        brand_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Brand/trading name
+          example: "EIP Etching"
+        slug:
+          type: string
+          maxLength: 255
+          description: URL-friendly identifier
+          example: "pt-etching-indo-prima"
+
+        # Contact Information
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          description: Primary contact email
+          example: "info@etchingindo.com"
+        phone:
+          type: string
+          maxLength: 50
+          description: Primary contact phone
+          example: "+62218765432"
+        mobile_phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Mobile phone number
+          example: "+62812345678"
+        fax:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Fax number
+          example: "+62217654321"
+        website:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Company website URL
+          example: "https://www.etchingindo.com"
+
+        # Address Information
+        address:
+          type: string
+          description: Complete address
+          example: "Jl. Industri Raya No. 123, Kawasan Industri"
+        city:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: City location
+          example: "Jakarta"
+        province:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Province/state
+          example: "DKI Jakarta"
+        postal_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: Postal/ZIP code
+          example: "12345"
+        country:
+          type: string
+          maxLength: 100
+          default: "Indonesia"
+          description: Country
+          example: "Indonesia"
+
+        # Legal Documents
+        npwp:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: NPWP tax number
+          example: "01.234.567.8-901.000"
+        siup_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: SIUP business license number
+          example: "SIUP/123/2024"
+        business_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Type of business
+          example: "Manufacturing - Metal Etching"
+        tax_document_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Tax document upload URL
+          example: "https://cdn.example.com/docs/npwp-123.pdf"
+        business_license_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Business license document URL
+          example: "https://cdn.example.com/docs/siup-123.pdf"
+
+        # Classification
+        quality_tier:
+          type: string
+          enum: ["standard", "premium"]
+          default: "standard"
+          description: Vendor quality classification
+          example: "premium"
+        status:
+          type: string
+          enum: ["active", "inactive", "on_hold", "blacklisted"]
+          default: "active"
+          description: Current vendor status
+          example: "active"
+
+        # Capacity & Capability
+        average_lead_time_days:
+          type: integer
+          minimum: 1
+          default: 7
+          description: Average lead time in days
+          example: 14
+        production_capacity_monthly:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Monthly production capacity
+          example: 1000
+        minimum_order_value:
+          type: number
+          format: decimal
+          minimum: 0
+          nullable: true
+          description: Minimum order value in IDR
+          example: 5000000
+        accepts_rush_orders:
+          type: boolean
+          default: false
+          description: Whether vendor accepts rush orders
+          example: true
+        rush_order_surcharge_percent:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Rush order surcharge percentage
+          example: 25.0
+
+        # Banking Information
+        bank_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Bank name for payments
+          example: "Bank Mandiri"
+        bank_account_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Bank account number
+          example: "1234567890"
+        bank_account_holder:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Account holder name
+          example: "PT Etching Indo Prima"
+        bank_branch:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Bank branch
+          example: "Jakarta Pusat"
+        swift_code:
+          type: string
+          maxLength: 20
+          nullable: true
+          description: SWIFT/BIC code for international transfers
+          example: "BMRIIDJA"
+
+        # Notes
+        notes:
+          type: string
+          nullable: true
+          description: General vendor notes
+          example: "Specialized in high-precision etching work"
+        internal_notes:
+          type: string
+          nullable: true
+          description: Internal admin notes
+          example: "Preferred vendor for premium clients"
+
+        # Statistics (auto-updated)
+        total_orders:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total number of orders placed
+          example: 45
+          readOnly: true
+        completed_orders:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Successfully completed orders
+          example: 42
+          readOnly: true
+        cancelled_orders:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Cancelled orders count
+          example: 3
+          readOnly: true
+        total_transaction_value:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0
+          description: Total transaction value in IDR
+          example: 250000000
+          readOnly: true
+
+        # Rating (auto-calculated)
+        overall_rating:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+          default: 0
+          description: Overall vendor rating (1-5)
+          example: 4.2
+          readOnly: true
+        quality_rating:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+          default: 0
+          description: Quality performance rating
+          example: 4.5
+          readOnly: true
+        timeliness_rating:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+          default: 0
+          description: On-time delivery rating
+          example: 4.0
+          readOnly: true
+        communication_rating:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+          default: 0
+          description: Communication effectiveness rating
+          example: 4.1
+          readOnly: true
+        pricing_rating:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+          default: 0
+          description: Pricing competitiveness rating
+          example: 4.3
+          readOnly: true
+        total_ratings_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total number of ratings received
+          example: 23
+          readOnly: true
+
+        # Verification
+        is_verified:
+          type: boolean
+          default: false
+          description: Vendor verification status
+          example: true
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Verification timestamp
+          example: "2025-11-01T10:30:00Z"
+          readOnly: true
+        verified_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of admin who verified
+          example: "123e4567-e89b-12d3-a456-426614174000"
+          readOnly: true
+
+        # Relations
+        specializations:
+          type: array
+          items:
+            $ref: '#/VendorSpecialization'
+          description: Vendor material specializations
+          readOnly: true
+        contacts:
+          type: array
+          items:
+            $ref: '#/VendorContact'
+          description: Vendor contact persons
+          readOnly: true
+        ratings:
+          type: array
+          items:
+            $ref: '#/VendorRating'
+          description: Vendor performance ratings
+          readOnly: true
+
+# Vendor Specialization Entity (Material/Service Capabilities)
+VendorSpecialization:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - vendor_id
+        - material_type
+        - quality_tier
+      properties:
+        # Foreign Key
+        vendor_id:
+          type: string
+          format: uuid
+          description: Reference to vendor
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Specialization Details
+        material_type:
+          type: string
+          maxLength: 100
+          enum: ["akrilik", "kuningan", "tembaga", "stainless_steel", "aluminum", "kaca", "kayu", "custom"]
+          description: Material specialization type
+          example: "stainless_steel"
+        quality_tier:
+          type: string
+          enum: ["standard", "premium"]
+          default: "standard"
+          description: Quality tier for this material
+          example: "premium"
+
+        # Capacity & Pricing
+        production_capacity_per_month:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Monthly production capacity for this material
+          example: 500
+        min_order_quantity:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Minimum order quantity
+          example: 10
+        price_per_unit_min:
+          type: number
+          format: decimal
+          minimum: 0
+          nullable: true
+          description: Minimum price per unit in IDR
+          example: 50000
+        price_per_unit_max:
+          type: number
+          format: decimal
+          minimum: 0
+          nullable: true
+          description: Maximum price per unit in IDR
+          example: 150000
+        currency:
+          type: string
+          maxLength: 3
+          default: "IDR"
+          description: Currency code
+          example: "IDR"
+
+        # Lead Time
+        lead_time_days_min:
+          type: integer
+          minimum: 1
+          default: 7
+          description: Minimum lead time in days
+          example: 5
+        lead_time_days_max:
+          type: integer
+          minimum: 1
+          default: 14
+          description: Maximum lead time in days
+          example: 10
+
+        # Additional Info
+        notes:
+          type: string
+          nullable: true
+          description: Specialization notes
+          example: "High precision etching available"
+        certifications:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Relevant certifications for this material
+          example: ["ISO 9001", "ISO 14001"]
+        sample_images:
+          type: array
+          items:
+            type: string
+            format: uri
+          default: []
+          description: Sample work images URLs
+          example: ["https://cdn.example.com/samples/steel1.jpg"]
+
+        # Status
+        is_active:
+          type: boolean
+          default: true
+          description: Whether this specialization is active
+          example: true
+
+        # Performance Metrics (auto-calculated)
+        total_orders_for_material:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total orders for this material type
+          example: 15
+          readOnly: true
+        success_rate_percent:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 100
+          description: Success rate percentage for this material
+          example: 93.5
+          readOnly: true
+        average_quality_rating:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 5
+          default: 0
+          description: Average quality rating for this material
+          example: 4.3
+          readOnly: true
+
+# Vendor Contact Person Entity
+VendorContact:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - vendor_id
+        - full_name
+      properties:
+        # Foreign Key
+        vendor_id:
+          type: string
+          format: uuid
+          description: Reference to vendor
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Contact Information
+        full_name:
+          type: string
+          maxLength: 255
+          description: Contact person full name
+          example: "Budi Santoso"
+        position:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Job position/title
+          example: "Sales Manager"
+        department:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Department
+          example: "Sales"
+
+        # Communication Channels
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Contact email address
+          example: "budi@etchingindo.com"
+        phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Office phone number
+          example: "+62218765432"
+        mobile_phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Mobile phone number
+          example: "+62812345678"
+        whatsapp:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: WhatsApp number
+          example: "+62812345678"
+        telegram:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Telegram username
+          example: "@budisales"
+
+        # Contact Preferences
+        is_primary:
+          type: boolean
+          default: false
+          description: Whether this is the primary contact
+          example: true
+        preferred_contact_method:
+          type: string
+          enum: ["email", "phone", "whatsapp", "telegram"]
+          default: "email"
+          description: Preferred communication method
+          example: "whatsapp"
+        available_hours:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Available contact hours
+          example: "08:00-17:00 WIB"
+        timezone:
+          type: string
+          maxLength: 50
+          default: "Asia/Jakarta"
+          description: Contact timezone
+          example: "Asia/Jakarta"
+
+        # Notes
+        notes:
+          type: string
+          nullable: true
+          description: Additional contact notes
+          example: "Best contact for technical discussions"
+
+        # Status
+        is_active:
+          type: boolean
+          default: true
+          description: Whether contact is active
+          example: true
+
+        # Soft Delete
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Soft delete timestamp
+          example: null
+          readOnly: true
+
+# Vendor Rating Entity (Performance Evaluation)
+VendorRating:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - vendor_id
+        - order_id
+        - quality_score
+        - timeliness_score
+        - communication_score
+        - pricing_score
+        - rated_by
+      properties:
+        # Foreign Keys
+        vendor_id:
+          type: string
+          format: uuid
+          description: Reference to vendor
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        order_id:
+          type: string
+          format: uuid
+          description: Reference to completed order
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Rating Criteria (1-5 scale)
+        quality_score:
+          type: number
+          format: decimal
+          minimum: 1
+          maximum: 5
+          description: Quality rating (1-5)
+          example: 4.5
+        timeliness_score:
+          type: number
+          format: decimal
+          minimum: 1
+          maximum: 5
+          description: Timeliness rating (1-5)
+          example: 4.0
+        communication_score:
+          type: number
+          format: decimal
+          minimum: 1
+          maximum: 5
+          description: Communication rating (1-5)
+          example: 4.2
+        pricing_score:
+          type: number
+          format: decimal
+          minimum: 1
+          maximum: 5
+          description: Pricing competitiveness rating (1-5)
+          example: 4.1
+
+        # Calculated Overall Rating (auto-computed)
+        overall_rating:
+          type: number
+          format: decimal
+          minimum: 1
+          maximum: 5
+          description: Weighted overall rating (quality 35%, timeliness 30%, communication 20%, pricing 15%)
+          example: 4.25
+          readOnly: true
+
+        # Detailed Feedback
+        review_title:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Review title/summary
+          example: "Excellent quality, slightly delayed delivery"
+        review_text:
+          type: string
+          nullable: true
+          description: Detailed review text
+          example: "Great attention to detail, final product exceeded expectations"
+        pros:
+          type: string
+          nullable: true
+          description: Positive aspects
+          example: "High quality finish, professional communication"
+        cons:
+          type: string
+          nullable: true
+          description: Areas for improvement
+          example: "Delivery was 2 days late"
+
+        # Order Details Snapshot
+        material_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Material type for this order
+          example: "stainless_steel"
+        order_value:
+          type: number
+          format: decimal
+          nullable: true
+          description: Order value in IDR
+          example: 15000000
+        delivery_days_actual:
+          type: integer
+          nullable: true
+          description: Actual delivery days taken
+          example: 12
+        delivery_days_promised:
+          type: integer
+          nullable: true
+          description: Originally promised delivery days
+          example: 10
+
+        # Media
+        review_images:
+          type: array
+          items:
+            type: string
+            format: uri
+          default: []
+          description: Review images URLs
+          example: ["https://cdn.example.com/reviews/review123-1.jpg"]
+
+        # Visibility
+        is_public:
+          type: boolean
+          default: false
+          description: Whether rating is visible to vendor
+          example: false
+
+        # Admin Actions
+        admin_response:
+          type: string
+          nullable: true
+          description: Admin response to this rating
+          example: "Thank you for the feedback, we'll discuss timing with vendor"
+        admin_response_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Admin response timestamp
+          example: "2025-11-13T14:30:00Z"
+
+        # Audit
+        rated_by:
+          type: string
+          format: uuid
+          description: ID of user who created the rating
+          example: "789e0123-e45f-67g8-h901-234567890123"
+
+# Vendor Negotiation Entity (Deal Management)
+VendorNegotiation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - vendor_id
+        - order_id
+        - negotiation_status
+      properties:
+        # Foreign Keys
+        vendor_id:
+          type: string
+          format: uuid
+          description: Reference to vendor
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        order_id:
+          type: string
+          format: uuid
+          description: Reference to order
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Negotiation Details
+        negotiation_round:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Current negotiation round
+          example: 2
+        negotiation_status:
+          type: string
+          enum: ["pending", "in_progress", "accepted", "rejected", "cancelled"]
+          default: "pending"
+          description: Current negotiation status
+          example: "in_progress"
+
+        # Pricing Information
+        initial_quote_amount:
+          type: number
+          format: decimal
+          nullable: true
+          description: Vendor's initial quote in IDR
+          example: 12000000
+        counter_offer_amount:
+          type: number
+          format: decimal
+          nullable: true
+          description: Admin counter-offer amount in IDR
+          example: 11000000
+        final_agreed_amount:
+          type: number
+          format: decimal
+          nullable: true
+          description: Final agreed amount in IDR
+          example: 11500000
+        currency:
+          type: string
+          maxLength: 3
+          default: "IDR"
+          description: Currency code
+          example: "IDR"
+
+        # Production Details
+        estimated_production_days:
+          type: integer
+          nullable: true
+          description: Vendor estimated production time
+          example: 10
+        rush_order_requested:
+          type: boolean
+          default: false
+          description: Whether rush order was requested
+          example: false
+        rush_surcharge_percent:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Rush order surcharge percentage
+          example: 20.0
+
+        # Material & Specifications
+        material_type:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Material type for this negotiation
+          example: "stainless_steel"
+        quality_tier:
+          type: string
+          enum: ["standard", "premium"]
+          nullable: true
+          description: Requested quality tier
+          example: "premium"
+        quantity:
+          type: integer
+          nullable: true
+          description: Order quantity
+          example: 50
+        unit:
+          type: string
+          maxLength: 50
+          default: "pcs"
+          description: Unit of measurement
+          example: "pcs"
+        specifications:
+          type: object
+          additionalProperties: true
+          description: Technical specifications (JSONB)
+          example:
+            thickness: "2mm"
+            dimensions: "100x50mm"
+            finish: "brushed"
+
+        # Communication
+        vendor_response:
+          type: string
+          nullable: true
+          description: Vendor's response/comments
+          example: "We can meet your timeline with 15% rush surcharge"
+        admin_notes:
+          type: string
+          nullable: true
+          description: Internal admin notes
+          example: "Client approved the counter-offer"
+        rejection_reason:
+          type: string
+          nullable: true
+          description: Reason for rejection if applicable
+          example: "Price too high for client budget"
+
+        # Attachments
+        quotation_document_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Vendor quotation document URL
+          example: "https://cdn.example.com/quotes/quote-123.pdf"
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              filename:
+                type: string
+              url:
+                type: string
+                format: uri
+              size:
+                type: integer
+              type:
+                type: string
+          default: []
+          description: Additional attachments
+          example: [{"filename": "specs.pdf", "url": "https://cdn.example.com/specs.pdf"}]
+
+        # Timeline
+        requested_at:
+          type: string
+          format: date-time
+          description: When negotiation was initiated
+          example: "2025-11-10T09:00:00Z"
+        vendor_responded_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When vendor responded
+          example: "2025-11-10T15:30:00Z"
+        deal_closed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When deal was finalized
+          example: "2025-11-11T10:15:00Z"
+
+        # Email Tracking
+        email_sent_count:
+          type: integer
+          default: 0
+          description: Number of emails sent
+          example: 3
+          readOnly: true
+        last_email_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last email sent timestamp
+          example: "2025-11-10T14:00:00Z"
+          readOnly: true
+
+# Vendor Payment Entity (Financial Tracking)
+VendorPayment:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - vendor_id
+        - order_id
+        - payment_type
+        - amount
+        - currency
+        - status
+      properties:
+        # Foreign Keys
+        vendor_id:
+          type: string
+          format: uuid
+          description: Reference to vendor
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        order_id:
+          type: string
+          format: uuid
+          description: Reference to order
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        negotiation_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to negotiation (if applicable)
+          example: "789e0123-e45f-67g8-h901-234567890123"
+
+        # Payment Details
+        payment_type:
+          type: string
+          enum: ["dp", "full", "partial"]
+          description: Type of payment
+          example: "dp"
+        amount:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Payment amount in specified currency
+          example: 5750000
+        currency:
+          type: string
+          maxLength: 3
+          default: "IDR"
+          description: Currency code
+          example: "IDR"
+        percentage_of_order:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: Percentage of total order value
+          example: 50.0
+
+        # Status & Timeline
+        status:
+          type: string
+          enum: ["pending", "processing", "paid", "failed", "cancelled", "refunded"]
+          default: "pending"
+          description: Payment status
+          example: "paid"
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: Payment due date
+          example: "2025-11-15"
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Actual payment timestamp
+          example: "2025-11-12T14:30:00Z"
+
+        # Payment Method
+        payment_method:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Payment method used
+          example: "bank_transfer"
+        bank_name:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Destination bank name
+          example: "Bank Mandiri"
+        account_number:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Destination account number
+          example: "1234567890"
+
+        # Documentation
+        payment_reference:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Payment reference/transaction ID
+          example: "TF20251112001"
+        payment_proof_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Payment proof document URL
+          example: "https://cdn.example.com/proofs/payment-123.jpg"
+        receipt_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Official receipt URL
+          example: "https://cdn.example.com/receipts/receipt-123.pdf"
+
+        # Verification
+        verified_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of admin who verified payment
+          example: "456e7890-e12b-34c5-d678-901234567890"
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Payment verification timestamp
+          example: "2025-11-12T16:00:00Z"
+
+        # Notes
+        notes:
+          type: string
+          nullable: true
+          description: Payment notes
+          example: "DP payment for stainless steel order"
+        admin_notes:
+          type: string
+          nullable: true
+          description: Internal admin notes
+          example: "Payment verified by finance team"
+
+# ================================================================
+# CREATE/UPDATE INPUT SCHEMAS
+# ================================================================
+
+VendorCreateInput:
+  type: object
+  required:
+    - company_name
+    - email
+    - phone
+    - address
+    - status
+  properties:
+    company_name:
+      type: string
+      maxLength: 255
+      description: Official company name
+      example: "PT Etching Indo Prima"
+    legal_entity_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Etching Indo Prima Tbk"
+    brand_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "EIP Etching"
+    email:
+      type: string
+      format: email
+      maxLength: 255
+      example: "info@etchingindo.com"
+    phone:
+      type: string
+      maxLength: 50
+      example: "+62218765432"
+    mobile_phone:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "+62812345678"
+    fax:
+      type: string
+      maxLength: 50
+      nullable: true
+    website:
+      type: string
+      format: uri
+      maxLength: 500
+      nullable: true
+      example: "https://www.etchingindo.com"
+    address:
+      type: string
+      example: "Jl. Industri Raya No. 123, Kawasan Industri"
+    city:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Jakarta"
+    province:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "DKI Jakarta"
+    postal_code:
+      type: string
+      maxLength: 20
+      nullable: true
+      example: "12345"
+    country:
+      type: string
+      maxLength: 100
+      default: "Indonesia"
+    npwp:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "01.234.567.8-901.000"
+    siup_number:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "SIUP/123/2024"
+    business_type:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Manufacturing - Metal Etching"
+    tax_document_url:
+      type: string
+      format: uri
+      maxLength: 500
+      nullable: true
+    business_license_url:
+      type: string
+      format: uri
+      maxLength: 500
+      nullable: true
+    quality_tier:
+      type: string
+      enum: ["standard", "premium"]
+      default: "standard"
+    status:
+      type: string
+      enum: ["active", "inactive", "on_hold", "blacklisted"]
+      default: "active"
+    average_lead_time_days:
+      type: integer
+      minimum: 1
+      default: 7
+      example: 14
+    production_capacity_monthly:
+      type: integer
+      minimum: 1
+      nullable: true
+      example: 1000
+    minimum_order_value:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+    accepts_rush_orders:
+      type: boolean
+      default: false
+    rush_order_surcharge_percent:
+      type: number
+      format: decimal
+      minimum: 0
+      maximum: 100
+      nullable: true
+    bank_name:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Bank Mandiri"
+    bank_account_number:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "1234567890"
+    bank_account_holder:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "PT Etching Indo Prima"
+    bank_branch:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Jakarta Pusat"
+    swift_code:
+      type: string
+      maxLength: 20
+      nullable: true
+    notes:
+      type: string
+      nullable: true
+    internal_notes:
+      type: string
+      nullable: true
+
+VendorUpdateInput:
+  allOf:
+    - $ref: '#/VendorCreateInput'
+    - type: object
+      properties:
+        is_verified:
+          type: boolean
+          description: Admin can verify vendor
+
+VendorSpecializationCreateInput:
+  type: object
+  required:
+    - vendor_id
+    - material_type
+    - quality_tier
+  properties:
+    vendor_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    material_type:
+      type: string
+      enum: ["akrilik", "kuningan", "tembaga", "stainless_steel", "aluminum", "kaca", "kayu", "custom"]
+      example: "stainless_steel"
+    quality_tier:
+      type: string
+      enum: ["standard", "premium"]
+      default: "standard"
+    production_capacity_per_month:
+      type: integer
+      minimum: 1
+      nullable: true
+      example: 500
+    min_order_quantity:
+      type: integer
+      minimum: 1
+      default: 1
+    price_per_unit_min:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      example: 50000
+    price_per_unit_max:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+      example: 150000
+    currency:
+      type: string
+      maxLength: 3
+      default: "IDR"
+    lead_time_days_min:
+      type: integer
+      minimum: 1
+      default: 7
+    lead_time_days_max:
+      type: integer
+      minimum: 1
+      default: 14
+    notes:
+      type: string
+      nullable: true
+    certifications:
+      type: array
+      items:
+        type: string
+      default: []
+    sample_images:
+      type: array
+      items:
+        type: string
+        format: uri
+      default: []
+    is_active:
+      type: boolean
+      default: true
+
+VendorSpecializationUpdateInput:
+  allOf:
+    - $ref: '#/VendorSpecializationCreateInput'
+    - type: object
+      properties:
+        vendor_id:
+          readOnly: true
+
+VendorContactCreateInput:
+  type: object
+  required:
+    - vendor_id
+    - full_name
+  properties:
+    vendor_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    full_name:
+      type: string
+      maxLength: 255
+      example: "Budi Santoso"
+    position:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Sales Manager"
+    department:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "Sales"
+    email:
+      type: string
+      format: email
+      maxLength: 255
+      nullable: true
+      example: "budi@etchingindo.com"
+    phone:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "+62218765432"
+    mobile_phone:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "+62812345678"
+    whatsapp:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "+62812345678"
+    telegram:
+      type: string
+      maxLength: 50
+      nullable: true
+      example: "@budisales"
+    is_primary:
+      type: boolean
+      default: false
+    preferred_contact_method:
+      type: string
+      enum: ["email", "phone", "whatsapp", "telegram"]
+      default: "email"
+    available_hours:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "08:00-17:00 WIB"
+    timezone:
+      type: string
+      maxLength: 50
+      default: "Asia/Jakarta"
+    notes:
+      type: string
+      nullable: true
+    is_active:
+      type: boolean
+      default: true
+
+VendorContactUpdateInput:
+  allOf:
+    - $ref: '#/VendorContactCreateInput'
+    - type: object
+      properties:
+        vendor_id:
+          readOnly: true
+
+VendorRatingCreateInput:
+  type: object
+  required:
+    - vendor_id
+    - order_id
+    - quality_score
+    - timeliness_score
+    - communication_score
+    - pricing_score
+  properties:
+    vendor_id:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    order_id:
+      type: string
+      format: uuid
+      example: "123e4567-e89b-12d3-a456-426614174000"
+    quality_score:
+      type: number
+      format: decimal
+      minimum: 1
+      maximum: 5
+      example: 4.5
+    timeliness_score:
+      type: number
+      format: decimal
+      minimum: 1
+      maximum: 5
+      example: 4.0
+    communication_score:
+      type: number
+      format: decimal
+      minimum: 1
+      maximum: 5
+      example: 4.2
+    pricing_score:
+      type: number
+      format: decimal
+      minimum: 1
+      maximum: 5
+      example: 4.1
+    review_title:
+      type: string
+      maxLength: 255
+      nullable: true
+      example: "Excellent quality, slightly delayed delivery"
+    review_text:
+      type: string
+      nullable: true
+      example: "Great attention to detail, final product exceeded expectations"
+    pros:
+      type: string
+      nullable: true
+      example: "High quality finish, professional communication"
+    cons:
+      type: string
+      nullable: true
+      example: "Delivery was 2 days late"
+    material_type:
+      type: string
+      maxLength: 100
+      nullable: true
+      example: "stainless_steel"
+    order_value:
+      type: number
+      format: decimal
+      nullable: true
+      example: 15000000
+    delivery_days_actual:
+      type: integer
+      nullable: true
+      example: 12
+    delivery_days_promised:
+      type: integer
+      nullable: true
+      example: 10
+    review_images:
+      type: array
+      items:
+        type: string
+        format: uri
+      default: []
+    is_public:
+      type: boolean
+      default: false
+    admin_response:
+      type: string
+      nullable: true
+
+VendorRatingUpdateInput:
+  allOf:
+    - $ref: '#/VendorRatingCreateInput'
+    - type: object
+      properties:
+        vendor_id:
+          readOnly: true
+        order_id:
+          readOnly: true
+
+# ================================================================
+# RESPONSE SCHEMAS
+# ================================================================
+
+VendorListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/Vendor'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+VendorResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          $ref: '#/Vendor'
+
+VendorSpecializationListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/VendorSpecialization'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+VendorContactListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/VendorContact'
+
+VendorRatingListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/VendorRating'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+VendorStatsResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            total_vendors:
+              type: integer
+              example: 45
+            active_vendors:
+              type: integer
+              example: 42
+            verified_vendors:
+              type: integer
+              example: 38
+            total_specializations:
+              type: integer
+              example: 156
+            average_rating:
+              type: number
+              format: decimal
+              example: 4.2
+            total_orders_value:
+              type: number
+              format: decimal
+              example: 2450000000
+            by_quality_tier:
+              type: object
+              properties:
+                standard:
+                  type: integer
+                  example: 28
+                premium:
+                  type: integer
+                  example: 17
+            by_material:
+              type: object
+              additionalProperties:
+                type: integer
+              example:
+                stainless_steel: 25
+                aluminum: 20
+                akrilik: 18
+            top_rated_vendors:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  company_name:
+                    type: string
+                  overall_rating:
+                    type: number
+                    format: decimal

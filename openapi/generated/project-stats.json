@@ -1,0 +1,44 @@
+{
+  "totalFiles": 48,
+  "validFiles": 47,
+  "invalidFiles": 1,
+  "successRate": 98,
+  "generatedAt": "2025-11-13T16:20:11.353Z",
+  "phases": {
+    "Foundation Setup": {
+      "status": "Complete",
+      "modules": 1,
+      "hours": 54
+    },
+    "Content Management": {
+      "status": "Complete",
+      "modules": 5,
+      "hours": 70
+    },
+    "E-Commerce": {
+      "status": "Complete",
+      "modules": 4,
+      "hours": 100
+    },
+    "User Management": {
+      "status": "Complete",
+      "modules": 4,
+      "hours": 88
+    },
+    "System Administration": {
+      "status": "Complete",
+      "modules": 3,
+      "hours": 52
+    },
+    "Assets & Localization": {
+      "status": "Complete",
+      "modules": 4,
+      "hours": 60
+    },
+    "Validation & Integration": {
+      "status": "In Progress",
+      "modules": 1,
+      "hours": 24
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "stencil-openapi-specifications",
+  "version": "1.0.0",
+  "description": "OpenAPI specifications for Stencil CMS with comprehensive CI/CD pipeline",
+  "main": "openapi.yaml",
+  "scripts": {
+    "validate": "node tools/validate-all.js",
+    "validate:comprehensive": "node validate-pipeline.cjs",
+    "test:performance": "node performance-test.cjs",
+    "audit:security": "node security-audit.cjs",
+    "generate:docs": "node generate-docs.cjs",
+    "generate:postman": "node generate-postman.cjs",
+    "pipeline:local": "npm run validate && npm run test:performance && npm run audit:security && npm run generate:docs && npm run generate:postman",
+    "pipeline:ci": "npm run validate:comprehensive && npm run test:performance && npm run audit:security",
+    "serve:docs": "cd generated && python -m http.server 8080",
+    "clean": "rm -rf generated/*",
+    "install:hooks": "cp scripts/pre-commit .git/hooks/ && chmod +x .git/hooks/pre-commit",
+    "docker:build": "docker build -f Dockerfile.openapi -t stencil-openapi-pipeline .",
+    "docker:run": "docker-compose up -d",
+    "docker:logs": "docker-compose logs -f openapi-pipeline"
+  },
+  "keywords": [
+    "openapi",
+    "swagger",
+    "api",
+    "documentation",
+    "stencil",
+    "cms",
+    "multi-tenant",
+    "cicd"
+  ],
+  "author": "Stencil CMS Team",
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "swagger-ui-dist": "^5.10.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/stencil-cms.git",
+    "directory": "openapi"
+  },
+  "ci": {
+    "validationThreshold": 95,
+    "securityThreshold": 60,
+    "performanceThreshold": 70
+  }
+}

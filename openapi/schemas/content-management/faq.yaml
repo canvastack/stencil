@@ -1,0 +1,807 @@
+# FAQ Module Schemas for Stencil CMS
+# Complete OpenAPI schemas for FAQ Management System (150+ fields, 5 tables)
+
+# FAQ Page Main Data Container
+FAQPageData:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      properties:
+        page:
+          $ref: '#/FAQPageBasicInfo'
+        hero:
+          $ref: '#/FAQHeroSection'
+        categories:
+          type: array
+          items:
+            $ref: '#/FAQCategoryWithQuestions'
+        cta:
+          $ref: '#/FAQCallToAction'
+
+# FAQ Page Basic Information
+FAQPageBasicInfo:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - slug
+        - title
+      properties:
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+          maxLength: 100
+          description: URL-friendly page identifier
+          example: "faq"
+        title:
+          type: string
+          maxLength: 255
+          description: Page title for SEO and navigation
+          example: "Frequently Asked Questions"
+        metaDescription:
+          type: string
+          maxLength: 500
+          description: SEO meta description
+          example: "Find answers to common questions about our products and services"
+        isActive:
+          type: boolean
+          default: true
+          description: Whether the page is published
+
+# FAQ Hero Section Entity
+FAQHeroSection:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - page_id
+        - title
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the FAQ page
+        title:
+          type: string
+          maxLength: 255
+          description: Main hero title
+          example: "Frequently Asked Questions"
+        subtitle:
+          type: string
+          maxLength: 500
+          description: Hero subtitle or description
+          example: "Find answers to common questions"
+          nullable: true
+        searchPlaceholder:
+          type: string
+          maxLength: 255
+          description: Placeholder text for search input
+          example: "Search for answers..."
+          nullable: true
+        showSearchBox:
+          type: boolean
+          default: true
+          description: Whether to display search functionality
+        backgroundImage:
+          type: string
+          format: uri
+          maxLength: 500
+          description: Hero background image URL
+          nullable: true
+
+# FAQ Call-to-Action Section Entity
+FAQCallToAction:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - page_id
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the FAQ page
+        title:
+          type: string
+          maxLength: 255
+          description: CTA section title
+          example: "Still have questions?"
+          nullable: true
+        subtitle:
+          type: string
+          maxLength: 500
+          description: CTA section subtitle
+          example: "Contact our support team for personalized assistance"
+          nullable: true
+        buttonText:
+          type: string
+          maxLength: 100
+          description: CTA button text
+          example: "Contact Support"
+          nullable: true
+        buttonLink:
+          type: string
+          format: uri
+          maxLength: 500
+          description: CTA button destination URL
+          example: "/contact"
+          nullable: true
+        enabled:
+          type: boolean
+          default: true
+          description: Whether CTA section is displayed
+
+# FAQ Category Entity
+FAQCategory:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - type: object
+      required:
+        - page_id
+        - category_name
+      properties:
+        page_id:
+          type: string
+          format: uuid
+          description: Reference to the FAQ page
+        category_name:
+          type: string
+          maxLength: 255
+          description: Category display name
+          example: "General"
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+          maxLength: 100
+          description: URL-friendly category identifier
+          example: "general"
+        icon_name:
+          type: string
+          maxLength: 50
+          description: Icon identifier for the category
+          example: "HelpCircle"
+          nullable: true
+        description:
+          type: string
+          maxLength: 500
+          description: Category description
+          example: "General questions about our company"
+          nullable: true
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Category color theme (hex code)
+          example: "#2563eb"
+          nullable: true
+        display_order:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Sort order for display
+        is_visible:
+          type: boolean
+          default: true
+          description: Whether category is visible to public
+        show_in_sidebar:
+          type: boolean
+          default: true
+          description: Whether to show category in sidebar navigation
+        question_count:
+          type: integer
+          minimum: 0
+          description: Number of published questions in category (computed field)
+          example: 5
+
+# FAQ Category with Questions (Response Schema)
+FAQCategoryWithQuestions:
+  allOf:
+    - $ref: '#/FAQCategory'
+    - type: object
+      properties:
+        questions:
+          type: array
+          description: FAQ questions in this category
+          items:
+            $ref: '#/FAQItem'
+
+# FAQ Item/Question Entity
+FAQItem:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - $ref: '../common/base.yaml#/PublishableEntity'
+    - $ref: '../common/base.yaml#/AuditEntity'
+    - type: object
+      required:
+        - category_id
+        - question
+        - answer
+      properties:
+        category_id:
+          type: string
+          format: uuid
+          description: Reference to the FAQ category
+        question:
+          type: string
+          maxLength: 500
+          description: The FAQ question
+          example: "What are your business hours?"
+        answer:
+          type: string
+          maxLength: 5000
+          description: The FAQ answer (supports markdown)
+          example: "We are open Monday to Friday, 9:00 AM - 5:00 PM. **Weekend hours:** Saturday 10:00 AM - 2:00 PM"
+        answer_format:
+          type: string
+          enum: [plain, markdown, html]
+          default: markdown
+          description: Format of the answer content
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+          maxLength: 200
+          description: URL-friendly question identifier
+          example: "what-are-your-business-hours"
+        is_featured:
+          type: boolean
+          default: false
+          description: Whether this FAQ is featured/highlighted
+        status:
+          type: string
+          enum: [draft, published, archived, scheduled]
+          default: draft
+          description: Publication status
+        scheduled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Scheduled publication date/time
+        display_order:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Sort order within category
+        tags:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 20
+          description: Tags for content organization
+          example: ["hours", "schedule", "contact"]
+        search_keywords:
+          type: string
+          maxLength: 1000
+          description: Additional search keywords
+          nullable: true
+        # Analytics fields
+        view_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times this FAQ was viewed
+        helpful_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of helpful votes
+        not_helpful_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of not helpful votes
+        last_viewed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time this FAQ was viewed
+        # SEO fields
+        meta_title:
+          type: string
+          maxLength: 255
+          description: SEO meta title
+          nullable: true
+        meta_description:
+          type: string
+          maxLength: 500
+          description: SEO meta description
+          nullable: true
+
+# FAQ Search Results Container
+FAQSearchResults:
+  type: object
+  properties:
+    query:
+      type: string
+      description: The search query that was executed
+      example: "shipping policy"
+    total_results:
+      type: integer
+      description: Total number of matching results
+      example: 3
+    execution_time:
+      type: number
+      format: float
+      description: Search execution time in seconds
+      example: 0.045
+    results:
+      type: array
+      description: Array of matching FAQ items
+      items:
+        $ref: '#/FAQSearchResult'
+    suggestions:
+      type: array
+      description: Related search suggestions
+      items:
+        type: string
+      example: ["shipping cost", "shipping time", "international shipping"]
+    filters:
+      type: object
+      description: Applied search filters
+      properties:
+        category_id:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          nullable: true
+
+# FAQ Search Result Item
+FAQSearchResult:
+  allOf:
+    - $ref: '#/FAQItem'
+    - type: object
+      properties:
+        category_name:
+          type: string
+          description: Name of the category containing this FAQ
+          example: "Shipping"
+        relevance_score:
+          type: number
+          format: float
+          description: Search relevance score (0-1)
+          minimum: 0
+          maximum: 1
+          example: 0.95
+        highlighted_question:
+          type: string
+          description: Question with search terms highlighted
+          example: "What is your <mark>shipping</mark> <mark>policy</mark>?"
+        highlighted_answer:
+          type: string
+          description: Answer excerpt with search terms highlighted
+          example: "We offer free <mark>shipping</mark> on orders over $50..."
+        match_type:
+          type: string
+          enum: [question, answer, both, tag]
+          description: Where the search term was found
+
+# FAQ Admin Extended Category (includes admin fields)
+FAQCategoryAdmin:
+  allOf:
+    - $ref: '#/FAQCategory'
+    - type: object
+      properties:
+        questions:
+          type: array
+          description: All questions in this category (for admin)
+          items:
+            $ref: '#/FAQItemAdmin'
+        total_views:
+          type: integer
+          description: Total views across all questions in category
+        avg_helpful_rating:
+          type: number
+          format: float
+          description: Average helpfulness rating for category
+
+# FAQ Admin Extended Item (includes admin fields)
+FAQItemAdmin:
+  allOf:
+    - $ref: '#/FAQItem'
+    - type: object
+      properties:
+        category_name:
+          type: string
+          description: Name of the category containing this FAQ
+          example: "General"
+        helpful_ratio:
+          type: number
+          format: float
+          description: Ratio of helpful to total votes
+          minimum: 0
+          maximum: 1
+        last_feedback_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time feedback was received
+        feedback_summary:
+          type: object
+          description: Summary of user feedback
+          properties:
+            total_feedback:
+              type: integer
+            avg_rating:
+              type: number
+              format: float
+            common_issues:
+              type: array
+              items:
+                type: string
+
+# FAQ Analytics Data Structure
+FAQAnalytics:
+  type: object
+  properties:
+    overview:
+      type: object
+      properties:
+        total_questions:
+          type: integer
+          description: Total number of FAQ questions
+          example: 45
+        total_categories:
+          type: integer
+          description: Total number of categories
+          example: 8
+        total_views:
+          type: integer
+          description: Total FAQ views in timeframe
+          example: 12456
+        total_searches:
+          type: integer
+          description: Total searches performed
+          example: 3245
+        average_helpful_rating:
+          type: number
+          format: float
+          description: Average helpfulness rating (0-1)
+          example: 0.87
+        timeframe:
+          type: string
+          description: Analytics time period
+          example: "30d"
+        published_questions:
+          type: integer
+          description: Number of published questions
+        draft_questions:
+          type: integer
+          description: Number of draft questions
+        featured_questions:
+          type: integer
+          description: Number of featured questions
+    popular_questions:
+      type: array
+      description: Most viewed FAQ questions
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          question:
+            type: string
+          views:
+            type: integer
+          helpful_votes:
+            type: integer
+          helpful_ratio:
+            type: number
+            format: float
+          category_name:
+            type: string
+    top_search_queries:
+      type: array
+      description: Most common search queries
+      items:
+        type: object
+        properties:
+          query:
+            type: string
+          count:
+            type: integer
+          results_found:
+            type: integer
+          avg_click_position:
+            type: number
+            format: float
+    category_performance:
+      type: array
+      description: Performance metrics by category
+      items:
+        type: object
+        properties:
+          category_id:
+            type: string
+            format: uuid
+          category_name:
+            type: string
+          question_count:
+            type: integer
+          total_views:
+            type: integer
+          avg_helpful_rating:
+            type: number
+            format: float
+          most_popular_question:
+            type: string
+    trending_topics:
+      type: array
+      description: Trending search topics
+      items:
+        type: object
+        properties:
+          topic:
+            type: string
+          growth_rate:
+            type: number
+            format: float
+          search_count:
+            type: integer
+
+# Input Schemas for API Operations
+
+# FAQ Category Input
+FAQCategoryInput:
+  type: object
+  required:
+    - category_name
+  properties:
+    category_name:
+      type: string
+      minLength: 1
+      maxLength: 255
+      description: Category display name
+      example: "Billing"
+    slug:
+      type: string
+      pattern: '^[a-z0-9-]+$'
+      maxLength: 100
+      description: URL-friendly identifier (auto-generated if not provided)
+    icon_name:
+      type: string
+      maxLength: 50
+      description: Icon identifier for the category
+      example: "CreditCard"
+    description:
+      type: string
+      maxLength: 500
+      description: Category description
+      example: "Questions about billing and payments"
+    color:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      description: Category color theme (hex code)
+      example: "#2563eb"
+    display_order:
+      type: integer
+      minimum: 0
+      default: 0
+      description: Sort order for display
+      example: 3
+    is_visible:
+      type: boolean
+      default: true
+      description: Whether category is visible to public
+    show_in_sidebar:
+      type: boolean
+      default: true
+      description: Whether to show in sidebar navigation
+
+# FAQ Item Input
+FAQItemInput:
+  type: object
+  required:
+    - category_id
+    - question
+    - answer
+  properties:
+    category_id:
+      type: string
+      format: uuid
+      description: ID of the category for this FAQ
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    question:
+      type: string
+      minLength: 1
+      maxLength: 500
+      description: The FAQ question
+      example: "How do I reset my password?"
+    answer:
+      type: string
+      minLength: 1
+      maxLength: 5000
+      description: The FAQ answer (supports markdown)
+      example: "You can reset your password by clicking 'Forgot Password' on the login page and following the instructions sent to your email."
+    answer_format:
+      type: string
+      enum: [plain, markdown, html]
+      default: markdown
+      description: Format of the answer content
+    slug:
+      type: string
+      pattern: '^[a-z0-9-]+$'
+      maxLength: 200
+      description: URL-friendly identifier (auto-generated if not provided)
+    is_featured:
+      type: boolean
+      default: false
+      description: Whether this FAQ should be featured
+    status:
+      type: string
+      enum: [draft, published, archived, scheduled]
+      default: draft
+      description: Publication status
+      example: "published"
+    scheduled_at:
+      type: string
+      format: date-time
+      description: Scheduled publication date/time (required if status is 'scheduled')
+    display_order:
+      type: integer
+      minimum: 0
+      default: 0
+      description: Sort order within category
+      example: 1
+    tags:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      maxItems: 20
+      description: Tags for content organization
+      example: ["password", "login", "security"]
+    search_keywords:
+      type: string
+      maxLength: 1000
+      description: Additional search keywords for better discoverability
+    meta_title:
+      type: string
+      maxLength: 255
+      description: SEO meta title
+    meta_description:
+      type: string
+      maxLength: 500
+      description: SEO meta description
+
+# FAQ Feedback Input
+FAQFeedbackInput:
+  type: object
+  properties:
+    reason:
+      type: string
+      description: Reason for marking as not helpful
+      enum: [unclear, outdated, incomplete, incorrect, missing_info, too_technical, other]
+      example: "unclear"
+    category:
+      type: string
+      description: Feedback category
+      enum: [content, formatting, relevance, accuracy, other]
+      example: "content"
+    comment:
+      type: string
+      maxLength: 500
+      description: Optional feedback comment
+      example: "The answer doesn't explain international shipping options"
+    suggested_improvement:
+      type: string
+      maxLength: 1000
+      description: Suggested improvement for the FAQ
+    user_email:
+      type: string
+      format: email
+      description: Optional email for follow-up (not stored)
+    difficulty_rating:
+      type: integer
+      minimum: 1
+      maximum: 5
+      description: How difficult was it to find this information (1=very easy, 5=very difficult)
+
+# FAQ Bulk Operations Input
+FAQBulkOperationInput:
+  type: object
+  required:
+    - operation
+    - item_ids
+  properties:
+    operation:
+      type: string
+      enum: [publish, unpublish, archive, delete, move_category, add_tags, remove_tags, feature, unfeature]
+      description: Bulk operation to perform
+    item_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      minItems: 1
+      maxItems: 100
+      description: IDs of FAQ items to operate on
+    target_category_id:
+      type: string
+      format: uuid
+      description: Target category ID (required for move_category operation)
+    tags:
+      type: array
+      items:
+        type: string
+        maxLength: 50
+      description: Tags to add/remove (required for add_tags/remove_tags operations)
+    confirm_irreversible:
+      type: boolean
+      description: Confirmation for irreversible operations (like delete)
+
+# FAQ Import/Export Schemas
+
+# FAQ Export Request
+FAQExportInput:
+  type: object
+  properties:
+    format:
+      type: string
+      enum: [json, csv, xlsx, pdf]
+      default: json
+      description: Export format
+    category_ids:
+      type: array
+      items:
+        type: string
+        format: uuid
+      description: Categories to export (empty = all)
+    include_drafts:
+      type: boolean
+      default: false
+      description: Whether to include draft questions
+    include_analytics:
+      type: boolean
+      default: false
+      description: Whether to include analytics data
+    date_range:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+
+# FAQ Import Request
+FAQImportInput:
+  type: object
+  required:
+    - format
+    - data
+  properties:
+    format:
+      type: string
+      enum: [json, csv]
+      description: Import data format
+    data:
+      type: string
+      description: Base64 encoded import data
+    options:
+      type: object
+      properties:
+        create_categories:
+          type: boolean
+          default: true
+          description: Whether to create missing categories
+        skip_duplicates:
+          type: boolean
+          default: true
+          description: Whether to skip duplicate questions
+        update_existing:
+          type: boolean
+          default: false
+          description: Whether to update existing questions
+        default_status:
+          type: string
+          enum: [draft, published]
+          default: draft
+          description: Default status for imported questions

@@ -1,0 +1,1116 @@
+openapi: 3.1.0
+info:
+  title: Inventory Management Module API
+  version: 1.0.0
+paths:
+  # Inventory Dashboard & Overview
+  /admin/inventory:
+    get:
+      tags:
+        - Inventory Management
+      summary: Get Inventory Dashboard
+      description: |
+        Retrieve comprehensive inventory dashboard with items, locations, alerts, and summary statistics.
+        
+        **Business Features:**
+        - Complete inventory overview with stock levels
+        - Low stock and out-of-stock alerts
+        - Location-based inventory distribution
+        - Value analysis and cost tracking
+        - Integration with etching business workflow
+        
+        **Dashboard Components:**
+        - Inventory items with current stock levels
+        - Storage locations and capacity utilization
+        - Active alerts (low stock, expiry, quality issues)
+        - Summary statistics and KPIs
+        - Recent movement history
+      operationId: getInventoryDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: location_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific location
+        - name: item_type
+          in: query
+          schema:
+            type: string
+            enum: [material, consumable, tool, finished_good, work_in_progress]
+          description: Filter by item type
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by item category
+        - name: low_stock_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Show only items below reorder point
+      responses:
+        '200':
+          description: Inventory dashboard retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/inventory.yaml#/InventoryPageData'
+              examples:
+                success:
+                  summary: Complete inventory dashboard
+                  value:
+                    success: true
+                    message: "Inventory dashboard retrieved successfully"
+                    data:
+                      summary:
+                        total_items: 450
+                        total_locations: 8
+                        total_inventory_value: 125750000.00
+                        low_stock_alerts: 12
+                        out_of_stock_count: 3
+                        pending_movements: 5
+                      items:
+                        - id: "550e8400-e29b-41d4-a716-446655440000"
+                          item_code: "MTL-BRASS-001"
+                          item_name: "Brass Sheet 2mm Thickness"
+                          category: "Raw Materials"
+                          current_stock: 15.5
+                          reorder_point: 20.0
+                          unit_of_measure: "kg"
+                          standard_cost: 45000.00
+                      alerts:
+                        - id: "660f9500-f39c-52e5-b827-557766551111"
+                          alert_type: "low_stock"
+                          priority: "high"
+                          alert_title: "Low Stock Alert: Brass Sheet 2mm"
+                          current_stock: 15.5
+                          threshold_value: 20.0
+                    meta:
+                      timestamp: "2025-01-15T10:30:00Z"
+                      tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      cache_expires: "2025-01-15T10:35:00Z"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Items Management
+  /admin/inventory/items:
+    get:
+      tags:
+        - Inventory Items
+      summary: List Inventory Items
+      description: |
+        Retrieve inventory items with filtering, search, sorting, and pagination.
+        
+        **Admin Features:**
+        - Complete item catalog with stock levels
+        - Advanced filtering by category, type, status
+        - Full-text search across item details
+        - Bulk operations support
+        - Export capabilities (CSV, Excel)
+        - Stock level monitoring and alerts
+      operationId: listInventoryItems
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search item code, name, or description
+          example: "brass sheet"
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by item category
+          example: "Raw Materials"
+        - name: item_type
+          in: query
+          schema:
+            type: string
+            enum: [material, consumable, tool, finished_good, work_in_progress]
+          description: Filter by item type
+        - name: material_type
+          in: query
+          schema:
+            type: string
+          description: Filter by material type (etching-specific)
+          example: "brass"
+        - name: low_stock
+          in: query
+          schema:
+            type: boolean
+          description: Show only items below reorder point
+        - name: out_of_stock
+          in: query
+          schema:
+            type: boolean
+          description: Show only out-of-stock items
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Show only active items
+      responses:
+        '200':
+          description: Inventory items retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryItem'
+                      meta:
+                        allOf:
+                          - $ref: '../../components/schemas.yaml#/PaginationMeta'
+                          - type: object
+                            properties:
+                              summary:
+                                $ref: '../../schemas/content-management/inventory.yaml#/InventorySummary'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Inventory Items
+      summary: Create Inventory Item
+      description: |
+        Create new inventory item with complete specifications.
+        
+        **Creation Features:**
+        - Full item specification with etching-specific properties
+        - Automatic stock initialization
+        - Supplier relationship setup
+        - Reorder point configuration
+        - Cost and pricing setup
+        - Quality control requirements
+      operationId: createInventoryItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/inventory.yaml#/InventoryItemCreateInput'
+            examples:
+              brass_material:
+                summary: Create brass sheet material
+                value:
+                  item_code: "MTL-BRASS-002"
+                  item_name: "Brass Sheet 3mm Thickness"
+                  description: "High-grade brass sheet for premium etching applications"
+                  category: "Raw Materials"
+                  subcategory: "Metals"
+                  item_type: "material"
+                  unit_of_measure: "kg"
+                  material_type: "Brass"
+                  thickness: 3.0
+                  minimum_stock_level: 15.0
+                  reorder_point: 25.0
+                  standard_cost: 55000.00
+                  is_active: true
+      responses:
+        '201':
+          $ref: '../../components/responses.yaml#/CreatedResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '409':
+          $ref: '../../components/responses.yaml#/Conflict'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /admin/inventory/items/{id}:
+    get:
+      tags:
+        - Inventory Items
+      summary: Get Inventory Item Details
+      description: |
+        Retrieve complete inventory item details including stock levels,
+        movement history, supplier information, and related data.
+      operationId: getInventoryItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Inventory item ID
+        - name: include
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [movements, suppliers, alerts, locations]
+          description: Include related data
+      responses:
+        '200':
+          description: Inventory item retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/inventory.yaml#/InventoryItem'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    put:
+      tags:
+        - Inventory Items
+      summary: Update Inventory Item
+      description: |
+        Update inventory item details including specifications,
+        stock parameters, and configurations.
+      operationId: updateInventoryItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Inventory item ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/inventory.yaml#/InventoryItemUpdateInput'
+      responses:
+        '200':
+          $ref: '../../components/responses.yaml#/UpdatedResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Inventory Items
+      summary: Delete Inventory Item
+      description: |
+        Soft delete inventory item. Items with stock or pending movements cannot be deleted.
+      operationId: deleteInventoryItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Inventory item ID
+      responses:
+        '200':
+          $ref: '../../components/responses.yaml#/DeletedResponse'
+        '400':
+          description: Cannot delete item with existing stock or movements
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Locations Management
+  /admin/inventory/locations:
+    get:
+      tags:
+        - Inventory Locations
+      summary: List Storage Locations
+      description: |
+        Retrieve all inventory storage locations with capacity information and hierarchy.
+      operationId: listInventoryLocations
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: location_type
+          in: query
+          schema:
+            type: string
+            enum: [warehouse, production, quality_control, shipping, receiving, quarantine, scrap]
+          description: Filter by location type
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Show only active locations
+      responses:
+        '200':
+          description: Locations retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryLocation'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Inventory Locations
+      summary: Create Storage Location
+      description: |
+        Create new storage location with capacity and environmental specifications.
+      operationId: createInventoryLocation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/inventory.yaml#/InventoryLocationCreateInput'
+            examples:
+              main_warehouse:
+                summary: Create main warehouse location
+                value:
+                  location_code: "WH-01-B-01"
+                  location_name: "Main Warehouse - Section B - Bay 01"
+                  description: "Secondary storage for finished goods"
+                  location_type: "warehouse"
+                  total_capacity: 500.0
+                  is_active: true
+      responses:
+        '201':
+          $ref: '../../components/responses.yaml#/CreatedResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '409':
+          $ref: '../../components/responses.yaml#/Conflict'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Movements Management
+  /admin/inventory/movements:
+    get:
+      tags:
+        - Inventory Movements
+      summary: List Inventory Movements
+      description: |
+        Retrieve inventory movement history with filtering and audit trail.
+        
+        **Movement Types:**
+        - Receipt: Incoming stock from suppliers
+        - Issue: Outbound stock to customers/production
+        - Transfer: Inter-location stock transfers
+        - Adjustment: Stock level corrections
+        - Production: Consumption and output from production
+        - Return: Customer/supplier returns
+        - Scrap: Waste and damaged goods
+      operationId: listInventoryMovements
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - name: item_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific item
+        - name: location_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by location (from or to)
+        - name: movement_type
+          in: query
+          schema:
+            type: string
+            enum: [receipt, issue, transfer, adjustment, production_consumption, production_output, return, scrap]
+          description: Filter by movement type
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter from date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Filter to date
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, cancelled]
+          description: Filter by approval status
+      responses:
+        '200':
+          description: Movements retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryMovement'
+                      meta:
+                        $ref: '../../components/schemas.yaml#/PaginationMeta'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Inventory Movements
+      summary: Create Inventory Movement
+      description: |
+        Create new inventory movement record. Automatically updates stock levels upon approval.
+      operationId: createInventoryMovement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/inventory.yaml#/InventoryMovementCreateInput'
+            examples:
+              stock_receipt:
+                summary: Stock receipt from supplier
+                value:
+                  movement_type: "receipt"
+                  item_id: "550e8400-e29b-41d4-a716-446655440000"
+                  to_location_id: "660f9500-f39c-52e5-b827-557766551111"
+                  quantity: 100.00
+                  unit_cost: 50000.00
+                  batch_number: "BATCH-2024-002"
+                  reference_type: "purchase_order"
+                  reference_number: "PO-2024-002"
+                  reason_code: "PURCHASE_RECEIPT"
+                  notes: "Received from supplier XYZ Corp"
+      responses:
+        '201':
+          $ref: '../../components/responses.yaml#/CreatedResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /admin/inventory/movements/{id}/approve:
+    post:
+      tags:
+        - Inventory Movements
+      summary: Approve Inventory Movement
+      description: |
+        Approve pending inventory movement. This will update actual stock levels.
+      operationId: approveInventoryMovement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Movement ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approval_notes:
+                  type: string
+                  description: Approval notes
+                  example: "Verified receipt and quality check passed"
+      responses:
+        '200':
+          description: Movement approved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/inventory.yaml#/InventoryMovement'
+        '400':
+          description: Movement cannot be approved (invalid status)
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Adjustments Management
+  /admin/inventory/adjustments:
+    get:
+      tags:
+        - Inventory Adjustments
+      summary: List Inventory Adjustments
+      description: |
+        Retrieve inventory adjustments and cycle count records.
+      operationId: listInventoryAdjustments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - name: adjustment_type
+          in: query
+          schema:
+            type: string
+            enum: [cycle_count, physical_count, shrinkage, damage, obsolete, correction, write_off]
+          description: Filter by adjustment type
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, cancelled]
+          description: Filter by approval status
+      responses:
+        '200':
+          description: Adjustments retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryAdjustment'
+                      meta:
+                        $ref: '../../components/schemas.yaml#/PaginationMeta'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Alerts Management
+  /admin/inventory/alerts:
+    get:
+      tags:
+        - Inventory Alerts
+      summary: List Inventory Alerts
+      description: |
+        Retrieve active inventory alerts including low stock, expiry warnings, and quality issues.
+      operationId: listInventoryAlerts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: alert_type
+          in: query
+          schema:
+            type: string
+            enum: [low_stock, out_of_stock, overstock, expiry_warning, expired, slow_moving, dead_stock, quality_issue]
+          description: Filter by alert type
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+          description: Filter by priority level
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, acknowledged, resolved, dismissed]
+          description: Filter by alert status
+      responses:
+        '200':
+          description: Alerts retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryAlert'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /admin/inventory/alerts/{id}/acknowledge:
+    post:
+      tags:
+        - Inventory Alerts
+      summary: Acknowledge Alert
+      description: |
+        Acknowledge inventory alert to mark it as seen and being handled.
+      operationId: acknowledgeInventoryAlert
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Alert ID
+      responses:
+        '200':
+          $ref: '../../components/responses.yaml#/SuccessResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Count Sessions
+  /admin/inventory/counts:
+    get:
+      tags:
+        - Inventory Counts
+      summary: List Count Sessions
+      description: |
+        Retrieve inventory count sessions including scheduled and completed counts.
+      operationId: listInventoryCounts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [planned, in_progress, completed, cancelled, on_hold]
+          description: Filter by count status
+        - name: count_type
+          in: query
+          schema:
+            type: string
+            enum: [full_physical, cycle_count, spot_check, abc_analysis, annual_count]
+          description: Filter by count type
+      responses:
+        '200':
+          description: Count sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryCount'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Reservations Management
+  /admin/inventory/reservations:
+    get:
+      tags:
+        - Inventory Reservations
+      summary: List Stock Reservations
+      description: |
+        Retrieve inventory reservations for orders and production.
+      operationId: listInventoryReservations
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: reservation_type
+          in: query
+          schema:
+            type: string
+            enum: [sales_order, production_order, transfer_order, quality_hold, manual_hold]
+          description: Filter by reservation type
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, partial, fulfilled, cancelled, expired]
+          description: Filter by reservation status
+      responses:
+        '200':
+          description: Reservations retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryReservation'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Inventory Suppliers Management
+  /admin/inventory/suppliers:
+    get:
+      tags:
+        - Inventory Suppliers
+      summary: List Item Suppliers
+      description: |
+        Retrieve supplier relationships for inventory items including pricing and lead times.
+      operationId: listInventorySuppliers
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: item_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific item
+        - name: supplier_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by specific supplier
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Show only active supplier relationships
+      responses:
+        '200':
+          description: Suppliers retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/inventory.yaml#/InventorySupplier'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Bulk Operations
+  /admin/inventory/bulk/stock-update:
+    post:
+      tags:
+        - Inventory Bulk Operations
+      summary: Bulk Stock Update
+      description: |
+        Update stock levels for multiple items simultaneously.
+        Useful for physical count results or mass adjustments.
+      operationId: bulkStockUpdate
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/inventory.yaml#/BulkStockUpdateInput'
+            examples:
+              physical_count_update:
+                summary: Bulk update from physical count
+                value:
+                  updates:
+                    - item_id: "550e8400-e29b-41d4-a716-446655440000"
+                      location_id: "660f9500-f39c-52e5-b827-557766551111"
+                      new_quantity: 95.50
+                      reason: "Physical count adjustment - January 2024"
+                    - item_id: "770fa610-a39d-62f6-c938-668877662222"
+                      location_id: "660f9500-f39c-52e5-b827-557766551111"
+                      new_quantity: 48.25
+                      reason: "Physical count adjustment - January 2024"
+      responses:
+        '200':
+          description: Bulk update completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          updated_count:
+                            type: integer
+                            example: 2
+                          failed_updates:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                item_id:
+                                  type: string
+                                  format: uuid
+                                error:
+                                  type: string
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # Reports & Analytics
+  /admin/inventory/reports/low-stock:
+    get:
+      tags:
+        - Inventory Reports
+      summary: Low Stock Report
+      description: |
+        Generate comprehensive low stock report with recommended actions.
+      operationId: getLowStockReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by item category
+        - name: location_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by location
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, csv, excel]
+            default: json
+          description: Report format
+      responses:
+        '200':
+          description: Low stock report generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/inventory.yaml#/LowStockReport'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /admin/inventory/reports/valuation:
+    get:
+      tags:
+        - Inventory Reports
+      summary: Inventory Valuation Report
+      description: |
+        Generate inventory valuation report with cost analysis by different methods.
+      operationId: getInventoryValuationReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: as_of_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Valuation date (defaults to current date)
+        - name: valuation_method
+          in: query
+          schema:
+            type: string
+            enum: [FIFO, LIFO, AVERAGE, STANDARD]
+          description: Override item valuation methods
+        - name: location_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by location
+      responses:
+        '200':
+          description: Valuation report generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          report_date:
+                            type: string
+                            format: date-time
+                          total_items:
+                            type: integer
+                          total_quantity:
+                            type: number
+                            format: decimal
+                          total_value:
+                            type: number
+                            format: decimal
+                          valuation_breakdown:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                item:
+                                  $ref: '../../schemas/content-management/inventory.yaml#/InventoryItem'
+                                quantity:
+                                  type: number
+                                  format: decimal
+                                unit_cost:
+                                  type: number
+                                  format: decimal
+                                total_value:
+                                  type: number
+                                  format: decimal
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'

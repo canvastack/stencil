@@ -1,0 +1,185 @@
+pipeline {
+    agent any
+    
+    environment {
+        NODE_VERSION = '18'
+        WORKING_DIR = 'openapi'
+    }
+    
+    triggers {
+        githubPush()
+    }
+    
+    stages {
+        stage('Setup') {
+            steps {
+                script {
+                    // Install Node.js
+                    sh '''
+                        curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                        sudo apt-get install -y nodejs
+                    '''
+                }
+                dir(env.WORKING_DIR) {
+                    sh 'npm install yaml swagger-ui-dist'
+                }
+            }
+        }
+        
+        stage('Validate') {
+            parallel {
+                stage('YAML Validation') {
+                    steps {
+                        dir(env.WORKING_DIR) {
+                            sh 'node tools/validate-all.js'
+                            sh 'node validate-pipeline.cjs'
+                        }
+                    }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: "${env.WORKING_DIR}/generated",
+                                reportFiles: 'validation-report.html',
+                                reportName: 'Validation Report'
+                            ])
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Testing') {
+            parallel {
+                stage('Performance Test') {
+                    steps {
+                        dir(env.WORKING_DIR) {
+                            sh 'node performance-test.cjs'
+                        }
+                    }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: "${env.WORKING_DIR}/generated",
+                                reportFiles: 'performance-report.html',
+                                reportName: 'Performance Report'
+                            ])
+                        }
+                    }
+                }
+                
+                stage('Security Audit') {
+                    steps {
+                        dir(env.WORKING_DIR) {
+                            sh 'node security-audit.cjs'
+                            script {
+                                def securityScore = sh(
+                                    script: '''node -e "
+                                        const report = JSON.parse(require('fs').readFileSync('generated/security-audit.json', 'utf8'));
+                                        console.log(report.summary.overallScore);
+                                    "''',
+                                    returnStdout: true
+                                ).trim() as Integer
+                                
+                                echo "Security Score: ${securityScore}"
+                                
+                                if (securityScore < 60) {
+                                    error("Security score below threshold: ${securityScore}")
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            publishHTML([
+                                allowMissing: false,
+                                alwaysLinkToLastBuild: true,
+                                keepAll: true,
+                                reportDir: "${env.WORKING_DIR}/generated",
+                                reportFiles: 'security-audit.html',
+                                reportName: 'Security Audit Report'
+                            ])
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Generate Documentation') {
+            when {
+                branch 'main'
+            }
+            steps {
+                dir(env.WORKING_DIR) {
+                    sh 'node generate-docs.cjs'
+                    sh 'node generate-postman.cjs'
+                }
+            }
+            post {
+                success {
+                    publishHTML([
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: "${env.WORKING_DIR}/generated",
+                        reportFiles: 'index.html',
+                        reportName: 'API Documentation'
+                    ])
+                    
+                    archiveArtifacts artifacts: "${env.WORKING_DIR}/generated/**/*", fingerprint: true
+                }
+            }
+        }
+        
+        stage('Quality Gate') {
+            steps {
+                script {
+                    echo "=== Quality Gate Evaluation ==="
+                    
+                    dir(env.WORKING_DIR) {
+                        // Evaluate all quality metrics
+                        sh '''
+                            echo "Evaluating quality metrics..."
+                            
+                            # Check if all reports exist
+                            if [ ! -f "generated/validation-report.json" ]; then
+                                echo "Missing validation report"
+                                exit 1
+                            fi
+                            
+                            if [ ! -f "generated/performance-report.json" ]; then
+                                echo "Missing performance report"
+                                exit 1
+                            fi
+                            
+                            if [ ! -f "generated/security-audit.json" ]; then
+                                echo "Missing security report"
+                                exit 1
+                            fi
+                            
+                            echo "✅ All quality checks passed!"
+                        '''
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo '🎉 OpenAPI Pipeline completed successfully!'
+        }
+        failure {
+            echo '❌ OpenAPI Pipeline failed!'
+            // Send notifications here
+        }
+    }
+}

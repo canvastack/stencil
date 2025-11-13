@@ -1,0 +1,239 @@
+name: OpenAPI Specification CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'openapi/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'openapi/**'
+
+jobs:
+  validate-openapi:
+    runs-on: ubuntu-latest
+    name: 🔍 Validate OpenAPI Specifications
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      working-directory: openapi
+      run: |
+        npm install yaml
+        npm install swagger-ui-dist
+    
+    - name: Run YAML validation
+      working-directory: openapi
+      run: node tools/validate-all.js
+    
+    - name: Run comprehensive validation pipeline
+      working-directory: openapi
+      run: node validate-pipeline.cjs
+    
+    - name: Upload validation reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: validation-reports
+        path: |
+          openapi/generated/validation-report.html
+          openapi/generated/validation-report.json
+        retention-days: 30
+
+  performance-test:
+    runs-on: ubuntu-latest
+    name: ⚡ Performance Testing
+    needs: validate-openapi
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      working-directory: openapi
+      run: npm install yaml
+    
+    - name: Run performance tests
+      working-directory: openapi
+      run: node performance-test.cjs
+    
+    - name: Upload performance reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-reports
+        path: |
+          openapi/generated/performance-report.html
+          openapi/generated/performance-report.json
+
+  security-audit:
+    runs-on: ubuntu-latest
+    name: 🛡️ Security Audit
+    needs: validate-openapi
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      working-directory: openapi
+      run: npm install yaml
+    
+    - name: Run security audit
+      working-directory: openapi
+      run: node security-audit.cjs
+    
+    - name: Check security score
+      working-directory: openapi
+      run: |
+        SECURITY_SCORE=$(node -e "
+          const report = JSON.parse(require('fs').readFileSync('generated/security-audit.json', 'utf8'));
+          console.log(report.summary.overallScore);
+        ")
+        echo "Security Score: $SECURITY_SCORE"
+        if [ "$SECURITY_SCORE" -lt 60 ]; then
+          echo "::warning::Security score is below 60. Consider addressing security findings."
+        fi
+        if [ "$SECURITY_SCORE" -lt 30 ]; then
+          echo "::error::Critical security score. Deployment blocked."
+          exit 1
+        fi
+    
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          openapi/generated/security-audit.html
+          openapi/generated/security-audit.json
+
+  generate-documentation:
+    runs-on: ubuntu-latest
+    name: 📚 Generate Documentation
+    needs: [validate-openapi, performance-test, security-audit]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      working-directory: openapi
+      run: |
+        npm install yaml
+        npm install swagger-ui-dist
+    
+    - name: Generate HTML documentation
+      working-directory: openapi
+      run: node generate-docs.cjs
+    
+    - name: Generate Postman collection
+      working-directory: openapi
+      run: node generate-postman.cjs
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: openapi/generated
+        destination_dir: api-docs
+
+  quality-gate:
+    runs-on: ubuntu-latest
+    name: 🚪 Quality Gate
+    needs: [validate-openapi, performance-test, security-audit]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+    
+    - name: Evaluate quality metrics
+      run: |
+        echo "=== Quality Gate Evaluation ==="
+        
+        # Check validation results
+        if [ -f "validation-reports/validation-report.json" ]; then
+          VALIDATION_SCORE=$(node -e "
+            const report = JSON.parse(require('fs').readFileSync('validation-reports/validation-report.json', 'utf8'));
+            console.log(report.summary.validationScore || 0);
+          ")
+          echo "Validation Score: $VALIDATION_SCORE/100"
+          if [ "$VALIDATION_SCORE" -lt 95 ]; then
+            echo "::error::Validation score below 95%. Quality gate failed."
+            exit 1
+          fi
+        fi
+        
+        # Check performance results
+        if [ -f "performance-reports/performance-report.json" ]; then
+          PERFORMANCE_SCORE=$(node -e "
+            const report = JSON.parse(require('fs').readFileSync('performance-reports/performance-report.json', 'utf8'));
+            console.log(report.summary.performanceScore || 0);
+          ")
+          echo "Performance Score: $PERFORMANCE_SCORE/100"
+          if [ "$PERFORMANCE_SCORE" -lt 70 ]; then
+            echo "::warning::Performance score below 70. Consider optimization."
+          fi
+        fi
+        
+        # Check security results
+        if [ -f "security-reports/security-audit.json" ]; then
+          SECURITY_SCORE=$(node -e "
+            const report = JSON.parse(require('fs').readFileSync('security-reports/security-audit.json', 'utf8'));
+            console.log(report.summary.overallScore || 0);
+          ")
+          echo "Security Score: $SECURITY_SCORE/100"
+          if [ "$SECURITY_SCORE" -lt 60 ]; then
+            echo "::error::Security score below 60%. Quality gate failed."
+            exit 1
+          fi
+        fi
+        
+        echo "✅ Quality gate passed!"
+
+  notify:
+    runs-on: ubuntu-latest
+    name: 📢 Notification
+    needs: [quality-gate, generate-documentation]
+    if: always()
+    
+    steps:
+    - name: Notify on success
+      if: ${{ needs.quality-gate.result == 'success' }}
+      run: |
+        echo "🎉 OpenAPI pipeline completed successfully!"
+        echo "📚 Documentation available at: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/api-docs/"
+    
+    - name: Notify on failure
+      if: ${{ needs.quality-gate.result == 'failure' }}
+      run: |
+        echo "❌ OpenAPI pipeline failed quality gate!"
+        echo "Please check the validation, performance, and security reports."

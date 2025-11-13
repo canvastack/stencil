@@ -1,0 +1,962 @@
+# Media Library Management Schemas for Stencil CMS
+# Complete OpenAPI schemas for Media Library System (120+ fields, 7 tables)
+# Multi-tenant media management with advanced features
+
+# ================================================================
+# CORE MEDIA ENTITIES  
+# ================================================================
+
+# Media File Entity - Main file storage and metadata
+MediaFile:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - filename
+        - original_filename
+        - file_path
+        - file_url
+        - file_type
+        - mime_type
+        - file_size
+        - uploaded_by
+      properties:
+        # File Organization
+        folder_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to parent media folder
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # File Identity
+        filename:
+          type: string
+          maxLength: 255
+          description: System-generated unique filename
+          example: "product_hero_20241112_150342.webp"
+        original_filename:
+          type: string
+          maxLength: 255
+          description: Original filename from user upload
+          example: "my_awesome_design.png"
+
+        # File Location
+        file_path:
+          type: string
+          maxLength: 1000
+          description: Full file system path
+          example: "/storage/tenant123/products/hero/product_hero_20241112_150342.webp"
+        file_url:
+          type: string
+          format: uri
+          maxLength: 1000
+          description: Public accessible URL
+          example: "https://cdn.stencil.com/tenant123/products/hero/product_hero_20241112_150342.webp"
+
+        # File Properties
+        file_type:
+          type: string
+          enum: ["image", "document", "video", "audio", "design", "archive"]
+          description: File category for organization and processing
+          example: "image"
+        mime_type:
+          type: string
+          maxLength: 100
+          description: Standard MIME type
+          example: "image/webp"
+        file_size:
+          type: integer
+          format: int64
+          minimum: 1
+          description: File size in bytes
+          example: 2048576
+
+        # Media Dimensions (for images/videos)
+        width:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Image or video width in pixels
+          example: 1920
+        height:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Image or video height in pixels
+          example: 1080
+        duration:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Video or audio duration in seconds
+          example: 120
+
+        # Content Description
+        alt_text:
+          type: string
+          nullable: true
+          description: Alternative text for accessibility
+          example: "Custom etched glass with company logo"
+        caption:
+          type: string
+          nullable: true
+          description: Display caption for media
+          example: "Professional etching on premium glass material"
+        description:
+          type: string
+          nullable: true
+          description: Detailed description of media content
+          example: "High-quality etched glass piece featuring company logo with precision detailing"
+
+        # Technical Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: File-specific metadata (camera settings, software used, etc.)
+          example:
+            camera: "Canon EOS R5"
+            lens: "RF 24-70mm f/2.8L IS USM" 
+            iso: 400
+            software: "Adobe Photoshop 2024"
+        exif_data:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Image EXIF data extraction
+          example:
+            DateTimeOriginal: "2024:11:12 15:03:42"
+            ColorSpace: "sRGB"
+            GPSLatitude: "-6.2"
+            GPSLongitude: "106.8"
+
+        # Access Control
+        is_public:
+          type: boolean
+          default: false
+          description: Whether file is publicly accessible without authentication
+          example: false
+        is_optimized:
+          type: boolean
+          default: false
+          description: Whether file has been processed/optimized
+          example: true
+
+        # Storage Configuration
+        storage_provider:
+          type: string
+          enum: ["local", "s3", "cloudinary", "google_cloud"]
+          default: "local"
+          description: Storage backend used
+          example: "s3"
+        storage_path:
+          type: string
+          maxLength: 1000
+          nullable: true
+          description: Provider-specific storage path
+          example: "s3://my-bucket/tenant123/products/hero/"
+
+        # Upload Tracking
+        upload_source:
+          type: string
+          enum: ["admin", "customer", "api", "bulk"]
+          default: "admin"
+          description: Source of file upload
+          example: "admin"
+        uploaded_by:
+          type: string
+          format: uuid
+          description: Reference to user who uploaded file
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Usage Analytics
+        download_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times file has been downloaded
+          example: 42
+        last_accessed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time file was accessed
+          example: "2024-11-12T14:30:00Z"
+
+# Media Folder Entity - Hierarchical organization
+MediaFolder:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - name
+        - slug
+        - folder_path
+        - created_by
+      properties:
+        # Folder Hierarchy
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to parent folder (null = root)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Folder Identity
+        name:
+          type: string
+          maxLength: 255
+          description: Folder display name
+          example: "Product Images"
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9-]+$'
+          description: URL-safe folder identifier
+          example: "product-images"
+        description:
+          type: string
+          nullable: true
+          description: Folder purpose and description
+          example: "High-resolution product photography for catalog"
+
+        # Folder Structure
+        folder_path:
+          type: string
+          maxLength: 1000
+          description: Full hierarchical path
+          example: "/products/hero-images/glass-etching"
+
+        # Display Properties
+        is_public:
+          type: boolean
+          default: false
+          description: Whether folder contents are publicly accessible
+          example: false
+        sort_order:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order among sibling folders
+          example: 1
+
+        # Access Control
+        permissions:
+          type: object
+          nullable: true
+          description: Role-based folder permissions
+          properties:
+            view:
+              type: array
+              items:
+                type: string
+              example: ["admin", "manager", "staff"]
+            upload:
+              type: array
+              items:
+                type: string
+              example: ["admin", "manager"]
+            edit:
+              type: array
+              items:
+                type: string
+              example: ["admin", "manager"]
+            delete:
+              type: array
+              items:
+                type: string
+              example: ["admin"]
+
+        # Creator Reference
+        created_by:
+          type: string
+          format: uuid
+          description: Reference to user who created folder
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+# Media Tag Entity - Categorization and organization
+MediaTag:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - name
+        - slug
+        - created_by
+      properties:
+        # Tag Identity
+        name:
+          type: string
+          maxLength: 100
+          description: Tag display name
+          example: "Glass Etching"
+        slug:
+          type: string
+          maxLength: 100
+          pattern: '^[a-z0-9-]+$'
+          description: URL-safe tag identifier
+          example: "glass-etching"
+        description:
+          type: string
+          nullable: true
+          description: Tag purpose and description
+          example: "Images and designs related to glass etching projects"
+
+        # Visual Properties
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          description: Hex color code for tag display
+          example: "#28a745"
+
+        # Organization
+        category:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Tag category for grouping
+          example: "materials"
+
+        # Usage Tracking
+        usage_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of files using this tag
+          example: 15
+
+        # Creator Reference
+        created_by:
+          type: string
+          format: uuid
+          description: Reference to user who created tag
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+# Media Usage Entity - Tracking file usage across system
+MediaUsage:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - media_file_id
+        - usage_type
+        - usage_context
+      properties:
+        # Media Reference
+        media_file_id:
+          type: string
+          format: uuid
+          description: Reference to media file being used
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Usage Classification
+        usage_type:
+          type: string
+          enum: ["product_image", "gallery_image", "document_attachment", "design_file", "reference_image", "portfolio_item"]
+          description: Type of usage context
+          example: "product_image"
+        usage_context:
+          type: string
+          maxLength: 100
+          description: Specific context of usage
+          example: "hero_image"
+
+        # Reference Information
+        reference_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID of related entity using this media
+          example: 12345
+        reference_table:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Table name of related entity
+          example: "products"
+
+        # Additional Metadata
+        usage_metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Context-specific usage metadata
+          example:
+            display_position: "primary"
+            crop_coordinates: { x: 100, y: 50, width: 800, height: 600 }
+            alt_text_override: "Custom product showcase"
+
+# Media Transformation Entity - File processing and versions
+MediaTransformation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - original_file_id
+        - transformation_name
+        - transformation_params
+        - transformed_filename
+        - transformed_path
+        - transformed_url
+        - file_size
+      properties:
+        # Source Reference
+        original_file_id:
+          type: string
+          format: uuid
+          description: Reference to original media file
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Transformation Definition
+        transformation_name:
+          type: string
+          maxLength: 100
+          description: Name/type of transformation applied
+          example: "thumbnail_300x300"
+        transformation_params:
+          type: object
+          description: Parameters used for transformation
+          properties:
+            width:
+              type: integer
+              example: 300
+            height:
+              type: integer
+              example: 300
+            quality:
+              type: integer
+              minimum: 1
+              maximum: 100
+              example: 85
+            format:
+              type: string
+              example: "webp"
+            crop:
+              type: string
+              enum: ["center", "top", "bottom", "left", "right", "smart"]
+              example: "center"
+            watermark:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                position:
+                  type: string
+                  enum: ["top-left", "top-right", "bottom-left", "bottom-right", "center"]
+                  example: "bottom-right"
+                opacity:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  example: 0.7
+
+        # Transformed File Properties
+        transformed_filename:
+          type: string
+          maxLength: 255
+          description: Filename of transformed file
+          example: "product_hero_20241112_150342_thumb_300x300.webp"
+        transformed_path:
+          type: string
+          maxLength: 1000
+          description: File system path of transformed file
+          example: "/storage/tenant123/products/hero/thumbs/product_hero_20241112_150342_thumb_300x300.webp"
+        transformed_url:
+          type: string
+          format: uri
+          maxLength: 1000
+          description: Public URL of transformed file
+          example: "https://cdn.stencil.com/tenant123/products/hero/thumbs/product_hero_20241112_150342_thumb_300x300.webp"
+
+        # File Properties
+        file_size:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Size of transformed file in bytes
+          example: 45678
+        width:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Width of transformed image
+          example: 300
+        height:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Height of transformed image
+          example: 300
+
+# Media Version Entity - Version history and rollback
+MediaVersion:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - media_file_id
+        - version_number
+        - previous_filename
+        - previous_file_path
+        - previous_file_url
+        - previous_file_size
+        - change_type
+        - created_by
+      properties:
+        # File Reference
+        media_file_id:
+          type: string
+          format: uuid
+          description: Reference to current media file
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Version Information
+        version_number:
+          type: integer
+          minimum: 1
+          description: Sequential version number
+          example: 3
+        version_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Human-readable version name
+          example: "Updated logo version"
+
+        # Previous Version Data
+        previous_filename:
+          type: string
+          maxLength: 255
+          description: Previous version filename
+          example: "company_logo_v2.png"
+        previous_file_path:
+          type: string
+          maxLength: 1000
+          description: Previous version file path
+          example: "/storage/tenant123/logos/company_logo_v2.png"
+        previous_file_url:
+          type: string
+          format: uri
+          maxLength: 1000
+          description: Previous version public URL
+          example: "https://cdn.stencil.com/tenant123/logos/company_logo_v2.png"
+        previous_file_size:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Previous version file size in bytes
+          example: 156789
+
+        # Change Information
+        change_type:
+          type: string
+          enum: ["upload", "replace", "edit", "optimize", "transform"]
+          description: Type of change that created this version
+          example: "replace"
+        change_description:
+          type: string
+          nullable: true
+          description: Description of changes made
+          example: "Updated logo with new brand colors"
+        change_metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Additional change-specific metadata
+          example:
+            editor: "Adobe Photoshop"
+            changes: ["color_correction", "logo_update"]
+            approval_status: "approved"
+
+        # Creator Reference
+        created_by:
+          type: string
+          format: uuid
+          description: Reference to user who made the change
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+# Media Analytics Entity - Usage and performance tracking
+MediaAnalytics:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - media_file_id
+        - event_type
+      properties:
+        # Media Reference
+        media_file_id:
+          type: string
+          format: uuid
+          description: Reference to media file
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+        # Event Classification
+        event_type:
+          type: string
+          enum: ["view", "download", "share", "embed", "transform", "delete"]
+          description: Type of analytics event
+          example: "view"
+        event_context:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Context where event occurred
+          example: "product_detail_page"
+
+        # User Session Information
+        user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Reference to authenticated user (if any)
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        session_id:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Session identifier
+          example: "sess_abc123def456"
+        ip_address:
+          type: string
+          format: ipv4
+          nullable: true
+          description: User IP address
+          example: "192.168.1.100"
+        user_agent:
+          type: string
+          nullable: true
+          description: User agent string
+          example: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+        # Page Context
+        referrer_url:
+          type: string
+          format: uri
+          maxLength: 1000
+          nullable: true
+          description: Referrer page URL
+          example: "https://example.com/products/glass-etching"
+        page_url:
+          type: string
+          format: uri
+          maxLength: 1000
+          nullable: true
+          description: Current page URL
+          example: "https://example.com/gallery/custom-designs"
+
+        # Additional Metadata
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: Event-specific metadata
+          example:
+            device_type: "desktop"
+            browser: "Chrome"
+            os: "Windows"
+            screen_resolution: "1920x1080"
+            load_time: 1.2
+            cdn_cache_hit: true
+
+# ================================================================
+# REQUEST/RESPONSE SCHEMAS
+# ================================================================
+
+# Create Media File Input
+MediaFileCreateInput:
+  type: object
+  required:
+    - file
+  properties:
+    file:
+      type: string
+      format: binary
+      description: File to upload
+    folder_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Target folder ID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    alt_text:
+      type: string
+      nullable: true
+      maxLength: 500
+      description: Alternative text for accessibility
+      example: "Custom etched glass design"
+    caption:
+      type: string
+      nullable: true
+      maxLength: 500
+      description: Display caption
+      example: "Professional etching work"
+    description:
+      type: string
+      nullable: true
+      description: Detailed description
+      example: "High-quality etched glass piece with precision detailing"
+    tags:
+      type: array
+      items:
+        type: string
+        format: uuid
+      description: Tag IDs to assign
+      example: ["123e4567-e89b-12d3-a456-426614174000"]
+    is_public:
+      type: boolean
+      default: false
+      description: Make file publicly accessible
+      example: false
+
+# Update Media File Input
+MediaFileUpdateInput:
+  type: object
+  properties:
+    folder_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Move to different folder
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    filename:
+      type: string
+      maxLength: 255
+      description: Update system filename
+      example: "updated_filename.jpg"
+    alt_text:
+      type: string
+      nullable: true
+      maxLength: 500
+      description: Update alternative text
+      example: "Updated alt text"
+    caption:
+      type: string
+      nullable: true
+      maxLength: 500
+      description: Update caption
+      example: "Updated caption"
+    description:
+      type: string
+      nullable: true
+      description: Update description
+      example: "Updated description"
+    tags:
+      type: array
+      items:
+        type: string
+        format: uuid
+      description: Replace assigned tags
+      example: ["123e4567-e89b-12d3-a456-426614174000"]
+    is_public:
+      type: boolean
+      description: Update public access flag
+      example: true
+
+# Media File with Relations
+MediaFileWithRelations:
+  allOf:
+    - $ref: '#/MediaFile'
+    - type: object
+      properties:
+        folder:
+          $ref: '#/MediaFolder'
+          nullable: true
+        tags:
+          type: array
+          items:
+            $ref: '#/MediaTag'
+        transformations:
+          type: array
+          items:
+            $ref: '#/MediaTransformation'
+        usage:
+          type: array
+          items:
+            $ref: '#/MediaUsage'
+
+# Create Media Folder Input
+MediaFolderCreateInput:
+  type: object
+  required:
+    - name
+  properties:
+    parent_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Parent folder ID (null for root)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    name:
+      type: string
+      maxLength: 255
+      description: Folder name
+      example: "Product Images"
+    description:
+      type: string
+      nullable: true
+      description: Folder description
+      example: "High-resolution product photography"
+    is_public:
+      type: boolean
+      default: false
+      description: Public access flag
+      example: false
+    sort_order:
+      type: integer
+      minimum: 0
+      default: 0
+      description: Display order
+      example: 1
+
+# Update Media Folder Input
+MediaFolderUpdateInput:
+  type: object
+  properties:
+    parent_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Move to different parent
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    name:
+      type: string
+      maxLength: 255
+      description: Update folder name
+      example: "Updated Folder Name"
+    description:
+      type: string
+      nullable: true
+      description: Update description
+      example: "Updated description"
+    is_public:
+      type: boolean
+      description: Update public access
+      example: true
+    sort_order:
+      type: integer
+      minimum: 0
+      description: Update display order
+      example: 2
+
+# Create Media Tag Input
+MediaTagCreateInput:
+  type: object
+  required:
+    - name
+  properties:
+    name:
+      type: string
+      maxLength: 100
+      description: Tag name
+      example: "Glass Etching"
+    description:
+      type: string
+      nullable: true
+      description: Tag description
+      example: "Images related to glass etching projects"
+    color:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      nullable: true
+      description: Hex color code
+      example: "#28a745"
+    category:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Tag category
+      example: "materials"
+
+# Update Media Tag Input
+MediaTagUpdateInput:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 100
+      description: Update tag name
+      example: "Updated Tag Name"
+    description:
+      type: string
+      nullable: true
+      description: Update description
+      example: "Updated description"
+    color:
+      type: string
+      pattern: '^#[0-9A-Fa-f]{6}$'
+      nullable: true
+      description: Update color
+      example: "#dc3545"
+    category:
+      type: string
+      maxLength: 50
+      nullable: true
+      description: Update category
+      example: "updated_category"
+
+# Media Analytics Summary
+MediaAnalyticsSummary:
+  type: object
+  properties:
+    total_files:
+      type: integer
+      description: Total number of files
+      example: 150
+    total_storage_used:
+      type: integer
+      format: int64
+      description: Total storage used in bytes
+      example: 1073741824
+    most_viewed_files:
+      type: array
+      items:
+        allOf:
+          - $ref: '#/MediaFile'
+          - type: object
+            properties:
+              view_count:
+                type: integer
+                example: 42
+    storage_by_type:
+      type: object
+      additionalProperties:
+        type: integer
+        format: int64
+      description: Storage usage by file type
+      example:
+        image: 524288000
+        document: 314572800
+        video: 209715200
+    activity_timeline:
+      type: array
+      items:
+        type: object
+        properties:
+          date:
+            type: string
+            format: date
+            example: "2024-11-12"
+          uploads:
+            type: integer
+            example: 5
+          downloads:
+            type: integer
+            example: 23
+          views:
+            type: integer
+            example: 156

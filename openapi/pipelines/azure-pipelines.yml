@@ -1,0 +1,125 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - openapi/*
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - openapi/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '18.x'
+  workingDirectory: 'openapi'
+
+stages:
+- stage: Validate
+  displayName: 'Validate OpenAPI Specifications'
+  jobs:
+  - job: ValidateYAML
+    displayName: 'YAML Validation'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Install Node.js'
+    
+    - script: |
+        cd $(workingDirectory)
+        npm install yaml
+        node tools/validate-all.js
+      displayName: 'Validate YAML files'
+    
+    - script: |
+        cd $(workingDirectory)
+        node validate-pipeline.cjs
+      displayName: 'Run validation pipeline'
+    
+    - task: PublishTestResults@2
+      condition: always()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '$(workingDirectory)/generated/validation-report.json'
+        failTaskOnFailedTests: true
+
+- stage: Test
+  displayName: 'Performance & Security Testing'
+  dependsOn: Validate
+  jobs:
+  - job: PerformanceTest
+    displayName: 'Performance Testing'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+    
+    - script: |
+        cd $(workingDirectory)
+        npm install yaml
+        node performance-test.cjs
+      displayName: 'Run performance tests'
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: '$(workingDirectory)/generated/performance-report.html'
+        artifactName: 'performance-report'
+  
+  - job: SecurityAudit
+    displayName: 'Security Audit'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+    
+    - script: |
+        cd $(workingDirectory)
+        npm install yaml
+        node security-audit.cjs
+      displayName: 'Run security audit'
+    
+    - script: |
+        cd $(workingDirectory)
+        SECURITY_SCORE=$(node -e "
+          const report = JSON.parse(require('fs').readFileSync('generated/security-audit.json', 'utf8'));
+          console.log(report.summary.overallScore);
+        ")
+        echo "Security Score: $SECURITY_SCORE"
+        if [ "$SECURITY_SCORE" -lt 60 ]; then
+          echo "##vso[task.logissue type=error]Security score below threshold: $SECURITY_SCORE"
+          exit 1
+        fi
+      displayName: 'Evaluate security score'
+
+- stage: Deploy
+  displayName: 'Generate & Deploy Documentation'
+  dependsOn: Test
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: GenerateDocs
+    displayName: 'Generate Documentation'
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+    
+    - script: |
+        cd $(workingDirectory)
+        npm install yaml swagger-ui-dist
+        node generate-docs.cjs
+        node generate-postman.cjs
+      displayName: 'Generate documentation'
+    
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: '$(workingDirectory)/generated'
+        artifactName: 'api-documentation'

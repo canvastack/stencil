@@ -1,0 +1,1463 @@
+openapi: 3.1.0
+info:
+  title: Financial Management API
+  version: 1.0.0
+paths:
+  # ================================================================
+  # FINANCIAL TRANSACTION ENDPOINTS
+  # ================================================================
+  /financial/transactions:
+    get:
+      tags:
+        - Financial Transactions
+      summary: List Financial Transactions
+      description: |
+        Retrieve paginated list of financial transactions with advanced filtering and analytics.
+        
+        **Features:**
+        - Search by description, reference number
+        - Filter by type, status, date range, project, customer, vendor
+        - Sort by multiple fields with performance optimization
+        - Real-time balance calculations
+        - Export functionality (CSV, Excel, PDF)
+        - Tenant-scoped results with strict isolation
+      operationId: listFinancialTransactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          description: Search in description, reference number
+          schema:
+            type: string
+            maxLength: 255
+          example: "etching service"
+        - name: transaction_type
+          in: query
+          description: Filter by transaction type
+          schema:
+            type: string
+            enum: [income, expense, transfer, adjustment]
+          example: "income"
+        - name: status
+          in: query
+          description: Filter by transaction status
+          schema:
+            type: string
+            enum: [pending, approved, rejected, cancelled, completed]
+          example: "approved"
+        - name: date_from
+          in: query
+          description: Filter transactions from this date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-01"
+        - name: date_to
+          in: query
+          description: Filter transactions to this date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-30"
+        - name: project_id
+          in: query
+          description: Filter by project
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: customer_id
+          in: query
+          description: Filter by customer
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: vendor_id
+          in: query
+          description: Filter by vendor
+          schema:
+            type: string
+            format: uuid
+          example: "987fcdeb-51d2-43b1-9876-543210fedcba"
+        - name: amount_min
+          in: query
+          description: Minimum transaction amount
+          schema:
+            type: number
+            format: decimal
+          example: 100000.00
+        - name: amount_max
+          in: query
+          description: Maximum transaction amount
+          schema:
+            type: number
+            format: decimal
+          example: 10000000.00
+      responses:
+        '200':
+          description: Financial transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/financial.yaml#/FinancialTransactionListResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Financial Transactions
+      summary: Create Financial Transaction
+      description: |
+        Create a new financial transaction with automatic accounting integration.
+        
+        **Business Features:**
+        - Automatic currency conversion and tax calculations
+        - Project and customer/vendor linking
+        - Document attachment support
+        - Approval workflow integration
+        - Real-time balance updates
+        - Audit trail creation
+      operationId: createFinancialTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/financial.yaml#/FinancialTransactionCreateInput'
+            examples:
+              income_transaction:
+                summary: Customer payment for etching service
+                value:
+                  transaction_type: "income"
+                  transaction_category: "custom_etching_services"
+                  amount: 1500000.00
+                  currency: "IDR"
+                  description: "Custom glass etching service - Premium package"
+                  reference_number: "INV-2025-001"
+                  transaction_date: "2025-11-12"
+                  customer_id: "123e4567-e89b-12d3-a456-426614174000"
+                  project_id: "550e8400-e29b-41d4-a716-446655440000"
+                  payment_method: "bank_transfer"
+                  tax_rate: 11.00
+              expense_transaction:
+                summary: Material purchase expense
+                value:
+                  transaction_type: "expense"
+                  transaction_category: "materials"
+                  amount: 800000.00
+                  currency: "IDR"
+                  description: "Premium glass plates for custom etching"
+                  reference_number: "PO-2025-045"
+                  transaction_date: "2025-11-10"
+                  vendor_id: "987fcdeb-51d2-43b1-9876-543210fedcba"
+                  project_id: "550e8400-e29b-41d4-a716-446655440000"
+                  payment_method: "bank_transfer"
+                  tax_rate: 11.00
+      responses:
+        '201':
+          description: Financial transaction created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/FinancialTransaction'
+                      message:
+                        type: string
+                        example: "Financial transaction created successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/transactions/{transactionId}:
+    get:
+      tags:
+        - Financial Transactions
+      summary: Get Financial Transaction Details
+      description: |
+        Retrieve detailed information about a specific financial transaction.
+        
+        **Includes:**
+        - Complete transaction details
+        - Related revenue/expense records
+        - Attachment information
+        - Approval history
+        - Related project/customer/vendor data
+      operationId: getFinancialTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: transactionId
+          in: path
+          required: true
+          description: Financial transaction UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Financial transaction details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/FinancialTransaction'
+                      message:
+                        type: string
+                        example: "Financial transaction retrieved successfully"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    patch:
+      tags:
+        - Financial Transactions
+      summary: Update Financial Transaction
+      description: |
+        Update an existing financial transaction with audit logging.
+        
+        **Business Rules:**
+        - Only pending transactions can be fully modified
+        - Approved transactions have limited update fields
+        - All changes are logged in audit trail
+        - Recalculates related financial reports
+      operationId: updateFinancialTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/financial.yaml#/FinancialTransactionUpdateInput'
+      responses:
+        '200':
+          description: Transaction updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/FinancialTransaction'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Financial Transactions
+      summary: Delete Financial Transaction
+      description: |
+        Delete a financial transaction (soft delete with audit trail).
+        
+        **Business Rules:**
+        - Only pending/draft transactions can be deleted
+        - Approved transactions are archived instead
+        - Maintains referential integrity
+        - Updates related reports and balances
+      operationId: deleteFinancialTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/BaseResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '409':
+          description: Cannot delete approved transaction
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/transactions/{transactionId}/approve:
+    post:
+      tags:
+        - Financial Transactions
+      summary: Approve Financial Transaction
+      description: |
+        Approve a pending financial transaction.
+        
+        **Approval Process:**
+        - Validates transaction completeness
+        - Updates status to approved
+        - Records approval timestamp and user
+        - Triggers accounting entries
+        - Updates financial reports
+      operationId: approveFinancialTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  description: Approval notes
+                  example: "Approved after verification of receipts"
+      responses:
+        '200':
+          description: Transaction approved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/FinancialTransaction'
+        '400':
+          description: Transaction cannot be approved
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/transactions/{transactionId}/reject:
+    post:
+      tags:
+        - Financial Transactions
+      summary: Reject Financial Transaction
+      description: |
+        Reject a pending financial transaction with reason.
+      operationId: rejectFinancialTransaction
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  description: Reason for rejection
+                  example: "Missing receipt documentation"
+      responses:
+        '200':
+          description: Transaction rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/BaseResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # FINANCIAL REPORTS ENDPOINTS
+  # ================================================================
+  /financial/reports:
+    get:
+      tags:
+        - Financial Reports
+      summary: List Financial Reports
+      description: |
+        Retrieve paginated list of generated financial reports.
+        
+        **Features:**
+        - Filter by report type, period, status
+        - Search by report name
+        - Access control based on sharing settings
+        - Export status tracking
+      operationId: listFinancialReports
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          description: Search in report name
+          schema:
+            type: string
+          example: "Monthly P&L"
+        - name: report_type
+          in: query
+          description: Filter by report type
+          schema:
+            type: string
+            enum: [profit_loss, balance_sheet, cash_flow, budget_variance, project_profitability, custom]
+          example: "profit_loss"
+        - name: status
+          in: query
+          description: Filter by report status
+          schema:
+            type: string
+            enum: [generating, generated, failed, archived]
+          example: "generated"
+        - name: period_from
+          in: query
+          description: Filter reports with period starting from this date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-01"
+        - name: period_to
+          in: query
+          description: Filter reports with period ending to this date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-30"
+      responses:
+        '200':
+          description: Financial reports retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/financial.yaml#/FinancialReportListResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Financial Reports
+      summary: Generate Financial Report
+      description: |
+        Generate a new financial report with specified parameters.
+        
+        **Report Types:**
+        - Profit & Loss Statement
+        - Balance Sheet
+        - Cash Flow Statement
+        - Budget Variance Report
+        - Project Profitability Analysis
+        - Custom Reports with filters
+      operationId: generateFinancialReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/financial.yaml#/FinancialReportGenerateInput'
+            examples:
+              profit_loss_report:
+                summary: Monthly Profit & Loss Report
+                value:
+                  report_name: "Monthly P&L Report - November 2025"
+                  report_type: "profit_loss"
+                  report_period_start: "2025-11-01"
+                  report_period_end: "2025-11-30"
+                  custom_parameters:
+                    include_tax_breakdown: true
+                    show_profit_margins: true
+                  export_formats: ["pdf", "excel"]
+              project_profitability:
+                summary: Project Profitability Analysis
+                value:
+                  report_name: "Q4 Project Profitability Analysis"
+                  report_type: "project_profitability"
+                  report_period_start: "2025-10-01"
+                  report_period_end: "2025-12-31"
+                  filters_applied:
+                    project_ids: ["550e8400-e29b-41d4-a716-446655440000"]
+                  custom_parameters:
+                    group_by_customer: true
+                    show_material_costs: true
+                  export_formats: ["excel", "csv"]
+      responses:
+        '201':
+          description: Financial report generation started
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/FinancialReport'
+                      message:
+                        type: string
+                        example: "Financial report generation started successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/reports/{reportId}:
+    get:
+      tags:
+        - Financial Reports
+      summary: Get Financial Report
+      description: |
+        Retrieve a specific financial report with complete data.
+        
+        **Response includes:**
+        - Report metadata and generation info
+        - Complete report data in JSON format
+        - Executive summary and insights
+        - Export download links
+      operationId: getFinancialReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: reportId
+          in: path
+          required: true
+          description: Financial report UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Financial report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/FinancialReport'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Financial Reports
+      summary: Delete Financial Report
+      description: |
+        Delete a financial report (archive for audit compliance).
+      operationId: deleteFinancialReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Financial report deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/BaseResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/reports/{reportId}/export:
+    get:
+      tags:
+        - Financial Reports
+      summary: Export Financial Report
+      description: |
+        Export financial report in specified format (PDF, Excel, CSV).
+        
+        **Export Formats:**
+        - PDF: Professional formatted report with charts
+        - Excel: Raw data with formulas and formatting
+        - CSV: Simple data export for analysis
+      operationId: exportFinancialReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          required: true
+          description: Export format
+          schema:
+            type: string
+            enum: [pdf, excel, csv]
+          example: "pdf"
+      responses:
+        '200':
+          description: Report exported successfully
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid export format
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # BUDGET MANAGEMENT ENDPOINTS
+  # ================================================================
+  /financial/budgets:
+    get:
+      tags:
+        - Budget Management
+      summary: List Budget Plans
+      description: |
+        Retrieve paginated list of budget plans with variance analysis.
+        
+        **Features:**
+        - Filter by budget type, fiscal year, status
+        - Sort by creation date, budget amounts
+        - Real-time variance calculations
+        - Status-based access control
+      operationId: listBudgetPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: budget_type
+          in: query
+          description: Filter by budget type
+          schema:
+            type: string
+            enum: [annual, quarterly, monthly, project, department]
+          example: "annual"
+        - name: fiscal_year
+          in: query
+          description: Filter by fiscal year
+          schema:
+            type: integer
+          example: 2025
+        - name: status
+          in: query
+          description: Filter by budget status
+          schema:
+            type: string
+            enum: [draft, submitted, approved, active, completed, cancelled]
+          example: "approved"
+      responses:
+        '200':
+          description: Budget plans retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/financial.yaml#/BudgetPlanListResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Budget Management
+      summary: Create Budget Plan
+      description: |
+        Create a new budget plan with detailed breakdown and approval workflow.
+        
+        **Budget Creation Features:**
+        - Hierarchical budget breakdown by category
+        - Template-based budget creation
+        - Validation against historical data
+        - Automatic variance alert setup
+      operationId: createBudgetPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/financial.yaml#/BudgetPlanCreateInput'
+            examples:
+              annual_budget:
+                summary: Annual Budget for FY 2025
+                value:
+                  budget_name: "Annual Budget FY 2025"
+                  budget_type: "annual"
+                  fiscal_year: 2025
+                  period_start: "2025-01-01"
+                  period_end: "2025-12-31"
+                  total_revenue_budget: 180000000.00
+                  total_expense_budget: 120000000.00
+                  budget_breakdown:
+                    revenue:
+                      custom_etching: 120000000.00
+                      consultation: 36000000.00
+                      rush_orders: 24000000.00
+                    expenses:
+                      materials: 48000000.00
+                      labor: 36000000.00
+                      utilities: 18000000.00
+                      marketing: 12000000.00
+                      administrative: 6000000.00
+                  notes: "Budget based on 15% growth projection from historical data"
+      responses:
+        '201':
+          description: Budget plan created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/BudgetPlan'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/budgets/{budgetId}:
+    get:
+      tags:
+        - Budget Management
+      summary: Get Budget Plan Details
+      description: |
+        Retrieve detailed budget plan with real-time variance analysis.
+        
+        **Includes:**
+        - Complete budget breakdown
+        - Actual vs. budgeted amounts
+        - Variance analysis and alerts
+        - Approval history and notes
+      operationId: getBudgetPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: budgetId
+          in: path
+          required: true
+          description: Budget plan UUID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget plan retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/BudgetPlan'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    patch:
+      tags:
+        - Budget Management
+      summary: Update Budget Plan
+      description: |
+        Update budget plan (only draft and submitted status allowed).
+      operationId: updateBudgetPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/financial.yaml#/BudgetPlanCreateInput'
+      responses:
+        '200':
+          description: Budget plan updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/financial.yaml#/BudgetPlan'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/budgets/{budgetId}/submit:
+    post:
+      tags:
+        - Budget Management
+      summary: Submit Budget for Approval
+      description: |
+        Submit budget plan for management approval.
+      operationId: submitBudgetPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Budget plan submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/BaseResponse'
+        '400':
+          description: Budget cannot be submitted
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/budgets/{budgetId}/approve:
+    post:
+      tags:
+        - Budget Management
+      summary: Approve Budget Plan
+      description: |
+        Approve submitted budget plan and activate it.
+      operationId: approveBudgetPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approval_notes:
+                  type: string
+                  description: Approval notes
+                  example: "Budget approved with recommended adjustments to marketing spend"
+      responses:
+        '200':
+          description: Budget plan approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/BaseResponse'
+        '400':
+          description: Budget cannot be approved
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # FINANCIAL ANALYTICS ENDPOINTS
+  # ================================================================
+  /financial/analytics/dashboard:
+    get:
+      tags:
+        - Financial Analytics
+      summary: Get Financial Dashboard Analytics
+      description: |
+        Retrieve comprehensive financial dashboard data with KPIs and trends.
+        
+        **Dashboard Includes:**
+        - Revenue and expense summaries
+        - Profit margins and growth trends
+        - Top customers and revenue sources
+        - Expense breakdown and cost analysis
+        - Cash flow indicators
+        - Budget vs. actual comparisons
+      operationId: getFinancialDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: period
+          in: query
+          description: Analysis period
+          schema:
+            type: string
+            enum: [today, week, month, quarter, year, custom]
+            default: month
+          example: "month"
+        - name: date_from
+          in: query
+          description: Custom period start date (required if period=custom)
+          schema:
+            type: string
+            format: date
+          example: "2025-11-01"
+        - name: date_to
+          in: query
+          description: Custom period end date (required if period=custom)
+          schema:
+            type: string
+            format: date
+          example: "2025-11-30"
+        - name: compare_previous
+          in: query
+          description: Include comparison with previous period
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Financial dashboard analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/financial.yaml#/FinancialAnalyticsResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/analytics/cash-flow:
+    get:
+      tags:
+        - Financial Analytics
+      summary: Get Cash Flow Analysis
+      description: |
+        Retrieve detailed cash flow analysis with projections.
+      operationId: getCashFlowAnalysis
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: months
+          in: query
+          description: Number of months to analyze
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 24
+            default: 12
+          example: 12
+        - name: include_projections
+          in: query
+          description: Include future cash flow projections
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Cash flow analysis retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      monthly_cash_flow:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              format: date
+                            cash_in:
+                              type: number
+                              format: decimal
+                            cash_out:
+                              type: number
+                              format: decimal
+                            net_cash_flow:
+                              type: number
+                              format: decimal
+                            running_balance:
+                              type: number
+                              format: decimal
+                      projections:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            month:
+                              type: string
+                              format: date
+                            projected_cash_in:
+                              type: number
+                              format: decimal
+                            projected_cash_out:
+                              type: number
+                              format: decimal
+                            projected_balance:
+                              type: number
+                              format: decimal
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/analytics/profitability:
+    get:
+      tags:
+        - Financial Analytics
+      summary: Get Profitability Analysis
+      description: |
+        Retrieve detailed profitability analysis by project, customer, or service type.
+      operationId: getProfitabilityAnalysis
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: group_by
+          in: query
+          description: Group profitability analysis by
+          schema:
+            type: string
+            enum: [project, customer, service_type, month]
+            default: project
+          example: "project"
+        - name: date_from
+          in: query
+          description: Analysis start date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-01"
+        - name: date_to
+          in: query
+          description: Analysis end date
+          schema:
+            type: string
+            format: date
+          example: "2025-11-30"
+        - name: min_margin
+          in: query
+          description: Minimum profit margin filter (percentage)
+          schema:
+            type: number
+            format: decimal
+          example: 20.0
+      responses:
+        '200':
+          description: Profitability analysis retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      overall_metrics:
+                        type: object
+                        properties:
+                          total_revenue:
+                            type: number
+                            format: decimal
+                          total_cost:
+                            type: number
+                            format: decimal
+                          gross_profit:
+                            type: number
+                            format: decimal
+                          average_margin:
+                            type: number
+                            format: decimal
+                      profitability_breakdown:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            group_name:
+                              type: string
+                            revenue:
+                              type: number
+                              format: decimal
+                            cost:
+                              type: number
+                              format: decimal
+                            profit:
+                              type: number
+                              format: decimal
+                            margin_percentage:
+                              type: number
+                              format: decimal
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # BULK OPERATIONS ENDPOINTS
+  # ================================================================
+  /financial/transactions/bulk-import:
+    post:
+      tags:
+        - Financial Transactions
+      summary: Bulk Import Financial Transactions
+      description: |
+        Import multiple financial transactions from CSV/Excel file.
+        
+        **Import Features:**
+        - CSV and Excel file support
+        - Data validation and error reporting
+        - Duplicate detection and handling
+        - Progress tracking for large imports
+        - Rollback capability on errors
+      operationId: bulkImportTransactions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV or Excel file containing transaction data
+                validate_only:
+                  type: boolean
+                  default: false
+                  description: Only validate data without importing
+                skip_duplicates:
+                  type: boolean
+                  default: true
+                  description: Skip duplicate transactions based on reference number
+      responses:
+        '200':
+          description: Transactions imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      total_rows:
+                        type: integer
+                        example: 150
+                      imported_count:
+                        type: integer
+                        example: 148
+                      skipped_count:
+                        type: integer
+                        example: 2
+                      error_count:
+                        type: integer
+                        example: 0
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            row:
+                              type: integer
+                            error:
+                              type: string
+                      import_id:
+                        type: string
+                        format: uuid
+                        description: Import batch ID for tracking
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/schemas.yaml#/ErrorResponse'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /financial/reports/bulk-generate:
+    post:
+      tags:
+        - Financial Reports
+      summary: Bulk Generate Financial Reports
+      description: |
+        Generate multiple financial reports in batch for different periods or types.
+      operationId: bulkGenerateReports
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reports
+              properties:
+                reports:
+                  type: array
+                  items:
+                    $ref: '../../schemas/content-management/financial.yaml#/FinancialReportGenerateInput'
+                  description: List of reports to generate
+                  minItems: 1
+                  maxItems: 10
+      responses:
+        '202':
+          description: Bulk report generation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      batch_id:
+                        type: string
+                        format: uuid
+                        description: Batch generation ID for tracking
+                      total_reports:
+                        type: integer
+                        example: 5
+                      estimated_completion:
+                        type: string
+                        format: date-time
+                        description: Estimated completion time
+                  message:
+                    type: string
+                    example: "Bulk report generation started successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'

@@ -1,0 +1,1725 @@
+# LANGUAGE & LOCALIZATION MANAGEMENT ENGINE
+# Complete OpenAPI schemas for Language & Internationalization System (150+ fields, 8 tables)
+# Enterprise-Grade Multi-Tenant Translation & Localization
+
+# ================================================================
+# CORE LANGUAGE ENTITIES
+# ================================================================
+
+# Main Language Registry Entity
+Language:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - code
+        - name
+        - native_name
+        - is_active
+        - is_default
+        - is_rtl
+      properties:
+        # Basic Language Info
+        code:
+          type: string
+          maxLength: 10
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+          description: ISO 639-1 language code (e.g., 'id', 'en', 'zh-CN')
+          example: "id"
+        name:
+          type: string
+          maxLength: 100
+          minLength: 2
+          description: English name of the language
+          example: "Indonesian"
+        native_name:
+          type: string
+          maxLength: 100
+          minLength: 2
+          description: Native name in the language itself
+          example: "Bahasa Indonesia"
+        
+        # Language Properties
+        is_active:
+          type: boolean
+          default: true
+          description: Whether language is active and available
+          example: true
+        is_default:
+          type: boolean
+          default: false
+          description: Whether this is the system default language
+          example: false
+        is_rtl:
+          type: boolean
+          default: false
+          description: Whether language uses right-to-left script
+          example: false
+        
+        # UI & Display
+        flag_emoji:
+          type: string
+          maxLength: 10
+          nullable: true
+          description: Flag emoji representation for UI
+          example: "🇮🇩"
+        flag_icon_url:
+          type: string
+          format: uri
+          maxLength: 500
+          nullable: true
+          description: Custom flag icon URL
+          example: "https://cdn.example.com/flags/id.svg"
+        sort_order:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order in language lists
+          example: 1
+        
+        # Locale Configuration
+        locale_settings:
+          type: object
+          nullable: true
+          description: Locale-specific configuration (date/number formats)
+          properties:
+            date_format:
+              type: string
+              example: "DD/MM/YYYY"
+            time_format:
+              type: string
+              example: "HH:mm:ss"
+            number_format:
+              type: object
+              properties:
+                decimal:
+                  type: string
+                  example: ","
+                thousand:
+                  type: string
+                  example: "."
+                precision:
+                  type: integer
+                  example: 2
+            currency_format:
+              type: object
+              properties:
+                symbol:
+                  type: string
+                  example: "Rp"
+                position:
+                  type: string
+                  enum: ["before", "after"]
+                  example: "before"
+                spacing:
+                  type: boolean
+                  example: true
+        
+        # Translation Features
+        supports_pluralization:
+          type: boolean
+          default: true
+          description: Whether language supports pluralization rules
+          example: true
+        pluralization_rules:
+          type: object
+          nullable: true
+          description: ICU MessageFormat pluralization rules
+          properties:
+            zero:
+              type: string
+              nullable: true
+            one:
+              type: string
+              nullable: true
+            two:
+              type: string
+              nullable: true
+            few:
+              type: string
+              nullable: true
+            many:
+              type: string
+              nullable: true
+            other:
+              type: string
+          example:
+            one: "item"
+            other: "items"
+        
+        # AI Translation Support
+        translation_api_support:
+          type: object
+          nullable: true
+          description: Supported translation APIs and configurations
+          properties:
+            google_translate:
+              type: boolean
+              example: true
+            deepl:
+              type: boolean
+              example: true
+            microsoft:
+              type: boolean
+              example: false
+            custom_endpoints:
+              type: array
+              items:
+                type: string
+                format: uri
+        translation_quality_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.00
+          description: AI translation quality score (0-1)
+          example: 0.85
+        
+        # Market Information
+        market_size:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Estimated market size for business prioritization
+          example: 273000000
+        market_priority:
+          type: string
+          enum: ["high", "medium", "low"]
+          default: "medium"
+          description: Business priority for this market
+          example: "high"
+        
+        # Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional language metadata
+          additionalProperties: true
+
+# Translation Categories Entity
+TranslationCategory:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - slug
+        - name
+      properties:
+        slug:
+          type: string
+          maxLength: 100
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+          description: URL-friendly identifier
+          example: "navigation"
+        name:
+          type: string
+          maxLength: 100
+          minLength: 3
+          description: Display name for the category
+          example: "Navigation"
+        description:
+          type: string
+          nullable: true
+          description: Description of the category purpose
+          example: "Menu items, links, and navigation elements"
+        parent_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Parent category ID for hierarchical organization
+          example: 1
+        sort_order:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Display order within parent category
+          example: 1
+        
+        # Virtual Relations
+        parent:
+          allOf:
+            - $ref: '#/TranslationCategory'
+            - readOnly: true
+          nullable: true
+        children:
+          type: array
+          items:
+            $ref: '#/TranslationCategory'
+          readOnly: true
+        translations_count:
+          type: integer
+          readOnly: true
+          description: Number of translations in this category
+          example: 25
+
+# Main Translation Entity
+Translation:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - key
+        - translations
+      properties:
+        # Translation Identity
+        key:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9]+(?:\.[a-z0-9]+)*$'
+          description: Unique translation key (namespace.section.key)
+          example: "nav.menu.home"
+        category_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Category this translation belongs to
+          example: 1
+        
+        # Translation Content
+        translations:
+          type: object
+          description: JSONB object with language_code -> translation mapping
+          additionalProperties:
+            type: string
+          example:
+            en: "Home"
+            id: "Beranda"
+            ja: "ホーム"
+        
+        # Metadata
+        description:
+          type: string
+          nullable: true
+          description: Helper text for translators
+          example: "Main navigation home button label"
+        context:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Usage context (e.g., component, screen)
+          example: "Navigation header component"
+        
+        # Content Type
+        is_html:
+          type: boolean
+          default: false
+          description: Whether translation contains HTML tags
+          example: false
+        is_markdown:
+          type: boolean
+          default: false
+          description: Whether translation contains Markdown syntax
+          example: false
+        is_system:
+          type: boolean
+          default: false
+          description: System translation (cannot be deleted)
+          example: false
+        
+        # Translation Features
+        supports_pluralization:
+          type: boolean
+          default: false
+          description: Whether translation supports pluralization
+          example: false
+        supports_interpolation:
+          type: boolean
+          default: false
+          description: Whether translation supports variable interpolation
+          example: true
+        
+        # Workflow & Status
+        status:
+          type: string
+          enum: ["draft", "review", "approved", "published", "archived"]
+          default: "draft"
+          description: Translation status in workflow
+          example: "published"
+        approval_status:
+          type: string
+          enum: ["pending", "approved", "rejected"]
+          default: "pending"
+          description: Approval status for quality control
+          example: "approved"
+        
+        # Quality & AI
+        translation_quality:
+          type: object
+          nullable: true
+          description: Quality scores per language
+          additionalProperties:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 1
+          example:
+            en: 1.0
+            id: 0.95
+            ja: 0.8
+        ai_generated:
+          type: boolean
+          default: false
+          description: Whether translation was AI-generated
+          example: false
+        ai_confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.00
+          description: AI confidence score (0-1)
+          example: 0.92
+        
+        # Usage Analytics
+        usage_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times translation was accessed
+          example: 1250
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time translation was accessed
+          example: "2025-11-12T14:30:00Z"
+        
+        # Version Control
+        version:
+          type: integer
+          minimum: 1
+          default: 1
+          description: Current version number
+          example: 3
+        parent_version_id:
+          type: integer
+          format: int64
+          nullable: true
+          description: Previous version reference for rollback
+          example: 123
+        
+        # Advanced Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional translation metadata
+          properties:
+            variables:
+              type: array
+              items:
+                type: string
+              description: Variable names used in interpolation
+              example: ["name", "count"]
+            max_length:
+              type: integer
+              description: Maximum character length for UI constraints
+              example: 50
+            screen:
+              type: string
+              description: Screen/page where translation is used
+              example: "ProductDetailPage"
+            component:
+              type: string
+              description: Component where translation is used
+              example: "AddToCartButton"
+          additionalProperties: true
+        
+        # Audit Fields (from AuditableEntity)
+        created_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User ID who created the translation
+          example: 1
+        updated_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User ID who last updated the translation
+          example: 1
+        approved_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User ID who approved the translation
+          example: 2
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the translation was approved
+          example: "2025-11-12T15:00:00Z"
+        
+        # Virtual Relations
+        category:
+          allOf:
+            - $ref: '#/TranslationCategory'
+            - readOnly: true
+          nullable: true
+        creator:
+          allOf:
+            - $ref: './users.yaml#/UserProfile'
+            - readOnly: true
+          nullable: true
+        updater:
+          allOf:
+            - $ref: './users.yaml#/UserProfile'  
+            - readOnly: true
+          nullable: true
+        approver:
+          allOf:
+            - $ref: './users.yaml#/UserProfile'
+            - readOnly: true
+          nullable: true
+
+# Translation Version Control Entity
+TranslationVersion:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - translation_id
+        - version_number
+        - translations_snapshot
+        - change_type
+      properties:
+        # Reference
+        translation_id:
+          type: integer
+          format: int64
+          description: Reference to the main translation record
+          example: 123
+        
+        # Version Info
+        version_number:
+          type: integer
+          minimum: 1
+          description: Sequential version number
+          example: 3
+        version_name:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Optional version name/label
+          example: "Initial Release"
+        
+        # Content Snapshot
+        translations_snapshot:
+          type: object
+          description: Full translation content at this version
+          additionalProperties:
+            type: string
+          example:
+            en: "Add to Cart"
+            id: "Tambah ke Keranjang"
+        metadata_snapshot:
+          type: object
+          nullable: true
+          description: Metadata snapshot at this version
+          additionalProperties: true
+        
+        # Change Information
+        change_type:
+          type: string
+          enum: ["create", "update", "delete", "restore", "merge"]
+          description: Type of change that created this version
+          example: "update"
+        change_summary:
+          type: string
+          nullable: true
+          description: Human-readable summary of changes
+          example: "Updated Indonesian translation for clarity"
+        diff_data:
+          type: object
+          nullable: true
+          description: Detailed diff information
+          properties:
+            added:
+              type: object
+              additionalProperties:
+                type: string
+            modified:
+              type: object
+              additionalProperties:
+                type: object
+                properties:
+                  old:
+                    type: string
+                  new:
+                    type: string
+            removed:
+              type: object
+              additionalProperties:
+                type: string
+        
+        # Audit
+        created_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User who created this version
+          example: 1
+        
+        # Virtual Relations
+        translation:
+          allOf:
+            - $ref: '#/Translation'
+            - readOnly: true
+        creator:
+          allOf:
+            - $ref: './users.yaml#/UserProfile'
+            - readOnly: true
+          nullable: true
+
+# Translation Analytics Entity
+TranslationAnalytics:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - translation_id
+        - language_code
+      properties:
+        # Reference
+        translation_id:
+          type: integer
+          format: int64
+          description: Reference to the translation record
+          example: 123
+        language_code:
+          type: string
+          maxLength: 10
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+          description: Language code for this analytics entry
+          example: "id"
+        
+        # Usage Metrics
+        view_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times translation was viewed
+          example: 5420
+        usage_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of times translation was actually used
+          example: 4850
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last time this translation was used
+          example: "2025-11-12T16:45:00Z"
+        
+        # Performance Metrics
+        avg_load_time_ms:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Average load time in milliseconds
+          example: 125
+        cache_hit_rate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          default: 0.00
+          description: Cache hit rate percentage
+          example: 85.5
+        
+        # Quality Metrics
+        user_rating:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 5
+          default: 0.00
+          description: Average user rating for translation quality
+          example: 4.2
+        user_rating_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of user ratings received
+          example: 15
+        ai_quality_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.00
+          description: AI-assessed quality score
+          example: 0.92
+        
+        # Context Analytics
+        context_usage:
+          type: object
+          nullable: true
+          description: Usage breakdown by context
+          additionalProperties:
+            type: integer
+            minimum: 0
+          example:
+            desktop: 3200
+            mobile: 1650
+            tablet: 400
+        device_usage:
+          type: object
+          nullable: true
+          description: Usage breakdown by device type
+          additionalProperties:
+            type: integer
+            minimum: 0
+        geographic_usage:
+          type: object
+          nullable: true
+          description: Usage breakdown by geographic region
+          additionalProperties:
+            type: integer
+            minimum: 0
+        
+        # Time-based Analytics
+        hourly_usage:
+          type: object
+          nullable: true
+          description: Usage distribution by hour of day (0-23)
+          additionalProperties:
+            type: integer
+            minimum: 0
+        daily_usage:
+          type: object
+          nullable: true
+          description: Usage distribution by day of week (0-6)
+          additionalProperties:
+            type: integer
+            minimum: 0
+        monthly_usage:
+          type: object
+          nullable: true
+          description: Usage distribution by month (1-12)
+          additionalProperties:
+            type: integer
+            minimum: 0
+        
+        # Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional analytics metadata
+          additionalProperties: true
+        
+        # Virtual Relations
+        translation:
+          allOf:
+            - $ref: '#/Translation'
+            - readOnly: true
+        language:
+          allOf:
+            - $ref: '#/Language'
+            - readOnly: true
+
+# Translation Import/Export Entity
+TranslationImport:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - import_type
+        - file_name
+        - file_size
+        - file_format
+      properties:
+        # Import Info
+        import_type:
+          type: string
+          enum: ["csv", "json", "po", "xliff", "yaml", "xml"]
+          description: Type of import operation
+          example: "json"
+        file_name:
+          type: string
+          maxLength: 255
+          description: Original filename of imported file
+          example: "translations_v1.json"
+        file_size:
+          type: integer
+          minimum: 0
+          description: File size in bytes
+          example: 2048576
+        file_format:
+          type: string
+          enum: ["csv", "json", "po", "xliff", "yaml", "xml"]
+          description: Format of the imported file
+          example: "json"
+        
+        # Processing Status
+        status:
+          type: string
+          enum: ["pending", "processing", "completed", "failed", "cancelled"]
+          default: "pending"
+          description: Current status of the import process
+          example: "completed"
+        progress_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+          default: 0
+          description: Progress percentage (0-100)
+          example: 100
+        
+        # Results
+        total_records:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total number of records in the import file
+          example: 1500
+        processed_records:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of records processed
+          example: 1500
+        successful_records:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of successfully imported records
+          example: 1485
+        failed_records:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of failed records
+          example: 15
+        
+        # Error Handling
+        errors:
+          type: array
+          nullable: true
+          description: List of import errors
+          items:
+            type: object
+            properties:
+              line:
+                type: integer
+                description: Line number where error occurred
+              key:
+                type: string
+                description: Translation key that failed
+              error:
+                type: string
+                description: Error message
+              severity:
+                type: string
+                enum: ["warning", "error", "critical"]
+        warnings:
+          type: array
+          nullable: true
+          description: List of import warnings
+          items:
+            type: object
+            properties:
+              line:
+                type: integer
+              key:
+                type: string
+              warning:
+                type: string
+              severity:
+                type: string
+                enum: ["info", "warning"]
+        
+        # Processing Details
+        processing_options:
+          type: object
+          nullable: true
+          description: Options used during processing
+          properties:
+            merge_mode:
+              type: string
+              enum: ["replace", "merge", "skip"]
+              description: How to handle existing translations
+            create_missing_categories:
+              type: boolean
+              description: Whether to create missing categories
+            validate_keys:
+              type: boolean
+              description: Whether to validate translation keys
+            backup_existing:
+              type: boolean
+              description: Whether to backup existing data
+        mapping_configuration:
+          type: object
+          nullable: true
+          description: Field mapping configuration
+          additionalProperties: true
+        
+        # File Storage
+        file_path:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Path to the uploaded file
+          example: "/uploads/imports/translations_20251112.json"
+        backup_file_path:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Path to backup file (if created)
+          example: "/backups/pre_import_20251112.json"
+        
+        # Processing Timestamps
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When processing started
+          example: "2025-11-12T10:00:00Z"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When processing completed
+          example: "2025-11-12T10:15:00Z"
+        
+        # Audit
+        created_by:
+          type: integer
+          format: int64
+          nullable: true
+          description: User who initiated the import
+          example: 1
+        
+        # Virtual Relations
+        creator:
+          allOf:
+            - $ref: './users.yaml#/UserProfile'
+            - readOnly: true
+          nullable: true
+
+# Translation Cache Entity
+TranslationCache:
+  type: object
+  required:
+    - cache_key
+    - language_code
+    - cached_translations
+    - cache_size
+    - expires_at
+  properties:
+    id:
+      type: integer
+      format: int64
+      readOnly: true
+      description: Primary key
+      example: 1
+    
+    # Cache Key
+    cache_key:
+      type: string
+      maxLength: 255
+      description: Unique cache identifier
+      example: "tenant_123_language_id_page_home"
+    tenant_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Tenant UUID (NULL for global cache)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    language_code:
+      type: string
+      maxLength: 10
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+      description: Language code for cached translations
+      example: "id"
+    
+    # Cached Data
+    cached_translations:
+      type: object
+      description: JSONB object with cached translation data
+      additionalProperties: true
+      example:
+        "nav.home": "Beranda"
+        "nav.about": "Tentang"
+        "common.save": "Simpan"
+    
+    # Cache Metadata
+    cache_size:
+      type: integer
+      minimum: 0
+      description: Size of cached data in bytes
+      example: 4096
+    compression_type:
+      type: string
+      enum: ["none", "gzip", "brotli"]
+      default: "none"
+      description: Compression algorithm used
+      example: "gzip"
+    
+    # Cache Statistics
+    hit_count:
+      type: integer
+      minimum: 0
+      default: 0
+      description: Number of cache hits
+      example: 1250
+    miss_count:
+      type: integer
+      minimum: 0
+      default: 0
+      description: Number of cache misses
+      example: 15
+    last_hit_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Last time cache was accessed
+      example: "2025-11-12T16:45:00Z"
+    
+    # Cache Lifecycle
+    created_at:
+      type: string
+      format: date-time
+      readOnly: true
+      description: When cache entry was created
+      example: "2025-11-12T10:00:00Z"
+    updated_at:
+      type: string
+      format: date-time
+      readOnly: true
+      description: When cache entry was last updated
+      example: "2025-11-12T16:30:00Z"
+    expires_at:
+      type: string
+      format: date-time
+      description: When cache entry expires
+      example: "2025-11-12T22:00:00Z"
+    
+    # Virtual Relations
+    language:
+      allOf:
+        - $ref: '#/Language'
+        - readOnly: true
+
+# Locale Settings Entity (Tenant-specific)
+LocaleSettings:
+  allOf:
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - type: object
+      required:
+        - default_language
+        - fallback_language
+        - available_languages
+        - timezone
+      properties:
+        # Language Configuration
+        default_language:
+          type: string
+          maxLength: 10
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+          default: "id"
+          description: Primary language for this tenant
+          example: "id"
+        fallback_language:
+          type: string
+          maxLength: 10
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+          default: "en"
+          description: Fallback language when translation missing
+          example: "en"
+        available_languages:
+          type: array
+          items:
+            type: string
+            pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+          default: ["id", "en"]
+          description: Array of enabled language codes for this tenant
+          example: ["id", "en", "ja"]
+        
+        # Locale Configuration
+        timezone:
+          type: string
+          maxLength: 100
+          default: "Asia/Jakarta"
+          description: IANA timezone identifier
+          example: "Asia/Jakarta"
+        
+        # Date/Time Formats
+        date_format:
+          type: string
+          maxLength: 50
+          default: "DD/MM/YYYY"
+          description: Date display format
+          example: "DD/MM/YYYY"
+        time_format:
+          type: string
+          maxLength: 50
+          default: "HH:mm:ss"
+          description: Time display format
+          example: "HH:mm:ss"
+        datetime_format:
+          type: string
+          maxLength: 50
+          default: "DD/MM/YYYY HH:mm"
+          description: Combined date-time format
+          example: "DD/MM/YYYY HH:mm"
+        
+        # Number & Currency Formatting
+        number_format:
+          type: object
+          default:
+            decimal: ","
+            thousand: "."
+            precision: 2
+          description: Number formatting configuration
+          properties:
+            decimal:
+              type: string
+              maxLength: 5
+              description: Decimal separator character
+              example: ","
+            thousand:
+              type: string
+              maxLength: 5
+              description: Thousand separator character
+              example: "."
+            precision:
+              type: integer
+              minimum: 0
+              maximum: 10
+              description: Default decimal precision
+              example: 2
+        currency_format:
+          type: object
+          default:
+            symbol: "Rp"
+            position: "before"
+            spacing: true
+          description: Currency formatting configuration
+          properties:
+            symbol:
+              type: string
+              maxLength: 10
+              description: Currency symbol
+              example: "Rp"
+            position:
+              type: string
+              enum: ["before", "after"]
+              description: Symbol position relative to amount
+              example: "before"
+            spacing:
+              type: boolean
+              description: Whether to add space between symbol and amount
+              example: true
+        
+        # Calendar Configuration
+        first_day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+          default: 1
+          description: First day of week (0=Sunday, 1=Monday)
+          example: 1
+        
+        # Metadata
+        metadata:
+          type: object
+          nullable: true
+          description: Additional locale metadata
+          additionalProperties: true
+        
+        # Virtual Relations
+        default_language_info:
+          allOf:
+            - $ref: '#/Language'
+            - readOnly: true
+        fallback_language_info:
+          allOf:
+            - $ref: '#/Language'
+            - readOnly: true
+
+# ================================================================
+# INPUT/OUTPUT SCHEMAS
+# ================================================================
+
+# Language Input Schemas
+LanguageCreateInput:
+  type: object
+  required:
+    - code
+    - name
+    - native_name
+  properties:
+    code:
+      type: string
+      maxLength: 10
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+      example: "ja"
+    name:
+      type: string
+      maxLength: 100
+      minLength: 2
+      example: "Japanese"
+    native_name:
+      type: string
+      maxLength: 100
+      minLength: 2
+      example: "日本語"
+    is_active:
+      type: boolean
+      default: true
+    is_default:
+      type: boolean
+      default: false
+    is_rtl:
+      type: boolean
+      default: false
+    flag_emoji:
+      type: string
+      maxLength: 10
+      nullable: true
+      example: "🇯🇵"
+    flag_icon_url:
+      type: string
+      format: uri
+      maxLength: 500
+      nullable: true
+    sort_order:
+      type: integer
+      minimum: 0
+      default: 0
+    locale_settings:
+      type: object
+      nullable: true
+    supports_pluralization:
+      type: boolean
+      default: true
+    pluralization_rules:
+      type: object
+      nullable: true
+    translation_api_support:
+      type: object
+      nullable: true
+    market_size:
+      type: integer
+      minimum: 0
+      default: 0
+    market_priority:
+      type: string
+      enum: ["high", "medium", "low"]
+      default: "medium"
+    metadata:
+      type: object
+      nullable: true
+
+LanguageUpdateInput:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 100
+      minLength: 2
+    native_name:
+      type: string
+      maxLength: 100
+      minLength: 2
+    is_active:
+      type: boolean
+    is_default:
+      type: boolean
+    is_rtl:
+      type: boolean
+    flag_emoji:
+      type: string
+      maxLength: 10
+      nullable: true
+    flag_icon_url:
+      type: string
+      format: uri
+      maxLength: 500
+      nullable: true
+    sort_order:
+      type: integer
+      minimum: 0
+    locale_settings:
+      type: object
+      nullable: true
+    supports_pluralization:
+      type: boolean
+    pluralization_rules:
+      type: object
+      nullable: true
+    translation_api_support:
+      type: object
+      nullable: true
+    market_size:
+      type: integer
+      minimum: 0
+    market_priority:
+      type: string
+      enum: ["high", "medium", "low"]
+    metadata:
+      type: object
+      nullable: true
+
+# Translation Category Input Schemas
+TranslationCategoryCreateInput:
+  type: object
+  required:
+    - slug
+    - name
+  properties:
+    slug:
+      type: string
+      maxLength: 100
+      pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+      example: "navigation"
+    name:
+      type: string
+      maxLength: 100
+      minLength: 3
+      example: "Navigation"
+    description:
+      type: string
+      nullable: true
+    parent_id:
+      type: integer
+      format: int64
+      nullable: true
+    sort_order:
+      type: integer
+      minimum: 0
+      default: 0
+
+TranslationCategoryUpdateInput:
+  type: object
+  properties:
+    slug:
+      type: string
+      maxLength: 100
+      pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+    name:
+      type: string
+      maxLength: 100
+      minLength: 3
+    description:
+      type: string
+      nullable: true
+    parent_id:
+      type: integer
+      format: int64
+      nullable: true
+    sort_order:
+      type: integer
+      minimum: 0
+
+# Translation Input Schemas
+TranslationCreateInput:
+  type: object
+  required:
+    - key
+    - translations
+  properties:
+    key:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9]+(?:\.[a-z0-9]+)*$'
+      example: "nav.menu.products"
+    category_id:
+      type: integer
+      format: int64
+      nullable: true
+    translations:
+      type: object
+      additionalProperties:
+        type: string
+      example:
+        en: "Products"
+        id: "Produk"
+    description:
+      type: string
+      nullable: true
+    context:
+      type: string
+      maxLength: 500
+      nullable: true
+    is_html:
+      type: boolean
+      default: false
+    is_markdown:
+      type: boolean
+      default: false
+    is_system:
+      type: boolean
+      default: false
+    supports_pluralization:
+      type: boolean
+      default: false
+    supports_interpolation:
+      type: boolean
+      default: false
+    metadata:
+      type: object
+      nullable: true
+
+TranslationUpdateInput:
+  type: object
+  properties:
+    category_id:
+      type: integer
+      format: int64
+      nullable: true
+    translations:
+      type: object
+      additionalProperties:
+        type: string
+    description:
+      type: string
+      nullable: true
+    context:
+      type: string
+      maxLength: 500
+      nullable: true
+    is_html:
+      type: boolean
+    is_markdown:
+      type: boolean
+    supports_pluralization:
+      type: boolean
+    supports_interpolation:
+      type: boolean
+    status:
+      type: string
+      enum: ["draft", "review", "approved", "published", "archived"]
+    approval_status:
+      type: string
+      enum: ["pending", "approved", "rejected"]
+    metadata:
+      type: object
+      nullable: true
+
+# Bulk Translation Operations
+BulkTranslationCreateInput:
+  type: object
+  required:
+    - translations
+  properties:
+    translations:
+      type: array
+      items:
+        $ref: '#/TranslationCreateInput'
+      minItems: 1
+      maxItems: 1000
+    category_id:
+      type: integer
+      format: int64
+      nullable: true
+      description: Default category for all translations
+    merge_mode:
+      type: string
+      enum: ["replace", "merge", "skip"]
+      default: "merge"
+      description: How to handle existing keys
+
+BulkTranslationUpdateInput:
+  type: object
+  required:
+    - updates
+  properties:
+    updates:
+      type: array
+      items:
+        type: object
+        required:
+          - key
+          - changes
+        properties:
+          key:
+            type: string
+            pattern: '^[a-z0-9]+(?:\.[a-z0-9]+)*$'
+          changes:
+            $ref: '#/TranslationUpdateInput'
+      minItems: 1
+      maxItems: 1000
+
+# Import Input Schema
+TranslationImportInput:
+  type: object
+  required:
+    - file
+    - import_type
+    - file_format
+  properties:
+    file:
+      type: string
+      format: binary
+      description: Translation file to import
+    import_type:
+      type: string
+      enum: ["csv", "json", "po", "xliff", "yaml", "xml"]
+    file_format:
+      type: string
+      enum: ["csv", "json", "po", "xliff", "yaml", "xml"]
+    processing_options:
+      type: object
+      properties:
+        merge_mode:
+          type: string
+          enum: ["replace", "merge", "skip"]
+          default: "merge"
+        create_missing_categories:
+          type: boolean
+          default: true
+        validate_keys:
+          type: boolean
+          default: true
+        backup_existing:
+          type: boolean
+          default: true
+    mapping_configuration:
+      type: object
+      nullable: true
+
+# Locale Settings Input Schemas
+LocaleSettingsCreateInput:
+  type: object
+  properties:
+    default_language:
+      type: string
+      maxLength: 10
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+      default: "id"
+    fallback_language:
+      type: string
+      maxLength: 10
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+      default: "en"
+    available_languages:
+      type: array
+      items:
+        type: string
+        pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+      default: ["id", "en"]
+    timezone:
+      type: string
+      maxLength: 100
+      default: "Asia/Jakarta"
+    date_format:
+      type: string
+      maxLength: 50
+      default: "DD/MM/YYYY"
+    time_format:
+      type: string
+      maxLength: 50
+      default: "HH:mm:ss"
+    datetime_format:
+      type: string
+      maxLength: 50
+      default: "DD/MM/YYYY HH:mm"
+    number_format:
+      type: object
+    currency_format:
+      type: object
+    first_day_of_week:
+      type: integer
+      minimum: 0
+      maximum: 6
+      default: 1
+    metadata:
+      type: object
+      nullable: true
+
+LocaleSettingsUpdateInput:
+  type: object
+  properties:
+    default_language:
+      type: string
+      maxLength: 10
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+    fallback_language:
+      type: string
+      maxLength: 10
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+    available_languages:
+      type: array
+      items:
+        type: string
+        pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+    timezone:
+      type: string
+      maxLength: 100
+    date_format:
+      type: string
+      maxLength: 50
+    time_format:
+      type: string
+      maxLength: 50
+    datetime_format:
+      type: string
+      maxLength: 50
+    number_format:
+      type: object
+    currency_format:
+      type: object
+    first_day_of_week:
+      type: integer
+      minimum: 0
+      maximum: 6
+    metadata:
+      type: object
+      nullable: true
+
+# ================================================================
+# RESPONSE SCHEMAS
+# ================================================================
+
+# Language List Response
+LanguageListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/Language'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Translation List Response
+TranslationListResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/Translation'
+        meta:
+          $ref: '../common/base.yaml#/PaginationMeta'
+
+# Translation Export Response
+TranslationExportResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            export_url:
+              type: string
+              format: uri
+              description: URL to download the exported file
+            file_name:
+              type: string
+              description: Name of the exported file
+            file_size:
+              type: integer
+              description: Size of the exported file in bytes
+            expires_at:
+              type: string
+              format: date-time
+              description: When the download link expires
+
+# Translation Analytics Response
+TranslationAnalyticsResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            summary:
+              type: object
+              properties:
+                total_translations:
+                  type: integer
+                active_languages:
+                  type: integer
+                completion_rate:
+                  type: number
+                  format: float
+                  minimum: 0
+                  maximum: 100
+                most_used_languages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      language_code:
+                        type: string
+                      usage_count:
+                        type: integer
+                      percentage:
+                        type: number
+            by_language:
+              type: array
+              items:
+                $ref: '#/TranslationAnalytics'
+            by_category:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    $ref: '#/TranslationCategory'
+                  translation_count:
+                    type: integer
+                  completion_rate:
+                    type: number
+                  most_recent_update:
+                    type: string
+                    format: date-time
+
+# Bulk Operation Response
+BulkTranslationResponse:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            total_processed:
+              type: integer
+              description: Total number of items processed
+            successful:
+              type: integer
+              description: Number of successful operations
+            failed:
+              type: integer
+              description: Number of failed operations
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    description: Translation key that failed
+                  error:
+                    type: string
+                    description: Error message
+                  line:
+                    type: integer
+                    nullable: true
+                    description: Line number (for file imports)
+            warnings:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                  warning:
+                    type: string
+                  line:
+                    type: integer
+                    nullable: true

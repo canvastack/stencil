@@ -1,0 +1,1655 @@
+openapi: 3.1.0
+info:
+  title: Documentation & Help Center API
+  version: 1.0.0
+paths:
+  # ================================================================
+  # DOCUMENTATION ARTICLES ENDPOINTS
+  # ================================================================
+  /documentation/articles:
+    get:
+      tags:
+        - Documentation Articles
+      summary: List Documentation Articles
+      description: |
+        Retrieve paginated list of documentation articles with advanced filtering and search capabilities.
+        
+        **Features:**
+        - Search by title, content, tags
+        - Filter by category, status, visibility
+        - Sort by multiple fields (date, views, rating)
+        - Multi-tenant support
+        - Public/customer access control
+      operationId: listDocumentationArticles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          description: Search in title, content, excerpt
+          schema:
+            type: string
+            maxLength: 255
+          example: "etching design"
+        - name: category_id
+          in: query
+          description: Filter by category UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: status
+          in: query
+          description: Filter by article status
+          schema:
+            type: string
+            enum: [draft, review, approved, published, archived]
+          example: "published"
+        - name: visibility
+          in: query
+          description: Filter by visibility level
+          schema:
+            type: string
+            enum: [private, internal, public, customer]
+          example: "customer"
+        - name: difficulty_level
+          in: query
+          description: Filter by difficulty level
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced, expert]
+          example: "beginner"
+        - name: author_id
+          in: query
+          description: Filter by author UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: tags
+          in: query
+          description: Filter by comma-separated tags
+          schema:
+            type: string
+          example: "design,tutorial,metal"
+        - name: published_from
+          in: query
+          description: Filter articles published after this date
+          schema:
+            type: string
+            format: date
+          example: "2025-01-01"
+        - name: published_to
+          in: query
+          description: Filter articles published before this date
+          schema:
+            type: string
+            format: date
+          example: "2025-12-31"
+      responses:
+        '200':
+          description: Documentation articles retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticlesResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Documentation Articles
+      summary: Create Documentation Article
+      description: |
+        Create a new documentation article with comprehensive content management features.
+        
+        **Admin Features:**
+        - Rich content with markdown/HTML support
+        - Category assignment and tagging
+        - SEO metadata management
+        - Version control integration
+        - Multi-tenant isolation
+      operationId: createDocumentationArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleInput'
+            examples:
+              technical_guide:
+                summary: Technical guide article
+                value:
+                  title: "Advanced Metal Etching Techniques for Industrial Applications"
+                  slug: "advanced-metal-etching-techniques-industrial"
+                  excerpt: "Master professional etching techniques for industrial-grade metal products"
+                  content: "## Introduction\n\nThis comprehensive guide covers advanced techniques for metal etching in industrial applications...\n\n### Required Materials\n\n1. High-grade stainless steel\n2. Precision etching tools\n3. Safety equipment\n\n### Process Steps\n\n#### Step 1: Preparation\n..."
+                  content_type: "markdown"
+                  status: "draft"
+                  visibility: "customer"
+                  category_id: "550e8400-e29b-41d4-a716-446655440000"
+                  difficulty_level: "advanced"
+                  meta_title: "Advanced Metal Etching Techniques | PT Custom Etching Xenial"
+                  meta_description: "Learn professional metal etching techniques for industrial applications with our comprehensive guide"
+                  meta_keywords: "metal etching, industrial etching, advanced techniques, stainless steel"
+                  tags: ["metal-etching", "advanced", "industrial", "techniques"]
+                  featured_image_url: "https://cdn.ptcex.com/docs/advanced-etching-featured.jpg"
+      responses:
+        '201':
+          description: Documentation article created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /documentation/articles/{articleId}:
+    get:
+      tags:
+        - Documentation Articles
+      summary: Get Documentation Article
+      description: |
+        Retrieve a specific documentation article by UUID with related content.
+        
+        **Features:**
+        - Article content with metadata
+        - Related articles suggestions
+        - View count tracking
+        - Version history access
+        - Category information
+      operationId: getDocumentationArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: articleId
+          in: path
+          required: true
+          description: Documentation article UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: increment_views
+          in: query
+          description: Whether to increment view count
+          schema:
+            type: boolean
+            default: true
+          example: true
+        - name: include_versions
+          in: query
+          description: Include version history
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: include_related
+          in: query
+          description: Include related articles
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Documentation article retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    patch:
+      tags:
+        - Documentation Articles
+      summary: Update Documentation Article
+      description: |
+        Update an existing documentation article with version control.
+        
+        **Admin Features:**
+        - Partial updates support
+        - Automatic version creation
+        - Status workflow management
+        - Content approval process
+        - SEO metadata updates
+      operationId: updateDocumentationArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: articleId
+          in: path
+          required: true
+          description: Documentation article UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: create_version
+          in: query
+          description: Whether to create a new version
+          schema:
+            type: boolean
+            default: true
+          example: true
+        - name: version_type
+          in: query
+          description: Type of version change
+          schema:
+            type: string
+            enum: [major, minor, patch, hotfix]
+            default: "minor"
+          example: "minor"
+        - name: change_summary
+          in: query
+          description: Summary of changes made
+          schema:
+            type: string
+            maxLength: 500
+          example: "Updated material specifications and added safety guidelines"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleInput'
+      responses:
+        '200':
+          description: Documentation article updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Documentation Articles
+      summary: Delete Documentation Article
+      description: |
+        Delete a documentation article (soft delete to archived status by default).
+        
+        **Admin Features:**
+        - Soft delete (archive) by default
+        - Hard delete option for admins
+        - Cascade handling for related content
+        - Version history preservation
+      operationId: deleteDocumentationArticle
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: articleId
+          in: path
+          required: true
+          description: Documentation article UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: hard_delete
+          in: query
+          description: Permanently delete instead of archiving
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: preserve_versions
+          in: query
+          description: Keep version history when hard deleting
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Documentation article deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Documentation article archived successfully"
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /documentation/articles/bulk:
+    post:
+      tags:
+        - Documentation Articles
+      summary: Bulk Operations on Articles
+      description: |
+        Perform bulk operations on multiple documentation articles.
+        
+        **Admin Operations:**
+        - Bulk publish/unpublish articles
+        - Bulk category assignment
+        - Bulk status updates
+        - Bulk tag management
+        - Export selected articles
+      operationId: bulkOperationsDocumentationArticles
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+                - article_ids
+              properties:
+                action:
+                  type: string
+                  enum: [publish, unpublish, archive, delete, update_category, add_tags, remove_tags, export]
+                  description: Bulk operation to perform
+                  example: "publish"
+                article_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: Array of article UUIDs
+                  example: ["550e8400-e29b-41d4-a716-446655440000", "123e4567-e89b-12d3-a456-426614174000"]
+                parameters:
+                  type: object
+                  additionalProperties: true
+                  description: Action-specific parameters
+                  example:
+                    category_id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+                    tags: ["updated", "reviewed"]
+      responses:
+        '200':
+          description: Bulk operation completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          processed:
+                            type: integer
+                            example: 15
+                          failed:
+                            type: integer
+                            example: 2
+                          errors:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                article_id:
+                                  type: string
+                                  format: uuid
+                                error:
+                                  type: string
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # DOCUMENTATION CATEGORIES ENDPOINTS
+  # ================================================================
+  /documentation/categories:
+    get:
+      tags:
+        - Documentation Categories
+      summary: List Documentation Categories
+      description: |
+        Retrieve hierarchical list of documentation categories with article counts.
+        
+        **Features:**
+        - Hierarchical tree structure
+        - Article counts per category
+        - Visibility filtering
+        - Sort order support
+        - Featured categories
+      operationId: listDocumentationCategories
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: include_hidden
+          in: query
+          description: Include hidden categories
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: featured_only
+          in: query
+          description: Return only featured categories
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: flat
+          in: query
+          description: Return flat list instead of hierarchy
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: include_counts
+          in: query
+          description: Include article counts
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Documentation categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoriesResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Documentation Categories
+      summary: Create Documentation Category
+      description: |
+        Create a new documentation category with hierarchical support.
+        
+        **Admin Features:**
+        - Parent-child relationships
+        - Custom icons and colors
+        - Sort order management
+        - Visibility controls
+        - Metadata storage
+      operationId: createDocumentationCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryInput'
+            examples:
+              main_category:
+                summary: Main category
+                value:
+                  name: "Technical Guides"
+                  slug: "technical-guides"
+                  description: "Comprehensive technical documentation for etching processes"
+                  icon: "book-open"
+                  color: "#3B82F6"
+                  sort_order: 10
+                  is_visible: true
+                  is_featured: true
+              sub_category:
+                summary: Sub-category
+                value:
+                  parent_id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "Material Specifications"
+                  slug: "material-specifications"
+                  description: "Detailed specifications for different etching materials"
+                  icon: "layers"
+                  color: "#10B981"
+                  sort_order: 5
+      responses:
+        '201':
+          description: Documentation category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /documentation/categories/{categoryId}:
+    get:
+      tags:
+        - Documentation Categories
+      summary: Get Documentation Category
+      description: |
+        Retrieve a specific documentation category with optional subcategories.
+      operationId: getDocumentationCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: categoryId
+          in: path
+          required: true
+          description: Documentation category UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: include_children
+          in: query
+          description: Include subcategories
+          schema:
+            type: boolean
+            default: false
+          example: true
+        - name: include_articles
+          in: query
+          description: Include recent articles
+          schema:
+            type: boolean
+            default: false
+          example: false
+      responses:
+        '200':
+          description: Documentation category retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryResponse'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    patch:
+      tags:
+        - Documentation Categories
+      summary: Update Documentation Category
+      description: |
+        Update an existing documentation category.
+      operationId: updateDocumentationCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: categoryId
+          in: path
+          required: true
+          description: Documentation category UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryInput'
+      responses:
+        '200':
+          description: Documentation category updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    delete:
+      tags:
+        - Documentation Categories
+      summary: Delete Documentation Category
+      description: |
+        Delete a documentation category with cascade handling.
+      operationId: deleteDocumentationCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: categoryId
+          in: path
+          required: true
+          description: Documentation category UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: reassign_to
+          in: query
+          description: Reassign articles to this category UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Documentation category deleted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Documentation category deleted successfully"
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # HELP TICKETS ENDPOINTS
+  # ================================================================
+  /help/tickets:
+    get:
+      tags:
+        - Help Tickets
+      summary: List Help Tickets
+      description: |
+        Retrieve paginated list of help tickets with filtering and search.
+        
+        **Support Features:**
+        - Filter by status, priority, assignment
+        - Search in subject and description
+        - Customer and staff views
+        - SLA tracking and metrics
+      operationId: listHelpTickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          description: Search in subject, description, ticket number
+          schema:
+            type: string
+            maxLength: 255
+          example: "design file"
+        - name: status
+          in: query
+          description: Filter by ticket status
+          schema:
+            type: string
+            enum: [open, in_progress, waiting_customer, resolved, closed]
+          example: "open"
+        - name: priority
+          in: query
+          description: Filter by ticket priority
+          schema:
+            type: string
+            enum: [low, medium, high, urgent]
+          example: "high"
+        - name: assigned_to
+          in: query
+          description: Filter by assigned staff UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: customer_id
+          in: query
+          description: Filter by customer UUID
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: category
+          in: query
+          description: Filter by ticket category
+          schema:
+            type: string
+          example: "Technical Support"
+        - name: created_from
+          in: query
+          description: Filter tickets created after this date
+          schema:
+            type: string
+            format: date
+          example: "2025-01-01"
+        - name: created_to
+          in: query
+          description: Filter tickets created before this date
+          schema:
+            type: string
+            format: date
+          example: "2025-12-31"
+      responses:
+        '200':
+          description: Help tickets retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketsResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Help Tickets
+      summary: Create Help Ticket
+      description: |
+        Create a new help ticket with automatic categorization and article suggestions.
+        
+        **Customer Features:**
+        - Auto-generated ticket numbers
+        - Smart article suggestions
+        - File attachment support
+        - Email notifications
+        - Integration with knowledge base
+      operationId: createHelpTicket
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketInput'
+            examples:
+              technical_support:
+                summary: Technical support ticket
+                value:
+                  subject: "Issues with metal etching design file preparation"
+                  description: "I'm having trouble preparing my logo design file for metal etching. The lines appear too thin when I export from Illustrator, and I'm not sure about the correct resolution settings for optimal etching quality."
+                  priority: "medium"
+                  category: "Technical Support"
+                  customer_email: "customer@example.com"
+                  customer_name: "John Smith"
+                  tags: ["design", "file-preparation", "technical"]
+              general_inquiry:
+                summary: General inquiry ticket
+                value:
+                  subject: "Question about pricing for custom metal plaques"
+                  description: "I'm interested in ordering custom metal plaques for our company awards ceremony. Can you provide information about pricing and turnaround times for different materials?"
+                  priority: "low"
+                  category: "Sales Inquiry"
+                  customer_email: "procurement@company.com"
+                  customer_name: "Sarah Johnson"
+                  tags: ["pricing", "inquiry", "plaques"]
+      responses:
+        '201':
+          description: Help ticket created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /help/tickets/{ticketId}:
+    get:
+      tags:
+        - Help Tickets
+      summary: Get Help Ticket
+      description: |
+        Retrieve a specific help ticket with full details and suggestions.
+      operationId: getHelpTicket
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: ticketId
+          in: path
+          required: true
+          description: Help ticket UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: include_suggestions
+          in: query
+          description: Include suggested articles
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Help ticket retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketResponse'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    patch:
+      tags:
+        - Help Tickets
+      summary: Update Help Ticket
+      description: |
+        Update help ticket status, assignment, and resolution details.
+        
+        **Staff Features:**
+        - Status workflow management
+        - Assignment and reassignment
+        - Resolution tracking
+        - Customer communication
+        - SLA monitoring
+      operationId: updateHelpTicket
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: ticketId
+          in: path
+          required: true
+          description: Help ticket UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: send_notification
+          in: query
+          description: Send email notification to customer
+          schema:
+            type: boolean
+            default: true
+          example: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [open, in_progress, waiting_customer, resolved, closed]
+                  example: "resolved"
+                priority:
+                  type: string
+                  enum: [low, medium, high, urgent]
+                  example: "medium"
+                assigned_to:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                category:
+                  type: string
+                  maxLength: 100
+                  nullable: true
+                  example: "Technical Support"
+                resolution:
+                  type: string
+                  nullable: true
+                  example: "Provided detailed file preparation guide and recommended settings for optimal etching results."
+                related_articles:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  nullable: true
+                  example: ["987fcdeb-51a2-43d1-9f4b-123456789abc"]
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  example: ["resolved", "design-help"]
+      responses:
+        '200':
+          description: Help ticket updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # KNOWLEDGE BASE ENDPOINTS
+  # ================================================================
+  /knowledge-base:
+    get:
+      tags:
+        - Knowledge Base
+      summary: List Knowledge Base Entries
+      description: |
+        Retrieve knowledge base entries with filtering and search capabilities.
+        
+        **Features:**
+        - Full-text search in content
+        - Filter by type and category
+        - Sort by helpfulness and views
+        - Featured entries priority
+      operationId: listKnowledgeBase
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: search
+          in: query
+          description: Search in title and content
+          schema:
+            type: string
+            maxLength: 255
+          example: "material properties"
+        - name: kb_type
+          in: query
+          description: Filter by knowledge base type
+          schema:
+            type: string
+            enum: [faq, guide, procedure, specification, troubleshooting]
+          example: "specification"
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+          example: "Materials"
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [draft, published, archived]
+          example: "published"
+        - name: featured_only
+          in: query
+          description: Return only featured entries
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: tags
+          in: query
+          description: Filter by comma-separated tags
+          schema:
+            type: string
+          example: "materials,specifications"
+      responses:
+        '200':
+          description: Knowledge base entries retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/KnowledgeBaseListResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - Knowledge Base
+      summary: Create Knowledge Base Entry
+      description: |
+        Create a new knowledge base entry with rich content and attachments.
+      operationId: createKnowledgeBase
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - kb_type
+                - status
+              properties:
+                title:
+                  type: string
+                  maxLength: 500
+                  example: "Stainless Steel Etching Specifications"
+                slug:
+                  type: string
+                  maxLength: 500
+                  nullable: true
+                  example: "stainless-steel-etching-specifications"
+                content:
+                  type: string
+                  example: "## Material Properties\n\n### Grade 304 Stainless Steel\n- Excellent corrosion resistance\n- Suitable for detailed etching\n- Recommended thickness: 0.5-3mm"
+                kb_type:
+                  type: string
+                  enum: [faq, guide, procedure, specification, troubleshooting]
+                  example: "specification"
+                status:
+                  type: string
+                  enum: [draft, published, archived]
+                  default: "draft"
+                  example: "published"
+                is_featured:
+                  type: boolean
+                  default: false
+                  example: true
+                category:
+                  type: string
+                  maxLength: 100
+                  nullable: true
+                  example: "Materials"
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  example: ["stainless-steel", "specifications", "materials"]
+                external_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  example: "https://materials.example.com/stainless-steel-guide"
+                attachments:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      url:
+                        type: string
+                        format: uri
+                      size:
+                        type: integer
+                      mime_type:
+                        type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Knowledge base entry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/KnowledgeBaseResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # USER GUIDES ENDPOINTS
+  # ================================================================
+  /user-guides:
+    get:
+      tags:
+        - User Guides
+      summary: List User Guides
+      description: |
+        Retrieve interactive user guides with completion tracking.
+        
+        **Features:**
+        - Step-by-step tutorials
+        - Completion rate tracking
+        - Target audience filtering
+        - Difficulty level sorting
+      operationId: listUserGuides
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '../../components/parameters.yaml#/SortParam'
+        - name: guide_type
+          in: query
+          description: Filter by guide type
+          schema:
+            type: string
+            enum: [tutorial, walkthrough, checklist, workflow]
+          example: "tutorial"
+        - name: difficulty_level
+          in: query
+          description: Filter by difficulty level
+          schema:
+            type: string
+            enum: [easy, medium, hard]
+          example: "easy"
+        - name: target_audience
+          in: query
+          description: Filter by target audience
+          schema:
+            type: string
+            enum: [all, customers, vendors, staff]
+          example: "customers"
+        - name: status
+          in: query
+          description: Filter by status
+          schema:
+            type: string
+            enum: [draft, published, archived]
+          example: "published"
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+          example: "Order Process"
+        - name: interactive_only
+          in: query
+          description: Return only interactive guides
+          schema:
+            type: boolean
+            default: false
+          example: true
+      responses:
+        '200':
+          description: User guides retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/UserGuidesResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+    post:
+      tags:
+        - User Guides
+      summary: Create User Guide
+      description: |
+        Create a new interactive user guide with step-by-step instructions.
+      operationId: createUserGuide
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - guide_type
+                - status
+                - steps
+              properties:
+                title:
+                  type: string
+                  maxLength: 500
+                  example: "Complete Order Placement Guide"
+                slug:
+                  type: string
+                  maxLength: 500
+                  nullable: true
+                  example: "complete-order-placement-guide"
+                description:
+                  type: string
+                  nullable: true
+                  example: "Step-by-step guide for placing custom etching orders"
+                guide_type:
+                  type: string
+                  enum: [tutorial, walkthrough, checklist, workflow]
+                  example: "tutorial"
+                status:
+                  type: string
+                  enum: [draft, published, archived]
+                  default: "draft"
+                  example: "published"
+                is_interactive:
+                  type: boolean
+                  default: false
+                  example: true
+                steps:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      step_number:
+                        type: integer
+                        minimum: 1
+                      title:
+                        type: string
+                        maxLength: 255
+                      content:
+                        type: string
+                      image_url:
+                        type: string
+                        format: uri
+                        nullable: true
+                      video_url:
+                        type: string
+                        format: uri
+                        nullable: true
+                      is_optional:
+                        type: boolean
+                        default: false
+                      estimated_time:
+                        type: integer
+                        nullable: true
+                  example:
+                    - step_number: 1
+                      title: "Choose Your Product"
+                      content: "Select the type of etching product from our catalog"
+                      image_url: "https://cdn.ptcex.com/guides/step1-choose-product.jpg"
+                      is_optional: false
+                      estimated_time: 2
+                category:
+                  type: string
+                  maxLength: 100
+                  nullable: true
+                  example: "Order Process"
+                difficulty_level:
+                  type: string
+                  enum: [easy, medium, hard]
+                  default: "easy"
+                  example: "easy"
+                target_audience:
+                  type: string
+                  enum: [all, customers, vendors, staff]
+                  default: "all"
+                  example: "customers"
+                prerequisites:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  example: ["Account registration", "Design file ready"]
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  nullable: true
+                  example: ["orders", "tutorial", "customers"]
+      responses:
+        '201':
+          description: User guide created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/UserGuideResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # SEARCH & ANALYTICS ENDPOINTS
+  # ================================================================
+  /documentation/search:
+    get:
+      tags:
+        - Documentation Search
+      summary: Search Documentation Content
+      description: |
+        Comprehensive search across all documentation content types.
+        
+        **Search Features:**
+        - Full-text search across articles, KB, guides
+        - Faceted search with filters
+        - Search suggestions and auto-complete
+        - Relevance scoring and ranking
+        - Search analytics tracking
+      operationId: searchDocumentation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+            maxLength: 255
+          example: "metal etching design preparation"
+        - name: types
+          in: query
+          description: Content types to search (comma-separated)
+          schema:
+            type: string
+          example: "article,knowledge_base,user_guide"
+        - name: category
+          in: query
+          description: Limit search to specific category
+          schema:
+            type: string
+          example: "Technical Guides"
+        - name: difficulty
+          in: query
+          description: Filter by difficulty level
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced, expert]
+          example: "beginner"
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: include_suggestions
+          in: query
+          description: Include search suggestions
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Search completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationSearchResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /documentation/analytics:
+    get:
+      tags:
+        - Documentation Analytics
+      summary: Get Documentation Analytics
+      description: |
+        Comprehensive analytics for documentation system performance.
+        
+        **Analytics Data:**
+        - Content performance metrics
+        - User engagement statistics
+        - Search analytics and trends
+        - Help desk performance
+        - Knowledge gap identification
+      operationId: getDocumentationAnalytics
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: period
+          in: query
+          description: Analytics time period
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y, all]
+            default: "30d"
+          example: "30d"
+        - name: include_detailed
+          in: query
+          description: Include detailed breakdowns
+          schema:
+            type: boolean
+            default: false
+          example: true
+      responses:
+        '200':
+          description: Documentation analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationAnalyticsResponse'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  # ================================================================
+  # PUBLIC DOCUMENTATION ENDPOINTS (Customer Access)
+  # ================================================================
+  /public/documentation/articles:
+    get:
+      tags:
+        - Public Documentation
+      summary: Public Documentation Articles
+      description: |
+        Public access to customer-visible documentation articles.
+        
+        **Public Features:**
+        - No authentication required for public articles
+        - Customer-only articles require auth
+        - View tracking and analytics
+        - Related content suggestions
+        - Search functionality
+      operationId: getPublicDocumentationArticles
+      security: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/PageParam'
+        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - name: category_slug
+          in: query
+          description: Filter by category slug
+          schema:
+            type: string
+          example: "technical-guides"
+        - name: difficulty
+          in: query
+          description: Filter by difficulty level
+          schema:
+            type: string
+            enum: [beginner, intermediate, advanced, expert]
+          example: "beginner"
+        - name: search
+          in: query
+          description: Search in titles and content
+          schema:
+            type: string
+          example: "design preparation"
+        - name: featured_only
+          in: query
+          description: Return only featured articles
+          schema:
+            type: boolean
+            default: false
+          example: false
+      responses:
+        '200':
+          description: Public documentation articles retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticlesResponse'
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /public/documentation/articles/{slug}:
+    get:
+      tags:
+        - Public Documentation
+      summary: Get Public Documentation Article
+      description: |
+        Retrieve a specific public documentation article by slug.
+      operationId: getPublicDocumentationArticle
+      security: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: slug
+          in: path
+          required: true
+          description: Article slug
+          schema:
+            type: string
+          example: "how-to-design-custom-etching-files"
+      responses:
+        '200':
+          description: Public documentation article retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'
+
+  /public/help/ticket:
+    post:
+      tags:
+        - Public Help
+      summary: Submit Public Help Ticket
+      description: |
+        Allow public users to submit help tickets without authentication.
+        
+        **Public Features:**
+        - No authentication required
+        - Basic spam protection
+        - Auto-categorization
+        - Article suggestions
+        - Email confirmation
+      operationId: submitPublicHelpTicket
+      security: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketInput'
+      responses:
+        '201':
+          description: Public help ticket submitted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          ticket_number:
+                            type: string
+                            example: "PTCEX-2025-0001"
+                          message:
+                            type: string
+                            example: "Your support ticket has been created. We will respond via email within 24 hours."
+                          suggested_articles:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                title:
+                                  type: string
+                                slug:
+                                  type: string
+                                excerpt:
+                                  type: string
+        '400':
+          $ref: '../../components/responses.yaml#/ValidationError'
+        '429':
+          $ref: '../../components/responses.yaml#/RateLimitExceeded'
+        '500':
+          $ref: '../../components/responses.yaml#/ServerError'

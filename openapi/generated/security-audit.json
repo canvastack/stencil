@@ -1,0 +1,1228 @@
+{
+  "timestamp": "2025-11-13T16:48:01.466Z",
+  "summary": {
+    "overallScore": -69,
+    "riskLevel": "CRITICAL",
+    "totalRecommendations": 4
+  },
+  "scores": {
+    "authentication": 100,
+    "authorization": 85,
+    "multiTenant": 50,
+    "dataProtection": -660,
+    "owaspCompliance": 80
+  },
+  "details": {
+    "overallScore": -69,
+    "authenticationSecurity": {
+      "score": 100,
+      "hasJWT": true,
+      "hasSecuritySchemes": true,
+      "hasMultipleAuthMethods": true,
+      "authEndpoints": [
+        "GET /about/hero",
+        "POST /about/hero",
+        "GET /about/hero/{id}",
+        "PUT /about/hero/{id}",
+        "DELETE /about/hero/{id}",
+        "GET /about/company",
+        "POST /about/company",
+        "GET /about/company/{id}",
+        "PUT /about/company/{id}",
+        "DELETE /about/company/{id}",
+        "GET /about/mission-vision",
+        "POST /about/mission-vision",
+        "GET /about/mission-vision/{id}",
+        "PUT /about/mission-vision/{id}",
+        "DELETE /about/mission-vision/{id}",
+        "GET /about/team",
+        "POST /about/team",
+        "GET /about/team/{id}",
+        "PUT /about/team/{id}",
+        "DELETE /about/team/{id}",
+        "GET /about/timeline",
+        "POST /about/timeline",
+        "GET /about/timeline/{id}",
+        "PUT /about/timeline/{id}",
+        "DELETE /about/timeline/{id}",
+        "GET /about/certifications",
+        "POST /about/certifications",
+        "GET /about/certifications/{id}",
+        "PUT /about/certifications/{id}",
+        "DELETE /about/certifications/{id}",
+        "GET /about/complete",
+        "POST /about/bulk",
+        "GET /pages",
+        "POST /pages",
+        "GET /pages/{id}",
+        "PUT /pages/{id}",
+        "DELETE /pages/{id}",
+        "GET /pages/{id}/sections",
+        "POST /pages/{id}/sections",
+        "GET /pages/{id}/analytics",
+        "POST /pages/bulk",
+        "GET /languages",
+        "POST /languages",
+        "GET /languages/{languageId}",
+        "PATCH /languages/{languageId}",
+        "DELETE /languages/{languageId}",
+        "GET /translation-categories",
+        "POST /translation-categories",
+        "GET /translation-categories/{categoryId}",
+        "PATCH /translation-categories/{categoryId}",
+        "DELETE /translation-categories/{categoryId}",
+        "GET /translations",
+        "POST /translations",
+        "GET /translations/{translationId}",
+        "PATCH /translations/{translationId}",
+        "DELETE /translations/{translationId}",
+        "POST /translations/{translationId}/approve",
+        "POST /translations/{translationId}/reject",
+        "POST /translations/bulk",
+        "PATCH /translations/bulk",
+        "POST /translations/import",
+        "GET /translations/imports/{importId}",
+        "POST /translations/export",
+        "GET /translations/analytics",
+        "GET /translations/missing",
+        "GET /locale-settings",
+        "POST /locale-settings",
+        "PATCH /locale-settings",
+        "GET /translations/cache",
+        "DELETE /translations/cache",
+        "GET /public/translations/{language}",
+        "GET /public/languages"
+      ],
+      "weaknesses": [
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /PAGES/CONTACT paths",
+        "No security requirement: /CONTACT/SUBMIT paths",
+        "No security requirement: /ADMIN/PAGES/CONTACT paths",
+        "No security requirement: /ADMIN/CONTACT/FORMS paths",
+        "No security requirement: /ADMIN/CONTACT/SUBMISSIONS paths",
+        "No security requirement: /ADMIN/CONTACT/SUBMISSIONS/{SUBMISSIONID} paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /CUSTOMERS paths",
+        "No security requirement: /CUSTOMERS/{ID} paths",
+        "No security requirement: /CUSTOMERS/{ID}/ADDRESSES paths",
+        "No security requirement: /CUSTOMERS/{ID}/ADDRESSES/{ADDRESSID} paths",
+        "No security requirement: /CUSTOMERS/{ID}/ANALYTICS paths",
+        "No security requirement: /CUSTOMERS/{ID}/INTERACTIONS paths",
+        "No security requirement: /CUSTOMERS/SEARCH paths",
+        "No security requirement: /CUSTOMERS/BULK paths",
+        "No security requirement: /CUSTOMER-SEGMENTS paths",
+        "No security requirement: /CUSTOMER-SEGMENTS/{ID}/CUSTOMERS paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /DOCUMENTATION/ARTICLES paths",
+        "No security requirement: /DOCUMENTATION/ARTICLES/{ARTICLEID} paths",
+        "No security requirement: /DOCUMENTATION/ARTICLES/BULK paths",
+        "No security requirement: /DOCUMENTATION/CATEGORIES paths",
+        "No security requirement: /DOCUMENTATION/CATEGORIES/{CATEGORYID} paths",
+        "No security requirement: /HELP/TICKETS paths",
+        "No security requirement: /HELP/TICKETS/{TICKETID} paths",
+        "No security requirement: /KNOWLEDGE-BASE paths",
+        "No security requirement: /USER-GUIDES paths",
+        "No security requirement: /DOCUMENTATION/SEARCH paths",
+        "No security requirement: /DOCUMENTATION/ANALYTICS paths",
+        "No security requirement: /PUBLIC/DOCUMENTATION/ARTICLES paths",
+        "No security requirement: /PUBLIC/DOCUMENTATION/ARTICLES/{SLUG} paths",
+        "No security requirement: /PUBLIC/HELP/TICKET paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /FAQ paths",
+        "No security requirement: /FAQ/CATEGORIES paths",
+        "No security requirement: /FAQ/SEARCH paths",
+        "No security requirement: /FAQ/{FAQID}/HELPFUL paths",
+        "No security requirement: /FAQ/{FAQID}/NOT-HELPFUL paths",
+        "No security requirement: /ADMIN/FAQ/CATEGORIES paths",
+        "No security requirement: /ADMIN/FAQ/CATEGORIES/{CATEGORYID} paths",
+        "No security requirement: /ADMIN/FAQ/QUESTIONS paths",
+        "No security requirement: /ADMIN/FAQ/QUESTIONS/{QUESTIONID} paths",
+        "No security requirement: /ADMIN/FAQ/ANALYTICS paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /FINANCIAL/TRANSACTIONS paths",
+        "No security requirement: /FINANCIAL/TRANSACTIONS/{TRANSACTIONID} paths",
+        "No security requirement: /FINANCIAL/TRANSACTIONS/{TRANSACTIONID}/APPROVE paths",
+        "No security requirement: /FINANCIAL/TRANSACTIONS/{TRANSACTIONID}/REJECT paths",
+        "No security requirement: /FINANCIAL/REPORTS paths",
+        "No security requirement: /FINANCIAL/REPORTS/{REPORTID} paths",
+        "No security requirement: /FINANCIAL/REPORTS/{REPORTID}/EXPORT paths",
+        "No security requirement: /FINANCIAL/BUDGETS paths",
+        "No security requirement: /FINANCIAL/BUDGETS/{BUDGETID} paths",
+        "No security requirement: /FINANCIAL/BUDGETS/{BUDGETID}/SUBMIT paths",
+        "No security requirement: /FINANCIAL/BUDGETS/{BUDGETID}/APPROVE paths",
+        "No security requirement: /FINANCIAL/ANALYTICS/DASHBOARD paths",
+        "No security requirement: /FINANCIAL/ANALYTICS/CASH-FLOW paths",
+        "No security requirement: /FINANCIAL/ANALYTICS/PROFITABILITY paths",
+        "No security requirement: /FINANCIAL/TRANSACTIONS/BULK-IMPORT paths",
+        "No security requirement: /FINANCIAL/REPORTS/BULK-GENERATE paths",
+        "No security requirement: GET /page-templates",
+        "No security requirement: GET /page-templates/{id}",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /ADMIN/INVENTORY paths",
+        "No security requirement: /ADMIN/INVENTORY/ITEMS paths",
+        "No security requirement: /ADMIN/INVENTORY/ITEMS/{ID} paths",
+        "No security requirement: /ADMIN/INVENTORY/LOCATIONS paths",
+        "No security requirement: /ADMIN/INVENTORY/MOVEMENTS paths",
+        "No security requirement: /ADMIN/INVENTORY/MOVEMENTS/{ID}/APPROVE paths",
+        "No security requirement: /ADMIN/INVENTORY/ADJUSTMENTS paths",
+        "No security requirement: /ADMIN/INVENTORY/ALERTS paths",
+        "No security requirement: /ADMIN/INVENTORY/ALERTS/{ID}/ACKNOWLEDGE paths",
+        "No security requirement: /ADMIN/INVENTORY/COUNTS paths",
+        "No security requirement: /ADMIN/INVENTORY/RESERVATIONS paths",
+        "No security requirement: /ADMIN/INVENTORY/SUPPLIERS paths",
+        "No security requirement: /ADMIN/INVENTORY/BULK/STOCK-UPDATE paths",
+        "No security requirement: /ADMIN/INVENTORY/REPORTS/LOW-STOCK paths",
+        "No security requirement: /ADMIN/INVENTORY/REPORTS/VALUATION paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /MEDIA/UPLOAD paths",
+        "No security requirement: /MEDIA/UPLOAD/BULK paths",
+        "No security requirement: /MEDIA/FILES paths",
+        "No security requirement: /MEDIA/FILES/{UUID} paths",
+        "No security requirement: /MEDIA/FILES/MOVE paths",
+        "No security requirement: /MEDIA/FILES/{UUID}/DOWNLOAD paths",
+        "No security requirement: /MEDIA/FOLDERS paths",
+        "No security requirement: /MEDIA/FOLDERS/{UUID} paths",
+        "No security requirement: /MEDIA/FOLDERS/{UUID}/CONTENTS paths",
+        "No security requirement: /MEDIA/TAGS paths",
+        "No security requirement: /MEDIA/TAGS/{UUID} paths",
+        "No security requirement: /MEDIA/FILES/{UUID}/TRANSFORMATIONS paths",
+        "No security requirement: /MEDIA/ANALYTICS paths",
+        "No security requirement: /MEDIA/FILES/{UUID}/USAGE paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /ORDERS paths",
+        "No security requirement: /ORDERS/{ORDER_CODE}/STATUS paths",
+        "No security requirement: /ADMIN/ORDERS paths",
+        "No security requirement: /ADMIN/ORDERS/{ID} paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/ASSIGN-VENDOR paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/STATUS paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/QUOTATIONS paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/QUOTATIONS/{QUOTATION_ID} paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/QUOTATIONS/{QUOTATION_ID}/APPROVE paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/NEGOTIATIONS paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/PAYMENTS paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/PAYMENTS/{PAYMENT_ID}/VERIFY paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/SHIPMENTS paths",
+        "No security requirement: /ADMIN/ORDERS/{ID}/PROFITABILITY paths",
+        "No security requirement: /ADMIN/ORDERS/ANALYTICS/DASHBOARD paths",
+        "No security requirement: /ADMIN/ORDERS/BULK/UPDATE-STATUS paths",
+        "No security requirement: /ADMIN/ORDERS/EXPORT paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /PLUGINS paths",
+        "No security requirement: /PLUGINS/{ID} paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID} paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID}/ACTIVATE paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID}/DEACTIVATE paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID}/SETTINGS paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{INSTALLATIONID}/SETTINGS/{SETTINGID} paths",
+        "No security requirement: /PLUGINS/HOOKS paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID}/HOOKS paths",
+        "No security requirement: /MARKETPLACE/PLUGINS paths",
+        "No security requirement: /MARKETPLACE/PLUGINS/{ID} paths",
+        "No security requirement: /MARKETPLACE/PLUGINS/{ID}/PURCHASE paths",
+        "No security requirement: /PLUGINS/PURCHASES paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID}/ANALYTICS paths",
+        "No security requirement: /PLUGINS/HEALTH paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID}/HEALTH paths",
+        "No security requirement: /PLUGINS/INSTALLATIONS/{ID}/EVENTS paths",
+        "No security requirement: /PLUGINS/BULK/ACTIVATE paths",
+        "No security requirement: /PLUGINS/BULK/DEACTIVATE paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /PRODUCTS paths",
+        "No security requirement: /PRODUCTS/{SLUG} paths",
+        "No security requirement: /PRODUCTS/CATEGORIES paths",
+        "No security requirement: /ADMIN/PRODUCTS paths",
+        "No security requirement: /ADMIN/PRODUCTS/{ID} paths",
+        "No security requirement: /ADMIN/PRODUCTS/{ID}/RESTORE paths",
+        "No security requirement: /ADMIN/PRODUCTS/BULK paths",
+        "No security requirement: /ADMIN/PRODUCTS/CATEGORIES paths",
+        "No security requirement: /ADMIN/PRODUCTS/CATEGORIES/{ID} paths",
+        "No security requirement: /ADMIN/PRODUCTS/ANALYTICS/DASHBOARD paths",
+        "No security requirement: /ADMIN/PRODUCTS/ANALYTICS/EXPORT paths",
+        "No security requirement: /ADMIN/PRODUCTS/{ID}/VENDOR-PRICING paths",
+        "No security requirement: /ADMIN/PRODUCTS/{ID}/STOCK paths",
+        "No security requirement: /ADMIN/PRODUCTS/QUOTATION-ELIGIBLE paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /PRODUCTS/{PRODUCTUUID}/REVIEWS paths",
+        "No security requirement: /REVIEWS paths",
+        "No security requirement: /REVIEWS/{REVIEWUUID} paths",
+        "No security requirement: /REVIEWS/{REVIEWUUID}/VOTE paths",
+        "No security requirement: /REVIEWS/{REVIEWUUID}/REPLIES paths",
+        "No security requirement: /REVIEWS/{REVIEWUUID}/REPORT paths",
+        "No security requirement: /ADMIN/REVIEWS paths",
+        "No security requirement: /ADMIN/REVIEWS/{REVIEWUUID}/MODERATE paths",
+        "No security requirement: /ADMIN/REVIEWS/BULK-MODERATE paths",
+        "No security requirement: /ADMIN/REVIEWS/REPORTS paths",
+        "No security requirement: /ADMIN/REVIEWS/REPORTS/{REPORTUUID} paths",
+        "No security requirement: /ADMIN/REVIEWS/ANALYTICS paths",
+        "No security requirement: /ADMIN/REVIEWS/EXPORT paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /SEO paths",
+        "No security requirement: /SITEMAP.XML paths",
+        "No security requirement: /ROBOTS.TXT paths",
+        "No security requirement: /ADMIN/SEO/SETTINGS paths",
+        "No security requirement: /ADMIN/SEO/{TYPE}/{ID} paths",
+        "No security requirement: /ADMIN/SEO/BULK-UPDATE paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /SETTINGS/DASHBOARD paths",
+        "No security requirement: /SETTINGS/HEALTH paths",
+        "No security requirement: /SETTINGS/SITE paths",
+        "No security requirement: /SETTINGS/EMAIL paths",
+        "No security requirement: /SETTINGS/EMAIL/TEST paths",
+        "No security requirement: /SETTINGS/PAYMENT paths",
+        "No security requirement: /SETTINGS/PAYMENT/TEST paths",
+        "No security requirement: /SETTINGS/ANALYTICS paths",
+        "No security requirement: /SETTINGS/INTEGRATIONS paths",
+        "No security requirement: /SETTINGS/BACKUP paths",
+        "No security requirement: /SETTINGS/BACKUP/MANUAL paths",
+        "No security requirement: /SETTINGS/TEMPLATES paths",
+        "No security requirement: /SETTINGS/TEMPLATES/{TEMPLATE_ID} paths",
+        "No security requirement: /SETTINGS/TEMPLATES/{TEMPLATE_ID}/APPLY paths",
+        "No security requirement: /SETTINGS/VALIDATION paths",
+        "No security requirement: /SETTINGS/VALIDATION/RESULTS paths",
+        "No security requirement: /SETTINGS/VALIDATION/{VALIDATION_ID} paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /SUPPLIERS paths",
+        "No security requirement: /SUPPLIERS/{SUPPLIER_ID} paths",
+        "No security requirement: /SUPPLIERS/{SUPPLIER_ID}/CONTACTS paths",
+        "No security requirement: /SUPPLIERS/{SUPPLIER_ID}/CONTACTS/{CONTACT_ID} paths",
+        "No security requirement: /SUPPLIERS/{SUPPLIER_ID}/PRODUCTS paths",
+        "No security requirement: /SUPPLIERS/{SUPPLIER_ID}/PRODUCTS/{PRODUCT_ID} paths",
+        "No security requirement: /SUPPLIERS/QUOTATIONS paths",
+        "No security requirement: /SUPPLIERS/QUOTATIONS/{QUOTATION_ID} paths",
+        "No security requirement: /SUPPLIERS/{SUPPLIER_ID}/APPROVE paths",
+        "No security requirement: /SUPPLIERS/QUOTATIONS/{QUOTATION_ID}/EVALUATE paths",
+        "No security requirement: /SUPPLIERS/STATISTICS paths",
+        "No security requirement: /SUPPLIERS/{SUPPLIER_ID}/PERFORMANCE-REPORT paths",
+        "No security requirement: /SUPPLIERS/BULK/EXPORT paths",
+        "No security requirement: /SUPPLIERS/BULK/IMPORT paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /THEMES paths",
+        "No security requirement: /THEMES/{THEMEID} paths",
+        "No security requirement: /TENANT/THEMES paths",
+        "No security requirement: /TENANT/THEMES/{INSTALLATIONID} paths",
+        "No security requirement: /TENANT/THEMES/{INSTALLATIONID}/ACTIVATE paths",
+        "No security requirement: /TENANT/THEMES/{INSTALLATIONID}/DEACTIVATE paths",
+        "No security requirement: /TENANT/THEMES/{INSTALLATIONID}/SETTINGS paths",
+        "No security requirement: /TENANT/THEMES/{INSTALLATIONID}/SETTINGS/RESET paths",
+        "No security requirement: /ADMIN/THEMES/MARKETPLACE paths",
+        "No security requirement: /ADMIN/THEMES/MARKETPLACE/{LISTINGID}/APPROVE paths",
+        "No security requirement: /ADMIN/THEMES/MARKETPLACE/{LISTINGID}/REJECT paths",
+        "No security requirement: /THEMES/{THEMEID}/VALIDATE paths",
+        "No security requirement: /THEMES/{THEMEID}/VALIDATION-RESULTS paths",
+        "No security requirement: /THEMES/{THEMEID}/VERSIONS paths",
+        "No security requirement: /THEMES/{THEMEID}/PURCHASE paths",
+        "No security requirement: /TENANT/THEME-PURCHASES paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /AUTH/REGISTER paths",
+        "No security requirement: /AUTH/LOGIN paths",
+        "No security requirement: /AUTH/LOGOUT paths",
+        "No security requirement: /AUTH/VERIFY-EMAIL paths",
+        "No security requirement: /AUTH/FORGOT-PASSWORD paths",
+        "No security requirement: /AUTH/RESET-PASSWORD paths",
+        "No security requirement: /USERS paths",
+        "No security requirement: /USERS/{ID} paths",
+        "No security requirement: /USERS/{ID}/TENANT-ASSIGNMENTS paths",
+        "No security requirement: /USERS/ME paths",
+        "No security requirement: /USERS/ME/PASSWORD paths",
+        "No security requirement: /ROLES paths",
+        "No security requirement: /ROLES/{ID} paths",
+        "No security requirement: /PERMISSIONS paths",
+        "No security requirement: /PERMISSIONS/CHECK paths",
+        "No security requirement: /USERS/{ID}/PERMISSIONS paths",
+        "No security requirement: /USER-PERMISSIONS paths",
+        "No security requirement: /USER-PERMISSIONS/{ID} paths",
+        "No security requirement: /USERS/BULK paths",
+        "No security requirement: /USERS/STATISTICS paths",
+        "No security requirement: 0 openapi",
+        "No security requirement: 1 openapi",
+        "No security requirement: 2 openapi",
+        "No security requirement: 3 openapi",
+        "No security requirement: 4 openapi",
+        "No security requirement: TITLE info",
+        "No security requirement: VERSION info",
+        "No security requirement: /VENDORS paths",
+        "No security requirement: /VENDORS/{ID} paths",
+        "No security requirement: /VENDORS/{VENDORID}/SPECIALIZATIONS paths",
+        "No security requirement: /VENDORS/{VENDORID}/SPECIALIZATIONS/{ID} paths",
+        "No security requirement: /VENDORS/{VENDORID}/CONTACTS paths",
+        "No security requirement: /VENDORS/{VENDORID}/CONTACTS/{ID} paths",
+        "No security requirement: /VENDORS/{VENDORID}/RATINGS paths",
+        "No security requirement: /VENDORS/{VENDORID}/RATINGS/{ID} paths",
+        "No security requirement: /VENDORS/STATISTICS paths",
+        "No security requirement: /VENDORS/{ID}/PERFORMANCE paths",
+        "No security requirement: /VENDORS/SEARCH paths",
+        "No security requirement: /VENDORS/BULK paths"
+      ]
+    },
+    "authorizationSecurity": {
+      "score": 85,
+      "hasRBAC": true,
+      "hasRoleBasedPaths": true,
+      "hasPermissionModel": true,
+      "roleDefinitions": [],
+      "permissionChecks": [
+        "scope: \"tenant\"",
+        "scope: \"tenant\""
+      ],
+      "weaknesses": [
+        "No role definitions found"
+      ]
+    },
+    "multiTenantSecurity": {
+      "score": 50,
+      "hasTenantIsolation": true,
+      "tenantIdUsage": [
+        {
+          "file": "components\\parameters.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "components\\schemas.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "openapi.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "paths\\content-management\\customers.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "paths\\content-management\\homepage.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "paths\\content-management\\inventory.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "paths\\content-management\\vendors.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\common\\auth.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\common\\base.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\common\\error.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\common\\pagination.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\content-management\\homepage.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\content-management\\inventory.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\content-management\\language.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\content-management\\theme.yaml",
+          "occurrences": 1
+        },
+        {
+          "file": "schemas\\content-management\\users.yaml",
+          "occurrences": 1
+        }
+      ],
+      "crossTenantRisks": [
+        "schemas\\common\\error.yaml"
+      ],
+      "isolationMechanisms": [
+        "openapi.yaml",
+        "paths\\content-management\\customers.yaml",
+        "paths\\content-management\\financial.yaml",
+        "paths\\content-management\\orders.yaml",
+        "paths\\content-management\\plugins.yaml",
+        "paths\\content-management\\seo.yaml",
+        "paths\\content-management\\suppliers.yaml",
+        "paths\\content-management\\users.yaml",
+        "paths\\content-management\\vendors.yaml",
+        "schemas\\common\\error.yaml",
+        "schemas\\content-management\\customers.yaml",
+        "schemas\\content-management\\seo.yaml",
+        "schemas\\content-management\\theme.yaml"
+      ],
+      "weaknesses": [
+        "Low tenant isolation coverage: 0.0%",
+        "Potential cross-tenant access risks detected"
+      ]
+    },
+    "dataProtection": {
+      "score": -660,
+      "sensitiveDataFound": [
+        {
+          "file": "components\\responses.yaml",
+          "matches": [
+            "token"
+          ]
+        },
+        {
+          "file": "components\\schemas.yaml",
+          "matches": [
+            "password"
+          ]
+        },
+        {
+          "file": "openapi.yaml",
+          "matches": [
+            "token"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\documentation.yaml",
+          "matches": [
+            "private"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\faq.yaml",
+          "matches": [
+            "password"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\language.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\media.yaml",
+          "matches": [
+            "token"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\plugins.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\products.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\seo.yaml",
+          "matches": [
+            "Key"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\settings.yaml",
+          "matches": [
+            "password"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\theme.yaml",
+          "matches": [
+            "token"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\users.yaml",
+          "matches": [
+            "Password"
+          ]
+        },
+        {
+          "file": "schemas\\common\\auth.yaml",
+          "matches": [
+            "Token"
+          ]
+        },
+        {
+          "file": "schemas\\common\\base.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\common\\error.yaml",
+          "matches": [
+            "TOKEN"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\contact.yaml",
+          "matches": [
+            "password"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\documentation.yaml",
+          "matches": [
+            "private"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\faq.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\financial.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\homepage.yaml",
+          "matches": [
+            "Key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\language.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\plugins.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\products.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\seo.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\settings.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\theme.yaml",
+          "matches": [
+            "key"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\users.yaml",
+          "matches": [
+            "password"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\vendors.yaml",
+          "matches": [
+            "Key"
+          ]
+        }
+      ],
+      "encryptionUsage": [
+        "paths\\content-management\\media.yaml",
+        "paths\\content-management\\plugins.yaml",
+        "paths\\content-management\\settings.yaml",
+        "paths\\content-management\\users.yaml",
+        "schemas\\common\\auth.yaml",
+        "schemas\\content-management\\plugins.yaml",
+        "schemas\\content-management\\settings.yaml",
+        "schemas\\content-management\\theme.yaml",
+        "schemas\\content-management\\users.yaml"
+      ],
+      "piiDetected": [
+        {
+          "file": "components\\responses.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "components\\schemas.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "openapi.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\about.yaml",
+          "matches": [
+            "phone"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\contact.yaml",
+          "matches": [
+            "Address"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\customers.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\documentation.yaml",
+          "matches": [
+            "Email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\faq.yaml",
+          "matches": [
+            "personal"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\orders.yaml",
+          "matches": [
+            "phone"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\plugins.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\reviews.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\settings.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\suppliers.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\theme.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\users.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "paths\\content-management\\vendors.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\common\\auth.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\common\\base.yaml",
+          "matches": [
+            "Email"
+          ]
+        },
+        {
+          "file": "schemas\\common\\error.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\about.yaml",
+          "matches": [
+            "phone"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\contact.yaml",
+          "matches": [
+            "Address"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\customers.yaml",
+          "matches": [
+            "phone"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\documentation.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\faq.yaml",
+          "matches": [
+            "personal"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\homepage.yaml",
+          "matches": [
+            "personal"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\inventory.yaml",
+          "matches": [
+            "Address"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\media.yaml",
+          "matches": [
+            "address"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\orders.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\plugins.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\reviews.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\seo.yaml",
+          "matches": [
+            "phone"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\settings.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\suppliers.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\theme.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\users.yaml",
+          "matches": [
+            "email"
+          ]
+        },
+        {
+          "file": "schemas\\content-management\\vendors.yaml",
+          "matches": [
+            "email"
+          ]
+        }
+      ],
+      "readOnlyFields": [
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true",
+        "readOnly: true"
+      ],
+      "dataExposureRisks": [
+        "Unprotected sensitive field in components\\responses.yaml:16",
+        "Unprotected sensitive field in components\\responses.yaml:31",
+        "Unprotected sensitive field in components\\responses.yaml:64",
+        "Unprotected sensitive field in components\\responses.yaml:179",
+        "Unprotected sensitive field in components\\schemas.yaml:39",
+        "Unprotected sensitive field in openapi.yaml:21",
+        "Unprotected sensitive field in openapi.yaml:61",
+        "Unprotected sensitive field in openapi.yaml:154",
+        "Unprotected sensitive field in openapi.yaml:156",
+        "Unprotected sensitive field in openapi.yaml:167",
+        "Unprotected sensitive field in openapi.yaml:174",
+        "Unprotected sensitive field in openapi.yaml:511",
+        "Unprotected sensitive field in openapi.yaml:540",
+        "Unprotected sensitive field in openapi.yaml:557",
+        "Unprotected sensitive field in openapi.yaml:602",
+        "Unprotected sensitive field in paths\\content-management\\documentation.yaml:106",
+        "Unprotected sensitive field in paths\\content-management\\documentation.yaml:164",
+        "Unprotected sensitive field in paths\\content-management\\faq.yaml:770",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:657",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:752",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:778",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:823",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:840",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:1212",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:1225",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:1314",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:1625",
+        "Unprotected sensitive field in paths\\content-management\\language.yaml:1992",
+        "Unprotected sensitive field in paths\\content-management\\media.yaml:728",
+        "Unprotected sensitive field in paths\\content-management\\plugins.yaml:493",
+        "Unprotected sensitive field in paths\\content-management\\plugins.yaml:706",
+        "Unprotected sensitive field in paths\\content-management\\plugins.yaml:883",
+        "Unprotected sensitive field in paths\\content-management\\plugins.yaml:1493",
+        "Unprotected sensitive field in paths\\content-management\\products.yaml:243",
+        "Unprotected sensitive field in paths\\content-management\\products.yaml:447",
+        "Unprotected sensitive field in paths\\content-management\\seo.yaml:108",
+        "Unprotected sensitive field in paths\\content-management\\seo.yaml:270",
+        "Unprotected sensitive field in paths\\content-management\\seo.yaml:335",
+        "Unprotected sensitive field in paths\\content-management\\seo.yaml:439",
+        "Unprotected sensitive field in paths\\content-management\\seo.yaml:523",
+        "Unprotected sensitive field in paths\\content-management\\settings.yaml:344",
+        "Unprotected sensitive field in paths\\content-management\\settings.yaml:599",
+        "Unprotected sensitive field in paths\\content-management\\settings.yaml:929",
+        "Unprotected sensitive field in paths\\content-management\\theme.yaml:1719",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:53",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:82",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:102",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:166",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:186",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:212",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:226",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:243",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:261",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:276",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:284",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:304",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:327",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:335",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:504",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:910",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:933",
+        "Unprotected sensitive field in paths\\content-management\\users.yaml:952",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:11",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:37",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:46",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:98",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:129",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:148",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:172",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:186",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:318",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:323",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:330",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:341",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:348",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:359",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:368",
+        "Unprotected sensitive field in schemas\\common\\auth.yaml:390",
+        "Unprotected sensitive field in schemas\\common\\base.yaml:245",
+        "Unprotected sensitive field in schemas\\common\\error.yaml:168",
+        "Unprotected sensitive field in schemas\\content-management\\contact.yaml:275",
+        "Unprotected sensitive field in schemas\\content-management\\contact.yaml:576",
+        "Unprotected sensitive field in schemas\\content-management\\contact.yaml:707",
+        "Unprotected sensitive field in schemas\\content-management\\contact.yaml:870",
+        "Unprotected sensitive field in schemas\\content-management\\documentation.yaml:77",
+        "Unprotected sensitive field in schemas\\content-management\\documentation.yaml:105",
+        "Unprotected sensitive field in schemas\\content-management\\documentation.yaml:860",
+        "Unprotected sensitive field in schemas\\content-management\\faq.yaml:314",
+        "Unprotected sensitive field in schemas\\content-management\\faq.yaml:672",
+        "Unprotected sensitive field in schemas\\content-management\\financial.yaml:594",
+        "Unprotected sensitive field in schemas\\content-management\\homepage.yaml:2504",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:265",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:279",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:825",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:835",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:860",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:913",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:920",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:939",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:1326",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:1368",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:1427",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:1440",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:1448",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:1486",
+        "Unprotected sensitive field in schemas\\content-management\\language.yaml:1718",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:412",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:451",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:782",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:1016",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:1039",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:1053",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:1072",
+        "Unprotected sensitive field in schemas\\content-management\\plugins.yaml:1668",
+        "Unprotected sensitive field in schemas\\content-management\\products.yaml:353",
+        "Unprotected sensitive field in schemas\\content-management\\products.yaml:458",
+        "Unprotected sensitive field in schemas\\content-management\\products.yaml:477",
+        "Unprotected sensitive field in schemas\\content-management\\products.yaml:680",
+        "Unprotected sensitive field in schemas\\content-management\\products.yaml:830",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:59",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:308",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:413",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:489",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:629",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:950",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1174",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1204",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1222",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1235",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1303",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1499",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1796",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:1984",
+        "Unprotected sensitive field in schemas\\content-management\\seo.yaml:2048",
+        "Unprotected sensitive field in schemas\\content-management\\settings.yaml:136",
+        "Unprotected sensitive field in schemas\\content-management\\settings.yaml:211",
+        "Unprotected sensitive field in schemas\\content-management\\settings.yaml:228",
+        "Unprotected sensitive field in schemas\\content-management\\settings.yaml:249",
+        "Unprotected sensitive field in schemas\\content-management\\settings.yaml:390",
+        "Unprotected sensitive field in schemas\\content-management\\settings.yaml:412",
+        "Unprotected sensitive field in schemas\\content-management\\settings.yaml:434",
+        "Unprotected sensitive field in schemas\\content-management\\theme.yaml:664",
+        "Unprotected sensitive field in schemas\\content-management\\theme.yaml:677",
+        "Unprotected sensitive field in schemas\\content-management\\users.yaml:20",
+        "Unprotected sensitive field in schemas\\content-management\\users.yaml:185",
+        "Unprotected sensitive field in schemas\\content-management\\users.yaml:837",
+        "Unprotected sensitive field in schemas\\content-management\\users.yaml:1147",
+        "Unprotected sensitive field in schemas\\content-management\\vendors.yaml:379",
+        "Unprotected sensitive field in schemas\\content-management\\vendors.yaml:514",
+        "Unprotected sensitive field in schemas\\content-management\\vendors.yaml:641",
+        "Unprotected sensitive field in schemas\\content-management\\vendors.yaml:788",
+        "Unprotected sensitive field in schemas\\content-management\\vendors.yaml:991"
+      ],
+      "weaknesses": [
+        "152 potential data exposure risks"
+      ]
+    },
+    "owaspCompliance": {
+      "score": 80,
+      "vulnerabilities": {
+        "Injection": {
+          "found": false,
+          "files": [],
+          "severity": "CRITICAL"
+        },
+        "Broken Authentication": {
+          "found": true,
+          "files": [
+            "paths\\content-management\\documentation.yaml",
+            "paths\\content-management\\homepage.yaml",
+            "paths\\content-management\\language.yaml",
+            "paths\\content-management\\reviews.yaml"
+          ],
+          "severity": "CRITICAL"
+        },
+        "Sensitive Data Exposure": {
+          "found": false,
+          "files": [],
+          "severity": "HIGH"
+        },
+        "XML External Entities": {
+          "found": false,
+          "files": [],
+          "severity": "HIGH"
+        },
+        "Broken Access Control": {
+          "found": false,
+          "files": [],
+          "severity": "CRITICAL"
+        },
+        "Security Misconfiguration": {
+          "found": false,
+          "files": [],
+          "severity": "MEDIUM"
+        },
+        "Cross-Site Scripting": {
+          "found": false,
+          "files": [],
+          "severity": "HIGH"
+        },
+        "Insecure Deserialization": {
+          "found": false,
+          "files": [],
+          "severity": "HIGH"
+        },
+        "Vulnerable Components": {
+          "found": false,
+          "files": [],
+          "severity": "MEDIUM"
+        },
+        "Insufficient Logging": {
+          "found": false,
+          "files": [],
+          "severity": "LOW"
+        }
+      },
+      "riskLevel": "CRITICAL",
+      "weaknesses": []
+    },
+    "vulnerabilities": [],
+    "recommendations": [
+      {
+        "category": "Authorization",
+        "priority": "HIGH",
+        "recommendation": "Implement comprehensive RBAC with granular permissions",
+        "impact": "Ensures users only access resources appropriate for their role"
+      },
+      {
+        "category": "Multi-Tenant Security",
+        "priority": "CRITICAL",
+        "recommendation": "Enforce tenant_id isolation in all API endpoints and database queries",
+        "impact": "Prevents data leakage between tenants"
+      },
+      {
+        "category": "Data Protection",
+        "priority": "HIGH",
+        "recommendation": "Implement encryption for sensitive data fields and PII",
+        "impact": "Protects sensitive information and ensures privacy compliance"
+      },
+      {
+        "category": "OWASP Compliance",
+        "priority": "CRITICAL",
+        "recommendation": "Address identified OWASP Top 10 vulnerabilities",
+        "impact": "Reduces security risks and improves overall security posture"
+      }
+    ]
+  }
+}

@@ -1,0 +1,2048 @@
+# LANGUAGE & LOCALIZATION MANAGEMENT API ENDPOINTS
+# Complete REST API specification for Language & Translation Management System (35+ endpoints)
+# Enterprise-grade multi-tenant internationalization system
+
+# ================================================================
+# LANGUAGE MANAGEMENT ENDPOINTS
+# ================================================================
+
+# Get All Languages
+/languages:
+  get:
+    tags:
+      - Languages
+    summary: Get All Languages
+    description: |
+      Retrieve all available languages in the system with optional filtering and sorting.
+      
+      **Features:**
+      - Supports pagination and filtering
+      - Sort by name, code, market priority
+      - Filter by active status, RTL support
+      - Include translation completion statistics
+      
+      **Permissions Required:** `languages.view`
+    operationId: getLanguages
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+        description: Page number for pagination
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        description: Number of items per page
+      - name: is_active
+        in: query
+        schema:
+          type: boolean
+        description: Filter by active status
+      - name: is_rtl
+        in: query
+        schema:
+          type: boolean
+        description: Filter by RTL languages
+      - name: market_priority
+        in: query
+        schema:
+          type: string
+          enum: ["high", "medium", "low"]
+        description: Filter by market priority
+      - name: search
+        in: query
+        schema:
+          type: string
+          maxLength: 100
+        description: Search by name or native name
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: ["name", "code", "sort_order", "market_priority", "created_at"]
+          default: "sort_order"
+        description: Sort field
+      - name: order
+        in: query
+        schema:
+          type: string
+          enum: ["asc", "desc"]
+          default: "asc"
+        description: Sort order
+      - name: include_stats
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Include translation completion statistics
+    responses:
+      '200':
+        description: Languages retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/language.yaml#/Language'
+                    meta:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  post:
+    tags:
+      - Languages
+    summary: Create New Language
+    description: |
+      Create a new language in the system with localization settings.
+      
+      **Features:**
+      - Language code validation (ISO 639-1)
+      - Duplicate prevention
+      - Automatic pluralization rules setup
+      - Translation API configuration
+      
+      **Permissions Required:** `languages.manage`
+    operationId: createLanguage
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/LanguageCreateInput'
+          examples:
+            japanese:
+              summary: Add Japanese language
+              value:
+                code: "ja"
+                name: "Japanese"
+                native_name: "日本語"
+                is_active: true
+                flag_emoji: "🇯🇵"
+                sort_order: 3
+                supports_pluralization: true
+                pluralization_rules:
+                  other: "items"
+                translation_api_support:
+                  google_translate: true
+                  deepl: true
+                market_priority: "high"
+                market_size: 125000000
+    responses:
+      '201':
+        description: Language created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Language'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Language code already exists
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "DUPLICATE_LANGUAGE_CODE"
+                message: "Language with this code already exists"
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Get, Update, Delete Specific Language
+/languages/{languageId}:
+  get:
+    tags:
+      - Languages
+    summary: Get Language Details
+    description: |
+      Retrieve detailed information about a specific language.
+      
+      **Features:**
+      - Complete language configuration
+      - Translation statistics
+      - Usage analytics
+      
+      **Permissions Required:** `languages.view`
+    operationId: getLanguage
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: languageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Language UUID
+      - name: include_stats
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Include translation completion and usage statistics
+    responses:
+      '200':
+        description: Language details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Language'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  patch:
+    tags:
+      - Languages
+    summary: Update Language
+    description: |
+      Update language configuration and settings.
+      
+      **Features:**
+      - Partial updates supported
+      - Version tracking
+      - Audit logging
+      - Validation of dependencies
+      
+      **Permissions Required:** `languages.manage`
+    operationId: updateLanguage
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: languageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Language UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/LanguageUpdateInput'
+          examples:
+            update_priority:
+              summary: Update market priority
+              value:
+                market_priority: "high"
+                market_size: 150000000
+    responses:
+      '200':
+        description: Language updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Language'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  delete:
+    tags:
+      - Languages
+    summary: Delete Language
+    description: |
+      Delete a language from the system (soft delete).
+      
+      **Features:**
+      - Soft delete with recovery option
+      - Validation of dependencies
+      - Automatic cleanup of related data
+      
+      **Permissions Required:** `languages.manage`
+    operationId: deleteLanguage
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: languageId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Language UUID
+      - name: force
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Force delete even if translations exist
+    responses:
+      '204':
+        description: Language deleted successfully
+      '400':
+        description: Cannot delete language with dependencies
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "LANGUAGE_HAS_DEPENDENCIES"
+                message: "Cannot delete language that has active translations"
+                details:
+                  translation_count: 150
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# TRANSLATION CATEGORY ENDPOINTS
+# ================================================================
+
+# Get All Translation Categories
+/translation-categories:
+  get:
+    tags:
+      - Translation Categories
+    summary: Get All Translation Categories
+    description: |
+      Retrieve all translation categories with hierarchical structure.
+      
+      **Features:**
+      - Hierarchical category tree
+      - Translation count per category
+      - Filtering and sorting options
+      
+      **Permissions Required:** `translations.view`
+    operationId: getTranslationCategories
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: parent_id
+        in: query
+        schema:
+          type: integer
+          format: int64
+        description: Filter by parent category ID (null for root categories)
+      - name: include_children
+        in: query
+        schema:
+          type: boolean
+          default: true
+        description: Include child categories in response
+      - name: include_counts
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Include translation counts per category
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: ["name", "slug", "sort_order", "created_at"]
+          default: "sort_order"
+        description: Sort field
+    responses:
+      '200':
+        description: Categories retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/language.yaml#/TranslationCategory'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  post:
+    tags:
+      - Translation Categories
+    summary: Create Translation Category
+    description: |
+      Create a new translation category for organizing translations.
+      
+      **Features:**
+      - Hierarchical categories support
+      - Slug auto-generation
+      - Sort order management
+      
+      **Permissions Required:** `translations.edit`
+    operationId: createTranslationCategory
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/TranslationCategoryCreateInput'
+          examples:
+            navigation:
+              summary: Navigation category
+              value:
+                slug: "navigation"
+                name: "Navigation"
+                description: "Menu items, links, and navigation elements"
+                sort_order: 1
+    responses:
+      '201':
+        description: Category created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/TranslationCategory'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Category slug already exists
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Get, Update, Delete Specific Translation Category
+/translation-categories/{categoryId}:
+  get:
+    tags:
+      - Translation Categories
+    summary: Get Category Details
+    description: |
+      Retrieve detailed information about a specific translation category.
+      
+      **Permissions Required:** `translations.view`
+    operationId: getTranslationCategory
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Category UUID
+      - name: include_children
+        in: query
+        schema:
+          type: boolean
+          default: true
+        description: Include child categories
+      - name: include_translations
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Include translations in this category
+    responses:
+      '200':
+        description: Category details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/TranslationCategory'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  patch:
+    tags:
+      - Translation Categories
+    summary: Update Translation Category
+    description: |
+      Update translation category information and hierarchy.
+      
+      **Permissions Required:** `translations.edit`
+    operationId: updateTranslationCategory
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Category UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/TranslationCategoryUpdateInput'
+    responses:
+      '200':
+        description: Category updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/TranslationCategory'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  delete:
+    tags:
+      - Translation Categories
+    summary: Delete Translation Category
+    description: |
+      Delete a translation category and optionally its children.
+      
+      **Permissions Required:** `translations.edit`
+    operationId: deleteTranslationCategory
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Category UUID
+      - name: delete_children
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Also delete child categories
+      - name: move_translations_to
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Move translations to this category before deletion
+    responses:
+      '204':
+        description: Category deleted successfully
+      '400':
+        description: Cannot delete category with dependencies
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# TRANSLATION MANAGEMENT ENDPOINTS
+# ================================================================
+
+# Get All Translations
+/translations:
+  get:
+    tags:
+      - Translations
+    summary: Get All Translations
+    description: |
+      Retrieve translations with comprehensive filtering and search capabilities.
+      
+      **Features:**
+      - Full-text search across keys and content
+      - Filter by language, category, status
+      - Include completion statistics
+      - Sort by usage, date, alphabetical
+      
+      **Permissions Required:** `translations.view`
+    operationId: getTranslations
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: category_id
+        in: query
+        schema:
+          type: integer
+          format: int64
+        description: Filter by category ID
+      - name: language
+        in: query
+        schema:
+          type: string
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Filter translations containing this language
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: ["draft", "review", "approved", "published", "archived"]
+        description: Filter by translation status
+      - name: approval_status
+        in: query
+        schema:
+          type: string
+          enum: ["pending", "approved", "rejected"]
+        description: Filter by approval status
+      - name: search
+        in: query
+        schema:
+          type: string
+          maxLength: 255
+        description: Search in translation keys, descriptions, and content
+      - name: key_prefix
+        in: query
+        schema:
+          type: string
+          maxLength: 100
+        description: Filter by translation key prefix (e.g., "nav.")
+      - name: is_system
+        in: query
+        schema:
+          type: boolean
+        description: Filter system/user translations
+      - name: missing_language
+        in: query
+        schema:
+          type: string
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Show translations missing this language
+      - name: has_html
+        in: query
+        schema:
+          type: boolean
+        description: Filter translations containing HTML
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: ["key", "usage_count", "last_used_at", "created_at", "updated_at"]
+          default: "key"
+        description: Sort field
+      - name: order
+        in: query
+        schema:
+          type: string
+          enum: ["asc", "desc"]
+          default: "asc"
+        description: Sort order
+    responses:
+      '200':
+        description: Translations retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/language.yaml#/Translation'
+                    meta:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  post:
+    tags:
+      - Translations
+    summary: Create New Translation
+    description: |
+      Create a new translation entry with multi-language support.
+      
+      **Features:**
+      - Multi-language content in single request
+      - Automatic key validation
+      - Category assignment
+      - Metadata support
+      
+      **Permissions Required:** `translations.edit`
+    operationId: createTranslation
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/TranslationCreateInput'
+          examples:
+            simple:
+              summary: Simple translation
+              value:
+                key: "nav.menu.dashboard"
+                category_id: 1
+                translations:
+                  en: "Dashboard"
+                  id: "Dashboard"
+                  ja: "ダッシュボード"
+                description: "Main navigation dashboard link"
+                context: "Main navigation menu"
+            with_interpolation:
+              summary: With variable interpolation
+              value:
+                key: "user.welcome_message"
+                translations:
+                  en: "Welcome, {name}!"
+                  id: "Selamat datang, {name}!"
+                supports_interpolation: true
+                metadata:
+                  variables: ["name"]
+                  max_length: 50
+    responses:
+      '201':
+        description: Translation created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Translation'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Translation key already exists
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Get, Update, Delete Specific Translation
+/translations/{translationId}:
+  get:
+    tags:
+      - Translations
+    summary: Get Translation Details
+    description: |
+      Retrieve detailed information about a specific translation.
+      
+      **Features:**
+      - Complete translation data
+      - Version history
+      - Usage analytics
+      - Quality metrics
+      
+      **Permissions Required:** `translations.view`
+    operationId: getTranslation
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: translationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Translation UUID
+      - name: include_versions
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Include version history
+      - name: include_analytics
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Include usage analytics
+    responses:
+      '200':
+        description: Translation details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Translation'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  patch:
+    tags:
+      - Translations
+    summary: Update Translation
+    description: |
+      Update translation content and metadata.
+      
+      **Features:**
+      - Partial language updates
+      - Version tracking
+      - Approval workflow integration
+      - Change notifications
+      
+      **Permissions Required:** `translations.edit`
+    operationId: updateTranslation
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: translationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Translation UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/TranslationUpdateInput'
+          examples:
+            update_content:
+              summary: Update translation content
+              value:
+                translations:
+                  en: "Updated Dashboard"
+                  ja: "更新されたダッシュボード"
+                status: "review"
+            add_language:
+              summary: Add new language
+              value:
+                translations:
+                  ko: "대시보드"
+    responses:
+      '200':
+        description: Translation updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Translation'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  delete:
+    tags:
+      - Translations
+    summary: Delete Translation
+    description: |
+      Delete a translation entry (soft delete with recovery).
+      
+      **Features:**
+      - Soft delete with recovery option
+      - System translation protection
+      - Cascade deletion options
+      
+      **Permissions Required:** `translations.edit`
+    operationId: deleteTranslation
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: translationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Translation UUID
+      - name: force
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Force delete system translations
+    responses:
+      '204':
+        description: Translation deleted successfully
+      '400':
+        description: Cannot delete system translation
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "SYSTEM_TRANSLATION_DELETE"
+                message: "System translations cannot be deleted without force flag"
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Translation Approval Endpoints
+/translations/{translationId}/approve:
+  post:
+    tags:
+      - Translations
+    summary: Approve Translation
+    description: |
+      Approve a translation and move it to published status.
+      
+      **Features:**
+      - Approval workflow integration
+      - Automatic status updates
+      - Notification system
+      
+      **Permissions Required:** `translations.approve`
+    operationId: approveTranslation
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: translationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Translation UUID
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              comment:
+                type: string
+                maxLength: 500
+                description: Approval comment
+              publish_immediately:
+                type: boolean
+                default: true
+                description: Publish immediately after approval
+    responses:
+      '200':
+        description: Translation approved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Translation'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/translations/{translationId}/reject:
+  post:
+    tags:
+      - Translations
+    summary: Reject Translation
+    description: |
+      Reject a translation and provide feedback for improvement.
+      
+      **Permissions Required:** `translations.approve`
+    operationId: rejectTranslation
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: translationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Translation UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - reason
+            properties:
+              reason:
+                type: string
+                maxLength: 1000
+                description: Rejection reason
+              suggestions:
+                type: object
+                description: Suggested improvements per language
+                additionalProperties:
+                  type: string
+    responses:
+      '200':
+        description: Translation rejected successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/Translation'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# BULK OPERATIONS ENDPOINTS
+# ================================================================
+
+# Bulk Create Translations
+/translations/bulk:
+  post:
+    tags:
+      - Translations
+      - Bulk Operations
+    summary: Bulk Create Translations
+    description: |
+      Create multiple translations in a single request.
+      
+      **Features:**
+      - Batch processing up to 1000 translations
+      - Partial success handling
+      - Error reporting per item
+      - Transaction rollback options
+      
+      **Permissions Required:** `translations.edit`
+    operationId: bulkCreateTranslations
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/BulkTranslationCreateInput'
+          examples:
+            navigation_bulk:
+              summary: Bulk create navigation translations
+              value:
+                category_id: 1
+                merge_mode: "merge"
+                translations:
+                  - key: "nav.menu.home"
+                    translations:
+                      en: "Home"
+                      id: "Beranda"
+                  - key: "nav.menu.about"
+                    translations:
+                      en: "About"
+                      id: "Tentang"
+    responses:
+      '200':
+        description: Bulk creation completed (with possible partial failures)
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/language.yaml#/BulkTranslationResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  patch:
+    tags:
+      - Translations
+      - Bulk Operations
+    summary: Bulk Update Translations
+    description: |
+      Update multiple translations in a single request.
+      
+      **Features:**
+      - Update by translation keys
+      - Partial field updates
+      - Error handling per item
+      
+      **Permissions Required:** `translations.edit`
+    operationId: bulkUpdateTranslations
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/BulkTranslationUpdateInput'
+    responses:
+      '200':
+        description: Bulk update completed
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/language.yaml#/BulkTranslationResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# IMPORT/EXPORT ENDPOINTS
+# ================================================================
+
+# Import Translations
+/translations/import:
+  post:
+    tags:
+      - Translations
+      - Import/Export
+    summary: Import Translations from File
+    description: |
+      Import translations from various file formats.
+      
+      **Supported Formats:**
+      - JSON: Structured translation files
+      - CSV: Tabular format with language columns
+      - PO: GNU gettext format
+      - XLIFF: Industry standard format
+      - YAML: Nested translation structure
+      
+      **Features:**
+      - Multiple file format support
+      - Merge/replace strategies
+      - Progress tracking
+      - Error reporting
+      - Backup creation
+      
+      **Permissions Required:** `translations.import`
+    operationId: importTranslations
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/TranslationImportInput'
+          examples:
+            json_import:
+              summary: JSON file import
+              value:
+                import_type: "json"
+                file_format: "json"
+                processing_options:
+                  merge_mode: "merge"
+                  create_missing_categories: true
+                  validate_keys: true
+                  backup_existing: true
+    responses:
+      '202':
+        description: Import started successfully (async processing)
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/TranslationImport'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '413':
+        description: File too large
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Get Import Status
+/translations/imports/{importId}:
+  get:
+    tags:
+      - Translations
+      - Import/Export
+    summary: Get Import Status
+    description: |
+      Check the status and progress of a translation import operation.
+      
+      **Permissions Required:** `translations.import`
+    operationId: getImportStatus
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: importId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Import UUID
+    responses:
+      '200':
+        description: Import status retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/TranslationImport'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Export Translations
+/translations/export:
+  post:
+    tags:
+      - Translations
+      - Import/Export
+    summary: Export Translations to File
+    description: |
+      Export translations in various formats for external use.
+      
+      **Features:**
+      - Multiple export formats
+      - Language filtering
+      - Category filtering
+      - Custom naming
+      
+      **Permissions Required:** `translations.export`
+    operationId: exportTranslations
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - format
+            properties:
+              format:
+                type: string
+                enum: ["json", "csv", "po", "xliff", "yaml"]
+                description: Export file format
+              languages:
+                type: array
+                items:
+                  type: string
+                  pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+                description: Languages to include (empty = all)
+              categories:
+                type: array
+                items:
+                  type: integer
+                  format: int64
+                description: Categories to include (empty = all)
+              include_system:
+                type: boolean
+                default: true
+                description: Include system translations
+              include_drafts:
+                type: boolean
+                default: false
+                description: Include draft translations
+              filename:
+                type: string
+                maxLength: 255
+                description: Custom filename (without extension)
+          examples:
+            json_export:
+              summary: JSON export for specific languages
+              value:
+                format: "json"
+                languages: ["en", "id", "ja"]
+                include_system: false
+                filename: "app_translations"
+    responses:
+      '200':
+        description: Export completed successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/language.yaml#/TranslationExportResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# ANALYTICS & REPORTING ENDPOINTS
+# ================================================================
+
+# Get Translation Analytics
+/translations/analytics:
+  get:
+    tags:
+      - Translations
+      - Analytics
+    summary: Get Translation Analytics
+    description: |
+      Retrieve comprehensive translation analytics and usage statistics.
+      
+      **Features:**
+      - Language completion rates
+      - Usage statistics
+      - Quality metrics
+      - Performance insights
+      - Geographic distribution
+      
+      **Permissions Required:** `translations.view`
+    operationId: getTranslationAnalytics
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: period
+        in: query
+        schema:
+          type: string
+          enum: ["day", "week", "month", "year"]
+          default: "month"
+        description: Analytics period
+      - name: language
+        in: query
+        schema:
+          type: string
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Filter by specific language
+      - name: category_id
+        in: query
+        schema:
+          type: integer
+          format: int64
+        description: Filter by category
+      - name: include_geographic
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Include geographic usage data
+    responses:
+      '200':
+        description: Analytics data retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/language.yaml#/TranslationAnalyticsResponse'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Get Missing Translations Report
+/translations/missing:
+  get:
+    tags:
+      - Translations
+      - Analytics
+    summary: Get Missing Translations Report
+    description: |
+      Generate report of missing translations across languages.
+      
+      **Features:**
+      - Language gap analysis
+      - Priority-based sorting
+      - Category breakdown
+      - CSV export option
+      
+      **Permissions Required:** `translations.view`
+    operationId: getMissingTranslations
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: target_language
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Language to check for missing translations
+      - name: category_id
+        in: query
+        schema:
+          type: integer
+          format: int64
+        description: Filter by category
+      - name: priority
+        in: query
+        schema:
+          type: string
+          enum: ["high", "medium", "low"]
+        description: Filter by translation priority
+      - name: export_csv
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Export results as CSV
+    responses:
+      '200':
+        description: Missing translations report generated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        target_language:
+                          type: string
+                        total_translations:
+                          type: integer
+                        missing_count:
+                          type: integer
+                        completion_percentage:
+                          type: number
+                          format: float
+                        missing_translations:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              category:
+                                $ref: '../../schemas/content-management/language.yaml#/TranslationCategory'
+                              available_languages:
+                                type: array
+                                items:
+                                  type: string
+                              priority:
+                                type: string
+                                enum: ["high", "medium", "low"]
+          text/csv:
+            schema:
+              type: string
+            example: |
+              key,category,available_languages,priority
+              nav.menu.settings,navigation,"en,id",high
+              error.validation.required,errors,"en",medium
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# LOCALE SETTINGS ENDPOINTS
+# ================================================================
+
+# Get Tenant Locale Settings
+/locale-settings:
+  get:
+    tags:
+      - Locale Settings
+    summary: Get Tenant Locale Settings
+    description: |
+      Retrieve locale configuration for the current tenant.
+      
+      **Features:**
+      - Complete locale configuration
+      - Language preferences
+      - Format settings
+      - Timezone information
+      
+      **Permissions Required:** `locale.view`
+    operationId: getLocaleSettings
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Locale settings retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/LocaleSettings'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        description: Locale settings not configured
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  post:
+    tags:
+      - Locale Settings
+    summary: Create Tenant Locale Settings
+    description: |
+      Create initial locale configuration for the tenant.
+      
+      **Permissions Required:** `locale.configure`
+    operationId: createLocaleSettings
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/LocaleSettingsCreateInput'
+          examples:
+            indonesian_locale:
+              summary: Indonesian-focused locale
+              value:
+                default_language: "id"
+                fallback_language: "en"
+                available_languages: ["id", "en"]
+                timezone: "Asia/Jakarta"
+                date_format: "DD/MM/YYYY"
+                currency_format:
+                  symbol: "Rp"
+                  position: "before"
+                  spacing: true
+                first_day_of_week: 1
+    responses:
+      '201':
+        description: Locale settings created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/LocaleSettings'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Locale settings already exist for this tenant
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  patch:
+    tags:
+      - Locale Settings
+    summary: Update Tenant Locale Settings
+    description: |
+      Update locale configuration for the tenant.
+      
+      **Permissions Required:** `locale.configure`
+    operationId: updateLocaleSettings
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/language.yaml#/LocaleSettingsUpdateInput'
+    responses:
+      '200':
+        description: Locale settings updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/language.yaml#/LocaleSettings'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# TRANSLATION CACHE ENDPOINTS  
+# ================================================================
+
+# Get Translation Cache Status
+/translations/cache:
+  get:
+    tags:
+      - Translation Cache
+    summary: Get Translation Cache Status
+    description: |
+      Retrieve translation cache statistics and performance metrics.
+      
+      **Features:**
+      - Cache hit/miss ratios
+      - Memory usage statistics
+      - Performance metrics
+      - Cache health indicators
+      
+      **Permissions Required:** `translations.view`
+    operationId: getTranslationCacheStatus
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: language
+        in: query
+        schema:
+          type: string
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Filter by specific language
+    responses:
+      '200':
+        description: Cache status retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        total_entries:
+                          type: integer
+                        total_size_bytes:
+                          type: integer
+                        hit_rate:
+                          type: number
+                          format: float
+                        miss_rate:
+                          type: number
+                          format: float
+                        expired_entries:
+                          type: integer
+                        by_language:
+                          type: array
+                          items:
+                            $ref: '../../schemas/content-management/language.yaml#/TranslationCache'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  
+  delete:
+    tags:
+      - Translation Cache
+    summary: Clear Translation Cache
+    description: |
+      Clear translation cache for performance or data consistency.
+      
+      **Features:**
+      - Clear all or specific language caches
+      - Force cache invalidation
+      - Cleanup expired entries
+      
+      **Permissions Required:** `translations.manage`
+    operationId: clearTranslationCache
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: language
+        in: query
+        schema:
+          type: string
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Clear cache for specific language only
+      - name: expired_only
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Clear only expired entries
+    responses:
+      '200':
+        description: Cache cleared successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        cleared_entries:
+                          type: integer
+                        freed_bytes:
+                          type: integer
+                        languages_affected:
+                          type: array
+                          items:
+                            type: string
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# PUBLIC TRANSLATION ENDPOINTS (No Authentication Required)
+# ================================================================
+
+# Get Public Translation Data
+/public/translations/{language}:
+  get:
+    tags:
+      - Public Translations
+    summary: Get Public Translation Data
+    description: |
+      Retrieve published translations for frontend applications.
+      
+      **Features:**
+      - No authentication required
+      - Cached responses for performance
+      - CORS enabled for frontend access
+      - Minified JSON responses
+      
+      **Note:** Only published translations are returned
+    operationId: getPublicTranslations
+    security: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: language
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Language code
+      - name: category
+        in: query
+        schema:
+          type: string
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+        description: Filter by category slug
+      - name: key_prefix
+        in: query
+        schema:
+          type: string
+          maxLength: 100
+        description: Filter by translation key prefix
+      - name: minified
+        in: query
+        schema:
+          type: boolean
+          default: true
+        description: Return minified response
+    responses:
+      '200':
+        description: Public translations retrieved successfully
+        headers:
+          Cache-Control:
+            schema:
+              type: string
+            description: Cache control header
+            example: "public, max-age=3600"
+          ETag:
+            schema:
+              type: string
+            description: ETag for cache validation
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Key-value pairs of translations
+              additionalProperties:
+                type: string
+            examples:
+              navigation:
+                summary: Navigation translations
+                value:
+                  "nav.home": "Beranda"
+                  "nav.about": "Tentang"
+                  "nav.contact": "Kontak"
+              minified:
+                summary: Minified response
+                value:
+                  "nav.home": "Beranda"
+                  "nav.about": "Tentang"
+      '404':
+        description: Language not found or not active
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Get Available Languages (Public)
+/public/languages:
+  get:
+    tags:
+      - Public Translations
+    summary: Get Available Languages
+    description: |
+      Get list of available languages for public use.
+      
+      **Features:**
+      - No authentication required
+      - Only active languages returned
+      - Cached responses
+      
+    operationId: getPublicLanguages
+    security: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Available languages retrieved successfully
+        headers:
+          Cache-Control:
+            schema:
+              type: string
+            example: "public, max-age=86400"
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          code:
+                            type: string
+                            example: "id"
+                          name:
+                            type: string
+                            example: "Indonesian"
+                          native_name:
+                            type: string
+                            example: "Bahasa Indonesia"
+                          flag_emoji:
+                            type: string
+                            nullable: true
+                            example: "🇮🇩"
+                          is_rtl:
+                            type: boolean
+                            example: false
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stencil CMS OpenAPI Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8f9fa; }
+        .header { background: white; padding: 30px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-number { font-size: 2.5em; font-weight: bold; color: #28a745; }
+        .stat-label { color: #6c757d; margin-top: 5px; }
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        .module-card { background: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .module-title { font-weight: bold; color: #495057; margin-bottom: 10px; }
+        .module-stats { font-size: 0.9em; color: #6c757d; }
+        .phase-section { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .phase-title { color: #007bff; font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Stencil CMS OpenAPI Documentation</h1>
+        <p>Comprehensive API specification for the multi-tenant etching business CMS platform</p>
+        <div style="margin-top: 15px;">
+            <span class="badge badge-success">Phase 6 Complete</span>
+            <span class="badge badge-info">22 Modules</span>
+            <span class="badge badge-info">48 Files</span>
+            <span class="badge badge-success">98% Valid</span>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">48</div>
+            <div class="stat-label">Total Files</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">47</div>
+            <div class="stat-label">Valid Files</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">22</div>
+            <div class="stat-label">Modules Complete</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">1800+</div>
+            <div class="stat-label">Database Fields</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">400+</div>
+            <div class="stat-label">API Endpoints</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">98%</div>
+            <div class="stat-label">Success Rate</div>
+        </div>
+    </div>
+
+    <div class="phase-section">
+        <div class="phase-title">📊 Implementation Status by Phase</div>
+        <div class="modules-grid">
+            
+        <div class="module-card">
+            <div class="module-title">Homepage</div>
+            <div class="module-stats">
+                Content Management • 240+ fields • 45+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">About</div>
+            <div class="module-stats">
+                Content Management • 80+ fields • 15+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Contact</div>
+            <div class="module-stats">
+                Content Management • 150+ fields • 25+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">FAQ</div>
+            <div class="module-stats">
+                Content Management • 150+ fields • 20+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">SEO</div>
+            <div class="module-stats">
+                Content Management • 20+ fields • 10+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Products</div>
+            <div class="module-stats">
+                E-Commerce • 68+ fields • 30+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Orders</div>
+            <div class="module-stats">
+                E-Commerce • 164+ fields • 50+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Inventory</div>
+            <div class="module-stats">
+                E-Commerce • 180+ fields • 40+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Reviews</div>
+            <div class="module-stats">
+                E-Commerce • 65+ fields • 25+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Users/RBAC</div>
+            <div class="module-stats">
+                User Management • 180+ fields • 40+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Customers</div>
+            <div class="module-stats">
+                User Management • 120+ fields • 30+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Vendors</div>
+            <div class="module-stats">
+                User Management • 97+ fields • 25+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Suppliers</div>
+            <div class="module-stats">
+                User Management • 156+ fields • 35+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Financial</div>
+            <div class="module-stats">
+                System Admin • 200+ fields • 45+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Settings</div>
+            <div class="module-stats">
+                System Admin • 180+ fields • 40+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Plugins</div>
+            <div class="module-stats">
+                System Admin • 156+ fields • 35+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Media Library</div>
+            <div class="module-stats">
+                Assets & Localization • 120+ fields • 28+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Theme Engine</div>
+            <div class="module-stats">
+                Assets & Localization • 200+ fields • 35+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Language/i18n</div>
+            <div class="module-stats">
+                Assets & Localization • 150+ fields • 35+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        <div class="module-card">
+            <div class="module-title">Documentation</div>
+            <div class="module-stats">
+                Assets & Localization • 95+ fields • 35+ endpoints
+                <br><span class="badge badge-success">Complete</span>
+            </div>
+        </div>
+    
+        </div>
+    </div>
+
+    <div class="phase-section">
+        <div class="phase-title">🔗 Quick Links</div>
+        <ul>
+            <li><a href="swagger-ui.html">Interactive API Documentation (Swagger UI)</a></li>
+            <li><a href="../openapi.yaml">Main OpenAPI Specification</a></li>
+            <li><a href="project-stats.json">Detailed Project Statistics</a></li>
+            <li><a href="../ROADMAP.md">Complete Development Roadmap</a></li>
+        </ul>
+    </div>
+
+    <div class="phase-section">
+        <div class="phase-title">🏗️ Architecture Highlights</div>
+        <ul>
+            <li><strong>Multi-tenant Architecture:</strong> Complete tenant isolation with UUID-based tenant_id scoping</li>
+            <li><strong>Security:</strong> JWT authentication with role-based access control (RBAC)</li>
+            <li><strong>Business Integration:</strong> Specialized for etching business workflow</li>
+            <li><strong>Performance:</strong> Pagination, caching, and bulk operations throughout</li>
+            <li><strong>Standards Compliance:</strong> OpenAPI 3.1+ specification with comprehensive validation</li>
+        </ul>
+    </div>
+
+    <footer style="text-align: center; margin-top: 40px; color: #6c757d;">
+        <p>Generated on 2025-11-13 | Stencil CMS OpenAPI Project</p>
+    </footer>
+</body>
+</html>

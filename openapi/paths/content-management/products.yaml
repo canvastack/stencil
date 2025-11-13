@@ -1,0 +1,1142 @@
+# Products Module API Paths for Stencil CMS
+# Complete CRUD operations for Products Management System (30+ endpoints)
+  # Public Product Catalog Endpoints (Customer-facing)
+  /products:
+    get:
+      tags:
+        - Product Catalog
+      summary: Get Products Catalog
+      description: |
+        Retrieve public product catalog with filtering, search, and pagination.
+        
+        **Business Logic:**
+        - Only shows published products (status = 'published')
+        - Price visibility based on production type and quotation requirements
+        - Supports category-based filtering and hierarchical navigation
+        - Full-text search across name, description, and tags
+        - SEO-optimized product listings
+        
+        **Features:**
+        - Multi-category filtering with hierarchical support
+        - Price range filtering (when prices are visible)
+        - Tag-based filtering and search
+        - Stock availability filtering
+        - Responsive pagination with meta information
+      operationId: getProductsCatalog
+      security: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/AcceptLanguage'
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search term for products
+          example: "brass etching"
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Category slug for filtering
+          example: "plakat-awards"
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: false
+          description: Filter by tags
+        - name: price_min
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Minimum price filter
+        - name: price_max
+          in: query
+          schema:
+            type: number
+            format: decimal
+          description: Maximum price filter
+        - name: in_stock
+          in: query
+          schema:
+            type: boolean
+          description: Filter by stock availability
+        - name: featured
+          in: query
+          schema:
+            type: boolean
+          description: Show only featured products
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [name, price, created_at, featured]
+            default: featured
+          description: Sort order
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 48
+            default: 24
+          description: Products per page
+      responses:
+        '200':
+          description: Products catalog retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          products:
+                            type: array
+                            items:
+                              $ref: '../../schemas/content-management/products.yaml#/PublicProduct'
+                          categories:
+                            type: array
+                            items:
+                              $ref: '../../schemas/content-management/products.yaml#/CategoryFilter'
+                      meta:
+                        type: object
+                        properties:
+                          pagination:
+                            $ref: '../../components/schemas.yaml#/PaginationMeta'
+                          filters_applied:
+                            type: object
+                            description: Currently active filters
+              examples:
+                success:
+                  summary: Product catalog with etching products
+                  value:
+                    success: true
+                    message: "Products catalog retrieved successfully"
+                    data:
+                      products:
+                        - id: "550e8400-e29b-41d4-a716-446655440000"
+                          name: "Custom Brass Etching Plate"
+                          slug: "custom-brass-etching-plate"
+                          description: "Premium brass plate with custom etching"
+                          images: ["https://cdn.example.com/brass-1.jpg"]
+                          category:
+                            id: "660f9500-f39c-52e5-b827-557766551111"
+                            name: "Plakat & Awards"
+                            slug: "plakat-awards"
+                          tags: ["brass", "etching", "custom"]
+                          price_display:
+                            show_price: false
+                            quotation_required: true
+                          min_order: 5
+                          in_stock: true
+                          customization_options:
+                            bahan_options: ["Kuningan", "Tembaga", "Stainless"]
+                            kualitas_options: ["standard", "premium"]
+                      categories:
+                        - id: "660f9500-f39c-52e5-b827-557766551111"
+                          name: "Plakat & Awards"
+                          product_count: 25
+                    meta:
+                      pagination:
+                        current_page: 1
+                        per_page: 24
+                        total: 120
+                        last_page: 5
+        '400':
+          $ref: '../../components/responses.yaml#/BadRequest'
+
+  /products/{slug}:
+    get:
+      tags:
+        - Product Catalog
+      summary: Get Product Details
+      description: |
+        Retrieve detailed product information by slug for product detail page.
+        
+        **Business Logic:**
+        - Only shows published products to public
+        - Price visibility based on production_type and quotation_required
+        - Full customization options and specifications
+        - Related products suggestions
+        - SEO metadata for page optimization
+      operationId: getProductBySlug
+      security: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '../../components/parameters.yaml#/AcceptLanguage'
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Product URL slug
+          example: "custom-brass-etching-plate"
+      responses:
+        '200':
+          description: Product details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/products.yaml#/PublicProduct'
+              examples:
+                brass_plate_product:
+                  summary: Brass plate product details
+                  value:
+                    success: true
+                    message: "Product details retrieved successfully"
+                    data:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      name: "Custom Brass Etching Plate"
+                      slug: "custom-brass-etching-plate"
+                      description: "Premium brass plate with custom etching for awards"
+                      long_description: "<p>Premium brass plate with <strong>precision etching</strong>...</p>"
+                      images: [
+                        "https://cdn.example.com/brass-1.jpg",
+                        "https://cdn.example.com/brass-2.jpg"
+                      ]
+                      price_display:
+                        show_price: false
+                        quotation_required: true
+                      customization_options:
+                        bahan_options: ["Kuningan", "Tembaga", "Stainless Steel"]
+                        kualitas_options: ["standard", "premium"]
+                        ketebalan_options: ["2mm", "3mm", "5mm"]
+                        ukuran_options: ["15x20", "20x30", "30x40"]
+                        custom_options:
+                          - name: "warna_text"
+                            label: "Warna Text"
+                            type: "color"
+                            required: true
+                            default: "#000000"
+                      specifications:
+                        - key: "Material"
+                          value: "Premium Grade Brass"
+                        - key: "Finishing"
+                          value: "Polished"
+                      seo_title: "Custom Brass Etching Plate - Premium Quality"
+                      seo_description: "Premium brass plates with precision etching..."
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+
+  /products/categories:
+    get:
+      tags:
+        - Product Catalog
+      summary: Get Product Categories
+      description: |
+        Retrieve hierarchical product categories for navigation and filtering.
+        
+        **Features:**
+        - Hierarchical category tree structure
+        - Product counts per category
+        - Only active categories
+        - Responsive to tenant configuration
+      operationId: getProductCategories
+      security: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/products.yaml#/CategoryFilter'
+
+  # Admin Product Management Endpoints
+  /admin/products:
+    get:
+      tags:
+        - Product Management
+      summary: Get Products List (Admin)
+      description: |
+        Administrative endpoint for managing products with full access to all statuses.
+        
+        **Features:**
+        - View all products regardless of status
+        - Advanced filtering and sorting options
+        - Bulk action support
+        - Export capabilities
+        - Performance optimized pagination
+      operationId: getAdminProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search in name, description, tags
+        - name: category_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by category
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, archived]
+          description: Filter by status
+        - name: featured
+          in: query
+          schema:
+            type: boolean
+          description: Filter by featured status
+        - name: production_type
+          in: query
+          schema:
+            type: string
+            enum: [internal, vendor]
+          description: Filter by production type
+        - name: in_stock
+          in: query
+          schema:
+            type: boolean
+          description: Filter by stock availability
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [name, price, created_at, updated_at, stock_quantity]
+            default: created_at
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Products list retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/products.yaml#/Product'
+                      meta:
+                        type: object
+                        properties:
+                          pagination:
+                            $ref: '../../components/schemas.yaml#/PaginationMeta'
+                          summary:
+                            $ref: '../../schemas/content-management/products.yaml#/ProductsSummary'
+        '401':
+          $ref: '../../components/responses.yaml#/Unauthorized'
+        '403':
+          $ref: '../../components/responses.yaml#/Forbidden'
+
+    post:
+      tags:
+        - Product Management
+      summary: Create New Product
+      description: |
+        Create a new product with full specification and customization options.
+        
+        **Business Workflow:**
+        - Auto-generate slug if not provided
+        - Set default production type based on tenant configuration
+        - Initialize customization options for etching workflow
+        - Create audit trail entry
+        
+        **Validation:**
+        - Unique slug per tenant
+        - Valid category assignment
+        - Proper price/stock requirements based on production type
+      operationId: createProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/products.yaml#/CreateProductRequest'
+            examples:
+              etching_product:
+                summary: Create etching product with vendor production
+                value:
+                  name: "Custom Brass Etching Plate Premium"
+                  description: "Premium brass plate with precision custom etching"
+                  long_description: "<p>Premium brass plate with precision etching technology...</p>"
+                  category_id: "660f9500-f39c-52e5-b827-557766551111"
+                  tags: ["brass", "etching", "custom", "premium"]
+                  images: [
+                    "https://cdn.example.com/brass-1.jpg",
+                    "https://cdn.example.com/brass-2.jpg"
+                  ]
+                  production_type: "vendor"
+                  bahan_options: ["Kuningan", "Tembaga", "Stainless Steel"]
+                  kualitas_options: ["standard", "premium"]
+                  ketebalan_options: ["2mm", "3mm", "5mm"]
+                  ukuran_options: ["15x20", "20x30", "30x40"]
+                  custom_options:
+                    - name: "warna_text"
+                      label: "Warna Text"
+                      type: "color"
+                      required: true
+                      default: "#000000"
+                  specifications:
+                    - key: "Material"
+                      value: "Premium Grade Brass"
+                    - key: "Finishing"
+                      value: "Polished"
+                  status: "draft"
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/products.yaml#/Product'
+        '400':
+          $ref: '../../components/responses.yaml#/BadRequest'
+        '422':
+          $ref: '../../components/responses.yaml#/ValidationError'
+
+  /admin/products/{id}:
+    get:
+      tags:
+        - Product Management
+      summary: Get Product Details (Admin)
+      description: Get complete product information for administrative purposes.
+      operationId: getAdminProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Product ID
+      responses:
+        '200':
+          description: Product details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/products.yaml#/Product'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+
+    put:
+      tags:
+        - Product Management
+      summary: Update Product
+      description: |
+        Update existing product with validation and business rule enforcement.
+        
+        **Business Rules:**
+        - Status transitions: draft ↔ published ↔ archived
+        - Price requirements based on production type
+        - Slug uniqueness validation
+        - Audit trail creation
+      operationId: updateProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/products.yaml#/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/products.yaml#/Product'
+        '400':
+          $ref: '../../components/responses.yaml#/BadRequest'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+        '422':
+          $ref: '../../components/responses.yaml#/ValidationError'
+
+    delete:
+      tags:
+        - Product Management
+      summary: Delete Product (Soft Delete)
+      description: |
+        Soft delete product by setting deleted_at timestamp.
+        
+        **Business Logic:**
+        - Product remains in database but hidden from listings
+        - Can be restored via restore endpoint
+        - Order history references remain intact
+      operationId: deleteProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Product deleted successfully
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+
+  /admin/products/{id}/restore:
+    post:
+      tags:
+        - Product Management
+      summary: Restore Deleted Product
+      description: Restore a soft-deleted product by clearing deleted_at timestamp.
+      operationId: restoreProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product restored successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/products.yaml#/Product'
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+
+  /admin/products/bulk:
+    post:
+      tags:
+        - Product Management
+      summary: Bulk Product Actions
+      description: |
+        Perform bulk actions on multiple products simultaneously.
+        
+        **Available Actions:**
+        - publish: Set status to published
+        - unpublish: Set status to draft
+        - archive: Set status to archived
+        - delete: Soft delete products
+        - restore: Restore deleted products
+        - feature: Set featured flag
+        - unfeature: Remove featured flag
+      operationId: bulkProductActions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/products.yaml#/BulkProductRequest'
+            examples:
+              publish_products:
+                summary: Publish multiple products
+                value:
+                  action: "publish"
+                  product_ids: [
+                    "550e8400-e29b-41d4-a716-446655440000",
+                    "660f9500-f39c-52e5-b827-557766551111"
+                  ]
+      responses:
+        '200':
+          description: Bulk action completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          processed:
+                            type: integer
+                            description: Number of products processed
+                          failed:
+                            type: integer
+                            description: Number of failed operations
+                          errors:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                product_id:
+                                  type: string
+                                error:
+                                  type: string
+
+  # Product Categories Management
+  /admin/products/categories:
+    get:
+      tags:
+        - Category Management
+      summary: Get Product Categories (Admin)
+      description: Get all product categories including inactive ones for administration.
+      operationId: getAdminCategories
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: include_inactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include inactive categories
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
+
+    post:
+      tags:
+        - Category Management
+      summary: Create Product Category
+      description: Create a new product category with optional parent-child relationship.
+      operationId: createCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/products.yaml#/CreateCategoryRequest'
+            examples:
+              main_category:
+                summary: Create main category
+                value:
+                  name: "Plakat & Awards"
+                  description: "Custom awards, trophies, and recognition plaques"
+                  icon: "Award"
+              sub_category:
+                summary: Create sub-category
+                value:
+                  name: "Brass Plaques"
+                  parent_id: "660f9500-f39c-52e5-b827-557766551111"
+                  description: "Premium brass plaques with custom etching"
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
+
+  /admin/products/categories/{id}:
+    put:
+      tags:
+        - Category Management
+      summary: Update Product Category
+      description: Update product category information and hierarchy.
+      operationId: updateCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/products.yaml#/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
+
+    delete:
+      tags:
+        - Category Management
+      summary: Delete Product Category
+      description: |
+        Delete product category with proper handling of child categories and assigned products.
+        
+        **Business Logic:**
+        - Cannot delete category with child categories
+        - Products in deleted category become uncategorized (category_id = null)
+        - Cascade delete handling for hierarchical structure
+      operationId: deleteCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Category deleted successfully
+        '400':
+          description: Cannot delete category with child categories
+        '404':
+          $ref: '../../components/responses.yaml#/NotFound'
+
+  # Business Analytics & Reports
+  /admin/products/analytics/dashboard:
+    get:
+      tags:
+        - Product Analytics
+      summary: Get Products Dashboard Analytics
+      description: |
+        Retrieve comprehensive product analytics for dashboard display.
+        
+        **Metrics Included:**
+        - Product status distribution
+        - Category performance
+        - Stock levels and alerts
+        - Recent activity summary
+        - Popular products and trends
+      operationId: getProductsDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y]
+            default: 30d
+          description: Analytics period
+      responses:
+        '200':
+          description: Dashboard analytics retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          summary:
+                            $ref: '../../schemas/content-management/products.yaml#/ProductsSummary'
+                          recent_products:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                  format: uuid
+                                name:
+                                  type: string
+                                status:
+                                  type: string
+                                created_at:
+                                  type: string
+                                  format: date-time
+                          low_stock_alerts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                product_id:
+                                  type: string
+                                  format: uuid
+                                name:
+                                  type: string
+                                current_stock:
+                                  type: integer
+                                min_order:
+                                  type: integer
+                          category_performance:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                category_name:
+                                  type: string
+                                product_count:
+                                  type: integer
+                                total_value:
+                                  type: number
+
+  /admin/products/analytics/export:
+    get:
+      tags:
+        - Product Analytics
+      summary: Export Products Data
+      description: |
+        Export products data in various formats for reporting and analysis.
+        
+        **Export Formats:**
+        - CSV: Product listings with specifications
+        - Excel: Multi-sheet with categories and analytics
+        - JSON: Full data export for system integration
+      operationId: exportProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, excel, json]
+            default: csv
+        - name: include_specifications
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: include_analytics
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, archived]
+          description: Filter by product status
+      responses:
+        '200':
+          description: Export file generated successfully
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+
+  # Product Business Workflow Integration
+  /admin/products/{id}/vendor-pricing:
+    post:
+      tags:
+        - Product Business Workflow
+      summary: Update Vendor Pricing
+      description: |
+        Update vendor pricing information for products with vendor production type.
+        
+        **Business Logic:**
+        - Only applicable for production_type = 'vendor'
+        - Updates vendor_price and markup_percentage
+        - Recalculates customer pricing if markup is set
+        - Creates pricing history for audit trail
+      operationId: updateVendorPricing
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - vendor_price
+              properties:
+                vendor_price:
+                  type: number
+                  format: decimal
+                  minimum: 0
+                  description: Vendor quoted price
+                markup_percentage:
+                  type: number
+                  format: decimal
+                  minimum: 0
+                  maximum: 100
+                  description: Broker markup percentage
+                effective_date:
+                  type: string
+                  format: date
+                  description: Price effective date
+                notes:
+                  type: string
+                  description: Pricing notes
+      responses:
+        '200':
+          description: Vendor pricing updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          vendor_price:
+                            type: number
+                            format: decimal
+                          markup_percentage:
+                            type: number
+                            format: decimal
+                          calculated_customer_price:
+                            type: number
+                            format: decimal
+                          profit_margin:
+                            type: number
+                            format: decimal
+
+  /admin/products/{id}/stock:
+    put:
+      tags:
+        - Product Business Workflow
+      summary: Update Product Stock
+      description: |
+        Update product stock levels with audit trail and notifications.
+        
+        **Features:**
+        - Stock adjustment tracking
+        - Low stock alerts
+        - Automatic out-of-stock status updates
+        - Integration with order management
+      operationId: updateProductStock
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - stock_quantity
+              properties:
+                stock_quantity:
+                  type: integer
+                  minimum: 0
+                  description: New stock quantity
+                adjustment_type:
+                  type: string
+                  enum: [restock, sale, adjustment, damage]
+                  description: Type of stock adjustment
+                notes:
+                  type: string
+                  description: Adjustment notes
+      responses:
+        '200':
+          description: Stock updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          previous_stock:
+                            type: integer
+                          new_stock:
+                            type: integer
+                          adjustment_amount:
+                            type: integer
+                          in_stock:
+                            type: boolean
+                          low_stock_alert:
+                            type: boolean
+
+  # Product Quotation System Integration
+  /admin/products/quotation-eligible:
+    get:
+      tags:
+        - Product Business Workflow
+      summary: Get Quotation Eligible Products
+      description: |
+        Retrieve products that are eligible for quotation requests.
+        
+        **Business Logic:**
+        - Products with quotation_required = true
+        - Products with production_type = 'vendor'
+        - Products with hidden pricing (price = null)
+        - Includes vendor information and specifications
+      operationId: getQuotationEligibleProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - name: category_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: vendor_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quotation eligible products retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: '../../schemas/content-management/products.yaml#/Product'
+                            - type: object
+                              properties:
+                                quotation_info:
+                                  type: object
+                                  properties:
+                                    requires_vendor_quote:
+                                      type: boolean
+                                    estimated_lead_time:
+                                      type: string
+                                    complexity_level:
+                                      type: string
+                                      enum: [simple, moderate, complex]
