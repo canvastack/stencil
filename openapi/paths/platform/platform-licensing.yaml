@@ -1,0 +1,1021 @@
+# Platform Licensing System API Endpoints
+# Module: Platform License Management & Tenant Service Licensing
+# Security: Dual Authentication (Platform License + Bearer Token)
+
+# ===== PLATFORM LICENSE MANAGEMENT =====
+
+/platform/licenses:
+  post:
+    tags: 
+    - Platform Licensing
+    summary: Create new platform license
+    description: |
+      Create a new platform license with cryptographic validation.
+      
+      **Features:**
+      - RSA-2048 encrypted license generation
+      - Hierarchical license types (master, delegated)
+      - Feature-level permissions control
+      - Tenant capacity management
+    operationId: createPlatformLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/platform/platform-licensing.yaml#/CreatePlatformLicenseRequest'
+    responses:
+      '201':
+        description: Platform license created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicense'
+                  license_installation:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicenseInstallation'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+  get:
+    tags:
+    - Platform Licensing
+    summary: List all platform licenses
+    description: |
+      Retrieve paginated list of all platform licenses with filtering options.
+      
+      **Features:**
+      - Status-based filtering
+      - License type filtering
+      - Search by owner details
+      - Pagination support
+    operationId: listPlatformLicenses
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [active, expired, suspended, revoked]
+        description: "Filter by license status"
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [master, delegated]
+        description: "Filter by license type"
+      - name: search
+        in: query
+        schema:
+          type: string
+        description: "Search by owner name or email"
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 10
+          maximum: 100
+          default: 20
+    responses:
+      '200':
+        description: List of platform licenses
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicense'
+                  pagination:
+                    $ref: '../../components/schemas.yaml#/PaginationInfo'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+/platform/licenses/{license_id}:
+  get:
+    tags:
+    - Platform Licensing
+    summary: Get platform license details
+    description: |
+      Retrieve detailed information about a specific platform license.
+      
+      **Includes:**
+      - License validation history
+      - Associated tenant count
+      - Feature permissions
+      - Usage statistics
+    operationId: getPlatformLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: license_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Platform license UUID identifier"
+    responses:
+      '200':
+        description: Platform license details
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicenseDetailed'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+
+  patch:
+    tags:
+    - Platform Licensing
+    summary: Update platform license
+    description: |
+      Update platform license settings and status.
+      
+      **Updatable Fields:**
+      - License validity period
+      - Status (active, suspended, revoked)
+      - Feature permissions
+      - Tenant capacity limits
+    operationId: updatePlatformLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: license_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Platform license UUID identifier"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/platform/platform-licensing.yaml#/UpdatePlatformLicenseRequest'
+    responses:
+      '200':
+        description: Platform license updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicense'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+
+  delete:
+    tags:
+    - Platform Licensing
+    summary: Revoke platform license
+    description: |
+      Revoke a platform license immediately.
+      
+      **Actions:**
+      - Set license status to 'revoked'
+      - Invalidate all cached validations
+      - Log revocation event
+      - Notify affected users
+    operationId: revokePlatformLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: license_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Platform license UUID identifier"
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              revocation_reason:
+                type: string
+                maxLength: 255
+                description: Reason for license revocation
+                example: "Security breach detected"
+    responses:
+      '200':
+        description: Platform license revoked successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      license_id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum: [revoked]
+                      revoked_at:
+                        type: string
+                        format: date-time
+                      revocation_reason:
+                        type: string
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+
+# ===== TENANT SERVICE LICENSE MANAGEMENT =====
+
+/platform/tenants/{tenant_id}/service-license:
+  post:
+    tags:
+    - Tenant Service Licensing
+    summary: Create or update tenant service license
+    description: |
+      Create or update service license for a specific tenant.
+      
+      **Features:**
+      - Plan type configuration (basic, pro, enterprise, custom)
+      - Usage limits and quotas
+      - Feature permissions
+      - Billing integration
+    operationId: createTenantServiceLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Tenant UUID identifier"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/platform/platform-licensing.yaml#/CreateTenantServiceLicenseRequest'
+    responses:
+      '201':
+        description: Tenant service license created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/TenantServiceLicense'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+
+  get:
+    tags:
+    - Tenant Service Licensing
+    summary: Get tenant service license details
+    description: |
+      Retrieve service license details for a specific tenant.
+      
+      **Includes:**
+      - Current plan information
+      - Usage statistics
+      - Billing information
+      - Feature permissions
+    operationId: getTenantServiceLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+      - TenantAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Tenant UUID identifier"
+    responses:
+      '200':
+        description: Tenant service license details
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/TenantServiceLicenseDetailed'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+
+  patch:
+    tags:
+    - Tenant Service Licensing
+    summary: Update tenant service license
+    description: |
+      Update service license configuration for a tenant.
+      
+      **Updatable Fields:**
+      - Plan configuration
+      - Resource quotas
+      - Feature permissions
+      - Billing settings
+    operationId: updateTenantServiceLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Tenant UUID identifier"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              # Plan Configuration
+              plan_type:
+                type: string
+                enum: ["basic", "pro", "enterprise", "custom"]
+              max_users:
+                type: integer
+                minimum: 1
+              max_storage_gb:
+                type: integer
+                minimum: 1
+              features:
+                type: array
+                items:
+                  type: string
+              # Status & Validity
+              status:
+                type: string
+                enum: ["trial", "active", "suspended", "cancelled"]
+              valid_until:
+                type: string
+                format: date-time
+              # Billing
+              monthly_price:
+                type: number
+                format: decimal
+                minimum: 0
+              auto_renewal:
+                type: boolean
+    responses:
+      '200':
+        description: Tenant service license updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/TenantServiceLicense'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+
+  delete:
+    tags:
+    - Tenant Service Licensing
+    summary: Cancel tenant service license
+    description: |
+      Cancel service license for a tenant.
+      
+      **Actions:**
+      - Set license status to 'cancelled'
+      - Process final billing
+      - Schedule data retention/cleanup
+      - Notify tenant users
+    operationId: cancelTenantServiceLicense
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Tenant UUID identifier"
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              cancellation_reason:
+                type: string
+                maxLength: 255
+                description: Reason for cancellation
+                example: "Customer request"
+              effective_date:
+                type: string
+                format: date-time
+                description: When cancellation becomes effective
+                example: "2025-12-31T23:59:59Z"
+              immediate:
+                type: boolean
+                default: false
+                description: Cancel immediately without grace period
+    responses:
+      '200':
+        description: Tenant service license cancelled successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tenant_id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+                        enum: [cancelled]
+                      cancelled_at:
+                        type: string
+                        format: date-time
+                      effective_date:
+                        type: string
+                        format: date-time
+                      cancellation_reason:
+                        type: string
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+
+/platform/tenants/{tenant_id}/usage:
+  get:
+    tags:
+    - Tenant Service Licensing
+    summary: Get tenant usage statistics
+    description: |
+      Retrieve usage statistics for a specific tenant.
+      
+      **Metrics:**
+      - User count vs limits
+      - Storage usage vs quotas
+      - Product count vs limits
+      - API call statistics
+    operationId: getTenantUsage
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+      - TenantAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: "Tenant UUID identifier"
+      - name: period
+        in: query
+        schema:
+          type: string
+          enum: [current, last_30_days, last_90_days]
+          default: current
+    responses:
+      '200':
+        description: Tenant usage statistics
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/UsageStatisticsResponse'
+
+# ===== LICENSE VALIDATION =====
+
+/auth/validate-platform-license:
+  post:
+    tags:
+    - License Validation
+    summary: Validate platform license key
+    description: |
+      Public endpoint for license installation and validation.
+      
+      **Features:**
+      - Cryptographic signature validation
+      - Environment binding verification
+      - Feature permission checking
+      - Audit logging
+    operationId: validatePlatformLicense
+    security: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/platform/platform-licensing.yaml#/LicenseValidationRequest'
+    responses:
+      '200':
+        description: License validation result
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/LicenseValidationResponse'
+      '400':
+        description: Invalid license key format
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                valid:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: "Invalid license key format"
+                message:
+                  type: string
+                  example: "The provided license key is malformed"
+      '403':
+        description: License validation failed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                valid:
+                  type: boolean
+                  example: false
+                error:
+                  type: string
+                  example: "LICENSE_EXPIRED"
+                message:
+                  type: string
+                  example: "The license has expired"
+                expires_at:
+                  type: string
+                  format: date-time
+                  example: "2024-12-31T23:59:59Z"
+
+/platform/validation-history:
+  get:
+    tags:
+    - License Validation
+    summary: Get license validation history
+    description: |
+      Retrieve validation history for platform licenses.
+      
+      **Features:**
+      - Filtered by date range
+      - Validation result filtering
+      - Performance metrics
+      - Request context tracking
+    operationId: getLicenseValidationHistory
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: days
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 90
+          default: 7
+        description: "Number of days to retrieve history for"
+      - name: result
+        in: query
+        schema:
+          type: string
+          enum: [valid, expired, invalid, revoked, error]
+        description: "Filter by validation result"
+      - name: license_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: "Filter by specific license UUID"
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 10
+          maximum: 100
+          default: 50
+    responses:
+      '200':
+        description: License validation history
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/platform/platform-licensing.yaml#/LicenseValidationHistoryResponse'
+                  pagination:
+                    $ref: '../../components/schemas.yaml#/PaginationInfo'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+# ===== BULK OPERATIONS =====
+
+/platform/licenses/bulk:
+  patch:
+    tags:
+    - Platform Licensing
+    summary: Bulk update platform licenses
+    description: |
+      Update multiple platform licenses at once.
+      
+      **Use Cases:**
+      - Bulk license renewal
+      - Feature updates across multiple licenses
+      - Status changes for license groups
+      - Emergency revocation
+    operationId: bulkUpdatePlatformLicenses
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - license_ids
+              - updates
+            properties:
+              license_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                minItems: 1
+                maxItems: 100
+                description: List of license UUIDs to update
+              updates:
+                type: object
+                properties:
+                  valid_until:
+                    type: string
+                    format: date-time
+                  status:
+                    type: string
+                    enum: [active, suspended, revoked]
+                  features:
+                    type: array
+                    items:
+                      type: string
+                  max_tenants:
+                    type: integer
+                    minimum: 1
+                description: Updates to apply to all selected licenses
+    responses:
+      '200':
+        description: Bulk update completed
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      updated_count:
+                        type: integer
+                        example: 15
+                      failed_count:
+                        type: integer
+                        example: 2
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            license_id:
+                              type: string
+                              format: uuid
+                            success:
+                              type: boolean
+                            error:
+                              type: string
+                              nullable: true
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+
+/platform/service-licenses/bulk:
+  patch:
+    tags:
+    - Tenant Service Licensing
+    summary: Bulk update tenant service licenses
+    description: |
+      Update multiple tenant service licenses at once.
+      
+      **Use Cases:**
+      - Plan migrations
+      - Pricing updates
+      - Feature rollouts
+      - Status changes
+    operationId: bulkUpdateTenantServiceLicenses
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - tenant_ids
+              - updates
+            properties:
+              tenant_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                minItems: 1
+                maxItems: 100
+                description: List of tenant UUIDs to update
+              updates:
+                type: object
+                properties:
+                  plan_type:
+                    type: string
+                    enum: ["basic", "pro", "enterprise", "custom"]
+                  max_users:
+                    type: integer
+                    minimum: 1
+                  max_storage_gb:
+                    type: integer
+                    minimum: 1
+                  features:
+                    type: array
+                    items:
+                      type: string
+                  status:
+                    type: string
+                    enum: ["trial", "active", "suspended", "cancelled"]
+                  monthly_price:
+                    type: number
+                    format: decimal
+                    minimum: 0
+                description: Updates to apply to all selected tenant licenses
+    responses:
+      '200':
+        description: Bulk update completed
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      updated_count:
+                        type: integer
+                        example: 25
+                      failed_count:
+                        type: integer
+                        example: 1
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tenant_id:
+                              type: string
+                              format: uuid
+                            success:
+                              type: boolean
+                            error:
+                              type: string
+                              nullable: true
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+
+# ===== REPORTING & ANALYTICS =====
+
+/platform/licensing/reports/summary:
+  get:
+    tags:
+    - Platform Licensing
+    summary: Get platform licensing summary report
+    description: |
+      Generate summary report of all platform licenses and tenant service licenses.
+      
+      **Metrics:**
+      - License distribution by type and status
+      - Revenue analytics
+      - Usage statistics
+      - Expiration forecasting
+    operationId: getPlatformLicensingSummary
+    security:
+      - bearerAuth: []
+      - PlatformAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: period
+        in: query
+        schema:
+          type: string
+          enum: [last_30_days, last_90_days, last_year, all_time]
+          default: last_30_days
+    responses:
+      '200':
+        description: Platform licensing summary report
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      platform_licenses:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 15
+                          by_status:
+                            type: object
+                            properties:
+                              active:
+                                type: integer
+                                example: 12
+                              expired:
+                                type: integer
+                                example: 2
+                              revoked:
+                                type: integer
+                                example: 1
+                          by_type:
+                            type: object
+                            properties:
+                              master:
+                                type: integer
+                                example: 3
+                              delegated:
+                                type: integer
+                                example: 12
+                      tenant_licenses:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 1250
+                          by_plan:
+                            type: object
+                            properties:
+                              basic:
+                                type: integer
+                                example: 750
+                              pro:
+                                type: integer
+                                example: 400
+                              enterprise:
+                                type: integer
+                                example: 100
+                          by_status:
+                            type: object
+                            properties:
+                              active:
+                                type: integer
+                                example: 1100
+                              trial:
+                                type: integer
+                                example: 120
+                              suspended:
+                                type: integer
+                                example: 30
+                      revenue:
+                        type: object
+                        properties:
+                          monthly_recurring_revenue:
+                            type: number
+                            format: decimal
+                            example: 125000.00
+                          annual_recurring_revenue:
+                            type: number
+                            format: decimal
+                            example: 1500000.00
+                          currency:
+                            type: string
+                            example: "USD"
+                      expiring_soon:
+                        type: object
+                        properties:
+                          next_30_days:
+                            type: integer
+                            example: 45
+                          next_90_days:
+                            type: integer
+                            example: 123
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'

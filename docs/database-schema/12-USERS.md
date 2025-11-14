@@ -321,8 +321,11 @@ CREATE TABLE tenant_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     
     -- Relationships
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID NULL REFERENCES tenants(id) ON DELETE CASCADE, -- NULL for Platform Users
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    
+    -- Platform License Reference (for Platform Users)
+    platform_license_id UUID NULL REFERENCES platform_licenses(uuid) ON DELETE CASCADE,
     
     -- User Status in Tenant
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
@@ -438,8 +441,10 @@ CREATE TABLE permissions (
     -- Action
     action VARCHAR(50),
     
-    -- Scope
+    -- Scope (ENHANCED for Platform Licensing)
     scope VARCHAR(50) DEFAULT 'tenant' CHECK (scope IN ('platform', 'tenant', 'global')),
+    platform_license_required BOOLEAN DEFAULT FALSE, -- Requires valid platform license
+    min_license_level VARCHAR(50) DEFAULT NULL CHECK (min_license_level IN ('master', 'delegated')),
     
     -- Flags
     is_system BOOLEAN DEFAULT FALSE,

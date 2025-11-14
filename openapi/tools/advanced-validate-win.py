@@ -24,8 +24,14 @@ def advanced_validation():
     print()
     
     base_path = Path(__file__).parent.parent.resolve()
-    schemas_dir = base_path / 'schemas' / 'content-management'
-    paths_dir = base_path / 'paths' / 'content-management'
+    schemas_dirs = [
+        base_path / 'schemas' / 'content-management',
+        base_path / 'schemas' / 'platform'
+    ]
+    paths_dirs = [
+        base_path / 'paths' / 'content-management',
+        base_path / 'paths' / 'platform'
+    ]
     components_dir = base_path / 'components'
     
     issues_found = {
@@ -41,21 +47,24 @@ def advanced_validation():
     print('LOADING ALL SCHEMAS...')
     print('-' * 90)
     
-    for schema_file in sorted(schemas_dir.glob('*.yaml')):
-        module_name = schema_file.stem
-        try:
-            with open(schema_file, 'r', encoding='utf-8') as f:
-                content = yaml.safe_load(f)
-            
-            all_schemas[module_name] = content
-            if isinstance(content, dict):
-                for entity_name in content.keys():
-                    schema_entities[entity_name].append(module_name)
-                    
-            print(f'OK   Loaded: {module_name:20} ({len(content) if isinstance(content, dict) else "?":2} entities)')
-        except Exception as e:
-            issues_found['critical'].append(f'Failed to load {module_name}: {str(e)[:60]}')
-            print(f'FAIL Failed: {module_name:20} - {str(e)[:50]}')
+    for schemas_dir in schemas_dirs:
+        if not schemas_dir.exists():
+            continue
+        for schema_file in sorted(schemas_dir.glob('*.yaml')):
+            module_name = schema_file.stem
+            try:
+                with open(schema_file, 'r', encoding='utf-8') as f:
+                    content = yaml.safe_load(f)
+                
+                all_schemas[module_name] = content
+                if isinstance(content, dict):
+                    for entity_name in content.keys():
+                        schema_entities[entity_name].append(module_name)
+                        
+                print(f'OK   Loaded: {module_name:20} ({len(content) if isinstance(content, dict) else "?":2} entities)')
+            except Exception as e:
+                issues_found['critical'].append(f'Failed to load {module_name}: {str(e)[:60]}')
+                print(f'FAIL Failed: {module_name:20} - {str(e)[:50]}')
     
     print()
     print('CHECKING TENANT_ID COMPLIANCE...')
@@ -119,69 +128,75 @@ def advanced_validation():
     print('-' * 90)
     
     # Check path files for $ref usage and validity
-    for paths_file in sorted(paths_dir.glob('*.yaml')):
-        module_name = paths_file.stem
-        try:
-            with open(paths_file, 'r', encoding='utf-8') as f:
-                content_str = f.read()
-                content = yaml.safe_load(content_str)
-            
-            # Find all $ref patterns
-            ref_pattern = r'\$ref:\s*["\']?([#/\w\-\.]+)["\']?'
-            refs_in_file = re.findall(ref_pattern, content_str)
-            
-            if refs_in_file:
-                print(f'\nFILE {module_name:20} - Found {len(set(refs_in_file))} unique references:')
+    for paths_dir in paths_dirs:
+        if not paths_dir.exists():
+            continue
+        for paths_file in sorted(paths_dir.glob('*.yaml')):
+            module_name = paths_file.stem
+            try:
+                with open(paths_file, 'r', encoding='utf-8') as f:
+                    content_str = f.read()
+                    content = yaml.safe_load(content_str)
                 
-                for ref in set(refs_in_file):
-                    if ref.startswith('#/'):
-                        # Internal reference - check if it resolves
-                        ref_path = ref.split('/')[1:]  # Skip '#'
-                        print(f'   -> {ref:60} (internal)', end='')
-                        
-                        # Simple check - just warn if suspicious
-                        if 'responses' in ref_path or 'schemas' in ref_path or 'parameters' in ref_path:
-                            print(' OK')
+                # Find all $ref patterns
+                ref_pattern = r'\$ref:\s*["\']?([#/\w\-\.]+)["\']?'
+                refs_in_file = re.findall(ref_pattern, content_str)
+                
+                if refs_in_file:
+                    print(f'\nFILE {module_name:20} - Found {len(set(refs_in_file))} unique references:')
+                    
+                    for ref in set(refs_in_file):
+                        if ref.startswith('#/'):
+                            # Internal reference - check if it resolves
+                            ref_path = ref.split('/')[1:]  # Skip '#'
+                            print(f'   -> {ref:60} (internal)', end='')
+                            
+                            # Simple check - just warn if suspicious
+                            if 'responses' in ref_path or 'schemas' in ref_path or 'parameters' in ref_path:
+                                print(' OK')
+                            else:
+                                print(' WARN')
                         else:
-                            print(' WARN')
-                    else:
-                        print(f'   -> {ref:60} (external)')
-                        issues_found['warning'].append(f'Unsupported reference format in {module_name}: {ref}')
-        
-        except Exception as e:
-            issues_found['warning'].append(f'Error checking references in {module_name}: {str(e)[:50]}')
+                            print(f'   -> {ref:60} (external)')
+                            issues_found['warning'].append(f'Unsupported reference format in {module_name}: {ref}')
+            
+            except Exception as e:
+                issues_found['warning'].append(f'Error checking references in {module_name}: {str(e)[:50]}')
     
     print()
     print('CHECKING SECURITY CONFIGURATION...')
     print('-' * 90)
     
     security_issues = defaultdict(list)
-    for paths_file in sorted(paths_dir.glob('*.yaml')):
-        module_name = paths_file.stem
-        try:
-            with open(paths_file, 'r', encoding='utf-8') as f:
-                content = yaml.safe_load(f)
-            
-            if isinstance(content, dict) and 'paths' in content:
-                for path, path_item in content['paths'].items():
-                    if isinstance(path_item, dict):
-                        for method in ['get', 'post', 'put', 'delete', 'patch']:
-                            if method in path_item:
-                                operation = path_item[method]
-                                if isinstance(operation, dict):
-                                    # Check if security is defined
-                                    has_security = 'security' in operation
-                                    
-                                    # Flag operations without explicit security
-                                    if not has_security and not path.startswith('/public/'):
-                                        if path not in ['/health', '/status', '/version']:
-                                            security_issues[module_name].append({
-                                                'method': method.upper(),
-                                                'path': path,
-                                                'issue': 'Missing explicit security definition'
-                                            })
-        except Exception as e:
-            issues_found['warning'].append(f'Error checking security in {module_name}: {str(e)[:50]}')
+    for paths_dir in paths_dirs:
+        if not paths_dir.exists():
+            continue
+        for paths_file in sorted(paths_dir.glob('*.yaml')):
+            module_name = paths_file.stem
+            try:
+                with open(paths_file, 'r', encoding='utf-8') as f:
+                    content = yaml.safe_load(f)
+                
+                if isinstance(content, dict) and 'paths' in content:
+                    for path, path_item in content['paths'].items():
+                        if isinstance(path_item, dict):
+                            for method in ['get', 'post', 'put', 'delete', 'patch']:
+                                if method in path_item:
+                                    operation = path_item[method]
+                                    if isinstance(operation, dict):
+                                        # Check if security is defined
+                                        has_security = 'security' in operation
+                                        
+                                        # Flag operations without explicit security
+                                        if not has_security and not path.startswith('/public/'):
+                                            if path not in ['/health', '/status', '/version']:
+                                                security_issues[module_name].append({
+                                                    'method': method.upper(),
+                                                    'path': path,
+                                                    'issue': 'Missing explicit security definition'
+                                                })
+            except Exception as e:
+                issues_found['warning'].append(f'Error checking security in {module_name}: {str(e)[:50]}')
     
     if security_issues:
         for module, issues in security_issues.items():
@@ -223,28 +238,31 @@ def advanced_validation():
     endpoints_with_examples = 0
     endpoints_with_descriptions = 0
     
-    for paths_file in sorted(paths_dir.glob('*.yaml')):
-        try:
-            with open(paths_file, 'r', encoding='utf-8') as f:
-                content = yaml.safe_load(f)
-            
-            if isinstance(content, dict) and 'paths' in content:
-                for path, path_item in content['paths'].items():
-                    if isinstance(path_item, dict):
-                        for method in ['get', 'post', 'put', 'delete', 'patch']:
-                            if method in path_item:
-                                operation = path_item[method]
-                                endpoints_by_method[method.upper()] += 1
-                                
-                                if isinstance(operation, dict):
-                                    if 'description' in operation or 'summary' in operation:
-                                        endpoints_with_descriptions += 1
+    for paths_dir in paths_dirs:
+        if not paths_dir.exists():
+            continue
+        for paths_file in sorted(paths_dir.glob('*.yaml')):
+            try:
+                with open(paths_file, 'r', encoding='utf-8') as f:
+                    content = yaml.safe_load(f)
+                
+                if isinstance(content, dict) and 'paths' in content:
+                    for path, path_item in content['paths'].items():
+                        if isinstance(path_item, dict):
+                            for method in ['get', 'post', 'put', 'delete', 'patch']:
+                                if method in path_item:
+                                    operation = path_item[method]
+                                    endpoints_by_method[method.upper()] += 1
                                     
-                                    if 'examples' in operation or 'requestBody' in operation:
-                                        if 'examples' in operation.get('requestBody', {}):
-                                            endpoints_with_examples += 1
-        except Exception as e:
-            pass
+                                    if isinstance(operation, dict):
+                                        if 'description' in operation or 'summary' in operation:
+                                            endpoints_with_descriptions += 1
+                                        
+                                        if 'examples' in operation or 'requestBody' in operation:
+                                            if 'examples' in operation.get('requestBody', {}):
+                                                endpoints_with_examples += 1
+            except Exception as e:
+                pass
     
     print('Endpoints by HTTP method:')
     for method in sorted(endpoints_by_method.keys()):

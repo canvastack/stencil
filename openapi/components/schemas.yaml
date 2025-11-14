@@ -281,3 +281,415 @@ BaseTranslation:
     - status
     - translated_by
     - translated_at
+
+# Platform Licensing Schemas
+# ============================================================================
+
+PlatformLicense:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Platform license unique identifier
+    license_key:
+      type: string
+      description: Base64 encoded license key
+    license_hash:
+      type: string
+      description: SHA-256 hash of license for quick validation
+    license_signature:
+      type: string
+      description: RSA-2048 digital signature
+    owner_name:
+      type: string
+      example: "John Smith"
+    owner_email:
+      type: string
+      format: email
+      example: "john@company.com"
+    owner_organization:
+      type: string
+      example: "Acme Corp"
+    license_type:
+      type: string
+      enum: [master, delegated]
+      example: "delegated"
+    status:
+      type: string
+      enum: [active, suspended, expired, revoked]
+      example: "active"
+    features:
+      type: array
+      items:
+        type: string
+      example: ["platform_management", "tenant_billing", "analytics"]
+    max_tenants:
+      type: integer
+      example: 100
+    max_users:
+      type: integer
+      example: 1000
+    valid_from:
+      type: string
+      format: date-time
+      example: "2025-01-01T00:00:00Z"
+    valid_until:
+      type: string
+      format: date-time
+      example: "2025-12-31T23:59:59Z"
+    last_validated:
+      type: string
+      format: date-time
+      example: "2025-11-14T12:30:00Z"
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - license_key
+    - license_hash
+    - license_signature
+    - owner_email
+    - license_type
+    - status
+    - features
+    - valid_from
+    - valid_until
+
+PlatformLicenseDetailed:
+  allOf:
+    - $ref: '#/PlatformLicense'
+    - type: object
+      properties:
+        restrictions:
+          type: object
+          additionalProperties: true
+          example:
+            tenant_business_data_access: false
+            platform_configuration: true
+        current_tenant_count:
+          type: integer
+          example: 15
+        current_user_count:
+          type: integer
+          example: 250
+        validation_history:
+          type: array
+          items:
+            $ref: '#/LicenseValidation'
+        associated_tenants:
+          type: array
+          items:
+            $ref: '#/TenantInfo'
+
+TenantServiceLicense:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    tenant_id:
+      type: string
+      format: uuid
+    platform_license_id:
+      type: string
+      format: uuid
+    plan_type:
+      type: string
+      enum: [basic, pro, enterprise, custom]
+      example: "pro"
+    plan_name:
+      type: string
+      example: "Professional Plan"
+    max_users:
+      type: integer
+      example: 25
+    max_storage_gb:
+      type: integer
+      example: 10
+    max_products:
+      type: integer
+      example: 1000
+    features:
+      type: array
+      items:
+        type: string
+      example: ["cms_advanced", "inventory", "financial_tracking"]
+    monthly_price:
+      type: number
+      format: decimal
+      example: 99.00
+    currency:
+      type: string
+      example: "USD"
+    status:
+      type: string
+      enum: [trial, active, suspended, expired, cancelled]
+      example: "active"
+    valid_until:
+      type: string
+      format: date-time
+    next_billing_date:
+      type: string
+      format: date-time
+    auto_renewal:
+      type: boolean
+      example: true
+    trial_period_days:
+      type: integer
+      example: 14
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - tenant_id
+    - platform_license_id
+    - plan_type
+    - max_users
+    - status
+    - valid_until
+
+TenantServiceLicenseDetailed:
+  allOf:
+    - $ref: '#/TenantServiceLicense'
+    - type: object
+      properties:
+        usage_stats:
+          $ref: '#/TenantUsageStats'
+        billing_history:
+          type: array
+          items:
+            type: object
+            properties:
+              billing_date:
+                type: string
+                format: date-time
+              amount:
+                type: number
+                format: decimal
+              status:
+                type: string
+                enum: [pending, paid, failed, refunded]
+        platform_license_info:
+          type: object
+          properties:
+            owner_organization:
+              type: string
+            license_type:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+
+TenantUsageStats:
+  type: object
+  properties:
+    users:
+      type: object
+      properties:
+        current:
+          type: integer
+          example: 15
+        limit:
+          type: integer
+          example: 25
+        percentage:
+          type: number
+          format: float
+          example: 60.0
+    storage:
+      type: object
+      properties:
+        current_gb:
+          type: number
+          format: decimal
+          example: 5.2
+        limit_gb:
+          type: integer
+          example: 10
+        percentage:
+          type: number
+          format: float
+          example: 52.0
+    products:
+      type: object
+      properties:
+        current:
+          type: integer
+          example: 150
+        limit:
+          type: integer
+          example: 1000
+        percentage:
+          type: number
+          format: float
+          example: 15.0
+    api_calls:
+      type: object
+      properties:
+        current_month:
+          type: integer
+          example: 2500
+        limit_month:
+          type: integer
+          example: 10000
+        percentage:
+          type: number
+          format: float
+          example: 25.0
+
+LicenseValidation:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    license_id:
+      type: string
+      format: uuid
+    validated_at:
+      type: string
+      format: date-time
+    validation_result:
+      type: string
+      enum: [valid, expired, invalid, revoked, error]
+      example: "valid"
+    validation_message:
+      type: string
+      example: "License validation successful"
+    request_ip:
+      type: string
+      format: ipv4
+      example: "192.168.1.100"
+    request_hostname:
+      type: string
+      example: "admin.stencil.com"
+    features_requested:
+      type: array
+      items:
+        type: string
+    validation_duration_ms:
+      type: integer
+      example: 45
+    environment:
+      type: string
+      enum: [development, staging, production]
+      example: "production"
+  required:
+    - id
+    - license_id
+    - validated_at
+    - validation_result
+    - validation_message
+
+SupportTicket:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    ticket_number:
+      type: string
+      example: "ST-2025-001234"
+    subject:
+      type: string
+      example: "Billing question"
+    status:
+      type: string
+      enum: [open, in_progress, waiting_customer, resolved, closed]
+      example: "open"
+    priority:
+      type: string
+      enum: [low, normal, high, urgent]
+      example: "normal"
+    category:
+      type: string
+      enum: [billing, technical, feature_request, bug_report, general]
+    created_by:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        tenant_id:
+          type: string
+          format: uuid
+    assigned_to:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    message:
+      type: string
+      description: Initial ticket message
+    attachments:
+      type: array
+      items:
+        type: string
+        format: uuid
+      description: Array of media file IDs
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+    resolved_at:
+      type: string
+      format: date-time
+      nullable: true
+  required:
+    - id
+    - ticket_number
+    - subject
+    - status
+    - priority
+    - category
+    - created_by
+    - message
+    - created_at
+
+PaginationInfo:
+  type: object
+  properties:
+    current_page:
+      type: integer
+      example: 1
+    per_page:
+      type: integer
+      example: 20
+    total:
+      type: integer
+      example: 150
+    total_pages:
+      type: integer
+      example: 8
+    has_next_page:
+      type: boolean
+      example: true
+    has_prev_page:
+      type: boolean
+      example: false
+  required:
+    - current_page
+    - per_page
+    - total
+    - total_pages
+    - has_next_page
+    - has_prev_page

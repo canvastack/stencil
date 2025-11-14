@@ -40,7 +40,8 @@ info:
     - **Vendors**: Vendor management with 97+ fields, 6 tables
     - **Suppliers**: Supply chain with 180+ fields, 8+ tables
     
-    ### ⚙️ System Administration (3 modules)
+    ### ⚙️ System Administration (4 modules)
+    - **✅ Platform Licensing**: Cryptographic license management with 95+ fields, 3 tables **(IMPLEMENTED)**
     - **Financial**: Revenue tracking with 120+ fields, 6+ tables
     - **Settings**: System config with 85+ fields, 5+ tables
     - **Plugins**: Extension system with variable fields
@@ -321,6 +322,37 @@ components:
     # Theme schemas will be added here
     # Users schemas will be added here
     # Vendors schemas will be added here
+    
+    # Platform Licensing Schemas
+    PlatformLicense:
+      $ref: './schemas/platform/platform-licensing.yaml#/PlatformLicense'
+    PlatformLicenseDetailed:
+      $ref: './schemas/platform/platform-licensing.yaml#/PlatformLicenseDetailed'
+    TenantServiceLicense:
+      $ref: './schemas/platform/platform-licensing.yaml#/TenantServiceLicense'
+    TenantServiceLicenseDetailed:
+      $ref: './schemas/platform/platform-licensing.yaml#/TenantServiceLicenseDetailed'
+    LicenseValidation:
+      $ref: './schemas/platform/platform-licensing.yaml#/LicenseValidation'
+    LicenseValidationSummary:
+      $ref: './schemas/platform/platform-licensing.yaml#/LicenseValidationSummary'
+    CreatePlatformLicenseRequest:
+      $ref: './schemas/platform/platform-licensing.yaml#/CreatePlatformLicenseRequest'
+    UpdatePlatformLicenseRequest:
+      $ref: './schemas/platform/platform-licensing.yaml#/UpdatePlatformLicenseRequest'
+    PlatformLicenseInstallation:
+      $ref: './schemas/platform/platform-licensing.yaml#/PlatformLicenseInstallation'
+    CreateTenantServiceLicenseRequest:
+      $ref: './schemas/platform/platform-licensing.yaml#/CreateTenantServiceLicenseRequest'
+    LicenseValidationRequest:
+      $ref: './schemas/platform/platform-licensing.yaml#/LicenseValidationRequest'
+    LicenseValidationResponse:
+      $ref: './schemas/platform/platform-licensing.yaml#/LicenseValidationResponse'
+    UsageStatisticsResponse:
+      $ref: './schemas/platform/platform-licensing.yaml#/UsageStatisticsResponse'
+    LicenseValidationHistoryResponse:
+      $ref: './schemas/platform/platform-licensing.yaml#/LicenseValidationHistoryResponse'
+    
     # External schemas
     ValidationErrorResponse:
     BaseResponse:
@@ -587,6 +619,34 @@ paths:
   /api/v1/admin/themes/marketplace/{listingId}/reject:
     $ref: './paths/content-management/theme.yaml#/~1admin~1themes~1marketplace~1{listingId}~1reject'
   
+  # ===== PLATFORM LICENSING ENDPOINTS =====
+  
+  # Platform License Management
+  /api/v1/platform/licenses:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licenses'
+  /api/v1/platform/licenses/{license_id}:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licenses~1{license_id}'
+  /api/v1/platform/licenses/bulk:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licenses~1bulk'
+  
+  # Tenant Service Licensing
+  /api/v1/platform/tenants/{tenant_id}/service-license:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1tenants~1{tenant_id}~1service-license'
+  /api/v1/platform/tenants/{tenant_id}/usage:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1tenants~1{tenant_id}~1usage'
+  /api/v1/platform/service-licenses/bulk:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1service-licenses~1bulk'
+  
+  # License Validation
+  /api/v1/auth/validate-platform-license:
+    $ref: './paths/platform/platform-licensing.yaml#/~1auth~1validate-platform-license'
+  /api/v1/platform/validation-history:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1validation-history'
+  
+  # Platform Licensing Reports
+  /api/v1/platform/licensing/reports/summary:
+    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licensing~1reports~1summary'
+  
   # Health Check Endpoint
   /health:
     get:
@@ -740,7 +800,13 @@ tags:
   - name: User Management
     description: Users, Customers, Vendors, and Suppliers management
   - name: System Administration
-    description: Financial, Settings, and Plugin management
+    description: Financial, Settings, Plugin, and Platform Licensing management
+  - name: Platform Licensing
+    description: Cryptographic platform license and tenant service license management
+  - name: Tenant Service Licensing
+    description: Service plan and usage management for tenants
+  - name: License Validation
+    description: License validation and audit trail management
   - name: Assets & Localization
     description: Media, Documentation, Theme, and Language management
   - name: Theme Marketplace

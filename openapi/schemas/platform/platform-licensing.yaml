@@ -1,0 +1,1375 @@
+# Platform Licensing System Schemas for Stencil CMS
+# Complete OpenAPI schemas for Platform License Management System (95+ fields, 3 tables)
+# Cryptographic license validation with multi-tenant service management
+
+# ================================================================
+# CORE PLATFORM LICENSING ENTITIES
+# ================================================================
+
+# Platform License Entity (Master License System)
+PlatformLicense:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - license_key
+        - license_hash
+        - license_type
+        - owner_name
+        - owner_email
+        - valid_until
+        - signature
+        - public_key
+      properties:
+        # License Identity
+        license_key:
+          type: string
+          description: Base64 encoded RSA-encrypted license data
+          minLength: 2000
+          maxLength: 10000
+          example: "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBeERaV..."
+          x-sensitive: true
+        license_hash:
+          type: string
+          maxLength: 255
+          description: SHA-256 hash of license_key for fast lookups
+          example: "a1b2c3d4e5f6789..."
+          readOnly: true
+        license_type:
+          type: string
+          enum: ["master", "delegated"]
+          description: Type of platform license
+          example: "master"
+
+        # Owner Information
+        owner_name:
+          type: string
+          maxLength: 255
+          description: Full name of license owner
+          example: "John Smith"
+        owner_email:
+          type: string
+          format: email
+          maxLength: 255
+          description: License owner email address
+          example: "john@company.com"
+        owner_organization:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Organization name
+          example: "Acme Corporation"
+        owner_phone:
+          type: string
+          maxLength: 50
+          nullable: true
+          pattern: '^\\+[1-9]\\d{1,14}$'
+          description: Phone number in international format
+          example: "+1234567890"
+
+        # License Scope & Restrictions
+        max_tenants:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          nullable: true
+          description: Maximum allowed tenants (null = unlimited)
+          example: 100
+        max_users:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+          nullable: true
+          description: Maximum allowed users (null = unlimited)
+          example: 1000
+        max_storage_gb:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          nullable: true
+          description: Maximum storage in GB (null = unlimited)
+          example: 500
+
+        # Features (JSONB array)
+        features:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Enabled platform features
+          example: ["platform_management", "tenant_billing", "analytics_full", "api_full_access"]
+        restrictions:
+          type: object
+          additionalProperties: true
+          default: {}
+          description: Custom access restrictions
+          example:
+            tenant_business_data_access: false
+            tenant_internal_settings: false
+
+        # Hierarchy (for delegated licenses)
+        parent_license_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent license UUID for delegated licenses
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        delegation_level:
+          type: integer
+          minimum: 0
+          maximum: 5
+          default: 0
+          description: License hierarchy level (0=master, 1=delegated, 2=sub-delegated)
+          example: 0
+
+        # Validity & Status
+        issued_at:
+          type: string
+          format: date-time
+          description: License issue timestamp
+          example: "2025-01-01T00:00:00Z"
+          readOnly: true
+        valid_from:
+          type: string
+          format: date-time
+          description: License validity start date
+          example: "2025-01-01T00:00:00Z"
+        valid_until:
+          type: string
+          format: date-time
+          description: License expiration date
+          example: "2025-12-31T23:59:59Z"
+        last_validated:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last validation timestamp
+          example: "2025-11-15T14:30:00Z"
+          readOnly: true
+        validation_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Total validation attempts
+          example: 156
+          readOnly: true
+
+        status:
+          type: string
+          enum: ["active", "suspended", "expired", "revoked"]
+          default: "active"
+          description: Current license status
+          example: "active"
+
+        # Cryptographic Security
+        signature:
+          type: string
+          description: RSA-2048 digital signature
+          minLength: 500
+          maxLength: 2000
+          example: "MEUCIQDxxx..."
+          x-sensitive: true
+        public_key:
+          type: string
+          description: RSA public key for signature validation
+          minLength: 200
+          maxLength: 1000
+          example: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
+        encryption_algorithm:
+          type: string
+          maxLength: 50
+          default: "RSA-2048"
+          description: Encryption algorithm used
+          example: "RSA-2048"
+
+        # Environment Binding
+        allowed_domains:
+          type: array
+          items:
+            type: string
+            format: hostname
+          default: []
+          description: Allowed domain whitelist
+          example: ["admin.stencil.com", "platform.stencil.com"]
+        allowed_ips:
+          type: array
+          items:
+            type: string
+            format: ipv4
+          default: []
+          description: IP address whitelist (optional)
+          example: ["192.168.1.100", "10.0.0.50"]
+
+        # Renewal Management
+        renewal_notification_sent:
+          type: boolean
+          default: false
+          description: Whether renewal notification has been sent
+          example: false
+        renewal_grace_period_days:
+          type: integer
+          minimum: 0
+          maximum: 90
+          default: 7
+          description: Grace period after expiration in days
+          example: 7
+        auto_renewal_enabled:
+          type: boolean
+          default: false
+          description: Automatic renewal enabled status
+          example: false
+
+        # Audit Fields
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User UUID who created the license
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User UUID who last updated the license
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+# Detailed Platform License (with additional info)
+PlatformLicenseDetailed:
+  allOf:
+    - $ref: '#/PlatformLicense'
+    - type: object
+      properties:
+        # Additional computed fields
+        days_until_expiry:
+          type: integer
+          description: Days remaining until expiration
+          example: 45
+          readOnly: true
+        is_expired:
+          type: boolean
+          description: Whether license is expired
+          example: false
+          readOnly: true
+        tenant_count:
+          type: integer
+          minimum: 0
+          description: Current number of associated tenants
+          example: 25
+          readOnly: true
+        usage_statistics:
+          type: object
+          description: License usage statistics
+          readOnly: true
+          properties:
+            total_validations:
+              type: integer
+              example: 1543
+            last_30_days_validations:
+              type: integer
+              example: 89
+            avg_daily_validations:
+              type: number
+              format: float
+              example: 12.5
+        validation_history:
+          type: array
+          items:
+            $ref: '#/LicenseValidationSummary'
+          description: Recent validation history
+          readOnly: true
+
+# ================================================================
+# TENANT SERVICE LICENSING ENTITIES
+# ================================================================
+
+# Tenant Service License Entity
+TenantServiceLicense:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - $ref: '../common/base.yaml#/TenantEntity'
+    - $ref: '../common/base.yaml#/AuditableEntity'
+    - type: object
+      required:
+        - platform_license_id
+        - plan_type
+        - plan_name
+        - max_users
+        - max_storage_gb
+        - valid_until
+        - monthly_price
+      properties:
+        # Relationships
+        platform_license_id:
+          type: string
+          format: uuid
+          description: Associated platform license UUID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Service Plan Configuration
+        plan_type:
+          type: string
+          enum: ["basic", "pro", "enterprise", "custom"]
+          description: Service plan type
+          example: "pro"
+        plan_name:
+          type: string
+          maxLength: 255
+          description: Display name of the service plan
+          example: "Professional Plan"
+        plan_version:
+          type: string
+          maxLength: 50
+          default: "1.0"
+          description: Plan version identifier
+          example: "2.1"
+
+        # Resource Quotas
+        max_users:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 10
+          description: Maximum users allowed
+          example: 25
+        max_admin_users:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 2
+          description: Maximum admin users allowed
+          example: 5
+        max_storage_gb:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          default: 1
+          description: Maximum storage in GB
+          example: 10
+        max_products:
+          type: integer
+          minimum: 0
+          maximum: 100000
+          nullable: true
+          description: Maximum products allowed (null = unlimited)
+          example: 1000
+        max_orders_per_month:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          nullable: true
+          description: Maximum orders per month (null = unlimited)
+          example: 500
+        max_api_calls_per_month:
+          type: integer
+          minimum: 0
+          maximum: 10000000
+          nullable: true
+          description: Maximum API calls per month (null = unlimited)
+          example: 10000
+
+        # Feature Permissions (JSONB arrays)
+        features:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Enabled service features
+          example: ["cms_advanced", "inventory", "analytics", "financial_tracking"]
+        addons:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Additional feature add-ons
+          example: ["advanced_reports", "custom_integrations", "white_label"]
+        restrictions:
+          type: object
+          additionalProperties: true
+          default: {}
+          description: Feature restrictions and limitations
+          example:
+            export_limit_per_day: 100
+            bulk_operations: true
+
+        # Billing Information
+        monthly_price:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 99999.99
+          default: 0.00
+          description: Monthly subscription price
+          example: 99.99
+        yearly_price:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 999999.99
+          nullable: true
+          description: Annual subscription price (optional)
+          example: 999.99
+        setup_fee:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 9999.99
+          default: 0.00
+          description: One-time setup fee
+          example: 49.99
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          default: "USD"
+          description: Currency code (ISO 4217)
+          example: "USD"
+        billing_cycle:
+          type: string
+          enum: ["monthly", "yearly"]
+          default: "monthly"
+          description: Billing cycle frequency
+          example: "monthly"
+
+        # Service Level Agreement
+        uptime_sla:
+          type: number
+          format: decimal
+          minimum: 90.00
+          maximum: 100.00
+          default: 99.50
+          description: Uptime SLA percentage
+          example: 99.50
+        support_level:
+          type: string
+          enum: ["basic", "standard", "premium", "enterprise"]
+          default: "standard"
+          description: Support service level
+          example: "premium"
+        response_time_hours:
+          type: integer
+          minimum: 1
+          maximum: 168
+          default: 24
+          description: Support response time in hours
+          example: 4
+
+        # Validity & Status
+        valid_from:
+          type: string
+          format: date-time
+          description: License validity start date
+          example: "2025-01-01T00:00:00Z"
+        valid_until:
+          type: string
+          format: date-time
+          description: License expiration date
+          example: "2025-12-31T23:59:59Z"
+        trial_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Trial period end date
+          example: "2025-01-15T23:59:59Z"
+        grace_period_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Grace period end date
+          example: "2025-01-07T23:59:59Z"
+
+        status:
+          type: string
+          enum: ["trial", "active", "suspended", "expired", "cancelled"]
+          default: "active"
+          description: Current license status
+          example: "active"
+        suspension_reason:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Reason for suspension
+          example: "Payment overdue"
+
+        # Usage Tracking (Current Period)
+        current_users:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Current active user count
+          example: 18
+        current_admin_users:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Current admin user count
+          example: 3
+        current_storage_gb:
+          type: number
+          format: decimal
+          minimum: 0
+          default: 0.00
+          description: Current storage usage in GB
+          example: 7.25
+        current_products:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Current product count
+          example: 450
+        current_orders_this_month:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Orders processed this month
+          example: 87
+        current_api_calls_this_month:
+          type: integer
+          minimum: 0
+          default: 0
+          description: API calls made this month
+          example: 2543
+
+        # Usage Alerts
+        usage_alert_threshold:
+          type: number
+          format: decimal
+          minimum: 0.00
+          maximum: 100.00
+          default: 80.00
+          description: Usage alert threshold percentage
+          example: 80.00
+        last_usage_alert_sent:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last usage alert timestamp
+          example: "2025-11-10T15:30:00Z"
+        overage_allowed:
+          type: boolean
+          default: false
+          description: Whether usage overages are allowed
+          example: true
+        overage_rate:
+          type: number
+          format: decimal
+          minimum: 0.0000
+          maximum: 999.9999
+          default: 0.00
+          description: Per-unit overage cost
+          example: 0.10
+
+        # Renewal & Billing
+        auto_renewal:
+          type: boolean
+          default: true
+          description: Automatic renewal enabled
+          example: true
+        next_billing_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Next billing date
+          example: "2025-12-01T00:00:00Z"
+        last_billed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last successful billing timestamp
+          example: "2025-11-01T09:15:30Z"
+        billing_contact_email:
+          type: string
+          format: email
+          maxLength: 255
+          nullable: true
+          description: Billing contact email address
+          example: "billing@company.com"
+
+        # Audit Fields
+        activated_by:
+          type: string
+          format: uuid
+          nullable: true
+          description: User UUID who activated the license
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        activated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: License activation timestamp
+          example: "2025-01-01T10:00:00Z"
+
+# Detailed Tenant Service License (with usage stats)
+TenantServiceLicenseDetailed:
+  allOf:
+    - $ref: '#/TenantServiceLicense'
+    - type: object
+      properties:
+        # Usage Statistics
+        usage_percentage:
+          type: object
+          description: Usage percentages against limits
+          readOnly: true
+          properties:
+            users:
+              type: number
+              format: float
+              example: 72.0
+            storage:
+              type: number
+              format: float
+              example: 72.5
+            products:
+              type: number
+              format: float
+              example: 45.0
+            api_calls:
+              type: number
+              format: float
+              example: 25.4
+
+        # Usage History
+        usage_trends:
+          type: object
+          description: Usage trends over time
+          readOnly: true
+          properties:
+            last_30_days:
+              type: object
+              properties:
+                avg_users:
+                  type: number
+                  format: float
+                  example: 16.5
+                avg_storage_gb:
+                  type: number
+                  format: float
+                  example: 6.8
+                total_orders:
+                  type: integer
+                  example: 267
+                total_api_calls:
+                  type: integer
+                  example: 8934
+
+        # Billing History
+        billing_history:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+                format: date
+                example: "2025-11"
+              amount:
+                type: number
+                format: decimal
+                example: 99.99
+              status:
+                type: string
+                enum: ["paid", "pending", "failed"]
+                example: "paid"
+          description: Recent billing history
+          readOnly: true
+
+# ================================================================
+# LICENSE VALIDATION ENTITIES
+# ================================================================
+
+# License Validation Record
+LicenseValidation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      required:
+        - platform_license_id
+        - validation_type
+        - validation_result
+      properties:
+        # License Reference
+        platform_license_id:
+          type: string
+          format: uuid
+          description: Associated platform license UUID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+        # Validation Context
+        validation_type:
+          type: string
+          enum: ["startup", "periodic", "api_request", "manual"]
+          description: Type of validation performed
+          example: "api_request"
+        validation_result:
+          type: string
+          enum: ["valid", "expired", "invalid", "revoked", "error"]
+          description: Validation result status
+          example: "valid"
+        validation_message:
+          type: string
+          nullable: true
+          description: Additional validation message
+          example: "License validation successful"
+        error_code:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Error code if validation failed
+          example: "LICENSE_EXPIRED"
+
+        # Request Context
+        request_ip:
+          type: string
+          format: ipv4
+          nullable: true
+          description: IP address of the request
+          example: "192.168.1.100"
+        request_user_agent:
+          type: string
+          maxLength: 1000
+          nullable: true
+          description: User agent string
+          example: "StencilCMS/1.0.0"
+        request_hostname:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Hostname of the request
+          example: "admin.stencil.com"
+        request_path:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Request path
+          example: "/api/platform/licenses"
+        request_method:
+          type: string
+          maxLength: 10
+          nullable: true
+          description: HTTP method
+          example: "GET"
+
+        # Features & Permissions Accessed
+        requested_features:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Features requested during validation
+          example: ["platform_management", "tenant_billing"]
+        granted_features:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Features granted after validation
+          example: ["platform_management", "tenant_billing"]
+        denied_features:
+          type: array
+          items:
+            type: string
+          default: []
+          description: Features denied during validation
+          example: []
+        permission_context:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Permission context information
+          example: "admin_dashboard"
+
+        # Performance Metrics
+        validation_duration_ms:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Validation duration in milliseconds
+          example: 45
+        database_query_count:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Database queries performed
+          example: 3
+        cache_hit:
+          type: boolean
+          default: false
+          description: Whether validation used cache
+          example: true
+
+        # Environment Info
+        server_hostname:
+          type: string
+          maxLength: 255
+          nullable: true
+          description: Server hostname
+          example: "app-server-01"
+        server_version:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: Server version
+          example: "1.0.0"
+        app_environment:
+          type: string
+          enum: ["development", "staging", "production"]
+          nullable: true
+          description: Application environment
+          example: "production"
+
+        # Timing
+        validated_at:
+          type: string
+          format: date-time
+          description: Validation timestamp
+          example: "2025-11-15T14:30:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Validation cache expiration
+          example: "2025-11-15T15:30:00Z"
+
+# License Validation Summary (for history)
+LicenseValidationSummary:
+  type: object
+  required:
+    - validated_at
+    - result
+    - duration_ms
+  properties:
+    validated_at:
+      type: string
+      format: date-time
+      description: Validation timestamp
+      example: "2025-11-15T14:30:00Z"
+    result:
+      type: string
+      enum: ["valid", "expired", "invalid", "revoked", "error"]
+      description: Validation result
+      example: "valid"
+    message:
+      type: string
+      nullable: true
+      description: Validation message
+      example: "License validation successful"
+    duration_ms:
+      type: integer
+      minimum: 0
+      description: Validation duration in milliseconds
+      example: 45
+    request_ip:
+      type: string
+      nullable: true
+      description: Request IP address
+      example: "192.168.1.100"
+    features_requested:
+      type: array
+      items:
+        type: string
+      description: Features requested
+      example: ["platform_management"]
+
+# ================================================================
+# REQUEST/RESPONSE ENTITIES
+# ================================================================
+
+# Create Platform License Request
+CreatePlatformLicenseRequest:
+  type: object
+  required:
+    - owner_name
+    - owner_email
+    - valid_until
+    - features
+    - license_type
+  properties:
+    # Owner Information
+    owner_name:
+      type: string
+      maxLength: 255
+      description: Full name of license owner
+      example: "John Smith"
+    owner_email:
+      type: string
+      format: email
+      maxLength: 255
+      description: License owner email address
+      example: "john@company.com"
+    owner_organization:
+      type: string
+      maxLength: 255
+      description: Organization name
+      example: "Acme Corporation"
+    owner_phone:
+      type: string
+      maxLength: 50
+      pattern: '^\\+[1-9]\\d{1,14}$'
+      description: Phone number in international format
+      example: "+1234567890"
+
+    # License Configuration
+    license_type:
+      type: string
+      enum: ["master", "delegated"]
+      description: Type of platform license to create
+      example: "master"
+    features:
+      type: array
+      items:
+        type: string
+      minItems: 1
+      description: Enabled platform features
+      example: ["platform_management", "tenant_billing", "analytics_full"]
+    restrictions:
+      type: object
+      additionalProperties: true
+      description: Custom access restrictions
+      example:
+        tenant_business_data_access: false
+
+    # Validity
+    valid_until:
+      type: string
+      format: date-time
+      description: License expiration date
+      example: "2025-12-31T23:59:59Z"
+    valid_from:
+      type: string
+      format: date-time
+      description: License validity start date (optional)
+      example: "2025-01-01T00:00:00Z"
+
+    # Quotas
+    max_tenants:
+      type: integer
+      minimum: 1
+      maximum: 100000
+      description: Maximum allowed tenants
+      example: 100
+    max_users:
+      type: integer
+      minimum: 1
+      maximum: 1000000
+      description: Maximum allowed users
+      example: 1000
+    max_storage_gb:
+      type: integer
+      minimum: 1
+      maximum: 100000
+      description: Maximum storage in GB
+      example: 500
+
+    # Hierarchy (for delegated licenses)
+    parent_license_id:
+      type: string
+      format: uuid
+      description: Parent license UUID (required for delegated licenses)
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+    # Environment Binding
+    allowed_domains:
+      type: array
+      items:
+        type: string
+        format: hostname
+      description: Allowed domain whitelist
+      example: ["admin.stencil.com", "platform.stencil.com"]
+    allowed_ips:
+      type: array
+      items:
+        type: string
+        format: ipv4
+      description: IP address whitelist
+      example: ["192.168.1.100"]
+
+    # Renewal Settings
+    auto_renewal_enabled:
+      type: boolean
+      default: false
+      description: Enable automatic renewal
+      example: false
+
+# Update Platform License Request
+UpdatePlatformLicenseRequest:
+  type: object
+  properties:
+    # Validity
+    valid_until:
+      type: string
+      format: date-time
+      description: New license expiration date
+      example: "2026-12-31T23:59:59Z"
+
+    # Status
+    status:
+      type: string
+      enum: ["active", "suspended", "revoked"]
+      description: New license status
+      example: "active"
+
+    # Features & Restrictions
+    features:
+      type: array
+      items:
+        type: string
+      description: Updated platform features
+      example: ["platform_management", "tenant_billing"]
+    restrictions:
+      type: object
+      additionalProperties: true
+      description: Updated access restrictions
+      example:
+        tenant_business_data_access: false
+
+    # Quotas
+    max_tenants:
+      type: integer
+      minimum: 1
+      maximum: 100000
+      description: Updated maximum tenants
+      example: 200
+    max_users:
+      type: integer
+      minimum: 1
+      maximum: 1000000
+      description: Updated maximum users
+      example: 2000
+
+    # Environment Binding
+    allowed_domains:
+      type: array
+      items:
+        type: string
+        format: hostname
+      description: Updated allowed domains
+      example: ["admin.stencil.com"]
+
+    # Renewal Settings
+    auto_renewal_enabled:
+      type: boolean
+      description: Update automatic renewal setting
+      example: true
+
+# Platform License Installation Info
+PlatformLicenseInstallation:
+  type: object
+  required:
+    - license_key
+    - installation_instructions
+  properties:
+    license_key:
+      type: string
+      description: Base64 encoded license key for installation
+      example: "LS0tLS1CRUdJTi..."
+    installation_instructions:
+      type: object
+      properties:
+        environment_variable:
+          type: string
+          example: "STENCIL_PLATFORM_LICENSE_KEY"
+        config_file_path:
+          type: string
+          example: ".env"
+        validation_url:
+          type: string
+          format: uri
+          example: "https://api.stencil.com/platform/validate-license"
+      description: Installation instructions for the license
+
+# Create Tenant Service License Request
+CreateTenantServiceLicenseRequest:
+  type: object
+  required:
+    - plan_type
+    - valid_until
+  properties:
+    # Plan Configuration
+    plan_type:
+      type: string
+      enum: ["basic", "pro", "enterprise", "custom"]
+      description: Service plan type
+      example: "pro"
+    plan_name:
+      type: string
+      maxLength: 255
+      description: Custom plan name (for custom plans)
+      example: "Custom Professional Plan"
+
+    # Resource Quotas
+    max_users:
+      type: integer
+      minimum: 1
+      maximum: 10000
+      description: Maximum users allowed
+      example: 25
+    max_storage_gb:
+      type: integer
+      minimum: 1
+      maximum: 10000
+      description: Maximum storage in GB
+      example: 10
+    max_products:
+      type: integer
+      minimum: 0
+      maximum: 100000
+      description: Maximum products allowed
+      example: 1000
+
+    # Features
+    features:
+      type: array
+      items:
+        type: string
+      description: Enabled service features
+      example: ["cms_advanced", "inventory", "analytics"]
+    addons:
+      type: array
+      items:
+        type: string
+      description: Additional feature add-ons
+      example: ["advanced_reports"]
+
+    # Pricing
+    monthly_price:
+      type: number
+      format: decimal
+      minimum: 0
+      description: Monthly subscription price
+      example: 99.99
+    setup_fee:
+      type: number
+      format: decimal
+      minimum: 0
+      description: One-time setup fee
+      example: 49.99
+
+    # Validity
+    valid_until:
+      type: string
+      format: date-time
+      description: License expiration date
+      example: "2025-12-31T23:59:59Z"
+    trial_ends_at:
+      type: string
+      format: date-time
+      description: Trial period end date
+      example: "2025-01-15T23:59:59Z"
+
+    # Support Level
+    support_level:
+      type: string
+      enum: ["basic", "standard", "premium", "enterprise"]
+      description: Support service level
+      example: "standard"
+
+# License Validation Request
+LicenseValidationRequest:
+  type: object
+  required:
+    - license_key
+  properties:
+    license_key:
+      type: string
+      description: Platform license key to validate
+      example: "LS0tLS1CRUdJTi..."
+    environment:
+      type: string
+      enum: ["development", "staging", "production"]
+      description: Environment for validation
+      example: "production"
+    requested_features:
+      type: array
+      items:
+        type: string
+      description: Features being requested
+      example: ["platform_management", "tenant_billing"]
+
+# License Validation Response
+LicenseValidationResponse:
+  type: object
+  required:
+    - valid
+    - expires_at
+  properties:
+    valid:
+      type: boolean
+      description: Whether the license is valid
+      example: true
+    owner:
+      type: string
+      description: License owner name
+      example: "John Smith"
+    organization:
+      type: string
+      nullable: true
+      description: License owner organization
+      example: "Acme Corporation"
+    features:
+      type: array
+      items:
+        type: string
+      description: Enabled features for this license
+      example: ["platform_management", "tenant_billing", "analytics_full"]
+    expires_at:
+      type: string
+      format: date-time
+      description: License expiration timestamp
+      example: "2025-12-31T23:59:59Z"
+    max_tenants:
+      type: integer
+      nullable: true
+      description: Maximum allowed tenants
+      example: 100
+    max_users:
+      type: integer
+      nullable: true
+      description: Maximum allowed users
+      example: 1000
+    license_type:
+      type: string
+      enum: ["master", "delegated"]
+      description: License type
+      example: "master"
+    restrictions:
+      type: object
+      additionalProperties: true
+      description: Access restrictions
+      example:
+        tenant_business_data_access: false
+
+# Usage Statistics Response
+UsageStatisticsResponse:
+  type: object
+  required:
+    - tenant_id
+    - plan_info
+    - usage
+  properties:
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant UUID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    plan_info:
+      type: object
+      properties:
+        plan_type:
+          type: string
+          example: "pro"
+        plan_name:
+          type: string
+          example: "Professional Plan"
+        status:
+          type: string
+          example: "active"
+    usage:
+      type: object
+      properties:
+        users:
+          type: object
+          properties:
+            current:
+              type: integer
+              example: 18
+            limit:
+              type: integer
+              example: 25
+            percentage:
+              type: number
+              format: float
+              example: 72.0
+        storage:
+          type: object
+          properties:
+            current_gb:
+              type: number
+              format: float
+              example: 7.25
+            limit_gb:
+              type: integer
+              example: 10
+            percentage:
+              type: number
+              format: float
+              example: 72.5
+        products:
+          type: object
+          properties:
+            current:
+              type: integer
+              example: 450
+            limit:
+              type: integer
+              example: 1000
+            percentage:
+              type: number
+              format: float
+              example: 45.0
+        api_calls:
+          type: object
+          properties:
+            current_month:
+              type: integer
+              example: 2543
+            limit_per_month:
+              type: integer
+              example: 10000
+            percentage:
+              type: number
+              format: float
+              example: 25.4
+    alerts:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: ["approaching_limit", "limit_exceeded", "billing_issue"]
+          resource:
+            type: string
+            enum: ["users", "storage", "products", "api_calls"]
+          message:
+            type: string
+          severity:
+            type: string
+            enum: ["info", "warning", "error"]
+          created_at:
+            type: string
+            format: date-time
+      description: Usage alerts and notifications
+
+# License Validation History Response
+LicenseValidationHistoryResponse:
+  type: object
+  required:
+    - validations
+    - summary
+  properties:
+    validations:
+      type: array
+      items:
+        $ref: '#/LicenseValidationSummary'
+      description: License validation history
+    summary:
+      type: object
+      properties:
+        total_validations:
+          type: integer
+          example: 1543
+        successful_validations:
+          type: integer
+          example: 1501
+        failed_validations:
+          type: integer
+          example: 42
+        success_rate:
+          type: number
+          format: float
+          example: 97.3
+        avg_response_time_ms:
+          type: number
+          format: float
+          example: 45.2
+      description: Validation summary statistics
