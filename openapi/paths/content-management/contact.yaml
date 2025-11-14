@@ -1,543 +1,590 @@
-# Contact Module API Paths for Stencil CMS
-# Complete CRUD operations for Contact Management System (15+ endpoints)
-  /pages/contact:
-    get:
-      tags:
-        - Contact Management
-      summary: Get Contact Page Content
-      description: |
-        Retrieve contact page content including hero section, contact information, 
-        dynamic contact form structure, map location, and quick contact options.
-        
-        **Features:**
-        - Multi-language content support
-        - Dynamic form field configuration
-        - Interactive map with location markers
-        - Quick contact integration (WhatsApp, Telegram, etc.)
-        - Responsive layout configurations
-      operationId: getContactPage
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/AcceptLanguage'
-      responses:
-        '200':
-          description: Contact page content retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/contact.yaml#/ContactPageData'
-              examples:
-                success:
-                  summary: Successful contact page retrieval
-                  value:
-                    success: true
-                    message: "Contact page content retrieved successfully"
-                    data:
-                      page:
-                        id: 3
-                        slug: "contact"
-                        title: "Contact Us"
-                        metaDescription: "Get in touch with our team"
-                      hero:
-                        title: "Get in Touch"
-                        subtitle: "We're here to help you succeed"
-                        backgroundImage: "/images/contact-hero.jpg"
-                      contactInfo:
-                        enabled: true
-                        items:
-                          - id: 1
-                            iconName: "MapPin"
-                            title: "Our Address"
-                            content: "Jl. Sudirman No. 123\nJakarta Pusat 10250"
-                            displayOrder: 1
-                          - id: 2
-                            iconName: "Phone"
-                            title: "Phone Number"
-                            content: "+62 21 1234 5678"
-                            displayOrder: 2
-                      form:
-                        id: 1
-                        enabled: true
-                        title: "Send us a Message"
-                        subtitle: "Fill out the form below and we'll get back to you"
-                        successMessage: "Thank you! We will contact you soon."
-                        fields:
-                          - id: 1
-                            fieldName: "name"
-                            fieldType: "text"
-                            fieldLabel: "Full Name"
-                            placeholder: "Enter your full name"
-                            isRequired: true
-                            validationRules:
-                              minLength: 3
-                              maxLength: 100
-                      map:
-                        enabled: true
-                        latitude: -6.2088
-                        longitude: 106.8456
-                        zoomLevel: 15
-                        markerTitle: "Our Jakarta Office"
-                      quickContacts:
-                        - id: 1
-                          contactType: "whatsapp"
-                          contactLabel: "Chat via WhatsApp"
-                          contactValue: "6281234567890"
-                          iconName: "MessageCircle"
-                          enabled: true
-                    meta:
-                      tenant: "main"
-                      timestamp: "2024-01-15T10:30:00Z"
-                      version: "1.0"
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /contact/submit:
-    post:
-      tags:
-        - Contact Management
-      summary: Submit Contact Form
-      description: |
-        Submit contact form data with validation and rate limiting.
-        
-        **Rate Limiting:** 5 submissions per hour per IP address
-        **Features:**
-        - Dynamic form validation based on field configuration
-        - Spam protection with reCAPTCHA integration
-        - Automatic email notifications
-        - Submission tracking and analytics
-      operationId: submitContactForm
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+/pages/contact:
+  get:
+    tags:
+    - Contact Management
+    summary: Get Contact Page Content
+    description: "Retrieve contact page content including hero section, contact information,\
+      \ \ndynamic contact form structure, map location, and quick contact options.\n\
+      \n**Features:**\n- Multi-language content support\n- Dynamic form field configuration\n\
+      - Interactive map with location markers\n- Quick contact integration (WhatsApp,\
+      \ Telegram, etc.)\n- Responsive layout configurations\n"
+    operationId: getContactPage
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/AcceptLanguage'
+    responses:
+      '200':
+        description: Contact page content retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/contact.yaml#/ContactFormSubmissionInput'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContactPageData'
             examples:
-              general_inquiry:
-                summary: General inquiry form submission
+              success:
+                summary: Successful contact page retrieval
                 value:
-                  formData:
-                    name: "John Doe"
-                    email: "john@example.com"
-                    phone: "+62 812-3456-7890"
-                    subject: "General Inquiry"
-                    message: "I would like to know more about your services."
-              product_question:
-                summary: Product-specific question
-                value:
-                  formData:
-                    name: "Jane Smith"
-                    email: "jane@company.com"
-                    phone: "+62 813-9876-5432"
-                    subject: "Product Question"
-                    message: "Can you provide more details about your pricing plans?"
-                    company: "ABC Corporation"
-      responses:
-        '201':
-          $ref: '../../components/responses.yaml#/CreatedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '429':
-          $ref: '../../components/responses.yaml#/RateLimitExceeded'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                  success: true
+                  message: Contact page content retrieved successfully
+                  data:
+                    page:
+                      id: 3
+                      slug: contact
+                      title: Contact Us
+                      metaDescription: Get in touch with our team
+                    hero:
+                      title: Get in Touch
+                      subtitle: We're here to help you succeed
+                      backgroundImage: /images/contact-hero.jpg
+                    contactInfo:
+                      enabled: true
+                      items:
+                      - id: 1
+                        iconName: MapPin
+                        title: Our Address
+                        content: 'Jl. Sudirman No. 123
 
-  /admin/pages/contact:
-    get:
-      tags:
-        - Contact Management
-      summary: Get Contact Page Admin Data
-      description: |
-        Retrieve contact page configuration data for admin panel management.
-        Includes all editable sections and form configurations.
-      operationId: getContactPageAdmin
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      responses:
-        '200':
-          description: Contact page admin data retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/contact.yaml#/ContactPageData'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    put:
-      tags:
-        - Contact Management
-      summary: Update Contact Page Configuration
-      description: |
-        Update all contact page sections including hero, contact info, form fields,
-        map settings, and quick contact options.
-        
-        **Admin Features:**
-        - Bulk update of all page sections
-        - Form field management (add/edit/remove)
-        - Map configuration with location settings
-        - Quick contact channel management
-      operationId: updateContactPage
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/contact.yaml#/ContactPageUpdateInput'
-            examples:
-              full_update:
-                summary: Complete page configuration update
-                value:
-                  hero:
-                    title: "Get in Touch with Us"
-                    subtitle: "We're here to help you succeed"
-                    backgroundImage: "/images/new-contact-hero.jpg"
-                  contactInfo:
-                    enabled: true
-                    items:
-                      - iconName: "MapPin"
-                        title: "Head Office"
-                        content: "Jl. Thamrin No. 456\nJakarta Pusat 10350"
+                          Jakarta Pusat 10250'
                         displayOrder: 1
-                      - iconName: "Phone"
-                        title: "Call Us"
-                        content: "+62 21 9876 5432"
+                      - id: 2
+                        iconName: Phone
+                        title: Phone Number
+                        content: +62 21 1234 5678
                         displayOrder: 2
-                  form:
-                    enabled: true
-                    title: "Contact Our Team"
-                    subtitle: "We'll respond within 24 hours"
-                    successMessage: "Thank you for contacting us!"
-                    fields:
-                      - fieldName: "name"
-                        fieldType: "text"
-                        fieldLabel: "Full Name"
-                        placeholder: "Your full name"
+                    form:
+                      id: 1
+                      enabled: true
+                      title: Send us a Message
+                      subtitle: Fill out the form below and we'll get back to you
+                      successMessage: Thank you! We will contact you soon.
+                      fields:
+                      - id: 1
+                        fieldName: name
+                        fieldType: text
+                        fieldLabel: Full Name
+                        placeholder: Enter your full name
                         isRequired: true
                         validationRules:
-                          minLength: 2
-                          maxLength: 150
-                  map:
-                    enabled: true
-                    latitude: -6.1944
-                    longitude: 106.8229
-                    zoomLevel: 16
-                    markerTitle: "Our New Location"
-                  quickContacts:
-                    - contactType: "whatsapp"
-                      contactLabel: "WhatsApp Business"
-                      contactValue: "6281987654321"
-                      iconName: "MessageCircle"
+                          minLength: 3
+                          maxLength: 100
+                    map:
                       enabled: true
-      responses:
-        '200':
-          $ref: '../../components/responses.yaml#/UpdatedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                      latitude: -6.2088
+                      longitude: 106.8456
+                      zoomLevel: 15
+                      markerTitle: Our Jakarta Office
+                    quickContacts:
+                    - id: 1
+                      contactType: whatsapp
+                      contactLabel: Chat via WhatsApp
+                      contactValue: '6281234567890'
+                      iconName: MessageCircle
+                      enabled: true
+                  meta:
+                    tenant: main
+                    timestamp: '2024-01-15T10:30:00Z'
+                    version: '1.0'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/contact/submit:
+  post:
+    tags:
+    - Contact Management
+    summary: Submit Contact Form
+    description: 'Submit contact form data with validation and rate limiting.
 
-  /admin/contact/forms:
-    get:
-      tags:
-        - Contact Management
-      summary: List Contact Form Configurations
-      description: |
-        Retrieve all contact form configurations including field definitions,
-        validation rules, and form settings.
-      operationId: listContactForms
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      responses:
-        '200':
-          description: Contact forms retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '../../schemas/content-management/contact.yaml#/ContactForm'
-              examples:
-                success:
-                  summary: List of contact forms
-                  value:
-                    success: true
-                    message: "Contact forms retrieved successfully"
-                    data:
-                      - id: 1
-                        enabled: true
-                        title: "General Contact Form"
-                        subtitle: "Get in touch with us"
-                        successMessage: "Thank you for your message!"
-                        fields:
-                          - id: 1
-                            fieldName: "name"
-                            fieldType: "text"
-                            fieldLabel: "Full Name"
-                            isRequired: true
-                          - id: 2
-                            fieldName: "email"
-                            fieldType: "email"
-                            fieldLabel: "Email Address"
-                            isRequired: true
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-  /admin/contact/submissions:
-    get:
-      tags:
-        - Contact Management
-      summary: List Contact Form Submissions
-      description: |
-        Retrieve contact form submissions with filtering, sorting, and pagination.
-        Includes submission management and status tracking.
-        
-        **Admin Features:**
-        - Filter by status, date range, and form type
-        - Search submissions by content
-        - Export submissions to CSV/Excel
-        - Bulk status updates
-      operationId: listContactSubmissions
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
-        - name: status
-          in: query
-          description: Filter by submission status
-          schema:
-            type: string
-            enum: [new, read, replied, archived]
-          example: new
-        - name: form_id
-          in: query
-          description: Filter by specific form ID
-          schema:
-            type: integer
-          example: 1
-        - name: date_from
-          in: query
-          description: Filter submissions from this date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-01"
-        - name: date_to
-          in: query
-          description: Filter submissions until this date
-          schema:
-            type: string
-            format: date
-          example: "2024-12-31"
-        - name: search
-          in: query
-          description: Search in submission content
-          schema:
-            type: string
-            maxLength: 255
-          example: "product inquiry"
-      responses:
-        '200':
-          description: Contact submissions retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '../../schemas/content-management/contact.yaml#/ContactSubmission'
-                      meta:
-                        allOf:
-                          - $ref: '../../components/schemas.yaml#/PaginationMeta'
-                          - type: object
-                            properties:
-                              filters:
-                                type: object
-                                properties:
-                                  status_counts:
-                                    type: object
-                                    properties:
-                                      new:
-                                        type: integer
-                                      read:
-                                        type: integer
-                                      replied:
-                                        type: integer
-                                      archived:
-                                        type: integer
-              examples:
-                success:
-                  summary: Paginated submissions list
-                  value:
-                    success: true
-                    message: "Contact submissions retrieved successfully"
-                    data:
-                      - id: 123
-                        formId: 1
-                        submissionData:
-                          name: "John Doe"
-                          email: "john@example.com"
-                          subject: "Product Inquiry"
-                          message: "I need more information about your services"
-                        status: "new"
-                        submitterIp: "192.168.1.100"
-                        createdAt: "2024-01-15T14:30:00Z"
-                        updatedAt: "2024-01-15T14:30:00Z"
-                    meta:
-                      pagination:
-                        page: 1
-                        perPage: 20
-                        total: 156
-                        totalPages: 8
-                      filters:
-                        status_counts:
-                          new: 45
-                          read: 67
-                          replied: 32
-                          archived: 12
-                      tenant: "main"
-                      timestamp: "2024-01-15T15:00:00Z"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      **Rate Limiting:** 5 submissions per hour per IP address
 
-  /admin/contact/submissions/{submissionId}:
-    get:
-      tags:
-        - Contact Management
-      summary: Get Contact Submission Details
-      description: Retrieve detailed information about a specific contact form submission
-      operationId: getContactSubmission
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: submissionId
-          in: path
-          required: true
-          description: Unique identifier of the submission
-          schema:
-            type: integer
-            minimum: 1
-          example: 123
-      responses:
-        '200':
-          description: Contact submission retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/contact.yaml#/ContactSubmission'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      **Features:**
 
-    patch:
-      tags:
-        - Contact Management
-      summary: Update Contact Submission Status
-      description: |
-        Update the status of a contact form submission and optionally add a reply message.
-        Used for submission management and tracking follow-up actions.
-      operationId: updateContactSubmissionStatus
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: submissionId
-          in: path
-          required: true
-          description: Unique identifier of the submission
+      - Dynamic form validation based on field configuration
+
+      - Spam protection with reCAPTCHA integration
+
+      - Automatic email notifications
+
+      - Submission tracking and analytics
+
+      '
+    operationId: submitContactForm
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: integer
-            minimum: 1
-          example: 123
-      requestBody:
-        required: true
+            $ref: '#/components/schemas/ContactFormSubmissionInput'
+          examples:
+            general_inquiry:
+              summary: General inquiry form submission
+              value:
+                formData:
+                  name: John Doe
+                  email: john@example.com
+                  phone: +62 812-3456-7890
+                  subject: General Inquiry
+                  message: I would like to know more about your services.
+            product_question:
+              summary: Product-specific question
+              value:
+                formData:
+                  name: Jane Smith
+                  email: jane@company.com
+                  phone: +62 813-9876-5432
+                  subject: Product Question
+                  message: Can you provide more details about your pricing plans?
+                  company: ABC Corporation
+    responses:
+      '201':
+        $ref: '#/components/responses/CreatedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/pages/contact:
+  get:
+    tags:
+    - Contact Management
+    summary: Get Contact Page Admin Data
+    description: 'Retrieve contact page configuration data for admin panel management.
+
+      Includes all editable sections and form configurations.
+
+      '
+    operationId: getContactPageAdmin
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    responses:
+      '200':
+        description: Contact page admin data retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/contact.yaml#/ContactSubmissionUpdateInput'
-            examples:
-              mark_replied:
-                summary: Mark as replied with message
-                value:
-                  status: "replied"
-                  replyMessage: "Thank you for your inquiry. We have sent detailed information to your email."
-              mark_archived:
-                summary: Archive the submission
-                value:
-                  status: "archived"
-      responses:
-        '200':
-          $ref: '../../components/responses.yaml#/UpdatedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContactPageData'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Contact Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Contact retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - Contact Management
+    summary: Update Contact Page Configuration
+    description: 'Update all contact page sections including hero, contact info, form
+      fields,
 
+      map settings, and quick contact options.
+
+
+      **Admin Features:**
+
+      - Bulk update of all page sections
+
+      - Form field management (add/edit/remove)
+
+      - Map configuration with location settings
+
+      - Quick contact channel management
+
+      '
+    operationId: updateContactPage
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ContactPageUpdateInput'
+          examples:
+            full_update:
+              summary: Complete page configuration update
+              value:
+                hero:
+                  title: Get in Touch with Us
+                  subtitle: We're here to help you succeed
+                  backgroundImage: /images/new-contact-hero.jpg
+                contactInfo:
+                  enabled: true
+                  items:
+                  - iconName: MapPin
+                    title: Head Office
+                    content: 'Jl. Thamrin No. 456
+
+                      Jakarta Pusat 10350'
+                    displayOrder: 1
+                  - iconName: Phone
+                    title: Call Us
+                    content: +62 21 9876 5432
+                    displayOrder: 2
+                form:
+                  enabled: true
+                  title: Contact Our Team
+                  subtitle: We'll respond within 24 hours
+                  successMessage: Thank you for contacting us!
+                  fields:
+                  - fieldName: name
+                    fieldType: text
+                    fieldLabel: Full Name
+                    placeholder: Your full name
+                    isRequired: true
+                    validationRules:
+                      minLength: 2
+                      maxLength: 150
+                map:
+                  enabled: true
+                  latitude: -6.1944
+                  longitude: 106.8229
+                  zoomLevel: 16
+                  markerTitle: Our New Location
+                quickContacts:
+                - contactType: whatsapp
+                  contactLabel: WhatsApp Business
+                  contactValue: '6281987654321'
+                  iconName: MessageCircle
+                  enabled: true
+    responses:
+      '200':
+        $ref: '#/components/responses/UpdatedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/contact/forms:
+  get:
+    tags:
+    - Contact Management
+    summary: List Contact Form Configurations
+    description: 'Retrieve all contact form configurations including field definitions,
+
+      validation rules, and form settings.
+
+      '
+    operationId: listContactForms
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    responses:
+      '200':
+        description: Contact forms retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContactForm'
+            examples:
+              success:
+                summary: List of contact forms
+                value:
+                  success: true
+                  message: Contact forms retrieved successfully
+                  data:
+                  - id: 1
+                    enabled: true
+                    title: General Contact Form
+                    subtitle: Get in touch with us
+                    successMessage: Thank you for your message!
+                    fields:
+                    - id: 1
+                      fieldName: name
+                      fieldType: text
+                      fieldLabel: Full Name
+                      isRequired: true
+                    - id: 2
+                      fieldName: email
+                      fieldType: email
+                      fieldLabel: Email Address
+                      isRequired: true
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/contact/submissions:
+  get:
+    tags:
+    - Contact Management
+    summary: List Contact Form Submissions
+    description: 'Retrieve contact form submissions with filtering, sorting, and pagination.
+
+      Includes submission management and status tracking.
+
+
+      **Admin Features:**
+
+      - Filter by status, date range, and form type
+
+      - Search submissions by content
+
+      - Export submissions to CSV/Excel
+
+      - Bulk status updates
+
+      '
+    operationId: listContactSubmissions
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: status
+      in: query
+      description: Filter by submission status
+      schema:
+        type: string
+        enum:
+        - new
+        - read
+        - replied
+        - archived
+      example: new
+    - name: form_id
+      in: query
+      description: Filter by specific form ID
+      schema:
+        type: integer
+      example: 1
+    - name: date_from
+      in: query
+      description: Filter submissions from this date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-01'
+    - name: date_to
+      in: query
+      description: Filter submissions until this date
+      schema:
+        type: string
+        format: date
+      example: '2024-12-31'
+    - name: search
+      in: query
+      description: Search in submission content
+      schema:
+        type: string
+        maxLength: 255
+      example: product inquiry
+    responses:
+      '200':
+        description: Contact submissions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContactSubmission'
+                  meta:
+                    allOf:
+                    - $ref: '#/components/schemas/PaginationMeta'
+                    - type: object
+                      properties:
+                        filters:
+                          type: object
+                          properties:
+                            status_counts:
+                              type: object
+                              properties:
+                                new:
+                                  type: integer
+                                read:
+                                  type: integer
+                                replied:
+                                  type: integer
+                                archived:
+                                  type: integer
+            examples:
+              success:
+                summary: Paginated submissions list
+                value:
+                  success: true
+                  message: Contact submissions retrieved successfully
+                  data:
+                  - id: 123
+                    formId: 1
+                    submissionData:
+                      name: John Doe
+                      email: john@example.com
+                      subject: Product Inquiry
+                      message: I need more information about your services
+                    status: new
+                    submitterIp: 192.168.1.100
+                    createdAt: '2024-01-15T14:30:00Z'
+                    updatedAt: '2024-01-15T14:30:00Z'
+                  meta:
+                    pagination:
+                      page: 1
+                      perPage: 20
+                      total: 156
+                      totalPages: 8
+                    filters:
+                      status_counts:
+                        new: 45
+                        read: 67
+                        replied: 32
+                        archived: 12
+                    tenant: main
+                    timestamp: '2024-01-15T15:00:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/contact/submissions/{submissionId}:
+  get:
+    tags:
+    - Contact Management
+    summary: Get Contact Submission Details
+    description: Retrieve detailed information about a specific contact form submission
+    operationId: getContactSubmission
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: submissionId
+      in: path
+      required: true
+      description: Unique identifier of the submission
+      schema:
+        type: integer
+        minimum: 1
+      example: 123
+    responses:
+      '200':
+        description: Contact submission retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ContactSubmission'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Contact Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Contact retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  patch:
+    tags:
+    - Contact Management
+    summary: Update Contact Submission Status
+    description: 'Update the status of a contact form submission and optionally add
+      a reply message.
+
+      Used for submission management and tracking follow-up actions.
+
+      '
+    operationId: updateContactSubmissionStatus
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: submissionId
+      in: path
+      required: true
+      description: Unique identifier of the submission
+      schema:
+        type: integer
+        minimum: 1
+      example: 123
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ContactSubmissionUpdateInput'
+          examples:
+            mark_replied:
+              summary: Mark as replied with message
+              value:
+                status: replied
+                replyMessage: Thank you for your inquiry. We have sent detailed information
+                  to your email.
+            mark_archived:
+              summary: Archive the submission
+              value:
+                status: archived
+    responses:
+      '200':
+        $ref: '#/components/responses/UpdatedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'

@@ -1,737 +1,832 @@
-# SEO Module API Paths for Stencil CMS
-# Complete CRUD operations for SEO Management System (10+ endpoints)
-  /seo:
-    get:
-      tags:
-        - SEO Management
-      summary: Get SEO Metadata for Frontend
-      description: |
-        Retrieve SEO metadata for a specific page/item for frontend rendering.
-        
-        **Fallback Hierarchy:**
-        1. Custom SEO for specific page/item (if exists)
-        2. Default/Global SEO settings  
-        3. System defaults
-        
-        **Query Options:**
-        - By URL: `?url=/about`
-        - By Type & ID: `?type=page&id=2`
-        
-        **Features:**
-        - Multi-tenant SEO isolation
-        - Caching with configurable TTL
-        - Fallback hierarchy for missing data
-        - Support for dynamic templates
-      operationId: getSEOMetadata
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: url
-          in: query
-          description: Page URL path
-          schema:
-            type: string
-            maxLength: 500
-          example: "/about"
-        - name: type
-          in: query
-          description: Content type (page, product, category, etc.)
-          schema:
-            type: string
-            enum: ['page', 'product', 'category', 'post', 'custom']
-          example: "page"
-        - name: id
-          in: query
-          description: Content ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: SEO metadata retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/seo.yaml#/SEOMetadataResponse'
-              examples:
-                page_seo:
-                  summary: SEO metadata for About page
-                  value:
-                    success: true
-                    message: "SEO metadata retrieved successfully"
-                    data:
-                      title: "About Us - Stencil CMS"
-                      metaDescription: "Learn about our innovative CMS platform and our dedicated team"
-                      metaKeywords: ["about", "company", "team", "cms"]
-                      canonicalUrl: "https://stencilcms.com/about"
-                      robots: "index, follow"
-                      openGraph:
-                        title: "About Us - Stencil CMS"
-                        description: "Learn about our innovative CMS platform"
-                        image: "/images/og-about.jpg"
-                        type: "website"
-                        url: "https://stencilcms.com/about"
-                      twitter:
-                        card: "summary_large_image"
-                        title: "About Us - Stencil CMS"
-                        description: "Learn about our innovative CMS platform"
-                        image: "/images/twitter-about.jpg"
-                      schema:
-                        "@context": "https://schema.org"
-                        "@type": "Organization"
-                        "name": "Stencil CMS"
-                      source: "custom"
-                product_seo:
-                  summary: SEO metadata for Product page
-                  value:
-                    success: true
-                    data:
-                      title: "Premium Etching Service - Stencil CMS"
-                      metaDescription: "High-quality custom etching services for various materials"
-                      canonicalUrl: "https://stencilcms.com/products/premium-etching"
-                      openGraph:
-                        type: "product"
-                      source: "default"
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /sitemap.xml:
-    get:
-      tags:
-        - SEO Management
-      summary: Get XML Sitemap
-      description: |
-        Generate and retrieve XML sitemap for search engines.
-        
-        **Multi-tenant Features:**
-        - Tenant-specific content filtering
-        - Custom priority and changefreq settings
-        - Automatic last modification tracking
-        
-        **Includes:**
-        - All published pages (filtered by tenant)
-        - All active products with SEO enabled
-        - All public categories
-        - Custom priority and changefreq settings
-      operationId: getSitemap
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      responses:
-        '200':
-          description: XML sitemap generated successfully
-          content:
-            application/xml:
-              schema:
-                type: string
-              examples:
-                sitemap:
-                  summary: Generated XML sitemap
-                  value: |
-                    <?xml version="1.0" encoding="UTF-8"?>
-                    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-                      <url>
-                        <loc>https://stencilcms.com/</loc>
-                        <lastmod>2025-11-12</lastmod>
-                        <changefreq>daily</changefreq>
-                        <priority>1.0</priority>
-                      </url>
-                      <url>
-                        <loc>https://stencilcms.com/about</loc>
-                        <lastmod>2025-11-10</lastmod>
-                        <changefreq>monthly</changefreq>
-                        <priority>0.8</priority>
-                      </url>
-                      <url>
-                        <loc>https://stencilcms.com/products/premium-etching</loc>
-                        <lastmod>2025-11-11</lastmod>
-                        <changefreq>weekly</changefreq>
-                        <priority>0.9</priority>
-                      </url>
-                    </urlset>
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /robots.txt:
-    get:
-      tags:
-        - SEO Management
-      summary: Get Robots.txt
-      description: |
-        Generate robots.txt file for search engine crawlers.
-        
-        **Generated from:**
-        - Default robots settings per tenant
-        - Sitemap URL (tenant-specific)
-        - Custom crawl directives
-        - Security-based restrictions
-      operationId: getRobotsTxt
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      responses:
-        '200':
-          description: Robots.txt content generated successfully
-          content:
-            text/plain:
-              schema:
-                type: string
-              examples:
-                robots:
-                  summary: Generated robots.txt
-                  value: |
-                    User-agent: *
-                    Allow: /
-                    Disallow: /admin/
-                    Disallow: /api/
-                    Disallow: /vendor/
-                    
-                    Sitemap: https://stencilcms.com/sitemap.xml
-                    
-                    # Custom directives
-                    Crawl-delay: 1
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/seo/settings:
-    get:
-      tags:
-        - SEO Management
-      summary: Get Default SEO Settings
-      description: |
-        Retrieve global/default SEO settings for the current tenant.
-        
-        **Admin Features:**
-        - Tenant-scoped configuration
-        - Template variable support
-        - Social media integration
-        - Search engine verification
-      operationId: getDefaultSEOSettings
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      responses:
-        '200':
-          description: Default SEO settings retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/seo.yaml#/DefaultSEOSettings'
-              examples:
-                success:
-                  summary: Default SEO settings
-                  value:
-                    success: true
-                    message: "Default SEO settings retrieved successfully"
-                    data:
-                      id: "550e8400-e29b-41d4-a716-446655440000"
-                      siteName: "Stencil CMS"
-                      defaultMetaTitle: "{page} | {siteName}"
-                      defaultMetaDescription: "Leading CMS platform for multi-tenant applications"
-                      defaultMetaKeywords: "cms, multi-tenant, laravel, react"
-                      openGraph:
-                        type: "website"
-                        siteName: "Stencil CMS"
-                        defaultImageUrl: "/images/og-default.jpg"
-                        locale: "id_ID"
-                      twitter:
-                        cardType: "summary_large_image"
-                        site: "@stencilcms"
-                      canonicalBaseUrl: "https://stencilcms.com"
-                      verification:
-                        googleSiteVerification: "abc123xyz"
-                      socialMedia:
-                        facebook: "https://facebook.com/stencilcms"
-                        twitter: "https://twitter.com/stencilcms"
-                      isActive: true
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    put:
-      tags:
-        - SEO Management
-      summary: Update Default SEO Settings
-      description: |
-        Update global/default SEO settings that apply to all pages without custom SEO.
-        
-        **Admin Features:**
-        - Template variable support ({page}, {siteName}, etc.)
-        - Social media profile integration
-        - Search engine verification management
-        - Multi-language locale support
-      operationId: updateDefaultSEOSettings
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+/seo:
+  get:
+    tags:
+    - SEO Management
+    summary: Get SEO Metadata for Frontend
+    description: "Retrieve SEO metadata for a specific page/item for frontend rendering.\n\
+      \n**Fallback Hierarchy:**\n1. Custom SEO for specific page/item (if exists)\n\
+      2. Default/Global SEO settings  \n3. System defaults\n\n**Query Options:**\n\
+      - By URL: `?url=/about`\n- By Type & ID: `?type=page&id=2`\n\n**Features:**\n\
+      - Multi-tenant SEO isolation\n- Caching with configurable TTL\n- Fallback hierarchy\
+      \ for missing data\n- Support for dynamic templates\n"
+    operationId: getSEOMetadata
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: url
+      in: query
+      description: Page URL path
+      schema:
+        type: string
+        maxLength: 500
+      example: /about
+    - name: type
+      in: query
+      description: Content type (page, product, category, etc.)
+      schema:
+        type: string
+        enum:
+        - page
+        - product
+        - category
+        - post
+        - custom
+      example: page
+    - name: id
+      in: query
+      description: Content ID (UUID format)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: SEO metadata retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/seo.yaml#/DefaultSEOSettingsInput'
-            examples:
-              full_update:
-                summary: Complete SEO settings update
-                value:
-                  siteName: "Stencil CMS Pro"
-                  defaultMetaTitle: "{page} - {siteName} | Premium CMS Platform"
-                  defaultMetaDescription: "Advanced multi-tenant CMS platform with enterprise features"
-                  defaultMetaKeywords: "cms, enterprise, multi-tenant, saas, platform"
-                  openGraph:
-                    type: "website"
-                    siteName: "Stencil CMS Pro"
-                    defaultImageUrl: "/images/og-default-pro.jpg"
-                    locale: "en_US"
-                  twitter:
-                    cardType: "summary_large_image"
-                    site: "@stencilcmspro"
-                    creator: "@stencilcmspro"
-                  schemaOrg:
-                    type: "Organization"
-                    data:
-                      "@context": "https://schema.org"
-                      "@type": "Organization"
-                      "name": "Stencil CMS Pro"
-                      "url": "https://stencilcms.com"
-                  canonicalBaseUrl: "https://stencilcms.com"
-                  verification:
-                    googleSiteVerification: "new123xyz"
-                    bingSiteVerification: "new456uvw"
-                  socialMedia:
-                    facebook: "https://facebook.com/stencilcmspro"
-                    twitter: "https://twitter.com/stencilcmspro"
-                    linkedin: "https://linkedin.com/company/stencilcms"
-      responses:
-        '200':
-          description: Default SEO settings updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/seo.yaml#/DefaultSEOSettings'
-                      message:
-                        type: string
-                        example: "Default SEO settings updated successfully"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '422':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/seo/{type}/{id}:
-    get:
-      tags:
-        - SEO Management
-      summary: Get SEO for Specific Item
-      description: |
-        Get custom SEO metadata for a specific page/product/category.
-        
-        **Features:**
-        - Polymorphic entity support
-        - Tenant-scoped access control
-        - Fallback to default settings if no custom SEO exists
-      operationId: getItemSEO
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: type
-          in: path
-          required: true
-          description: Content type
-          schema:
-            type: string
-            enum: [page, product, category, post, custom]
-          example: "page"
-        - name: id
-          in: path
-          required: true
-          description: Content ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: SEO metadata retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/seo.yaml#/SEOMeta'
-              examples:
-                custom_seo:
-                  summary: Custom SEO metadata found
-                  value:
-                    success: true
-                    message: "Custom SEO metadata retrieved successfully"
-                    data:
-                      id: "550e8400-e29b-41d4-a716-446655440001"
-                      seoMetableType: "App\\Models\\Page"
-                      seoMetableId: "550e8400-e29b-41d4-a716-446655440000"
-                      metaTitle: "About Our Company - Stencil CMS"
-                      metaDescription: "Learn about our innovative CMS platform, our mission, and our dedicated team of developers"
-                      metaKeywords: "about, company, team, cms, innovation"
-                      canonicalUrl: "https://stencilcms.com/about"
-                      robots: "index, follow"
-                      schemaType: "Organization"
-                      schemaData:
-                        "@context": "https://schema.org"
-                        "@type": "Organization"
-                        "name": "Stencil CMS"
-                      isEnabled: true
-                      priority: 0.8
-                      changeFreq: "monthly"
-                no_custom_seo:
-                  summary: No custom SEO, returns default structure
-                  value:
-                    success: true
-                    message: "No custom SEO found, default settings will be used"
-                    data:
-                      seoMetableType: "App\\Models\\Page"
-                      seoMetableId: "550e8400-e29b-41d4-a716-446655440000"
-                      isEnabled: true
-                      priority: 0.5
-                      changeFreq: "weekly"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    put:
-      tags:
-        - SEO Management
-      summary: Update SEO for Specific Item
-      description: |
-        Create or update custom SEO metadata for a specific page/product/category.
-        
-        **Features:**
-        - Create custom SEO if doesn't exist
-        - Update existing custom SEO settings
-        - Polymorphic entity support
-        - Tenant-scoped operations
-        - Validation for SEO best practices
-      operationId: updateItemSEO
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: type
-          in: path
-          required: true
-          description: Content type
-          schema:
-            type: string
-            enum: [page, product, category, post, custom]
-        - name: id
-          in: path
-          required: true
-          description: Content ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/seo.yaml#/SEOMetaInput'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SEOMetadataResponse'
             examples:
               page_seo:
-                summary: Update SEO for About page
+                summary: SEO metadata for About page
                 value:
-                  metaTitle: "About Our Innovative Team - Stencil CMS"
-                  metaDescription: "Discover the story behind Stencil CMS, our innovative team, and our mission to revolutionize content management"
-                  metaKeywords: "about, team, innovation, cms, company, mission"
-                  ogTitle: "About Our Team - Stencil CMS"
-                  ogDescription: "Meet the innovative team behind Stencil CMS"
-                  ogImageUrl: "/images/team-og.jpg"
-                  ogImageAlt: "Stencil CMS team working together"
-                  ogType: "website"
-                  twitterTitle: "About Our Team - Stencil CMS"
-                  twitterDescription: "Meet the innovative team behind Stencil CMS"
-                  twitterImageUrl: "/images/team-twitter.jpg"
-                  twitterCardType: "summary_large_image"
-                  canonicalUrl: "https://stencilcms.com/about"
-                  robots: "index, follow"
-                  schemaType: "Organization"
-                  schemaData:
-                    "@context": "https://schema.org"
-                    "@type": "Organization"
-                    "name": "Stencil CMS"
-                    "description": "Innovative CMS platform"
-                  isEnabled: true
-                  priority: 0.8
-                  changeFreq: "monthly"
+                  success: true
+                  message: SEO metadata retrieved successfully
+                  data:
+                    title: About Us - Stencil CMS
+                    metaDescription: Learn about our innovative CMS platform and our
+                      dedicated team
+                    metaKeywords:
+                    - about
+                    - company
+                    - team
+                    - cms
+                    canonicalUrl: https://stencilcms.com/about
+                    robots: index, follow
+                    openGraph:
+                      title: About Us - Stencil CMS
+                      description: Learn about our innovative CMS platform
+                      image: /images/og-about.jpg
+                      type: website
+                      url: https://stencilcms.com/about
+                    twitter:
+                      card: summary_large_image
+                      title: About Us - Stencil CMS
+                      description: Learn about our innovative CMS platform
+                      image: /images/twitter-about.jpg
+                    schema:
+                      '@context': https://schema.org
+                      '@type': Organization
+                      name: Stencil CMS
+                    source: custom
               product_seo:
-                summary: Update SEO for Product page
+                summary: SEO metadata for Product page
                 value:
-                  metaTitle: "Premium Etching Services - Order Now"
-                  metaDescription: "High-quality custom etching services for metal, glass, and wood. Professional results guaranteed."
-                  ogType: "product"
-                  schemaType: "Product"
-                  priority: 0.9
-                  changeFreq: "weekly"
-      responses:
-        '200':
-          description: SEO metadata updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/seo.yaml#/SEOMeta'
-                      message:
-                        type: string
-                        example: "SEO metadata updated successfully"
-        '201':
-          description: SEO metadata created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/seo.yaml#/SEOMeta'
-                      message:
-                        type: string
-                        example: "Custom SEO metadata created successfully"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '422':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                  success: true
+                  data:
+                    title: Premium Etching Service - Stencil CMS
+                    metaDescription: High-quality custom etching services for various
+                      materials
+                    canonicalUrl: https://stencilcms.com/products/premium-etching
+                    openGraph:
+                      type: product
+                    source: default
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/sitemap.xml:
+  get:
+    tags:
+    - SEO Management
+    summary: Get XML Sitemap
+    description: 'Generate and retrieve XML sitemap for search engines.
 
-    delete:
-      tags:
-        - SEO Management
-      summary: Delete Custom SEO
-      description: |
-        Delete custom SEO metadata for an item.
-        After deletion, the item will use default SEO settings.
-        
-        **Features:**
-        - Soft delete with audit trail
-        - Automatic fallback to default settings
-        - Tenant-scoped operations
-      operationId: deleteItemSEO
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: type
-          in: path
-          required: true
-          description: Content type
-          schema:
-            type: string
-            enum: [page, product, category, post, custom]
-        - name: id
-          in: path
-          required: true
-          description: Content ID (UUID format)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: SEO metadata deleted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Custom SEO deleted. Item will now use default SEO settings."
-              examples:
-                success:
-                  summary: Successful deletion
-                  value:
-                    success: true
-                    message: "Custom SEO metadata deleted successfully. The item will now use default SEO settings."
-                    data: null
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-  /admin/seo/bulk-update:
-    post:
-      tags:
-        - SEO Management
-      summary: Bulk Update SEO Settings
-      description: |
-        Bulk update SEO settings for multiple items at once.
-        
-        **Features:**
-        - Multi-item SEO updates
-        - Template-based updates
-        - Progress tracking
-        - Error reporting per item
-      operationId: bulkUpdateSEO
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+      **Multi-tenant Features:**
+
+      - Tenant-specific content filtering
+
+      - Custom priority and changefreq settings
+
+      - Automatic last modification tracking
+
+
+      **Includes:**
+
+      - All published pages (filtered by tenant)
+
+      - All active products with SEO enabled
+
+      - All public categories
+
+      - Custom priority and changefreq settings
+
+      '
+    operationId: getSitemap
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    responses:
+      '200':
+        description: XML sitemap generated successfully
+        content:
+          application/xml:
+            schema:
+              type: string
+            examples:
+              sitemap:
+                summary: Generated XML sitemap
+                value: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"\
+                  http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url>\n    <loc>https://stencilcms.com/</loc>\n\
+                  \    <lastmod>2025-11-12</lastmod>\n    <changefreq>daily</changefreq>\n\
+                  \    <priority>1.0</priority>\n  </url>\n  <url>\n    <loc>https://stencilcms.com/about</loc>\n\
+                  \    <lastmod>2025-11-10</lastmod>\n    <changefreq>monthly</changefreq>\n\
+                  \    <priority>0.8</priority>\n  </url>\n  <url>\n    <loc>https://stencilcms.com/products/premium-etching</loc>\n\
+                  \    <lastmod>2025-11-11</lastmod>\n    <changefreq>weekly</changefreq>\n\
+                  \    <priority>0.9</priority>\n  </url>\n</urlset>\n"
+      '500':
+        $ref: '#/components/responses/ServerError'
+/robots.txt:
+  get:
+    tags:
+    - SEO Management
+    summary: Get Robots.txt
+    description: 'Generate robots.txt file for search engine crawlers.
+
+
+      **Generated from:**
+
+      - Default robots settings per tenant
+
+      - Sitemap URL (tenant-specific)
+
+      - Custom crawl directives
+
+      - Security-based restrictions
+
+      '
+    operationId: getRobotsTxt
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    responses:
+      '200':
+        description: Robots.txt content generated successfully
+        content:
+          text/plain:
+            schema:
+              type: string
+            examples:
+              robots:
+                summary: Generated robots.txt
+                value: 'User-agent: *
+
+                  Allow: /
+
+                  Disallow: /admin/
+
+                  Disallow: /api/
+
+                  Disallow: /vendor/
+
+
+                  Sitemap: https://stencilcms.com/sitemap.xml
+
+
+                  # Custom directives
+
+                  Crawl-delay: 1
+
+                  '
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/seo/settings:
+  get:
+    tags:
+    - SEO Management
+    summary: Get Default SEO Settings
+    description: 'Retrieve global/default SEO settings for the current tenant.
+
+
+      **Admin Features:**
+
+      - Tenant-scoped configuration
+
+      - Template variable support
+
+      - Social media integration
+
+      - Search engine verification
+
+      '
+    operationId: getDefaultSEOSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    responses:
+      '200':
+        description: Default SEO settings retrieved successfully
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - items
-              properties:
-                items:
-                  type: array
-                  maxItems: 100
-                  description: Array of items to update (max 100)
-                  items:
-                    type: object
-                    required:
-                      - type
-                      - id
-                    properties:
-                      type:
-                        type: string
-                        enum: [page, product, category, post]
-                      id:
-                        type: string
-                        format: uuid
-                      seoData:
-                        $ref: '../../schemas/content-management/seo.yaml#/SEOMetaInput'
-                template:
-                  type: object
-                  description: Template to apply to all items
-                  properties:
-                    metaTitle:
-                      type: string
-                      description: Template with variables (e.g., "{title} - {siteName}")
-                    priority:
-                      type: number
-                      format: float
-                    changeFreq:
-                      type: string
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DefaultSEOSettings'
             examples:
-              template_update:
-                summary: Apply template to multiple pages
+              success:
+                summary: Default SEO settings
                 value:
-                  template:
-                    metaTitle: "{title} - Stencil CMS"
+                  success: true
+                  message: Default SEO settings retrieved successfully
+                  data:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    siteName: Stencil CMS
+                    defaultMetaTitle: '{page} | {siteName}'
+                    defaultMetaDescription: Leading CMS platform for multi-tenant
+                      applications
+                    defaultMetaKeywords: cms, multi-tenant, laravel, react
+                    openGraph:
+                      type: website
+                      siteName: Stencil CMS
+                      defaultImageUrl: /images/og-default.jpg
+                      locale: id_ID
+                    twitter:
+                      cardType: summary_large_image
+                      site: '@stencilcms'
+                    canonicalBaseUrl: https://stencilcms.com
+                    verification:
+                      googleSiteVerification: abc123xyz
+                    socialMedia:
+                      facebook: https://facebook.com/stencilcms
+                      twitter: https://twitter.com/stencilcms
+                    isActive: true
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - SEO Management
+    summary: Update Default SEO Settings
+    description: 'Update global/default SEO settings that apply to all pages without
+      custom SEO.
+
+
+      **Admin Features:**
+
+      - Template variable support ({page}, {siteName}, etc.)
+
+      - Social media profile integration
+
+      - Search engine verification management
+
+      - Multi-language locale support
+
+      '
+    operationId: updateDefaultSEOSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DefaultSEOSettingsInput'
+          examples:
+            full_update:
+              summary: Complete SEO settings update
+              value:
+                siteName: Stencil CMS Pro
+                defaultMetaTitle: '{page} - {siteName} | Premium CMS Platform'
+                defaultMetaDescription: Advanced multi-tenant CMS platform with enterprise
+                  features
+                defaultMetaKeywords: cms, enterprise, multi-tenant, saas, platform
+                openGraph:
+                  type: website
+                  siteName: Stencil CMS Pro
+                  defaultImageUrl: /images/og-default-pro.jpg
+                  locale: en_US
+                twitter:
+                  cardType: summary_large_image
+                  site: '@stencilcmspro'
+                  creator: '@stencilcmspro'
+                schemaOrg:
+                  type: Organization
+                  data:
+                    '@context': https://schema.org
+                    '@type': Organization
+                    name: Stencil CMS Pro
+                    url: https://stencilcms.com
+                canonicalBaseUrl: https://stencilcms.com
+                verification:
+                  googleSiteVerification: new123xyz
+                  bingSiteVerification: new456uvw
+                socialMedia:
+                  facebook: https://facebook.com/stencilcmspro
+                  twitter: https://twitter.com/stencilcmspro
+                  linkedin: https://linkedin.com/company/stencilcms
+    responses:
+      '200':
+        description: Default SEO settings updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DefaultSEOSettings'
+                  message:
+                    type: string
+                    example: Default SEO settings updated successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Seo puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '422':
+        $ref: '#/components/responses/ValidationError'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/seo/{type}/{id}:
+  get:
+    tags:
+    - SEO Management
+    summary: Get SEO for Specific Item
+    description: 'Get custom SEO metadata for a specific page/product/category.
+
+
+      **Features:**
+
+      - Polymorphic entity support
+
+      - Tenant-scoped access control
+
+      - Fallback to default settings if no custom SEO exists
+
+      '
+    operationId: getItemSEO
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: type
+      in: path
+      required: true
+      description: Content type
+      schema:
+        type: string
+        enum:
+        - page
+        - product
+        - category
+        - post
+        - custom
+      example: page
+    - name: id
+      in: path
+      required: true
+      description: Content ID (UUID format)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: SEO metadata retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SEOMeta'
+            examples:
+              custom_seo:
+                summary: Custom SEO metadata found
+                value:
+                  success: true
+                  message: Custom SEO metadata retrieved successfully
+                  data:
+                    id: 550e8400-e29b-41d4-a716-446655440001
+                    seoMetableType: App\Models\Page
+                    seoMetableId: 550e8400-e29b-41d4-a716-446655440000
+                    metaTitle: About Our Company - Stencil CMS
+                    metaDescription: Learn about our innovative CMS platform, our
+                      mission, and our dedicated team of developers
+                    metaKeywords: about, company, team, cms, innovation
+                    canonicalUrl: https://stencilcms.com/about
+                    robots: index, follow
+                    schemaType: Organization
+                    schemaData:
+                      '@context': https://schema.org
+                      '@type': Organization
+                      name: Stencil CMS
+                    isEnabled: true
                     priority: 0.8
-                    changeFreq: "monthly"
-                  items:
-                    - type: "page"
-                      id: "550e8400-e29b-41d4-a716-446655440001"
-                    - type: "page"  
-                      id: "550e8400-e29b-41d4-a716-446655440002"
-              individual_updates:
-                summary: Individual SEO updates
+                    changeFreq: monthly
+              no_custom_seo:
+                summary: No custom SEO, returns default structure
                 value:
-                  items:
-                    - type: "product"
-                      id: "550e8400-e29b-41d4-a716-446655440003"
-                      seoData:
-                        metaTitle: "Premium Product A"
-                        metaDescription: "High quality product description"
-                    - type: "product"
-                      id: "550e8400-e29b-41d4-a716-446655440004"
-                      seoData:
-                        metaTitle: "Premium Product B"
-                        metaDescription: "Another quality product"
-      responses:
-        '200':
-          description: Bulk update completed successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
+                  success: true
+                  message: No custom SEO found, default settings will be used
+                  data:
+                    seoMetableType: App\Models\Page
+                    seoMetableId: 550e8400-e29b-41d4-a716-446655440000
+                    isEnabled: true
+                    priority: 0.5
+                    changeFreq: weekly
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - SEO Management
+    summary: Update SEO for Specific Item
+    description: 'Create or update custom SEO metadata for a specific page/product/category.
+
+
+      **Features:**
+
+      - Create custom SEO if doesn''t exist
+
+      - Update existing custom SEO settings
+
+      - Polymorphic entity support
+
+      - Tenant-scoped operations
+
+      - Validation for SEO best practices
+
+      '
+    operationId: updateItemSEO
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: type
+      in: path
+      required: true
+      description: Content type
+      schema:
+        type: string
+        enum:
+        - page
+        - product
+        - category
+        - post
+        - custom
+    - name: id
+      in: path
+      required: true
+      description: Content ID (UUID format)
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SEOMetaInput'
+          examples:
+            page_seo:
+              summary: Update SEO for About page
+              value:
+                metaTitle: About Our Innovative Team - Stencil CMS
+                metaDescription: Discover the story behind Stencil CMS, our innovative
+                  team, and our mission to revolutionize content management
+                metaKeywords: about, team, innovation, cms, company, mission
+                ogTitle: About Our Team - Stencil CMS
+                ogDescription: Meet the innovative team behind Stencil CMS
+                ogImageUrl: /images/team-og.jpg
+                ogImageAlt: Stencil CMS team working together
+                ogType: website
+                twitterTitle: About Our Team - Stencil CMS
+                twitterDescription: Meet the innovative team behind Stencil CMS
+                twitterImageUrl: /images/team-twitter.jpg
+                twitterCardType: summary_large_image
+                canonicalUrl: https://stencilcms.com/about
+                robots: index, follow
+                schemaType: Organization
+                schemaData:
+                  '@context': https://schema.org
+                  '@type': Organization
+                  name: Stencil CMS
+                  description: Innovative CMS platform
+                isEnabled: true
+                priority: 0.8
+                changeFreq: monthly
+            product_seo:
+              summary: Update SEO for Product page
+              value:
+                metaTitle: Premium Etching Services - Order Now
+                metaDescription: High-quality custom etching services for metal, glass,
+                  and wood. Professional results guaranteed.
+                ogType: product
+                schemaType: Product
+                priority: 0.9
+                changeFreq: weekly
+    responses:
+      '200':
+        description: SEO metadata updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SEOMeta'
+                  message:
+                    type: string
+                    example: SEO metadata updated successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Seo puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '201':
+        description: SEO metadata created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SEOMeta'
+                  message:
+                    type: string
+                    example: Custom SEO metadata created successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Seo created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '422':
+        $ref: '#/components/responses/ValidationError'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - SEO Management
+    summary: Delete Custom SEO
+    description: 'Delete custom SEO metadata for an item.
+
+      After deletion, the item will use default SEO settings.
+
+
+      **Features:**
+
+      - Soft delete with audit trail
+
+      - Automatic fallback to default settings
+
+      - Tenant-scoped operations
+
+      '
+    operationId: deleteItemSEO
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: type
+      in: path
+      required: true
+      description: Content type
+      schema:
+        type: string
+        enum:
+        - page
+        - product
+        - category
+        - post
+        - custom
+    - name: id
+      in: path
+      required: true
+      description: Content ID (UUID format)
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: SEO metadata deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Custom SEO deleted. Item will now use default SEO settings.
+            examples:
+              success:
+                summary: Successful deletion
+                value:
+                  success: true
+                  message: Custom SEO metadata deleted successfully. The item will
+                    now use default SEO settings.
+                  data: null
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/seo/bulk-update:
+  post:
+    tags:
+    - SEO Management
+    summary: Bulk Update SEO Settings
+    description: 'Bulk update SEO settings for multiple items at once.
+
+
+      **Features:**
+
+      - Multi-item SEO updates
+
+      - Template-based updates
+
+      - Progress tracking
+
+      - Error reporting per item
+
+      '
+    operationId: bulkUpdateSEO
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - items
+            properties:
+              items:
+                type: array
+                maxItems: 100
+                description: Array of items to update (max 100)
+                items:
+                  type: object
+                  required:
+                  - type
+                  - id
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - page
+                      - product
+                      - category
+                      - post
+                    id:
+                      type: string
+                      format: uuid
+                    seoData:
+                      $ref: '#/components/schemas/SEOMetaInput'
+              template:
+                type: object
+                description: Template to apply to all items
+                properties:
+                  metaTitle:
+                    type: string
+                    description: Template with variables (e.g., "{title} - {siteName}")
+                  priority:
+                    type: number
+                    format: float
+                  changeFreq:
+                    type: string
+          examples:
+            template_update:
+              summary: Apply template to multiple pages
+              value:
+                template:
+                  metaTitle: '{title} - Stencil CMS'
+                  priority: 0.8
+                  changeFreq: monthly
+                items:
+                - type: page
+                  id: 550e8400-e29b-41d4-a716-446655440001
+                - type: page
+                  id: 550e8400-e29b-41d4-a716-446655440002
+            individual_updates:
+              summary: Individual SEO updates
+              value:
+                items:
+                - type: product
+                  id: 550e8400-e29b-41d4-a716-446655440003
+                  seoData:
+                    metaTitle: Premium Product A
+                    metaDescription: High quality product description
+                - type: product
+                  id: 550e8400-e29b-41d4-a716-446655440004
+                  seoData:
+                    metaTitle: Premium Product B
+                    metaDescription: Another quality product
+    responses:
+      '200':
+        description: Bulk update completed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
                     properties:
-                      data:
-                        type: object
-                        properties:
-                          processed:
-                            type: integer
-                            description: Number of items successfully processed
-                          failed:
-                            type: integer
-                            description: Number of items that failed
-                          errors:
-                            type: array
-                            description: Array of errors for failed items
-                            items:
-                              type: object
-                              properties:
-                                item_id:
-                                  type: string
-                                  format: uuid
-                                error:
-                                  type: string
-                      message:
-                        type: string
-                        example: "Bulk SEO update completed: 8 successful, 2 failed"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '422':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                      processed:
+                        type: integer
+                        description: Number of items successfully processed
+                      failed:
+                        type: integer
+                        description: Number of items that failed
+                      errors:
+                        type: array
+                        description: Array of errors for failed items
+                        items:
+                          type: object
+                          properties:
+                            item_id:
+                              type: string
+                              format: uuid
+                            error:
+                              type: string
+                  message:
+                    type: string
+                    example: 'Bulk SEO update completed: 8 successful, 2 failed'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Seo posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '422':
+        $ref: '#/components/responses/ValidationError'
+      '500':
+        $ref: '#/components/responses/ServerError'

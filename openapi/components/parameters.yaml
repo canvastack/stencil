@@ -1,6 +1,21 @@
 # Common Parameters for Stencil CMS API
 # Reusable parameter definitions
 
+# Language Parameters
+AcceptLanguage:
+  name: Accept-Language
+  in: header
+  required: false
+  schema:
+    type: string
+    pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+    default: 'en'
+  description: |
+    Language preference for localized content.
+    
+    **Format:** ISO 639-1 language code (e.g., 'en', 'id', 'es-ES')
+  example: 'en'
+
 # Pagination Parameters
 PageParam:
   name: page

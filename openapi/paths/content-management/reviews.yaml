@@ -1,1301 +1,1595 @@
-# Reviews Module API Paths for Stencil CMS
-# Complete CRUD operations for Reviews Management System (25+ endpoints)
-  # PUBLIC ENDPOINTS - Frontend Customer-Facing APIs
+/products/{productUuid}/reviews:
+  get:
+    tags:
+    - Reviews Management
+    summary: Get Product Reviews with Statistics
+    description: 'Retrieve reviews for a specific product with filtering, sorting,
+      and comprehensive statistics.
 
-  /products/{productUuid}/reviews:
-    get:
-      tags:
-        - Reviews Management
-      summary: Get Product Reviews with Statistics
-      description: |
-        Retrieve reviews for a specific product with filtering, sorting, and comprehensive statistics.
-        
-        **Features:**
-        - Product rating statistics and distribution
-        - Verified purchase filtering
-        - Photo review filtering
-        - Helpful voting system integration
-        - Reply thread inclusion
-        - Advanced sorting options (recent, helpful, rating)
-        - Pagination with performance optimization
-        
-        **Public Access:** No authentication required
-      operationId: getProductReviews
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/AcceptLanguage'
-        - name: productUuid
-          in: path
-          required: true
-          description: Product UUID to get reviews for
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: page
-          in: query
-          description: Page number for pagination
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-          example: 1
-        - name: limit
-          in: query
-          description: Number of reviews per page (max 100)
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-          example: 20
-        - name: rating
-          in: query
-          description: Filter by specific rating value
-          schema:
-            type: number
-            format: float
-            minimum: 0.5
-            maximum: 5.0
-          example: 4.5
-        - name: rating_min
-          in: query
-          description: Minimum rating filter
-          schema:
-            type: number
-            format: float
-            minimum: 0.5
-            maximum: 5.0
-          example: 4.0
-        - name: verified_only
-          in: query
-          description: Show only verified purchase reviews
-          schema:
-            type: boolean
-          example: true
-        - name: with_images
-          in: query
-          description: Show only photo reviews
-          schema:
-            type: boolean
-          example: true
-        - name: sort
-          in: query
-          description: Sort order for reviews
-          schema:
-            type: string
-            enum: [recent, helpful, highest_rating, lowest_rating, oldest]
-            default: recent
-          example: "helpful"
-        - name: search
-          in: query
-          description: Search in review titles and content
-          schema:
-            type: string
-            maxLength: 255
-          example: "quality precision"
-        - name: include_replies
-          in: query
-          description: Include admin/vendor replies in response
-          schema:
-            type: boolean
-            default: true
-          example: true
-      responses:
-        '200':
-          description: Product reviews retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/ReviewListResponse'
-              examples:
-                success:
-                  summary: Successful product reviews retrieval
-                  value:
-                    success: true
-                    message: "Product reviews retrieved successfully"
-                    data:
-                      reviews:
-                        - id: "550e8400-e29b-41d4-a716-446655440000"
-                          product_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-                          reviewer_name: "Budi Santoso"
-                          reviewer_avatar_url: "https://cdn.example.com/avatars/budi.jpg"
-                          rating: 4.5
-                          title: "Produk Berkualitas Tinggi"
-                          comment: "Sangat puas dengan hasil etching yang presisi..."
-                          pros: "Detail presisi, material berkualitas"
-                          cons: "Harga sedikit mahal"
-                          is_verified_purchase: true
-                          is_anonymous: false
-                          helpful_count: 15
-                          unhelpful_count: 2
-                          reply_count: 1
-                          images:
-                            - id: "7cb8c920-8ead-22e2-91c5-11d05fd430c8"
-                              image_url: "https://cdn.example.com/reviews/review-1.jpg"
-                              thumbnail_url: "https://cdn.example.com/reviews/review-1-thumb.jpg"
-                              is_primary: true
-                          replies:
-                            - id: "8dc9d030-9fbe-33f3-a2d6-22e16fd430c8"
-                              user_type: "admin"
-                              reply_text: "Terima kasih atas review positif Anda!"
-                              is_official: true
-                              created_at: "2024-01-16T10:30:00Z"
-                          created_at: "2024-01-15T14:20:00Z"
-                      stats:
-                        product_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-                        total_reviews: 127
-                        average_rating: 4.6
-                        rating_distribution:
-                          "5": 85
-                          "4": 30
-                          "3": 8
-                          "2": 3
-                          "1": 1
-                        verified_purchase_percentage: 78.5
-                        photo_review_percentage: 42.0
-                      pagination:
-                        current_page: 1
-                        total_pages: 7
-                        total_records: 127
-                        per_page: 20
-                        has_next_page: true
-                        has_previous_page: false
-                    meta:
-                      tenant: "main"
-                      timestamp: "2024-01-16T12:00:00Z"
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-  /reviews:
-    post:
-      tags:
-        - Reviews Management
-      summary: Submit New Product Review
-      description: |
-        Submit a new product review with optional image attachments.
-        
-        **Features:**
-        - Automatic verified purchase detection via order_id
-        - Support for guest and registered user reviews
-        - Multi-image upload (max 5 images)
-        - Pros/cons structured feedback
-        - Anonymous review option
-        - Automatic spam detection and moderation queue
-        - Real-time rating statistics update
-        
-        **Rate Limiting:** 3 reviews per user per product per day
-      operationId: createReview
-      security:
-        - bearerAuth: []
-        - {} # Allow anonymous submissions
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+      **Features:**
+
+      - Product rating statistics and distribution
+
+      - Verified purchase filtering
+
+      - Photo review filtering
+
+      - Helpful voting system integration
+
+      - Reply thread inclusion
+
+      - Advanced sorting options (recent, helpful, rating)
+
+      - Pagination with performance optimization
+
+
+      **Public Access:** No authentication required
+
+      '
+    operationId: getProductReviews
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/AcceptLanguage'
+    - name: productUuid
+      in: path
+      required: true
+      description: Product UUID to get reviews for
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: page
+      in: query
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    - name: limit
+      in: query
+      description: Number of reviews per page (max 100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+    - name: rating
+      in: query
+      description: Filter by specific rating value
+      schema:
+        type: number
+        format: float
+        minimum: 0.5
+        maximum: 5.0
+      example: 4.5
+    - name: rating_min
+      in: query
+      description: Minimum rating filter
+      schema:
+        type: number
+        format: float
+        minimum: 0.5
+        maximum: 5.0
+      example: 4.0
+    - name: verified_only
+      in: query
+      description: Show only verified purchase reviews
+      schema:
+        type: boolean
+      example: true
+    - name: with_images
+      in: query
+      description: Show only photo reviews
+      schema:
+        type: boolean
+      example: true
+    - name: sort
+      in: query
+      description: Sort order for reviews
+      schema:
+        type: string
+        enum:
+        - recent
+        - helpful
+        - highest_rating
+        - lowest_rating
+        - oldest
+        default: recent
+      example: helpful
+    - name: search
+      in: query
+      description: Search in review titles and content
+      schema:
+        type: string
+        maxLength: 255
+      example: quality precision
+    - name: include_replies
+      in: query
+      description: Include admin/vendor replies in response
+      schema:
+        type: boolean
+        default: true
+      example: true
+    responses:
+      '200':
+        description: Product reviews retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/reviews.yaml#/ReviewCreateInput'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReviewListResponse'
             examples:
-              verified_purchase:
-                summary: Verified purchase review with images
+              success:
+                summary: Successful product reviews retrieval
                 value:
-                  product_id: "550e8400-e29b-41d4-a716-446655440000"
-                  order_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-                  reviewer_name: "Budi Santoso"
-                  reviewer_email: "budi.santoso@email.com"
-                  rating: 4.5
-                  title: "Excellent Etching Quality"
-                  comment: "Very satisfied with the precision and quality of the etching work. The material is high-grade and the details are sharp."
-                  pros: "High precision, quality materials, fast delivery, excellent packaging"
-                  cons: "Slightly expensive compared to competitors"
-                  is_anonymous: false
-                  images:
-                    - image_url: "https://cdn.example.com/uploads/review-img-1.jpg"
-                      caption: "Final product showing detail"
-                      alt_text: "Custom brass etched nameplate"
-                    - image_url: "https://cdn.example.com/uploads/review-img-2.jpg"
-                      caption: "Packaging quality"
-                      alt_text: "Professional packaging with protective materials"
-              guest_review:
-                summary: Guest review without order verification
-                value:
-                  product_id: "550e8400-e29b-41d4-a716-446655440000"
-                  reviewer_name: "Anonymous Customer"
-                  reviewer_email: "guest@example.com"
-                  rating: 5.0
-                  title: "Outstanding Service"
-                  comment: "Great product and fast shipping. Will order again!"
-                  is_anonymous: true
-      responses:
-        '201':
-          description: Review submitted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          review_id:
-                            type: string
-                            format: uuid
-                            example: "550e8400-e29b-41d4-a716-446655440000"
-                          approval_status:
-                            type: string
-                            example: "pending"
-                          is_verified_purchase:
-                            type: boolean
-                            example: true
-                          estimated_approval_time:
-                            type: string
-                            example: "24 hours"
-              examples:
-                success:
-                  summary: Review created successfully
-                  value:
-                    success: true
-                    message: "Review submitted successfully. It will be visible after admin approval."
-                    data:
-                      review_id: "550e8400-e29b-41d4-a716-446655440000"
-                      approval_status: "pending"
+                  success: true
+                  message: Product reviews retrieved successfully
+                  data:
+                    reviews:
+                    - id: 550e8400-e29b-41d4-a716-446655440000
+                      product_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                      reviewer_name: Budi Santoso
+                      reviewer_avatar_url: https://cdn.example.com/avatars/budi.jpg
+                      rating: 4.5
+                      title: Produk Berkualitas Tinggi
+                      comment: Sangat puas dengan hasil etching yang presisi...
+                      pros: Detail presisi, material berkualitas
+                      cons: Harga sedikit mahal
                       is_verified_purchase: true
-                      estimated_approval_time: "24 hours"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '429':
-          $ref: '../../components/responses.yaml#/RateLimitExceeded'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                      is_anonymous: false
+                      helpful_count: 15
+                      unhelpful_count: 2
+                      reply_count: 1
+                      images:
+                      - id: 7cb8c920-8ead-22e2-91c5-11d05fd430c8
+                        image_url: https://cdn.example.com/reviews/review-1.jpg
+                        thumbnail_url: https://cdn.example.com/reviews/review-1-thumb.jpg
+                        is_primary: true
+                      replies:
+                      - id: 8dc9d030-9fbe-33f3-a2d6-22e16fd430c8
+                        user_type: admin
+                        reply_text: Terima kasih atas review positif Anda!
+                        is_official: true
+                        created_at: '2024-01-16T10:30:00Z'
+                      created_at: '2024-01-15T14:20:00Z'
+                    stats:
+                      product_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                      total_reviews: 127
+                      average_rating: 4.6
+                      rating_distribution:
+                        '5': 85
+                        '4': 30
+                        '3': 8
+                        '2': 3
+                        '1': 1
+                      verified_purchase_percentage: 78.5
+                      photo_review_percentage: 42.0
+                    pagination:
+                      current_page: 1
+                      total_pages: 7
+                      total_records: 127
+                      per_page: 20
+                      has_next_page: true
+                      has_previous_page: false
+                  meta:
+                    tenant: main
+                    timestamp: '2024-01-16T12:00:00Z'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/reviews:
+  post:
+    tags:
+    - Reviews Management
+    summary: Submit New Product Review
+    description: 'Submit a new product review with optional image attachments.
 
-  /reviews/{reviewUuid}:
-    get:
-      tags:
-        - Reviews Management
-      summary: Get Single Review Details
-      description: |
-        Retrieve detailed information for a specific review including images, replies, and vote counts.
-        
-        **Features:**
-        - Complete review metadata
-        - Image gallery with thumbnails
-        - Reply thread with admin responses
-        - Helpful vote statistics
-        - Edit history (if available)
-      operationId: getReviewById
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: include_replies
-          in: query
-          description: Include reply threads
-          schema:
-            type: boolean
-            default: true
-          example: true
-      responses:
-        '200':
-          description: Review details retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/Review'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-    put:
-      tags:
-        - Reviews Management
-      summary: Edit Existing Review
-      description: |
-        Edit an existing review. Only the original reviewer can edit within 24 hours of submission.
-        
-        **Business Rules:**
-        - Edit window: 24 hours after submission
-        - Major edits reset approval status to 'pending'
-        - Edit history is maintained for transparency
-        - Admin notification for significant changes
-      operationId: updateReview
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID
+      **Features:**
+
+      - Automatic verified purchase detection via order_id
+
+      - Support for guest and registered user reviews
+
+      - Multi-image upload (max 5 images)
+
+      - Pros/cons structured feedback
+
+      - Anonymous review option
+
+      - Automatic spam detection and moderation queue
+
+      - Real-time rating statistics update
+
+
+      **Rate Limiting:** 3 reviews per user per product per day
+
+      '
+    operationId: createReview
+    security:
+    - bearerAuth: []
+    - {}
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
+            $ref: '#/components/schemas/ReviewCreateInput'
+          examples:
+            verified_purchase:
+              summary: Verified purchase review with images
+              value:
+                product_id: 550e8400-e29b-41d4-a716-446655440000
+                order_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                reviewer_name: Budi Santoso
+                reviewer_email: budi.santoso@email.com
+                rating: 4.5
+                title: Excellent Etching Quality
+                comment: Very satisfied with the precision and quality of the etching
+                  work. The material is high-grade and the details are sharp.
+                pros: High precision, quality materials, fast delivery, excellent
+                  packaging
+                cons: Slightly expensive compared to competitors
+                is_anonymous: false
+                images:
+                - image_url: https://cdn.example.com/uploads/review-img-1.jpg
+                  caption: Final product showing detail
+                  alt_text: Custom brass etched nameplate
+                - image_url: https://cdn.example.com/uploads/review-img-2.jpg
+                  caption: Packaging quality
+                  alt_text: Professional packaging with protective materials
+            guest_review:
+              summary: Guest review without order verification
+              value:
+                product_id: 550e8400-e29b-41d4-a716-446655440000
+                reviewer_name: Anonymous Customer
+                reviewer_email: guest@example.com
+                rating: 5.0
+                title: Outstanding Service
+                comment: Great product and fast shipping. Will order again!
+                is_anonymous: true
+    responses:
+      '201':
+        description: Review submitted successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/reviews.yaml#/ReviewUpdateInput'
-            examples:
-              rating_update:
-                summary: Update rating and add long-term experience
-                value:
-                  rating: 5.0
-                  title: "Updated: Outstanding Quality After Extended Use"
-                  comment: "After using the product for 3 weeks, I can confirm the quality is outstanding. The etching remains sharp and the material shows no signs of wear."
-                  pros: "Durability confirmed, easy installation, excellent customer support"
-                  cons: "Initial setup instructions could be clearer"
-                  edit_reason: "Updated rating after extended use and added durability feedback"
-      responses:
-        '200':
-          description: Review updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
                     properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/Review'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          description: Edit not allowed (24-hour window expired or not owner)
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                message: "Review editing is only allowed within 24 hours of submission"
-                error_code: "EDIT_WINDOW_EXPIRED"
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                      review_id:
+                        type: string
+                        format: uuid
+                        example: 550e8400-e29b-41d4-a716-446655440000
+                      approval_status:
+                        type: string
+                        example: pending
+                      is_verified_purchase:
+                        type: boolean
+                        example: true
+                      estimated_approval_time:
+                        type: string
+                        example: 24 hours
+            examples:
+              success:
+                summary: Review created successfully
+                value:
+                  success: true
+                  message: Review submitted successfully. It will be visible after
+                    admin approval.
+                  data:
+                    review_id: 550e8400-e29b-41d4-a716-446655440000
+                    approval_status: pending
+                    is_verified_purchase: true
+                    estimated_approval_time: 24 hours
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/reviews/{reviewUuid}:
+  get:
+    tags:
+    - Reviews Management
+    summary: Get Single Review Details
+    description: 'Retrieve detailed information for a specific review including images,
+      replies, and vote counts.
 
-    delete:
-      tags:
-        - Reviews Management
-      summary: Soft Delete Review
-      description: |
-        Soft delete a review (mark as deleted without permanent removal).
-        Only the original reviewer or admin can delete reviews.
-        
-        **Note:** This performs a soft delete to maintain data integrity and analytics.
-      operationId: deleteReview
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          $ref: '../../components/responses.yaml#/DeletedResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-  # REVIEW INTERACTION ENDPOINTS
+      **Features:**
 
-  /reviews/{reviewUuid}/vote:
-    post:
-      tags:
-        - Reviews Management
-      summary: Vote on Review Helpfulness
-      description: |
-        Cast a helpful/unhelpful vote on a review to indicate quality to other users.
-        
-        **Features:**
-        - One vote per user per review (enforced by database constraints)
-        - Guest voting via IP address tracking
-        - Vote change allowed (helpful ↔ unhelpful)
-        - Real-time vote count updates
-        - Spam prevention via rate limiting
-      operationId: voteOnReview
-      security:
-        - bearerAuth: []
-        - {} # Allow guest voting
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID to vote on
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
+      - Complete review metadata
+
+      - Image gallery with thumbnails
+
+      - Reply thread with admin responses
+
+      - Helpful vote statistics
+
+      - Edit history (if available)
+
+      '
+    operationId: getReviewById
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include_replies
+      in: query
+      description: Include reply threads
+      schema:
+        type: boolean
+        default: true
+      example: true
+    responses:
+      '200':
+        description: Review details retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/reviews.yaml#/ReviewHelpfulVoteInput'
-            examples:
-              helpful_vote:
-                summary: Mark review as helpful
-                value:
-                  vote_type: "helpful"
-              unhelpful_vote:
-                summary: Mark review as unhelpful
-                value:
-                  vote_type: "unhelpful"
-      responses:
-        '201':
-          description: Vote recorded successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          vote_id:
-                            type: string
-                            format: uuid
-                            example: "7cb8c920-8ead-22e2-91c5-11d05fd430c8"
-                          vote_type:
-                            type: string
-                            example: "helpful"
-                          helpful_count:
-                            type: integer
-                            example: 16
-                          unhelpful_count:
-                            type: integer
-                            example: 2
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '409':
-          description: Vote already exists (can be updated)
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                message: "You have already voted on this review. Your vote has been updated."
-                error_code: "VOTE_UPDATED"
-        '429':
-          $ref: '../../components/responses.yaml#/RateLimitExceeded'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Review'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Reviews Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Reviews retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - Reviews Management
+    summary: Edit Existing Review
+    description: 'Edit an existing review. Only the original reviewer can edit within
+      24 hours of submission.
 
-  /reviews/{reviewUuid}/replies:
-    get:
-      tags:
-        - Reviews Management
-      summary: Get Review Reply Thread
-      description: |
-        Retrieve all replies for a specific review including nested reply chains.
-        
-        **Features:**
-        - Hierarchical reply structure (1-level deep)
-        - Admin/vendor response identification
-        - Official badge display
-        - Chronological ordering
-      operationId: getReviewReplies
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID
+
+      **Business Rules:**
+
+      - Edit window: 24 hours after submission
+
+      - Major edits reset approval status to ''pending''
+
+      - Edit history is maintained for transparency
+
+      - Admin notification for significant changes
+
+      '
+    operationId: updateReview
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Review replies retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
+            $ref: '#/components/schemas/ReviewUpdateInput'
+          examples:
+            rating_update:
+              summary: Update rating and add long-term experience
+              value:
+                rating: 5.0
+                title: 'Updated: Outstanding Quality After Extended Use'
+                comment: After using the product for 3 weeks, I can confirm the quality
+                  is outstanding. The etching remains sharp and the material shows
+                  no signs of wear.
+                pros: Durability confirmed, easy installation, excellent customer
+                  support
+                cons: Initial setup instructions could be clearer
+                edit_reason: Updated rating after extended use and added durability
+                  feedback
+    responses:
+      '200':
+        description: Review updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Review'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Reviews puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        description: Edit not allowed (24-hour window expired or not owner)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              message: Review editing is only allowed within 24 hours of submission
+              error_code: EDIT_WINDOW_EXPIRED
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - Reviews Management
+    summary: Soft Delete Review
+    description: 'Soft delete a review (mark as deleted without permanent removal).
+
+      Only the original reviewer or admin can delete reviews.
+
+
+      **Note:** This performs a soft delete to maintain data integrity and analytics.
+
+      '
+    operationId: deleteReview
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        $ref: '#/components/responses/DeletedResponse'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/reviews/{reviewUuid}/vote:
+  post:
+    tags:
+    - Reviews Management
+    summary: Vote on Review Helpfulness
+    description: "Cast a helpful/unhelpful vote on a review to indicate quality to\
+      \ other users.\n\n**Features:**\n- One vote per user per review (enforced by\
+      \ database constraints)\n- Guest voting via IP address tracking\n- Vote change\
+      \ allowed (helpful \u2194 unhelpful)\n- Real-time vote count updates\n- Spam\
+      \ prevention via rate limiting\n"
+    operationId: voteOnReview
+    security:
+    - bearerAuth: []
+    - {}
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID to vote on
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReviewHelpfulVoteInput'
+          examples:
+            helpful_vote:
+              summary: Mark review as helpful
+              value:
+                vote_type: helpful
+            unhelpful_vote:
+              summary: Mark review as unhelpful
+              value:
+                vote_type: unhelpful
+    responses:
+      '201':
+        description: Vote recorded successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
                     properties:
-                      data:
+                      vote_id:
+                        type: string
+                        format: uuid
+                        example: 7cb8c920-8ead-22e2-91c5-11d05fd430c8
+                      vote_type:
+                        type: string
+                        example: helpful
+                      helpful_count:
+                        type: integer
+                        example: 16
+                      unhelpful_count:
+                        type: integer
+                        example: 2
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Reviews created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '409':
+        description: Vote already exists (can be updated)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              message: You have already voted on this review. Your vote has been updated.
+              error_code: VOTE_UPDATED
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/reviews/{reviewUuid}/replies:
+  get:
+    tags:
+    - Reviews Management
+    summary: Get Review Reply Thread
+    description: 'Retrieve all replies for a specific review including nested reply
+      chains.
+
+
+      **Features:**
+
+      - Hierarchical reply structure (1-level deep)
+
+      - Admin/vendor response identification
+
+      - Official badge display
+
+      - Chronological ordering
+
+      '
+    operationId: getReviewReplies
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: Review replies retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReviewReply'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Reviews Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Reviews retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Reviews Management
+    summary: Reply to Review
+    description: 'Post a reply to a customer review. Restricted to admin, customer
+      service, or vendor users.
+
+
+      **Business Rules:**
+
+      - Only admin/customer service/vendor roles can reply
+
+      - One official reply per review (additional replies as nested)
+
+      - Email notification sent to original reviewer
+
+      - Official badge displayed for brand responses
+
+      '
+    operationId: replyToReview
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID to reply to
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReviewReplyCreateInput'
+          examples:
+            admin_reply:
+              summary: Official admin response to positive review
+              value:
+                review_id: 550e8400-e29b-41d4-a716-446655440000
+                reply_text: Thank you for your detailed and positive review! We're
+                  thrilled that you're satisfied with the precision and quality of
+                  our etching work. Your feedback about our packaging and delivery
+                  speed is especially valuable to us.
+                is_official: true
+            customer_service_reply:
+              summary: Customer service addressing concerns
+              value:
+                review_id: 550e8400-e29b-41d4-a716-446655440000
+                reply_text: We appreciate your feedback about our pricing. We'd love
+                  to discuss our value proposition and available options with you.
+                  Please reach out to our customer service team at support@example.com
+                  for personalized assistance.
+                is_official: true
+    responses:
+      '201':
+        description: Reply posted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReviewReply'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Reviews created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/reviews/{reviewUuid}/report:
+  post:
+    tags:
+    - Reviews Management
+    summary: Report Inappropriate Review
+    description: 'Report a review for inappropriate content, spam, or policy violations.
+
+
+      **Features:**
+
+      - Multiple report reason categories
+
+      - Guest and registered user reporting
+
+      - Automatic review hiding after threshold reached
+
+      - Admin notification system
+
+      - Duplicate report prevention
+
+      '
+    operationId: reportReview
+    security:
+    - bearerAuth: []
+    - {}
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID to report
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReviewReportCreateInput'
+          examples:
+            spam_report:
+              summary: Report review as spam
+              value:
+                review_id: 550e8400-e29b-41d4-a716-446655440000
+                report_reason: spam
+                report_details: This review contains promotional content for competitor
+                  products and appears to be fake
+            inappropriate_content:
+              summary: Report offensive language
+              value:
+                review_id: 550e8400-e29b-41d4-a716-446655440000
+                report_reason: offensive_language
+                report_details: Review contains profanity and inappropriate language
+                  that violates community guidelines
+    responses:
+      '201':
+        description: Report submitted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      report_id:
+                        type: string
+                        format: uuid
+                        example: 8dc9d030-9fbe-33f3-a2d6-22e16fd430c8
+                      status:
+                        type: string
+                        example: pending
+                      message:
+                        type: string
+                        example: Report submitted successfully. Our team will review
+                          it within 24 hours.
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Reviews created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '409':
+        description: Duplicate report
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              message: You have already reported this review
+              error_code: DUPLICATE_REPORT
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/reviews:
+  get:
+    tags:
+    - Admin - Reviews Management
+    summary: List All Reviews for Moderation
+    description: 'Admin endpoint to list all reviews with advanced filtering for moderation
+      purposes.
+
+
+      **Admin Features:**
+
+      - Filter by approval status (pending, approved, rejected, spam)
+
+      - Search by content, reviewer name, or product
+
+      - Sort by submission date, rating, helpful votes
+
+      - Bulk selection support
+
+      - Export functionality
+
+      - Advanced analytics integration
+
+      '
+    operationId: listAllReviews
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: approval_status
+      in: query
+      description: Filter by approval status
+      schema:
+        type: string
+        enum:
+        - pending
+        - approved
+        - rejected
+        - spam
+        - all
+        default: all
+      example: pending
+    - name: product_id
+      in: query
+      description: Filter by specific product
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: rating_min
+      in: query
+      description: Minimum rating filter
+      schema:
+        type: number
+        format: float
+        minimum: 0.5
+        maximum: 5.0
+      example: 1.0
+    - name: date_from
+      in: query
+      description: Filter reviews from this date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-01'
+    - name: date_to
+      in: query
+      description: Filter reviews until this date
+      schema:
+        type: string
+        format: date
+      example: '2024-12-31'
+    - name: search
+      in: query
+      description: Search in review content and reviewer name
+      schema:
+        type: string
+        maxLength: 255
+      example: quality issue
+    - name: reported_only
+      in: query
+      description: Show only reviews with reports
+      schema:
+        type: boolean
+      example: true
+    responses:
+      '200':
+        description: Reviews retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReviewListResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Reviews Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Reviews retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/reviews/{reviewUuid}/moderate:
+  put:
+    tags:
+    - Admin - Reviews Management
+    summary: Moderate Review (Approve/Reject/Spam)
+    description: 'Admin endpoint to moderate reviews with approval, rejection, or
+      spam marking.
+
+
+      **Moderation Actions:**
+
+      - Approve: Make review public and update product statistics
+
+      - Reject: Hide review with reason provided to reviewer
+
+      - Mark as Spam: Hide review and flag user for monitoring
+
+      - Feature: Highlight review prominently on product page
+
+      - Unfeature: Remove featured status
+
+      '
+    operationId: moderateReview
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reviewUuid
+      in: path
+      required: true
+      description: Review UUID to moderate
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReviewModerationInput'
+          examples:
+            approve_review:
+              summary: Approve a pending review
+              value:
+                action: approve
+                admin_notes: Quality review with constructive feedback, approved for
+                  public display
+            reject_review:
+              summary: Reject review with reason
+              value:
+                action: reject
+                rejection_reason: Review contains inappropriate language and violates
+                  community guidelines
+                admin_notes: Profanity detected in review content
+            mark_spam:
+              summary: Mark review as spam
+              value:
+                action: mark_spam
+                rejection_reason: Review identified as spam - contains competitor
+                  promotional content
+                admin_notes: User flagged for monitoring due to multiple spam attempts
+            feature_review:
+              summary: Feature high-quality review
+              value:
+                action: feature
+                admin_notes: Excellent detailed review that will help other customers
+    responses:
+      '200':
+        description: Review moderated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Review'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Reviews puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/reviews/bulk-moderate:
+  put:
+    tags:
+    - Admin - Reviews Management
+    summary: Bulk Moderate Multiple Reviews
+    description: 'Admin endpoint for bulk moderation actions on multiple reviews simultaneously.
+
+
+      **Bulk Actions:**
+
+      - Approve multiple pending reviews
+
+      - Reject multiple reviews with same reason
+
+      - Mark multiple reviews as spam
+
+      - Feature/unfeature multiple reviews
+
+      - Bulk delete reviews (soft delete)
+
+
+      **Limitations:** Maximum 100 reviews per request
+
+      '
+    operationId: bulkModerateReviews
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReviewBulkActionInput'
+          examples:
+            bulk_approve:
+              summary: Approve multiple reviews
+              value:
+                review_ids:
+                - 550e8400-e29b-41d4-a716-446655440000
+                - 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                action: approve
+            bulk_reject_spam:
+              summary: Reject multiple spam reviews
+              value:
+                review_ids:
+                - 7cb8c920-8ead-22e2-91c5-11d05fd430c8
+                - 8dc9d030-9fbe-33f3-a2d6-22e16fd430c8
+                action: mark_spam
+                rejection_reason: 'Bulk action: Reviews identified as spam content'
+    responses:
+      '200':
+        description: Bulk moderation completed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      processed_count:
+                        type: integer
+                        example: 25
+                      successful_count:
+                        type: integer
+                        example: 23
+                      failed_count:
+                        type: integer
+                        example: 2
+                      errors:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/reviews.yaml#/ReviewReply'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                          type: object
+                          properties:
+                            review_id:
+                              type: string
+                              format: uuid
+                            error_message:
+                              type: string
+                        example:
+                        - review_id: 8dc9d030-9fbe-33f3-a2d6-22e16fd430c8
+                          error_message: Review not found
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Reviews puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/reviews/reports:
+  get:
+    tags:
+    - Admin - Reviews Management
+    summary: List Review Reports for Moderation
+    description: 'Admin endpoint to manage review reports submitted by users.
 
-    post:
-      tags:
-        - Reviews Management
-      summary: Reply to Review
-      description: |
-        Post a reply to a customer review. Restricted to admin, customer service, or vendor users.
-        
-        **Business Rules:**
-        - Only admin/customer service/vendor roles can reply
-        - One official reply per review (additional replies as nested)
-        - Email notification sent to original reviewer
-        - Official badge displayed for brand responses
-      operationId: replyToReview
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID to reply to
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
+
+      **Features:**
+
+      - Filter by report status (pending, resolved, dismissed)
+
+      - Sort by report date and frequency
+
+      - View reporter information
+
+      - Batch report processing
+
+      - Report trend analysis
+
+      '
+    operationId: listReviewReports
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - name: status
+      in: query
+      description: Filter by report status
+      schema:
+        type: string
+        enum:
+        - pending
+        - under_review
+        - resolved
+        - dismissed
+      example: pending
+    - name: report_reason
+      in: query
+      description: Filter by report reason
+      schema:
+        type: string
+        enum:
+        - spam
+        - offensive_language
+        - fake_review
+        - irrelevant
+        - personal_information
+        - copyright
+        - other
+      example: spam
+    - name: date_from
+      in: query
+      description: Filter reports from this date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-01'
+    responses:
+      '200':
+        description: Review reports retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/reviews.yaml#/ReviewReplyCreateInput'
-            examples:
-              admin_reply:
-                summary: Official admin response to positive review
-                value:
-                  review_id: "550e8400-e29b-41d4-a716-446655440000"
-                  reply_text: "Thank you for your detailed and positive review! We're thrilled that you're satisfied with the precision and quality of our etching work. Your feedback about our packaging and delivery speed is especially valuable to us."
-                  is_official: true
-              customer_service_reply:
-                summary: Customer service addressing concerns
-                value:
-                  review_id: "550e8400-e29b-41d4-a716-446655440000"
-                  reply_text: "We appreciate your feedback about our pricing. We'd love to discuss our value proposition and available options with you. Please reach out to our customer service team at support@example.com for personalized assistance."
-                  is_official: true
-      responses:
-        '201':
-          description: Reply posted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/ReviewReply'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReviewReport'
+                  meta:
+                    allOf:
+                    - $ref: '#/components/schemas/PaginationMeta'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Reviews Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Reviews retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/reviews/reports/{reportUuid}:
+  put:
+    tags:
+    - Admin - Reviews Management
+    summary: Resolve Review Report
+    description: 'Admin endpoint to resolve or dismiss a review report.
 
-  /reviews/{reviewUuid}/report:
-    post:
-      tags:
-        - Reviews Management
-      summary: Report Inappropriate Review
-      description: |
-        Report a review for inappropriate content, spam, or policy violations.
-        
-        **Features:**
-        - Multiple report reason categories
-        - Guest and registered user reporting
-        - Automatic review hiding after threshold reached
-        - Admin notification system
-        - Duplicate report prevention
-      operationId: reportReview
-      security:
-        - bearerAuth: []
-        - {} # Allow guest reports
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID to report
+
+      **Actions:**
+
+      - Resolve: Take action on the reported review
+
+      - Dismiss: Mark report as invalid/not actionable
+
+      - Under Review: Mark report as being investigated
+
+      '
+    operationId: resolveReviewReport
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: reportUuid
+      in: path
+      required: true
+      description: Report UUID to resolve
+      schema:
+        type: string
+        format: uuid
+      example: 9ed0e140-a0ce-44f4-b3e7-33f27fd430c8
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
+            type: object
+            required:
+            - status
+            properties:
+              status:
+                type: string
+                enum:
+                - resolved
+                - dismissed
+                - under_review
+                description: Resolution status
+                example: resolved
+              resolution_note:
+                type: string
+                maxLength: 1000
+                description: Admin notes on resolution
+                example: Review content reviewed and found to violate community guidelines.
+                  Review has been removed.
+              review_action:
+                type: string
+                enum:
+                - no_action
+                - hide_review
+                - delete_review
+                - warn_user
+                nullable: true
+                description: Action taken on the reported review
+                example: hide_review
+          example:
+            title: Updated Reviews Title
+            description: Updated description for reviews
+            is_active: true
+    responses:
+      '200':
+        description: Report resolved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/reviews.yaml#/ReviewReportCreateInput'
-            examples:
-              spam_report:
-                summary: Report review as spam
-                value:
-                  review_id: "550e8400-e29b-41d4-a716-446655440000"
-                  report_reason: "spam"
-                  report_details: "This review contains promotional content for competitor products and appears to be fake"
-              inappropriate_content:
-                summary: Report offensive language
-                value:
-                  review_id: "550e8400-e29b-41d4-a716-446655440000"
-                  report_reason: "offensive_language"
-                  report_details: "Review contains profanity and inappropriate language that violates community guidelines"
-      responses:
-        '201':
-          description: Report submitted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          report_id:
-                            type: string
-                            format: uuid
-                            example: "8dc9d030-9fbe-33f3-a2d6-22e16fd430c8"
-                          status:
-                            type: string
-                            example: "pending"
-                          message:
-                            type: string
-                            example: "Report submitted successfully. Our team will review it within 24 hours."
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '409':
-          description: Duplicate report
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                message: "You have already reported this review"
-                error_code: "DUPLICATE_REPORT"
-        '429':
-          $ref: '../../components/responses.yaml#/RateLimitExceeded'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReviewReport'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Reviews puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/reviews/analytics:
+  get:
+    tags:
+    - Admin - Reviews Analytics
+    summary: Get Review Analytics Summary
+    description: 'Admin endpoint for comprehensive review analytics and performance
+      metrics.
 
-  # ADMIN ENDPOINTS - Review Management and Moderation
 
-  /admin/reviews:
-    get:
-      tags:
-        - Admin - Reviews Management
-      summary: List All Reviews for Moderation
-      description: |
-        Admin endpoint to list all reviews with advanced filtering for moderation purposes.
-        
-        **Admin Features:**
-        - Filter by approval status (pending, approved, rejected, spam)
-        - Search by content, reviewer name, or product
-        - Sort by submission date, rating, helpful votes
-        - Bulk selection support
-        - Export functionality
-        - Advanced analytics integration
-      operationId: listAllReviews
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
-        - name: approval_status
-          in: query
-          description: Filter by approval status
-          schema:
-            type: string
-            enum: [pending, approved, rejected, spam, all]
-            default: all
-          example: "pending"
-        - name: product_id
-          in: query
-          description: Filter by specific product
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: rating_min
-          in: query
-          description: Minimum rating filter
-          schema:
-            type: number
-            format: float
-            minimum: 0.5
-            maximum: 5.0
-          example: 1.0
-        - name: date_from
-          in: query
-          description: Filter reviews from this date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-01"
-        - name: date_to
-          in: query
-          description: Filter reviews until this date
-          schema:
-            type: string
-            format: date
-          example: "2024-12-31"
-        - name: search
-          in: query
-          description: Search in review content and reviewer name
-          schema:
-            type: string
-            maxLength: 255
-          example: "quality issue"
-        - name: reported_only
-          in: query
-          description: Show only reviews with reports
-          schema:
-            type: boolean
-          example: true
-      responses:
-        '200':
-          description: Reviews retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/ReviewListResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      **Analytics Included:**
 
-  /admin/reviews/{reviewUuid}/moderate:
-    put:
-      tags:
-        - Admin - Reviews Management
-      summary: Moderate Review (Approve/Reject/Spam)
-      description: |
-        Admin endpoint to moderate reviews with approval, rejection, or spam marking.
-        
-        **Moderation Actions:**
-        - Approve: Make review public and update product statistics
-        - Reject: Hide review with reason provided to reviewer
-        - Mark as Spam: Hide review and flag user for monitoring
-        - Feature: Highlight review prominently on product page
-        - Unfeature: Remove featured status
-      operationId: moderateReview
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reviewUuid
-          in: path
-          required: true
-          description: Review UUID to moderate
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
+      - Platform-wide review statistics
+
+      - Moderation queue metrics
+
+      - Engagement and quality metrics
+
+      - Time-based trends
+
+      - Product performance insights
+
+      '
+    operationId: getReviewAnalytics
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: date_from
+      in: query
+      description: Analytics start date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-01'
+    - name: date_to
+      in: query
+      description: Analytics end date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-31'
+    - name: product_id
+      in: query
+      description: Product-specific analytics
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: Review analytics retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/reviews.yaml#/ReviewModerationInput'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReviewAnalyticsSummary'
             examples:
-              approve_review:
-                summary: Approve a pending review
+              success:
+                summary: Comprehensive review analytics
                 value:
-                  action: "approve"
-                  admin_notes: "Quality review with constructive feedback, approved for public display"
-              reject_review:
-                summary: Reject review with reason
-                value:
-                  action: "reject"
-                  rejection_reason: "Review contains inappropriate language and violates community guidelines"
-                  admin_notes: "Profanity detected in review content"
-              mark_spam:
-                summary: Mark review as spam
-                value:
-                  action: "mark_spam"
-                  rejection_reason: "Review identified as spam - contains competitor promotional content"
-                  admin_notes: "User flagged for monitoring due to multiple spam attempts"
-              feature_review:
-                summary: Feature high-quality review
-                value:
-                  action: "feature"
-                  admin_notes: "Excellent detailed review that will help other customers"
-      responses:
-        '200':
-          description: Review moderated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/Review'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                  success: true
+                  message: Review analytics retrieved successfully
+                  data:
+                    total_reviews: 1547
+                    approved_reviews: 1398
+                    pending_reviews: 127
+                    rejected_reviews: 22
+                    average_rating_platform: 4.4
+                    verified_purchase_rate: 73.2
+                    photo_review_rate: 38.5
+                    total_helpful_votes: 8743
+                    reply_rate: 24.8
+                    reviews_last_30_days: 156
+                    reviews_last_7_days: 43
+                    avg_response_time_hours: 18.5
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/reviews/export:
+  get:
+    tags:
+    - Admin - Reviews Analytics
+    summary: Export Reviews Data
+    description: 'Admin endpoint to export review data in various formats (CSV, Excel,
+      JSON).
 
-  /admin/reviews/bulk-moderate:
-    put:
-      tags:
-        - Admin - Reviews Management
-      summary: Bulk Moderate Multiple Reviews
-      description: |
-        Admin endpoint for bulk moderation actions on multiple reviews simultaneously.
-        
-        **Bulk Actions:**
-        - Approve multiple pending reviews
-        - Reject multiple reviews with same reason
-        - Mark multiple reviews as spam
-        - Feature/unfeature multiple reviews
-        - Bulk delete reviews (soft delete)
-        
-        **Limitations:** Maximum 100 reviews per request
-      operationId: bulkModerateReviews
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+
+      **Export Features:**
+
+      - Configurable date ranges
+
+      - Custom field selection
+
+      - Multiple format support
+
+      - Large dataset handling with streaming
+
+      - Scheduled export capabilities
+
+      '
+    operationId: exportReviewsData
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: format
+      in: query
+      required: true
+      description: Export format
+      schema:
+        type: string
+        enum:
+        - csv
+        - excel
+        - json
+      example: csv
+    - name: date_from
+      in: query
+      description: Export start date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-01'
+    - name: date_to
+      in: query
+      description: Export end date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-31'
+    - name: approval_status
+      in: query
+      description: Filter by approval status
+      schema:
+        type: string
+        enum:
+        - pending
+        - approved
+        - rejected
+        - spam
+        - all
+        default: approved
+      example: approved
+    - name: include_images
+      in: query
+      description: Include image URLs in export
+      schema:
+        type: boolean
+        default: false
+      example: true
+    - name: include_replies
+      in: query
+      description: Include reply data in export
+      schema:
+        type: boolean
+        default: false
+      example: true
+    responses:
+      '200':
+        description: Export file generated successfully
         content:
-          application/json:
+          application/octet-stream:
             schema:
-              $ref: '../../schemas/content-management/reviews.yaml#/ReviewBulkActionInput'
-            examples:
-              bulk_approve:
-                summary: Approve multiple reviews
-                value:
-                  review_ids: ["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
-                  action: "approve"
-              bulk_reject_spam:
-                summary: Reject multiple spam reviews
-                value:
-                  review_ids: ["7cb8c920-8ead-22e2-91c5-11d05fd430c8", "8dc9d030-9fbe-33f3-a2d6-22e16fd430c8"]
-                  action: "mark_spam"
-                  rejection_reason: "Bulk action: Reviews identified as spam content"
-      responses:
-        '200':
-          description: Bulk moderation completed successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          processed_count:
-                            type: integer
-                            example: 25
-                          successful_count:
-                            type: integer
-                            example: 23
-                          failed_count:
-                            type: integer
-                            example: 2
-                          errors:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                review_id:
-                                  type: string
-                                  format: uuid
-                                error_message:
-                                  type: string
-                            example:
-                              - review_id: "8dc9d030-9fbe-33f3-a2d6-22e16fd430c8"
-                                error_message: "Review not found"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              type: string
+              format: binary
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Reviews Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Reviews retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+          text/csv:
+            schema:
+              type: string
+              example: 'id,product_id,reviewer_name,rating,title,comment,created_at
 
-  /admin/reviews/reports:
-    get:
-      tags:
-        - Admin - Reviews Management
-      summary: List Review Reports for Moderation
-      description: |
-        Admin endpoint to manage review reports submitted by users.
-        
-        **Features:**
-        - Filter by report status (pending, resolved, dismissed)
-        - Sort by report date and frequency
-        - View reporter information
-        - Batch report processing
-        - Report trend analysis
-      operationId: listReviewReports
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - name: status
-          in: query
-          description: Filter by report status
-          schema:
-            type: string
-            enum: [pending, under_review, resolved, dismissed]
-          example: "pending"
-        - name: report_reason
-          in: query
-          description: Filter by report reason
-          schema:
-            type: string
-            enum: [spam, offensive_language, fake_review, irrelevant, personal_information, copyright, other]
-          example: "spam"
-        - name: date_from
-          in: query
-          description: Filter reports from this date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-01"
-      responses:
-        '200':
-          description: Review reports retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '../../schemas/content-management/reviews.yaml#/ReviewReport'
-                      meta:
-                        allOf:
-                          - $ref: '../../components/schemas.yaml#/PaginationMeta'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-11d1-80b4-00c04fd430c8,Budi
+                Santoso,4.5,"Great Quality","Excellent product...",2024-01-15T14:20:00Z
 
-  /admin/reviews/reports/{reportUuid}:
-    put:
-      tags:
-        - Admin - Reviews Management
-      summary: Resolve Review Report
-      description: |
-        Admin endpoint to resolve or dismiss a review report.
-        
-        **Actions:**
-        - Resolve: Take action on the reported review
-        - Dismiss: Mark report as invalid/not actionable
-        - Under Review: Mark report as being investigated
-      operationId: resolveReviewReport
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: reportUuid
-          in: path
-          required: true
-          description: Report UUID to resolve
-          schema:
-            type: string
-            format: uuid
-          example: "9ed0e140-a0ce-44f4-b3e7-33f27fd430c8"
-      requestBody:
-        required: true
-        content:
+                '
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Reviews Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Reviews retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
           application/json:
             schema:
               type: object
-              required:
-                - status
               properties:
-                status:
-                  type: string
-                  enum: [resolved, dismissed, under_review]
-                  description: Resolution status
-                  example: "resolved"
-                resolution_note:
-                  type: string
-                  maxLength: 1000
-                  description: Admin notes on resolution
-                  example: "Review content reviewed and found to violate community guidelines. Review has been removed."
-                review_action:
-                  type: string
-                  enum: [no_action, hide_review, delete_review, warn_user]
-                  nullable: true
-                  description: Action taken on the reported review
-                  example: "hide_review"
-      responses:
-        '200':
-          description: Report resolved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/ReviewReport'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ANALYTICS AND REPORTING ENDPOINTS
-
-  /admin/reviews/analytics:
-    get:
-      tags:
-        - Admin - Reviews Analytics
-      summary: Get Review Analytics Summary
-      description: |
-        Admin endpoint for comprehensive review analytics and performance metrics.
-        
-        **Analytics Included:**
-        - Platform-wide review statistics
-        - Moderation queue metrics
-        - Engagement and quality metrics
-        - Time-based trends
-        - Product performance insights
-      operationId: getReviewAnalytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: date_from
-          in: query
-          description: Analytics start date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-01"
-        - name: date_to
-          in: query
-          description: Analytics end date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-31"
-        - name: product_id
-          in: query
-          description: Product-specific analytics
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Review analytics retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/reviews.yaml#/ReviewAnalyticsSummary'
-              examples:
-                success:
-                  summary: Comprehensive review analytics
-                  value:
-                    success: true
-                    message: "Review analytics retrieved successfully"
-                    data:
-                      total_reviews: 1547
-                      approved_reviews: 1398
-                      pending_reviews: 127
-                      rejected_reviews: 22
-                      average_rating_platform: 4.4
-                      verified_purchase_rate: 73.2
-                      photo_review_rate: 38.5
-                      total_helpful_votes: 8743
-                      reply_rate: 24.8
-                      reviews_last_30_days: 156
-                      reviews_last_7_days: 43
-                      avg_response_time_hours: 18.5
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/reviews/export:
-    get:
-      tags:
-        - Admin - Reviews Analytics
-      summary: Export Reviews Data
-      description: |
-        Admin endpoint to export review data in various formats (CSV, Excel, JSON).
-        
-        **Export Features:**
-        - Configurable date ranges
-        - Custom field selection
-        - Multiple format support
-        - Large dataset handling with streaming
-        - Scheduled export capabilities
-      operationId: exportReviewsData
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: format
-          in: query
-          required: true
-          description: Export format
-          schema:
-            type: string
-            enum: [csv, excel, json]
-          example: "csv"
-        - name: date_from
-          in: query
-          description: Export start date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-01"
-        - name: date_to
-          in: query
-          description: Export end date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-31"
-        - name: approval_status
-          in: query
-          description: Filter by approval status
-          schema:
-            type: string
-            enum: [pending, approved, rejected, spam, all]
-            default: approved
-          example: "approved"
-        - name: include_images
-          in: query
-          description: Include image URLs in export
-          schema:
-            type: boolean
-            default: false
-          example: true
-        - name: include_replies
-          in: query
-          description: Include reply data in export
-          schema:
-            type: boolean
-            default: false
-          example: true
-      responses:
-        '200':
-          description: Export file generated successfully
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-            text/csv:
-              schema:
-                type: string
-                example: |
-                  id,product_id,reviewer_name,rating,title,comment,created_at
-                  550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-11d1-80b4-00c04fd430c8,Budi Santoso,4.5,"Great Quality","Excellent product...",2024-01-15T14:20:00Z
-            application/json:
-              schema:
-                type: object
-                properties:
-                  reviews:
-                    type: array
-                    items:
-                      $ref: '../../schemas/content-management/reviews.yaml#/Review'
-          headers:
-            Content-Disposition:
-              description: Attachment filename
-              schema:
-                type: string
-                example: 'attachment; filename="reviews_export_2024-01-15.csv"'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                reviews:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Review'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Reviews Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Reviews retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+        headers:
+          Content-Disposition:
+            description: Attachment filename
+            schema:
+              type: string
+              example: attachment; filename="reviews_export_2024-01-15.csv"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'

@@ -25,13 +25,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: '../../schemas/content-management/media.yaml#/MediaFileCreateInput'
+              $ref: '#/components/schemas/MediaFileCreateInput'
             examples:
               product_image:
                 summary: Upload product image
@@ -49,11 +49,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaFileWithRelations'
+                        $ref: '#/components/schemas/MediaFileWithRelations'
                       message:
                         type: string
                         example: "File uploaded successfully"
@@ -62,7 +62,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 file_too_large:
                   summary: File size exceeds limit
@@ -79,13 +79,13 @@ paths:
                       code: "INVALID_FORMAT"
                       message: "File format not supported for this file type"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: Insufficient permissions
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
@@ -96,14 +96,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "PAYLOAD_TOO_LARGE"
                   message: "File exceeds maximum upload size"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/upload/bulk:
     post:
@@ -123,7 +123,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
@@ -163,7 +163,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -172,7 +172,7 @@ paths:
                           successful:
                             type: array
                             items:
-                              $ref: '../../schemas/content-management/media.yaml#/MediaFile'
+                              $ref: '#/components/schemas/MediaFile'
                           failed:
                             type: array
                             items:
@@ -195,13 +195,13 @@ paths:
                                 type: integer
                                 example: 2
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/files:
     get:
@@ -222,10 +222,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: folder_id
           in: query
           description: Filter by folder (null for root)
@@ -301,16 +301,16 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+                  - $ref: '#/components/schemas/PaginatedResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/media.yaml#/MediaFileWithRelations'
+                          $ref: '#/components/schemas/MediaFileWithRelations'
                       meta:
                         allOf:
-                          - $ref: '../../components/schemas.yaml#/PaginationMeta'
+                          - $ref: '#/components/schemas/PaginationMeta'
                           - type: object
                             properties:
                               filters:
@@ -331,13 +331,13 @@ paths:
                                       document: 8
                                       video: 2
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/files/{uuid}:
     get:
@@ -358,7 +358,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -380,28 +380,28 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaFileWithRelations'
+                        $ref: '#/components/schemas/MediaFileWithRelations'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media file not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "MEDIA_FILE_NOT_FOUND"
                   message: "Media file not found"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -420,7 +420,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -434,7 +434,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/media.yaml#/MediaFileUpdateInput'
+              $ref: '#/components/schemas/MediaFileUpdateInput'
             examples:
               update_metadata:
                 summary: Update file metadata
@@ -456,28 +456,28 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaFileWithRelations'
+                        $ref: '#/components/schemas/MediaFileWithRelations'
                       message:
                         type: string
                         example: "Media file updated successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media file not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -495,7 +495,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -518,7 +518,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
@@ -538,7 +538,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
@@ -548,17 +548,17 @@ paths:
                     usage_count: 3
                     usage_contexts: ["product_image", "gallery_image"]
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media file not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/files/move:
     post:
@@ -577,7 +577,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
@@ -608,7 +608,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -634,13 +634,13 @@ paths:
                         type: string
                         example: "5 files moved successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/files/{uuid}/download:
     post:
@@ -659,7 +659,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -692,7 +692,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -714,17 +714,17 @@ paths:
                             description: File size in bytes
                             example: 2048576
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media file not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # MEDIA FOLDER ENDPOINTS
@@ -746,7 +746,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: parent_id
           in: query
           description: Filter by parent folder (null for root level)
@@ -776,20 +776,20 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
                           allOf:
-                            - $ref: '../../schemas/content-management/media.yaml#/MediaFolder'
+                            - $ref: '#/components/schemas/MediaFolder'
                             - type: object
                               properties:
                                 children:
                                   type: array
                                   items:
-                                    $ref: '../../schemas/content-management/media.yaml#/MediaFolder'
+                                    $ref: '#/components/schemas/MediaFolder'
                                 file_count:
                                   type: integer
                                   example: 15
@@ -798,11 +798,11 @@ paths:
                                   format: int64
                                   example: 52428800
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -820,13 +820,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/media.yaml#/MediaFolderCreateInput'
+              $ref: '#/components/schemas/MediaFolderCreateInput'
             examples:
               root_folder:
                 summary: Create root-level folder
@@ -848,33 +848,33 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaFolder'
+                        $ref: '#/components/schemas/MediaFolder'
                       message:
                         type: string
                         example: "Media folder created successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '409':
           description: Folder name already exists in parent
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "FOLDER_EXISTS"
                   message: "Folder with this name already exists in parent directory"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/folders/{uuid}:
     get:
@@ -893,7 +893,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -909,12 +909,12 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         allOf:
-                          - $ref: '../../schemas/content-management/media.yaml#/MediaFolder'
+                          - $ref: '#/components/schemas/MediaFolder'
                           - type: object
                             properties:
                               breadcrumb:
@@ -946,17 +946,17 @@ paths:
                                     format: int64
                                     example: 104857600
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media folder not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -974,7 +974,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -988,7 +988,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/media.yaml#/MediaFolderUpdateInput'
+              $ref: '#/components/schemas/MediaFolderUpdateInput'
             examples:
               rename_folder:
                 summary: Rename folder
@@ -1007,28 +1007,28 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaFolder'
+                        $ref: '#/components/schemas/MediaFolder'
                       message:
                         type: string
                         example: "Media folder updated successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media folder not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -1046,7 +1046,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1076,7 +1076,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
@@ -1096,7 +1096,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               examples:
                 folder_not_empty:
                   summary: Folder contains files
@@ -1116,17 +1116,17 @@ paths:
                       code: "FILES_IN_USE"
                       message: "Cannot delete folder containing files that are currently in use"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media folder not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/folders/{uuid}/contents:
     get:
@@ -1145,7 +1145,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1190,7 +1190,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -1199,11 +1199,11 @@ paths:
                           folders:
                             type: array
                             items:
-                              $ref: '../../schemas/content-management/media.yaml#/MediaFolder'
+                              $ref: '#/components/schemas/MediaFolder'
                           files:
                             type: array
                             items:
-                              $ref: '../../schemas/content-management/media.yaml#/MediaFile'
+                              $ref: '#/components/schemas/MediaFile'
                           summary:
                             type: object
                             properties:
@@ -1218,17 +1218,17 @@ paths:
                                 format: int64
                                 example: 52428800
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media folder not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # MEDIA TAG ENDPOINTS
@@ -1250,7 +1250,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: category
           in: query
           description: Filter by tag category
@@ -1288,13 +1288,13 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/media.yaml#/MediaTag'
+                          $ref: '#/components/schemas/MediaTag'
                       meta:
                         type: object
                         properties:
@@ -1313,11 +1313,11 @@ paths:
                             type: integer
                             example: 25
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -1335,13 +1335,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/media.yaml#/MediaTagCreateInput'
+              $ref: '#/components/schemas/MediaTagCreateInput'
             examples:
               material_tag:
                 summary: Create material tag
@@ -1364,33 +1364,33 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaTag'
+                        $ref: '#/components/schemas/MediaTag'
                       message:
                         type: string
                         example: "Media tag created successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '409':
           description: Tag name already exists
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "TAG_EXISTS"
                   message: "Tag with this name already exists"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/tags/{uuid}:
     get:
@@ -1403,7 +1403,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1419,31 +1419,31 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         allOf:
-                          - $ref: '../../schemas/content-management/media.yaml#/MediaTag'
+                          - $ref: '#/components/schemas/MediaTag'
                           - type: object
                             properties:
                               recent_files:
                                 type: array
                                 items:
-                                  $ref: '../../schemas/content-management/media.yaml#/MediaFile'
+                                  $ref: '#/components/schemas/MediaFile'
                                 description: Recent files using this tag
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media tag not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -1455,7 +1455,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1469,7 +1469,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/media.yaml#/MediaTagUpdateInput'
+              $ref: '#/components/schemas/MediaTagUpdateInput'
             examples:
               update_tag:
                 summary: Update tag properties
@@ -1485,28 +1485,28 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaTag'
+                        $ref: '#/components/schemas/MediaTag'
                       message:
                         type: string
                         example: "Media tag updated successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media tag not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -1523,7 +1523,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1539,7 +1539,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
@@ -1552,17 +1552,17 @@ paths:
                             type: integer
                             example: 15
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media tag not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # MEDIA TRANSFORMATIONS ENDPOINTS
@@ -1583,7 +1583,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1599,25 +1599,25 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/media.yaml#/MediaTransformation'
+                          $ref: '#/components/schemas/MediaTransformation'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media file not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -1636,7 +1636,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1738,39 +1738,39 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaTransformation'
+                        $ref: '#/components/schemas/MediaTransformation'
                       message:
                         type: string
                         example: "Media transformation created successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media file not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: Transformation with this name already exists
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "TRANSFORMATION_EXISTS"
                   message: "Transformation with this name already exists for this file"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # MEDIA ANALYTICS ENDPOINTS
@@ -1793,7 +1793,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: period
           in: query
           description: Analytics time period
@@ -1830,17 +1830,17 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/media.yaml#/MediaAnalyticsSummary'
+                        $ref: '#/components/schemas/MediaAnalyticsSummary'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /media/files/{uuid}/usage:
     get:
@@ -1859,7 +1859,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: uuid
           in: path
           required: true
@@ -1875,7 +1875,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -1884,7 +1884,7 @@ paths:
                           usage_records:
                             type: array
                             items:
-                              $ref: '../../schemas/content-management/media.yaml#/MediaUsage'
+                              $ref: '#/components/schemas/MediaUsage'
                           summary:
                             type: object
                             properties:
@@ -1904,14 +1904,14 @@ paths:
                                 example: false
                                 description: Whether file can be safely deleted
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
           description: Media file not found
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'

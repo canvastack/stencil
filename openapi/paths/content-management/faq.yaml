@@ -1,970 +1,1054 @@
-# FAQ Module API Paths for Stencil CMS
-# Complete CRUD operations for FAQ Management System (20+ endpoints)
-  /faq:
-    get:
-      tags:
-        - FAQ Management
-      summary: Get FAQ Page Content
-      description: |
-        Retrieve complete FAQ page content with categorized questions and answers.
-        
-        **Features:**
-        - Questions grouped by categories with custom ordering
-        - Featured questions prominently displayed
-        - Search-friendly structured content
-        - Analytics tracking for popular questions
-        - Multi-language content support
-      operationId: getFAQPage
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/AcceptLanguage'
-      responses:
-        '200':
-          description: FAQ page content retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/faq.yaml#/FAQPageData'
-              examples:
-                success:
-                  summary: Complete FAQ page content
-                  value:
-                    success: true
-                    message: "FAQ page content retrieved successfully"
-                    data:
-                      page:
-                        id: 4
-                        slug: "faq"
-                        title: "Frequently Asked Questions"
-                        metaDescription: "Find answers to common questions about our products and services"
-                      hero:
-                        title: "Frequently Asked Questions"
-                        subtitle: "Find answers to common questions"
-                        searchPlaceholder: "Search for answers..."
-                      categories:
-                        - id: 1
-                          categoryName: "General"
-                          iconName: "HelpCircle"
-                          description: "General questions about our company"
-                          displayOrder: 1
-                          questionCount: 5
-                          questions:
-                            - id: 1
-                              question: "What are your business hours?"
-                              answer: "We are open Monday to Friday, 9:00 AM - 5:00 PM"
-                              isFeatured: true
-                              viewCount: 245
-                              helpfulCount: 189
-                        - id: 2
-                          categoryName: "Products"
-                          iconName: "Package"
-                          description: "Questions about our products and services"
-                          displayOrder: 2
-                          questionCount: 8
-                          questions:
-                            - id: 5
-                              question: "How do I place an order?"
-                              answer: "You can place an order through our online catalog..."
-                              isFeatured: false
-                              viewCount: 156
-                              helpfulCount: 134
-                      cta:
-                        title: "Still have questions?"
-                        subtitle: "Contact our support team for personalized assistance"
-                        buttonText: "Contact Support"
-                        buttonLink: "/contact"
-                        enabled: true
-                    meta:
-                      tenant: "main"
-                      timestamp: "2024-01-15T10:30:00Z"
-                      version: "1.0"
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+/faq:
+  get:
+    tags:
+    - FAQ Management
+    summary: Get FAQ Page Content
+    description: 'Retrieve complete FAQ page content with categorized questions and
+      answers.
 
-  /faq/categories:
-    get:
-      tags:
-        - FAQ Management
-      summary: List FAQ Categories
-      description: |
-        Retrieve all FAQ categories with question count and basic information.
-        Used for category navigation and filtering.
-      operationId: listFAQCategories
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/AcceptLanguage'
-      responses:
-        '200':
-          description: FAQ categories retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '../../schemas/content-management/faq.yaml#/FAQCategory'
-              examples:
-                success:
-                  summary: List of FAQ categories
-                  value:
-                    success: true
-                    message: "FAQ categories retrieved successfully"
-                    data:
-                      - id: 1
-                        categoryName: "General"
-                        iconName: "HelpCircle"
-                        description: "General questions about our company"
-                        questionCount: 5
-                        displayOrder: 1
-                      - id: 2
-                        categoryName: "Products"
-                        iconName: "Package"
-                        description: "Questions about our products and services"
-                        questionCount: 8
-                        displayOrder: 2
-                    meta:
-                      tenant: "main"
-                      timestamp: "2024-01-15T10:30:00Z"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-  /faq/search:
-    get:
-      tags:
-        - FAQ Management
-      summary: Search FAQ Content
-      description: |
-        Full-text search across questions and answers with relevance scoring.
-        
-        **Search Features:**
-        - Searches both questions and answers with weighted relevance
-        - Optional category filtering for targeted results
-        - Auto-complete suggestions for common queries
-        - Search analytics tracking for content optimization
-        - Highlighted search terms in results
-      operationId: searchFAQ
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: q
-          in: query
-          required: true
-          description: Search query string (minimum 2 characters)
-          schema:
-            type: string
-            minLength: 2
-            maxLength: 100
-          example: "shipping policy"
-        - name: categoryId
-          in: query
-          description: Filter results by specific category
-          schema:
-            type: integer
-            minimum: 1
-          example: 2
-        - name: limit
-          in: query
-          description: Maximum number of results to return
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 50
-            default: 10
-          example: 10
-      responses:
-        '200':
-          description: Search results retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/faq.yaml#/FAQSearchResults'
-              examples:
-                success:
-                  summary: FAQ search results
-                  value:
-                    success: true
-                    message: "Search completed successfully"
-                    data:
-                      query: "shipping policy"
-                      totalResults: 3
-                      executionTime: 0.045
-                      results:
-                        - id: 15
-                          question: "What is your shipping policy?"
-                          answer: "We offer free shipping on orders over $50..."
-                          categoryId: 3
-                          categoryName: "Shipping"
-                          relevanceScore: 0.95
-                          highlightedQuestion: "What is your <mark>shipping</mark> <mark>policy</mark>?"
-                          highlightedAnswer: "We offer free <mark>shipping</mark> on orders..."
-                        - id: 23
-                          question: "How long does shipping take?"
-                          answer: "Standard shipping takes 3-5 business days..."
-                          categoryId: 3
-                          categoryName: "Shipping"
-                          relevanceScore: 0.78
-                          highlightedQuestion: "How long does <mark>shipping</mark> take?"
-                          highlightedAnswer: "Standard <mark>shipping</mark> takes 3-5 business days..."
-                      suggestions:
-                        - "shipping cost"
-                        - "shipping time"
-                        - "international shipping"
-                    meta:
-                      tenant: "main"
-                      timestamp: "2024-01-15T10:30:00Z"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      **Features:**
 
-  /faq/{faqId}/helpful:
-    post:
-      tags:
-        - FAQ Management
-      summary: Mark FAQ as Helpful
-      description: |
-        Record positive feedback for an FAQ item by incrementing its helpful counter.
-        
-        **Rate Limiting & Tracking:**
-        - IP-based tracking prevents multiple votes from same user
-        - Each FAQ can be marked helpful only once per IP address
-        - Analytics data collected for content optimization
-        - Helps identify most valuable FAQ content
-      operationId: markFAQHelpful
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: faqId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ item
-          schema:
-            type: integer
-            minimum: 1
-          example: 15
-      responses:
-        '200':
-          description: Feedback recorded successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          helpfulCount:
-                            type: integer
-                            description: Updated helpful count
-                            example: 253
-                          alreadyVoted:
-                            type: boolean
-                            description: Whether user already voted
-                            example: false
-              examples:
-                success:
-                  summary: Feedback recorded
-                  value:
-                    success: true
-                    message: "Thank you for your feedback!"
-                    data:
-                      helpfulCount: 253
-                      alreadyVoted: false
-                already_voted:
-                  summary: User already voted
-                  value:
-                    success: true
-                    message: "You have already marked this FAQ as helpful"
-                    data:
-                      helpfulCount: 252
-                      alreadyVoted: true
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '429':
-          $ref: '../../components/responses.yaml#/RateLimitExceeded'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      - Questions grouped by categories with custom ordering
 
-  /faq/{faqId}/not-helpful:
-    post:
-      tags:
-        - FAQ Management
-      summary: Mark FAQ as Not Helpful
-      description: |
-        Record negative feedback for an FAQ item with optional improvement suggestions.
-        Used for content quality improvement and identifying areas needing clarification.
-      operationId: markFAQNotHelpful
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: faqId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ item
-          schema:
-            type: integer
-            minimum: 1
-          example: 15
-      requestBody:
+      - Featured questions prominently displayed
+
+      - Search-friendly structured content
+
+      - Analytics tracking for popular questions
+
+      - Multi-language content support
+
+      '
+    operationId: getFAQPage
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/AcceptLanguage'
+    responses:
+      '200':
+        description: FAQ page content retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/faq.yaml#/FAQFeedbackInput'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FAQPageData'
             examples:
-              with_feedback:
-                summary: Feedback with improvement suggestion
+              success:
+                summary: Complete FAQ page content
                 value:
-                  reason: "unclear"
-                  comment: "The answer doesn't explain international shipping options"
-              simple_feedback:
-                summary: Simple negative feedback
-                value:
-                  reason: "outdated"
-      responses:
-        '200':
-          description: Feedback recorded successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          notHelpfulCount:
-                            type: integer
-                            description: Updated not helpful count
-                            example: 12
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '429':
-          $ref: '../../components/responses.yaml#/RateLimitExceeded'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/faq/categories:
-    get:
-      tags:
-        - FAQ Management
-      summary: List FAQ Categories (Admin)
-      description: |
-        Retrieve all FAQ categories with detailed admin information including
-        creation timestamps, question counts, and display order settings.
-      operationId: adminListFAQCategories
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      responses:
-        '200':
-          description: FAQ categories retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '../../schemas/content-management/faq.yaml#/FAQCategoryAdmin'
-              examples:
-                success:
-                  summary: Admin categories list
-                  value:
-                    success: true
-                    message: "FAQ categories retrieved successfully"
-                    data:
+                  success: true
+                  message: FAQ page content retrieved successfully
+                  data:
+                    page:
+                      id: 4
+                      slug: faq
+                      title: Frequently Asked Questions
+                      metaDescription: Find answers to common questions about our
+                        products and services
+                    hero:
+                      title: Frequently Asked Questions
+                      subtitle: Find answers to common questions
+                      searchPlaceholder: Search for answers...
+                    categories:
+                    - id: 1
+                      categoryName: General
+                      iconName: HelpCircle
+                      description: General questions about our company
+                      displayOrder: 1
+                      questionCount: 5
+                      questions:
                       - id: 1
-                        categoryName: "General"
-                        iconName: "HelpCircle"
-                        description: "General questions about our company"
-                        questionCount: 5
-                        displayOrder: 1
-                        isVisible: true
-                        createdAt: "2024-01-10T09:00:00Z"
-                        updatedAt: "2024-01-15T14:30:00Z"
-                      - id: 2
-                        categoryName: "Products"
-                        iconName: "Package"
-                        description: "Questions about products and services"
-                        questionCount: 8
-                        displayOrder: 2
-                        isVisible: true
-                        createdAt: "2024-01-10T09:15:00Z"
-                        updatedAt: "2024-01-12T11:20:00Z"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    post:
-      tags:
-        - FAQ Management
-      summary: Create FAQ Category
-      description: |
-        Create a new FAQ category with custom ordering and icon settings.
-        Categories help organize questions by topic for better user navigation.
-      operationId: createFAQCategory
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/faq.yaml#/FAQCategoryInput'
-            examples:
-              basic_category:
-                summary: Basic category creation
-                value:
-                  categoryName: "Billing"
-                  iconName: "CreditCard"
-                  description: "Questions about billing and payments"
-                  displayOrder: 3
-              advanced_category:
-                summary: Category with custom settings
-                value:
-                  categoryName: "Technical Support"
-                  iconName: "Settings"
-                  description: "Technical questions and troubleshooting guides"
-                  displayOrder: 4
-                  isVisible: true
-                  color: "#2563eb"
-      responses:
-        '201':
-          $ref: '../../components/responses.yaml#/CreatedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '409':
-          $ref: '../../components/responses.yaml#/Conflict'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/faq/categories/{categoryId}:
-    get:
-      tags:
-        - FAQ Management
-      summary: Get FAQ Category Details
-      description: Retrieve detailed information about a specific FAQ category
-      operationId: getFAQCategory
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: categoryId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ category
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-      responses:
-        '200':
-          description: FAQ category retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/faq.yaml#/FAQCategoryAdmin'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    put:
-      tags:
-        - FAQ Management
-      summary: Update FAQ Category
-      description: |
-        Update an existing FAQ category's properties including name, icon, 
-        description, display order, and visibility settings.
-      operationId: updateFAQCategory
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: categoryId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ category
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/faq.yaml#/FAQCategoryInput'
-      responses:
-        '200':
-          $ref: '../../components/responses.yaml#/UpdatedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '409':
-          $ref: '../../components/responses.yaml#/Conflict'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    delete:
-      tags:
-        - FAQ Management
-      summary: Delete FAQ Category
-      description: |
-        Delete an FAQ category. All questions in this category will be moved
-        to a default "Uncategorized" category or deleted based on configuration.
-      operationId: deleteFAQCategory
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: categoryId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ category
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-        - name: moveQuestionsTo
-          in: query
-          description: Category ID to move existing questions to (optional)
-          schema:
-            type: integer
-            minimum: 1
-          example: 2
-      responses:
-        '200':
-          $ref: '../../components/responses.yaml#/DeletedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '409':
-          $ref: '../../components/responses.yaml#/Conflict'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/faq/questions:
-    get:
-      tags:
-        - FAQ Management
-      summary: List FAQ Questions (Admin)
-      description: |
-        Retrieve FAQ questions with advanced filtering, sorting, and pagination.
-        Includes analytics data like view counts and helpfulness ratings.
-        
-        **Admin Features:**
-        - Filter by category, featured status, or visibility
-        - Sort by popularity, creation date, or alphabetical order
-        - Search within questions and answers
-        - Bulk operations support
-      operationId: adminListFAQQuestions
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
-        - name: categoryId
-          in: query
-          description: Filter by category ID
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-        - name: featured
-          in: query
-          description: Filter by featured status
-          schema:
-            type: boolean
-          example: true
-        - name: search
-          in: query
-          description: Search in questions and answers
-          schema:
-            type: string
-            maxLength: 100
-          example: "shipping"
-        - name: status
-          in: query
-          description: Filter by visibility status
-          schema:
-            type: string
-            enum: [published, draft, archived]
-          example: published
-      responses:
-        '200':
-          description: FAQ questions retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '../../schemas/content-management/faq.yaml#/FAQItemAdmin'
-                      meta:
-                        allOf:
-                          - $ref: '../../components/schemas.yaml#/PaginationMeta'
-                          - type: object
-                            properties:
-                              filters:
-                                type: object
-                                properties:
-                                  totalQuestions:
-                                    type: integer
-                                  publishedCount:
-                                    type: integer
-                                  draftCount:
-                                    type: integer
-                                  featuredCount:
-                                    type: integer
-              examples:
-                success:
-                  summary: Paginated FAQ questions
-                  value:
-                    success: true
-                    message: "FAQ questions retrieved successfully"
-                    data:
-                      - id: 1
-                        question: "What are your business hours?"
-                        answer: "We are open Monday to Friday, 9:00 AM - 5:00 PM"
-                        categoryId: 1
-                        categoryName: "General"
+                        question: What are your business hours?
+                        answer: We are open Monday to Friday, 9:00 AM - 5:00 PM
                         isFeatured: true
-                        status: "published"
-                        displayOrder: 1
                         viewCount: 245
                         helpfulCount: 189
-                        notHelpfulCount: 5
-                        createdAt: "2024-01-10T09:30:00Z"
-                        updatedAt: "2024-01-15T14:30:00Z"
-                    meta:
-                      pagination:
-                        page: 1
-                        perPage: 20
-                        total: 45
-                        totalPages: 3
-                      filters:
-                        totalQuestions: 45
-                        publishedCount: 42
-                        draftCount: 3
-                        featuredCount: 8
-                      tenant: "main"
-                      timestamp: "2024-01-15T15:00:00Z"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                    - id: 2
+                      categoryName: Products
+                      iconName: Package
+                      description: Questions about our products and services
+                      displayOrder: 2
+                      questionCount: 8
+                      questions:
+                      - id: 5
+                        question: How do I place an order?
+                        answer: You can place an order through our online catalog...
+                        isFeatured: false
+                        viewCount: 156
+                        helpfulCount: 134
+                    cta:
+                      title: Still have questions?
+                      subtitle: Contact our support team for personalized assistance
+                      buttonText: Contact Support
+                      buttonLink: /contact
+                      enabled: true
+                  meta:
+                    tenant: main
+                    timestamp: '2024-01-15T10:30:00Z'
+                    version: '1.0'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/faq/categories:
+  get:
+    tags:
+    - FAQ Management
+    summary: List FAQ Categories
+    description: 'Retrieve all FAQ categories with question count and basic information.
 
-    post:
-      tags:
-        - FAQ Management
-      summary: Create FAQ Question
-      description: |
-        Create a new FAQ question with rich text answer and categorization.
-        Supports markdown formatting and media attachments in answers.
-      operationId: createFAQQuestion
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+      Used for category navigation and filtering.
+
+      '
+    operationId: listFAQCategories
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/AcceptLanguage'
+    responses:
+      '200':
+        description: FAQ categories retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/faq.yaml#/FAQItemInput'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FAQCategory'
             examples:
-              basic_question:
-                summary: Basic FAQ question
+              success:
+                summary: List of FAQ categories
                 value:
-                  categoryId: 1
-                  question: "How do I reset my password?"
-                  answer: "You can reset your password by clicking 'Forgot Password' on the login page..."
-                  isFeatured: false
-                  status: "published"
-              featured_question:
-                summary: Featured FAQ with rich content
-                value:
-                  categoryId: 2
-                  question: "What payment methods do you accept?"
-                  answer: "We accept all major credit cards, PayPal, and bank transfers. **Note:** Processing times may vary by payment method."
-                  isFeatured: true
-                  status: "published"
-                  displayOrder: 1
-                  tags: ["payments", "billing", "cards"]
-      responses:
-        '201':
-          $ref: '../../components/responses.yaml#/CreatedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                  success: true
+                  message: FAQ categories retrieved successfully
+                  data:
+                  - id: 1
+                    categoryName: General
+                    iconName: HelpCircle
+                    description: General questions about our company
+                    questionCount: 5
+                    displayOrder: 1
+                  - id: 2
+                    categoryName: Products
+                    iconName: Package
+                    description: Questions about our products and services
+                    questionCount: 8
+                    displayOrder: 2
+                  meta:
+                    tenant: main
+                    timestamp: '2024-01-15T10:30:00Z'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/faq/search:
+  get:
+    tags:
+    - FAQ Management
+    summary: Search FAQ Content
+    description: 'Full-text search across questions and answers with relevance scoring.
 
-  /admin/faq/questions/{questionId}:
-    get:
-      tags:
-        - FAQ Management
-      summary: Get FAQ Question Details
-      description: Retrieve detailed information about a specific FAQ question including analytics
-      operationId: getFAQQuestion
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: questionId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ question
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-      responses:
-        '200':
-          description: FAQ question retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/faq.yaml#/FAQItemAdmin'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-    put:
-      tags:
-        - FAQ Management
-      summary: Update FAQ Question
-      description: |
-        Update an existing FAQ question including content, categorization, 
-        and display settings. Maintains version history for content changes.
-      operationId: updateFAQQuestion
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: questionId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ question
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-      requestBody:
-        required: true
+      **Search Features:**
+
+      - Searches both questions and answers with weighted relevance
+
+      - Optional category filtering for targeted results
+
+      - Auto-complete suggestions for common queries
+
+      - Search analytics tracking for content optimization
+
+      - Highlighted search terms in results
+
+      '
+    operationId: searchFAQ
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: q
+      in: query
+      required: true
+      description: Search query string (minimum 2 characters)
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 100
+      example: shipping policy
+    - name: categoryId
+      in: query
+      description: Filter results by specific category
+      schema:
+        type: integer
+        minimum: 1
+      example: 2
+    - name: limit
+      in: query
+      description: Maximum number of results to return
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 10
+      example: 10
+    responses:
+      '200':
+        description: Search results retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/faq.yaml#/FAQItemInput'
-      responses:
-        '200':
-          $ref: '../../components/responses.yaml#/UpdatedResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FAQSearchResults'
+            examples:
+              success:
+                summary: FAQ search results
+                value:
+                  success: true
+                  message: Search completed successfully
+                  data:
+                    query: shipping policy
+                    totalResults: 3
+                    executionTime: 0.045
+                    results:
+                    - id: 15
+                      question: What is your shipping policy?
+                      answer: We offer free shipping on orders over $50...
+                      categoryId: 3
+                      categoryName: Shipping
+                      relevanceScore: 0.95
+                      highlightedQuestion: What is your <mark>shipping</mark> <mark>policy</mark>?
+                      highlightedAnswer: We offer free <mark>shipping</mark> on orders...
+                    - id: 23
+                      question: How long does shipping take?
+                      answer: Standard shipping takes 3-5 business days...
+                      categoryId: 3
+                      categoryName: Shipping
+                      relevanceScore: 0.78
+                      highlightedQuestion: How long does <mark>shipping</mark> take?
+                      highlightedAnswer: Standard <mark>shipping</mark> takes 3-5
+                        business days...
+                    suggestions:
+                    - shipping cost
+                    - shipping time
+                    - international shipping
+                  meta:
+                    tenant: main
+                    timestamp: '2024-01-15T10:30:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/faq/{faqId}/helpful:
+  post:
+    tags:
+    - FAQ Management
+    summary: Mark FAQ as Helpful
+    description: 'Record positive feedback for an FAQ item by incrementing its helpful
+      counter.
 
-    delete:
-      tags:
-        - FAQ Management
-      summary: Delete FAQ Question
-      description: |
-        Delete an FAQ question. This action is irreversible and will remove
-        all associated analytics data including view counts and feedback.
-      operationId: deleteFAQQuestion
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: questionId
-          in: path
-          required: true
-          description: Unique identifier of the FAQ question
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-      responses:
-        '200':
-          $ref: '../../components/responses.yaml#/DeletedResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-  /admin/faq/analytics:
-    get:
-      tags:
-        - FAQ Management
-      summary: Get FAQ Analytics Data
-      description: |
-        Retrieve comprehensive analytics for FAQ content including popular questions,
-        search queries, user feedback trends, and content performance metrics.
-      operationId: getFAQAnalytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: timeframe
-          in: query
-          description: Analytics time period
-          schema:
-            type: string
-            enum: [7d, 30d, 90d, 1y, all]
-            default: 30d
-          example: 30d
-        - name: categoryId
-          in: query
-          description: Filter analytics by category
-          schema:
-            type: integer
-            minimum: 1
-          example: 1
-      responses:
-        '200':
-          description: FAQ analytics retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
+      **Rate Limiting & Tracking:**
+
+      - IP-based tracking prevents multiple votes from same user
+
+      - Each FAQ can be marked helpful only once per IP address
+
+      - Analytics data collected for content optimization
+
+      - Helps identify most valuable FAQ content
+
+      '
+    operationId: markFAQHelpful
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: faqId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ item
+      schema:
+        type: integer
+        minimum: 1
+      example: 15
+    responses:
+      '200':
+        description: Feedback recorded successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
                     properties:
-                      data:
-                        $ref: '../../schemas/content-management/faq.yaml#/FAQAnalytics'
-              examples:
-                success:
-                  summary: FAQ analytics overview
-                  value:
-                    success: true
-                    message: "FAQ analytics retrieved successfully"
-                    data:
-                      overview:
-                        totalQuestions: 45
-                        totalViews: 12456
-                        totalSearches: 3245
-                        averageHelpfulRating: 0.87
-                        timeframe: "30d"
-                      popularQuestions:
-                        - id: 1
-                          question: "What are your business hours?"
-                          views: 245
-                          helpfulVotes: 189
-                          helpfulRatio: 0.88
-                        - id: 5
-                          question: "How do I place an order?"
-                          views: 156
-                          helpfulVotes: 134
-                          helpfulRatio: 0.92
-                      topSearchQueries:
-                        - query: "shipping"
-                          count: 156
-                          resultsFound: 8
-                        - query: "refund policy"
-                          count: 89
-                          resultsFound: 3
-                      categoryPerformance:
-                        - categoryId: 1
-                          categoryName: "General"
-                          questionCount: 5
-                          totalViews: 856
-                          avgHelpfulRating: 0.89
-                        - categoryId: 2
-                          categoryName: "Products"
-                          questionCount: 8
-                          totalViews: 1234
-                          avgHelpfulRating: 0.91
-                    meta:
-                      generatedAt: "2024-01-15T15:00:00Z"
-                      tenant: "main"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                      helpfulCount:
+                        type: integer
+                        description: Updated helpful count
+                        example: 253
+                      alreadyVoted:
+                        type: boolean
+                        description: Whether user already voted
+                        example: false
+            examples:
+              success:
+                summary: Feedback recorded
+                value:
+                  success: true
+                  message: Thank you for your feedback!
+                  data:
+                    helpfulCount: 253
+                    alreadyVoted: false
+              already_voted:
+                summary: User already voted
+                value:
+                  success: true
+                  message: You have already marked this FAQ as helpful
+                  data:
+                    helpfulCount: 252
+                    alreadyVoted: true
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/faq/{faqId}/not-helpful:
+  post:
+    tags:
+    - FAQ Management
+    summary: Mark FAQ as Not Helpful
+    description: 'Record negative feedback for an FAQ item with optional improvement
+      suggestions.
+
+      Used for content quality improvement and identifying areas needing clarification.
+
+      '
+    operationId: markFAQNotHelpful
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: faqId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ item
+      schema:
+        type: integer
+        minimum: 1
+      example: 15
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FAQFeedbackInput'
+          examples:
+            with_feedback:
+              summary: Feedback with improvement suggestion
+              value:
+                reason: unclear
+                comment: The answer doesn't explain international shipping options
+            simple_feedback:
+              summary: Simple negative feedback
+              value:
+                reason: outdated
+    responses:
+      '200':
+        description: Feedback recorded successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      notHelpfulCount:
+                        type: integer
+                        description: Updated not helpful count
+                        example: 12
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Faq posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/faq/categories:
+  get:
+    tags:
+    - FAQ Management
+    summary: List FAQ Categories (Admin)
+    description: 'Retrieve all FAQ categories with detailed admin information including
+
+      creation timestamps, question counts, and display order settings.
+
+      '
+    operationId: adminListFAQCategories
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    responses:
+      '200':
+        description: FAQ categories retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FAQCategoryAdmin'
+            examples:
+              success:
+                summary: Admin categories list
+                value:
+                  success: true
+                  message: FAQ categories retrieved successfully
+                  data:
+                  - id: 1
+                    categoryName: General
+                    iconName: HelpCircle
+                    description: General questions about our company
+                    questionCount: 5
+                    displayOrder: 1
+                    isVisible: true
+                    createdAt: '2024-01-10T09:00:00Z'
+                    updatedAt: '2024-01-15T14:30:00Z'
+                  - id: 2
+                    categoryName: Products
+                    iconName: Package
+                    description: Questions about products and services
+                    questionCount: 8
+                    displayOrder: 2
+                    isVisible: true
+                    createdAt: '2024-01-10T09:15:00Z'
+                    updatedAt: '2024-01-12T11:20:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - FAQ Management
+    summary: Create FAQ Category
+    description: 'Create a new FAQ category with custom ordering and icon settings.
+
+      Categories help organize questions by topic for better user navigation.
+
+      '
+    operationId: createFAQCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FAQCategoryInput'
+          examples:
+            basic_category:
+              summary: Basic category creation
+              value:
+                categoryName: Billing
+                iconName: CreditCard
+                description: Questions about billing and payments
+                displayOrder: 3
+            advanced_category:
+              summary: Category with custom settings
+              value:
+                categoryName: Technical Support
+                iconName: Settings
+                description: Technical questions and troubleshooting guides
+                displayOrder: 4
+                isVisible: true
+                color: '#2563eb'
+    responses:
+      '201':
+        $ref: '#/components/responses/CreatedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        $ref: '#/components/responses/Conflict'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/faq/categories/{categoryId}:
+  get:
+    tags:
+    - FAQ Management
+    summary: Get FAQ Category Details
+    description: Retrieve detailed information about a specific FAQ category
+    operationId: getFAQCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: categoryId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        description: FAQ category retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FAQCategoryAdmin'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Faq Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Faq retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - FAQ Management
+    summary: Update FAQ Category
+    description: "Update an existing FAQ category's properties including name, icon,\
+      \ \ndescription, display order, and visibility settings.\n"
+    operationId: updateFAQCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: categoryId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FAQCategoryInput'
+          example:
+            title: Updated Faq Title
+            description: Updated description for faq
+            is_active: true
+    responses:
+      '200':
+        $ref: '#/components/responses/UpdatedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '409':
+        $ref: '#/components/responses/Conflict'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - FAQ Management
+    summary: Delete FAQ Category
+    description: 'Delete an FAQ category. All questions in this category will be moved
+
+      to a default "Uncategorized" category or deleted based on configuration.
+
+      '
+    operationId: deleteFAQCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: categoryId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    - name: moveQuestionsTo
+      in: query
+      description: Category ID to move existing questions to (optional)
+      schema:
+        type: integer
+        minimum: 1
+      example: 2
+    responses:
+      '200':
+        $ref: '#/components/responses/DeletedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '409':
+        $ref: '#/components/responses/Conflict'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/faq/questions:
+  get:
+    tags:
+    - FAQ Management
+    summary: List FAQ Questions (Admin)
+    description: 'Retrieve FAQ questions with advanced filtering, sorting, and pagination.
+
+      Includes analytics data like view counts and helpfulness ratings.
+
+
+      **Admin Features:**
+
+      - Filter by category, featured status, or visibility
+
+      - Sort by popularity, creation date, or alphabetical order
+
+      - Search within questions and answers
+
+      - Bulk operations support
+
+      '
+    operationId: adminListFAQQuestions
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: categoryId
+      in: query
+      description: Filter by category ID
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    - name: featured
+      in: query
+      description: Filter by featured status
+      schema:
+        type: boolean
+      example: true
+    - name: search
+      in: query
+      description: Search in questions and answers
+      schema:
+        type: string
+        maxLength: 100
+      example: shipping
+    - name: status
+      in: query
+      description: Filter by visibility status
+      schema:
+        type: string
+        enum:
+        - published
+        - draft
+        - archived
+      example: published
+    responses:
+      '200':
+        description: FAQ questions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FAQItemAdmin'
+                  meta:
+                    allOf:
+                    - $ref: '#/components/schemas/PaginationMeta'
+                    - type: object
+                      properties:
+                        filters:
+                          type: object
+                          properties:
+                            totalQuestions:
+                              type: integer
+                            publishedCount:
+                              type: integer
+                            draftCount:
+                              type: integer
+                            featuredCount:
+                              type: integer
+            examples:
+              success:
+                summary: Paginated FAQ questions
+                value:
+                  success: true
+                  message: FAQ questions retrieved successfully
+                  data:
+                  - id: 1
+                    question: What are your business hours?
+                    answer: We are open Monday to Friday, 9:00 AM - 5:00 PM
+                    categoryId: 1
+                    categoryName: General
+                    isFeatured: true
+                    status: published
+                    displayOrder: 1
+                    viewCount: 245
+                    helpfulCount: 189
+                    notHelpfulCount: 5
+                    createdAt: '2024-01-10T09:30:00Z'
+                    updatedAt: '2024-01-15T14:30:00Z'
+                  meta:
+                    pagination:
+                      page: 1
+                      perPage: 20
+                      total: 45
+                      totalPages: 3
+                    filters:
+                      totalQuestions: 45
+                      publishedCount: 42
+                      draftCount: 3
+                      featuredCount: 8
+                    tenant: main
+                    timestamp: '2024-01-15T15:00:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - FAQ Management
+    summary: Create FAQ Question
+    description: 'Create a new FAQ question with rich text answer and categorization.
+
+      Supports markdown formatting and media attachments in answers.
+
+      '
+    operationId: createFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FAQItemInput'
+          examples:
+            basic_question:
+              summary: Basic FAQ question
+              value:
+                categoryId: 1
+                question: How do I reset my password?
+                answer: You can reset your password by clicking 'Forgot Password'
+                  on the login page...
+                isFeatured: false
+                status: published
+            featured_question:
+              summary: Featured FAQ with rich content
+              value:
+                categoryId: 2
+                question: What payment methods do you accept?
+                answer: We accept all major credit cards, PayPal, and bank transfers.
+                  **Note:** Processing times may vary by payment method.
+                isFeatured: true
+                status: published
+                displayOrder: 1
+                tags:
+                - payments
+                - billing
+                - cards
+    responses:
+      '201':
+        $ref: '#/components/responses/CreatedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/faq/questions/{questionId}:
+  get:
+    tags:
+    - FAQ Management
+    summary: Get FAQ Question Details
+    description: Retrieve detailed information about a specific FAQ question including
+      analytics
+    operationId: getFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: questionId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ question
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        description: FAQ question retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FAQItemAdmin'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Faq Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Faq retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - FAQ Management
+    summary: Update FAQ Question
+    description: "Update an existing FAQ question including content, categorization,\
+      \ \nand display settings. Maintains version history for content changes.\n"
+    operationId: updateFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: questionId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ question
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FAQItemInput'
+          example:
+            title: Updated Faq Title
+            description: Updated description for faq
+            is_active: true
+    responses:
+      '200':
+        $ref: '#/components/responses/UpdatedResponse'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - FAQ Management
+    summary: Delete FAQ Question
+    description: 'Delete an FAQ question. This action is irreversible and will remove
+
+      all associated analytics data including view counts and feedback.
+
+      '
+    operationId: deleteFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: questionId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ question
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        $ref: '#/components/responses/DeletedResponse'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/faq/analytics:
+  get:
+    tags:
+    - FAQ Management
+    summary: Get FAQ Analytics Data
+    description: 'Retrieve comprehensive analytics for FAQ content including popular
+      questions,
+
+      search queries, user feedback trends, and content performance metrics.
+
+      '
+    operationId: getFAQAnalytics
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: timeframe
+      in: query
+      description: Analytics time period
+      schema:
+        type: string
+        enum:
+        - 7d
+        - 30d
+        - 90d
+        - 1y
+        - all
+        default: 30d
+      example: 30d
+    - name: categoryId
+      in: query
+      description: Filter analytics by category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        description: FAQ analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FAQAnalytics'
+            examples:
+              success:
+                summary: FAQ analytics overview
+                value:
+                  success: true
+                  message: FAQ analytics retrieved successfully
+                  data:
+                    overview:
+                      totalQuestions: 45
+                      totalViews: 12456
+                      totalSearches: 3245
+                      averageHelpfulRating: 0.87
+                      timeframe: 30d
+                    popularQuestions:
+                    - id: 1
+                      question: What are your business hours?
+                      views: 245
+                      helpfulVotes: 189
+                      helpfulRatio: 0.88
+                    - id: 5
+                      question: How do I place an order?
+                      views: 156
+                      helpfulVotes: 134
+                      helpfulRatio: 0.92
+                    topSearchQueries:
+                    - query: shipping
+                      count: 156
+                      resultsFound: 8
+                    - query: refund policy
+                      count: 89
+                      resultsFound: 3
+                    categoryPerformance:
+                    - categoryId: 1
+                      categoryName: General
+                      questionCount: 5
+                      totalViews: 856
+                      avgHelpfulRating: 0.89
+                    - categoryId: 2
+                      categoryName: Products
+                      questionCount: 8
+                      totalViews: 1234
+                      avgHelpfulRating: 0.91
+                  meta:
+                    generatedAt: '2024-01-15T15:00:00Z'
+                    tenant: main
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'

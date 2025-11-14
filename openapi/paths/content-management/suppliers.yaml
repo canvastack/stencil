@@ -25,10 +25,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: search
           in: query
           description: Search in supplier name, code, company name
@@ -116,15 +116,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierListResponse'
+                $ref: '#/components/schemas/SupplierListResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -143,13 +143,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierCreateInput'
+              $ref: '#/components/schemas/SupplierCreateInput'
             examples:
               steel_supplier:
                 summary: Steel manufacturing supplier
@@ -184,33 +184,33 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+                        $ref: '#/components/schemas/Supplier'
                       message:
                         type: string
                         example: "Supplier created successfully and pending approval"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '409':
           description: Supplier code already exists
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "SUPPLIER_CODE_EXISTS"
                   message: "Supplier code already exists in this tenant"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /suppliers/{supplier_id}:
     get:
@@ -229,7 +229,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -252,19 +252,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+                        $ref: '#/components/schemas/Supplier'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -282,7 +282,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -296,7 +296,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierUpdateInput'
+              $ref: '#/components/schemas/SupplierUpdateInput'
             examples:
               update_rating:
                 summary: Update supplier performance ratings
@@ -319,24 +319,24 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+                        $ref: '#/components/schemas/Supplier'
                       message:
                         type: string
                         example: "Supplier information updated successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -354,7 +354,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -377,31 +377,31 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
                         type: string
                         example: "Supplier deleted successfully"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '409':
           description: Cannot delete supplier with active quotations
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "SUPPLIER_HAS_ACTIVE_QUOTATIONS"
                   message: "Cannot delete supplier with active quotations"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # SUPPLIER CONTACTS ENDPOINTS
@@ -423,7 +423,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -451,15 +451,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContactListResponse'
+                $ref: '#/components/schemas/SupplierContactListResponse'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -476,7 +476,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -490,7 +490,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContactCreateInput'
+              $ref: '#/components/schemas/SupplierContactCreateInput'
             examples:
               sales_contact:
                 summary: Sales contact person
@@ -514,24 +514,24 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContact'
+                        $ref: '#/components/schemas/SupplierContact'
                       message:
                         type: string
                         example: "Supplier contact added successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /suppliers/{supplier_id}/contacts/{contact_id}:
     get:
@@ -544,7 +544,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -568,19 +568,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContact'
+                        $ref: '#/components/schemas/SupplierContact'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -592,7 +592,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -614,7 +614,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContactCreateInput'
+              $ref: '#/components/schemas/SupplierContactCreateInput'
       responses:
         '200':
           description: Contact updated successfully
@@ -622,21 +622,21 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierContact'
+                        $ref: '#/components/schemas/SupplierContact'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -648,7 +648,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -672,31 +672,31 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
                         type: string
                         example: "Contact deleted successfully"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '409':
           description: Cannot delete primary contact
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "CANNOT_DELETE_PRIMARY_CONTACT"
                   message: "Cannot delete primary contact. Please designate another primary contact first."
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # SUPPLIER PRODUCTS ENDPOINTS  
@@ -719,7 +719,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -728,8 +728,8 @@ paths:
             type: string
             format: uuid
           example: "550e8400-e29b-41d4-a716-446655440000"
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
         - name: search
           in: query
           description: Search in product name, code, description
@@ -782,15 +782,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProductListResponse'
+                $ref: '#/components/schemas/SupplierProductListResponse'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -809,7 +809,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -823,7 +823,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProductCreateInput'
+              $ref: '#/components/schemas/SupplierProductCreateInput'
             examples:
               steel_plate:
                 summary: Steel plate product
@@ -860,35 +860,35 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProduct'
+                        $ref: '#/components/schemas/SupplierProduct'
                       message:
                         type: string
                         example: "Product added to supplier catalog successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '409':
           description: Product code already exists for this supplier
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "PRODUCT_CODE_EXISTS"
                   message: "Product code already exists for this supplier"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /suppliers/{supplier_id}/products/{product_id}:
     get:
@@ -901,7 +901,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -925,19 +925,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProduct'
+                        $ref: '#/components/schemas/SupplierProduct'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -949,7 +949,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -971,7 +971,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProductCreateInput'
+              $ref: '#/components/schemas/SupplierProductCreateInput'
       responses:
         '200':
           description: Product updated successfully
@@ -979,21 +979,21 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierProduct'
+                        $ref: '#/components/schemas/SupplierProduct'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -1005,7 +1005,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -1029,20 +1029,20 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
                         type: string
                         example: "Product removed from supplier catalog"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # SUPPLIER QUOTATIONS ENDPOINTS
@@ -1065,10 +1065,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: search
           in: query
           description: Search in quotation title, number, RFQ number
@@ -1130,15 +1130,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotationListResponse'
+                $ref: '#/components/schemas/SupplierQuotationListResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -1157,13 +1157,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotationCreateInput'
+              $ref: '#/components/schemas/SupplierQuotationCreateInput'
             examples:
               steel_quotation:
                 summary: Steel plates quotation request
@@ -1195,22 +1195,22 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+                        $ref: '#/components/schemas/SupplierQuotation'
                       message:
                         type: string
                         example: "Quotation request created and will be sent to supplier"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /suppliers/quotations/{quotation_id}:
     get:
@@ -1223,7 +1223,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: quotation_id
           in: path
           required: true
@@ -1239,19 +1239,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+                        $ref: '#/components/schemas/SupplierQuotation'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -1263,7 +1263,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: quotation_id
           in: path
           required: true
@@ -1277,7 +1277,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotationCreateInput'
+              $ref: '#/components/schemas/SupplierQuotationCreateInput'
       responses:
         '200':
           description: Quotation updated successfully
@@ -1285,21 +1285,21 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+                        $ref: '#/components/schemas/SupplierQuotation'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -1311,7 +1311,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: quotation_id
           in: path
           required: true
@@ -1327,20 +1327,20 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
                         type: string
                         example: "Quotation deleted successfully"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # SUPPLIER EVALUATION & APPROVAL ENDPOINTS
@@ -1363,7 +1363,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -1403,35 +1403,35 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/Supplier'
+                        $ref: '#/components/schemas/Supplier'
                       message:
                         type: string
                         example: "Supplier approved successfully and is now active for business operations"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '409':
           description: Supplier already approved
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "SUPPLIER_ALREADY_APPROVED"
                   message: "This supplier is already approved for business operations"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /suppliers/quotations/{quotation_id}/evaluate:
     post:
@@ -1452,7 +1452,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: quotation_id
           in: path
           required: true
@@ -1499,24 +1499,24 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierQuotation'
+                        $ref: '#/components/schemas/SupplierQuotation'
                       message:
                         type: string
                         example: "Quotation evaluation completed successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # REPORTING & ANALYTICS ENDPOINTS
@@ -1539,7 +1539,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: period
           in: query
           description: Statistics period
@@ -1554,17 +1554,17 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierStatistics'
+                        $ref: '#/components/schemas/SupplierStatistics'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /suppliers/{supplier_id}/performance-report:
     get:
@@ -1584,7 +1584,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: supplier_id
           in: path
           required: true
@@ -1614,19 +1614,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/suppliers.yaml#/SupplierPerformanceReport'
+                        $ref: '#/components/schemas/SupplierPerformanceReport'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # BULK OPERATIONS ENDPOINTS
@@ -1648,7 +1648,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: format
           in: query
           description: Export format
@@ -1703,13 +1703,13 @@ paths:
                 type: string
                 format: binary
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /suppliers/bulk/import:
     post:
@@ -1729,7 +1729,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: validate_only
           in: query
           description: Only validate data without importing
@@ -1768,7 +1768,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -1805,17 +1805,17 @@ paths:
                         type: string
                         example: "Import completed: 145 suppliers imported successfully, 5 failed"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '413':
           description: File too large
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
@@ -1826,11 +1826,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
                 success: false
                 error:
                   code: "UNSUPPORTED_FORMAT"
                   message: "Only CSV and Excel (.xlsx) files are supported"
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'

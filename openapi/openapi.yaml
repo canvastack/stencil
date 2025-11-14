@@ -178,33 +178,160 @@ components:
 
   # External Component References  
   responses:
-    $ref: './components/responses.yaml'
+    Conflict:
+      $ref: './components/responses.yaml#/Conflict'
+    CreatedResponse:
+      $ref: './components/responses.yaml#/CreatedResponse'
+    DeletedResponse:
+      $ref: './components/responses.yaml#/DeletedResponse'
+    Forbidden:
+      $ref: './components/responses.yaml#/Forbidden'
+    NotFound:
+      $ref: './components/responses.yaml#/NotFound'
+    RateLimitExceeded:
+      $ref: './components/responses.yaml#/RateLimitExceeded'
+    ServerError:
+      $ref: './components/responses.yaml#/ServerError'
+    SuccessResponse:
+      $ref: './components/responses.yaml#/SuccessResponse'
+    Unauthorized:
+      $ref: './components/responses.yaml#/Unauthorized'
+    UpdatedResponse:
+      $ref: './components/responses.yaml#/UpdatedResponse'
+    ValidationError:
+      $ref: './components/responses.yaml#/ValidationError'
   parameters:
-    $ref: './components/parameters.yaml'
+    AcceptLanguage:
+      $ref: './components/parameters.yaml#/AcceptLanguage'
+    AuthorParam:
+      $ref: './components/parameters.yaml#/AuthorParam'
+    BulkIdsParam:
+      $ref: './components/parameters.yaml#/BulkIdsParam'
+    CacheControlParam:
+      $ref: './components/parameters.yaml#/CacheControlParam'
+    CategoryParam:
+      $ref: './components/parameters.yaml#/CategoryParam'
+    CompareVersionParam:
+      $ref: './components/parameters.yaml#/CompareVersionParam'
+    ContentTypeParam:
+      $ref: './components/parameters.yaml#/ContentTypeParam'
+    DateFromParam:
+      $ref: './components/parameters.yaml#/DateFromParam'
+    DateToParam:
+      $ref: './components/parameters.yaml#/DateToParam'
+    DryRunParam:
+      $ref: './components/parameters.yaml#/DryRunParam'
+    ETagParam:
+      $ref: './components/parameters.yaml#/ETagParam'
+    ExportFormatParam:
+      $ref: './components/parameters.yaml#/ExportFormatParam'
+    FallbackLocaleParam:
+      $ref: './components/parameters.yaml#/FallbackLocaleParam'
+    FeaturesParam:
+      $ref: './components/parameters.yaml#/FeaturesParam'
+    FieldsParam:
+      $ref: './components/parameters.yaml#/FieldsParam'
+    FileTypeParam:
+      $ref: './components/parameters.yaml#/FileTypeParam'
+    FilterParam:
+      $ref: './components/parameters.yaml#/FilterParam'
+    IncludeParam:
+      $ref: './components/parameters.yaml#/IncludeParam'
+    LocaleParam:
+      $ref: './components/parameters.yaml#/LocaleParam'
+    MaxFileSizeParam:
+      $ref: './components/parameters.yaml#/MaxFileSizeParam'
+    MetricParam:
+      $ref: './components/parameters.yaml#/MetricParam'
+    OrderParam:
+      $ref: './components/parameters.yaml#/OrderParam'
+    PageParam:
+      $ref: './components/parameters.yaml#/PageParam'
+    PerPageParam:
+      $ref: './components/parameters.yaml#/PerPageParam'
+    PeriodParam:
+      $ref: './components/parameters.yaml#/PeriodParam'
+    PublishStatusParam:
+      $ref: './components/parameters.yaml#/PublishStatusParam'
+    RateLimitParam:
+      $ref: './components/parameters.yaml#/RateLimitParam'
+    SearchParam:
+      $ref: './components/parameters.yaml#/SearchParam'
+    SortParam:
+      $ref: './components/parameters.yaml#/SortParam'
+    StatusParam:
+      $ref: './components/parameters.yaml#/StatusParam'
+    TagsParam:
+      $ref: './components/parameters.yaml#/TagsParam'
+    TemplateParam:
+      $ref: './components/parameters.yaml#/TemplateParam'
+    TenantHeader:
+      $ref: './components/parameters.yaml#/TenantHeader'
+    TenantParam:
+      $ref: './components/parameters.yaml#/TenantParam'
+    UUIDParam:
+      $ref: './components/parameters.yaml#/UUIDParam'
+    ValidateOnlyParam:
+      $ref: './components/parameters.yaml#/ValidateOnlyParam'
+    VersionParam:
+      $ref: './components/parameters.yaml#/VersionParam'
     
   # Schema Definitions (mix of external and inline)
   schemas:
-    # External schemas
-    ValidationErrorResponse:
-      $ref: './components/schemas.yaml#/ValidationErrorResponse'
-    BaseResponse:
-      $ref: './components/schemas.yaml#/BaseResponse'
-    SuccessResponse:
-      $ref: './components/schemas.yaml#/SuccessResponse'
-    ErrorResponse:
-      $ref: './components/schemas.yaml#/ErrorResponse'
-    PaginationMeta:
-      $ref: './components/schemas.yaml#/PaginationMeta'
-    PaginatedResponse:
-      $ref: './components/schemas.yaml#/PaginatedResponse'
-    TenantInfo:
-      $ref: './components/schemas.yaml#/TenantInfo'
+    # External component schemas
     AuditInfo:
       $ref: './components/schemas.yaml#/AuditInfo'
-    TranslationStatus:
-      $ref: './components/schemas.yaml#/TranslationStatus'
+    BaseResponse:
+      $ref: './components/schemas.yaml#/BaseResponse'
     BaseTranslation:
       $ref: './components/schemas.yaml#/BaseTranslation'
+    ErrorResponse:
+      $ref: './components/schemas.yaml#/ErrorResponse'
+    PaginatedResponse:
+      $ref: './components/schemas.yaml#/PaginatedResponse'
+    PaginationMeta:
+      $ref: './components/schemas.yaml#/PaginationMeta'
+    SuccessResponse:
+      $ref: './components/schemas.yaml#/SuccessResponse'
+    TenantInfo:
+      $ref: './components/schemas.yaml#/TenantInfo'
+    TranslationStatus:
+      $ref: './components/schemas.yaml#/TranslationStatus'
+    ValidationErrorResponse:
+      $ref: './components/schemas.yaml#/ValidationErrorResponse'
+
+    # Content Management Schemas
+    # About schemas will be added here
+    # Contact schemas will be added here
+    # Customers schemas will be added here
+    # Documentation schemas will be added here
+    # Faq schemas will be added here
+    # Financial schemas will be added here
+    # Homepage schemas will be added here
+    # Inventory schemas will be added here
+    # Language schemas will be added here
+    # Media schemas will be added here
+    # Orders schemas will be added here
+    # Plugins schemas will be added here
+    # Products schemas will be added here
+    # Reviews schemas will be added here
+    # Seo schemas will be added here
+    # Settings schemas will be added here
+    # Suppliers schemas will be added here
+    # Theme schemas will be added here
+    # Users schemas will be added here
+    # Vendors schemas will be added here
+    # External schemas
+    ValidationErrorResponse:
+    BaseResponse:
+    SuccessResponse:
+    ErrorResponse:
+    PaginationMeta:
+    PaginatedResponse:
+    TenantInfo:
+    AuditInfo:
+    TranslationStatus:
+    BaseTranslation:
     
     # Inline Schema Definitions (legacy compatibility)
     # Base Entity Schema

@@ -29,7 +29,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: location_id
           in: query
           schema:
@@ -60,11 +60,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/inventory.yaml#/InventoryPageData'
+                        $ref: '#/components/schemas/InventoryPageData'
               examples:
                 success:
                   summary: Complete inventory dashboard
@@ -100,11 +100,11 @@ paths:
                       tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
                       cache_expires: "2025-01-15T10:35:00Z"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Items Management
   /admin/inventory/items:
@@ -126,10 +126,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: search
           in: query
           schema:
@@ -177,26 +177,26 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryItem'
+                          $ref: '#/components/schemas/InventoryItem'
                       meta:
                         allOf:
-                          - $ref: '../../components/schemas.yaml#/PaginationMeta'
+                          - $ref: '#/components/schemas/PaginationMeta'
                           - type: object
                             properties:
                               summary:
-                                $ref: '../../schemas/content-management/inventory.yaml#/InventorySummary'
+                                $ref: '#/components/schemas/InventorySummary'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -216,13 +216,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/inventory.yaml#/InventoryItemCreateInput'
+              $ref: '#/components/schemas/InventoryItemCreateInput'
             examples:
               brass_material:
                 summary: Create brass sheet material
@@ -242,17 +242,17 @@ paths:
                   is_active: true
       responses:
         '201':
-          $ref: '../../components/responses.yaml#/CreatedResponse'
+          $ref: '#/components/responses/CreatedResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '409':
-          $ref: '../../components/responses.yaml#/Conflict'
+          $ref: '#/components/responses/Conflict'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /admin/inventory/items/{id}:
     get:
@@ -266,7 +266,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: id
           in: path
           required: true
@@ -289,19 +289,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/inventory.yaml#/InventoryItem'
+                        $ref: '#/components/schemas/InventoryItem'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     put:
       tags:
@@ -314,7 +314,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: id
           in: path
           required: true
@@ -327,20 +327,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/inventory.yaml#/InventoryItemUpdateInput'
+              $ref: '#/components/schemas/InventoryItemUpdateInput'
       responses:
         '200':
-          $ref: '../../components/responses.yaml#/UpdatedResponse'
+          $ref: '#/components/responses/UpdatedResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -352,7 +352,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: id
           in: path
           required: true
@@ -362,21 +362,21 @@ paths:
           description: Inventory item ID
       responses:
         '200':
-          $ref: '../../components/responses.yaml#/DeletedResponse'
+          $ref: '#/components/responses/DeletedResponse'
         '400':
           description: Cannot delete item with existing stock or movements
           content:
             application/json:
               schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Locations Management
   /admin/inventory/locations:
@@ -390,7 +390,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: location_type
           in: query
           schema:
@@ -410,19 +410,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryLocation'
+                          $ref: '#/components/schemas/InventoryLocation'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -434,13 +434,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/inventory.yaml#/InventoryLocationCreateInput'
+              $ref: '#/components/schemas/InventoryLocationCreateInput'
             examples:
               main_warehouse:
                 summary: Create main warehouse location
@@ -453,17 +453,17 @@ paths:
                   is_active: true
       responses:
         '201':
-          $ref: '../../components/responses.yaml#/CreatedResponse'
+          $ref: '#/components/responses/CreatedResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '409':
-          $ref: '../../components/responses.yaml#/Conflict'
+          $ref: '#/components/responses/Conflict'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Movements Management
   /admin/inventory/movements:
@@ -486,9 +486,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
         - name: item_id
           in: query
           schema:
@@ -532,21 +532,21 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryMovement'
+                          $ref: '#/components/schemas/InventoryMovement'
                       meta:
-                        $ref: '../../components/schemas.yaml#/PaginationMeta'
+                        $ref: '#/components/schemas/PaginationMeta'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -558,13 +558,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/inventory.yaml#/InventoryMovementCreateInput'
+              $ref: '#/components/schemas/InventoryMovementCreateInput'
             examples:
               stock_receipt:
                 summary: Stock receipt from supplier
@@ -581,15 +581,15 @@ paths:
                   notes: "Received from supplier XYZ Corp"
       responses:
         '201':
-          $ref: '../../components/responses.yaml#/CreatedResponse'
+          $ref: '#/components/responses/CreatedResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /admin/inventory/movements/{id}/approve:
     post:
@@ -602,7 +602,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: id
           in: path
           required: true
@@ -627,21 +627,21 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/inventory.yaml#/InventoryMovement'
+                        $ref: '#/components/schemas/InventoryMovement'
         '400':
           description: Movement cannot be approved (invalid status)
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Adjustments Management
   /admin/inventory/adjustments:
@@ -655,9 +655,9 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
         - name: adjustment_type
           in: query
           schema:
@@ -677,21 +677,21 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryAdjustment'
+                          $ref: '#/components/schemas/InventoryAdjustment'
                       meta:
-                        $ref: '../../components/schemas.yaml#/PaginationMeta'
+                        $ref: '#/components/schemas/PaginationMeta'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Alerts Management
   /admin/inventory/alerts:
@@ -705,7 +705,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: alert_type
           in: query
           schema:
@@ -731,19 +731,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryAlert'
+                          $ref: '#/components/schemas/InventoryAlert'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /admin/inventory/alerts/{id}/acknowledge:
     post:
@@ -756,7 +756,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: id
           in: path
           required: true
@@ -766,15 +766,15 @@ paths:
           description: Alert ID
       responses:
         '200':
-          $ref: '../../components/responses.yaml#/SuccessResponse'
+          $ref: '#/components/responses/SuccessResponse'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Count Sessions
   /admin/inventory/counts:
@@ -788,7 +788,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: status
           in: query
           schema:
@@ -808,19 +808,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryCount'
+                          $ref: '#/components/schemas/InventoryCount'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Reservations Management
   /admin/inventory/reservations:
@@ -834,7 +834,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: reservation_type
           in: query
           schema:
@@ -854,19 +854,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventoryReservation'
+                          $ref: '#/components/schemas/InventoryReservation'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Inventory Suppliers Management
   /admin/inventory/suppliers:
@@ -880,7 +880,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: item_id
           in: query
           schema:
@@ -906,19 +906,19 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/inventory.yaml#/InventorySupplier'
+                          $ref: '#/components/schemas/InventorySupplier'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Bulk Operations
   /admin/inventory/bulk/stock-update:
@@ -933,13 +933,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/inventory.yaml#/BulkStockUpdateInput'
+              $ref: '#/components/schemas/BulkStockUpdateInput'
             examples:
               physical_count_update:
                 summary: Bulk update from physical count
@@ -960,7 +960,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -980,13 +980,13 @@ paths:
                                 error:
                                   type: string
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # Reports & Analytics
   /admin/inventory/reports/low-stock:
@@ -1000,7 +1000,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: category
           in: query
           schema:
@@ -1026,17 +1026,17 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
-                        $ref: '../../schemas/content-management/inventory.yaml#/LowStockReport'
+                        $ref: '#/components/schemas/LowStockReport'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /admin/inventory/reports/valuation:
     get:
@@ -1049,7 +1049,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: as_of_date
           in: query
           schema:
@@ -1075,7 +1075,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -1098,7 +1098,7 @@ paths:
                               type: object
                               properties:
                                 item:
-                                  $ref: '../../schemas/content-management/inventory.yaml#/InventoryItem'
+                                  $ref: '#/components/schemas/InventoryItem'
                                 quantity:
                                   type: number
                                   format: decimal
@@ -1109,8 +1109,8 @@ paths:
                                   type: number
                                   format: decimal
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'

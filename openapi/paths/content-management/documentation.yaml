@@ -24,10 +24,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: search
           in: query
           description: Search in title, content, excerpt
@@ -96,13 +96,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticlesResponse'
+                $ref: '#/components/schemas/DocumentationArticlesResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -121,13 +121,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleInput'
+              $ref: '#/components/schemas/DocumentationArticleInput'
             examples:
               technical_guide:
                 summary: Technical guide article
@@ -152,15 +152,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+                $ref: '#/components/schemas/DocumentationArticleResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /documentation/articles/{articleId}:
     get:
@@ -180,7 +180,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: articleId
           in: path
           required: true
@@ -216,13 +216,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+                $ref: '#/components/schemas/DocumentationArticleResponse'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     patch:
       tags:
@@ -241,7 +241,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: articleId
           in: path
           required: true
@@ -277,24 +277,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleInput'
+              $ref: '#/components/schemas/DocumentationArticleInput'
       responses:
         '200':
           description: Documentation article updated successfully
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+                $ref: '#/components/schemas/DocumentationArticleResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -312,7 +312,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: articleId
           in: path
           required: true
@@ -342,20 +342,20 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
                         type: string
                         example: "Documentation article archived successfully"
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /documentation/articles/bulk:
     post:
@@ -375,7 +375,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
@@ -412,7 +412,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -435,13 +435,13 @@ paths:
                                 error:
                                   type: string
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # DOCUMENTATION CATEGORIES ENDPOINTS
@@ -464,7 +464,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: include_hidden
           in: query
           description: Include hidden categories
@@ -499,11 +499,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoriesResponse'
+                $ref: '#/components/schemas/DocumentationCategoriesResponse'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -522,13 +522,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryInput'
+              $ref: '#/components/schemas/DocumentationCategoryInput'
             examples:
               main_category:
                 summary: Main category
@@ -557,15 +557,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryResponse'
+                $ref: '#/components/schemas/DocumentationCategoryResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /documentation/categories/{categoryId}:
     get:
@@ -578,7 +578,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: categoryId
           in: path
           required: true
@@ -607,13 +607,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryResponse'
+                $ref: '#/components/schemas/DocumentationCategoryResponse'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     patch:
       tags:
@@ -625,7 +625,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: categoryId
           in: path
           required: true
@@ -639,24 +639,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryInput'
+              $ref: '#/components/schemas/DocumentationCategoryInput'
       responses:
         '200':
           description: Documentation category updated successfully
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationCategoryResponse'
+                $ref: '#/components/schemas/DocumentationCategoryResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     delete:
       tags:
@@ -668,7 +668,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: categoryId
           in: path
           required: true
@@ -691,22 +691,22 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       message:
                         type: string
                         example: "Documentation category deleted successfully"
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # HELP TICKETS ENDPOINTS
@@ -728,10 +728,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: search
           in: query
           description: Search in subject, description, ticket number
@@ -793,13 +793,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketsResponse'
+                $ref: '#/components/schemas/HelpTicketsResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -818,13 +818,13 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketInput'
+              $ref: '#/components/schemas/HelpTicketInput'
             examples:
               technical_support:
                 summary: Technical support ticket
@@ -852,13 +852,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketResponse'
+                $ref: '#/components/schemas/HelpTicketResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /help/tickets/{ticketId}:
     get:
@@ -871,7 +871,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: ticketId
           in: path
           required: true
@@ -893,13 +893,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketResponse'
+                $ref: '#/components/schemas/HelpTicketResponse'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     patch:
       tags:
@@ -918,7 +918,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: ticketId
           in: path
           required: true
@@ -982,17 +982,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketResponse'
+                $ref: '#/components/schemas/HelpTicketResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # KNOWLEDGE BASE ENDPOINTS
@@ -1014,10 +1014,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: search
           in: query
           description: Search in title and content
@@ -1064,13 +1064,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/KnowledgeBaseListResponse'
+                $ref: '#/components/schemas/KnowledgeBaseListResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -1082,7 +1082,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
@@ -1157,15 +1157,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/KnowledgeBaseResponse'
+                $ref: '#/components/schemas/KnowledgeBaseResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # USER GUIDES ENDPOINTS
@@ -1187,10 +1187,10 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
+        - $ref: '#/components/parameters/SortParam'
         - name: guide_type
           in: query
           description: Filter by guide type
@@ -1238,13 +1238,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/UserGuidesResponse'
+                $ref: '#/components/schemas/UserGuidesResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
     post:
       tags:
@@ -1256,7 +1256,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
@@ -1362,15 +1362,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/UserGuideResponse'
+                $ref: '#/components/schemas/UserGuideResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # SEARCH & ANALYTICS ENDPOINTS
@@ -1393,7 +1393,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: q
           in: query
           required: true
@@ -1443,13 +1443,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationSearchResponse'
+                $ref: '#/components/schemas/DocumentationSearchResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /documentation/analytics:
     get:
@@ -1469,7 +1469,7 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: period
           in: query
           description: Analytics time period
@@ -1491,13 +1491,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationAnalyticsResponse'
+                $ref: '#/components/schemas/DocumentationAnalyticsResponse'
         '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
+          $ref: '#/components/responses/Forbidden'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   # ================================================================
   # PUBLIC DOCUMENTATION ENDPOINTS (Customer Access)
@@ -1519,9 +1519,9 @@ paths:
       operationId: getPublicDocumentationArticles
       security: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PerPageParam'
         - name: category_slug
           in: query
           description: Filter by category slug
@@ -1554,11 +1554,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticlesResponse'
+                $ref: '#/components/schemas/DocumentationArticlesResponse'
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /public/documentation/articles/{slug}:
     get:
@@ -1570,7 +1570,7 @@ paths:
       operationId: getPublicDocumentationArticle
       security: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
         - name: slug
           in: path
           required: true
@@ -1584,11 +1584,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../schemas/content-management/documentation.yaml#/DocumentationArticleResponse'
+                $ref: '#/components/schemas/DocumentationArticleResponse'
         '404':
-          $ref: '../../components/responses.yaml#/NotFound'
+          $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'
 
   /public/help/ticket:
     post:
@@ -1607,13 +1607,13 @@ paths:
       operationId: submitPublicHelpTicket
       security: []
       parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
+        - $ref: '#/components/parameters/TenantHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/documentation.yaml#/HelpTicketInput'
+              $ref: '#/components/schemas/HelpTicketInput'
       responses:
         '201':
           description: Public help ticket submitted successfully
@@ -1621,7 +1621,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
+                  - $ref: '#/components/schemas/BaseResponse'
                   - type: object
                     properties:
                       data:
@@ -1648,8 +1648,8 @@ paths:
                                 excerpt:
                                   type: string
         '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
+          $ref: '#/components/responses/ValidationError'
         '429':
-          $ref: '../../components/responses.yaml#/RateLimitExceeded'
+          $ref: '#/components/responses/RateLimitExceeded'
         '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+          $ref: '#/components/responses/ServerError'

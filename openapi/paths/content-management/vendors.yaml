@@ -1,1718 +1,2048 @@
-# Vendor Management API Paths for Stencil CMS
-# Complete CRUD operations for Vendor Management System (25+ endpoints)
-  # ================================================================
-  # VENDOR MANAGEMENT ENDPOINTS
-  # ================================================================
-  /vendors:
-    get:
-      tags:
-        - Vendor Management
-      summary: List Vendors
-      description: |
-        Retrieve paginated list of vendors with advanced filtering and search capabilities.
-        
-        **Admin Features:**
-        - Search by company name, brand, email, phone
-        - Filter by status, quality tier, verification status
-        - Sort by multiple fields (rating, name, orders count)
-        - Export functionality
-        - Tenant-scoped results
-      operationId: listVendors
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
-        - name: search
-          in: query
-          description: Search in company name, brand name, email, phone
-          schema:
-            type: string
-            maxLength: 255
-          example: "etching"
-        - name: status
-          in: query
-          description: Filter by vendor status
-          schema:
-            type: string
-            enum: [active, inactive, on_hold, blacklisted]
-          example: "active"
-        - name: quality_tier
-          in: query
-          description: Filter by quality tier
-          schema:
-            type: string
-            enum: [standard, premium]
-          example: "premium"
-        - name: is_verified
-          in: query
-          description: Filter by verification status
-          schema:
-            type: boolean
-          example: true
-        - name: material_type
-          in: query
-          description: Filter vendors by material specialization
-          schema:
-            type: string
-            enum: [akrilik, kuningan, tembaga, stainless_steel, aluminum, kaca, kayu, custom]
-          example: "stainless_steel"
-        - name: city
-          in: query
-          description: Filter by city location
-          schema:
-            type: string
-            maxLength: 100
-          example: "Jakarta"
-        - name: province
-          in: query
-          description: Filter by province
-          schema:
-            type: string
-            maxLength: 100
-          example: "DKI Jakarta"
-        - name: min_rating
-          in: query
-          description: Filter vendors with minimum rating
-          schema:
-            type: number
-            format: decimal
-            minimum: 0
-            maximum: 5
-          example: 4.0
-        - name: accepts_rush_orders
-          in: query
-          description: Filter vendors accepting rush orders
-          schema:
-            type: boolean
-          example: true
-        - name: created_from
-          in: query
-          description: Filter vendors created after this date
-          schema:
-            type: string
-            format: date
-          example: "2025-01-01"
-        - name: created_to
-          in: query
-          description: Filter vendors created before this date
-          schema:
-            type: string
-            format: date
-          example: "2025-12-31"
-        - name: include
-          in: query
-          description: Include related data (specializations, contacts, ratings)
-          schema:
-            type: array
-            items:
-              type: string
-              enum: [specializations, contacts, ratings, statistics]
-          style: form
-          explode: false
-          example: ["specializations", "contacts"]
-      responses:
-        '200':
-          description: Vendors retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorListResponse'
-              example:
-                success: true
-                data:
-                  - id: "550e8400-e29b-41d4-a716-446655440000"
-                    company_name: "PT Etching Indo Prima"
-                    brand_name: "EIP Etching"
-                    email: "info@etchingindo.com"
-                    phone: "+62218765432"
-                    status: "active"
-                    quality_tier: "premium"
-                    overall_rating: 4.2
-                    total_orders: 45
-                    is_verified: true
-                meta:
-                  page: 1
-                  limit: 20
-                  total: 45
-                  hasNext: true
-                  hasPrev: false
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+/vendors:
+  get:
+    tags:
+    - Vendor Management
+    summary: List Vendors
+    description: 'Retrieve paginated list of vendors with advanced filtering and search
+      capabilities.
 
-    post:
-      tags:
-        - Vendor Management
-      summary: Create New Vendor
-      description: |
-        Create a new vendor with complete company information and capabilities.
-        
-        **Required Information:**
-        - Company details (name, contact, address)
-        - Legal documentation (NPWP, SIUP optional)
-        - Banking information for payments
-        - Initial capacity and capability settings
-        
-        **Auto-generated:**
-        - UUID identifier
-        - URL-friendly slug
-        - Initial statistics and ratings
-      operationId: createVendor
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+
+      **Admin Features:**
+
+      - Search by company name, brand, email, phone
+
+      - Filter by status, quality tier, verification status
+
+      - Sort by multiple fields (rating, name, orders count)
+
+      - Export functionality
+
+      - Tenant-scoped results
+
+      '
+    operationId: listVendors
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: search
+      in: query
+      description: Search in company name, brand name, email, phone
+      schema:
+        type: string
+        maxLength: 255
+      example: etching
+    - name: status
+      in: query
+      description: Filter by vendor status
+      schema:
+        type: string
+        enum:
+        - active
+        - inactive
+        - on_hold
+        - blacklisted
+      example: active
+    - name: quality_tier
+      in: query
+      description: Filter by quality tier
+      schema:
+        type: string
+        enum:
+        - standard
+        - premium
+      example: premium
+    - name: is_verified
+      in: query
+      description: Filter by verification status
+      schema:
+        type: boolean
+      example: true
+    - name: material_type
+      in: query
+      description: Filter vendors by material specialization
+      schema:
+        type: string
+        enum:
+        - akrilik
+        - kuningan
+        - tembaga
+        - stainless_steel
+        - aluminum
+        - kaca
+        - kayu
+        - custom
+      example: stainless_steel
+    - name: city
+      in: query
+      description: Filter by city location
+      schema:
+        type: string
+        maxLength: 100
+      example: Jakarta
+    - name: province
+      in: query
+      description: Filter by province
+      schema:
+        type: string
+        maxLength: 100
+      example: DKI Jakarta
+    - name: min_rating
+      in: query
+      description: Filter vendors with minimum rating
+      schema:
+        type: number
+        format: decimal
+        minimum: 0
+        maximum: 5
+      example: 4.0
+    - name: accepts_rush_orders
+      in: query
+      description: Filter vendors accepting rush orders
+      schema:
+        type: boolean
+      example: true
+    - name: created_from
+      in: query
+      description: Filter vendors created after this date
+      schema:
+        type: string
+        format: date
+      example: '2025-01-01'
+    - name: created_to
+      in: query
+      description: Filter vendors created before this date
+      schema:
+        type: string
+        format: date
+      example: '2025-12-31'
+    - name: include
+      in: query
+      description: Include related data (specializations, contacts, ratings)
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - specializations
+          - contacts
+          - ratings
+          - statistics
+      style: form
+      explode: false
+      example:
+      - specializations
+      - contacts
+    responses:
+      '200':
+        description: Vendors retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorCreateInput'
-            examples:
-              new_vendor:
-                summary: New premium vendor
-                value:
-                  company_name: "PT Etching Indo Prima"
-                  legal_entity_name: "PT Etching Indo Prima Tbk"
-                  brand_name: "EIP Etching"
-                  email: "info@etchingindo.com"
-                  phone: "+62218765432"
-                  mobile_phone: "+62812345678"
-                  website: "https://www.etchingindo.com"
-                  address: "Jl. Industri Raya No. 123, Kawasan Industri"
-                  city: "Jakarta"
-                  province: "DKI Jakarta"
-                  postal_code: "12345"
-                  npwp: "01.234.567.8-901.000"
-                  siup_number: "SIUP/123/2024"
-                  business_type: "Manufacturing - Metal Etching"
-                  quality_tier: "premium"
-                  status: "active"
-                  average_lead_time_days: 10
-                  production_capacity_monthly: 1000
-                  minimum_order_value: 5000000
-                  accepts_rush_orders: true
-                  rush_order_surcharge_percent: 25.0
-                  bank_name: "Bank Mandiri"
-                  bank_account_number: "1234567890"
-                  bank_account_holder: "PT Etching Indo Prima"
-                  bank_branch: "Jakarta Pusat"
-                  notes: "Specialized in high-precision etching work"
-      responses:
-        '201':
-          description: Vendor created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorResponse'
-              example:
-                success: true
-                message: "Vendor created successfully"
-                data:
-                  id: "550e8400-e29b-41d4-a716-446655440000"
-                  company_name: "PT Etching Indo Prima"
-                  slug: "pt-etching-indo-prima"
-                  status: "active"
-                  quality_tier: "premium"
-                  overall_rating: 0.0
-                  total_orders: 0
-                  is_verified: false
-                  created_at: "2025-11-13T10:30:00Z"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '409':
-          description: Vendor already exists
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "VENDOR_EXISTS"
-                  message: "Vendor with this email already exists"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              $ref: '#/components/schemas/VendorListResponse'
+            example:
+              success: true
+              data:
+              - id: 550e8400-e29b-41d4-a716-446655440000
+                company_name: PT Etching Indo Prima
+                brand_name: EIP Etching
+                email: info@etchingindo.com
+                phone: '+62218765432'
+                status: active
+                quality_tier: premium
+                overall_rating: 4.2
+                total_orders: 45
+                is_verified: true
+              meta:
+                page: 1
+                limit: 20
+                total: 45
+                hasNext: true
+                hasPrev: false
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Vendor Management
+    summary: Create New Vendor
+    description: 'Create a new vendor with complete company information and capabilities.
 
-  /vendors/{id}:
-    get:
-      tags:
-        - Vendor Management
-      summary: Get Vendor Details
-      description: |
-        Retrieve complete vendor information including specializations, contacts, and performance metrics.
-        
-        **Included Data:**
-        - Complete vendor profile
-        - All specializations and capabilities
-        - Contact persons list
-        - Performance ratings and statistics
-        - Recent order history (if permitted)
-      operationId: getVendor
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: id
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: include
-          in: query
-          description: Include related data
-          schema:
-            type: array
-            items:
-              type: string
-              enum: [specializations, contacts, ratings, negotiations, payments, statistics]
-          style: form
-          explode: false
-          example: ["specializations", "contacts", "ratings"]
-      responses:
-        '200':
-          description: Vendor details retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Vendor not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "VENDOR_NOT_FOUND"
-                  message: "Vendor not found"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-    put:
-      tags:
-        - Vendor Management
-      summary: Update Vendor
-      description: |
-        Update vendor information including company details, capabilities, and settings.
-        
-        **Updateable Fields:**
-        - Company and contact information
-        - Address and legal documents
-        - Banking details
-        - Capacity and capability settings
-        - Admin can update verification status
-        
-        **Protected Fields:**
-        - Statistics and ratings (auto-calculated)
-        - UUID and tenant_id
-        - Created/updated timestamps
-      operationId: updateVendor
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: id
-          in: path
-          required: true
-          description: Vendor ID (UUID)
+      **Required Information:**
+
+      - Company details (name, contact, address)
+
+      - Legal documentation (NPWP, SIUP optional)
+
+      - Banking information for payments
+
+      - Initial capacity and capability settings
+
+
+      **Auto-generated:**
+
+      - UUID identifier
+
+      - URL-friendly slug
+
+      - Initial statistics and ratings
+
+      '
+    operationId: createVendor
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
+            $ref: '#/components/schemas/VendorCreateInput'
+          examples:
+            new_vendor:
+              summary: New premium vendor
+              value:
+                company_name: PT Etching Indo Prima
+                legal_entity_name: PT Etching Indo Prima Tbk
+                brand_name: EIP Etching
+                email: info@etchingindo.com
+                phone: '+62218765432'
+                mobile_phone: '+62812345678'
+                website: https://www.etchingindo.com
+                address: Jl. Industri Raya No. 123, Kawasan Industri
+                city: Jakarta
+                province: DKI Jakarta
+                postal_code: '12345'
+                npwp: 01.234.567.8-901.000
+                siup_number: SIUP/123/2024
+                business_type: Manufacturing - Metal Etching
+                quality_tier: premium
+                status: active
+                average_lead_time_days: 10
+                production_capacity_monthly: 1000
+                minimum_order_value: 5000000
+                accepts_rush_orders: true
+                rush_order_surcharge_percent: 25.0
+                bank_name: Bank Mandiri
+                bank_account_number: '1234567890'
+                bank_account_holder: PT Etching Indo Prima
+                bank_branch: Jakarta Pusat
+                notes: Specialized in high-precision etching work
+    responses:
+      '201':
+        description: Vendor created successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorUpdateInput'
-            examples:
-              update_capacity:
-                summary: Update capacity and contact
-                value:
-                  production_capacity_monthly: 1500
-                  average_lead_time_days: 8
-                  mobile_phone: "+62812345679"
-                  website: "https://www.etchingindo.co.id"
-                  notes: "Expanded capacity, faster delivery times"
-              verify_vendor:
-                summary: Admin verification
-                value:
-                  is_verified: true
-                  status: "active"
-                  quality_tier: "premium"
-      responses:
-        '200':
-          description: Vendor updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorResponse'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Vendor not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+              $ref: '#/components/schemas/VendorResponse'
+            example:
+              success: true
+              message: Vendor created successfully
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                company_name: PT Etching Indo Prima
+                slug: pt-etching-indo-prima
+                status: active
+                quality_tier: premium
+                overall_rating: 0.0
+                total_orders: 0
+                is_verified: false
+                created_at: '2025-11-13T10:30:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        description: Vendor already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: VENDOR_EXISTS
+                message: Vendor with this email already exists
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{id}:
+  get:
+    tags:
+    - Vendor Management
+    summary: Get Vendor Details
+    description: 'Retrieve complete vendor information including specializations,
+      contacts, and performance metrics.
 
-    delete:
-      tags:
-        - Vendor Management
-      summary: Delete Vendor
-      description: |
-        Soft delete a vendor (sets deleted_at timestamp).
-        
-        **Cascade Effects:**
-        - All specializations are soft deleted
-        - All contacts are soft deleted  
-        - Existing orders and ratings remain for audit trail
-        - Vendor becomes unavailable for new orders
-        
-        **Requirements:**
-        - Admin privileges required
-        - Cannot delete vendor with active orders
-      operationId: deleteVendor
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: id
-          in: path
-          required: true
-          description: Vendor ID (UUID)
+
+      **Included Data:**
+
+      - Complete vendor profile
+
+      - All specializations and capabilities
+
+      - Contact persons list
+
+      - Performance ratings and statistics
+
+      - Recent order history (if permitted)
+
+      '
+    operationId: getVendor
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      description: Include related data
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - specializations
+          - contacts
+          - ratings
+          - negotiations
+          - payments
+          - statistics
+      style: form
+      explode: false
+      example:
+      - specializations
+      - contacts
+      - ratings
+    responses:
+      '200':
+        description: Vendor details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Vendors Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Vendors retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Vendor not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: VENDOR_NOT_FOUND
+                message: Vendor not found
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - Vendor Management
+    summary: Update Vendor
+    description: 'Update vendor information including company details, capabilities,
+      and settings.
+
+
+      **Updateable Fields:**
+
+      - Company and contact information
+
+      - Address and legal documents
+
+      - Banking details
+
+      - Capacity and capability settings
+
+      - Admin can update verification status
+
+
+      **Protected Fields:**
+
+      - Statistics and ratings (auto-calculated)
+
+      - UUID and tenant_id
+
+      - Created/updated timestamps
+
+      '
+    operationId: updateVendor
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: force
-          in: query
-          description: Force delete even with existing relationships (admin only)
+            $ref: '#/components/schemas/VendorUpdateInput'
+          examples:
+            update_capacity:
+              summary: Update capacity and contact
+              value:
+                production_capacity_monthly: 1500
+                average_lead_time_days: 8
+                mobile_phone: '+62812345679'
+                website: https://www.etchingindo.co.id
+                notes: Expanded capacity, faster delivery times
+            verify_vendor:
+              summary: Admin verification
+              value:
+                is_verified: true
+                status: active
+                quality_tier: premium
+    responses:
+      '200':
+        description: Vendor updated successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Vendor not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - Vendor Management
+    summary: Delete Vendor
+    description: "Soft delete a vendor (sets deleted_at timestamp).\n\n**Cascade Effects:**\n\
+      - All specializations are soft deleted\n- All contacts are soft deleted  \n\
+      - Existing orders and ratings remain for audit trail\n- Vendor becomes unavailable\
+      \ for new orders\n\n**Requirements:**\n- Admin privileges required\n- Cannot\
+      \ delete vendor with active orders\n"
+    operationId: deleteVendor
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: force
+      in: query
+      description: Force delete even with existing relationships (admin only)
+      schema:
+        type: boolean
+        default: false
+      example: false
+    responses:
+      '200':
+        description: Vendor deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Vendor deleted successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors deleteed successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        description: Cannot delete vendor with active orders
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: VENDOR_HAS_ACTIVE_ORDERS
+                message: Cannot delete vendor with active orders
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{vendorId}/specializations:
+  get:
+    tags:
+    - Vendor Specializations
+    summary: List Vendor Specializations
+    description: 'Retrieve all material specializations for a specific vendor.
+
+
+      **Information Included:**
+
+      - Material type and quality tier
+
+      - Pricing ranges and capacity
+
+      - Lead time estimates
+
+      - Performance metrics per material
+
+      - Certification and sample images
+
+      '
+    operationId: listVendorSpecializations
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: material_type
+      in: query
+      description: Filter by material type
+      schema:
+        type: string
+        enum:
+        - akrilik
+        - kuningan
+        - tembaga
+        - stainless_steel
+        - aluminum
+        - kaca
+        - kayu
+        - custom
+    - name: quality_tier
+      in: query
+      description: Filter by quality tier
+      schema:
+        type: string
+        enum:
+        - standard
+        - premium
+    - name: is_active
+      in: query
+      description: Filter by active status
+      schema:
+        type: boolean
+      example: true
+    responses:
+      '200':
+        description: Specializations retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorSpecializationListResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Vendors Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Vendors retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Vendor Specializations
+    summary: Add Vendor Specialization
+    description: 'Add a new material specialization to vendor capabilities.
+
+
+      **Requirements:**
+
+      - Unique material type per vendor
+
+      - Valid pricing and capacity information
+
+      - Lead time estimates
+
+      - Quality tier classification
+
+      '
+    operationId: createVendorSpecialization
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: boolean
-            default: false
-          example: false
-      responses:
-        '200':
-          description: Vendor deleted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
+            $ref: '#/components/schemas/VendorSpecializationCreateInput'
+          examples:
+            stainless_steel_premium:
+              summary: Premium stainless steel specialization
+              value:
+                vendor_id: 550e8400-e29b-41d4-a716-446655440000
+                material_type: stainless_steel
+                quality_tier: premium
+                production_capacity_per_month: 500
+                min_order_quantity: 10
+                price_per_unit_min: 75000
+                price_per_unit_max: 200000
+                lead_time_days_min: 5
+                lead_time_days_max: 12
+                notes: High precision etching, mirror finish available
+                certifications:
+                - ISO 9001
+                - ISO 14001
+                sample_images:
+                - https://cdn.example.com/samples/steel1.jpg
+    responses:
+      '201':
+        description: Specialization created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VendorSpecialization'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Vendors created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        description: Specialization already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: SPECIALIZATION_EXISTS
+                message: Vendor already has specialization for this material type
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{vendorId}/specializations/{id}:
+  put:
+    tags:
+    - Vendor Specializations
+    summary: Update Vendor Specialization
+    description: 'Update specialization details including pricing, capacity, and lead
+      times.
+
+      '
+    operationId: updateVendorSpecialization
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      description: Specialization ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VendorSpecializationUpdateInput'
+          example:
+            title: Updated Vendors Title
+            description: Updated description for vendors
+            is_active: true
+    responses:
+      '200':
+        description: Specialization updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VendorSpecialization'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - Vendor Specializations
+    summary: Delete Vendor Specialization
+    description: 'Remove a material specialization from vendor capabilities.
+
+      Cannot delete if there are active orders for this material type.
+
+      '
+    operationId: deleteVendorSpecialization
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      description: Specialization ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Specialization deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors deleteed successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        description: Cannot delete specialization with active orders
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{vendorId}/contacts:
+  get:
+    tags:
+    - Vendor Contacts
+    summary: List Vendor Contacts
+    description: 'Retrieve all contact persons for a specific vendor.
+
+      '
+    operationId: listVendorContacts
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: is_primary
+      in: query
+      description: Filter by primary contact status
+      schema:
+        type: boolean
+    - name: is_active
+      in: query
+      description: Filter by active status
+      schema:
+        type: boolean
+      example: true
+    responses:
+      '200':
+        description: Contacts retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorContactListResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Vendors Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Vendors retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Vendor Contacts
+    summary: Add Vendor Contact
+    description: 'Add a new contact person for the vendor.
+
+
+      **Contact Information:**
+
+      - Personal details (name, position, department)
+
+      - Multiple communication channels
+
+      - Contact preferences and availability
+
+      - Primary contact designation
+
+      '
+    operationId: createVendorContact
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VendorContactCreateInput'
+          examples:
+            sales_manager:
+              summary: Sales Manager contact
+              value:
+                vendor_id: 550e8400-e29b-41d4-a716-446655440000
+                full_name: Budi Santoso
+                position: Sales Manager
+                department: Sales
+                email: budi@etchingindo.com
+                phone: '+62218765432'
+                mobile_phone: '+62812345678'
+                whatsapp: '+62812345678'
+                is_primary: true
+                preferred_contact_method: whatsapp
+                available_hours: 08:00-17:00 WIB
+                notes: Best contact for quotations and technical discussions
+    responses:
+      '201':
+        description: Contact created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VendorContact'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Vendors created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{vendorId}/contacts/{id}:
+  put:
+    tags:
+    - Vendor Contacts
+    summary: Update Vendor Contact
+    description: 'Update contact person information and preferences.
+
+      '
+    operationId: updateVendorContact
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      description: Contact ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VendorContactUpdateInput'
+          example:
+            title: Updated Vendors Title
+            description: Updated description for vendors
+            is_active: true
+    responses:
+      '200':
+        description: Contact updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VendorContact'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - Vendor Contacts
+    summary: Delete Vendor Contact
+    description: 'Soft delete a vendor contact person.
+
+      Cannot delete the last remaining contact.
+
+      '
+    operationId: deleteVendorContact
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      description: Contact ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Contact deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BaseResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors deleteed successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        description: Cannot delete last remaining contact
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{vendorId}/ratings:
+  get:
+    tags:
+    - Vendor Ratings
+    summary: List Vendor Ratings
+    description: 'Retrieve performance ratings for a specific vendor.
+
+
+      **Rating Information:**
+
+      - Multi-criteria scoring (quality, timeliness, communication, pricing)
+
+      - Detailed reviews and feedback
+
+      - Order-specific context
+
+      - Performance trends over time
+
+      '
+    operationId: listVendorRatings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: min_rating
+      in: query
+      description: Filter ratings above this score
+      schema:
+        type: number
+        format: decimal
+        minimum: 1
+        maximum: 5
+      example: 4.0
+    - name: material_type
+      in: query
+      description: Filter by material type
+      schema:
+        type: string
+        enum:
+        - akrilik
+        - kuningan
+        - tembaga
+        - stainless_steel
+        - aluminum
+        - kaca
+        - kayu
+        - custom
+    - name: is_public
+      in: query
+      description: Filter by public visibility
+      schema:
+        type: boolean
+    - name: date_from
+      in: query
+      description: Filter ratings from this date
+      schema:
+        type: string
+        format: date
+    - name: date_to
+      in: query
+      description: Filter ratings until this date
+      schema:
+        type: string
+        format: date
+    responses:
+      '200':
+        description: Ratings retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorRatingListResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Vendors Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Vendors retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Vendor Ratings
+    summary: Create Vendor Rating
+    description: "Create a performance rating for a completed order.\n\n**Rating Criteria:**\n\
+      - Quality (35% weight): Product quality and finish\n- Timeliness (30% weight):\
+      \ On-time delivery performance  \n- Communication (20% weight): Responsiveness\
+      \ and clarity\n- Pricing (15% weight): Competitive pricing and value\n\n**Requirements:**\n\
+      - Must reference a completed order\n- Only one rating per order allowed\n- Rating\
+      \ scores must be 1-5 scale\n"
+    operationId: createVendorRating
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VendorRatingCreateInput'
+          examples:
+            excellent_rating:
+              summary: Excellent performance rating
+              value:
+                vendor_id: 550e8400-e29b-41d4-a716-446655440000
+                order_id: 123e4567-e89b-12d3-a456-426614174000
+                quality_score: 4.5
+                timeliness_score: 4.0
+                communication_score: 4.2
+                pricing_score: 4.1
+                review_title: Excellent quality, slightly delayed delivery
+                review_text: Great attention to detail, final product exceeded expectations
+                pros: High quality finish, professional communication
+                cons: Delivery was 2 days late
+                material_type: stainless_steel
+                order_value: 15000000
+                delivery_days_actual: 12
+                delivery_days_promised: 10
+                review_images:
+                - https://cdn.example.com/reviews/review123-1.jpg
+                is_public: false
+    responses:
+      '201':
+        description: Rating created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VendorRating'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Vendors created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        description: Rating already exists for this order
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: RATING_EXISTS
+                message: Rating already exists for this order
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{vendorId}/ratings/{id}:
+  put:
+    tags:
+    - Vendor Ratings
+    summary: Update Vendor Rating
+    description: 'Update an existing vendor rating and review.
+
+      Can add admin response to ratings.
+
+      '
+    operationId: updateVendorRating
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: id
+      in: path
+      required: true
+      description: Rating ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VendorRatingUpdateInput'
+          example:
+            title: Updated Vendors Title
+            description: Updated description for vendors
+            is_active: true
+    responses:
+      '200':
+        description: Rating updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VendorRating'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/statistics:
+  get:
+    tags:
+    - Vendor Analytics
+    summary: Get Vendor Statistics
+    description: 'Retrieve comprehensive vendor statistics and analytics.
+
+
+      **Statistics Included:**
+
+      - Total vendor counts by status and tier
+
+      - Average ratings and performance metrics
+
+      - Material specialization distribution
+
+      - Top-rated vendors list
+
+      - Transaction value summaries
+
+      - Geographic distribution
+
+      '
+    operationId: getVendorStatistics
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: period
+      in: query
+      description: Time period for statistics
+      schema:
+        type: string
+        enum:
+        - last_7_days
+        - last_30_days
+        - last_90_days
+        - last_year
+        - all_time
+        default: last_30_days
+      example: last_30_days
+    - name: material_type
+      in: query
+      description: Filter statistics by material type
+      schema:
+        type: string
+        enum:
+        - akrilik
+        - kuningan
+        - tembaga
+        - stainless_steel
+        - aluminum
+        - kaca
+        - kayu
+        - custom
+    - name: quality_tier
+      in: query
+      description: Filter by quality tier
+      schema:
+        type: string
+        enum:
+        - standard
+        - premium
+    responses:
+      '200':
+        description: Statistics retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendorStatsResponse'
+            example:
+              success: true
+              data:
+                total_vendors: 45
+                active_vendors: 42
+                verified_vendors: 38
+                total_specializations: 156
+                average_rating: 4.2
+                total_orders_value: 2450000000
+                by_quality_tier:
+                  standard: 28
+                  premium: 17
+                by_material:
+                  stainless_steel: 25
+                  aluminum: 20
+                  akrilik: 18
+                  kuningan: 15
+                top_rated_vendors:
+                - id: 550e8400-e29b-41d4-a716-446655440000
+                  company_name: PT Etching Indo Prima
+                  overall_rating: 4.8
+                - id: 123e4567-e89b-12d3-a456-426614174000
+                  company_name: CV Precision Metal
+                  overall_rating: 4.6
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/{id}/performance:
+  get:
+    tags:
+    - Vendor Analytics
+    summary: Get Vendor Performance Report
+    description: 'Retrieve detailed performance analysis for a specific vendor.
+
+
+      **Performance Metrics:**
+
+      - Rating trends over time
+
+      - Order completion statistics
+
+      - Material-specific performance
+
+      - Comparative analysis vs other vendors
+
+      - Profitability metrics
+
+      '
+    operationId: getVendorPerformance
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    - name: period
+      in: query
+      description: Analysis period
+      schema:
+        type: string
+        enum:
+        - last_30_days
+        - last_90_days
+        - last_year
+        - all_time
+        default: last_90_days
+    - name: include_comparison
+      in: query
+      description: Include comparison with other vendors
+      schema:
+        type: boolean
+        default: true
+    responses:
+      '200':
+        description: Performance report generated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
                     properties:
-                      message:
+                      vendor_id:
                         type: string
-                        example: "Vendor deleted successfully"
-        '400':
-          description: Cannot delete vendor with active orders
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "VENDOR_HAS_ACTIVE_ORDERS"
-                  message: "Cannot delete vendor with active orders"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # VENDOR SPECIALIZATIONS ENDPOINTS
-  # ================================================================
-  /vendors/{vendorId}/specializations:
-    get:
-      tags:
-        - Vendor Specializations
-      summary: List Vendor Specializations
-      description: |
-        Retrieve all material specializations for a specific vendor.
-        
-        **Information Included:**
-        - Material type and quality tier
-        - Pricing ranges and capacity
-        - Lead time estimates
-        - Performance metrics per material
-        - Certification and sample images
-      operationId: listVendorSpecializations
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: material_type
-          in: query
-          description: Filter by material type
-          schema:
-            type: string
-            enum: [akrilik, kuningan, tembaga, stainless_steel, aluminum, kaca, kayu, custom]
-        - name: quality_tier
-          in: query
-          description: Filter by quality tier
-          schema:
-            type: string
-            enum: [standard, premium]
-        - name: is_active
-          in: query
-          description: Filter by active status
-          schema:
-            type: boolean
-          example: true
-      responses:
-        '200':
-          description: Specializations retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorSpecializationListResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    post:
-      tags:
-        - Vendor Specializations
-      summary: Add Vendor Specialization
-      description: |
-        Add a new material specialization to vendor capabilities.
-        
-        **Requirements:**
-        - Unique material type per vendor
-        - Valid pricing and capacity information
-        - Lead time estimates
-        - Quality tier classification
-      operationId: createVendorSpecialization
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorSpecializationCreateInput'
-            examples:
-              stainless_steel_premium:
-                summary: Premium stainless steel specialization
-                value:
-                  vendor_id: "550e8400-e29b-41d4-a716-446655440000"
-                  material_type: "stainless_steel"
-                  quality_tier: "premium"
-                  production_capacity_per_month: 500
-                  min_order_quantity: 10
-                  price_per_unit_min: 75000
-                  price_per_unit_max: 200000
-                  lead_time_days_min: 5
-                  lead_time_days_max: 12
-                  notes: "High precision etching, mirror finish available"
-                  certifications: ["ISO 9001", "ISO 14001"]
-                  sample_images: ["https://cdn.example.com/samples/steel1.jpg"]
-      responses:
-        '201':
-          description: Specialization created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/vendors.yaml#/VendorSpecialization'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '409':
-          description: Specialization already exists
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "SPECIALIZATION_EXISTS"
-                  message: "Vendor already has specialization for this material type"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /vendors/{vendorId}/specializations/{id}:
-    put:
-      tags:
-        - Vendor Specializations
-      summary: Update Vendor Specialization
-      description: |
-        Update specialization details including pricing, capacity, and lead times.
-      operationId: updateVendorSpecialization
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: id
-          in: path
-          required: true
-          description: Specialization ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorSpecializationUpdateInput'
-      responses:
-        '200':
-          description: Specialization updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/vendors.yaml#/VendorSpecialization'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    delete:
-      tags:
-        - Vendor Specializations
-      summary: Delete Vendor Specialization
-      description: |
-        Remove a material specialization from vendor capabilities.
-        Cannot delete if there are active orders for this material type.
-      operationId: deleteVendorSpecialization
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: id
-          in: path
-          required: true
-          description: Specialization ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Specialization deleted successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/BaseResponse'
-        '400':
-          description: Cannot delete specialization with active orders
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # VENDOR CONTACTS ENDPOINTS
-  # ================================================================
-  /vendors/{vendorId}/contacts:
-    get:
-      tags:
-        - Vendor Contacts
-      summary: List Vendor Contacts
-      description: |
-        Retrieve all contact persons for a specific vendor.
-      operationId: listVendorContacts
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: is_primary
-          in: query
-          description: Filter by primary contact status
-          schema:
-            type: boolean
-        - name: is_active
-          in: query
-          description: Filter by active status
-          schema:
-            type: boolean
-          example: true
-      responses:
-        '200':
-          description: Contacts retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorContactListResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    post:
-      tags:
-        - Vendor Contacts
-      summary: Add Vendor Contact
-      description: |
-        Add a new contact person for the vendor.
-        
-        **Contact Information:**
-        - Personal details (name, position, department)
-        - Multiple communication channels
-        - Contact preferences and availability
-        - Primary contact designation
-      operationId: createVendorContact
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorContactCreateInput'
-            examples:
-              sales_manager:
-                summary: Sales Manager contact
-                value:
-                  vendor_id: "550e8400-e29b-41d4-a716-446655440000"
-                  full_name: "Budi Santoso"
-                  position: "Sales Manager"
-                  department: "Sales"
-                  email: "budi@etchingindo.com"
-                  phone: "+62218765432"
-                  mobile_phone: "+62812345678"
-                  whatsapp: "+62812345678"
-                  is_primary: true
-                  preferred_contact_method: "whatsapp"
-                  available_hours: "08:00-17:00 WIB"
-                  notes: "Best contact for quotations and technical discussions"
-      responses:
-        '201':
-          description: Contact created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/vendors.yaml#/VendorContact'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /vendors/{vendorId}/contacts/{id}:
-    put:
-      tags:
-        - Vendor Contacts
-      summary: Update Vendor Contact
-      description: |
-        Update contact person information and preferences.
-      operationId: updateVendorContact
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: id
-          in: path
-          required: true
-          description: Contact ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorContactUpdateInput'
-      responses:
-        '200':
-          description: Contact updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/vendors.yaml#/VendorContact'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    delete:
-      tags:
-        - Vendor Contacts
-      summary: Delete Vendor Contact
-      description: |
-        Soft delete a vendor contact person.
-        Cannot delete the last remaining contact.
-      operationId: deleteVendorContact
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: id
-          in: path
-          required: true
-          description: Contact ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Contact deleted successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/BaseResponse'
-        '400':
-          description: Cannot delete last remaining contact
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # VENDOR RATINGS ENDPOINTS
-  # ================================================================
-  /vendors/{vendorId}/ratings:
-    get:
-      tags:
-        - Vendor Ratings
-      summary: List Vendor Ratings
-      description: |
-        Retrieve performance ratings for a specific vendor.
-        
-        **Rating Information:**
-        - Multi-criteria scoring (quality, timeliness, communication, pricing)
-        - Detailed reviews and feedback
-        - Order-specific context
-        - Performance trends over time
-      operationId: listVendorRatings
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: min_rating
-          in: query
-          description: Filter ratings above this score
-          schema:
-            type: number
-            format: decimal
-            minimum: 1
-            maximum: 5
-          example: 4.0
-        - name: material_type
-          in: query
-          description: Filter by material type
-          schema:
-            type: string
-            enum: [akrilik, kuningan, tembaga, stainless_steel, aluminum, kaca, kayu, custom]
-        - name: is_public
-          in: query
-          description: Filter by public visibility
-          schema:
-            type: boolean
-        - name: date_from
-          in: query
-          description: Filter ratings from this date
-          schema:
-            type: string
-            format: date
-        - name: date_to
-          in: query
-          description: Filter ratings until this date
-          schema:
-            type: string
-            format: date
-      responses:
-        '200':
-          description: Ratings retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorRatingListResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    post:
-      tags:
-        - Vendor Ratings
-      summary: Create Vendor Rating
-      description: |
-        Create a performance rating for a completed order.
-        
-        **Rating Criteria:**
-        - Quality (35% weight): Product quality and finish
-        - Timeliness (30% weight): On-time delivery performance  
-        - Communication (20% weight): Responsiveness and clarity
-        - Pricing (15% weight): Competitive pricing and value
-        
-        **Requirements:**
-        - Must reference a completed order
-        - Only one rating per order allowed
-        - Rating scores must be 1-5 scale
-      operationId: createVendorRating
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorRatingCreateInput'
-            examples:
-              excellent_rating:
-                summary: Excellent performance rating
-                value:
-                  vendor_id: "550e8400-e29b-41d4-a716-446655440000"
-                  order_id: "123e4567-e89b-12d3-a456-426614174000"
-                  quality_score: 4.5
-                  timeliness_score: 4.0
-                  communication_score: 4.2
-                  pricing_score: 4.1
-                  review_title: "Excellent quality, slightly delayed delivery"
-                  review_text: "Great attention to detail, final product exceeded expectations"
-                  pros: "High quality finish, professional communication"
-                  cons: "Delivery was 2 days late"
-                  material_type: "stainless_steel"
-                  order_value: 15000000
-                  delivery_days_actual: 12
-                  delivery_days_promised: 10
-                  review_images: ["https://cdn.example.com/reviews/review123-1.jpg"]
-                  is_public: false
-      responses:
-        '201':
-          description: Rating created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/vendors.yaml#/VendorRating'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '409':
-          description: Rating already exists for this order
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "RATING_EXISTS"
-                  message: "Rating already exists for this order"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /vendors/{vendorId}/ratings/{id}:
-    put:
-      tags:
-        - Vendor Ratings
-      summary: Update Vendor Rating
-      description: |
-        Update an existing vendor rating and review.
-        Can add admin response to ratings.
-      operationId: updateVendorRating
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: vendorId
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: id
-          in: path
-          required: true
-          description: Rating ID (UUID)
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/vendors.yaml#/VendorRatingUpdateInput'
-      responses:
-        '200':
-          description: Rating updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/vendors.yaml#/VendorRating'
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # VENDOR ANALYTICS & STATISTICS
-  # ================================================================
-  /vendors/statistics:
-    get:
-      tags:
-        - Vendor Analytics
-      summary: Get Vendor Statistics
-      description: |
-        Retrieve comprehensive vendor statistics and analytics.
-        
-        **Statistics Included:**
-        - Total vendor counts by status and tier
-        - Average ratings and performance metrics
-        - Material specialization distribution
-        - Top-rated vendors list
-        - Transaction value summaries
-        - Geographic distribution
-      operationId: getVendorStatistics
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: period
-          in: query
-          description: Time period for statistics
-          schema:
-            type: string
-            enum: [last_7_days, last_30_days, last_90_days, last_year, all_time]
-            default: last_30_days
-          example: "last_30_days"
-        - name: material_type
-          in: query
-          description: Filter statistics by material type
-          schema:
-            type: string
-            enum: [akrilik, kuningan, tembaga, stainless_steel, aluminum, kaca, kayu, custom]
-        - name: quality_tier
-          in: query
-          description: Filter by quality tier
-          schema:
-            type: string
-            enum: [standard, premium]
-      responses:
-        '200':
-          description: Statistics retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/vendors.yaml#/VendorStatsResponse'
-              example:
-                success: true
-                data:
-                  total_vendors: 45
-                  active_vendors: 42
-                  verified_vendors: 38
-                  total_specializations: 156
-                  average_rating: 4.2
-                  total_orders_value: 2450000000
-                  by_quality_tier:
-                    standard: 28
-                    premium: 17
-                  by_material:
-                    stainless_steel: 25
-                    aluminum: 20
-                    akrilik: 18
-                    kuningan: 15
-                  top_rated_vendors:
-                    - id: "550e8400-e29b-41d4-a716-446655440000"
-                      company_name: "PT Etching Indo Prima"
-                      overall_rating: 4.8
-                    - id: "123e4567-e89b-12d3-a456-426614174000"
-                      company_name: "CV Precision Metal"
-                      overall_rating: 4.6
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /vendors/{id}/performance:
-    get:
-      tags:
-        - Vendor Analytics
-      summary: Get Vendor Performance Report
-      description: |
-        Retrieve detailed performance analysis for a specific vendor.
-        
-        **Performance Metrics:**
-        - Rating trends over time
-        - Order completion statistics
-        - Material-specific performance
-        - Comparative analysis vs other vendors
-        - Profitability metrics
-      operationId: getVendorPerformance
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: id
-          in: path
-          required: true
-          description: Vendor ID (UUID)
-          schema:
-            type: string
-            format: uuid
-        - name: period
-          in: query
-          description: Analysis period
-          schema:
-            type: string
-            enum: [last_30_days, last_90_days, last_year, all_time]
-            default: last_90_days
-        - name: include_comparison
-          in: query
-          description: Include comparison with other vendors
-          schema:
-            type: boolean
-            default: true
-      responses:
-        '200':
-          description: Performance report generated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
+                        format: uuid
+                      company_name:
+                        type: string
+                      performance_period:
+                        type: string
+                      overall_metrics:
                         type: object
                         properties:
-                          vendor_id:
-                            type: string
-                            format: uuid
-                          company_name:
-                            type: string
-                          performance_period:
-                            type: string
-                          overall_metrics:
-                            type: object
-                            properties:
-                              total_orders:
-                                type: integer
-                              completed_orders:
-                                type: integer
-                              success_rate:
-                                type: number
-                                format: decimal
-                              average_rating:
-                                type: number
-                                format: decimal
-                              total_value:
-                                type: number
-                                format: decimal
-                          rating_trends:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                period:
-                                  type: string
-                                  format: date
-                                quality_rating:
-                                  type: number
-                                  format: decimal
-                                timeliness_rating:
-                                  type: number
-                                  format: decimal
-                                communication_rating:
-                                  type: number
-                                  format: decimal
-                                pricing_rating:
-                                  type: number
-                                  format: decimal
-                          material_performance:
-                            type: object
-                            additionalProperties:
-                              type: object
-                              properties:
-                                orders:
-                                  type: integer
-                                success_rate:
-                                  type: number
-                                  format: decimal
-                                average_rating:
-                                  type: number
-                                  format: decimal
-                          comparison:
-                            type: object
-                            properties:
-                              industry_average:
-                                type: number
-                                format: decimal
-                              rank_percentile:
-                                type: number
-                                format: decimal
-                              similar_vendors_count:
-                                type: integer
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          $ref: '../../components/responses.yaml#/NotFound'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                          total_orders:
+                            type: integer
+                          completed_orders:
+                            type: integer
+                          success_rate:
+                            type: number
+                            format: decimal
+                          average_rating:
+                            type: number
+                            format: decimal
+                          total_value:
+                            type: number
+                            format: decimal
+                      rating_trends:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            period:
+                              type: string
+                              format: date
+                            quality_rating:
+                              type: number
+                              format: decimal
+                            timeliness_rating:
+                              type: number
+                              format: decimal
+                            communication_rating:
+                              type: number
+                              format: decimal
+                            pricing_rating:
+                              type: number
+                              format: decimal
+                      material_performance:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          properties:
+                            orders:
+                              type: integer
+                            success_rate:
+                              type: number
+                              format: decimal
+                            average_rating:
+                              type: number
+                              format: decimal
+                      comparison:
+                        type: object
+                        properties:
+                          industry_average:
+                            type: number
+                            format: decimal
+                          rank_percentile:
+                            type: number
+                            format: decimal
+                          similar_vendors_count:
+                            type: integer
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Vendors Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Vendors retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/search:
+  post:
+    tags:
+    - Vendor Search
+    summary: Search Vendors by Criteria
+    description: 'Advanced vendor search and matching for order sourcing.
 
-  # ================================================================
-  # VENDOR SEARCH & MATCHING ENDPOINTS
-  # ================================================================
-  /vendors/search:
-    post:
-      tags:
-        - Vendor Search
-      summary: Search Vendors by Criteria
-      description: |
-        Advanced vendor search and matching for order sourcing.
-        
-        **Matching Criteria:**
-        - Material type and quality requirements
-        - Capacity and lead time needs
-        - Price range expectations
-        - Geographic preferences
-        - Rating thresholds
-        - Rush order capabilities
-        
-        **Results Include:**
-        - Matching score per vendor
-        - Availability status
-        - Estimated pricing ranges
-        - Recommended vendor ranking
-      operationId: searchVendors
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+
+      **Matching Criteria:**
+
+      - Material type and quality requirements
+
+      - Capacity and lead time needs
+
+      - Price range expectations
+
+      - Geographic preferences
+
+      - Rating thresholds
+
+      - Rush order capabilities
+
+
+      **Results Include:**
+
+      - Matching score per vendor
+
+      - Availability status
+
+      - Estimated pricing ranges
+
+      - Recommended vendor ranking
+
+      '
+    operationId: searchVendors
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - material_type
+            properties:
+              material_type:
+                type: string
+                enum:
+                - akrilik
+                - kuningan
+                - tembaga
+                - stainless_steel
+                - aluminum
+                - kaca
+                - kayu
+                - custom
+                description: Required material type
+                example: stainless_steel
+              quality_tier:
+                type: string
+                enum:
+                - standard
+                - premium
+                description: Preferred quality tier
+                example: premium
+              quantity:
+                type: integer
+                minimum: 1
+                description: Order quantity
+                example: 100
+              max_lead_time_days:
+                type: integer
+                minimum: 1
+                description: Maximum acceptable lead time
+                example: 14
+              budget_min:
+                type: number
+                format: decimal
+                minimum: 0
+                description: Minimum budget per unit (IDR)
+                example: 50000
+              budget_max:
+                type: number
+                format: decimal
+                minimum: 0
+                description: Maximum budget per unit (IDR)
+                example: 150000
+              rush_order:
+                type: boolean
+                default: false
+                description: Whether this is a rush order
+                example: false
+              min_rating:
+                type: number
+                format: decimal
+                minimum: 0
+                maximum: 5
+                default: 3.0
+                description: Minimum acceptable vendor rating
+                example: 4.0
+              preferred_cities:
+                type: array
+                items:
+                  type: string
+                description: Preferred vendor locations
+                example:
+                - Jakarta
+                - Tangerang
+                - Bekasi
+              exclude_vendors:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                description: Vendor IDs to exclude from results
+                example: []
+              limit:
+                type: integer
+                minimum: 1
+                maximum: 20
+                default: 10
+                description: Maximum number of results
+                example: 5
+          examples:
+            premium_steel_search:
+              summary: Premium stainless steel search
+              value:
+                material_type: stainless_steel
+                quality_tier: premium
+                quantity: 100
+                max_lead_time_days: 14
+                budget_min: 75000
+                budget_max: 200000
+                rush_order: false
+                min_rating: 4.0
+                preferred_cities:
+                - Jakarta
+                - Tangerang
+                limit: 5
+    responses:
+      '200':
+        description: Vendor search completed successfully
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - material_type
-              properties:
-                material_type:
-                  type: string
-                  enum: [akrilik, kuningan, tembaga, stainless_steel, aluminum, kaca, kayu, custom]
-                  description: Required material type
-                  example: "stainless_steel"
-                quality_tier:
-                  type: string
-                  enum: [standard, premium]
-                  description: Preferred quality tier
-                  example: "premium"
-                quantity:
-                  type: integer
-                  minimum: 1
-                  description: Order quantity
-                  example: 100
-                max_lead_time_days:
-                  type: integer
-                  minimum: 1
-                  description: Maximum acceptable lead time
-                  example: 14
-                budget_min:
-                  type: number
-                  format: decimal
-                  minimum: 0
-                  description: Minimum budget per unit (IDR)
-                  example: 50000
-                budget_max:
-                  type: number
-                  format: decimal
-                  minimum: 0
-                  description: Maximum budget per unit (IDR)
-                  example: 150000
-                rush_order:
-                  type: boolean
-                  default: false
-                  description: Whether this is a rush order
-                  example: false
-                min_rating:
-                  type: number
-                  format: decimal
-                  minimum: 0
-                  maximum: 5
-                  default: 3.0
-                  description: Minimum acceptable vendor rating
-                  example: 4.0
-                preferred_cities:
-                  type: array
-                  items:
-                    type: string
-                  description: Preferred vendor locations
-                  example: ["Jakarta", "Tangerang", "Bekasi"]
-                exclude_vendors:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-                  description: Vendor IDs to exclude from results
-                  example: []
-                limit:
-                  type: integer
-                  minimum: 1
-                  maximum: 20
-                  default: 10
-                  description: Maximum number of results
-                  example: 5
-            examples:
-              premium_steel_search:
-                summary: Premium stainless steel search
-                value:
-                  material_type: "stainless_steel"
-                  quality_tier: "premium"
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      search_criteria:
+                        type: object
+                        description: Echo of search parameters
+                      total_matches:
+                        type: integer
+                        description: Total vendors matching criteria
+                        example: 12
+                      recommended_vendors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            vendor:
+                              $ref: '#/components/schemas/Vendor'
+                            specialization:
+                              $ref: '#/components/schemas/VendorSpecialization'
+                            match_score:
+                              type: number
+                              format: decimal
+                              minimum: 0
+                              maximum: 100
+                              description: Matching score percentage
+                              example: 92.5
+                            estimated_price_min:
+                              type: number
+                              format: decimal
+                              example: 85000
+                            estimated_price_max:
+                              type: number
+                              format: decimal
+                              example: 125000
+                            estimated_lead_time:
+                              type: integer
+                              example: 10
+                            availability_status:
+                              type: string
+                              enum:
+                              - available
+                              - busy
+                              - overbooked
+                              example: available
+                            distance_km:
+                              type: number
+                              format: decimal
+                              nullable: true
+                              example: 25.5
+                            reasons:
+                              type: array
+                              items:
+                                type: string
+                              example:
+                              - High quality rating
+                              - Competitive pricing
+                              - Fast lead time
+            example:
+              success: true
+              data:
+                search_criteria:
+                  material_type: stainless_steel
+                  quality_tier: premium
                   quantity: 100
                   max_lead_time_days: 14
-                  budget_min: 75000
-                  budget_max: 200000
-                  rush_order: false
-                  min_rating: 4.0
-                  preferred_cities: ["Jakarta", "Tangerang"]
-                  limit: 5
-      responses:
-        '200':
-          description: Vendor search completed successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          search_criteria:
-                            type: object
-                            description: Echo of search parameters
-                          total_matches:
-                            type: integer
-                            description: Total vendors matching criteria
-                            example: 12
-                          recommended_vendors:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                vendor:
-                                  $ref: '../../schemas/content-management/vendors.yaml#/Vendor'
-                                specialization:
-                                  $ref: '../../schemas/content-management/vendors.yaml#/VendorSpecialization'
-                                match_score:
-                                  type: number
-                                  format: decimal
-                                  minimum: 0
-                                  maximum: 100
-                                  description: Matching score percentage
-                                  example: 92.5
-                                estimated_price_min:
-                                  type: number
-                                  format: decimal
-                                  example: 85000
-                                estimated_price_max:
-                                  type: number
-                                  format: decimal
-                                  example: 125000
-                                estimated_lead_time:
-                                  type: integer
-                                  example: 10
-                                availability_status:
-                                  type: string
-                                  enum: [available, busy, overbooked]
-                                  example: "available"
-                                distance_km:
-                                  type: number
-                                  format: decimal
-                                  nullable: true
-                                  example: 25.5
-                                reasons:
-                                  type: array
-                                  items:
-                                    type: string
-                                  example: ["High quality rating", "Competitive pricing", "Fast lead time"]
-              example:
-                success: true
-                data:
-                  search_criteria:
-                    material_type: "stainless_steel"
-                    quality_tier: "premium"
-                    quantity: 100
-                    max_lead_time_days: 14
-                  total_matches: 12
-                  recommended_vendors:
-                    - vendor:
-                        id: "550e8400-e29b-41d4-a716-446655440000"
-                        company_name: "PT Etching Indo Prima"
-                        overall_rating: 4.8
-                        city: "Jakarta"
-                        status: "active"
-                      specialization:
-                        material_type: "stainless_steel"
-                        quality_tier: "premium"
-                        lead_time_days_min: 7
-                        lead_time_days_max: 12
-                      match_score: 92.5
-                      estimated_price_min: 85000
-                      estimated_price_max: 125000
-                      estimated_lead_time: 10
-                      availability_status: "available"
-                      distance_km: 15.2
-                      reasons: ["High quality rating", "Competitive pricing", "Fast lead time", "Local vendor"]
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                total_matches: 12
+                recommended_vendors:
+                - vendor:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    company_name: PT Etching Indo Prima
+                    overall_rating: 4.8
+                    city: Jakarta
+                    status: active
+                  specialization:
+                    material_type: stainless_steel
+                    quality_tier: premium
+                    lead_time_days_min: 7
+                    lead_time_days_max: 12
+                  match_score: 92.5
+                  estimated_price_min: 85000
+                  estimated_price_max: 125000
+                  estimated_lead_time: 10
+                  availability_status: available
+                  distance_km: 15.2
+                  reasons:
+                  - High quality rating
+                  - Competitive pricing
+                  - Fast lead time
+                  - Local vendor
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/vendors/bulk:
+  post:
+    tags:
+    - Vendor Management
+    summary: Bulk Vendor Operations
+    description: 'Perform bulk operations on multiple vendors simultaneously.
 
-  # ================================================================
-  # BULK OPERATIONS
-  # ================================================================
-  /vendors/bulk:
-    post:
-      tags:
-        - Vendor Management
-      summary: Bulk Vendor Operations
-      description: |
-        Perform bulk operations on multiple vendors simultaneously.
-        
-        **Supported Operations:**
-        - Update status (active/inactive/on_hold/blacklisted)
-        - Update quality tier (standard/premium)
-        - Verify multiple vendors
-        - Export vendor data
-        - Bulk delete (soft delete)
-      operationId: bulkVendorOperations
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
+
+      **Supported Operations:**
+
+      - Update status (active/inactive/on_hold/blacklisted)
+
+      - Update quality tier (standard/premium)
+
+      - Verify multiple vendors
+
+      - Export vendor data
+
+      - Bulk delete (soft delete)
+
+      '
+    operationId: bulkVendorOperations
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - operation
+            - vendor_ids
+            properties:
+              operation:
+                type: string
+                enum:
+                - update_status
+                - update_quality_tier
+                - verify
+                - export
+                - delete
+                description: Bulk operation to perform
+                example: update_status
+              vendor_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                description: List of vendor IDs
+                example:
+                - 550e8400-e29b-41d4-a716-446655440000
+                - 123e4567-e89b-12d3-a456-426614174000
+              parameters:
+                type: object
+                description: Operation-specific parameters
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - active
+                    - inactive
+                    - on_hold
+                    - blacklisted
+                    description: New status (for update_status operation)
+                    example: active
+                  quality_tier:
+                    type: string
+                    enum:
+                    - standard
+                    - premium
+                    description: New quality tier (for update_quality_tier operation)
+                    example: premium
+                  verify:
+                    type: boolean
+                    description: Verification status (for verify operation)
+                    example: true
+                  export_format:
+                    type: string
+                    enum:
+                    - csv
+                    - excel
+                    - json
+                    description: Export format (for export operation)
+                    example: excel
+                  include_specializations:
+                    type: boolean
+                    default: false
+                    description: Include specializations in export
+                    example: true
+                  include_contacts:
+                    type: boolean
+                    default: false
+                    description: Include contacts in export
+                    example: true
+              reason:
+                type: string
+                nullable: true
+                description: Reason for bulk operation (for audit trail)
+                example: Quality tier upgrade based on recent performance
+          examples:
+            bulk_verify:
+              summary: Bulk verify vendors
+              value:
+                operation: verify
+                vendor_ids:
+                - 550e8400-e29b-41d4-a716-446655440000
+                - 123e4567-e89b-12d3-a456-426614174000
+                parameters:
+                  verify: true
+                reason: Completed verification process
+            bulk_export:
+              summary: Export vendor data
+              value:
+                operation: export
+                vendor_ids:
+                - 550e8400-e29b-41d4-a716-446655440000
+                - 123e4567-e89b-12d3-a456-426614174000
+                parameters:
+                  export_format: excel
+                  include_specializations: true
+                  include_contacts: true
+    responses:
+      '200':
+        description: Bulk operation completed successfully
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - operation
-                - vendor_ids
-              properties:
-                operation:
-                  type: string
-                  enum: [update_status, update_quality_tier, verify, export, delete]
-                  description: Bulk operation to perform
-                  example: "update_status"
-                vendor_ids:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-                  description: List of vendor IDs
-                  example: ["550e8400-e29b-41d4-a716-446655440000", "123e4567-e89b-12d3-a456-426614174000"]
-                parameters:
-                  type: object
-                  description: Operation-specific parameters
-                  properties:
-                    status:
-                      type: string
-                      enum: [active, inactive, on_hold, blacklisted]
-                      description: New status (for update_status operation)
-                      example: "active"
-                    quality_tier:
-                      type: string
-                      enum: [standard, premium]
-                      description: New quality tier (for update_quality_tier operation)
-                      example: "premium"
-                    verify:
-                      type: boolean
-                      description: Verification status (for verify operation)
-                      example: true
-                    export_format:
-                      type: string
-                      enum: [csv, excel, json]
-                      description: Export format (for export operation)
-                      example: "excel"
-                    include_specializations:
-                      type: boolean
-                      default: false
-                      description: Include specializations in export
-                      example: true
-                    include_contacts:
-                      type: boolean
-                      default: false
-                      description: Include contacts in export
-                      example: true
-                reason:
-                  type: string
-                  nullable: true
-                  description: Reason for bulk operation (for audit trail)
-                  example: "Quality tier upgrade based on recent performance"
-            examples:
-              bulk_verify:
-                summary: Bulk verify vendors
-                value:
-                  operation: "verify"
-                  vendor_ids: ["550e8400-e29b-41d4-a716-446655440000", "123e4567-e89b-12d3-a456-426614174000"]
-                  parameters:
-                    verify: true
-                  reason: "Completed verification process"
-              bulk_export:
-                summary: Export vendor data
-                value:
-                  operation: "export"
-                  vendor_ids: ["550e8400-e29b-41d4-a716-446655440000", "123e4567-e89b-12d3-a456-426614174000"]
-                  parameters:
-                    export_format: "excel"
-                    include_specializations: true
-                    include_contacts: true
-      responses:
-        '200':
-          description: Bulk operation completed successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
                     properties:
-                      data:
-                        type: object
-                        properties:
-                          operation:
-                            type: string
-                            example: "update_status"
-                          total_vendors:
-                            type: integer
-                            example: 15
-                          successful:
-                            type: integer
-                            example: 14
-                          failed:
-                            type: integer
-                            example: 1
-                          results:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                vendor_id:
-                                  type: string
-                                  format: uuid
-                                success:
-                                  type: boolean
-                                error:
-                                  type: string
-                                  nullable: true
-                          export_url:
-                            type: string
-                            format: uri
-                            nullable: true
-                            description: Download URL for export operations
-                            example: "https://cdn.example.com/exports/vendors-20251113.xlsx"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                      operation:
+                        type: string
+                        example: update_status
+                      total_vendors:
+                        type: integer
+                        example: 15
+                      successful:
+                        type: integer
+                        example: 14
+                      failed:
+                        type: integer
+                        example: 1
+                      results:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            vendor_id:
+                              type: string
+                              format: uuid
+                            success:
+                              type: boolean
+                            error:
+                              type: string
+                              nullable: true
+                      export_url:
+                        type: string
+                        format: uri
+                        nullable: true
+                        description: Download URL for export operations
+                        example: https://cdn.example.com/exports/vendors-20251113.xlsx
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Vendors posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'

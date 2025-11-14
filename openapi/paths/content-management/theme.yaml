@@ -1,1855 +1,2219 @@
-# Theme Management API Paths for Stencil CMS
-# Complete CRUD operations for Theme Management System (30+ endpoints)
-  # ================================================================
-  # THEME MARKETPLACE ENDPOINTS
-  # ================================================================
-  /themes:
-    get:
-      tags:
-        - Theme Marketplace
-      summary: Browse Theme Marketplace
-      description: |
-        Browse available themes in the marketplace with advanced filtering and search.
-        
-        **Features:**
-        - Full-text search across theme metadata
-        - Category and tag filtering
-        - Price range filtering
-        - Rating-based filtering
-        - Official/featured theme filtering
-        - Pagination and sorting
-      operationId: listThemes
-      security: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
-        - name: search
-          in: query
-          description: Search in theme name, description, and tags
-          schema:
-            type: string
-            maxLength: 255
-          example: "business professional"
-        - name: pricing_type
-          in: query
-          description: Filter by pricing model
-          schema:
-            type: string
-            enum: [free, paid, subscription]
-          example: "paid"
-        - name: categories
-          in: query
-          description: Filter by categories (comma-separated)
-          schema:
-            type: string
-          example: "business,ecommerce"
-        - name: tags
-          in: query
-          description: Filter by tags (comma-separated)
-          schema:
-            type: string
-          example: "professional,responsive"
-        - name: is_official
-          in: query
-          description: Filter official themes only
-          schema:
-            type: boolean
-          example: true
-        - name: is_featured
-          in: query
-          description: Filter featured themes only
-          schema:
-            type: boolean
-          example: false
-        - name: min_rating
-          in: query
-          description: Minimum average rating
-          schema:
-            type: number
-            format: decimal
-            minimum: 0
-            maximum: 5
-          example: 4.0
-        - name: price_min
-          in: query
-          description: Minimum price filter
-          schema:
-            type: number
-            format: decimal
-            minimum: 0
-          example: 0
-        - name: price_max
-          in: query
-          description: Maximum price filter
-          schema:
-            type: number
-            format: decimal
-          example: 100
-      responses:
-        '200':
-          description: Theme marketplace listing retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/theme.yaml#/ThemeListResponse'
-              examples:
-                marketplace_browse:
-                  summary: Marketplace browse result
-                  value:
-                    success: true
-                    data:
-                      - uuid: "550e8400-e29b-41d4-a716-446655440000"
-                        slug: "etching-professional"
-                        name: "Etching Professional"
-                        description: "Professional theme for etching businesses"
-                        version: "1.2.3"
-                        author_name: "Stencil Team"
-                        pricing_type: "paid"
-                        pricing_price: 79.99
-                        pricing_currency: "USD"
-                        rating_average: 4.75
-                        rating_count: 123
-                        download_count: 2847
-                        is_official: true
-                        is_featured: true
-                        screenshots:
-                          - url: "https://cdn.stencilcms.com/themes/etching/screenshot1.jpg"
-                            caption: "Homepage"
-                            order: 1
-                    meta:
-                      pagination:
-                        current_page: 1
-                        per_page: 20
-                        total: 150
-                        total_pages: 8
-                    filters:
-                      categories: ["business", "ecommerce", "portfolio"]
-                      tags: ["professional", "responsive", "dark-mode"]
-                      price_range:
-                        min: 0
-                        max: 299.99
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+/themes:
+  get:
+    tags:
+    - Theme Marketplace
+    summary: Browse Theme Marketplace
+    description: 'Browse available themes in the marketplace with advanced filtering
+      and search.
 
-    post:
-      tags:
-        - Theme Management
-      summary: Create New Theme
-      description: |
-        Create a new theme in the global registry.
-        
-        **Admin/Developer Features:**
-        - Theme metadata definition
-        - Customizer settings schema
-        - Pricing configuration
-        - Author information
-        
-        **Required Permissions:** `themes.create`
-      operationId: createTheme
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
+
+      **Features:**
+
+      - Full-text search across theme metadata
+
+      - Category and tag filtering
+
+      - Price range filtering
+
+      - Rating-based filtering
+
+      - Official/featured theme filtering
+
+      - Pagination and sorting
+
+      '
+    operationId: listThemes
+    security: []
+    parameters:
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: search
+      in: query
+      description: Search in theme name, description, and tags
+      schema:
+        type: string
+        maxLength: 255
+      example: business professional
+    - name: pricing_type
+      in: query
+      description: Filter by pricing model
+      schema:
+        type: string
+        enum:
+        - free
+        - paid
+        - subscription
+      example: paid
+    - name: categories
+      in: query
+      description: Filter by categories (comma-separated)
+      schema:
+        type: string
+      example: business,ecommerce
+    - name: tags
+      in: query
+      description: Filter by tags (comma-separated)
+      schema:
+        type: string
+      example: professional,responsive
+    - name: is_official
+      in: query
+      description: Filter official themes only
+      schema:
+        type: boolean
+      example: true
+    - name: is_featured
+      in: query
+      description: Filter featured themes only
+      schema:
+        type: boolean
+      example: false
+    - name: min_rating
+      in: query
+      description: Minimum average rating
+      schema:
+        type: number
+        format: decimal
+        minimum: 0
+        maximum: 5
+      example: 4.0
+    - name: price_min
+      in: query
+      description: Minimum price filter
+      schema:
+        type: number
+        format: decimal
+        minimum: 0
+      example: 0
+    - name: price_max
+      in: query
+      description: Maximum price filter
+      schema:
+        type: number
+        format: decimal
+      example: 100
+    responses:
+      '200':
+        description: Theme marketplace listing retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '../../schemas/content-management/theme.yaml#/ThemeCreateInput'
+              $ref: '#/components/schemas/ThemeListResponse'
             examples:
-              new_business_theme:
-                summary: New business theme
+              marketplace_browse:
+                summary: Marketplace browse result
                 value:
-                  slug: "corporate-modern"
-                  name: "Corporate Modern"
-                  description: "Clean and professional theme for corporate websites"
-                  version: "1.0.0"
-                  author_name: "John Developer"
-                  author_email: "john@example.com"
-                  author_url: "https://johndeveloper.com"
-                  compatibility_stencil_version: ">=2.0.0"
-                  pricing_type: "paid"
-                  pricing_price: 49.99
-                  pricing_currency: "USD"
-                  tags: ["business", "corporate", "professional"]
-                  categories: ["business"]
-                  customizer_settings_schema:
-                    type: "object"
-                    properties:
-                      primary_color:
-                        type: "string"
-                        pattern: "^#[0-9A-Fa-f]{6}$"
-                        default: "#2563eb"
-                      font_family:
-                        type: "string"
-                        enum: ["Inter", "Roboto", "Open Sans"]
-                        default: "Inter"
-      responses:
-        '201':
-          description: Theme created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/theme.yaml#/Theme'
-                      message:
-                        type: string
-                        example: "Theme created successfully"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '409':
-          description: Theme slug already exists
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "THEME_SLUG_EXISTS"
-                  message: "Theme with this slug already exists"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                  success: true
+                  data:
+                  - uuid: 550e8400-e29b-41d4-a716-446655440000
+                    slug: etching-professional
+                    name: Etching Professional
+                    description: Professional theme for etching businesses
+                    version: 1.2.3
+                    author_name: Stencil Team
+                    pricing_type: paid
+                    pricing_price: 79.99
+                    pricing_currency: USD
+                    rating_average: 4.75
+                    rating_count: 123
+                    download_count: 2847
+                    is_official: true
+                    is_featured: true
+                    screenshots:
+                    - url: https://cdn.stencilcms.com/themes/etching/screenshot1.jpg
+                      caption: Homepage
+                      order: 1
+                  meta:
+                    pagination:
+                      current_page: 1
+                      per_page: 20
+                      total: 150
+                      total_pages: 8
+                  filters:
+                    categories:
+                    - business
+                    - ecommerce
+                    - portfolio
+                    tags:
+                    - professional
+                    - responsive
+                    - dark-mode
+                    price_range:
+                      min: 0
+                      max: 299.99
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Theme Management
+    summary: Create New Theme
+    description: 'Create a new theme in the global registry.
 
-  /themes/{themeId}:
-    get:
-      tags:
-        - Theme Marketplace
-      summary: Get Theme Details
-      description: |
-        Retrieve detailed information about a specific theme including versions, reviews, and tenant-specific data.
-        
-        **Public Information:**
-        - Theme metadata and screenshots
-        - Versions and changelog
-        - Ratings and reviews
-        
-        **Tenant-Specific (Authenticated):**
-        - Installation status
-        - Current theme settings
-        - Purchase history
-      operationId: getTheme
-      security:
-        - bearerAuth: []
-        - {}
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: include
-          in: query
-          description: Additional data to include (comma-separated)
-          schema:
-            type: string
-          example: "versions,installation,settings,marketplace"
-      responses:
-        '200':
-          description: Theme details retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/theme.yaml#/ThemeDetailsResponse'
-        '404':
-          description: Theme not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "THEME_NOT_FOUND"
-                  message: "Theme not found"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-    patch:
-      tags:
-        - Theme Management
-      summary: Update Theme
-      description: |
-        Update theme metadata, pricing, and configuration.
-        
-        **Required Permissions:** `themes.edit`
-        **Restrictions:** Only theme author or platform admin can update
-      operationId: updateTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/theme.yaml#/ThemeUpdateInput'
-            examples:
-              update_pricing:
-                summary: Update theme pricing
-                value:
-                  pricing_price: 59.99
-                  is_featured: true
-                  tags: ["business", "professional", "ecommerce", "new"]
-      responses:
-        '200':
-          description: Theme updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/theme.yaml#/Theme'
-                      message:
-                        type: string
-                        example: "Theme updated successfully"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Theme not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      **Admin/Developer Features:**
 
-    delete:
-      tags:
-        - Theme Management
-      summary: Delete Theme
-      description: |
-        Delete a theme from the global registry. This will also remove all installations and related data.
-        
-        **Required Permissions:** `themes.delete`
-        **Warning:** This action cannot be undone and will affect all tenants using this theme.
-      operationId: deleteTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Theme deleted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Theme deleted successfully"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Theme not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '409':
-          description: Cannot delete theme with active installations
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "THEME_HAS_INSTALLATIONS"
-                  message: "Cannot delete theme with active installations"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      - Theme metadata definition
 
-  # ================================================================
-  # THEME INSTALLATION ENDPOINTS
-  # ================================================================
-  /tenant/themes:
-    get:
-      tags:
-        - Theme Installation
-      summary: List Installed Themes
-      description: |
-        List all themes installed in the current tenant with their status and settings.
-        
-        **Features:**
-        - Installation status tracking
-        - Active theme identification
-        - Update availability checking
-        - Settings preview
-      operationId: listInstalledThemes
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - name: status
-          in: query
-          description: Filter by installation status
-          schema:
-            type: string
-            enum: [installing, installed, failed, updating, uninstalling]
-          example: "installed"
-        - name: is_active
-          in: query
-          description: Filter by active status
-          schema:
-            type: boolean
-          example: true
-        - name: has_updates
-          in: query
-          description: Filter themes with available updates
-          schema:
-            type: boolean
-          example: true
-      responses:
-        '200':
-          description: Installed themes retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          allOf:
-                            - $ref: '../../schemas/content-management/theme.yaml#/ThemeInstallation'
-                            - type: object
-                              properties:
-                                theme:
-                                  $ref: '../../schemas/content-management/theme.yaml#/Theme'
-                                has_updates:
-                                  type: boolean
-                                  description: Whether updates are available
-                                  example: true
-                                settings_configured:
-                                  type: boolean
-                                  description: Whether theme settings are configured
-                                  example: true
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      - Customizer settings schema
 
-    post:
-      tags:
-        - Theme Installation
-      summary: Install Theme
-      description: |
-        Install a theme for the current tenant. This will download, validate, and configure the theme.
-        
-        **Installation Process:**
-        1. License validation (for paid themes)
-        2. Download and extraction
-        3. Security and compatibility validation
-        4. Installation with default settings
-        5. Optional activation
-        
-        **Required Permissions:** `themes.install`
-      operationId: installTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/theme.yaml#/ThemeInstallationInput'
-            examples:
-              install_etching_theme:
-                summary: Install Etching Professional theme
-                value:
-                  theme_id: "550e8400-e29b-41d4-a716-446655440000"
-                  auto_update_enabled: true
-                  notes: "Installing for corporate rebrand project"
-      responses:
-        '202':
-          description: Theme installation started
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          installation_id:
-                            type: string
-                            format: uuid
-                            description: Installation tracking ID
-                            example: "789e0123-e45b-67c8-a901-234567890abc"
-                          status:
-                            type: string
-                            enum: [installing]
-                            example: "installing"
-                          progress:
-                            type: integer
-                            minimum: 0
-                            maximum: 100
-                            example: 0
-                      message:
-                        type: string
-                        example: "Theme installation started"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '409':
-          description: Theme already installed or conflicts
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              examples:
-                already_installed:
-                  summary: Theme already installed
-                  value:
-                    success: false
-                    error:
-                      code: "THEME_ALREADY_INSTALLED"
-                      message: "Theme is already installed for this tenant"
-                license_required:
-                  summary: License required for paid theme
-                  value:
-                    success: false
-                    error:
-                      code: "LICENSE_REQUIRED"
-                      message: "Valid license required to install this paid theme"
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      - Pricing configuration
 
-  /tenant/themes/{installationId}:
-    get:
-      tags:
-        - Theme Installation
-      summary: Get Installation Status
-      description: |
-        Get real-time installation status and progress tracking.
-        
-        **Status Information:**
-        - Current installation stage
-        - Progress percentage
-        - Installation logs
-        - Error details (if failed)
-      operationId: getInstallationStatus
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: installationId
-          in: path
-          required: true
-          description: Installation UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-        - name: include_logs
-          in: query
-          description: Include detailed installation logs
-          schema:
-            type: boolean
-            default: false
-          example: true
-      responses:
-        '200':
-          description: Installation status retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '../../schemas/content-management/theme.yaml#/InstallationStatusResponse'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '404':
-          description: Installation not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      - Author information
 
-    delete:
-      tags:
-        - Theme Installation
-      summary: Uninstall Theme
-      description: |
-        Uninstall a theme from the current tenant. This will remove theme files, settings, and data.
-        
-        **Uninstallation Process:**
-        1. Deactivate theme if currently active
-        2. Backup theme settings (optional)
-        3. Remove theme files and database entries
-        4. Clean up related data
-        
-        **Required Permissions:** `themes.install`
-        **Warning:** This action will remove all customizations
-      operationId: uninstallTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: installationId
-          in: path
-          required: true
-          description: Installation UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-        - name: backup_settings
-          in: query
-          description: Create backup of theme settings before uninstall
-          schema:
-            type: boolean
-            default: true
-          example: true
-      responses:
-        '202':
-          description: Theme uninstallation started
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Theme uninstallation started"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Installation not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '409':
-          description: Cannot uninstall active theme
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "CANNOT_UNINSTALL_ACTIVE_THEME"
-                  message: "Cannot uninstall currently active theme. Please activate another theme first."
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
 
-  /tenant/themes/{installationId}/activate:
-    post:
-      tags:
-        - Theme Installation
-      summary: Activate Theme
-      description: |
-        Activate a theme for the current tenant. This will deactivate the current theme and switch to the new one.
-        
-        **Activation Process:**
-        1. Validate theme compatibility
-        2. Deactivate current active theme
-        3. Activate new theme
-        4. Apply default/saved settings
-        5. Execute theme hooks
-        
-        **Required Permissions:** `themes.activate`
-      operationId: activateTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: installationId
-          in: path
-          required: true
-          description: Installation UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-      responses:
-        '200':
-          description: Theme activated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/theme.yaml#/ThemeInstallation'
-                      message:
-                        type: string
-                        example: "Theme activated successfully"
-        '400':
-          description: Theme cannot be activated
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              examples:
-                incompatible_version:
-                  summary: Incompatible Stencil version
-                  value:
-                    success: false
-                    error:
-                      code: "INCOMPATIBLE_VERSION"
-                      message: "Theme requires Stencil CMS v2.1.0 or higher"
-                validation_failed:
-                  summary: Theme validation failed
-                  value:
-                    success: false
-                    error:
-                      code: "THEME_VALIDATION_FAILED"
-                      message: "Theme failed security validation"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Installation not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+      **Required Permissions:** `themes.create`
 
-  /tenant/themes/{installationId}/deactivate:
-    post:
-      tags:
-        - Theme Installation
-      summary: Deactivate Theme
-      description: |
-        Deactivate the currently active theme. The system will fall back to the default theme.
-        
-        **Required Permissions:** `themes.activate`
-      operationId: deactivateTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: installationId
-          in: path
-          required: true
-          description: Installation UUID
+      '
+    operationId: createTheme
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-      responses:
-        '200':
-          description: Theme deactivated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Theme deactivated successfully. Using default theme."
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Installation not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # THEME CUSTOMIZATION ENDPOINTS
-  # ================================================================
-  /tenant/themes/{installationId}/settings:
-    get:
-      tags:
-        - Theme Customization
-      summary: Get Theme Settings
-      description: |
-        Retrieve current theme customization settings and available options.
-        
-        **Features:**
-        - Current settings values
-        - Available customization options (from schema)
-        - Setting validation rules
-        - Preview URLs
-      operationId: getThemeSettings
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: installationId
-          in: path
-          required: true
-          description: Installation UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-      responses:
-        '200':
-          description: Theme settings retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        allOf:
-                          - $ref: '../../schemas/content-management/theme.yaml#/ThemeSettings'
-                          - type: object
-                            properties:
-                              schema:
-                                type: object
-                                description: Theme customization schema
-                                example:
-                                  type: "object"
-                                  properties:
-                                    primary_color:
-                                      type: "string"
-                                      pattern: "^#[0-9A-Fa-f]{6}$"
-                                      default: "#3b82f6"
-                              defaults:
-                                type: object
-                                description: Default settings values
-                                example:
-                                  primary_color: "#3b82f6"
-                                  font_family: "Inter"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Installation or settings not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    put:
-      tags:
-        - Theme Customization
-      summary: Update Theme Settings
-      description: |
-        Update theme customization settings. Settings will be validated against the theme schema.
-        
-        **Features:**
-        - Schema-based validation
-        - Live preview support
-        - Setting inheritance
-        - Custom CSS/JS injection
-        
-        **Required Permissions:** `themes.customize`
-      operationId: updateThemeSettings
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: installationId
-          in: path
-          required: true
-          description: Installation UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-        - name: apply_immediately
-          in: query
-          description: Apply changes immediately without requiring theme reactivation
-          schema:
-            type: boolean
-            default: true
-          example: true
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '../../schemas/content-management/theme.yaml#/ThemeSettingsInput'
-            examples:
-              update_colors:
-                summary: Update theme colors
-                value:
-                  settings_data:
-                    primary_color: "#1e40af"
-                    secondary_color: "#dc2626"
-                    font_family: "Montserrat"
-                    container_width: 1280
-                    enable_dark_mode: true
-                  custom_css: |
-                    .hero-section {
-                      background: linear-gradient(45deg, #1e40af, #dc2626);
-                    }
-                  custom_js: |
-                    // Custom analytics tracking
-                    gtag('config', 'GA_MEASUREMENT_ID');
-      responses:
-        '200':
-          description: Theme settings updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/theme.yaml#/ThemeSettings'
-                      message:
-                        type: string
-                        example: "Theme settings updated successfully"
-        '400':
-          description: Settings validation failed
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ValidationErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "SETTINGS_VALIDATION_ERROR"
-                  message: "Theme settings validation failed"
-                  details:
-                    primary_color:
-                      - "Invalid color format. Expected #RRGGBB"
-                    container_width:
-                      - "Value must be between 1024 and 1920"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Installation not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /tenant/themes/{installationId}/settings/reset:
-    post:
-      tags:
-        - Theme Customization
-      summary: Reset Theme Settings
-      description: |
-        Reset theme settings to default values defined by the theme.
-        
-        **Required Permissions:** `themes.customize`
-      operationId: resetThemeSettings
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: installationId
-          in: path
-          required: true
-          description: Installation UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-      responses:
-        '200':
-          description: Theme settings reset successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/theme.yaml#/ThemeSettings'
-                      message:
-                        type: string
-                        example: "Theme settings reset to defaults"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Installation not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # THEME MARKETPLACE MANAGEMENT ENDPOINTS
-  # ================================================================
-  /admin/themes/marketplace:
-    get:
-      tags:
-        - Theme Marketplace Management
-      summary: Manage Marketplace Submissions
-      description: |
-        Admin interface for managing theme marketplace submissions and listings.
-        
-        **Admin Features:**
-        - Review pending submissions
-        - Approve/reject themes
-        - Manage featured themes
-        - Sales analytics
-        - Vendor management
-        
-        **Required Permissions:** `themes.admin`
-      operationId: listMarketplaceSubmissions
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - $ref: '../../components/parameters.yaml#/SortParam'
-        - name: status
-          in: query
-          description: Filter by submission status
-          schema:
-            type: string
-            enum: [pending, approved, rejected, suspended]
-          example: "pending"
-        - name: is_published
-          in: query
-          description: Filter by publication status
-          schema:
-            type: boolean
-          example: true
-        - name: vendor_id
-          in: query
-          description: Filter by vendor/developer
-          schema:
-            type: string
-            format: uuid
-          example: "456e7890-a123-45b6-c789-012345678def"
-      responses:
-        '200':
-          description: Marketplace submissions retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          allOf:
-                            - $ref: '../../schemas/content-management/theme.yaml#/ThemeMarketplaceListing'
-                            - type: object
-                              properties:
-                                theme:
-                                  $ref: '../../schemas/content-management/theme.yaml#/Theme'
-                                vendor_info:
-                                  type: object
-                                  properties:
-                                    name:
-                                      type: string
-                                    email:
-                                      type: string
-                                    total_themes:
-                                      type: integer
-                                    total_revenue:
-                                      type: number
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/themes/marketplace/{listingId}/approve:
-    post:
-      tags:
-        - Theme Marketplace Management
-      summary: Approve Marketplace Submission
-      description: |
-        Approve a theme for marketplace publication after review.
-        
-        **Required Permissions:** `themes.admin`
-      operationId: approveMarketplaceSubmission
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: listingId
-          in: path
-          required: true
-          description: Marketplace listing UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                review_notes:
-                  type: string
-                  description: Review notes for the vendor
-                  example: "Theme approved. Great work on the design!"
-                is_featured:
-                  type: boolean
-                  default: false
-                  description: Mark as featured theme
-                  example: true
-                commission_rate:
-                  type: number
-                  format: decimal
-                  minimum: 0
-                  maximum: 100
-                  description: Custom commission rate for this theme
-                  example: 20.00
-      responses:
-        '200':
-          description: Theme approved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/theme.yaml#/ThemeMarketplaceListing'
-                      message:
-                        type: string
-                        example: "Theme approved and published to marketplace"
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Marketplace listing not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '409':
-          description: Theme already approved
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /admin/themes/marketplace/{listingId}/reject:
-    post:
-      tags:
-        - Theme Marketplace Management
-      summary: Reject Marketplace Submission
-      description: |
-        Reject a theme marketplace submission with feedback.
-        
-        **Required Permissions:** `themes.admin`
-      operationId: rejectMarketplaceSubmission
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: listingId
-          in: path
-          required: true
-          description: Marketplace listing UUID
-          schema:
-            type: string
-            format: uuid
-          example: "789e0123-e45b-67c8-a901-234567890abc"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - review_notes
-              properties:
-                review_notes:
-                  type: string
-                  description: Detailed rejection reason and feedback
-                  example: "Theme contains security vulnerabilities. Please fix the XSS issues in the contact form component and resubmit."
-                allow_resubmission:
-                  type: boolean
-                  default: true
-                  description: Whether vendor can resubmit after fixes
-                  example: true
-      responses:
-        '200':
-          description: Theme rejected successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Theme submission rejected. Vendor has been notified."
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Marketplace listing not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # THEME VALIDATION & SECURITY ENDPOINTS
-  # ================================================================
-  /themes/{themeId}/validate:
-    post:
-      tags:
-        - Theme Validation
-      summary: Validate Theme
-      description: |
-        Perform comprehensive theme validation including security, performance, and compatibility checks.
-        
-        **Validation Types:**
-        - Structure validation (theme manifest, required files)
-        - Security scanning (malware, vulnerabilities, code injection)
-        - Performance testing (load times, resource usage)
-        - Accessibility compliance (WCAG guidelines)
-        - Compatibility testing (Stencil version, dependencies)
-        
-        **Required Permissions:** `themes.admin` or theme ownership
-      operationId: validateTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                validation_types:
-                  type: array
-                  items:
-                    type: string
-                    enum: ["structure", "security", "performance", "accessibility", "compatibility"]
-                  default: ["structure", "security", "compatibility"]
-                  description: Types of validation to perform
-                  example: ["security", "performance"]
-                version:
-                  type: string
-                  description: "Specific theme version to validate (default: latest)"
-                  example: "1.2.3"
-                strict_mode:
-                  type: boolean
-                  default: false
-                  description: Enable strict validation mode
-                  example: true
-      responses:
-        '202':
-          description: Validation started
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          validation_id:
-                            type: string
-                            format: uuid
-                            description: Validation job ID
-                            example: "validation-123e4567-e89b"
-                          estimated_duration:
-                            type: integer
-                            description: Estimated duration in seconds
-                            example: 180
-                      message:
-                        type: string
-                        example: "Theme validation started"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Theme not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  /themes/{themeId}/validation-results:
-    get:
-      tags:
-        - Theme Validation
-      summary: Get Validation Results
-      description: |
-        Retrieve theme validation results and security scan findings.
-        
-        **Features:**
-        - Validation status and scores
-        - Security scan findings
-        - Performance metrics
-        - Accessibility compliance report
-        - Detailed error and warning lists
-      operationId: getValidationResults
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: version
-          in: query
-          description: "Theme version (default: latest)"
-          schema:
-            type: string
-          example: "1.2.3"
-        - name: validation_type
-          in: query
-          description: Filter by validation type
-          schema:
-            type: string
-            enum: ["structure", "security", "performance", "accessibility", "compatibility"]
-          example: "security"
-        - name: include_resolved
-          in: query
-          description: Include resolved/fixed issues
-          schema:
-            type: boolean
-            default: false
-          example: true
-      responses:
-        '200':
-          description: Validation results retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          overall_status:
-                            type: string
-                            enum: ["passed", "failed", "warning"]
-                            description: Overall validation status
-                            example: "passed"
-                          overall_score:
-                            type: integer
-                            minimum: 0
-                            maximum: 100
-                            description: Overall validation score
-                            example: 95
-                          results:
-                            type: array
-                            items:
-                              $ref: '../../schemas/content-management/theme.yaml#/ThemeValidationResult'
-                          security_scans:
-                            type: array
-                            items:
-                              $ref: '../../schemas/content-management/theme.yaml#/ThemeSecurityScan'
-                          summary:
-                            type: object
-                            properties:
-                              total_errors:
-                                type: integer
-                                example: 0
-                              total_warnings:
-                                type: integer
-                                example: 3
-                              security_issues:
-                                type: integer
-                                example: 0
-                              performance_score:
-                                type: integer
-                                example: 92
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Theme or validation results not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # THEME VERSION MANAGEMENT ENDPOINTS
-  # ================================================================
-  /themes/{themeId}/versions:
-    get:
-      tags:
-        - Theme Versions
-      summary: List Theme Versions
-      description: |
-        List all available versions of a theme with changelog and compatibility information.
-      operationId: listThemeVersions
-      security:
-        - bearerAuth: []
-        - {}
-      parameters:
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: stable_only
-          in: query
-          description: Show stable versions only
-          schema:
-            type: boolean
-            default: false
-          example: true
-        - name: include_prerelease
-          in: query
-          description: Include pre-release versions
-          schema:
-            type: boolean
-            default: false
-          example: false
-      responses:
-        '200':
-          description: Theme versions retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '../../schemas/content-management/theme.yaml#/ThemeVersion'
-        '404':
-          description: Theme not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-    post:
-      tags:
-        - Theme Versions
-      summary: Create Theme Version
-      description: |
-        Create a new version of a theme with changelog and package information.
-        
-        **Required Permissions:** `themes.edit` and theme ownership
-      operationId: createThemeVersion
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - version
-                - release_notes
-              properties:
-                version:
-                  type: string
-                  maxLength: 50
-                  pattern: '^\d+\.\d+\.\d+$'
-                  description: Semantic version number
-                  example: "1.3.0"
-                release_notes:
-                  type: string
-                  description: Release notes and changelog
-                  example: "Added dark mode support and improved performance"
-                changes:
-                  type: array
-                  items:
-                    type: object
-                    required:
-                      - type
-                      - description
-                    properties:
-                      type:
-                        type: string
-                        enum: ["feature", "bugfix", "security", "breaking"]
-                      description:
-                        type: string
-                  description: Structured changelog
-                  example:
-                    - type: "feature"
-                      description: "Added dark mode toggle"
-                    - type: "bugfix"
-                      description: "Fixed responsive layout issues"
-                package_url:
-                  type: string
-                  format: uri
-                  maxLength: 500
-                  description: Download URL for this version
-                  example: "https://cdn.stencilcms.com/themes/etching-professional-v1.3.0.zip"
-                is_stable:
-                  type: boolean
-                  default: true
-                  description: Whether this is a stable release
-                  example: true
-                is_security_update:
-                  type: boolean
-                  default: false
-                  description: Contains security fixes
-                  example: false
-                is_breaking_change:
-                  type: boolean
-                  default: false
-                  description: Contains breaking changes
-                  example: false
-                min_stencil_version:
-                  type: string
-                  maxLength: 50
-                  description: Minimum required Stencil version
-                  example: "2.1.0"
-      responses:
-        '201':
-          description: Theme version created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '../../schemas/content-management/theme.yaml#/ThemeVersion'
-                      message:
-                        type: string
-                        example: "Theme version created successfully"
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Theme not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '409':
-          description: Version already exists
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
-
-  # ================================================================
-  # THEME PURCHASE & LICENSE ENDPOINTS
-  # ================================================================
-  /themes/{themeId}/purchase:
-    post:
-      tags:
-        - Theme Purchases
-      summary: Purchase Theme
-      description: |
-        Purchase a paid theme for the current tenant. This will process payment and generate a license.
-        
-        **Purchase Flow:**
-        1. Payment processing
-        2. License generation
-        3. Installation preparation
-        4. Receipt generation
-        
-        **Required Permissions:** `themes.purchase`
-      operationId: purchaseTheme
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - name: themeId
-          in: path
-          required: true
-          description: Theme UUID to purchase
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - payment_method
-              properties:
-                payment_method:
-                  type: string
-                  enum: ["credit_card", "paypal", "bank_transfer"]
-                  description: Payment method
-                  example: "credit_card"
-                payment_token:
-                  type: string
-                  description: Payment processor token
-                  example: "tok_1234567890abcdef"
-                license_type:
-                  type: string
-                  enum: ["single-site", "multi-site"]
-                  default: "single-site"
-                  description: License type to purchase
-                  example: "single-site"
-                discount_code:
-                  type: string
-                  maxLength: 50
-                  nullable: true
-                  description: Discount/coupon code
-                  example: "LAUNCH50"
-                billing_info:
+            $ref: '#/components/schemas/ThemeCreateInput'
+          examples:
+            new_business_theme:
+              summary: New business theme
+              value:
+                slug: corporate-modern
+                name: Corporate Modern
+                description: Clean and professional theme for corporate websites
+                version: 1.0.0
+                author_name: John Developer
+                author_email: john@example.com
+                author_url: https://johndeveloper.com
+                compatibility_stencil_version: '>=2.0.0'
+                pricing_type: paid
+                pricing_price: 49.99
+                pricing_currency: USD
+                tags:
+                - business
+                - corporate
+                - professional
+                categories:
+                - business
+                customizer_settings_schema:
                   type: object
                   properties:
-                    name:
+                    primary_color:
                       type: string
-                      example: "John Doe"
-                    email:
+                      pattern: ^#[0-9A-Fa-f]{6}$
+                      default: '#2563eb'
+                    font_family:
                       type: string
-                      format: email
-                      example: "john@ptcex.com"
-                    company:
-                      type: string
-                      example: "PT Custom Etching Xenial"
-                    address:
-                      type: object
-                      properties:
-                        street:
-                          type: string
-                        city:
-                          type: string
-                        country:
-                          type: string
-      responses:
-        '201':
-          description: Theme purchased successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          purchase:
-                            $ref: '../../schemas/content-management/theme.yaml#/ThemePurchase'
-                          license:
-                            $ref: '../../schemas/content-management/theme.yaml#/ThemeLicense'
-                          invoice_url:
-                            type: string
-                            format: uri
-                            description: Invoice download URL
-                            example: "https://invoices.stencilcms.com/inv-001234.pdf"
-                      message:
-                        type: string
-                        example: "Theme purchased successfully. You can now install it."
-        '400':
-          $ref: '../../components/responses.yaml#/ValidationError'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '402':
-          description: Payment failed
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "PAYMENT_FAILED"
-                  message: "Payment processing failed. Please check your payment details."
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '404':
-          description: Theme not found
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '409':
-          description: Theme already purchased
-          content:
-            application/json:
-              schema:
-                $ref: '../../components/schemas.yaml#/ErrorResponse'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                      enum:
+                      - Inter
+                      - Roboto
+                      - Open Sans
+                      default: Inter
+    responses:
+      '201':
+        description: Theme created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Theme'
+                  message:
+                    type: string
+                    example: Theme created successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Theme created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        description: Theme slug already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: THEME_SLUG_EXISTS
+                message: Theme with this slug already exists
+      '500':
+        $ref: '#/components/responses/ServerError'
+/themes/{themeId}:
+  get:
+    tags:
+    - Theme Marketplace
+    summary: Get Theme Details
+    description: 'Retrieve detailed information about a specific theme including versions,
+      reviews, and tenant-specific data.
 
-  /tenant/theme-purchases:
-    get:
-      tags:
-        - Theme Purchases
-      summary: List Theme Purchases
-      description: |
-        List all theme purchases for the current tenant.
-        
-        **Features:**
-        - Purchase history
-        - License information
-        - Invoice access
-        - Refund status
-      operationId: listThemePurchases
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '../../components/parameters.yaml#/TenantHeader'
-        - $ref: '../../components/parameters.yaml#/PageParam'
-        - $ref: '../../components/parameters.yaml#/PerPageParam'
-        - name: status
-          in: query
-          description: Filter by payment status
+
+      **Public Information:**
+
+      - Theme metadata and screenshots
+
+      - Versions and changelog
+
+      - Ratings and reviews
+
+
+      **Tenant-Specific (Authenticated):**
+
+      - Installation status
+
+      - Current theme settings
+
+      - Purchase history
+
+      '
+    operationId: getTheme
+    security:
+    - bearerAuth: []
+    - {}
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      description: Additional data to include (comma-separated)
+      schema:
+        type: string
+      example: versions,installation,settings,marketplace
+    responses:
+      '200':
+        description: Theme details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ThemeDetailsResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: THEME_NOT_FOUND
+                message: Theme not found
+      '500':
+        $ref: '#/components/responses/ServerError'
+  patch:
+    tags:
+    - Theme Management
+    summary: Update Theme
+    description: 'Update theme metadata, pricing, and configuration.
+
+
+      **Required Permissions:** `themes.edit`
+
+      **Restrictions:** Only theme author or platform admin can update
+
+      '
+    operationId: updateTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            enum: [pending, completed, failed, refunded]
-          example: "completed"
-        - name: theme_id
-          in: query
-          description: Filter by specific theme
+            $ref: '#/components/schemas/ThemeUpdateInput'
+          examples:
+            update_pricing:
+              summary: Update theme pricing
+              value:
+                pricing_price: 59.99
+                is_featured: true
+                tags:
+                - business
+                - professional
+                - ecommerce
+                - new
+    responses:
+      '200':
+        description: Theme updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Theme'
+                  message:
+                    type: string
+                    example: Theme updated successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme patched successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - Theme Management
+    summary: Delete Theme
+    description: 'Delete a theme from the global registry. This will also remove all
+      installations and related data.
+
+
+      **Required Permissions:** `themes.delete`
+
+      **Warning:** This action cannot be undone and will affect all tenants using
+      this theme.
+
+      '
+    operationId: deleteTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: Theme deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Theme deleted successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme deleteed successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Cannot delete theme with active installations
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: THEME_HAS_INSTALLATIONS
+                message: Cannot delete theme with active installations
+      '500':
+        $ref: '#/components/responses/ServerError'
+/tenant/themes:
+  get:
+    tags:
+    - Theme Installation
+    summary: List Installed Themes
+    description: 'List all themes installed in the current tenant with their status
+      and settings.
+
+
+      **Features:**
+
+      - Installation status tracking
+
+      - Active theme identification
+
+      - Update availability checking
+
+      - Settings preview
+
+      '
+    operationId: listInstalledThemes
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - name: status
+      in: query
+      description: Filter by installation status
+      schema:
+        type: string
+        enum:
+        - installing
+        - installed
+        - failed
+        - updating
+        - uninstalling
+      example: installed
+    - name: is_active
+      in: query
+      description: Filter by active status
+      schema:
+        type: boolean
+      example: true
+    - name: has_updates
+      in: query
+      description: Filter themes with available updates
+      schema:
+        type: boolean
+      example: true
+    responses:
+      '200':
+        description: Installed themes retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '#/components/schemas/ThemeInstallation'
+                      - type: object
+                        properties:
+                          theme:
+                            $ref: '#/components/schemas/Theme'
+                          has_updates:
+                            type: boolean
+                            description: Whether updates are available
+                            example: true
+                          settings_configured:
+                            type: boolean
+                            description: Whether theme settings are configured
+                            example: true
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Theme Installation
+    summary: Install Theme
+    description: 'Install a theme for the current tenant. This will download, validate,
+      and configure the theme.
+
+
+      **Installation Process:**
+
+      1. License validation (for paid themes)
+
+      2. Download and extraction
+
+      3. Security and compatibility validation
+
+      4. Installation with default settings
+
+      5. Optional activation
+
+
+      **Required Permissions:** `themes.install`
+
+      '
+    operationId: installTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Theme purchases retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '../../components/schemas.yaml#/BaseResponse'
-                  - type: object
+            $ref: '#/components/schemas/ThemeInstallationInput'
+          examples:
+            install_etching_theme:
+              summary: Install Etching Professional theme
+              value:
+                theme_id: 550e8400-e29b-41d4-a716-446655440000
+                auto_update_enabled: true
+                notes: Installing for corporate rebrand project
+    responses:
+      '202':
+        description: Theme installation started
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
                     properties:
-                      data:
+                      installation_id:
+                        type: string
+                        format: uuid
+                        description: Installation tracking ID
+                        example: 789e0123-e45b-67c8-a901-234567890abc
+                      status:
+                        type: string
+                        enum:
+                        - installing
+                        example: installing
+                      progress:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                        example: 0
+                  message:
+                    type: string
+                    example: Theme installation started
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        description: Theme already installed or conflicts
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            examples:
+              already_installed:
+                summary: Theme already installed
+                value:
+                  success: false
+                  error:
+                    code: THEME_ALREADY_INSTALLED
+                    message: Theme is already installed for this tenant
+              license_required:
+                summary: License required for paid theme
+                value:
+                  success: false
+                  error:
+                    code: LICENSE_REQUIRED
+                    message: Valid license required to install this paid theme
+      '500':
+        $ref: '#/components/responses/ServerError'
+/tenant/themes/{installationId}:
+  get:
+    tags:
+    - Theme Installation
+    summary: Get Installation Status
+    description: 'Get real-time installation status and progress tracking.
+
+
+      **Status Information:**
+
+      - Current installation stage
+
+      - Progress percentage
+
+      - Installation logs
+
+      - Error details (if failed)
+
+      '
+    operationId: getInstallationStatus
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: installationId
+      in: path
+      required: true
+      description: Installation UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    - name: include_logs
+      in: query
+      description: Include detailed installation logs
+      schema:
+        type: boolean
+        default: false
+      example: true
+    responses:
+      '200':
+        description: Installation status retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstallationStatusResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '404':
+        description: Installation not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  delete:
+    tags:
+    - Theme Installation
+    summary: Uninstall Theme
+    description: 'Uninstall a theme from the current tenant. This will remove theme
+      files, settings, and data.
+
+
+      **Uninstallation Process:**
+
+      1. Deactivate theme if currently active
+
+      2. Backup theme settings (optional)
+
+      3. Remove theme files and database entries
+
+      4. Clean up related data
+
+
+      **Required Permissions:** `themes.install`
+
+      **Warning:** This action will remove all customizations
+
+      '
+    operationId: uninstallTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: installationId
+      in: path
+      required: true
+      description: Installation UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    - name: backup_settings
+      in: query
+      description: Create backup of theme settings before uninstall
+      schema:
+        type: boolean
+        default: true
+      example: true
+    responses:
+      '202':
+        description: Theme uninstallation started
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Theme uninstallation started
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Installation not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Cannot uninstall active theme
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: CANNOT_UNINSTALL_ACTIVE_THEME
+                message: Cannot uninstall currently active theme. Please activate
+                  another theme first.
+      '500':
+        $ref: '#/components/responses/ServerError'
+/tenant/themes/{installationId}/activate:
+  post:
+    tags:
+    - Theme Installation
+    summary: Activate Theme
+    description: 'Activate a theme for the current tenant. This will deactivate the
+      current theme and switch to the new one.
+
+
+      **Activation Process:**
+
+      1. Validate theme compatibility
+
+      2. Deactivate current active theme
+
+      3. Activate new theme
+
+      4. Apply default/saved settings
+
+      5. Execute theme hooks
+
+
+      **Required Permissions:** `themes.activate`
+
+      '
+    operationId: activateTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: installationId
+      in: path
+      required: true
+      description: Installation UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    responses:
+      '200':
+        description: Theme activated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ThemeInstallation'
+                  message:
+                    type: string
+                    example: Theme activated successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        description: Theme cannot be activated
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            examples:
+              incompatible_version:
+                summary: Incompatible Stencil version
+                value:
+                  success: false
+                  error:
+                    code: INCOMPATIBLE_VERSION
+                    message: Theme requires Stencil CMS v2.1.0 or higher
+              validation_failed:
+                summary: Theme validation failed
+                value:
+                  success: false
+                  error:
+                    code: THEME_VALIDATION_FAILED
+                    message: Theme failed security validation
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Installation not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/tenant/themes/{installationId}/deactivate:
+  post:
+    tags:
+    - Theme Installation
+    summary: Deactivate Theme
+    description: 'Deactivate the currently active theme. The system will fall back
+      to the default theme.
+
+
+      **Required Permissions:** `themes.activate`
+
+      '
+    operationId: deactivateTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: installationId
+      in: path
+      required: true
+      description: Installation UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    responses:
+      '200':
+        description: Theme deactivated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Theme deactivated successfully. Using default theme.
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Installation not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/tenant/themes/{installationId}/settings:
+  get:
+    tags:
+    - Theme Customization
+    summary: Get Theme Settings
+    description: 'Retrieve current theme customization settings and available options.
+
+
+      **Features:**
+
+      - Current settings values
+
+      - Available customization options (from schema)
+
+      - Setting validation rules
+
+      - Preview URLs
+
+      '
+    operationId: getThemeSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: installationId
+      in: path
+      required: true
+      description: Installation UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    responses:
+      '200':
+        description: Theme settings retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/ThemeSettings'
+                    - type: object
+                      properties:
+                        schema:
+                          type: object
+                          description: Theme customization schema
+                          example:
+                            type: object
+                            properties:
+                              primary_color:
+                                type: string
+                                pattern: ^#[0-9A-Fa-f]{6}$
+                                default: '#3b82f6'
+                        defaults:
+                          type: object
+                          description: Default settings values
+                          example:
+                            primary_color: '#3b82f6'
+                            font_family: Inter
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Installation or settings not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  put:
+    tags:
+    - Theme Customization
+    summary: Update Theme Settings
+    description: 'Update theme customization settings. Settings will be validated
+      against the theme schema.
+
+
+      **Features:**
+
+      - Schema-based validation
+
+      - Live preview support
+
+      - Setting inheritance
+
+      - Custom CSS/JS injection
+
+
+      **Required Permissions:** `themes.customize`
+
+      '
+    operationId: updateThemeSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: installationId
+      in: path
+      required: true
+      description: Installation UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    - name: apply_immediately
+      in: query
+      description: Apply changes immediately without requiring theme reactivation
+      schema:
+        type: boolean
+        default: true
+      example: true
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ThemeSettingsInput'
+          examples:
+            update_colors:
+              summary: Update theme colors
+              value:
+                settings_data:
+                  primary_color: '#1e40af'
+                  secondary_color: '#dc2626'
+                  font_family: Montserrat
+                  container_width: 1280
+                  enable_dark_mode: true
+                custom_css: ".hero-section {\n  background: linear-gradient(45deg,\
+                  \ #1e40af, #dc2626);\n}\n"
+                custom_js: '// Custom analytics tracking
+
+                  gtag(''config'', ''GA_MEASUREMENT_ID'');
+
+                  '
+    responses:
+      '200':
+        description: Theme settings updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ThemeSettings'
+                  message:
+                    type: string
+                    example: Theme settings updated successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        description: Settings validation failed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationErrorResponse'
+            example:
+              success: false
+              error:
+                code: SETTINGS_VALIDATION_ERROR
+                message: Theme settings validation failed
+                details:
+                  primary_color:
+                  - 'Invalid color format. Expected #RRGGBB'
+                  container_width:
+                  - Value must be between 1024 and 1920
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Installation not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/tenant/themes/{installationId}/settings/reset:
+  post:
+    tags:
+    - Theme Customization
+    summary: Reset Theme Settings
+    description: 'Reset theme settings to default values defined by the theme.
+
+
+      **Required Permissions:** `themes.customize`
+
+      '
+    operationId: resetThemeSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: installationId
+      in: path
+      required: true
+      description: Installation UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    responses:
+      '200':
+        description: Theme settings reset successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ThemeSettings'
+                  message:
+                    type: string
+                    example: Theme settings reset to defaults
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Installation not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/themes/marketplace:
+  get:
+    tags:
+    - Theme Marketplace Management
+    summary: Manage Marketplace Submissions
+    description: 'Admin interface for managing theme marketplace submissions and listings.
+
+
+      **Admin Features:**
+
+      - Review pending submissions
+
+      - Approve/reject themes
+
+      - Manage featured themes
+
+      - Sales analytics
+
+      - Vendor management
+
+
+      **Required Permissions:** `themes.admin`
+
+      '
+    operationId: listMarketplaceSubmissions
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: status
+      in: query
+      description: Filter by submission status
+      schema:
+        type: string
+        enum:
+        - pending
+        - approved
+        - rejected
+        - suspended
+      example: pending
+    - name: is_published
+      in: query
+      description: Filter by publication status
+      schema:
+        type: boolean
+      example: true
+    - name: vendor_id
+      in: query
+      description: Filter by vendor/developer
+      schema:
+        type: string
+        format: uuid
+      example: 456e7890-a123-45b6-c789-012345678def
+    responses:
+      '200':
+        description: Marketplace submissions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '#/components/schemas/ThemeMarketplaceListing'
+                      - type: object
+                        properties:
+                          theme:
+                            $ref: '#/components/schemas/Theme'
+                          vendor_info:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              email:
+                                type: string
+                              total_themes:
+                                type: integer
+                              total_revenue:
+                                type: number
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/themes/marketplace/{listingId}/approve:
+  post:
+    tags:
+    - Theme Marketplace Management
+    summary: Approve Marketplace Submission
+    description: 'Approve a theme for marketplace publication after review.
+
+
+      **Required Permissions:** `themes.admin`
+
+      '
+    operationId: approveMarketplaceSubmission
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: listingId
+      in: path
+      required: true
+      description: Marketplace listing UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              review_notes:
+                type: string
+                description: Review notes for the vendor
+                example: Theme approved. Great work on the design!
+              is_featured:
+                type: boolean
+                default: false
+                description: Mark as featured theme
+                example: true
+              commission_rate:
+                type: number
+                format: decimal
+                minimum: 0
+                maximum: 100
+                description: Custom commission rate for this theme
+                example: 20.0
+          example:
+            title: New Theme Title
+            description: Sample description for theme
+            is_active: true
+    responses:
+      '200':
+        description: Theme approved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ThemeMarketplaceListing'
+                  message:
+                    type: string
+                    example: Theme approved and published to marketplace
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Marketplace listing not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Theme already approved
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/admin/themes/marketplace/{listingId}/reject:
+  post:
+    tags:
+    - Theme Marketplace Management
+    summary: Reject Marketplace Submission
+    description: 'Reject a theme marketplace submission with feedback.
+
+
+      **Required Permissions:** `themes.admin`
+
+      '
+    operationId: rejectMarketplaceSubmission
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: listingId
+      in: path
+      required: true
+      description: Marketplace listing UUID
+      schema:
+        type: string
+        format: uuid
+      example: 789e0123-e45b-67c8-a901-234567890abc
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - review_notes
+            properties:
+              review_notes:
+                type: string
+                description: Detailed rejection reason and feedback
+                example: Theme contains security vulnerabilities. Please fix the XSS
+                  issues in the contact form component and resubmit.
+              allow_resubmission:
+                type: boolean
+                default: true
+                description: Whether vendor can resubmit after fixes
+                example: true
+          example:
+            title: New Theme Title
+            description: Sample description for theme
+            is_active: true
+    responses:
+      '200':
+        description: Theme rejected successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Theme submission rejected. Vendor has been notified.
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Theme posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Marketplace listing not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/themes/{themeId}/validate:
+  post:
+    tags:
+    - Theme Validation
+    summary: Validate Theme
+    description: 'Perform comprehensive theme validation including security, performance,
+      and compatibility checks.
+
+
+      **Validation Types:**
+
+      - Structure validation (theme manifest, required files)
+
+      - Security scanning (malware, vulnerabilities, code injection)
+
+      - Performance testing (load times, resource usage)
+
+      - Accessibility compliance (WCAG guidelines)
+
+      - Compatibility testing (Stencil version, dependencies)
+
+
+      **Required Permissions:** `themes.admin` or theme ownership
+
+      '
+    operationId: validateTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              validation_types:
+                type: array
+                items:
+                  type: string
+                  enum:
+                  - structure
+                  - security
+                  - performance
+                  - accessibility
+                  - compatibility
+                default:
+                - structure
+                - security
+                - compatibility
+                description: Types of validation to perform
+                example:
+                - security
+                - performance
+              version:
+                type: string
+                description: 'Specific theme version to validate (default: latest)'
+                example: 1.2.3
+              strict_mode:
+                type: boolean
+                default: false
+                description: Enable strict validation mode
+                example: true
+          example:
+            title: New Theme Title
+            description: Sample description for theme
+            is_active: true
+    responses:
+      '202':
+        description: Validation started
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      validation_id:
+                        type: string
+                        format: uuid
+                        description: Validation job ID
+                        example: validation-123e4567-e89b
+                      estimated_duration:
+                        type: integer
+                        description: Estimated duration in seconds
+                        example: 180
+                  message:
+                    type: string
+                    example: Theme validation started
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/themes/{themeId}/validation-results:
+  get:
+    tags:
+    - Theme Validation
+    summary: Get Validation Results
+    description: 'Retrieve theme validation results and security scan findings.
+
+
+      **Features:**
+
+      - Validation status and scores
+
+      - Security scan findings
+
+      - Performance metrics
+
+      - Accessibility compliance report
+
+      - Detailed error and warning lists
+
+      '
+    operationId: getValidationResults
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: version
+      in: query
+      description: 'Theme version (default: latest)'
+      schema:
+        type: string
+      example: 1.2.3
+    - name: validation_type
+      in: query
+      description: Filter by validation type
+      schema:
+        type: string
+        enum:
+        - structure
+        - security
+        - performance
+        - accessibility
+        - compatibility
+      example: security
+    - name: include_resolved
+      in: query
+      description: Include resolved/fixed issues
+      schema:
+        type: boolean
+        default: false
+      example: true
+    responses:
+      '200':
+        description: Validation results retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      overall_status:
+                        type: string
+                        enum:
+                        - passed
+                        - failed
+                        - warning
+                        description: Overall validation status
+                        example: passed
+                      overall_score:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                        description: Overall validation score
+                        example: 95
+                      results:
                         type: array
                         items:
-                          allOf:
-                            - $ref: '../../schemas/content-management/theme.yaml#/ThemePurchase'
-                            - type: object
-                              properties:
-                                theme:
-                                  $ref: '../../schemas/content-management/theme.yaml#/Theme'
-                                licenses:
-                                  type: array
-                                  items:
-                                    $ref: '../../schemas/content-management/theme.yaml#/ThemeLicense'
-        '401':
-          $ref: '../../components/responses.yaml#/Unauthorized'
-        '403':
-          $ref: '../../components/responses.yaml#/Forbidden'
-        '500':
-          $ref: '../../components/responses.yaml#/ServerError'
+                          $ref: '#/components/schemas/ThemeValidationResult'
+                      security_scans:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ThemeSecurityScan'
+                      summary:
+                        type: object
+                        properties:
+                          total_errors:
+                            type: integer
+                            example: 0
+                          total_warnings:
+                            type: integer
+                            example: 3
+                          security_issues:
+                            type: integer
+                            example: 0
+                          performance_score:
+                            type: integer
+                            example: 92
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Theme or validation results not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/themes/{themeId}/versions:
+  get:
+    tags:
+    - Theme Versions
+    summary: List Theme Versions
+    description: 'List all available versions of a theme with changelog and compatibility
+      information.
+
+      '
+    operationId: listThemeVersions
+    security:
+    - bearerAuth: []
+    - {}
+    parameters:
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: stable_only
+      in: query
+      description: Show stable versions only
+      schema:
+        type: boolean
+        default: false
+      example: true
+    - name: include_prerelease
+      in: query
+      description: Include pre-release versions
+      schema:
+        type: boolean
+        default: false
+      example: false
+    responses:
+      '200':
+        description: Theme versions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ThemeVersion'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+  post:
+    tags:
+    - Theme Versions
+    summary: Create Theme Version
+    description: 'Create a new version of a theme with changelog and package information.
+
+
+      **Required Permissions:** `themes.edit` and theme ownership
+
+      '
+    operationId: createThemeVersion
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - version
+            - release_notes
+            properties:
+              version:
+                type: string
+                maxLength: 50
+                pattern: ^\d+\.\d+\.\d+$
+                description: Semantic version number
+                example: 1.3.0
+              release_notes:
+                type: string
+                description: Release notes and changelog
+                example: Added dark mode support and improved performance
+              changes:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - type
+                  - description
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                      - feature
+                      - bugfix
+                      - security
+                      - breaking
+                    description:
+                      type: string
+                description: Structured changelog
+                example:
+                - type: feature
+                  description: Added dark mode toggle
+                - type: bugfix
+                  description: Fixed responsive layout issues
+              package_url:
+                type: string
+                format: uri
+                maxLength: 500
+                description: Download URL for this version
+                example: https://cdn.stencilcms.com/themes/etching-professional-v1.3.0.zip
+              is_stable:
+                type: boolean
+                default: true
+                description: Whether this is a stable release
+                example: true
+              is_security_update:
+                type: boolean
+                default: false
+                description: Contains security fixes
+                example: false
+              is_breaking_change:
+                type: boolean
+                default: false
+                description: Contains breaking changes
+                example: false
+              min_stencil_version:
+                type: string
+                maxLength: 50
+                description: Minimum required Stencil version
+                example: 2.1.0
+          example:
+            title: New Theme Title
+            description: Sample description for theme
+            is_active: true
+    responses:
+      '201':
+        description: Theme version created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ThemeVersion'
+                  message:
+                    type: string
+                    example: Theme version created successfully
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Theme created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Version already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/themes/{themeId}/purchase:
+  post:
+    tags:
+    - Theme Purchases
+    summary: Purchase Theme
+    description: 'Purchase a paid theme for the current tenant. This will process
+      payment and generate a license.
+
+
+      **Purchase Flow:**
+
+      1. Payment processing
+
+      2. License generation
+
+      3. Installation preparation
+
+      4. Receipt generation
+
+
+      **Required Permissions:** `themes.purchase`
+
+      '
+    operationId: purchaseTheme
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID to purchase
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - payment_method
+            properties:
+              payment_method:
+                type: string
+                enum:
+                - credit_card
+                - paypal
+                - bank_transfer
+                description: Payment method
+                example: credit_card
+              payment_token:
+                type: string
+                description: Payment processor token
+                example: tok_1234567890abcdef
+              license_type:
+                type: string
+                enum:
+                - single-site
+                - multi-site
+                default: single-site
+                description: License type to purchase
+                example: single-site
+              discount_code:
+                type: string
+                maxLength: 50
+                nullable: true
+                description: Discount/coupon code
+                example: LAUNCH50
+              billing_info:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: John Doe
+                  email:
+                    type: string
+                    format: email
+                    example: john@ptcex.com
+                  company:
+                    type: string
+                    example: PT Custom Etching Xenial
+                  address:
+                    type: object
+                    properties:
+                      street:
+                        type: string
+                      city:
+                        type: string
+                      country:
+                        type: string
+          example:
+            title: New Theme Title
+            description: Sample description for theme
+            is_active: true
+    responses:
+      '201':
+        description: Theme purchased successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      purchase:
+                        $ref: '#/components/schemas/ThemePurchase'
+                      license:
+                        $ref: '#/components/schemas/ThemeLicense'
+                      invoice_url:
+                        type: string
+                        format: uri
+                        description: Invoice download URL
+                        example: https://invoices.stencilcms.com/inv-001234.pdf
+                  message:
+                    type: string
+                    example: Theme purchased successfully. You can now install it.
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Theme created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '402':
+        description: Payment failed
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: PAYMENT_FAILED
+                message: Payment processing failed. Please check your payment details.
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Theme already purchased
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+/tenant/theme-purchases:
+  get:
+    tags:
+    - Theme Purchases
+    summary: List Theme Purchases
+    description: 'List all theme purchases for the current tenant.
+
+
+      **Features:**
+
+      - Purchase history
+
+      - License information
+
+      - Invoice access
+
+      - Refund status
+
+      '
+    operationId: listThemePurchases
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - name: status
+      in: query
+      description: Filter by payment status
+      schema:
+        type: string
+        enum:
+        - pending
+        - completed
+        - failed
+        - refunded
+      example: completed
+    - name: theme_id
+      in: query
+      description: Filter by specific theme
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: Theme purchases retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '#/components/schemas/ThemePurchase'
+                      - type: object
+                        properties:
+                          theme:
+                            $ref: '#/components/schemas/Theme'
+                          licenses:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ThemeLicense'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Theme Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'

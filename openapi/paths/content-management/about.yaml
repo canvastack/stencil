@@ -1,31 +1,28 @@
-# About Us Module API Paths for Stencil CMS
-# Complete CRUD operations for About Us Management System (15+ endpoints)
-
-# About Hero Section Endpoints
 /about/hero:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get About hero sections
-    description: Retrieve all About hero sections for the current tenant with pagination and filtering
+    description: Retrieve all About hero sections for the current tenant with pagination
+      and filtering
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - $ref: '../../components/parameters.yaml#/PageParam'
-      - $ref: '../../components/parameters.yaml#/PerPageParam'
-      - $ref: '../../components/parameters.yaml#/SortParam'
-      - name: page_id
-        in: query
-        schema:
-          type: string
-          format: uuid
-        description: Filter by specific page ID
-      - name: is_active
-        in: query
-        schema:
-          type: boolean
-        description: Filter by active status
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: page_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific page ID
+    - name: is_active
+      in: query
+      schema:
+        type: boolean
+      description: Filter by active status
     responses:
       '200':
         description: About hero sections retrieved successfully
@@ -33,31 +30,42 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/PaginatedResponse'
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '../../schemas/content-management/about.yaml#/AboutHero'
+              - $ref: '#/components/schemas/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AboutHero'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   post:
     tags:
-      - About Us
+    - About Us
     summary: Create About hero section
     description: Create a new About hero section
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -65,8 +73,8 @@
           schema:
             type: object
             required:
-              - page_id
-              - title
+            - page_id
+            - title
             properties:
               page_id:
                 type: string
@@ -75,10 +83,10 @@
               title:
                 type: string
                 maxLength: 255
-                example: "About Our Company"
+                example: About Our Company
               subtitle:
                 type: string
-                example: "Leading innovation in etching industry since 2015"
+                example: Leading innovation in etching industry since 2015
                 nullable: true
               background_image_url:
                 type: string
@@ -96,12 +104,18 @@
                 default: 0.5
               text_alignment:
                 type: string
-                enum: ['left', 'center', 'right']
-                default: 'center'
+                enum:
+                - left
+                - center
+                - right
+                default: center
               vertical_position:
                 type: string
-                enum: ['top', 'center', 'bottom']
-                default: 'center'
+                enum:
+                - top
+                - center
+                - bottom
+                default: center
               cta_text:
                 type: string
                 maxLength: 100
@@ -112,8 +126,11 @@
                 nullable: true
               cta_style:
                 type: string
-                enum: ['primary', 'secondary', 'outline']
-                default: 'primary'
+                enum:
+                - primary
+                - secondary
+                - outline
+                default: primary
               alt_text:
                 type: string
                 maxLength: 255
@@ -121,6 +138,10 @@
               is_active:
                 type: boolean
                 default: true
+          example:
+            title: New About Title
+            description: Sample description for about
+            is_active: true
     responses:
       '201':
         description: About hero section created successfully
@@ -128,45 +149,53 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/AboutHero'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AboutHero'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: About created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '409':
-        $ref: '../../components/responses.yaml#/Conflict'
+        $ref: '#/components/responses/Conflict'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
 /about/hero/{id}:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get specific About hero section
     description: Retrieve a specific About hero section by ID
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: About hero section ID
-      - name: include_versions
-        in: query
-        schema:
-          type: boolean
-          default: false
-        description: Include version history
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: About hero section ID
+    - name: include_versions
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include version history
     responses:
       '200':
         description: About hero section retrieved successfully
@@ -174,36 +203,47 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/AboutHero'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AboutHero'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   put:
     tags:
-      - About Us
+    - About Us
     summary: Update About hero section
     description: Update an existing About hero section
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: About hero section ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: About hero section ID
     requestBody:
       required: true
       content:
@@ -232,10 +272,16 @@
                 maximum: 1.0
               text_alignment:
                 type: string
-                enum: ['left', 'center', 'right']
+                enum:
+                - left
+                - center
+                - right
               vertical_position:
                 type: string
-                enum: ['top', 'center', 'bottom']
+                enum:
+                - top
+                - center
+                - bottom
               cta_text:
                 type: string
                 maxLength: 100
@@ -246,13 +292,20 @@
                 nullable: true
               cta_style:
                 type: string
-                enum: ['primary', 'secondary', 'outline']
+                enum:
+                - primary
+                - secondary
+                - outline
               alt_text:
                 type: string
                 maxLength: 255
                 nullable: true
               is_active:
                 type: boolean
+          example:
+            title: Updated About Title
+            description: Updated description for about
+            is_active: true
     responses:
       '200':
         description: About hero section updated successfully
@@ -260,69 +313,74 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/AboutHero'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AboutHero'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: About puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   delete:
     tags:
-      - About Us
+    - About Us
     summary: Delete About hero section
     description: Soft delete an About hero section
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: About hero section ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: About hero section ID
     responses:
       '204':
         description: About hero section deleted successfully
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Company Profile Endpoints
+        $ref: '#/components/responses/ServerError'
 /about/company:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get company profiles
     description: Retrieve company profile information
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - $ref: '../../components/parameters.yaml#/PageParam'
-      - $ref: '../../components/parameters.yaml#/PerPageParam'
-      - name: page_id
-        in: query
-        schema:
-          type: string
-          format: uuid
-        description: Filter by specific page ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - name: page_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific page ID
     responses:
       '200':
         description: Company profiles retrieved successfully
@@ -330,31 +388,42 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/PaginatedResponse'
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
+              - $ref: '#/components/schemas/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CompanyProfile'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   post:
     tags:
-      - About Us
+    - About Us
     summary: Create company profile
     description: Create a new company profile
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -362,7 +431,7 @@
           schema:
             type: object
             required:
-              - page_id
+            - page_id
             properties:
               page_id:
                 type: string
@@ -378,7 +447,12 @@
                 nullable: true
               company_size:
                 type: string
-                enum: ['startup', 'small', 'medium', 'large', 'enterprise']
+                enum:
+                - startup
+                - small
+                - medium
+                - large
+                - enterprise
                 nullable: true
               industry:
                 type: string
@@ -462,6 +536,10 @@
               is_active:
                 type: boolean
                 default: true
+          example:
+            title: New About Title
+            description: Sample description for about
+            is_active: true
     responses:
       '201':
         description: Company profile created successfully
@@ -469,39 +547,47 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CompanyProfile'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: About created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '409':
-        $ref: '../../components/responses.yaml#/Conflict'
+        $ref: '#/components/responses/Conflict'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
 /about/company/{id}:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get specific company profile
     description: Retrieve a specific company profile by ID
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Company profile ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Company profile ID
     responses:
       '200':
         description: Company profile retrieved successfully
@@ -509,36 +595,47 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CompanyProfile'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   put:
     tags:
-      - About Us
+    - About Us
     summary: Update company profile
     description: Update an existing company profile
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Company profile ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Company profile ID
     requestBody:
       required: true
       content:
@@ -557,7 +654,12 @@
                 nullable: true
               company_size:
                 type: string
-                enum: ['startup', 'small', 'medium', 'large', 'enterprise']
+                enum:
+                - startup
+                - small
+                - medium
+                - large
+                - enterprise
                 nullable: true
               industry:
                 type: string
@@ -640,6 +742,10 @@
                 additionalProperties: true
               is_active:
                 type: boolean
+          example:
+            title: Updated About Title
+            description: Updated description for about
+            is_active: true
     responses:
       '200':
         description: Company profile updated successfully
@@ -647,74 +753,79 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CompanyProfile'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: About puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   delete:
     tags:
-      - About Us
+    - About Us
     summary: Delete company profile
     description: Soft delete a company profile
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Company profile ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Company profile ID
     responses:
       '204':
         description: Company profile deleted successfully
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Mission & Vision Endpoints
+        $ref: '#/components/responses/ServerError'
 /about/mission-vision:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get mission & vision content
     description: Retrieve mission and vision content
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: page_id
-        in: query
-        schema:
-          type: string
-          format: uuid
-        description: Filter by specific page ID
-      - name: language
-        in: query
-        schema:
-          type: string
-          pattern: "^[a-z]{2}(-[A-Z]{2})?$"
-          default: "en"
-        description: Language/locale for translations
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: page_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific page ID
+    - name: language
+      in: query
+      schema:
+        type: string
+        pattern: ^[a-z]{2}(-[A-Z]{2})?$
+        default: en
+      description: Language/locale for translations
     responses:
       '200':
         description: Mission & vision content retrieved successfully
@@ -722,31 +833,42 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/PaginatedResponse'
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '../../schemas/content-management/about.yaml#/MissionVision'
+              - $ref: '#/components/schemas/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MissionVision'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   post:
     tags:
-      - About Us
+    - About Us
     summary: Create mission & vision content
     description: Create new mission and vision content
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -754,7 +876,7 @@
           schema:
             type: object
             required:
-              - page_id
+            - page_id
             properties:
               page_id:
                 type: string
@@ -762,7 +884,7 @@
               mission_title:
                 type: string
                 maxLength: 255
-                default: "Our Mission"
+                default: Our Mission
                 nullable: true
               mission_statement:
                 type: string
@@ -778,7 +900,7 @@
               vision_title:
                 type: string
                 maxLength: 255
-                default: "Our Vision"
+                default: Our Vision
                 nullable: true
               vision_statement:
                 type: string
@@ -793,8 +915,12 @@
                 nullable: true
               layout_style:
                 type: string
-                enum: ['side-by-side', 'stacked', 'tabs', 'cards']
-                default: 'side-by-side'
+                enum:
+                - side-by-side
+                - stacked
+                - tabs
+                - cards
+                default: side-by-side
               background_color:
                 type: string
                 maxLength: 20
@@ -823,6 +949,10 @@
               is_active:
                 type: boolean
                 default: true
+          example:
+            title: New About Title
+            description: Sample description for about
+            is_active: true
     responses:
       '201':
         description: Mission & vision content created successfully
@@ -830,46 +960,54 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/MissionVision'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MissionVision'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: About created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '409':
-        $ref: '../../components/responses.yaml#/Conflict'
+        $ref: '#/components/responses/Conflict'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
 /about/mission-vision/{id}:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get specific mission & vision content
     description: Retrieve specific mission and vision content by ID
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Mission & vision content ID
-      - name: language
-        in: query
-        schema:
-          type: string
-          pattern: "^[a-z]{2}(-[A-Z]{2})?$"
-          default: "en"
-        description: Language/locale for translations
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Mission & vision content ID
+    - name: language
+      in: query
+      schema:
+        type: string
+        pattern: ^[a-z]{2}(-[A-Z]{2})?$
+        default: en
+      description: Language/locale for translations
     responses:
       '200':
         description: Mission & vision content retrieved successfully
@@ -877,36 +1015,47 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/MissionVision'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MissionVision'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   put:
     tags:
-      - About Us
+    - About Us
     summary: Update mission & vision content
     description: Update existing mission and vision content
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Mission & vision content ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Mission & vision content ID
     requestBody:
       required: true
       content:
@@ -946,7 +1095,11 @@
                 nullable: true
               layout_style:
                 type: string
-                enum: ['side-by-side', 'stacked', 'tabs', 'cards']
+                enum:
+                - side-by-side
+                - stacked
+                - tabs
+                - cards
               background_color:
                 type: string
                 maxLength: 20
@@ -972,6 +1125,10 @@
                 type: boolean
               is_active:
                 type: boolean
+          example:
+            title: Updated About Title
+            description: Updated description for about
+            is_active: true
     responses:
       '200':
         description: Mission & vision content updated successfully
@@ -979,85 +1136,90 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/MissionVision'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MissionVision'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: About puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   delete:
     tags:
-      - About Us
+    - About Us
     summary: Delete mission & vision content
     description: Soft delete mission and vision content
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Mission & vision content ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Mission & vision content ID
     responses:
       '204':
         description: Mission & vision content deleted successfully
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Team Members Endpoints
+        $ref: '#/components/responses/ServerError'
 /about/team:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get team members
     description: Retrieve team members with filtering and sorting options
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - $ref: '../../components/parameters.yaml#/PageParam'
-      - $ref: '../../components/parameters.yaml#/PerPageParam'
-      - $ref: '../../components/parameters.yaml#/SortParam'
-      - name: page_id
-        in: query
-        schema:
-          type: string
-          format: uuid
-        description: Filter by specific page ID
-      - name: is_featured
-        in: query
-        schema:
-          type: boolean
-        description: Filter by featured status
-      - name: department
-        in: query
-        schema:
-          type: string
-        description: Filter by department
-      - name: search
-        in: query
-        schema:
-          type: string
-        description: Search by name or position
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '#/components/parameters/SortParam'
+    - name: page_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific page ID
+    - name: is_featured
+      in: query
+      schema:
+        type: boolean
+      description: Filter by featured status
+    - name: department
+      in: query
+      schema:
+        type: string
+      description: Filter by department
+    - name: search
+      in: query
+      schema:
+        type: string
+      description: Search by name or position
     responses:
       '200':
         description: Team members retrieved successfully
@@ -1065,31 +1227,42 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/PaginatedResponse'
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '../../schemas/content-management/about.yaml#/TeamMember'
+              - $ref: '#/components/schemas/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TeamMember'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   post:
     tags:
-      - About Us
+    - About Us
     summary: Create team member
     description: Add a new team member
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1097,9 +1270,9 @@
           schema:
             type: object
             required:
-              - page_id
-              - name
-              - position
+            - page_id
+            - name
+            - position
             properties:
               page_id:
                 type: string
@@ -1107,11 +1280,11 @@
               name:
                 type: string
                 maxLength: 255
-                example: "John Doe"
+                example: John Doe
               position:
                 type: string
                 maxLength: 255
-                example: "Chief Executive Officer"
+                example: Chief Executive Officer
               bio:
                 type: string
                 nullable: true
@@ -1149,6 +1322,10 @@
               display_order:
                 type: integer
                 default: 0
+          example:
+            title: New About Title
+            description: Sample description for about
+            is_active: true
     responses:
       '201':
         description: Team member created successfully
@@ -1156,37 +1333,45 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/TeamMember'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TeamMember'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: About created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
 /about/team/{id}:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get specific team member
     description: Retrieve a specific team member by ID
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Team member ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Team member ID
     responses:
       '200':
         description: Team member retrieved successfully
@@ -1194,36 +1379,47 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/TeamMember'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TeamMember'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   put:
     tags:
-      - About Us
+    - About Us
     summary: Update team member
     description: Update an existing team member
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Team member ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Team member ID
     requestBody:
       required: true
       content:
@@ -1272,6 +1468,10 @@
                 nullable: true
               display_order:
                 type: integer
+          example:
+            title: Updated About Title
+            description: Updated description for about
+            is_active: true
     responses:
       '200':
         description: Team member updated successfully
@@ -1279,85 +1479,96 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/TeamMember'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TeamMember'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: About puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   delete:
     tags:
-      - About Us
+    - About Us
     summary: Delete team member
     description: Soft delete a team member
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Team member ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Team member ID
     responses:
       '204':
         description: Team member deleted successfully
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Timeline Events Endpoints
+        $ref: '#/components/responses/ServerError'
 /about/timeline:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get timeline events
     description: Retrieve company timeline events
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - $ref: '../../components/parameters.yaml#/PageParam'
-      - $ref: '../../components/parameters.yaml#/PerPageParam'
-      - name: page_id
-        in: query
-        schema:
-          type: string
-          format: uuid
-        description: Filter by specific page ID
-      - name: year_from
-        in: query
-        schema:
-          type: integer
-        description: Filter events from this year
-      - name: year_to
-        in: query
-        schema:
-          type: integer
-        description: Filter events up to this year
-      - name: milestone_type
-        in: query
-        schema:
-          type: string
-          enum: ['founding', 'expansion', 'achievement', 'partnership', 'product_launch', 'other']
-        description: Filter by milestone type
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - name: page_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific page ID
+    - name: year_from
+      in: query
+      schema:
+        type: integer
+      description: Filter events from this year
+    - name: year_to
+      in: query
+      schema:
+        type: integer
+      description: Filter events up to this year
+    - name: milestone_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - founding
+        - expansion
+        - achievement
+        - partnership
+        - product_launch
+        - other
+      description: Filter by milestone type
     responses:
       '200':
         description: Timeline events retrieved successfully
@@ -1365,31 +1576,42 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/PaginatedResponse'
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
+              - $ref: '#/components/schemas/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TimelineEvent'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   post:
     tags:
-      - About Us
+    - About Us
     summary: Create timeline event
     description: Add a new timeline event
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1397,9 +1619,9 @@
           schema:
             type: object
             required:
-              - page_id
-              - year
-              - title
+            - page_id
+            - year
+            - title
             properties:
               page_id:
                 type: string
@@ -1412,7 +1634,7 @@
               title:
                 type: string
                 maxLength: 255
-                example: "Company Founded"
+                example: Company Founded
               description:
                 type: string
                 nullable: true
@@ -1422,15 +1644,29 @@
                 nullable: true
               milestone_type:
                 type: string
-                enum: ['founding', 'expansion', 'achievement', 'partnership', 'product_launch', 'other']
-                default: 'other'
+                enum:
+                - founding
+                - expansion
+                - achievement
+                - partnership
+                - product_launch
+                - other
+                default: other
               importance_level:
                 type: string
-                enum: ['low', 'medium', 'high', 'critical']
-                default: 'medium'
+                enum:
+                - low
+                - medium
+                - high
+                - critical
+                default: medium
               display_order:
                 type: integer
                 default: 0
+          example:
+            title: New About Title
+            description: Sample description for about
+            is_active: true
     responses:
       '201':
         description: Timeline event created successfully
@@ -1438,37 +1674,45 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TimelineEvent'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: About created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
 /about/timeline/{id}:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get specific timeline event
     description: Retrieve a specific timeline event by ID
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Timeline event ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Timeline event ID
     responses:
       '200':
         description: Timeline event retrieved successfully
@@ -1476,36 +1720,47 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TimelineEvent'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   put:
     tags:
-      - About Us
+    - About Us
     summary: Update timeline event
     description: Update an existing timeline event
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Timeline event ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Timeline event ID
     requestBody:
       required: true
       content:
@@ -1529,12 +1784,26 @@
                 nullable: true
               milestone_type:
                 type: string
-                enum: ['founding', 'expansion', 'achievement', 'partnership', 'product_launch', 'other']
+                enum:
+                - founding
+                - expansion
+                - achievement
+                - partnership
+                - product_launch
+                - other
               importance_level:
                 type: string
-                enum: ['low', 'medium', 'high', 'critical']
+                enum:
+                - low
+                - medium
+                - high
+                - critical
               display_order:
                 type: integer
+          example:
+            title: Updated About Title
+            description: Updated description for about
+            is_active: true
     responses:
       '200':
         description: Timeline event updated successfully
@@ -1542,86 +1811,101 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TimelineEvent'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: About puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   delete:
     tags:
-      - About Us
+    - About Us
     summary: Delete timeline event
     description: Soft delete a timeline event
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Timeline event ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Timeline event ID
     responses:
       '204':
         description: Timeline event deleted successfully
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Certifications Endpoints
+        $ref: '#/components/responses/ServerError'
 /about/certifications:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get certifications
     description: Retrieve company certifications and awards
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - $ref: '../../components/parameters.yaml#/PageParam'
-      - $ref: '../../components/parameters.yaml#/PerPageParam'
-      - name: page_id
-        in: query
-        schema:
-          type: string
-          format: uuid
-        description: Filter by specific page ID
-      - name: certification_type
-        in: query
-        schema:
-          type: string
-          enum: ['iso', 'industry', 'government', 'award', 'accreditation', 'other']
-        description: Filter by certification type
-      - name: status
-        in: query
-        schema:
-          type: string
-          enum: ['active', 'expired', 'pending_renewal', 'suspended']
-        description: Filter by status
-      - name: year
-        in: query
-        schema:
-          type: integer
-        description: Filter by issue year
+    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '#/components/parameters/PageParam'
+    - $ref: '#/components/parameters/PerPageParam'
+    - name: page_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific page ID
+    - name: certification_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - iso
+        - industry
+        - government
+        - award
+        - accreditation
+        - other
+      description: Filter by certification type
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+        - active
+        - expired
+        - pending_renewal
+        - suspended
+      description: Filter by status
+    - name: year
+      in: query
+      schema:
+        type: integer
+      description: Filter by issue year
     responses:
       '200':
         description: Certifications retrieved successfully
@@ -1629,31 +1913,42 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/PaginatedResponse'
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '../../schemas/content-management/about.yaml#/Certification'
+              - $ref: '#/components/schemas/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Certification'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   post:
     tags:
-      - About Us
+    - About Us
     summary: Create certification
     description: Add a new certification or award
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1661,9 +1956,9 @@
           schema:
             type: object
             required:
-              - page_id
-              - name
-              - issuer
+            - page_id
+            - name
+            - issuer
             properties:
               page_id:
                 type: string
@@ -1671,11 +1966,11 @@
               name:
                 type: string
                 maxLength: 255
-                example: "ISO 9001:2015 Quality Management System"
+                example: ISO 9001:2015 Quality Management System
               issuer:
                 type: string
                 maxLength: 255
-                example: "International Organization for Standardization"
+                example: International Organization for Standardization
               issue_year:
                 type: integer
                 minimum: 1900
@@ -1698,15 +1993,29 @@
                 nullable: true
               certification_type:
                 type: string
-                enum: ['iso', 'industry', 'government', 'award', 'accreditation', 'other']
-                default: 'other'
+                enum:
+                - iso
+                - industry
+                - government
+                - award
+                - accreditation
+                - other
+                default: other
               status:
                 type: string
-                enum: ['active', 'expired', 'pending_renewal', 'suspended']
-                default: 'active'
+                enum:
+                - active
+                - expired
+                - pending_renewal
+                - suspended
+                default: active
               display_order:
                 type: integer
                 default: 0
+          example:
+            title: New About Title
+            description: Sample description for about
+            is_active: true
     responses:
       '201':
         description: Certification created successfully
@@ -1714,37 +2023,45 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/Certification'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Certification'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: About created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
 /about/certifications/{id}:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get specific certification
     description: Retrieve a specific certification by ID
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Certification ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Certification ID
     responses:
       '200':
         description: Certification retrieved successfully
@@ -1752,36 +2069,47 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/Certification'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Certification'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   put:
     tags:
-      - About Us
+    - About Us
     summary: Update certification
     description: Update an existing certification
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Certification ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Certification ID
     requestBody:
       required: true
       content:
@@ -1817,12 +2145,26 @@
                 nullable: true
               certification_type:
                 type: string
-                enum: ['iso', 'industry', 'government', 'award', 'accreditation', 'other']
+                enum:
+                - iso
+                - industry
+                - government
+                - award
+                - accreditation
+                - other
               status:
                 type: string
-                enum: ['active', 'expired', 'pending_renewal', 'suspended']
+                enum:
+                - active
+                - expired
+                - pending_renewal
+                - suspended
               display_order:
                 type: integer
+          example:
+            title: Updated About Title
+            description: Updated description for about
+            is_active: true
     responses:
       '200':
         description: Certification updated successfully
@@ -1830,81 +2172,86 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/Certification'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Certification'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: About puted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
+        $ref: '#/components/responses/ServerError'
   delete:
     tags:
-      - About Us
+    - About Us
     summary: Delete certification
     description: Soft delete a certification
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: Certification ID
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Certification ID
     responses:
       '204':
         description: Certification deleted successfully
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Complete About Page Endpoint
+        $ref: '#/components/responses/ServerError'
 /about/complete:
   get:
     tags:
-      - About Us
+    - About Us
     summary: Get complete About page
     description: Retrieve all About page content in a single response
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
-      - name: page_id
-        in: query
-        required: true
-        schema:
-          type: string
-          format: uuid
-        description: About page ID
-      - name: language
-        in: query
-        schema:
-          type: string
-          pattern: "^[a-z]{2}(-[A-Z]{2})?$"
-          default: "en"
-        description: Language/locale for translations
-      - name: include_inactive
-        in: query
-        schema:
-          type: boolean
-          default: false
-        description: Include inactive content sections
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: page_id
+      in: query
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: About page ID
+    - name: language
+      in: query
+      schema:
+        type: string
+        pattern: ^[a-z]{2}(-[A-Z]{2})?$
+        default: en
+      description: Language/locale for translations
+    - name: include_inactive
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include inactive content sections
     responses:
       '200':
         description: Complete About page retrieved successfully
@@ -1912,39 +2259,53 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/AboutPageComplete'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AboutPageComplete'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample About Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: About retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-
-# Bulk Operations Endpoint
+        $ref: '#/components/responses/ServerError'
 /about/bulk:
   post:
     tags:
-      - About Us
+    - About Us
     summary: Bulk operations on About content
     description: Perform bulk operations (create, update, delete) on About content
     security:
-      - bearerAuth: []
+    - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '../../schemas/content-management/about.yaml#/AboutBulkOperation'
+            $ref: '#/components/schemas/AboutBulkOperation'
+          example:
+            title: New About Title
+            description: Sample description for about
+            is_active: true
     responses:
       '200':
         description: Bulk operation completed
@@ -1952,16 +2313,24 @@
           application/json:
             schema:
               allOf:
-                - $ref: '../../schemas/common/base.yaml#/SuccessResponse'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '../../schemas/content-management/about.yaml#/AboutBulkResult'
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AboutBulkResult'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: About posted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
       '500':
-        $ref: '../../components/responses.yaml#/ServerError'
+        $ref: '#/components/responses/ServerError'

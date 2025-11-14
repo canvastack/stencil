@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Advanced OpenAPI Validation with Reference & Cross-Module Checking
+Advanced OpenAPI Validation with Reference & Cross-Module Checking (Windows Compatible)
 Validates:
 - YAML syntax integrity
 - Schema reference validity
@@ -18,11 +18,9 @@ from collections import defaultdict
 def advanced_validation():
     """Run advanced OpenAPI validation"""
     
-    print('╔' + '═' * 88 + '╗')
-    print('║' + ' ' * 88 + '║')
-    print('║' + '🔍 ADVANCED OPENAPI SCHEMA VALIDATION & ISSUES REPORT'.center(88) + '║')
-    print('║' + ' ' * 88 + '║')
-    print('╚' + '═' * 88 + '╝')
+    print('=' * 90)
+    print(' ' * 30 + 'ADVANCED OPENAPI SCHEMA VALIDATION')
+    print('=' * 90)
     print()
     
     base_path = Path(__file__).parent.parent.resolve()
@@ -40,7 +38,7 @@ def advanced_validation():
     all_schemas = {}
     schema_entities = defaultdict(list)
     
-    print('📖 LOADING ALL SCHEMAS...')
+    print('LOADING ALL SCHEMAS...')
     print('-' * 90)
     
     for schema_file in sorted(schemas_dir.glob('*.yaml')):
@@ -54,13 +52,13 @@ def advanced_validation():
                 for entity_name in content.keys():
                     schema_entities[entity_name].append(module_name)
                     
-            print(f'✅ Loaded: {module_name:20} ({len(content) if isinstance(content, dict) else "?":2} entities)')
+            print(f'OK   Loaded: {module_name:20} ({len(content) if isinstance(content, dict) else "?":2} entities)')
         except Exception as e:
             issues_found['critical'].append(f'Failed to load {module_name}: {str(e)[:60]}')
-            print(f'❌ Failed: {module_name:20} - {str(e)[:50]}')
+            print(f'FAIL Failed: {module_name:20} - {str(e)[:50]}')
     
     print()
-    print('🔎 CHECKING TENANT_ID COMPLIANCE...')
+    print('CHECKING TENANT_ID COMPLIANCE...')
     print('-' * 90)
     
     # Check tenant_id in all schemas (with smart reference following)
@@ -112,12 +110,12 @@ def advanced_validation():
                 issues_found['critical'].append(
                     f'TENANT_ID: Module "{module_name}" missing tenant_id field in all entities'
                 )
-                print(f'⚠️ {module_name:20} - NO tenant_id FOUND')
+                print(f'WARN {module_name:20} - NO tenant_id FOUND')
             else:
-                print(f'✅ {module_name:20} - tenant_id present')
+                print(f'OK   {module_name:20} - tenant_id present')
     
     print()
-    print('🔗 CHECKING SCHEMA REFERENCES & DEFINITIONS...')
+    print('CHECKING SCHEMA REFERENCES & DEFINITIONS...')
     print('-' * 90)
     
     # Check path files for $ref usage and validity
@@ -133,28 +131,28 @@ def advanced_validation():
             refs_in_file = re.findall(ref_pattern, content_str)
             
             if refs_in_file:
-                print(f'\n📄 {module_name:20} - Found {len(set(refs_in_file))} unique references:')
+                print(f'\nFILE {module_name:20} - Found {len(set(refs_in_file))} unique references:')
                 
                 for ref in set(refs_in_file):
                     if ref.startswith('#/'):
                         # Internal reference - check if it resolves
                         ref_path = ref.split('/')[1:]  # Skip '#'
-                        print(f'   ├─ {ref:60} (internal)', end='')
+                        print(f'   -> {ref:60} (internal)', end='')
                         
                         # Simple check - just warn if suspicious
-                        if 'responses' in ref_path or 'schemas' in ref_path:
-                            print(' ✅')
+                        if 'responses' in ref_path or 'schemas' in ref_path or 'parameters' in ref_path:
+                            print(' OK')
                         else:
-                            print(' ⚠️')
+                            print(' WARN')
                     else:
-                        print(f'   ├─ {ref:60} (external)')
+                        print(f'   -> {ref:60} (external)')
                         issues_found['warning'].append(f'Unsupported reference format in {module_name}: {ref}')
         
         except Exception as e:
             issues_found['warning'].append(f'Error checking references in {module_name}: {str(e)[:50]}')
     
     print()
-    print('🔐 CHECKING SECURITY CONFIGURATION...')
+    print('CHECKING SECURITY CONFIGURATION...')
     print('-' * 90)
     
     security_issues = defaultdict(list)
@@ -187,38 +185,38 @@ def advanced_validation():
     
     if security_issues:
         for module, issues in security_issues.items():
-            print(f'⚠️ {module:20} - {len(issues)} endpoints missing explicit security:')
+            print(f'WARN {module:20} - {len(issues)} endpoints missing explicit security:')
             for issue in issues[:3]:  # Show first 3
-                print(f'   └─ {issue["method"]} {issue["path"]}')
+                print(f'   -> {issue["method"]} {issue["path"]}')
             if len(issues) > 3:
-                print(f'   └─ ... and {len(issues) - 3} more')
+                print(f'   -> ... and {len(issues) - 3} more')
             issues_found['warning'].extend([
                 f'SECURITY: {module} - {issue["method"]} {issue["path"]} missing security'
                 for issue in issues
             ])
     else:
-        print('✅ All endpoints have explicit security definitions')
+        print('OK   All endpoints have explicit security definitions')
     
     print()
-    print('📐 CHECKING ENTITY RELATIONSHIPS...')
+    print('CHECKING ENTITY RELATIONSHIPS...')
     print('-' * 90)
     
     # Check for potential broken references between modules
     entity_conflicts = []
     for entity_name, modules in schema_entities.items():
         if len(modules) > 1:
-            print(f'📌 Entity "{entity_name}" defined in: {", ".join(modules)}')
+            print(f'INFO Entity "{entity_name}" defined in: {", ".join(modules)}')
             entity_conflicts.append((entity_name, modules))
     
     if not entity_conflicts:
-        print('✅ No entity name conflicts found')
+        print('OK   No entity name conflicts found')
     else:
-        print(f'\n⚠️ Found {len(entity_conflicts)} entities defined in multiple modules')
+        print(f'\nWARN Found {len(entity_conflicts)} entities defined in multiple modules')
         for entity, modules in entity_conflicts:
             issues_found['info'].append(f'Entity "{entity}" found in modules: {", ".join(modules)}')
     
     print()
-    print('📊 ENDPOINT VALIDATION...')
+    print('ENDPOINT VALIDATION...')
     print('-' * 90)
     
     endpoints_by_method = defaultdict(int)
@@ -261,16 +259,14 @@ def advanced_validation():
         issues_found['warning'].append(f'Only {endpoints_with_descriptions}/{total_endpoints} endpoints have descriptions')
     
     print()
-    print('╔' + '═' * 88 + '╗')
-    print('║' + ' ' * 88 + '║')
-    print('║' + '📋 ISSUES SUMMARY'.center(88) + '║')
-    print('║' + ' ' * 88 + '║')
-    print('╚' + '═' * 88 + '╝')
+    print('=' * 90)
+    print(' ' * 35 + 'ISSUES SUMMARY')
+    print('=' * 90)
     print()
     
     # Print critical issues
     if issues_found['critical']:
-        print('🚨 CRITICAL ISSUES (must fix):')
+        print('CRITICAL ISSUES (must fix):')
         print('-' * 90)
         for i, issue in enumerate(issues_found['critical'], 1):
             print(f'{i:2}. {issue}')
@@ -278,7 +274,7 @@ def advanced_validation():
     
     # Print warnings
     if issues_found['warning']:
-        print('⚠️  WARNINGS (should review):')
+        print('WARNINGS (should review):')
         print('-' * 90)
         unique_warnings = list(dict.fromkeys(issues_found['warning']))[:10]  # Unique, first 10
         for i, issue in enumerate(unique_warnings, 1):
@@ -289,7 +285,7 @@ def advanced_validation():
     
     # Print info
     if issues_found['info']:
-        print('ℹ️  INFORMATION:')
+        print('INFORMATION:')
         print('-' * 90)
         for i, issue in enumerate(issues_found['info'][:5], 1):
             print(f'{i:2}. {issue}')
@@ -299,19 +295,19 @@ def advanced_validation():
     
     # Final summary
     print()
-    print('═' * 90)
-    print('📌 FINAL ASSESSMENT')
-    print('═' * 90)
+    print('=' * 90)
+    print('FINAL ASSESSMENT')
+    print('=' * 90)
     print()
     
     total_issues = len(issues_found['critical']) + len(issues_found['warning'])
     
     if len(issues_found['critical']) == 0 and len(issues_found['warning']) == 0:
-        print('✅ VALIDATION PASSED - No critical issues found!')
+        print('PASS - No critical issues found!')
     elif len(issues_found['critical']) == 0:
-        print(f'⚠️  VALIDATION WARNING - {len(issues_found["warning"])} warnings found')
+        print(f'WARNING - {len(issues_found["warning"])} warnings found')
     else:
-        print(f'🚨 VALIDATION FAILED - {len(issues_found["critical"])} critical, {len(issues_found["warning"])} warnings')
+        print(f'FAILED - {len(issues_found["critical"])} critical, {len(issues_found["warning"])} warnings')
     
     print()
     print(f'Total files: 33 (15 schemas + 15 paths + 3 components)')
