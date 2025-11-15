@@ -46,7 +46,8 @@ ProductsSummary:
       description: Count of products by category
     total_value:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       description: Total inventory value
       example: 12500000.00
     out_of_stock_count:
@@ -81,8 +82,12 @@ ProductsFilters:
             type: string
           min:
             type: number
+            format: double
+            multipleOf: 0.01
           max:
             type: number
+            format: double
+            multipleOf: 0.01
 
 # Main Product Entity
 Product:
@@ -158,8 +163,9 @@ Product:
         # Pricing & Stock
         price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Product price (nullable for vendor production)
           example: 150000.00
           nullable: true
@@ -205,17 +211,19 @@ Product:
           description: Production method for business workflow
         vendor_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Vendor quoted price (for broker margin calculation)
           example: 120000.00
           nullable: true
         markup_percentage:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           default: 0.00
+          multipleOf: 0.01
           description: Broker markup percentage
           example: 25.00
         quotation_required:
@@ -634,8 +642,9 @@ CreateProductRequest:
         format: uri
     price:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
     currency:
       type: string
       maxLength: 3
@@ -719,10 +728,12 @@ ProductListQuery:
       enum: [internal, vendor]
     price_min:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
     price_max:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
     sort:
       type: string
       enum: [name, price, created_at, updated_at, stock_quantity]
@@ -777,7 +788,8 @@ PublicProduct:
           type: boolean
         price:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         currency:
           type: string
         price_unit:

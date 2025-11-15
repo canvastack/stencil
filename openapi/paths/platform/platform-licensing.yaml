@@ -21,6 +21,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.platform.create
     requestBody:
       required: true
       content:
@@ -64,6 +66,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.platform.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: status
@@ -116,6 +120,8 @@
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
 
 /platform/licenses/{license_id}:
   get:
@@ -134,6 +140,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.platform.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: license_id
@@ -176,6 +184,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.platform.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: license_id
@@ -224,6 +234,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.platform.revoke
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: license_id
@@ -293,6 +305,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.tenant.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
@@ -342,6 +356,8 @@
       - bearerAuth: []
       - PlatformAuth: []
       - TenantAuth: []
+    x-permissions:
+      - licensing.tenant.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
@@ -382,6 +398,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.tenant.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
@@ -459,6 +477,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.tenant.cancel
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
@@ -537,6 +557,8 @@
       - bearerAuth: []
       - PlatformAuth: []
       - TenantAuth: []
+    x-permissions:
+      - licensing.analytics.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
@@ -564,6 +586,12 @@
                 properties:
                   data:
                     $ref: '#/components/schemas/UsageStatisticsResponse'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
 
 # ===== LICENSE VALIDATION =====
 
@@ -636,6 +664,8 @@
                   type: string
                   format: date-time
                   example: "2024-12-31T23:59:59Z"
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
 
 /platform/validation-history:
   get:
@@ -654,6 +684,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.platform.history.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: days
@@ -707,6 +739,8 @@
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
 
 # ===== BULK OPERATIONS =====
 
@@ -727,6 +761,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.platform.bulk_update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -816,6 +852,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.tenant.bulk_update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -914,6 +952,8 @@
     security:
       - bearerAuth: []
       - PlatformAuth: []
+    x-permissions:
+      - licensing.analytics
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: period
@@ -1019,3 +1059,5 @@
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'

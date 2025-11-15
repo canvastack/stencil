@@ -12,7 +12,7 @@
     description: |
       Retrieve paginated list of documentation articles with advanced filtering and search capabilities.
       
-      **Features:**
+      Features:
       - Search by title, content, tags
       - Filter by category, status, visibility
       - Sort by multiple fields (date, views, rating)
@@ -21,6 +21,8 @@
     operationId: listDocumentationArticles
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - $ref: '#/components/parameters/PageParam'
@@ -95,10 +97,37 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationArticlesResponse'
+            examples:
+              ok:
+                summary: Articles list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        title: "Advanced Metal Etching Techniques"
+                        slug: "advanced-metal-etching-techniques"
+                        status: "published"
+                        visibility: "public"
+                        category_id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+                        published_at: "2025-02-10T09:30:00Z"
+                      - id: "123e4567-e89b-12d3-a456-426614174000"
+                        title: "Beginner's Guide to Etching"
+                        slug: "beginners-guide-etching"
+                        status: "published"
+                        visibility: "customer"
+                        category_id: "876e4321-e89b-12d3-a456-426614174000"
+                        published_at: "2025-02-14T12:00:00Z"
+                    meta:
+                      page: 1
+                      per_page: 10
+                      total: 2
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -109,7 +138,7 @@
     description: |
       Create a new documentation article with comprehensive content management features.
       
-      **Admin Features:**
+      Admin Features:
       - Rich content with markdown/HTML support
       - Category assignment and tagging
       - SEO metadata management
@@ -118,6 +147,8 @@
     operationId: createDocumentationArticle
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -151,6 +182,20 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationArticleResponse'
+            examples:
+              created:
+                summary: Article created
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Advanced Metal Etching Techniques for Industrial Applications"
+                    slug: "advanced-metal-etching-techniques-industrial"
+                    status: "draft"
+                    visibility: "customer"
+                    category_id: "550e8400-e29b-41d4-a716-446655440000"
+                    difficulty_level: "advanced"
+                    created_at: "2025-02-15T09:00:00Z"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -168,7 +213,7 @@
     description: |
       Retrieve a specific documentation article by UUID with related content.
       
-      **Features:**
+      Features:
       - Article content with metadata
       - Related articles suggestions
       - View count tracking
@@ -177,6 +222,8 @@
     operationId: getDocumentationArticle
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: articleId
@@ -215,6 +262,20 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationArticleResponse'
+            examples:
+              ok:
+                summary: Article detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Advanced Metal Etching Techniques"
+                    slug: "advanced-metal-etching-techniques"
+                    status: "published"
+                    category_id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+                    published_at: "2025-02-10T09:30:00Z"
+                    content: "## Introduction..."
+                    tags: ["metal-etching", "advanced"]
       '404':
         $ref: '#/components/responses/NotFound'
       '401':
@@ -229,7 +290,7 @@
     description: |
       Update an existing documentation article with version control.
       
-      **Admin Features:**
+      Admin Features:
       - Partial updates support
       - Automatic version creation
       - Status workflow management
@@ -238,6 +299,8 @@
     operationId: updateDocumentationArticle
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: articleId
@@ -276,6 +339,12 @@
         application/json:
           schema:
             $ref: '#/components/schemas/DocumentationArticleInput'
+          examples:
+            update_basic:
+              summary: Update title and excerpt
+              value:
+                title: "Advanced Metal Etching Techniques (Updated)"
+                excerpt: "Updated professional etching techniques overview"
     responses:
       '200':
         description: Documentation article updated successfully
@@ -283,6 +352,16 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationArticleResponse'
+            examples:
+              ok:
+                summary: Article updated
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Advanced Metal Etching Techniques (Updated)"
+                    status: "published"
+                    updated_at: "2025-02-16T11:20:00Z"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -301,7 +380,7 @@
     description: |
       Delete a documentation article (soft delete to archived status by default).
       
-      **Admin Features:**
+      Admin Features:
       - Soft delete (archive) by default
       - Hard delete option for admins
       - Cascade handling for related content
@@ -309,6 +388,8 @@
     operationId: deleteDocumentationArticle
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: articleId
@@ -346,6 +427,12 @@
                     message:
                       type: string
                       example: "Documentation article archived successfully"
+            examples:
+              ok:
+                summary: Deleted (archived)
+                value:
+                  success: true
+                  message: "Documentation article archived successfully"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -363,7 +450,7 @@
     description: |
       Perform bulk operations on multiple documentation articles.
       
-      **Admin Operations:**
+      Admin Operations:
       - Bulk publish/unpublish articles
       - Bulk category assignment
       - Bulk status updates
@@ -372,6 +459,8 @@
     operationId: bulkOperationsDocumentationArticles
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -432,6 +521,19 @@
                                 format: uuid
                               error:
                                 type: string
+            examples:
+              ok:
+                summary: Bulk result
+                value:
+                  success: true
+                  data:
+                    processed: 15
+                    failed: 2
+                    errors:
+                      - article_id: "123e4567-e89b-12d3-a456-426614174000"
+                        error: "NOT_FOUND"
+                      - article_id: "987e6543-e21b-98d7-a654-426614174111"
+                        error: "VALIDATION_ERROR"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -452,7 +554,7 @@
     description: |
       Retrieve hierarchical list of documentation categories with article counts.
       
-      **Features:**
+      Features:
       - Hierarchical tree structure
       - Article counts per category
       - Visibility filtering
@@ -461,6 +563,8 @@
     operationId: listDocumentationCategories
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.category.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: include_hidden
@@ -498,8 +602,29 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationCategoriesResponse'
+            examples:
+              ok:
+                summary: Categories list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        name: "Technical Guides"
+                        slug: "technical-guides"
+                        is_visible: true
+                        is_featured: true
+                        article_count: 12
+                      - id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+                        name: "Material Specifications"
+                        slug: "material-specifications"
+                        is_visible: true
+                        is_featured: false
+                        article_count: 7
       '401':
         $ref: '#/components/responses/Unauthorized'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -510,7 +635,7 @@
     description: |
       Create a new documentation category with hierarchical support.
       
-      **Admin Features:**
+      Admin Features:
       - Parent-child relationships
       - Custom icons and colors
       - Sort order management
@@ -519,6 +644,8 @@
     operationId: createDocumentationCategory
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.category.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -556,6 +683,18 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationCategoryResponse'
+            examples:
+              created:
+                summary: Category created
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Technical Guides"
+                    slug: "technical-guides"
+                    is_visible: true
+                    is_featured: true
+                    sort_order: 10
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -575,6 +714,8 @@
     operationId: getDocumentationCategory
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.category.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: categoryId
@@ -606,6 +747,18 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationCategoryResponse'
+            examples:
+              ok:
+                summary: Category detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Technical Guides"
+                    slug: "technical-guides"
+                    is_visible: true
+                    is_featured: true
+                    parent_id: null
       '404':
         $ref: '#/components/responses/NotFound'
       '401':
@@ -622,6 +775,8 @@
     operationId: updateDocumentationCategory
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.category.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: categoryId
@@ -638,6 +793,12 @@
         application/json:
           schema:
             $ref: '#/components/schemas/DocumentationCategoryInput'
+          examples:
+            update_name:
+              summary: Update name/visibility
+              value:
+                name: "Technical Guides (Updated)"
+                is_visible: false
     responses:
       '200':
         description: Documentation category updated successfully
@@ -645,6 +806,17 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationCategoryResponse'
+            examples:
+              ok:
+                summary: Category updated
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Technical Guides (Updated)"
+                    slug: "technical-guides"
+                    is_visible: false
+                    is_featured: true
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -665,6 +837,8 @@
     operationId: deleteDocumentationCategory
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.category.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: categoryId
@@ -695,6 +869,12 @@
                     message:
                       type: string
                       example: "Documentation category deleted successfully"
+            examples:
+              ok:
+                summary: Deleted
+                value:
+                  success: true
+                  message: "Documentation category deleted successfully"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -717,7 +897,7 @@
     description: |
       Retrieve paginated list of help tickets with filtering and search.
       
-      **Support Features:**
+      Support Features:
       - Filter by status, priority, assignment
       - Search in subject and description
       - Customer and staff views
@@ -725,6 +905,8 @@
     operationId: listHelpTickets
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.help.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - $ref: '#/components/parameters/PageParam'
@@ -792,10 +974,35 @@
           application/json:
             schema:
               $ref: '#/components/schemas/HelpTicketsResponse'
+            examples:
+              ok:
+                summary: Tickets list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        subject: "Issues with metal etching design file preparation"
+                        status: "open"
+                        priority: "medium"
+                        category: "Technical Support"
+                        created_at: "2025-02-10T08:40:00Z"
+                      - id: "123e4567-e89b-12d3-a456-426614174000"
+                        subject: "Question about pricing for custom metal plaques"
+                        status: "resolved"
+                        priority: "low"
+                        category: "Sales Inquiry"
+                        created_at: "2025-02-11T10:00:00Z"
+                    meta:
+                      page: 1
+                      per_page: 10
+                      total: 2
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -806,7 +1013,7 @@
     description: |
       Create a new help ticket with automatic categorization and article suggestions.
       
-      **Customer Features:**
+      Customer Features:
       - Auto-generated ticket numbers
       - Smart article suggestions
       - File attachment support
@@ -815,6 +1022,8 @@
     operationId: createHelpTicket
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.help.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -851,6 +1060,17 @@
           application/json:
             schema:
               $ref: '#/components/schemas/HelpTicketResponse'
+            examples:
+              created:
+                summary: Ticket created
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    subject: "Issues with metal etching design file preparation"
+                    status: "open"
+                    priority: "medium"
+                    created_at: "2025-02-15T09:05:00Z"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -868,6 +1088,8 @@
     operationId: getHelpTicket
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.help.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: ticketId
@@ -892,6 +1114,21 @@
           application/json:
             schema:
               $ref: '#/components/schemas/HelpTicketResponse'
+            examples:
+              ok:
+                summary: Ticket detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    subject: "Issues with metal etching design file preparation"
+                    status: "open"
+                    priority: "medium"
+                    category: "Technical Support"
+                    suggestions:
+                      - id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+                        title: "How to prepare your design files for etching"
+                        slug: "prepare-design-files-etching"
       '404':
         $ref: '#/components/responses/NotFound'
       '401':
@@ -906,7 +1143,7 @@
     description: |
       Update help ticket status, assignment, and resolution details.
       
-      **Staff Features:**
+      Staff Features:
       - Status workflow management
       - Assignment and reassignment
       - Resolution tracking
@@ -915,6 +1152,8 @@
     operationId: updateHelpTicket
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.help.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: ticketId
@@ -981,6 +1220,15 @@
           application/json:
             schema:
               $ref: '#/components/schemas/HelpTicketResponse'
+            examples:
+              ok:
+                summary: Ticket updated
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    status: "resolved"
+                    updated_at: "2025-02-16T12:00:00Z"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1003,7 +1251,7 @@
     description: |
       Retrieve knowledge base entries with filtering and search capabilities.
       
-      **Features:**
+      Features:
       - Full-text search in content
       - Filter by type and category
       - Sort by helpfulness and views
@@ -1011,6 +1259,8 @@
     operationId: listKnowledgeBase
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.kb.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - $ref: '#/components/parameters/PageParam'
@@ -1063,10 +1313,29 @@
           application/json:
             schema:
               $ref: '#/components/schemas/KnowledgeBaseListResponse'
+            examples:
+              ok:
+                summary: KB list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        title: "Stainless Steel Etching Specifications"
+                        kb_type: "specification"
+                        status: "published"
+                        category: "Materials"
+                        tags: ["stainless-steel", "specifications"]
+                    meta:
+                      page: 1
+                      per_page: 10
+                      total: 1
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1079,6 +1348,8 @@
     operationId: createKnowledgeBase
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.kb.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -1156,6 +1427,17 @@
           application/json:
             schema:
               $ref: '#/components/schemas/KnowledgeBaseResponse'
+            examples:
+              created:
+                summary: KB created
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Stainless Steel Etching Specifications"
+                    kb_type: "specification"
+                    status: "published"
+                    created_at: "2025-02-15T10:00:00Z"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1176,7 +1458,7 @@
     description: |
       Retrieve interactive user guides with completion tracking.
       
-      **Features:**
+      Features:
       - Step-by-step tutorials
       - Completion rate tracking
       - Target audience filtering
@@ -1184,6 +1466,8 @@
     operationId: listUserGuides
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.guide.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - $ref: '#/components/parameters/PageParam'
@@ -1237,10 +1521,29 @@
           application/json:
             schema:
               $ref: '#/components/schemas/UserGuidesResponse'
+            examples:
+              ok:
+                summary: Guides list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        title: "Complete Order Placement Guide"
+                        guide_type: "tutorial"
+                        status: "published"
+                        difficulty_level: "easy"
+                        target_audience: "customers"
+                    meta:
+                      page: 1
+                      per_page: 10
+                      total: 1
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1253,6 +1556,8 @@
     operationId: createUserGuide
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.guide.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -1361,6 +1666,17 @@
           application/json:
             schema:
               $ref: '#/components/schemas/UserGuideResponse'
+            examples:
+              created:
+                summary: Guide created
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Complete Order Placement Guide"
+                    status: "published"
+                    guide_type: "tutorial"
+                    created_at: "2025-02-15T11:00:00Z"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1381,7 +1697,7 @@
     description: |
       Comprehensive search across all documentation content types.
       
-      **Search Features:**
+      Search Features:
       - Full-text search across articles, KB, guides
       - Faceted search with filters
       - Search suggestions and auto-complete
@@ -1390,6 +1706,8 @@
     operationId: searchDocumentation
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.search
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: q
@@ -1442,10 +1760,28 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationSearchResponse'
+            examples:
+              ok:
+                summary: Search results
+                value:
+                  success: true
+                  data:
+                    results:
+                      - type: "article"
+                        id: "550e8400-e29b-41d4-a716-446655440000"
+                        title: "Advanced Metal Etching Techniques"
+                        snippet: "... detailed etching techniques ..."
+                      - type: "knowledge_base"
+                        id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+                        title: "Stainless Steel Etching Specifications"
+                        snippet: "... grade 304 stainless steel ..."
+                    suggestions: ["metal etching", "etching design"]
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1457,7 +1793,7 @@
     description: |
       Comprehensive analytics for documentation system performance.
       
-      **Analytics Data:**
+      Analytics Data:
       - Content performance metrics
       - User engagement statistics
       - Search analytics and trends
@@ -1466,6 +1802,8 @@
     operationId: getDocumentationAnalytics
     security:
       - bearerAuth: []
+    x-permissions:
+      - doc.analytics
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: period
@@ -1490,6 +1828,21 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationAnalyticsResponse'
+            examples:
+              ok:
+                summary: Analytics summary
+                value:
+                  success: true
+                  data:
+                    content_performance:
+                      top_articles:
+                        - id: "550e8400-e29b-41d4-a716-446655440000"
+                          title: "Advanced Metal Etching Techniques"
+                          views: 1542
+                      total_views: 12045
+                    search_analytics:
+                      total_searches: 893
+                      top_queries: ["etching", "design preparation"]
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1508,7 +1861,7 @@
     description: |
       Public access to customer-visible documentation articles.
       
-      **Public Features:**
+      Public Features:
       - No authentication required for public articles
       - Customer-only articles require auth
       - View tracking and analytics
@@ -1553,8 +1906,26 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationArticlesResponse'
+            examples:
+              ok:
+                summary: Public articles list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        title: "Beginner's Guide to Etching"
+                        slug: "beginners-guide-etching"
+                        visibility: "public"
+                        published_at: "2025-02-14T12:00:00Z"
+                    meta:
+                      page: 1
+                      per_page: 10
+                      total: 1
       '400':
         $ref: '#/components/responses/ValidationError'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1583,8 +1954,23 @@
           application/json:
             schema:
               $ref: '#/components/schemas/DocumentationArticleResponse'
+            examples:
+              ok:
+                summary: Public article detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "How to Design Custom Etching Files"
+                    slug: "how-to-design-custom-etching-files"
+                    content: "## Overview ..."
+                    status: "published"
+                    visibility: "public"
+                    published_at: "2025-02-12T08:00:00Z"
       '404':
         $ref: '#/components/responses/NotFound'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1596,7 +1982,7 @@
     description: |
       Allow public users to submit help tickets without authentication.
       
-      **Public Features:**
+      Public Features:
       - No authentication required
       - Basic spam protection
       - Auto-categorization
@@ -1612,6 +1998,16 @@
         application/json:
           schema:
             $ref: '#/components/schemas/HelpTicketInput'
+          examples:
+            public_ticket:
+              summary: Public ticket
+              value:
+                subject: "Issue with download link"
+                description: "The download link in the documentation page is not working."
+                priority: "low"
+                category: "General"
+                customer_email: "public@example.com"
+                customer_name: "Jane Doe"
     responses:
       '201':
         description: Public help ticket submitted successfully
@@ -1645,6 +2041,19 @@
                                 type: string
                               excerpt:
                                 type: string
+            examples:
+              created:
+                summary: Public ticket created
+                value:
+                  success: true
+                  data:
+                    ticket_number: "PTCEX-2025-0001"
+                    message: "Your support ticket has been created. We will respond via email within 24 hours."
+                    suggested_articles:
+                      - id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
+                        title: "How to prepare your design files"
+                        slug: "prepare-design-files"
+                        excerpt: "Learn how to prepare your files for best results"
       '400':
         $ref: '#/components/responses/ValidationError'
       '429':

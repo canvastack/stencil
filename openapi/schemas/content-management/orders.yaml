@@ -37,12 +37,14 @@ OrdersSummary:
         completed: 1180
     total_revenue:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       description: Total revenue from all orders
       example: 245750000.00
     pending_payments:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       description: Total pending customer payments
       example: 15750000.00
     profitability:
@@ -50,11 +52,13 @@ OrdersSummary:
       properties:
         total_profit:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           example: 62500000.00
         average_margin:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           example: 25.42
 
 # Purchase Order Main Entity
@@ -188,45 +192,52 @@ PurchaseOrder:
         # Customer Pricing
         subtotal:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Subtotal before tax and fees
           example: 1750000.00
         tax_rate:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           default: 11.00
+          multipleOf: 0.01
           description: Tax rate percentage (PPN)
         tax_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Calculated tax amount
           example: 192500.00
         shipping_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Shipping charges
           example: 50000.00
         discount_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Total discount applied
           example: 0.00
         additional_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Additional fees or charges
           example: 25000.00
         total_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Final total amount
           example: 2017500.00
         currency:
@@ -238,15 +249,17 @@ PurchaseOrder:
         # Vendor Pricing (for profitability)
         vendor_subtotal:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Subtotal from vendor
           example: 1400000.00
           nullable: true
         vendor_total:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Total cost to vendor
           example: 1400000.00
           nullable: true
@@ -259,51 +272,59 @@ PurchaseOrder:
         # Profitability
         markup_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Profit markup amount
           example: 350000.00
         markup_percentage:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Markup percentage
           example: 25.00
         profit_amount:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Calculated profit
           example: 617500.00
         profit_margin:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Profit margin percentage
           example: 30.61
           
         # Payment Tracking
         dp_percentage:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           default: 50.00
+          multipleOf: 0.01
           description: Down payment percentage
         dp_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Down payment amount
           example: 1008750.00
         paid_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Total amount paid
           example: 1008750.00
         remaining_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Remaining balance
           example: 1008750.00
           
@@ -520,8 +541,9 @@ PurchaseOrder:
           description: Rush order with expedited handling
         rush_fee:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Additional rush order fee
           example: 100000.00
           
@@ -590,29 +612,33 @@ OrderItem:
           example: 5
         unit_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Price per unit
           example: 350000.00
         subtotal:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Line total (quantity × unit_price)
           example: 1750000.00
           
         # Vendor Pricing
         vendor_unit_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Vendor price per unit
           example: 280000.00
           nullable: true
         vendor_subtotal:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Vendor line total
           example: 1400000.00
           nullable: true
@@ -820,8 +846,9 @@ OrderQuotation:
         # Pricing Details
         base_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Base unit price
           example: 280000.00
         quantity:
@@ -831,76 +858,87 @@ OrderQuotation:
           example: 5
         subtotal:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Base subtotal
           example: 1400000.00
           
         # Additional Costs
         material_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Material costs
           example: 200000.00
         labor_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Labor costs
           example: 150000.00
         overhead_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Overhead allocation
           example: 50000.00
         shipping_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Shipping charges
           example: 50000.00
         rush_fee:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Rush order surcharge
           example: 100000.00
           
         # Tax & Discounts
         tax_rate:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           default: 11.00
+          multipleOf: 0.01
           description: Tax rate percentage
         tax_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Calculated tax
           example: 192500.00
         discount_percentage:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
+          multipleOf: 0.01
           description: Discount percentage
           example: 5.00
         discount_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Total discount amount
           example: 87500.00
           
         # Total
         total_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Final quoted amount
           example: 1955000.00
         currency:
@@ -917,15 +955,17 @@ OrderQuotation:
           nullable: true
         markup_value:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Markup value (% or fixed amount)
           example: 25.00
           nullable: true
         markup_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Calculated markup amount
           example: 350000.00
           nullable: true
@@ -966,15 +1006,17 @@ OrderQuotation:
           description: Down payment required
         dp_percentage:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           default: 50.00
+          multipleOf: 0.01
           description: Required DP percentage
         dp_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Calculated DP amount
           example: 977500.00
           nullable: true
@@ -1131,8 +1173,9 @@ OrderNegotiation:
         # Pricing Offered
         offered_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Price offered in this round
           example: 280000.00
         offered_lead_time_days:
@@ -1149,17 +1192,20 @@ OrderNegotiation:
         # Comparison with Previous
         previous_price:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Previous round price
           nullable: true
         price_difference:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Price change from previous
           nullable: true
         price_change_percentage:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Percentage price change
           nullable: true
           
@@ -1330,8 +1376,9 @@ OrderPayment:
         # Payment Details
         amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0.01
+          multipleOf: 0.01
           description: Payment amount
           example: 1008750.00
         currency:
@@ -1465,8 +1512,9 @@ OrderPayment:
         # Refund Information
         refund_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Amount refunded
           nullable: true
         refund_date:
@@ -1600,7 +1648,7 @@ OrderShipment:
           description: Number of packages
         weight_kg:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Total weight in kg
           nullable: true
@@ -1674,26 +1722,30 @@ OrderShipment:
         # Costs
         shipping_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Shipping charges
           example: 50000.00
         insurance_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Insurance cost
           example: 25000.00
         additional_fee:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Additional fees
           example: 10000.00
         total_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Total shipping cost
           example: 85000.00
         currency:
@@ -2278,8 +2330,9 @@ CreateQuotationRequest:
       nullable: true
     base_price:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
       description: Base unit price
     quantity:
       type: integer
@@ -2296,8 +2349,9 @@ CreateQuotationRequest:
       nullable: true
     markup_value:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
       description: Markup value
       nullable: true
     payment_terms:
@@ -2325,52 +2379,66 @@ ProfitabilityReport:
       properties:
         subtotal:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         tax_amount:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         shipping_cost:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         total_amount:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
     vendor_costs:
       type: object
       properties:
         subtotal:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         shipping_cost:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         total_amount:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
     additional_costs:
       type: object
       properties:
         packaging:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         handling:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         other:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         total:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
     profitability:
       type: object
       properties:
         gross_profit:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         profit_margin_percentage:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         roi_percentage:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01

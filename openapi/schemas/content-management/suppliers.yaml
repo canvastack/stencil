@@ -163,9 +163,10 @@ Supplier:
           example: "NET 30"
         credit_limit:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Credit limit amount
           example: 500000000.00
 
@@ -218,7 +219,7 @@ Supplier:
         # Performance Metrics
         overall_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.00
           maximum: 5.00
           default: 5.00
@@ -226,7 +227,7 @@ Supplier:
           example: 4.50
         quality_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.00
           maximum: 5.00
           default: 5.00
@@ -234,7 +235,7 @@ Supplier:
           example: 4.80
         delivery_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.00
           maximum: 5.00
           default: 5.00
@@ -242,7 +243,7 @@ Supplier:
           example: 4.20
         service_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.00
           maximum: 5.00
           default: 5.00
@@ -250,7 +251,7 @@ Supplier:
           example: 4.60
         cost_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.00
           maximum: 5.00
           default: 5.00
@@ -297,16 +298,18 @@ Supplier:
           example: 14
         minimum_order_value:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Minimum order value required
           example: 10000000.00
         maximum_order_value:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           nullable: true
+          multipleOf: 0.01
           description: Maximum order value capacity
           example: 1000000000.00
 
@@ -531,9 +534,10 @@ SupplierContact:
           example: false
         authorization_limit:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Authorization limit amount
           example: 100000000.00
 
@@ -638,8 +642,9 @@ SupplierProduct:
         # Pricing Information
         unit_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Price per unit
           example: 15000.00
         currency:
@@ -668,10 +673,11 @@ SupplierProduct:
             properties:
               quantity:
                 type: number
-                format: decimal
+                format: double
               unit_price:
                 type: number
-                format: decimal
+                format: double
+                multipleOf: 0.01
           description: Volume pricing tiers
           example:
             - quantity: 100
@@ -682,14 +688,14 @@ SupplierProduct:
               unit_price: 14000.00
         minimum_order_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 1
           description: Minimum order quantity
           example: 50.00
         maximum_order_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           nullable: true
           description: Maximum order quantity
@@ -709,12 +715,12 @@ SupplierProduct:
           description: Current availability status
           example: "available"
         stock_quantity:
-          type: number
-          format: decimal
-          minimum: 0
-          nullable: true
-          description: Available stock quantity
-          example: 5000.00
+            type: number
+            format: double
+            minimum: 0
+            nullable: true
+            description: Available stock quantity
+            example: 5000.00
 
         # Quality Information
         quality_grade:
@@ -744,7 +750,7 @@ SupplierProduct:
           example: "kg"
         package_size:
           type: number
-          format: decimal
+          format: double
           nullable: true
           description: Package/bundle size
           example: 2000.00
@@ -756,25 +762,25 @@ SupplierProduct:
           example: "kg"
         weight_per_unit:
           type: number
-          format: decimal
+          format: double
           nullable: true
           description: Weight per unit in kg
           example: 94.20
         dimensions_length:
           type: number
-          format: decimal
+          format: double
           nullable: true
           description: Length in cm
           example: 240.00
         dimensions_width:
           type: number
-          format: decimal
+          format: double
           nullable: true
           description: Width in cm
           example: 120.00
         dimensions_height:
           type: number
-          format: decimal
+          format: double
           nullable: true
           description: Height in cm
           example: 1.00
@@ -782,7 +788,7 @@ SupplierProduct:
         # Supplier Performance for this Product
         quality_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.00
           maximum: 5.00
           default: 5.00
@@ -790,7 +796,7 @@ SupplierProduct:
           example: 4.80
         delivery_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.00
           maximum: 5.00
           default: 5.00
@@ -823,13 +829,14 @@ SupplierProduct:
           example: "2025-10-15"
         last_purchase_price:
           type: number
-          format: decimal
+          format: double
           nullable: true
+          multipleOf: 0.01
           description: Last purchase price
           example: 14800.00
         last_purchase_quantity:
           type: number
-          format: decimal
+          format: double
           nullable: true
           description: Last purchase quantity
           example: 1000.00
@@ -912,13 +919,15 @@ SupplierQuotation:
                 type: string
               quantity:
                 type: number
-                format: decimal
+                format: double
               unit_price:
                 type: number
-                format: decimal
+                format: double
+                multipleOf: 0.01
               total_price:
                 type: number
-                format: decimal
+                format: double
+                multipleOf: 0.01
               unit_of_measure:
                 type: string
               specifications:
@@ -945,30 +954,34 @@ SupplierQuotation:
         # Pricing Summary
         subtotal:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Subtotal amount before tax and shipping
           example: 145000000.00
         tax_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Tax amount (PPN)
           example: 14500000.00
         shipping_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Shipping/delivery cost
           example: 2000000.00
         total_amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Total quotation amount
           example: 161500000.00
         currency:
@@ -1076,10 +1089,11 @@ SupplierQuotation:
         # Comparison & Evaluation
         evaluation_score:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           nullable: true
+          multipleOf: 0.01
           description: Evaluation score (0-100)
           example: 85.50
         evaluation_notes:
@@ -1271,9 +1285,10 @@ SupplierCreateInput:
       example: "NET 30"
     credit_limit:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       default: 0
+      multipleOf: 0.01
       example: 500000000.00
     bank_name:
       type: string
@@ -1336,15 +1351,17 @@ SupplierCreateInput:
       example: 14
     minimum_order_value:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       default: 0
+      multipleOf: 0.01
       example: 10000000.00
     maximum_order_value:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       nullable: true
+      multipleOf: 0.01
       example: 1000000000.00
     contract_start_date:
       type: string
@@ -1475,8 +1492,9 @@ SupplierUpdateInput:
       example: "NET 30"
     credit_limit:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
       example: 500000000.00
     bank_name:
       type: string
@@ -1513,31 +1531,31 @@ SupplierUpdateInput:
       example: "low"
     overall_rating:
       type: number
-      format: decimal
+      format: double
       minimum: 1.00
       maximum: 5.00
       example: 4.50
     quality_rating:
       type: number
-      format: decimal
+      format: double
       minimum: 1.00
       maximum: 5.00
       example: 4.80
     delivery_rating:
       type: number
-      format: decimal
+      format: double
       minimum: 1.00
       maximum: 5.00
       example: 4.20
     service_rating:
       type: number
-      format: decimal
+      format: double
       minimum: 1.00
       maximum: 5.00
       example: 4.60
     cost_rating:
       type: number
-      format: decimal
+      format: double
       minimum: 1.00
       maximum: 5.00
       example: 4.30
@@ -1570,14 +1588,16 @@ SupplierUpdateInput:
       example: 14
     minimum_order_value:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
       example: 10000000.00
     maximum_order_value:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       nullable: true
+      multipleOf: 0.01
       example: 1000000000.00
     is_active:
       type: boolean
@@ -1713,9 +1733,10 @@ SupplierContactCreateInput:
       example: false
     authorization_limit:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       default: 0
+      multipleOf: 0.01
       example: 100000000.00
     notes:
       type: string
@@ -1783,8 +1804,9 @@ SupplierProductCreateInput:
         tensile_strength: "400-550 MPa"
     unit_price:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
       example: 15000.00
     currency:
       type: string
@@ -1807,10 +1829,11 @@ SupplierProductCreateInput:
         properties:
           quantity:
             type: number
-            format: decimal
+            format: double
           unit_price:
             type: number
-            format: decimal
+            format: double
+            multipleOf: 0.01
       example:
         - quantity: 100
           unit_price: 15000.00
@@ -1818,13 +1841,13 @@ SupplierProductCreateInput:
           unit_price: 14500.00
     minimum_order_quantity:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       default: 1
       example: 50.00
     maximum_order_quantity:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       nullable: true
       example: 10000.00
@@ -1840,7 +1863,7 @@ SupplierProductCreateInput:
       example: "available"
     stock_quantity:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       nullable: true
       example: 5000.00
@@ -1865,7 +1888,7 @@ SupplierProductCreateInput:
       example: "kg"
     package_size:
       type: number
-      format: decimal
+      format: double
       nullable: true
       example: 2000.00
     package_unit:
@@ -1875,22 +1898,22 @@ SupplierProductCreateInput:
       example: "kg"
     weight_per_unit:
       type: number
-      format: decimal
+      format: double
       nullable: true
       example: 94.20
     dimensions_length:
       type: number
-      format: decimal
+      format: double
       nullable: true
       example: 240.00
     dimensions_width:
       type: number
-      format: decimal
+      format: double
       nullable: true
       example: 120.00
     dimensions_height:
       type: number
-      format: decimal
+      format: double
       nullable: true
       example: 1.00
     supplier_notes:
@@ -1946,13 +1969,15 @@ SupplierQuotationCreateInput:
             type: string
           quantity:
             type: number
-            format: decimal
+            format: double
           unit_price:
             type: number
-            format: decimal
+            format: double
+            multipleOf: 0.01
           total_price:
             type: number
-            format: decimal
+            format: double
+            multipleOf: 0.01
           unit_of_measure:
             type: string
           specifications:
@@ -2092,15 +2117,18 @@ SupplierPerformanceReport:
       example: 18
     quotation_approval_rate:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       example: 72.00
     total_order_value:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       example: 2500000000.00
     average_order_value:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       example: 138888888.89
     on_time_deliveries:
       type: integer
@@ -2110,25 +2138,28 @@ SupplierPerformanceReport:
       example: 18
     on_time_delivery_rate:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       example: 88.89
     quality_issues:
       type: integer
       example: 1
     quality_issue_rate:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       example: 5.56
     average_lead_time_days:
       type: number
-      format: decimal
+      format: double
       example: 12.5
     cost_competitiveness_rank:
       type: integer
       example: 3
     overall_performance_score:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       example: 85.50
 
 # Supplier Statistics Summary
@@ -2188,23 +2219,23 @@ SupplierStatistics:
       properties:
         overall_rating:
           type: number
-          format: decimal
+          format: double
           example: 4.25
         quality_rating:
           type: number
-          format: decimal
+          format: double
           example: 4.40
         delivery_rating:
           type: number
-          format: decimal
+          format: double
           example: 4.10
         service_rating:
           type: number
-          format: decimal
+          format: double
           example: 4.35
         cost_rating:
           type: number
-          format: decimal
+          format: double
           example: 4.15
     total_quotations_this_month:
       type: integer
@@ -2214,7 +2245,8 @@ SupplierStatistics:
       example: 42
     quotation_growth_rate:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       example: 14.29
 
 # ================================================================

@@ -169,9 +169,10 @@ Vendor:
           example: 1000
         minimum_order_value:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           nullable: true
+          multipleOf: 0.01
           description: Minimum order value in IDR
           example: 5000000
         accepts_rush_orders:
@@ -181,10 +182,11 @@ Vendor:
           example: true
         rush_order_surcharge_percent:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           nullable: true
+          multipleOf: 0.01
           description: Rush order surcharge percentage
           example: 25.0
 
@@ -256,9 +258,10 @@ Vendor:
           readOnly: true
         total_transaction_value:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Total transaction value in IDR
           example: 250000000
           readOnly: true
@@ -266,7 +269,7 @@ Vendor:
         # Rating (auto-calculated)
         overall_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 5
           default: 0
@@ -275,7 +278,7 @@ Vendor:
           readOnly: true
         quality_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 5
           default: 0
@@ -284,7 +287,7 @@ Vendor:
           readOnly: true
         timeliness_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 5
           default: 0
@@ -293,7 +296,7 @@ Vendor:
           readOnly: true
         communication_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 5
           default: 0
@@ -302,7 +305,7 @@ Vendor:
           readOnly: true
         pricing_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 5
           default: 0
@@ -405,16 +408,18 @@ VendorSpecialization:
           example: 10
         price_per_unit_min:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           nullable: true
+          multipleOf: 0.01
           description: Minimum price per unit in IDR
           example: 50000
         price_per_unit_max:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           nullable: true
+          multipleOf: 0.01
           description: Maximum price per unit in IDR
           example: 150000
         currency:
@@ -477,16 +482,17 @@ VendorSpecialization:
           readOnly: true
         success_rate_percent:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           default: 100
+          multipleOf: 0.01
           description: Success rate percentage for this material
           example: 93.5
           readOnly: true
         average_quality_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 5
           default: 0
@@ -641,28 +647,28 @@ VendorRating:
         # Rating Criteria (1-5 scale)
         quality_score:
           type: number
-          format: decimal
+          format: double
           minimum: 1
           maximum: 5
           description: Quality rating (1-5)
           example: 4.5
         timeliness_score:
           type: number
-          format: decimal
+          format: double
           minimum: 1
           maximum: 5
           description: Timeliness rating (1-5)
           example: 4.0
         communication_score:
           type: number
-          format: decimal
+          format: double
           minimum: 1
           maximum: 5
           description: Communication rating (1-5)
           example: 4.2
         pricing_score:
           type: number
-          format: decimal
+          format: double
           minimum: 1
           maximum: 5
           description: Pricing competitiveness rating (1-5)
@@ -671,7 +677,7 @@ VendorRating:
         # Calculated Overall Rating (auto-computed)
         overall_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1
           maximum: 5
           description: Weighted overall rating (quality 35%, timeliness 30%, communication 20%, pricing 15%)
@@ -710,8 +716,9 @@ VendorRating:
           example: "stainless_steel"
         order_value:
           type: number
-          format: decimal
+          format: double
           nullable: true
+          multipleOf: 0.01
           description: Order value in IDR
           example: 15000000
         delivery_days_actual:
@@ -802,20 +809,23 @@ VendorNegotiation:
         # Pricing Information
         initial_quote_amount:
           type: number
-          format: decimal
+          format: double
           nullable: true
+          multipleOf: 0.01
           description: Vendor's initial quote in IDR
           example: 12000000
         counter_offer_amount:
           type: number
-          format: decimal
+          format: double
           nullable: true
+          multipleOf: 0.01
           description: Admin counter-offer amount in IDR
           example: 11000000
         final_agreed_amount:
           type: number
-          format: decimal
+          format: double
           nullable: true
+          multipleOf: 0.01
           description: Final agreed amount in IDR
           example: 11500000
         currency:
@@ -838,10 +848,11 @@ VendorNegotiation:
           example: false
         rush_surcharge_percent:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           nullable: true
+          multipleOf: 0.01
           description: Rush order surcharge percentage
           example: 20.0
 
@@ -996,8 +1007,9 @@ VendorPayment:
           example: "dp"
         amount:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Payment amount in specified currency
           example: 5750000
         currency:
@@ -1008,10 +1020,11 @@ VendorPayment:
           example: "IDR"
         percentage_of_order:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
           nullable: true
+          multipleOf: 0.01
           description: Percentage of total order value
           example: 50.0
 
@@ -1222,18 +1235,20 @@ VendorCreateInput:
       example: 1000
     minimum_order_value:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       nullable: true
+      multipleOf: 0.01
     accepts_rush_orders:
       type: boolean
       default: false
     rush_order_surcharge_percent:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       maximum: 100
       nullable: true
+      multipleOf: 0.01
     bank_name:
       type: string
       maxLength: 255
@@ -1304,15 +1319,17 @@ VendorSpecializationCreateInput:
       default: 1
     price_per_unit_min:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       nullable: true
+      multipleOf: 0.01
       example: 50000
     price_per_unit_max:
       type: number
-      format: decimal
+      format: double
       minimum: 0
       nullable: true
+      multipleOf: 0.01
       example: 150000
     currency:
       type: string
@@ -1453,25 +1470,25 @@ VendorRatingCreateInput:
       example: "123e4567-e89b-12d3-a456-426614174000"
     quality_score:
       type: number
-      format: decimal
+      format: double
       minimum: 1
       maximum: 5
       example: 4.5
     timeliness_score:
       type: number
-      format: decimal
+      format: double
       minimum: 1
       maximum: 5
       example: 4.0
     communication_score:
       type: number
-      format: decimal
+      format: double
       minimum: 1
       maximum: 5
       example: 4.2
     pricing_score:
       type: number
-      format: decimal
+      format: double
       minimum: 1
       maximum: 5
       example: 4.1
@@ -1499,8 +1516,9 @@ VendorRatingCreateInput:
       example: "stainless_steel"
     order_value:
       type: number
-      format: decimal
+      format: double
       nullable: true
+      multipleOf: 0.01
       example: 15000000
     delivery_days_actual:
       type: integer
@@ -1613,11 +1631,12 @@ VendorStatsResponse:
               example: 156
             average_rating:
               type: number
-              format: decimal
+              format: double
               example: 4.2
             total_orders_value:
               type: number
-              format: decimal
+              format: double
+              multipleOf: 0.01
               example: 2450000000
             by_quality_tier:
               type: object
@@ -1648,4 +1667,4 @@ VendorStatsResponse:
                     type: string
                   overall_rating:
                     type: number
-                    format: decimal
+                    format: double

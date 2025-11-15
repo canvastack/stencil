@@ -48,7 +48,8 @@ InventorySummary:
         finished_good: 30
     total_inventory_value:
       type: number
-      format: decimal
+      format: double
+      multipleOf: 0.01
       description: Total inventory valuation
       example: 125750000.00
     low_stock_alerts:
@@ -121,35 +122,35 @@ InventoryItem:
           example: "kg"
         weight_per_unit:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Weight per unit in kg
           example: 15.75
           nullable: true
         dimensions_length:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Length in cm
           example: 100.0
           nullable: true
         dimensions_width:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Width in cm
           example: 60.0
           nullable: true
         dimensions_height:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Height/thickness in cm
           example: 0.2
           nullable: true
         volume_per_unit:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Volume per unit in cubic cm
           example: 1200.0
@@ -170,7 +171,7 @@ InventoryItem:
           nullable: true
         thickness:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Material thickness in mm
           example: 2.0
@@ -211,28 +212,28 @@ InventoryItem:
         # Stock Levels
         current_stock:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Current available stock quantity
           example: 125.50
         available_stock:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Stock available for allocation
           example: 100.00
         reserved_stock:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Stock reserved for orders/production
           example: 25.50
         on_order_stock:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Stock on order from suppliers
@@ -241,35 +242,35 @@ InventoryItem:
         # Reorder Management
         minimum_stock_level:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Minimum stock before reorder alert
           example: 20.00
         maximum_stock_level:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Maximum stock capacity
           example: 500.00
           nullable: true
         reorder_point:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Stock level that triggers reorder
           example: 30.00
         reorder_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Standard reorder quantity
           example: 100.00
         economic_order_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Calculated optimal order quantity
           example: 150.00
@@ -278,29 +279,33 @@ InventoryItem:
         # Cost Information
         standard_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Standard cost per unit
           example: 45000.00
         average_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Weighted average cost
           example: 47500.00
         last_purchase_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Most recent purchase cost
           example: 50000.00
         current_market_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Current market price
           example: 52000.00
           nullable: true
@@ -371,19 +376,20 @@ InventoryItem:
         # Storage Requirements
         storage_temperature_min:
           type: number
-          format: decimal
+          format: double
           description: Minimum storage temperature in Celsius
           example: 15.0
           nullable: true
         storage_temperature_max:
           type: number
-          format: decimal
+          format: double
           description: Maximum storage temperature in Celsius
           example: 35.0
           nullable: true
         storage_humidity_max:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Maximum storage humidity percentage
           example: 60.0
           nullable: true
@@ -525,21 +531,21 @@ InventoryLocation:
         # Capacity Management
         total_capacity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Total storage capacity
           example: 1000.00
           nullable: true
         used_capacity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Currently used capacity
           example: 650.50
         available_capacity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Available capacity (calculated)
           example: 349.50
@@ -558,13 +564,13 @@ InventoryLocation:
           description: Whether location has temperature control
         temperature_min:
           type: number
-          format: decimal
+          format: double
           description: Minimum temperature in Celsius
           example: 18.0
           nullable: true
         temperature_max:
           type: number
-          format: decimal
+          format: double
           description: Maximum temperature in Celsius
           example: 25.0
           nullable: true
@@ -574,7 +580,8 @@ InventoryLocation:
           description: Whether location has humidity control
         humidity_max:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Maximum humidity percentage
           example: 50.0
           nullable: true
@@ -692,20 +699,22 @@ InventoryMovement:
         # Movement Details
         quantity:
           type: number
-          format: decimal
+          format: double
           description: Movement quantity (positive for inbound, negative for outbound)
           example: 50.00
         unit_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Cost per unit
           example: 45000.00
         total_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Total movement cost (calculated)
           example: 2250000.00
           readOnly: true
@@ -846,17 +855,17 @@ InventoryAdjustment:
         # Adjustment Details
         book_quantity:
           type: number
-          format: decimal
+          format: double
           description: System recorded quantity
           example: 100.00
         physical_quantity:
           type: number
-          format: decimal
+          format: double
           description: Physically counted quantity
           example: 95.50
         adjustment_quantity:
           type: number
-          format: decimal
+          format: double
           description: Difference (physical - book)
           example: -4.50
           readOnly: true
@@ -864,14 +873,16 @@ InventoryAdjustment:
         # Cost Impact
         unit_cost:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Unit cost for adjustment
           example: 45000.00
         total_cost_impact:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Total financial impact
           example: -202500.00
           readOnly: true
@@ -996,13 +1007,13 @@ InventoryAlert:
           example: "Current stock (15.5 kg) is below reorder point (20.0 kg). Consider placing purchase order."
         current_stock:
           type: number
-          format: decimal
+          format: double
           description: Current stock level when alert triggered
           example: 15.5
           nullable: true
         threshold_value:
           type: number
-          format: decimal
+          format: double
           description: Threshold that triggered the alert
           example: 20.0
           nullable: true
@@ -1016,7 +1027,7 @@ InventoryAlert:
           nullable: true
         trigger_value:
           type: number
-          format: decimal
+          format: double
           description: Value that triggered the condition
           example: 15.5
           nullable: true
@@ -1212,9 +1223,10 @@ InventoryCount:
           example: 8
         completion_percentage:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 100
+          multipleOf: 0.01
           description: Count completion percentage (calculated)
           example: 80.0
           readOnly: true
@@ -1222,27 +1234,31 @@ InventoryCount:
         # Count Results
         total_book_value:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Total book value of counted items
           example: 5750000.00
         total_physical_value:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
+          multipleOf: 0.01
           description: Total physical value of counted items
           example: 5640000.00
         total_variance_value:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Total variance value (physical - book)
           example: -110000.00
           readOnly: true
         variance_percentage:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
           description: Variance as percentage of book value
           example: -1.91
           readOnly: true
@@ -1322,20 +1338,20 @@ InventoryReservation:
         # Reservation Details
         reserved_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Quantity reserved
           example: 25.00
         allocated_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Quantity already allocated/used
           example: 10.00
         remaining_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Remaining reserved quantity
           example: 15.00
@@ -1398,7 +1414,7 @@ InventoryReservation:
         priority:
           type: string
           enum: [low, normal, high, urgent]
-          default: normal
+        default: normal
           description: Reservation priority
           example: "high"
         status:
@@ -1421,7 +1437,7 @@ InventoryReservation:
         # Fulfillment Tracking
         fulfilled_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Quantity fulfilled/consumed
@@ -1440,7 +1456,7 @@ InventoryReservation:
         # Cancellation/Release
         cancelled_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0
           description: Quantity cancelled/released
@@ -1512,8 +1528,9 @@ InventorySupplier:
         # Pricing Information
         unit_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Price per unit from supplier
           example: 50000.00
         currency:
@@ -1534,7 +1551,7 @@ InventorySupplier:
           nullable: true
         minimum_order_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 1
           description: Minimum order quantity
@@ -1544,7 +1561,8 @@ InventorySupplier:
           description: Quantity-based pricing tiers
           additionalProperties:
             type: number
-            format: decimal
+            format: double
+            multipleOf: 0.01
           example:
             "50": 48000.00
             "100": 45000.00
@@ -1578,7 +1596,7 @@ InventorySupplier:
         # Quality & Performance Ratings
         quality_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.0
           maximum: 5.0
           default: 5.0
@@ -1586,7 +1604,7 @@ InventorySupplier:
           example: 4.5
         delivery_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.0
           maximum: 5.0
           default: 5.0
@@ -1594,7 +1612,7 @@ InventorySupplier:
           example: 4.8
         service_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.0
           maximum: 5.0
           default: 5.0
@@ -1602,7 +1620,7 @@ InventorySupplier:
           example: 4.2
         overall_rating:
           type: number
-          format: decimal
+          format: double
           minimum: 1.0
           maximum: 5.0
           description: Overall supplier rating (calculated average)
@@ -1655,13 +1673,14 @@ InventorySupplier:
           nullable: true
         last_purchase_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
+          multipleOf: 0.01
           description: Price of last purchase
           nullable: true
         last_purchase_quantity:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           description: Quantity of last purchase
           nullable: true
@@ -1723,20 +1742,21 @@ InventoryItemCreateInput:
           nullable: true
         thickness:
           type: number
-          format: decimal
+          format: double
           nullable: true
         minimum_stock_level:
           type: number
-          format: decimal
+          format: double
           default: 0
         reorder_point:
           type: number
-          format: decimal
+          format: double
           default: 0
         standard_cost:
           type: number
-          format: decimal
+          format: double
           default: 0
+          multipleOf: 0.01
         is_active:
           type: boolean
           default: true
@@ -1762,13 +1782,14 @@ InventoryItemUpdateInput:
           nullable: true
         minimum_stock_level:
           type: number
-          format: decimal
+          format: double
         reorder_point:
           type: number
-          format: decimal
+          format: double
         standard_cost:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         is_active:
           type: boolean
 
@@ -1798,11 +1819,12 @@ InventoryMovementCreateInput:
           nullable: true
         quantity:
           type: number
-          format: decimal
+          format: double
         unit_cost:
           type: number
-          format: decimal
+          format: double
           default: 0
+          multipleOf: 0.01
         batch_number:
           type: string
           maxLength: 100
@@ -1861,7 +1883,7 @@ InventoryLocationCreateInput:
           default: warehouse
         total_capacity:
           type: number
-          format: decimal
+          format: double
           nullable: true
         is_active:
           type: boolean
@@ -1893,7 +1915,7 @@ BulkStockUpdateInput:
             nullable: true
           new_quantity:
             type: number
-            format: decimal
+            format: double
           reason:
             type: string
             maxLength: 255
@@ -1912,16 +1934,16 @@ LowStockReport:
             $ref: '#/InventoryItem'
           current_stock:
             type: number
-            format: decimal
+            format: double
           reorder_point:
             type: number
-            format: decimal
+            format: double
           shortage:
             type: number
-            format: decimal
+            format: double
           suggested_order_quantity:
             type: number
-            format: decimal
+            format: double
           primary_supplier:
             type: object
             properties:
@@ -1932,7 +1954,8 @@ LowStockReport:
                 type: string
               unit_price:
                 type: number
-                format: decimal
+                format: double
+                multipleOf: 0.01
               lead_time_days:
                 type: integer
     summary:
@@ -1942,10 +1965,11 @@ LowStockReport:
           type: integer
         total_shortage_value:
           type: number
-          format: decimal
+          format: double
+          multipleOf: 0.01
         average_lead_time:
           type: number
-          format: decimal
+          format: double
 
 # Response Schemas
 # ================

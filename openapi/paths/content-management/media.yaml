@@ -22,6 +22,8 @@
     operationId: uploadMediaFile
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.upload
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -55,6 +57,19 @@
                     message:
                       type: string
                       example: "File uploaded successfully"
+            examples:
+              created:
+                summary: Single file uploaded
+                value:
+                  success: true
+                  message: "File uploaded successfully"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    filename: "product-image.jpg"
+                    mime_type: "image/jpeg"
+                    is_public: false
+                    folder_id: "550e8400-e29b-41d4-a716-446655440000"
+                    created_at: "2025-02-16T10:00:00Z"
       '400':
         description: Validation error or unsupported file
         content:
@@ -120,6 +135,8 @@
     operationId: bulkUploadMediaFiles
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.upload
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -192,6 +209,24 @@
                             failed:
                               type: integer
                               example: 2
+            examples:
+              created:
+                summary: Bulk upload result
+                value:
+                  success: true
+                  data:
+                    successful:
+                      - id: "111e8400-e29b-41d4-a716-446655440111"
+                        filename: "img-1.jpg"
+                      - id: "222e8400-e29b-41d4-a716-446655440222"
+                        filename: "img-2.jpg"
+                    failed:
+                      - filename: "bad-file.exe"
+                        error: "INVALID_FORMAT"
+                    summary:
+                      total: 3
+                      successful: 2
+                      failed: 1
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -219,6 +254,8 @@
     operationId: listMediaFiles
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - $ref: '#/components/parameters/PageParam'
@@ -290,7 +327,6 @@
         description: Include related data (comma-separated)
         schema:
           type: string
-          enum: [folder, tags, transformations, usage, versions]
         example: "folder,tags,transformations"
     responses:
       '200':
@@ -328,12 +364,34 @@
                                     image: 15
                                     document: 8
                                     video: 2
+            examples:
+              ok:
+                summary: Files list
+                value:
+                  success: true
+                  data:
+                    - id: "550e8400-e29b-41d4-a716-446655440000"
+                      filename: "logo.jpg"
+                      mime_type: "image/jpeg"
+                      folder_id: "550e8400-e29b-41d4-a716-446655440000"
+                      is_public: false
+                    - id: "123e4567-e89b-12d3-a456-426614174000"
+                      filename: "manual.pdf"
+                      mime_type: "application/pdf"
+                      folder_id: null
+                      is_public: true
+                  meta:
+                    page: 1
+                    per_page: 10
+                    total: 2
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -355,6 +413,8 @@
     operationId: getMediaFile
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -383,6 +443,20 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/MediaFileWithRelations'
+            examples:
+              ok:
+                summary: File detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    filename: "logo.jpg"
+                    mime_type: "image/jpeg"
+                    is_public: true
+                    folder:
+                      id: null
+                      name: "Root"
+                    tags: []
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -417,6 +491,8 @@
     operationId: updateMediaFile
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -462,6 +538,16 @@
                     message:
                       type: string
                       example: "Media file updated successfully"
+            examples:
+              ok:
+                summary: File updated
+                value:
+                  success: true
+                  message: "Media file updated successfully"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    filename: "new_filename.jpg"
+                    is_public: true
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -492,6 +578,8 @@
     operationId: deleteMediaFile
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -531,6 +619,15 @@
                         cleaned_usage_records:
                           type: integer
                           example: 5
+            examples:
+              ok:
+                summary: File deleted
+                value:
+                  success: true
+                  message: "Media file deleted successfully"
+                  data:
+                    cleaned_transformations: 3
+                    cleaned_usage_records: 5
       '400':
         description: File is in use and cannot be deleted
         content:
@@ -574,6 +671,8 @@
     operationId: moveMediaFiles
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.move
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -631,6 +730,16 @@
                     message:
                       type: string
                       example: "5 files moved successfully"
+            examples:
+              ok:
+                summary: Move result
+                value:
+                  success: true
+                  message: "5 files moved successfully"
+                  data:
+                    moved_count: 5
+                    failed_count: 0
+                    failed_files: []
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -656,6 +765,8 @@
     operationId: downloadMediaFile
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.download
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -711,6 +822,15 @@
                           format: int64
                           description: File size in bytes
                           example: 2048576
+            examples:
+              ok:
+                summary: Download URL
+                value:
+                  success: true
+                  data:
+                    download_url: "https://cdn.example.com/secure/tenant123/file123.jpg?token=abc&expires=1699876543"
+                    expires_at: "2025-02-16T12:30:00Z"
+                    file_size: 2048576
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -743,6 +863,8 @@
     operationId: listMediaFolders
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.folder.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: parent_id
@@ -795,10 +917,30 @@
                                 type: integer
                                 format: int64
                                 example: 52428800
+            examples:
+              ok:
+                summary: Folders list
+                value:
+                  success: true
+                  data:
+                    - id: "550e8400-e29b-41d4-a716-446655440000"
+                      name: "Product Images"
+                      is_public: false
+                      children: []
+                      file_count: 15
+                      total_size: 52428800
+                    - id: "123e4567-e89b-12d3-a456-426614174000"
+                      name: "Documents"
+                      is_public: true
+                      children: []
+                      file_count: 3
+                      total_size: 1048576
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -807,16 +949,12 @@
       - Media Folders
     summary: Create Media Folder
     description: |
-      Create a new media folder with hierarchical organization.
-      
-      **Features:**
-      - Nested folder creation
-      - Automatic path generation
-      - Permission inheritance from parent
-      - Slug generation for URL-safe names
+      Create a new media folder with capacity and hierarchical organization.
     operationId: createMediaFolder
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.folder.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -854,6 +992,16 @@
                     message:
                       type: string
                       example: "Media folder created successfully"
+            examples:
+              created:
+                summary: Folder created
+                value:
+                  success: true
+                  message: "Media folder created successfully"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Product Images"
+                    is_public: false
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -890,6 +1038,8 @@
     operationId: getMediaFolder
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.folder.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -943,6 +1093,23 @@
                                   type: integer
                                   format: int64
                                   example: 104857600
+            examples:
+              ok:
+                summary: Folder detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Product Images"
+                    breadcrumb:
+                      - uuid: "root"
+                        name: "Root"
+                      - uuid: "550e8400-e29b-41d4-a716-446655440000"
+                        name: "Product Images"
+                    statistics:
+                      file_count: 25
+                      subfolder_count: 3
+                      total_size: 104857600
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -971,6 +1138,8 @@
     operationId: updateMediaFolder
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.folder.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1013,6 +1182,15 @@
                     message:
                       type: string
                       example: "Media folder updated successfully"
+            examples:
+              ok:
+                summary: Folder updated
+                value:
+                  success: true
+                  message: "Media folder updated successfully"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Updated Folder Name"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1043,6 +1221,8 @@
     operationId: deleteMediaFolder
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.folder.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1089,6 +1269,15 @@
                         deleted_subfolders:
                           type: integer
                           example: 0
+            examples:
+              ok:
+                summary: Folder deleted
+                value:
+                  success: true
+                  message: "Media folder deleted successfully"
+                  data:
+                    deleted_files: 0
+                    deleted_subfolders: 0
       '400':
         description: Folder is not empty or contains files in use
         content:
@@ -1142,6 +1331,8 @@
     operationId: getFolderContents
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.folder.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1215,6 +1406,23 @@
                               type: integer
                               format: int64
                               example: 52428800
+            examples:
+              ok:
+                summary: Folder contents
+                value:
+                  success: true
+                  data:
+                    folders:
+                      - id: "111e8400-e29b-41d4-a716-446655441111"
+                        name: "Logos"
+                    files:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        filename: "logo.jpg"
+                        mime_type: "image/jpeg"
+                    summary:
+                      total_folders: 1
+                      total_files: 1
+                      total_size: 1048576
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1225,6 +1433,8 @@
           application/json:
             schema:
               $ref: '#/components/schemas/ErrorResponse'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1247,6 +1457,8 @@
     operationId: listMediaTags
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.tag.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: category
@@ -1310,10 +1522,27 @@
                         total_tags:
                           type: integer
                           example: 25
+            examples:
+              ok:
+                summary: Tags list
+                value:
+                  success: true
+                  data:
+                    - id: "550e8400-e29b-41d4-a716-446655440000"
+                      name: "Glass Etching"
+                      color: "#28a745"
+                      category: "materials"
+                  meta:
+                    categories:
+                      - name: "materials"
+                        count: 1
+                    total_tags: 1
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1332,6 +1561,8 @@
     operationId: createMediaTag
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.tag.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -1370,6 +1601,17 @@
                     message:
                       type: string
                       example: "Media tag created successfully"
+            examples:
+              created:
+                summary: Tag created
+                value:
+                  success: true
+                  message: "Media tag created successfully"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Glass Etching"
+                    color: "#28a745"
+                    category: "materials"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1400,6 +1642,8 @@
     operationId: getMediaTag
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.tag.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1430,6 +1674,17 @@
                               items:
                                 $ref: '#/components/schemas/MediaFile'
                               description: Recent files using this tag
+            examples:
+              ok:
+                summary: Tag detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Glass Etching"
+                    color: "#28a745"
+                    category: "materials"
+                    recent_files: []
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1452,6 +1707,8 @@
     operationId: updateMediaTag
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.tag.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1491,6 +1748,17 @@
                     message:
                       type: string
                       example: "Media tag updated successfully"
+            examples:
+              ok:
+                summary: Tag updated
+                value:
+                  success: true
+                  message: "Media tag updated successfully"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "Updated Tag Name"
+                    color: "#dc3545"
+                    category: "updated_category"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1520,6 +1788,8 @@
     operationId: deleteMediaTag
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.tag.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1549,6 +1819,14 @@
                         removed_from_files:
                           type: integer
                           example: 15
+            examples:
+              ok:
+                summary: Tag deleted
+                value:
+                  success: true
+                  message: "Media tag deleted successfully"
+                  data:
+                    removed_from_files: 15
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1580,6 +1858,8 @@
     operationId: listFileTransformations
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.transform.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1604,6 +1884,20 @@
                       type: array
                       items:
                         $ref: '#/components/schemas/MediaTransformation'
+            examples:
+              ok:
+                summary: Transformations list
+                value:
+                  success: true
+                  data:
+                    - name: "thumbnail_300x300"
+                      width: 300
+                      height: 300
+                      format: "webp"
+                    - name: "large_jpeg"
+                      width: 1200
+                      height: 800
+                      format: "jpeg"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1633,6 +1927,8 @@
     operationId: createFileTransformation
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.transform.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1744,6 +2040,17 @@
                     message:
                       type: string
                       example: "Media transformation created successfully"
+            examples:
+              created:
+                summary: Transformation created
+                value:
+                  success: true
+                  message: "Media transformation created successfully"
+                  data:
+                    name: "thumbnail_300x300"
+                    width: 300
+                    height: 300
+                    format: "webp"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1790,6 +2097,8 @@
     operationId: getMediaAnalytics
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.analytics
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: period
@@ -1833,6 +2142,22 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/MediaAnalyticsSummary'
+            examples:
+              ok:
+                summary: Analytics summary
+                value:
+                  success: true
+                  data:
+                    totals:
+                      files: 2450
+                      storage_bytes: 987654321
+                    top_files:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        filename: "hero.jpg"
+                        downloads: 1200
+                      - id: "123e4567-e89b-12d3-a456-426614174000"
+                        filename: "brochure.pdf"
+                        downloads: 875
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1856,6 +2181,8 @@
     operationId: getFileUsage
     security:
       - bearerAuth: []
+    x-permissions:
+      - media.analytics.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: uuid
@@ -1901,6 +2228,20 @@
                               type: boolean
                               example: false
                               description: Whether file can be safely deleted
+            examples:
+              ok:
+                summary: File usage
+                value:
+                  success: true
+                  data:
+                    usage_records: []
+                    summary:
+                      total_usage: 8
+                      usage_contexts:
+                        product_image: 3
+                        gallery_image: 2
+                        design_file: 3
+                      can_be_deleted: false
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':

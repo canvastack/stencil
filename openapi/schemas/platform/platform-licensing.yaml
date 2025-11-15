@@ -64,7 +64,7 @@ PlatformLicense:
           type: string
           maxLength: 50
           nullable: true
-          pattern: '^\\+[1-9]\\d{1,14}$'
+          pattern: '^\+[1-9]\d{1,14}$'
           description: Phone number in international format
           example: "+1234567890"
 
@@ -394,26 +394,29 @@ TenantServiceLicense:
         # Billing Information
         monthly_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 99999.99
           default: 0.00
+          multipleOf: 0.01
           description: Monthly subscription price
           example: 99.99
         yearly_price:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 999999.99
           nullable: true
+          multipleOf: 0.01
           description: Annual subscription price (optional)
           example: 999.99
         setup_fee:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           maximum: 9999.99
           default: 0.00
+          multipleOf: 0.01
           description: One-time setup fee
           example: 49.99
         currency:
@@ -433,10 +436,11 @@ TenantServiceLicense:
         # Service Level Agreement
         uptime_sla:
           type: number
-          format: decimal
+          format: double
           minimum: 90.00
           maximum: 100.00
           default: 99.50
+          multipleOf: 0.01
           description: Uptime SLA percentage
           example: 99.50
         support_level:
@@ -505,7 +509,7 @@ TenantServiceLicense:
           example: 3
         current_storage_gb:
           type: number
-          format: decimal
+          format: double
           minimum: 0
           default: 0.00
           description: Current storage usage in GB
@@ -532,10 +536,11 @@ TenantServiceLicense:
         # Usage Alerts
         usage_alert_threshold:
           type: number
-          format: decimal
+          format: double
           minimum: 0.00
           maximum: 100.00
           default: 80.00
+          multipleOf: 0.01
           description: Usage alert threshold percentage
           example: 80.00
         last_usage_alert_sent:
@@ -551,10 +556,11 @@ TenantServiceLicense:
           example: true
         overage_rate:
           type: number
-          format: decimal
+          format: double
           minimum: 0.0000
           maximum: 999.9999
           default: 0.00
+          multipleOf: 0.0001
           description: Per-unit overage cost
           example: 0.10
 
@@ -663,7 +669,8 @@ TenantServiceLicenseDetailed:
                 example: "2025-11"
               amount:
                 type: number
-                format: decimal
+                format: double
+                multipleOf: 0.01
                 example: 99.99
               status:
                 type: string
@@ -903,7 +910,7 @@ CreatePlatformLicenseRequest:
     owner_phone:
       type: string
       maxLength: 50
-      pattern: '^\\+[1-9]\\d{1,14}$'
+      pattern: '^\+[1-9]\d{1,14}$'
       description: Phone number in international format
       example: "+1234567890"
 
@@ -1132,14 +1139,16 @@ CreateTenantServiceLicenseRequest:
     # Pricing
     monthly_price:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
       description: Monthly subscription price
       example: 99.99
     setup_fee:
       type: number
-      format: decimal
+      format: double
       minimum: 0
+      multipleOf: 0.01
       description: One-time setup fee
       example: 49.99
 

@@ -23,6 +23,8 @@
     operationId: listSuppliers
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.list
     parameters:
         - $ref: '#/components/parameters/TenantHeader'
         - $ref: '#/components/parameters/PageParam'
@@ -116,12 +118,41 @@
           application/json:
             schema:
               $ref: '#/components/schemas/SupplierListResponse'
+            examples:
+              ok:
+                summary: Suppliers list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        supplier_code: "SUP-2025-001"
+                        supplier_name: "Steel Indonesia Manufacturing"
+                        supplier_type: "material"
+                        supplier_tier: "preferred"
+                        is_active: true
+                        is_approved: true
+                        overall_rating: 4.5
+                      - id: "123e4567-e89b-12d3-a456-426614174000"
+                        supplier_code: "SUP-2025-002"
+                        supplier_name: "Chem Corp"
+                        supplier_type: "consumable"
+                        supplier_tier: "standard"
+                        is_active: true
+                        is_approved: false
+                        overall_rating: 3.9
+                  meta:
+                    page: 1
+                    per_page: 10
+                    total: 2
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -141,6 +172,8 @@
     operationId: createSupplier
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -191,6 +224,20 @@
                     message:
                       type: string
                       example: "Supplier created successfully and pending approval"
+            examples:
+              created:
+                summary: Supplier created
+                value:
+                  success: true
+                  message: "Supplier created successfully and pending approval"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    supplier_code: "SUP-2025-001"
+                    supplier_name: "Steel Indonesia Manufacturing"
+                    supplier_type: "material"
+                    supplier_tier: "preferred"
+                    is_active: true
+                    is_approved: false
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -227,6 +274,8 @@
     operationId: getSupplier
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -256,6 +305,19 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/Supplier'
+            examples:
+              ok:
+                summary: Supplier detail
+                value:
+                  success: true
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    supplier_code: "SUP-2025-001"
+                    supplier_name: "Steel Indonesia Manufacturing"
+                    supplier_type: "material"
+                    supplier_tier: "preferred"
+                    is_active: true
+                    is_approved: true
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -280,6 +342,8 @@
     operationId: updateSupplier
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -326,6 +390,16 @@
                     message:
                       type: string
                       example: "Supplier information updated successfully"
+            examples:
+              ok:
+                summary: Supplier updated
+                value:
+                  success: true
+                  message: "Supplier information updated successfully"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    supplier_tier: "preferred"
+                    overall_rating: 4.5
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -352,6 +426,8 @@
     operationId: deleteSupplier
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -382,6 +458,12 @@
                     message:
                       type: string
                       example: "Supplier deleted successfully"
+            examples:
+              ok:
+                summary: Supplier deleted
+                value:
+                  success: true
+                  message: "Supplier deleted successfully"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -421,6 +503,8 @@
     operationId: listSupplierContacts
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.contact.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -451,12 +535,35 @@
           application/json:
             schema:
               $ref: '#/components/schemas/SupplierContactListResponse'
+            examples:
+              ok:
+                summary: Contacts list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "111e8400-e29b-41d4-a716-446655441111"
+                        contact_name: "Budi Santoso"
+                        job_title: "Sales Manager"
+                        department: "Sales & Marketing"
+                        email: "budi.santoso@steelindonesia.com"
+                        contact_type: "sales"
+                        is_primary: true
+                      - id: "222e8400-e29b-41d4-a716-446655442222"
+                        contact_name: "Ani Wijaya"
+                        job_title: "Finance Officer"
+                        department: "Finance"
+                        email: "ani.wijaya@steelindonesia.com"
+                        contact_type: "finance"
+                        is_primary: false
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
       '404':
         $ref: '#/components/responses/NotFound'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -474,6 +581,8 @@
     operationId: createSupplierContact
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.contact.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -521,6 +630,18 @@
                     message:
                       type: string
                       example: "Supplier contact added successfully"
+            examples:
+              created:
+                summary: Contact created
+                value:
+                  success: true
+                  message: "Supplier contact added successfully"
+                  data:
+                    id: "111e8400-e29b-41d4-a716-446655441111"
+                    contact_name: "Budi Santoso"
+                    job_title: "Sales Manager"
+                    contact_type: "sales"
+                    is_primary: true
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -542,6 +663,8 @@
     operationId: getSupplierContact
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.contact.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -572,6 +695,17 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierContact'
+            examples:
+              ok:
+                summary: Contact detail
+                value:
+                  success: true
+                  data:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    contact_name: "Budi Santoso"
+                    job_title: "Sales Manager"
+                    contact_type: "sales"
+                    is_primary: true
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -590,6 +724,8 @@
     operationId: updateSupplierContact
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.contact.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -614,6 +750,14 @@
         application/json:
           schema:
             $ref: '#/components/schemas/SupplierContactCreateInput'
+          examples:
+            update_contact:
+              summary: Update contact basics
+              value:
+                contact_name: "Budi Santoso"
+                job_title: "Senior Sales Manager"
+                email: "budi.senior@steelindonesia.com"
+                is_primary: true
     responses:
       '200':
         description: Contact updated successfully
@@ -626,6 +770,16 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierContact'
+            examples:
+              ok:
+                summary: Contact updated
+                value:
+                  success: true
+                  data:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    contact_name: "Budi Santoso"
+                    job_title: "Senior Sales Manager"
+                    is_primary: true
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -646,6 +800,8 @@
     operationId: deleteSupplierContact
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.contact.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -677,6 +833,12 @@
                     message:
                       type: string
                       example: "Contact deleted successfully"
+            examples:
+              ok:
+                summary: Contact deleted
+                value:
+                  success: true
+                  message: "Contact deleted successfully"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -717,6 +879,8 @@
     operationId: listSupplierProducts
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.product.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -782,12 +946,37 @@
           application/json:
             schema:
               $ref: '#/components/schemas/SupplierProductListResponse'
+            examples:
+              ok:
+                summary: Supplier products list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "111e8400-e29b-41d4-a716-446655441111"
+                        supplier_product_code: "ST-A36-10MM"
+                        supplier_product_name: "Steel Plate A36 - 10mm Thickness"
+                        unit_price: 15000.00
+                        unit_of_measure: "kg"
+                        availability_status: "available"
+                      - id: "222e8400-e29b-41d4-a716-446655442222"
+                        supplier_product_code: "ST-A36-03MM"
+                        supplier_product_name: "Steel Plate A36 - 3mm Thickness"
+                        unit_price: 12000.00
+                        unit_of_measure: "kg"
+                        availability_status: "limited"
+                  meta:
+                    page: 1
+                    per_page: 10
+                    total: 2
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
       '404':
         $ref: '#/components/responses/NotFound'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -807,6 +996,8 @@
     operationId: createSupplierProduct
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.product.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -867,6 +1058,18 @@
                     message:
                       type: string
                       example: "Product added to supplier catalog successfully"
+            examples:
+              created:
+                summary: Product created
+                value:
+                  success: true
+                  message: "Product added to supplier catalog successfully"
+                  data:
+                    id: "111e8400-e29b-41d4-a716-446655441111"
+                    supplier_product_code: "ST-A36-10MM"
+                    supplier_product_name: "Steel Plate A36 - 10mm Thickness"
+                    unit_price: 15000.00
+                    unit_of_measure: "kg"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -899,6 +1102,8 @@
     operationId: getSupplierProduct
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.product.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -929,6 +1134,18 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierProduct'
+            examples:
+              ok:
+                summary: Product detail
+                value:
+                  success: true
+                  data:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    supplier_product_code: "ST-A36-10MM"
+                    supplier_product_name: "Steel Plate A36 - 10mm Thickness"
+                    unit_price: 15000.00
+                    unit_of_measure: "kg"
+                    availability_status: "available"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -947,6 +1164,8 @@
     operationId: updateSupplierProduct
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.product.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -971,6 +1190,13 @@
         application/json:
           schema:
             $ref: '#/components/schemas/SupplierProductCreateInput'
+          examples:
+            update_product:
+              summary: Update pricing and availability
+              value:
+                unit_price: 14750.00
+                availability_status: "limited"
+                minimum_order_quantity: 100.0
     responses:
       '200':
         description: Product updated successfully
@@ -983,6 +1209,16 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierProduct'
+            examples:
+              ok:
+                summary: Product updated
+                value:
+                  success: true
+                  data:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    supplier_product_code: "ST-A36-10MM"
+                    unit_price: 14750.00
+                    availability_status: "limited"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1003,6 +1239,8 @@
     operationId: deleteSupplierProduct
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.product.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -1034,6 +1272,12 @@
                     message:
                       type: string
                       example: "Product removed from supplier catalog"
+            examples:
+              ok:
+                summary: Product removed
+                value:
+                  success: true
+                  message: "Product removed from supplier catalog"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1063,6 +1307,8 @@
     operationId: listSupplierQuotations
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.quotation.list
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - $ref: '#/components/parameters/PageParam'
@@ -1130,12 +1376,35 @@
           application/json:
             schema:
               $ref: '#/components/schemas/SupplierQuotationListResponse'
+            examples:
+              ok:
+                summary: Quotations list
+                value:
+                  success: true
+                  data:
+                    items:
+                      - id: "550e8400-e29b-41d4-a716-446655440000"
+                        quotation_number: "QUO-2025-001"
+                        supplier_id: "550e8400-e29b-41d4-a716-446655440000"
+                        status: "received"
+                        total_amount: 25000000.00
+                      - id: "123e4567-e89b-12d3-a456-426614174000"
+                        quotation_number: "QUO-2025-002"
+                        supplier_id: "123e4567-e89b-12d3-a456-426614174000"
+                        status: "under_review"
+                        total_amount: 34000000.00
+                  meta:
+                    page: 1
+                    per_page: 10
+                    total: 2
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1155,6 +1424,8 @@
     operationId: createSupplierQuotation
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.quotation.create
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
     requestBody:
@@ -1202,6 +1473,16 @@
                     message:
                       type: string
                       example: "Quotation request created and will be sent to supplier"
+            examples:
+              created:
+                summary: Quotation created
+                value:
+                  success: true
+                  message: "Quotation request created and will be sent to supplier"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    quotation_number: "QUO-2025-001"
+                    status: "sent"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1221,6 +1502,8 @@
     operationId: getSupplierQuotation
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.quotation.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: quotation_id
@@ -1243,6 +1526,17 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierQuotation'
+            examples:
+              ok:
+                summary: Quotation detail
+                value:
+                  success: true
+                  data:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    quotation_number: "QUO-2025-001"
+                    status: "received"
+                    total_amount: 25000000.00
+                    supplier_id: "550e8400-e29b-41d4-a716-446655440000"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1261,6 +1555,8 @@
     operationId: updateSupplierQuotation
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.quotation.update
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: quotation_id
@@ -1277,6 +1573,14 @@
         application/json:
           schema:
             $ref: '#/components/schemas/SupplierQuotationCreateInput'
+          examples:
+            update_quotation:
+              summary: Update quotation evaluation
+              value:
+                evaluation_score: 88.5
+                evaluation_notes: "Strong pricing and quality record"
+                rank_position: 1
+                recommendation: "approve"
     responses:
       '200':
         description: Quotation updated successfully
@@ -1289,6 +1593,16 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierQuotation'
+            examples:
+              ok:
+                summary: Quotation updated
+                value:
+                  success: true
+                  data:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    status: "under_review"
+                    evaluation_score: 88.5
+                    recommendation: "approve"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1309,6 +1623,8 @@
     operationId: deleteSupplierQuotation
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.quotation.delete
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: quotation_id
@@ -1332,6 +1648,12 @@
                     message:
                       type: string
                       example: "Quotation deleted successfully"
+            examples:
+              ok:
+                summary: Quotation deleted
+                value:
+                  success: true
+                  message: "Quotation deleted successfully"
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1361,6 +1683,8 @@
     operationId: approveSupplier
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.approve
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -1410,6 +1734,16 @@
                     message:
                       type: string
                       example: "Supplier approved successfully and is now active for business operations"
+            examples:
+              ok:
+                summary: Supplier approved
+                value:
+                  success: true
+                  message: "Supplier approved successfully and is now active for business operations"
+                  data:
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    supplier_tier: "preferred"
+                    is_approved: true
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1450,6 +1784,8 @@
     operationId: evaluateSupplierQuotation
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.quotation.evaluate
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: quotation_id
@@ -1506,6 +1842,16 @@
                     message:
                       type: string
                       example: "Quotation evaluation completed successfully"
+            examples:
+              ok:
+                summary: Quotation evaluated
+                value:
+                  success: true
+                  message: "Quotation evaluation completed successfully"
+                  data:
+                    id: "123e4567-e89b-12d3-a456-426614174000"
+                    evaluation_score: 85.5
+                    recommendation: "approve"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
@@ -1537,6 +1883,8 @@
     operationId: getSupplierStatistics
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.analytics
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: period
@@ -1558,10 +1906,26 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierStatistics'
+            examples:
+              ok:
+                summary: Statistics
+                value:
+                  success: true
+                  data:
+                    totals:
+                      all: 150
+                      active: 120
+                      preferred: 40
+                      strategic: 10
+                    ratings:
+                      average_overall: 4.2
+                      top_suppliers: ["Steel Indonesia Manufacturing", "Chem Corp"]
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
         $ref: '#/components/responses/Forbidden'
+      '429':
+        $ref: '#/components/responses/RateLimitExceeded'
       '500':
         $ref: '#/components/responses/ServerError'
 
@@ -1582,6 +1946,8 @@
     operationId: getSupplierPerformanceReport
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.analytics.read
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: supplier_id
@@ -1618,6 +1984,20 @@
                   properties:
                     data:
                       $ref: '#/components/schemas/SupplierPerformanceReport'
+            examples:
+              ok:
+                summary: Performance report
+                value:
+                  success: true
+                  data:
+                    summary:
+                      on_time_delivery_rate: 97.5
+                      avg_quality_rating: 4.7
+                      quotation_win_rate: 42.0
+                    trends:
+                      last_6_months:
+                        on_time_delivery_rate: [96.1, 97.0, 98.3, 97.9, 97.1, 97.5]
+                        avg_quality_rating: [4.5, 4.6, 4.7, 4.7, 4.8, 4.7]
       '401':
         $ref: '#/components/responses/Unauthorized'
       '403':
@@ -1646,6 +2026,8 @@
     operationId: exportSuppliers
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.export
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: format
@@ -1727,6 +2109,8 @@
     operationId: importSuppliers
     security:
       - bearerAuth: []
+    x-permissions:
+      - suppliers.import
     parameters:
       - $ref: '#/components/parameters/TenantHeader'
       - name: validate_only
@@ -1803,6 +2187,23 @@
                     message:
                       type: string
                       example: "Import completed: 145 suppliers imported successfully, 5 failed"
+            examples:
+              ok:
+                summary: Import result
+                value:
+                  success: true
+                  data:
+                    total_rows: 150
+                    successful_imports: 145
+                    failed_imports: 5
+                    errors:
+                      - row: 3
+                        field: "primary_email"
+                        message: "Invalid email format"
+                      - row: 7
+                        field: "supplier_code"
+                        message: "Supplier code already exists"
+                  message: "Import completed: 145 suppliers imported successfully, 5 failed"
       '400':
         $ref: '#/components/responses/ValidationError'
       '401':
