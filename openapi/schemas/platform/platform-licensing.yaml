@@ -287,7 +287,6 @@ PlatformLicenseDetailed:
 TenantServiceLicense:
   allOf:
     - $ref: '../common/base.yaml#/BaseEntity'
-    - $ref: '../common/base.yaml#/TenantEntity'
     - $ref: '../common/base.yaml#/AuditableEntity'
     - type: object
       required:

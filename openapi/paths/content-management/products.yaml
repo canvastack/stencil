@@ -113,7 +113,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -131,7 +131,7 @@
                     type: object
                     properties:
                       pagination:
-                        $ref: '#/components/schemas/PaginationMeta'
+                        $ref: '#/components/schemas/PaginationInfo'
                       filters_applied:
                         type: object
                         description: Currently active filters
@@ -181,7 +181,7 @@
                       total: 120
                       last_page: 5
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '#/components/responses/ValidationError'
 /products/{slug}:
   get:
     tags:
@@ -223,7 +223,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -308,7 +308,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -431,7 +431,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -442,7 +442,7 @@
                     type: object
                     properties:
                       pagination:
-                        $ref: '#/components/schemas/PaginationMeta'
+                        $ref: '#/components/schemas/PaginationInfo'
                       summary:
                         $ref: '#/components/schemas/ProductsSummary'
             example:
@@ -550,7 +550,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -565,7 +565,7 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '#/components/responses/ValidationError'
       '422':
         $ref: '#/components/responses/ValidationError'
 /admin/products/{id}:
@@ -593,7 +593,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -648,7 +648,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -662,7 +662,7 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '#/components/responses/ValidationError'
       '404':
         $ref: '#/components/responses/NotFound'
       '422':
@@ -723,7 +723,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -789,7 +789,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -842,7 +842,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -897,7 +897,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -945,7 +945,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1037,7 +1037,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1267,7 +1267,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1358,7 +1358,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1427,7 +1427,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '#/components/schemas/SuccessResponse'
               - type: object
                 properties:
                   data:

@@ -35,9 +35,8 @@ BaseEntity:
       example: "2025-11-12T13:30:00Z"
       readOnly: true
     deleted_at:
-      type: string
+      type: [string, "null"]
       format: date-time
-      nullable: true
       description: Soft deletion timestamp (ISO 8601)
       example: null
       readOnly: true
@@ -72,9 +71,8 @@ SoftDeletableEntity:
     - type: object
       properties:
         deleted_at:
-          type: string
+          type: [string, "null"]
           format: date-time
-          nullable: true
           description: Soft deletion timestamp (null if not deleted)
           example: null
 

@@ -1627,3 +1627,65 @@ InstallationStatusResponse:
               items:
                 $ref: '#/ThemeInstallationLog'
               description: Installation logs
+
+# ================================================================
+# ERROR RESPONSE SCHEMAS
+# ================================================================
+
+# Validation Error Response with Field-level Details
+ValidationErrorResponse:
+  type: object
+  required:
+    - success
+    - error
+    - validation_errors
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Theme validation failed"
+    validation_errors:
+      type: array
+      items:
+        type: object
+        required:
+          - field
+          - code
+          - message
+        properties:
+          field:
+            type: string
+            description: Field name that failed validation
+            example: "version"
+          code:
+            type: string
+            description: Validation error code
+            example: "INVALID_SEMVER"
+          message:
+            type: string
+            description: Field-specific error message
+            example: "Version must follow semantic versioning (e.g., 1.0.0)"
+          value:
+            description: The invalid value that was provided
+            example: "1.0"
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-11-15T16:03:19Z"
+        total_errors:
+          type: integer
+          example: 3

@@ -26,7 +26,7 @@
       content:
         application/json:
           schema:
-            $ref: '../../schemas/platform/platform-licensing.yaml#/CreatePlatformLicenseRequest'
+            $ref: '#/components/schemas/CreatePlatformLicenseRequest'
     responses:
       '201':
         description: Platform license created successfully
@@ -34,19 +34,19 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicense'
+                    $ref: '#/components/schemas/PlatformLicense'
                   license_installation:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicenseInstallation'
+                    $ref: '#/components/schemas/PlatformLicenseInstallation'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
 
   get:
     tags:
@@ -65,7 +65,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: status
         in: query
         schema:
@@ -103,19 +103,19 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicense'
+                      $ref: '#/components/schemas/PlatformLicense'
                   pagination:
-                    $ref: '../../components/schemas.yaml#/PaginationInfo'
+                    $ref: '#/components/schemas/PaginationInfo'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
 
 /platform/licenses/{license_id}:
   get:
@@ -135,7 +135,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: license_id
         in: path
         required: true
@@ -150,15 +150,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicenseDetailed'
+                    $ref: '#/components/schemas/PlatformLicenseDetailed'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
 
   patch:
     tags:
@@ -177,7 +177,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: license_id
         in: path
         required: true
@@ -190,7 +190,7 @@
       content:
         application/json:
           schema:
-            $ref: '../../schemas/platform/platform-licensing.yaml#/UpdatePlatformLicenseRequest'
+            $ref: '#/components/schemas/UpdatePlatformLicenseRequest'
     responses:
       '200':
         description: Platform license updated successfully
@@ -198,15 +198,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/PlatformLicense'
+                    $ref: '#/components/schemas/PlatformLicense'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
 
   delete:
     tags:
@@ -225,7 +225,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: license_id
         in: path
         required: true
@@ -252,7 +252,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -270,9 +270,9 @@
                       revocation_reason:
                         type: string
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
 
 # ===== TENANT SERVICE LICENSE MANAGEMENT =====
 
@@ -294,7 +294,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -307,7 +307,7 @@
       content:
         application/json:
           schema:
-            $ref: '../../schemas/platform/platform-licensing.yaml#/CreateTenantServiceLicenseRequest'
+            $ref: '#/components/schemas/CreateTenantServiceLicenseRequest'
     responses:
       '201':
         description: Tenant service license created successfully
@@ -315,15 +315,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/TenantServiceLicense'
+                    $ref: '#/components/schemas/TenantServiceLicense'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
 
   get:
     tags:
@@ -343,7 +343,7 @@
       - PlatformAuth: []
       - TenantAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -358,13 +358,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/TenantServiceLicenseDetailed'
+                    $ref: '#/components/schemas/TenantServiceLicenseDetailed'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
 
   patch:
     tags:
@@ -383,7 +383,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -433,15 +433,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/TenantServiceLicense'
+                    $ref: '#/components/schemas/TenantServiceLicense'
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
 
   delete:
     tags:
@@ -460,7 +460,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -496,7 +496,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -517,7 +517,7 @@
                       cancellation_reason:
                         type: string
       '404':
-        $ref: '../../components/responses.yaml#/NotFound'
+        $ref: '#/components/responses/NotFound'
 
 /platform/tenants/{tenant_id}/usage:
   get:
@@ -538,7 +538,7 @@
       - PlatformAuth: []
       - TenantAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -559,11 +559,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/UsageStatisticsResponse'
+                    $ref: '#/components/schemas/UsageStatisticsResponse'
 
 # ===== LICENSE VALIDATION =====
 
@@ -587,7 +587,7 @@
       content:
         application/json:
           schema:
-            $ref: '../../schemas/platform/platform-licensing.yaml#/LicenseValidationRequest'
+            $ref: '#/components/schemas/LicenseValidationRequest'
     responses:
       '200':
         description: License validation result
@@ -595,11 +595,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/LicenseValidationResponse'
+                    $ref: '#/components/schemas/LicenseValidationResponse'
       '400':
         description: Invalid license key format
         content:
@@ -655,7 +655,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: days
         in: query
         schema:
@@ -696,17 +696,17 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/platform/platform-licensing.yaml#/LicenseValidationHistoryResponse'
+                    $ref: '#/components/schemas/LicenseValidationHistoryResponse'
                   pagination:
-                    $ref: '../../components/schemas.yaml#/PaginationInfo'
+                    $ref: '#/components/schemas/PaginationInfo'
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'
 
 # ===== BULK OPERATIONS =====
 
@@ -728,7 +728,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -771,7 +771,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -797,7 +797,7 @@
                               type: string
                               nullable: true
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
 
 /platform/service-licenses/bulk:
   patch:
@@ -817,7 +817,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
     requestBody:
       required: true
       content:
@@ -867,7 +867,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -893,7 +893,7 @@
                               type: string
                               nullable: true
       '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
+        $ref: '#/components/responses/ValidationError'
 
 # ===== REPORTING & ANALYTICS =====
 
@@ -915,7 +915,7 @@
       - bearerAuth: []
       - PlatformAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '#/components/parameters/TenantHeader'
       - name: period
         in: query
         schema:
@@ -929,7 +929,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '../../components/responses.yaml#/BaseResponse'
+              - $ref: '#/components/responses/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1016,6 +1016,6 @@
                             type: integer
                             example: 123
       '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
+        $ref: '#/components/responses/Unauthorized'
       '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
+        $ref: '#/components/responses/Forbidden'

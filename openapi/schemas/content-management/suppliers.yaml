@@ -2216,3 +2216,51 @@ SupplierStatistics:
       type: number
       format: decimal
       example: 14.29
+
+# ================================================================
+# ERROR RESPONSE SCHEMAS
+# ================================================================
+
+# Error Response for Supplier Operations
+ErrorResponse:
+  type: object
+  required:
+    - success
+    - error
+  properties:
+    success:
+      type: boolean
+      example: false
+    error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Error code identifier
+          example: "SUPPLIER_CODE_EXISTS"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Supplier code already exists in this tenant"
+        details:
+          type: string
+          description: Additional error details
+          example: "The supplier code 'SUP-2025-001' is already used by another supplier"
+        field:
+          type: string
+          description: Field that caused the error (for validation errors)
+          example: "supplier_code"
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-11-15T16:03:19Z"
+        request_id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"

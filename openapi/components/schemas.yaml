@@ -265,15 +265,13 @@ BaseTranslation:
       description: When the translation was created
       example: "2025-01-01T12:00:00Z"
     reviewed_by:
-      type: string
+      type: [string, "null"]
       format: uuid
-      nullable: true
       description: ID of the user who reviewed the translation
       example: "123e4567-e89b-12d3-a456-426614174003"
     reviewed_at:
-      type: string
+      type: [string, "null"]
       format: date-time
-      nullable: true
       description: When the translation was reviewed
       example: "2025-01-01T12:15:00Z"
   required:
@@ -651,9 +649,8 @@ SupportTicket:
       type: string
       format: date-time
     resolved_at:
-      type: string
+      type: [string, "null"]
       format: date-time
-      nullable: true
   required:
     - id
     - ticket_number

@@ -1,1917 +1,1915 @@
-openapi: 3.1.0
-info:
-  title: Media Library Management API
-  version: 1.0.0
-paths:
-  # ================================================================
-  # MEDIA FILE ENDPOINTS
-  # ================================================================
-  /media/upload:
-    post:
-      tags:
-        - Media Files
-      summary: Upload Single Media File
-      description: |
-        Upload a single media file with metadata and optional folder assignment.
-        
-        **Features:**
-        - Multi-format support (image, document, video, design files)
-        - Automatic file validation and virus scanning
-        - Metadata extraction (EXIF for images)
-        - Thumbnail generation for images
-        - Cloud storage integration
-        - Tag assignment during upload
-      operationId: uploadMediaFile
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/MediaFileCreateInput'
-            examples:
-              product_image:
-                summary: Upload product image
-                value:
-                  folder_id: "550e8400-e29b-41d4-a716-446655440000"
-                  alt_text: "Custom etched glass design"
-                  caption: "High-quality etching work"
-                  description: "Professional glass etching with company logo"
-                  tags: ["123e4567-e89b-12d3-a456-426614174000"]
-                  is_public: false
-      responses:
-        '201':
-          description: File uploaded successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaFileWithRelations'
-                      message:
-                        type: string
-                        example: "File uploaded successfully"
-        '400':
-          description: Validation error or unsupported file
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                file_too_large:
-                  summary: File size exceeds limit
-                  value:
-                    success: false
-                    error:
-                      code: "FILE_TOO_LARGE"
-                      message: "File size exceeds 10MB limit for images"
-                invalid_format:
-                  summary: Unsupported file format
-                  value:
-                    success: false
-                    error:
-                      code: "INVALID_FORMAT"
-                      message: "File format not supported for this file type"
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: Insufficient permissions
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "PERMISSION_DENIED"
-                  message: "media.upload permission required"
-        '413':
-          description: Request entity too large
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "PAYLOAD_TOO_LARGE"
-                  message: "File exceeds maximum upload size"
-        '500':
-          $ref: '#/components/responses/ServerError'
+# Media Library Management API Path Items
+# This file contains only path items (no openapi/info/paths wrapper)
 
-  /media/upload/bulk:
-    post:
-      tags:
-        - Media Files
-      summary: Upload Multiple Media Files
-      description: |
-        Upload multiple media files in a single request with batch processing.
-        
-        **Features:**
-        - Bulk file upload with progress tracking
-        - Batch metadata assignment
-        - Folder organization for all files
-        - Automatic error handling per file
-        - Background processing for large batches
-      operationId: bulkUploadMediaFiles
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-      requestBody:
-        required: true
+# ================================================================
+# MEDIA FILE ENDPOINTS
+# ================================================================
+/media/upload:
+  post:
+    tags:
+      - Media Files
+    summary: Upload Single Media File
+    description: |
+      Upload a single media file with metadata and optional folder assignment.
+      
+      **Features:**
+      - Multi-format support (image, document, video, design files)
+      - Automatic file validation and virus scanning
+      - Metadata extraction (EXIF for images)
+      - Thumbnail generation for images
+      - Cloud storage integration
+      - Tag assignment during upload
+    operationId: uploadMediaFile
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/MediaFileCreateInput'
+          examples:
+            product_image:
+              summary: Upload product image
+              value:
+                folder_id: "550e8400-e29b-41d4-a716-446655440000"
+                alt_text: "Custom etched glass design"
+                caption: "High-quality etching work"
+                description: "Professional glass etching with company logo"
+                tags: ["123e4567-e89b-12d3-a456-426614174000"]
+                is_public: false
+    responses:
+      '201':
+        description: File uploaded successfully
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              required:
-                - files
-              properties:
-                files:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: Array of files to upload
-                folder_id:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaFileWithRelations'
+                    message:
+                      type: string
+                      example: "File uploaded successfully"
+      '400':
+        description: Validation error or unsupported file
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            examples:
+              file_too_large:
+                summary: File size exceeds limit
+                value:
+                  success: false
+                  error:
+                    code: "FILE_TOO_LARGE"
+                    message: "File size exceeds 10MB limit for images"
+              invalid_format:
+                summary: Unsupported file format
+                value:
+                  success: false
+                  error:
+                    code: "INVALID_FORMAT"
+                    message: "File format not supported for this file type"
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        description: Insufficient permissions
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "PERMISSION_DENIED"
+                message: "media.upload permission required"
+      '413':
+        description: Request entity too large
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "PAYLOAD_TOO_LARGE"
+                message: "File exceeds maximum upload size"
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+/media/upload/bulk:
+  post:
+    tags:
+      - Media Files
+    summary: Upload Multiple Media Files
+    description: |
+      Upload multiple media files in a single request with batch processing.
+      
+      **Features:**
+      - Bulk file upload with progress tracking
+      - Batch metadata assignment
+      - Folder organization for all files
+      - Automatic error handling per file
+      - Background processing for large batches
+    operationId: bulkUploadMediaFiles
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - files
+            properties:
+              files:
+                type: array
+                items:
+                  type: string
+                  format: binary
+                description: Array of files to upload
+              folder_id:
+                type: string
+                format: uuid
+                nullable: true
+                description: Target folder for all files
+                example: "550e8400-e29b-41d4-a716-446655440000"
+              tags:
+                type: array
+                items:
                   type: string
                   format: uuid
-                  nullable: true
-                  description: Target folder for all files
-                  example: "550e8400-e29b-41d4-a716-446655440000"
-                tags:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-                  description: Tags to assign to all files
-                  example: ["123e4567-e89b-12d3-a456-426614174000"]
-                is_public:
-                  type: boolean
-                  default: false
-                  description: Make all files publicly accessible
-      responses:
-        '201':
-          description: Bulk upload completed (may include partial failures)
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          successful:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/MediaFile'
-                          failed:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                filename:
-                                  type: string
-                                error:
-                                  type: string
-                          summary:
+                description: Tags to assign to all files
+                example: ["123e4567-e89b-12d3-a456-426614174000"]
+              is_public:
+                type: boolean
+                default: false
+                description: Make all files publicly accessible
+    responses:
+      '201':
+        description: Bulk upload completed (may include partial failures)
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        successful:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/MediaFile'
+                        failed:
+                          type: array
+                          items:
                             type: object
                             properties:
-                              total:
-                                type: integer
-                                example: 10
-                              successful:
-                                type: integer
-                                example: 8
-                              failed:
-                                type: integer
-                                example: 2
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/ServerError'
+                              filename:
+                                type: string
+                              error:
+                                type: string
+                        summary:
+                          type: object
+                          properties:
+                            total:
+                              type: integer
+                              example: 10
+                            successful:
+                              type: integer
+                              example: 8
+                            failed:
+                              type: integer
+                              example: 2
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
 
-  /media/files:
-    get:
-      tags:
-        - Media Files
-      summary: List Media Files
-      description: |
-        Retrieve paginated list of media files with advanced filtering and search.
-        
-        **Features:**
-        - Folder-based filtering
-        - File type filtering
-        - Tag-based search
-        - Full-text search in metadata
-        - Sorting by various fields
-        - Include related data (folder, tags, transformations)
-      operationId: listMediaFiles
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/PerPageParam'
-        - $ref: '#/components/parameters/SortParam'
-        - name: folder_id
-          in: query
-          description: Filter by folder (null for root)
-          schema:
-            type: string
-            format: uuid
-            nullable: true
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: file_type
-          in: query
-          description: Filter by file type
-          schema:
-            type: string
-            enum: [image, document, video, audio, design, archive]
-          example: "image"
-        - name: mime_type
-          in: query
-          description: Filter by MIME type
-          schema:
-            type: string
-          example: "image/jpeg"
-        - name: tags
-          in: query
-          description: Filter by tag IDs (comma-separated)
-          schema:
-            type: string
-          example: "123e4567-e89b-12d3-a456-426614174000,456e1234-e89b-12d3-a456-426614174000"
-        - name: search
-          in: query
-          description: Search in filename, alt_text, caption, description
-          schema:
-            type: string
-            maxLength: 255
-          example: "logo design"
-        - name: is_public
-          in: query
-          description: Filter by public access status
-          schema:
-            type: boolean
-          example: false
-        - name: uploaded_by
-          in: query
-          description: Filter by uploader user ID
-          schema:
-            type: string
-            format: uuid
-          example: "123e4567-e89b-12d3-a456-426614174000"
-        - name: created_from
-          in: query
-          description: Filter files created after this date
-          schema:
-            type: string
-            format: date
-          example: "2024-01-01"
-        - name: created_to
-          in: query
-          description: Filter files created before this date
-          schema:
-            type: string
-            format: date
-          example: "2024-12-31"
-        - name: include
-          in: query
-          description: Include related data (comma-separated)
-          schema:
-            type: string
-            enum: [folder, tags, transformations, usage, versions]
-          example: "folder,tags,transformations"
-      responses:
-        '200':
-          description: Media files retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/PaginatedResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/MediaFileWithRelations'
-                      meta:
-                        allOf:
-                          - $ref: '#/components/schemas/PaginationMeta'
-                          - type: object
-                            properties:
-                              filters:
-                                type: object
-                                properties:
-                                  total_size:
-                                    type: integer
-                                    format: int64
-                                    description: Total size of filtered files in bytes
-                                    example: 10485760
-                                  file_types:
-                                    type: object
-                                    additionalProperties:
-                                      type: integer
-                                    description: Count by file type
-                                    example:
-                                      image: 15
-                                      document: 8
-                                      video: 2
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /media/files/{uuid}:
-    get:
-      tags:
-        - Media Files
-      summary: Get Media File Details
-      description: |
-        Retrieve detailed information about a specific media file including all related data.
-        
-        **Includes:**
-        - File metadata and properties
-        - Folder information
-        - Associated tags
-        - Available transformations
-        - Usage tracking
-        - Version history
-      operationId: getMediaFile
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media file UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: include
-          in: query
-          description: Include related data (comma-separated)
-          schema:
-            type: string
-          example: "folder,tags,transformations,usage,versions"
-      responses:
-        '200':
-          description: Media file details retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaFileWithRelations'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media file not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "MEDIA_FILE_NOT_FOUND"
-                  message: "Media file not found"
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    put:
-      tags:
-        - Media Files
-      summary: Update Media File Metadata
-      description: |
-        Update media file metadata, organization, and properties.
-        
-        **Updatable Fields:**
-        - File organization (folder assignment)
-        - Content metadata (alt_text, caption, description)
-        - Tag assignments
-        - Access control (is_public)
-        - Custom filename
-      operationId: updateMediaFile
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media file UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
+/media/files:
+  get:
+    tags:
+      - Media Files
+    summary: List Media Files
+    description: |
+      Retrieve paginated list of media files with advanced filtering and search.
+      
+      **Features:**
+      - Folder-based filtering
+      - File type filtering
+      - Tag-based search
+      - Full-text search in metadata
+      - Sorting by various fields
+      - Include related data (folder, tags, transformations)
+    operationId: listMediaFiles
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '#/components/parameters/PageParam'
+      - $ref: '#/components/parameters/PerPageParam'
+      - $ref: '#/components/parameters/SortParam'
+      - name: folder_id
+        in: query
+        description: Filter by folder (null for root)
+        schema:
+          type: string
+          format: uuid
+          nullable: true
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: file_type
+        in: query
+        description: Filter by file type
+        schema:
+          type: string
+          enum: [image, document, video, audio, design, archive]
+        example: "image"
+      - name: mime_type
+        in: query
+        description: Filter by MIME type
+        schema:
+          type: string
+        example: "image/jpeg"
+      - name: tags
+        in: query
+        description: Filter by tag IDs (comma-separated)
+        schema:
+          type: string
+        example: "123e4567-e89b-12d3-a456-426614174000,456e1234-e89b-12d3-a456-426614174000"
+      - name: search
+        in: query
+        description: Search in filename, alt_text, caption, description
+        schema:
+          type: string
+          maxLength: 255
+        example: "logo design"
+      - name: is_public
+        in: query
+        description: Filter by public access status
+        schema:
+          type: boolean
+        example: false
+      - name: uploaded_by
+        in: query
+        description: Filter by uploader user ID
+        schema:
+          type: string
+          format: uuid
+        example: "123e4567-e89b-12d3-a456-426614174000"
+      - name: created_from
+        in: query
+        description: Filter files created after this date
+        schema:
+          type: string
+          format: date
+        example: "2024-01-01"
+      - name: created_to
+        in: query
+        description: Filter files created before this date
+        schema:
+          type: string
+          format: date
+        example: "2024-12-31"
+      - name: include
+        in: query
+        description: Include related data (comma-separated)
+        schema:
+          type: string
+          enum: [folder, tags, transformations, usage, versions]
+        example: "folder,tags,transformations"
+    responses:
+      '200':
+        description: Media files retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MediaFileUpdateInput'
-            examples:
-              update_metadata:
-                summary: Update file metadata
-                value:
-                  alt_text: "Updated alternative text"
-                  caption: "Updated caption"
-                  description: "Updated detailed description"
-                  tags: ["123e4567-e89b-12d3-a456-426614174000"]
-              move_and_rename:
-                summary: Move file and update name
-                value:
-                  folder_id: "456e1234-e89b-12d3-a456-426614174000"
-                  filename: "new_filename.jpg"
-                  is_public: true
-      responses:
-        '200':
-          description: Media file updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
+              allOf:
+                - $ref: '#/components/schemas/PaginatedResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
                         $ref: '#/components/schemas/MediaFileWithRelations'
-                      message:
-                        type: string
-                        example: "Media file updated successfully"
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media file not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    delete:
-      tags:
-        - Media Files
-      summary: Delete Media File
-      description: |
-        Delete a media file and all its associated data (transformations, usage records).
-        
-        **Safety Features:**
-        - Usage validation (prevent deletion of files in use)
-        - Force deletion option for admin users
-        - Cleanup of all related transformations
-        - Audit trail logging
-      operationId: deleteMediaFile
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media file UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: force
-          in: query
-          description: Force deletion even if file is in use (requires admin permission)
-          schema:
-            type: boolean
-            default: false
-          example: false
-      responses:
-        '200':
-          description: Media file deleted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Media file deleted successfully"
-                      data:
-                        type: object
-                        properties:
-                          cleaned_transformations:
-                            type: integer
-                            example: 3
-                          cleaned_usage_records:
-                            type: integer
-                            example: 5
-        '400':
-          description: File is in use and cannot be deleted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "FILE_IN_USE"
-                  message: "Cannot delete file that is currently in use"
-                  details:
-                    usage_count: 3
-                    usage_contexts: ["product_image", "gallery_image"]
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media file not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /media/files/move:
-    post:
-      tags:
-        - Media Files
-      summary: Move Multiple Files to Folder
-      description: |
-        Move multiple media files to a different folder in bulk operation.
-        
-        **Features:**
-        - Bulk file movement
-        - Folder path validation
-        - Permission checking for target folder
-        - Atomic operation (all or nothing)
-      operationId: moveMediaFiles
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - file_ids
-                - folder_id
-              properties:
-                file_ids:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-                  description: Array of file UUIDs to move
-                  example: ["550e8400-e29b-41d4-a716-446655440000", "123e4567-e89b-12d3-a456-426614174000"]
-                folder_id:
-                  type: string
-                  format: uuid
-                  nullable: true
-                  description: Target folder UUID (null for root)
-                  example: "456e1234-e89b-12d3-a456-426614174000"
-      responses:
-        '200':
-          description: Files moved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          moved_count:
-                            type: integer
-                            example: 5
-                          failed_count:
-                            type: integer
-                            example: 0
-                          failed_files:
-                            type: array
-                            items:
+                    meta:
+                      allOf:
+                        - $ref: '#/components/schemas/PaginationMeta'
+                        - type: object
+                          properties:
+                            filters:
                               type: object
                               properties:
-                                file_id:
-                                  type: string
-                                  format: uuid
-                                error:
-                                  type: string
-                      message:
-                        type: string
-                        example: "5 files moved successfully"
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /media/files/{uuid}/download:
-    post:
-      tags:
-        - Media Files
-      summary: Generate Secure Download URL
-      description: |
-        Generate a secure, time-limited download URL for the media file and track the download.
-        
-        **Features:**
-        - Secure signed URLs with expiration
-        - Download analytics tracking
-        - Access control validation
-        - CDN integration support
-      operationId: downloadMediaFile
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media file UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                transformation:
-                  type: string
-                  description: Specific transformation to download
-                  example: "thumbnail_300x300"
-                expires_in:
-                  type: integer
-                  minimum: 300
-                  maximum: 3600
-                  default: 3600
-                  description: URL expiration time in seconds
-                  example: 1800
-      responses:
-        '200':
-          description: Download URL generated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          download_url:
-                            type: string
-                            format: uri
-                            description: Secure download URL
-                            example: "https://cdn.example.com/secure/tenant123/file123.jpg?token=abc&expires=1699876543"
-                          expires_at:
-                            type: string
-                            format: date-time
-                            description: URL expiration timestamp
-                            example: "2024-11-12T16:30:00Z"
-                          file_size:
-                            type: integer
-                            format: int64
-                            description: File size in bytes
-                            example: 2048576
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media file not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ================================================================
-  # MEDIA FOLDER ENDPOINTS
-  # ================================================================
-  /media/folders:
-    get:
-      tags:
-        - Media Folders
-      summary: List Media Folders
-      description: |
-        Retrieve hierarchical list of media folders with optional tree structure.
-        
-        **Features:**
-        - Tree structure with nested folders
-        - Breadcrumb path information
-        - File count per folder
-        - Permission-based filtering
-      operationId: listMediaFolders
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: parent_id
-          in: query
-          description: Filter by parent folder (null for root level)
-          schema:
-            type: string
-            format: uuid
-            nullable: true
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: tree
-          in: query
-          description: Return full tree structure
-          schema:
-            type: boolean
-            default: false
-          example: true
-        - name: include_files
-          in: query
-          description: Include file counts per folder
-          schema:
-            type: boolean
-            default: false
-          example: true
-      responses:
-        '200':
-          description: Media folders retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          allOf:
-                            - $ref: '#/components/schemas/MediaFolder'
-                            - type: object
-                              properties:
-                                children:
-                                  type: array
-                                  items:
-                                    $ref: '#/components/schemas/MediaFolder'
-                                file_count:
-                                  type: integer
-                                  example: 15
                                 total_size:
                                   type: integer
                                   format: int64
-                                  example: 52428800
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/ServerError'
+                                  description: Total size of filtered files in bytes
+                                  example: 10485760
+                                file_types:
+                                  type: object
+                                  additionalProperties:
+                                    type: integer
+                                  description: Count by file type
+                                  example:
+                                    image: 15
+                                    document: 8
+                                    video: 2
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
 
-    post:
-      tags:
-        - Media Folders
-      summary: Create Media Folder
-      description: |
-        Create a new media folder with hierarchical organization.
-        
-        **Features:**
-        - Nested folder creation
-        - Automatic path generation
-        - Permission inheritance from parent
-        - Slug generation for URL-safe names
-      operationId: createMediaFolder
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-      requestBody:
+/media/files/{uuid}:
+  get:
+    tags:
+      - Media Files
+    summary: Get Media File Details
+    description: |
+      Retrieve detailed information about a specific media file including all related data.
+      
+      **Includes:**
+      - File metadata and properties
+      - Folder information
+      - Associated tags
+      - Available transformations
+      - Usage tracking
+      - Version history
+    operationId: getMediaFile
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
         required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: include
+        in: query
+        description: Include related data (comma-separated)
+        schema:
+          type: string
+        example: "folder,tags,transformations,usage,versions"
+    responses:
+      '200':
+        description: Media file details retrieved successfully
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MediaFolderCreateInput'
-            examples:
-              root_folder:
-                summary: Create root-level folder
-                value:
-                  name: "Product Images"
-                  description: "High-resolution product photography"
-                  is_public: false
-              nested_folder:
-                summary: Create nested folder
-                value:
-                  parent_id: "550e8400-e29b-41d4-a716-446655440000"
-                  name: "Glass Etching"
-                  description: "Glass etching project files"
-                  sort_order: 1
-      responses:
-        '201':
-          description: Media folder created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaFolder'
-                      message:
-                        type: string
-                        example: "Media folder created successfully"
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          description: Folder name already exists in parent
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "FOLDER_EXISTS"
-                  message: "Folder with this name already exists in parent directory"
-        '500':
-          $ref: '#/components/responses/ServerError'
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaFileWithRelations'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media file not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "MEDIA_FILE_NOT_FOUND"
+                message: "Media file not found"
+      '500':
+        $ref: '#/components/responses/ServerError'
 
-  /media/folders/{uuid}:
-    get:
-      tags:
-        - Media Folders
-      summary: Get Media Folder Details
-      description: |
-        Retrieve detailed information about a specific media folder.
-        
-        **Includes:**
-        - Folder metadata and properties
-        - Breadcrumb path
-        - File and subfolder counts
-        - Storage usage statistics
-      operationId: getMediaFolder
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media folder UUID
+  put:
+    tags:
+      - Media Files
+    summary: Update Media File Metadata
+    description: |
+      Update media file metadata, organization, and properties.
+      
+      **Updatable Fields:**
+      - File organization (folder assignment)
+      - Content metadata (alt_text, caption, description)
+      - Tag assignments
+      - Access control (is_public)
+      - Custom filename
+    operationId: updateMediaFile
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Media folder details retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
+            $ref: '#/components/schemas/MediaFileUpdateInput'
+          examples:
+            update_metadata:
+              summary: Update file metadata
+              value:
+                alt_text: "Updated alternative text"
+                caption: "Updated caption"
+                description: "Updated detailed description"
+                tags: ["123e4567-e89b-12d3-a456-426614174000"]
+            move_and_rename:
+              summary: Move file and update name
+              value:
+                folder_id: "456e1234-e89b-12d3-a456-426614174000"
+                filename: "new_filename.jpg"
+                is_public: true
+    responses:
+      '200':
+        description: Media file updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaFileWithRelations'
+                    message:
+                      type: string
+                      example: "Media file updated successfully"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media file not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+  delete:
+    tags:
+      - Media Files
+    summary: Delete Media File
+    description: |
+      Delete a media file and all its associated data (transformations, usage records).
+      
+      **Safety Features:**
+      - Usage validation (prevent deletion of files in use)
+      - Force deletion option for admin users
+      - Cleanup of all related transformations
+      - Audit trail logging
+    operationId: deleteMediaFile
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: force
+        in: query
+        description: Force deletion even if file is in use (requires admin permission)
+        schema:
+          type: boolean
+          default: false
+        example: false
+    responses:
+      '200':
+        description: Media file deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Media file deleted successfully"
+                    data:
+                      type: object
+                      properties:
+                        cleaned_transformations:
+                          type: integer
+                          example: 3
+                        cleaned_usage_records:
+                          type: integer
+                          example: 5
+      '400':
+        description: File is in use and cannot be deleted
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "FILE_IN_USE"
+                message: "Cannot delete file that is currently in use"
+                details:
+                  usage_count: 3
+                  usage_contexts: ["product_image", "gallery_image"]
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media file not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+/media/files/move:
+  post:
+    tags:
+      - Media Files
+    summary: Move Multiple Files to Folder
+    description: |
+      Move multiple media files to a different folder in bulk operation.
+      
+      **Features:**
+      - Bulk file movement
+      - Folder path validation
+      - Permission checking for target folder
+      - Atomic operation (all or nothing)
+    operationId: moveMediaFiles
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - file_ids
+              - folder_id
+            properties:
+              file_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                description: Array of file UUIDs to move
+                example: ["550e8400-e29b-41d4-a716-446655440000", "123e4567-e89b-12d3-a456-426614174000"]
+              folder_id:
+                type: string
+                format: uuid
+                nullable: true
+                description: Target folder UUID (null for root)
+                example: "456e1234-e89b-12d3-a456-426614174000"
+    responses:
+      '200':
+        description: Files moved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        moved_count:
+                          type: integer
+                          example: 5
+                        failed_count:
+                          type: integer
+                          example: 0
+                        failed_files:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              file_id:
+                                type: string
+                                format: uuid
+                              error:
+                                type: string
+                    message:
+                      type: string
+                      example: "5 files moved successfully"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+/media/files/{uuid}/download:
+  post:
+    tags:
+      - Media Files
+    summary: Generate Secure Download URL
+    description: |
+      Generate a secure, time-limited download URL for the media file and track the download.
+      
+      **Features:**
+      - Secure signed URLs with expiration
+      - Download analytics tracking
+      - Access control validation
+      - CDN integration support
+    operationId: downloadMediaFile
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              transformation:
+                type: string
+                description: Specific transformation to download
+                example: "thumbnail_300x300"
+              expires_in:
+                type: integer
+                minimum: 300
+                maximum: 3600
+                default: 3600
+                description: URL expiration time in seconds
+                example: 1800
+    responses:
+      '200':
+        description: Download URL generated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        download_url:
+                          type: string
+                          format: uri
+                          description: Secure download URL
+                          example: "https://cdn.example.com/secure/tenant123/file123.jpg?token=abc&expires=1699876543"
+                        expires_at:
+                          type: string
+                          format: date-time
+                          description: URL expiration timestamp
+                          example: "2024-11-12T16:30:00Z"
+                        file_size:
+                          type: integer
+                          format: int64
+                          description: File size in bytes
+                          example: 2048576
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media file not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+# ================================================================
+# MEDIA FOLDER ENDPOINTS
+# ================================================================
+/media/folders:
+  get:
+    tags:
+      - Media Folders
+    summary: List Media Folders
+    description: |
+      Retrieve hierarchical list of media folders with optional tree structure.
+      
+      **Features:**
+      - Tree structure with nested folders
+      - Breadcrumb path information
+      - File count per folder
+      - Permission-based filtering
+    operationId: listMediaFolders
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: parent_id
+        in: query
+        description: Filter by parent folder (null for root level)
+        schema:
+          type: string
+          format: uuid
+          nullable: true
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: tree
+        in: query
+        description: Return full tree structure
+        schema:
+          type: boolean
+          default: false
+        example: true
+      - name: include_files
+        in: query
+        description: Include file counts per folder
+        schema:
+          type: boolean
+          default: false
+        example: true
+    responses:
+      '200':
+        description: Media folders retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
                         allOf:
                           - $ref: '#/components/schemas/MediaFolder'
                           - type: object
                             properties:
-                              breadcrumb:
+                              children:
                                 type: array
                                 items:
-                                  type: object
-                                  properties:
-                                    uuid:
-                                      type: string
-                                      format: uuid
-                                    name:
-                                      type: string
-                                example:
-                                  - uuid: "root"
-                                    name: "Root"
-                                  - uuid: "550e8400-e29b-41d4-a716-446655440000"
-                                    name: "Product Images"
-                              statistics:
-                                type: object
-                                properties:
-                                  file_count:
-                                    type: integer
-                                    example: 25
-                                  subfolder_count:
-                                    type: integer
-                                    example: 3
-                                  total_size:
-                                    type: integer
-                                    format: int64
-                                    example: 104857600
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media folder not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    put:
-      tags:
-        - Media Folders
-      summary: Update Media Folder
-      description: |
-        Update media folder properties and organization.
-        
-        **Updatable Fields:**
-        - Folder hierarchy (parent assignment)
-        - Display properties (name, description)
-        - Access control settings
-        - Sort order
-      operationId: updateMediaFolder
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media folder UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MediaFolderUpdateInput'
-            examples:
-              rename_folder:
-                summary: Rename folder
-                value:
-                  name: "Updated Folder Name"
-                  description: "Updated description"
-              move_folder:
-                summary: Move folder to different parent
-                value:
-                  parent_id: "456e1234-e89b-12d3-a456-426614174000"
-                  sort_order: 2
-      responses:
-        '200':
-          description: Media folder updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaFolder'
-                      message:
-                        type: string
-                        example: "Media folder updated successfully"
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media folder not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    delete:
-      tags:
-        - Media Folders
-      summary: Delete Media Folder
-      description: |
-        Delete a media folder and optionally its contents.
-        
-        **Safety Features:**
-        - Empty folder validation
-        - Recursive deletion option
-        - File usage validation
-        - Audit trail logging
-      operationId: deleteMediaFolder
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media folder UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: recursive
-          in: query
-          description: Delete folder and all its contents
-          schema:
-            type: boolean
-            default: false
-          example: false
-        - name: force
-          in: query
-          description: Force deletion even if files are in use (requires admin permission)
-          schema:
-            type: boolean
-            default: false
-          example: false
-      responses:
-        '200':
-          description: Media folder deleted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Media folder deleted successfully"
-                      data:
-                        type: object
-                        properties:
-                          deleted_files:
-                            type: integer
-                            example: 0
-                          deleted_subfolders:
-                            type: integer
-                            example: 0
-        '400':
-          description: Folder is not empty or contains files in use
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                folder_not_empty:
-                  summary: Folder contains files
-                  value:
-                    success: false
-                    error:
-                      code: "FOLDER_NOT_EMPTY"
-                      message: "Cannot delete folder that contains files or subfolders"
-                      details:
-                        file_count: 5
-                        subfolder_count: 2
-                files_in_use:
-                  summary: Contains files in use
-                  value:
-                    success: false
-                    error:
-                      code: "FILES_IN_USE"
-                      message: "Cannot delete folder containing files that are currently in use"
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media folder not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /media/folders/{uuid}/contents:
-    get:
-      tags:
-        - Media Folders
-      summary: Get Folder Contents
-      description: |
-        Retrieve all files and subfolders within a specific folder.
-        
-        **Features:**
-        - Combined file and folder listing
-        - Filtering by file types
-        - Optional recursive traversal
-        - Sorting and pagination
-      operationId: getFolderContents
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media folder UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-        - name: include_subfolders
-          in: query
-          description: Include files from subfolders recursively
-          schema:
-            type: boolean
-            default: false
-          example: false
-        - name: file_types
-          in: query
-          description: Filter by file types (comma-separated)
-          schema:
-            type: string
-          example: "image,document"
-        - name: sort
-          in: query
-          description: Sort order
-          schema:
-            type: string
-            enum: [name, created_at, file_size, file_type]
-            default: name
-          example: "created_at"
-        - name: order
-          in: query
-          description: Sort direction
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: asc
-          example: "desc"
-      responses:
-        '200':
-          description: Folder contents retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          folders:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/MediaFolder'
-                          files:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/MediaFile'
-                          summary:
-                            type: object
-                            properties:
-                              total_folders:
-                                type: integer
-                                example: 3
-                              total_files:
+                                  $ref: '#/components/schemas/MediaFolder'
+                              file_count:
                                 type: integer
                                 example: 15
                               total_size:
                                 type: integer
                                 format: int64
                                 example: 52428800
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media folder not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
 
-  # ================================================================
-  # MEDIA TAG ENDPOINTS
-  # ================================================================
-  /media/tags:
-    get:
-      tags:
-        - Media Tags
-      summary: List Media Tags
-      description: |
-        Retrieve list of media tags with usage statistics and filtering options.
-        
-        **Features:**
-        - Category-based filtering
-        - Search by tag name
-        - Usage count sorting
-        - Color-coded organization
-      operationId: listMediaTags
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: category
-          in: query
-          description: Filter by tag category
+  post:
+    tags:
+      - Media Folders
+    summary: Create Media Folder
+    description: |
+      Create a new media folder with hierarchical organization.
+      
+      **Features:**
+      - Nested folder creation
+      - Automatic path generation
+      - Permission inheritance from parent
+      - Slug generation for URL-safe names
+    operationId: createMediaFolder
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
           schema:
-            type: string
-            maxLength: 50
-          example: "materials"
-        - name: search
-          in: query
-          description: Search in tag name and description
-          schema:
-            type: string
-            maxLength: 255
-          example: "glass"
-        - name: sort
-          in: query
-          description: Sort field
-          schema:
-            type: string
-            enum: [name, usage_count, created_at, category]
-            default: name
-          example: "usage_count"
-        - name: order
-          in: query
-          description: Sort direction
-          schema:
-            type: string
-            enum: [asc, desc]
-            default: asc
-          example: "desc"
-      responses:
-        '200':
-          description: Media tags retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/MediaTag'
-                      meta:
-                        type: object
-                        properties:
-                          categories:
-                            type: array
-                            items:
+            $ref: '#/components/schemas/MediaFolderCreateInput'
+          examples:
+            root_folder:
+              summary: Create root-level folder
+              value:
+                name: "Product Images"
+                description: "High-resolution product photography"
+                is_public: false
+            nested_folder:
+              summary: Create nested folder
+              value:
+                parent_id: "550e8400-e29b-41d4-a716-446655440000"
+                name: "Glass Etching"
+                description: "Glass etching project files"
+                sort_order: 1
+    responses:
+      '201':
+        description: Media folder created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaFolder'
+                    message:
+                      type: string
+                      example: "Media folder created successfully"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        description: Folder name already exists in parent
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "FOLDER_EXISTS"
+                message: "Folder with this name already exists in parent directory"
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+/media/folders/{uuid}:
+  get:
+    tags:
+      - Media Folders
+    summary: Get Media Folder Details
+    description: |
+      Retrieve detailed information about a specific media folder.
+      
+      **Includes:**
+      - Folder metadata and properties
+      - Breadcrumb path
+      - File and subfolder counts
+      - Storage usage statistics
+    operationId: getMediaFolder
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: Media folder details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      allOf:
+                        - $ref: '#/components/schemas/MediaFolder'
+                        - type: object
+                          properties:
+                            breadcrumb:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  uuid:
+                                    type: string
+                                    format: uuid
+                                  name:
+                                    type: string
+                              example:
+                                - uuid: "root"
+                                  name: "Root"
+                                - uuid: "550e8400-e29b-41d4-a716-446655440000"
+                                  name: "Product Images"
+                            statistics:
                               type: object
                               properties:
-                                name:
-                                  type: string
-                                  example: "materials"
-                                count:
+                                file_count:
                                   type: integer
-                                  example: 8
-                          total_tags:
-                            type: integer
-                            example: 25
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    post:
-      tags:
-        - Media Tags
-      summary: Create Media Tag
-      description: |
-        Create a new media tag for file organization and categorization.
-        
-        **Features:**
-        - Unique tag name per tenant
-        - Automatic slug generation
-        - Color coding for visual organization
-        - Category assignment
-      operationId: createMediaTag
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-      requestBody:
-        required: true
+                                  example: 25
+                                subfolder_count:
+                                  type: integer
+                                  example: 3
+                                total_size:
+                                  type: integer
+                                  format: int64
+                                  example: 104857600
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media folder not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MediaTagCreateInput'
-            examples:
-              material_tag:
-                summary: Create material tag
-                value:
-                  name: "Glass Etching"
-                  description: "Images and designs related to glass etching projects"
-                  color: "#28a745"
-                  category: "materials"
-              project_tag:
-                summary: Create project tag
-                value:
-                  name: "Customer Project A"
-                  description: "Files for specific customer project"
-                  color: "#007bff"
-                  category: "projects"
-      responses:
-        '201':
-          description: Media tag created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaTag'
-                      message:
-                        type: string
-                        example: "Media tag created successfully"
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          description: Tag name already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "TAG_EXISTS"
-                  message: "Tag with this name already exists"
-        '500':
-          $ref: '#/components/responses/ServerError'
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
 
-  /media/tags/{uuid}:
-    get:
-      tags:
-        - Media Tags
-      summary: Get Media Tag Details
-      description: |
-        Retrieve detailed information about a specific media tag including usage statistics.
-      operationId: getMediaTag
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media tag UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Media tag details retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        allOf:
-                          - $ref: '#/components/schemas/MediaTag'
-                          - type: object
-                            properties:
-                              recent_files:
-                                type: array
-                                items:
-                                  $ref: '#/components/schemas/MediaFile'
-                                description: Recent files using this tag
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media tag not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    put:
-      tags:
-        - Media Tags
-      summary: Update Media Tag
-      description: |
-        Update media tag properties and organization.
-      operationId: updateMediaTag
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media tag UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
+  put:
+    tags:
+      - Media Folders
+    summary: Update Media Folder
+    description: |
+      Update media folder properties and organization.
+      
+      **Updatable Fields:**
+      - Folder hierarchy (parent assignment)
+      - Display properties (name, description)
+      - Access control settings
+      - Sort order
+    operationId: updateMediaFolder
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
         required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MediaFolderUpdateInput'
+          examples:
+            rename_folder:
+              summary: Rename folder
+              value:
+                name: "Updated Folder Name"
+                description: "Updated description"
+            move_folder:
+              summary: Move folder to different parent
+              value:
+                parent_id: "456e1234-e89b-12d3-a456-426614174000"
+                sort_order: 2
+    responses:
+      '200':
+        description: Media folder updated successfully
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MediaTagUpdateInput'
-            examples:
-              update_tag:
-                summary: Update tag properties
-                value:
-                  name: "Updated Tag Name"
-                  description: "Updated description"
-                  color: "#dc3545"
-                  category: "updated_category"
-      responses:
-        '200':
-          description: Media tag updated successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaTag'
-                      message:
-                        type: string
-                        example: "Media tag updated successfully"
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media tag not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    delete:
-      tags:
-        - Media Tags
-      summary: Delete Media Tag
-      description: |
-        Delete a media tag and remove it from all associated files.
-        
-        **Features:**
-        - Automatic removal from all files
-        - Usage count validation
-        - Audit trail logging
-      operationId: deleteMediaTag
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media tag UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: Media tag deleted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "Media tag deleted successfully"
-                      data:
-                        type: object
-                        properties:
-                          removed_from_files:
-                            type: integer
-                            example: 15
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media tag not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ================================================================
-  # MEDIA TRANSFORMATIONS ENDPOINTS
-  # ================================================================
-  /media/files/{uuid}/transformations:
-    get:
-      tags:
-        - Media Transformations
-      summary: List File Transformations
-      description: |
-        Retrieve all available transformations for a specific media file.
-        
-        **Features:**
-        - All transformation variants
-        - Size and format information
-        - Download URLs for each transformation
-      operationId: listFileTransformations
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media file UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: File transformations retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/MediaTransformation'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media file not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-    post:
-      tags:
-        - Media Transformations
-      summary: Create File Transformation
-      description: |
-        Create a new transformation variant of a media file.
-        
-        **Transformation Types:**
-        - Resize with various algorithms
-        - Format conversion (WebP, AVIF)
-        - Quality optimization
-        - Watermark application
-        - Crop and aspect ratio adjustment
-      operationId: createFileTransformation
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media file UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - params
-              properties:
-                name:
-                  type: string
-                  maxLength: 100
-                  description: Transformation name/identifier
-                  example: "thumbnail_300x300"
-                params:
-                  type: object
-                  description: Transformation parameters
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
                   properties:
-                    width:
-                      type: integer
-                      minimum: 1
-                      maximum: 4000
-                      example: 300
-                    height:
-                      type: integer
-                      minimum: 1
-                      maximum: 4000
-                      example: 300
-                    quality:
-                      type: integer
-                      minimum: 1
-                      maximum: 100
-                      default: 85
-                      example: 85
-                    format:
+                    data:
+                      $ref: '#/components/schemas/MediaFolder'
+                    message:
                       type: string
-                      enum: [jpeg, png, webp, avif]
-                      default: "webp"
-                      example: "webp"
-                    crop:
+                      example: "Media folder updated successfully"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media folder not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+  delete:
+    tags:
+      - Media Folders
+    summary: Delete Media Folder
+    description: |
+      Delete a media folder and optionally its contents.
+      
+      **Safety Features:**
+      - Empty folder validation
+      - Recursive deletion option
+      - File usage validation
+      - Audit trail logging
+    operationId: deleteMediaFolder
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: recursive
+        in: query
+        description: Delete folder and all its contents
+        schema:
+          type: boolean
+          default: false
+        example: false
+      - name: force
+        in: query
+        description: Force deletion even if files are in use (requires admin permission)
+        schema:
+          type: boolean
+          default: false
+        example: false
+    responses:
+      '200':
+        description: Media folder deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    message:
                       type: string
-                      enum: [center, top, bottom, left, right, smart]
-                      default: "center"
-                      example: "center"
-                    watermark:
+                      example: "Media folder deleted successfully"
+                    data:
                       type: object
                       properties:
-                        enabled:
-                          type: boolean
-                          default: false
-                          example: true
-                        position:
-                          type: string
-                          enum: [top-left, top-right, bottom-left, bottom-right, center]
-                          default: "bottom-right"
-                          example: "bottom-right"
-                        opacity:
-                          type: number
-                          minimum: 0
-                          maximum: 1
-                          default: 0.7
-                          example: 0.7
+                        deleted_files:
+                          type: integer
+                          example: 0
+                        deleted_subfolders:
+                          type: integer
+                          example: 0
+      '400':
+        description: Folder is not empty or contains files in use
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
             examples:
-              thumbnail:
-                summary: Create thumbnail transformation
+              folder_not_empty:
+                summary: Folder contains files
                 value:
-                  name: "thumbnail_300x300"
-                  params:
-                    width: 300
-                    height: 300
-                    quality: 85
-                    format: "webp"
-                    crop: "center"
-              watermarked:
-                summary: Create watermarked version
+                  success: false
+                  error:
+                    code: "FOLDER_NOT_EMPTY"
+                    message: "Cannot delete folder that contains files or subfolders"
+                    details:
+                      file_count: 5
+                      subfolder_count: 2
+              files_in_use:
+                summary: Contains files in use
                 value:
-                  name: "watermarked_large"
-                  params:
-                    width: 1200
-                    quality: 90
-                    format: "jpeg"
-                    watermark:
-                      enabled: true
-                      position: "bottom-right"
-                      opacity: 0.7
-      responses:
-        '201':
-          description: Transformation created successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaTransformation'
-                      message:
-                        type: string
-                        example: "Media transformation created successfully"
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media file not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '409':
-          description: Transformation with this name already exists
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "TRANSFORMATION_EXISTS"
-                  message: "Transformation with this name already exists for this file"
-        '500':
-          $ref: '#/components/responses/ServerError'
+                  success: false
+                  error:
+                    code: "FILES_IN_USE"
+                    message: "Cannot delete folder containing files that are currently in use"
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media folder not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
 
-  # ================================================================
-  # MEDIA ANALYTICS ENDPOINTS
-  # ================================================================
-  /media/analytics:
-    get:
-      tags:
-        - Media Analytics
-      summary: Get Media Analytics Summary
-      description: |
-        Retrieve comprehensive media analytics and usage statistics.
-        
-        **Analytics Include:**
-        - Total files and storage usage
-        - Most viewed/downloaded files
-        - Storage usage by file type
-        - Activity timeline
-        - Performance metrics
-      operationId: getMediaAnalytics
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: period
-          in: query
-          description: Analytics time period
-          schema:
-            type: string
-            enum: [day, week, month, year]
-            default: month
-          example: "month"
-        - name: file_type
-          in: query
-          description: Filter by specific file type
-          schema:
-            type: string
-            enum: [image, document, video, audio, design, archive]
-          example: "image"
-        - name: from_date
-          in: query
-          description: Start date for analytics period
-          schema:
-            type: string
-            format: date
-          example: "2024-10-01"
-        - name: to_date
-          in: query
-          description: End date for analytics period
-          schema:
-            type: string
-            format: date
-          example: "2024-11-12"
-      responses:
-        '200':
-          description: Media analytics retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/MediaAnalyticsSummary'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '500':
-          $ref: '#/components/responses/ServerError'
+/media/folders/{uuid}/contents:
+  get:
+    tags:
+      - Media Folders
+    summary: Get Folder Contents
+    description: |
+      Retrieve all files and subfolders within a specific folder.
+      
+      **Features:**
+      - Combined file and folder listing
+      - Filtering by file types
+      - Optional recursive traversal
+      - Sorting and pagination
+    operationId: getFolderContents
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: include_subfolders
+        in: query
+        description: Include files from subfolders recursively
+        schema:
+          type: boolean
+          default: false
+        example: false
+      - name: file_types
+        in: query
+        description: Filter by file types (comma-separated)
+        schema:
+          type: string
+        example: "image,document"
+      - name: sort
+        in: query
+        description: Sort order
+        schema:
+          type: string
+          enum: [name, created_at, file_size, file_type]
+          default: name
+        example: "created_at"
+      - name: order
+        in: query
+        description: Sort direction
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: asc
+        example: "desc"
+    responses:
+      '200':
+        description: Folder contents retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        folders:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/MediaFolder'
+                        files:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/MediaFile'
+                        summary:
+                          type: object
+                          properties:
+                            total_folders:
+                              type: integer
+                              example: 3
+                            total_files:
+                              type: integer
+                              example: 15
+                            total_size:
+                              type: integer
+                              format: int64
+                              example: 52428800
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media folder not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
 
-  /media/files/{uuid}/usage:
-    get:
-      tags:
-        - Media Analytics
-      summary: Get File Usage Information
-      description: |
-        Retrieve detailed usage information for a specific media file.
-        
-        **Usage Information:**
-        - Where the file is used throughout the system
-        - Usage context and metadata
-        - Reference to related entities
-        - Usage frequency and patterns
-      operationId: getFileUsage
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/TenantHeader'
-        - name: uuid
-          in: path
-          required: true
-          description: Media file UUID
-          schema:
-            type: string
-            format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
-      responses:
-        '200':
-          description: File usage information retrieved successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/BaseResponse'
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          usage_records:
-                            type: array
-                            items:
-                              $ref: '#/components/schemas/MediaUsage'
-                          summary:
+# ================================================================
+# MEDIA TAG ENDPOINTS
+# ================================================================
+/media/tags:
+  get:
+    tags:
+      - Media Tags
+    summary: List Media Tags
+    description: |
+      Retrieve list of media tags with usage statistics and filtering options.
+      
+      **Features:**
+      - Category-based filtering
+      - Search by tag name
+      - Usage count sorting
+      - Color-coded organization
+    operationId: listMediaTags
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: category
+        in: query
+        description: Filter by tag category
+        schema:
+          type: string
+          maxLength: 50
+        example: "materials"
+      - name: search
+        in: query
+        description: Search in tag name and description
+        schema:
+          type: string
+          maxLength: 255
+        example: "glass"
+      - name: sort
+        in: query
+        description: Sort field
+        schema:
+          type: string
+          enum: [name, usage_count, created_at, category]
+          default: name
+        example: "usage_count"
+      - name: order
+        in: query
+        description: Sort direction
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: asc
+        example: "desc"
+    responses:
+      '200':
+        description: Media tags retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/MediaTag'
+                    meta:
+                      type: object
+                      properties:
+                        categories:
+                          type: array
+                          items:
                             type: object
                             properties:
-                              total_usage:
+                              name:
+                                type: string
+                                example: "materials"
+                              count:
                                 type: integer
                                 example: 8
-                              usage_contexts:
-                                type: object
-                                additionalProperties:
-                                  type: integer
-                                example:
-                                  product_image: 3
-                                  gallery_image: 2
-                                  design_file: 3
-                              can_be_deleted:
-                                type: boolean
-                                example: false
-                                description: Whether file can be safely deleted
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          description: Media file not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          $ref: '#/components/responses/ServerError'
+                        total_tags:
+                          type: integer
+                          example: 25
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+  post:
+    tags:
+      - Media Tags
+    summary: Create Media Tag
+    description: |
+      Create a new media tag for file organization and categorization.
+      
+      **Features:**
+      - Unique tag name per tenant
+      - Automatic slug generation
+      - Color coding for visual organization
+      - Category assignment
+    operationId: createMediaTag
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MediaTagCreateInput'
+          examples:
+            material_tag:
+              summary: Create material tag
+              value:
+                name: "Glass Etching"
+                description: "Images and designs related to glass etching projects"
+                color: "#28a745"
+                category: "materials"
+            project_tag:
+              summary: Create project tag
+              value:
+                name: "Customer Project A"
+                description: "Files for specific customer project"
+                color: "#007bff"
+                category: "projects"
+    responses:
+      '201':
+        description: Media tag created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaTag'
+                    message:
+                      type: string
+                      example: "Media tag created successfully"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        description: Tag name already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "TAG_EXISTS"
+                message: "Tag with this name already exists"
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+/media/tags/{uuid}:
+  get:
+    tags:
+      - Media Tags
+    summary: Get Media Tag Details
+    description: |
+      Retrieve detailed information about a specific media tag including usage statistics.
+    operationId: getMediaTag
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media tag UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: Media tag details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      allOf:
+                        - $ref: '#/components/schemas/MediaTag'
+                        - type: object
+                          properties:
+                            recent_files:
+                              type: array
+                              items:
+                                $ref: '#/components/schemas/MediaFile'
+                              description: Recent files using this tag
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media tag not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+  put:
+    tags:
+      - Media Tags
+    summary: Update Media Tag
+    description: |
+      Update media tag properties and organization.
+    operationId: updateMediaTag
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media tag UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MediaTagUpdateInput'
+          examples:
+            update_tag:
+              summary: Update tag properties
+              value:
+                name: "Updated Tag Name"
+                description: "Updated description"
+                color: "#dc3545"
+                category: "updated_category"
+    responses:
+      '200':
+        description: Media tag updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaTag'
+                    message:
+                      type: string
+                      example: "Media tag updated successfully"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media tag not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+  delete:
+    tags:
+      - Media Tags
+    summary: Delete Media Tag
+    description: |
+      Delete a media tag and remove it from all associated files.
+      
+      **Features:**
+      - Automatic removal from all files
+      - Usage count validation
+      - Audit trail logging
+    operationId: deleteMediaTag
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media tag UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: Media tag deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Media tag deleted successfully"
+                    data:
+                      type: object
+                      properties:
+                        removed_from_files:
+                          type: integer
+                          example: 15
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media tag not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+# ================================================================
+# MEDIA TRANSFORMATIONS ENDPOINTS
+# ================================================================
+/media/files/{uuid}/transformations:
+  get:
+    tags:
+      - Media Transformations
+    summary: List File Transformations
+    description: |
+      Retrieve all available transformations for a specific media file.
+      
+      **Features:**
+      - All transformation variants
+      - Size and format information
+      - Download URLs for each transformation
+    operationId: listFileTransformations
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: File transformations retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/MediaTransformation'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media file not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+  post:
+    tags:
+      - Media Transformations
+    summary: Create File Transformation
+    description: |
+      Create a new transformation variant of a media file.
+      
+      **Transformation Types:**
+      - Resize with various algorithms
+      - Format conversion (WebP, AVIF)
+      - Quality optimization
+      - Watermark application
+      - Crop and aspect ratio adjustment
+    operationId: createFileTransformation
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - params
+            properties:
+              name:
+                type: string
+                maxLength: 100
+                description: Transformation name/identifier
+                example: "thumbnail_300x300"
+              params:
+                type: object
+                description: Transformation parameters
+                properties:
+                  width:
+                    type: integer
+                    minimum: 1
+                    maximum: 4000
+                    example: 300
+                  height:
+                    type: integer
+                    minimum: 1
+                    maximum: 4000
+                    example: 300
+                  quality:
+                    type: integer
+                    minimum: 1
+                    maximum: 100
+                    default: 85
+                    example: 85
+                  format:
+                    type: string
+                    enum: [jpeg, png, webp, avif]
+                    default: "webp"
+                    example: "webp"
+                  crop:
+                    type: string
+                    enum: [center, top, bottom, left, right, smart]
+                    default: "center"
+                    example: "center"
+                  watermark:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                        default: false
+                        example: true
+                      position:
+                        type: string
+                        enum: [top-left, top-right, bottom-left, bottom-right, center]
+                        default: "bottom-right"
+                        example: "bottom-right"
+                      opacity:
+                        type: number
+                        minimum: 0
+                        maximum: 1
+                        default: 0.7
+                        example: 0.7
+          examples:
+            thumbnail:
+              summary: Create thumbnail transformation
+              value:
+                name: "thumbnail_300x300"
+                params:
+                  width: 300
+                  height: 300
+                  quality: 85
+                  format: "webp"
+                  crop: "center"
+            watermarked:
+              summary: Create watermarked version
+              value:
+                name: "watermarked_large"
+                params:
+                  width: 1200
+                  quality: 90
+                  format: "jpeg"
+                  watermark:
+                    enabled: true
+                    position: "bottom-right"
+                    opacity: 0.7
+    responses:
+      '201':
+        description: Transformation created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaTransformation'
+                    message:
+                      type: string
+                      example: "Media transformation created successfully"
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media file not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '409':
+        description: Transformation with this name already exists
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: "TRANSFORMATION_EXISTS"
+                message: "Transformation with this name already exists for this file"
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+# ================================================================
+# MEDIA ANALYTICS ENDPOINTS
+# ================================================================
+/media/analytics:
+  get:
+    tags:
+      - Media Analytics
+    summary: Get Media Analytics Summary
+    description: |
+      Retrieve comprehensive media analytics and usage statistics.
+      
+      **Analytics Include:**
+      - Total files and storage usage
+      - Most viewed/downloaded files
+      - Storage usage by file type
+      - Activity timeline
+      - Performance metrics
+    operationId: getMediaAnalytics
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: period
+        in: query
+        description: Analytics time period
+        schema:
+          type: string
+          enum: [day, week, month, year]
+          default: month
+        example: "month"
+      - name: file_type
+        in: query
+        description: Filter by specific file type
+        schema:
+          type: string
+          enum: [image, document, video, audio, design, archive]
+        example: "image"
+      - name: from_date
+        in: query
+        description: Start date for analytics period
+        schema:
+          type: string
+          format: date
+        example: "2024-10-01"
+      - name: to_date
+        in: query
+        description: End date for analytics period
+        schema:
+          type: string
+          format: date
+        example: "2024-11-12"
+    responses:
+      '200':
+        description: Media analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/MediaAnalyticsSummary'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+/media/files/{uuid}/usage:
+  get:
+    tags:
+      - Media Analytics
+    summary: Get File Usage Information
+    description: |
+      Retrieve detailed usage information for a specific media file.
+      
+      **Usage Information:**
+      - Where the file is used throughout the system
+      - Usage context and metadata
+      - Reference to related entities
+      - Usage frequency and patterns
+    operationId: getFileUsage
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: File usage information retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        usage_records:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/MediaUsage'
+                        summary:
+                          type: object
+                          properties:
+                            total_usage:
+                              type: integer
+                              example: 8
+                            usage_contexts:
+                              type: object
+                              additionalProperties:
+                                type: integer
+                              example:
+                                product_image: 3
+                                gallery_image: 2
+                                design_file: 3
+                            can_be_deleted:
+                              type: boolean
+                              example: false
+                              description: Whether file can be safely deleted
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        description: Media file not found
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        $ref: '#/components/responses/ServerError'
