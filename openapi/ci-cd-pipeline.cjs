@@ -915,7 +915,7 @@ fi`;
             },
             "repository": {
                 "type": "git",
-                "url": "https://github.com/your-org/stencil-cms.git",
+                "url": "https://github.com/your-org/stencil.git",
                 "directory": "openapi"
             },
             "ci": {

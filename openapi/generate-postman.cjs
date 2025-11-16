@@ -52,7 +52,7 @@ function generatePostmanCollection() {
         variable: [
             {
                 key: "base_url",
-                value: "https://api.stencil-cms.com/api/v1",
+                value: "https://api.stencil.com/api/v1",
                 type: "string"
             },
             {
@@ -87,11 +87,11 @@ function generatePostmanCollection() {
         });
     });
     
-    const outputPath = path.join(__dirname, 'generated', 'Stencil-CMS-API.postman_collection.json');
+    const outputPath = path.join(__dirname, 'generated', 'Stencil-API.postman_collection.json');
     fs.writeFileSync(outputPath, JSON.stringify(collection, null, 2));
     
     console.log('✅ Postman collection generated successfully!');
-    console.log(`📄 File: generated/Stencil-CMS-API.postman_collection.json`);
+    console.log(`📄 File: generated/Stencil-API.postman_collection.json`);
     console.log(`📊 Modules: ${modules.length}`);
     console.log(`🎯 Total endpoints: ${modules.reduce((sum, m) => sum + m.endpoints.length, 0)}`);
     

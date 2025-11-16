@@ -1,5 +1,5 @@
 {
-  "name": "stencil-cms-openapi-tools",
+  "name": "stencil-openapi-tools",
   "version": "1.0.0",
   "description": "OpenAPI validation and generation tools for Stencil CMS",
   "scripts": {
@@ -32,14 +32,14 @@
     "swagger",
     "api",
     "validation",
-    "stencil-cms",
+    "stencil",
     "multi-tenant"
   ],
   "author": "CanvaStack Development Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/canvastack/stencil-cms.git",
+    "url": "https://github.com/canvastack/stencil.git",
     "directory": "openapi/tools"
   },
   "dependencies": {
