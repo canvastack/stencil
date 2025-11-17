@@ -20,77 +20,73 @@ class TenantDataSeeder extends Seeder
     public function run(): void
     {
         $tenants = TenantEloquentModel::all();
+        
+        $this->command->info("📊 Seeding business data for {$tenants->count()} tenants...");
 
         foreach ($tenants as $tenant) {
-            $this->seedTenantUsers($tenant);
+            $this->command->info("   Processing: {$tenant->name}");
+            $this->seedAdditionalTenantUsers($tenant);
             $this->seedCustomers($tenant);
             $this->seedVendors($tenant);
             $this->seedProducts($tenant);
             $this->seedOrders($tenant);
         }
 
-        $this->command->info('Tenant business data seeded successfully!');
+        $this->command->info('✅ Tenant business data seeded successfully!');
+        
+        // Summary
+        $totalCustomers = CustomerEloquentModel::count();
+        $totalProducts = ProductEloquentModel::count();
+        $totalOrders = OrderEloquentModel::count();
+        $totalVendors = VendorEloquentModel::count();
+        
+        $this->command->info("📈 Data Summary:");
+        $this->command->info("   - Customers: {$totalCustomers}");
+        $this->command->info("   - Products: {$totalProducts}");
+        $this->command->info("   - Orders: {$totalOrders}");
+        $this->command->info("   - Vendors: {$totalVendors}");
     }
 
-    private function seedTenantUsers($tenant): void
+    private function seedAdditionalTenantUsers($tenant): void
     {
-        // Create tenant owner
-        \App\Models\User::create([
-            'id' => Str::uuid(),
-            'tenant_id' => $tenant->id,
-            'name' => 'Owner ' . $tenant->name,
-            'email' => 'owner@' . $tenant->slug . '.local',
-            'password' => Hash::make('password123'),
-            'status' => 'active',
-            'department' => 'Management',
-            'location' => [
-                'address' => 'Jl. Sudirman No. 1',
-                'city' => 'Jakarta',
-                'province' => 'DKI Jakarta',
-                'postal_code' => '12190'
-            ]
-        ]);
+        // Skip if tenant already has users (from MultiTenantBusinessSeeder)
+        $existingUsers = \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::where('tenant_id', $tenant->id)->count();
+        if ($existingUsers >= 5) {
+            return; // Already has enough users
+        }
 
-        // Create manager
-        \App\Models\User::create([
-            'id' => Str::uuid(),
-            'tenant_id' => $tenant->id,
-            'name' => 'Manager ' . $tenant->name,
-            'email' => 'manager@' . $tenant->slug . '.local',
-            'password' => Hash::make('password123'),
-            'status' => 'active',
-            'department' => 'Operations',
-            'location' => [
-                'address' => 'Jl. Thamrin No. 5',
-                'city' => 'Jakarta',
-                'province' => 'DKI Jakarta',
-                'postal_code' => '10350'
-            ]
-        ]);
-
-        // Create employees
-        for ($i = 1; $i <= 3; $i++) {
-            \App\Models\User::create([
-                'id' => Str::uuid(),
+        // Create additional employees (10-15 per tenant for performance testing)
+        $departments = ['Sales', 'Support', 'Operations', 'Marketing', 'Finance', 'HR', 'IT', 'Quality Control'];
+        $positions = ['Staff', 'Senior Staff', 'Team Lead', 'Coordinator', 'Specialist', 'Executive'];
+        
+        for ($i = 1; $i <= 12; $i++) {
+            $department = $departments[array_rand($departments)];
+            $position = $positions[array_rand($positions)];
+            
+            \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::create([
                 'tenant_id' => $tenant->id,
-                'name' => "Employee {$i} - {$tenant->name}",
+                'name' => "{$position} {$i} - {$tenant->name}",
                 'email' => "employee{$i}@" . $tenant->slug . '.local',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('Employee2024!'),
                 'status' => rand(0, 10) > 1 ? 'active' : 'inactive',
-                'department' => ['Sales', 'Support', 'Operations'][rand(0, 2)],
+                'department' => $department,
+                'phone' => '+628' . rand(1000000000, 9999999999),
+                'email_verified_at' => now()->subDays(rand(1, 30)),
                 'location' => [
-                    'address' => 'Jl. Gatot Subroto No. ' . rand(10, 99),
-                    'city' => ['Jakarta', 'Surabaya', 'Bandung'][rand(0, 2)],
-                    'province' => ['DKI Jakarta', 'Jawa Timur', 'Jawa Barat'][rand(0, 2)],
-                    'postal_code' => rand(10000, 99999)
-                ]
+                    'address' => 'Jl. ' . ['Gatot Subroto', 'Sudirman', 'Thamrin', 'Kuningan', 'Senayan'][rand(0, 4)] . ' No. ' . rand(10, 99),
+                    'city' => ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang'][rand(0, 4)],
+                    'province' => ['DKI Jakarta', 'Jawa Timur', 'Jawa Barat', 'Sumatera Utara', 'Jawa Tengah'][rand(0, 4)],
+                    'postal_code' => (string) rand(10000, 99999)
+                ],
+                'last_login_at' => rand(0, 5) > 1 ? now()->subDays(rand(0, 7)) : null,
             ]);
         }
     }
 
     private function seedCustomers($tenant): void
     {
-        $customerData = [
+        // Base customer data (10 core customers)
+        $baseCustomerData = [
             ['Budi', 'Santoso', 'budi.santoso@email.com', '+6281234567890', 'individual'],
             ['Siti', 'Rahayu', 'siti.rahayu@email.com', '+6281234567891', 'individual'],
             ['Ahmad', 'Wijaya', 'ahmad.wijaya@email.com', '+6281234567892', 'individual'],
@@ -103,37 +99,81 @@ class TenantDataSeeder extends Seeder
             ['Joko', 'Prabowo', 'joko.prabowo@email.com', '+6281234567899', 'individual']
         ];
 
-        foreach ($customerData as $index => $data) {
+        // Generate additional customers (total 35-45 per tenant)
+        $firstNames = ['Andi', 'Bagus', 'Citra', 'Dedi', 'Eka', 'Fajar', 'Gita', 'Hadi', 'Indra', 'Juni', 'Kartika', 'Lia', 'Mira', 'Nico', 'Oia', 'Putra', 'Qori', 'Rina', 'Sari', 'Tono', 'Umi', 'Vita', 'Wati', 'Xena', 'Yuda', 'Zaki'];
+        $lastNames = ['Wijaya', 'Susanto', 'Permana', 'Lestari', 'Pratama', 'Sari', 'Utama', 'Indah', 'Kusuma', 'Purnama', 'Salsabila', 'Maharani', 'Handoko', 'Setiawan'];
+        $companies = ['PT Sentosa', 'CV Makmur', 'UD Jaya', 'PT Bahagia', 'CV Sejahtera', 'PT Mandiri', 'UD Sukses', 'PT Berkah', 'CV Gemilang', 'PT Mitra'];
+        
+        $customerCount = rand(35, 45);
+        
+        // Create base customers
+        foreach ($baseCustomerData as $data) {
             [$firstName, $lastName, $email, $phone, $type] = $data;
-            
-            CustomerEloquentModel::create([
-                'id' => Str::uuid(),
-                'tenant_id' => $tenant->id,
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-                'email' => $email,
-                'phone' => $phone,
-                'address' => [
-                    'street' => 'Jl. ' . ['Sudirman', 'Thamrin', 'Kuningan', 'Senayan', 'Menteng'][rand(0, 4)] . ' No. ' . rand(1, 100),
-                    'city' => ['Jakarta', 'Surabaya', 'Bandung', 'Yogyakarta', 'Semarang'][rand(0, 4)],
-                    'province' => ['DKI Jakarta', 'Jawa Timur', 'Jawa Barat', 'DI Yogyakarta', 'Jawa Tengah'][rand(0, 4)],
-                    'postal_code' => rand(10000, 99999),
-                    'country' => 'Indonesia'
-                ],
-                'status' => rand(0, 10) > 1 ? 'active' : 'suspended',
-                'type' => $type,
-                'company' => $type === 'business' ? $firstName : null,
-                'tax_number' => $type === 'business' ? '01.' . rand(100, 999) . '.' . rand(100, 999) . '.1-011.000' : null,
-                'notes' => rand(0, 5) > 3 ? 'Customer notes for ' . $firstName : null,
-                'tags' => array_slice(['vip', 'regular', 'wholesale', 'retail', 'new'], 0, rand(1, 3)),
-                'last_order_at' => rand(0, 10) > 3 ? Carbon::now()->subDays(rand(1, 90)) : null
-            ]);
+            $this->createCustomer($tenant, $firstName, $lastName, $email, $phone, $type);
         }
+        
+        // Create additional random customers
+        for ($i = 11; $i <= $customerCount; $i++) {
+            $type = rand(0, 10) > 7 ? 'business' : 'individual'; // 30% business, 70% individual
+            
+            if ($type === 'business') {
+                $companyName = $companies[array_rand($companies)] . ' ' . ['Nusantara', 'Indonesia', 'Sejahtera', 'Makmur'][rand(0, 3)];
+                $firstName = $companyName;
+                $lastName = ['Manager', 'Direktur', 'Owner', 'CEO'][rand(0, 3)];
+                $email = strtolower(str_replace([' ', '.'], ['', ''], $companyName)) . '@company' . $i . '.com';
+            } else {
+                $firstName = $firstNames[array_rand($firstNames)];
+                $lastName = $lastNames[array_rand($lastNames)];
+                $email = strtolower($firstName . '.' . $lastName . $i) . '@email.com';
+            }
+            
+            $phone = '+628' . rand(1000000000, 9999999999);
+            $this->createCustomer($tenant, $firstName, $lastName, $email, $phone, $type);
+        }
+    }
+    
+    private function createCustomer($tenant, $firstName, $lastName, $email, $phone, $type): void
+    {
+        $cities = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Palembang', 'Makassar', 'Yogyakarta', 'Malang', 'Denpasar'];
+        $provinces = ['DKI Jakarta', 'Jawa Timur', 'Jawa Barat', 'Sumatera Utara', 'Jawa Tengah', 'Sumatera Selatan', 'Sulawesi Selatan', 'DI Yogyakarta', 'Jawa Timur', 'Bali'];
+        $streets = ['Sudirman', 'Thamrin', 'Kuningan', 'Senayan', 'Menteng', 'Kemang', 'Pondok Indah', 'Kelapa Gading', 'PIK', 'BSD'];
+        
+        $addressText = 'Jl. ' . $streets[rand(0, count($streets) - 1)] . ' No. ' . rand(1, 100) . ', ' 
+                      . $cities[rand(0, count($cities) - 1)] . ', ' 
+                      . $provinces[rand(0, count($provinces) - 1)] . ' ' . rand(10000, 99999);
+        
+        $metadata = [];
+        if ($type === 'business') {
+            $metadata['tax_number'] = '01.' . rand(100, 999) . '.' . rand(100, 999) . '.1-011.000';
+            $metadata['business_type'] = ['corporation', 'partnership', 'sole_proprietorship'][rand(0, 2)];
+        }
+        
+        if (rand(0, 5) > 3) {
+            $metadata['notes'] = 'Customer since ' . rand(2020, 2024) . '. ' . ['Reliable client', 'VIP customer', 'Bulk purchaser', 'Regular buyer'][rand(0, 3)];
+        }
+
+        CustomerEloquentModel::create([
+            'tenant_id' => $tenant->id,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'email' => $email,
+            'phone' => $phone,
+            'address' => $addressText,
+            'status' => rand(0, 20) > 1 ? 'active' : 'suspended', // 95% active
+            'type' => $type,
+            'company_name' => $type === 'business' ? $firstName : null,
+            'metadata' => !empty($metadata) ? $metadata : null,
+            'tags' => array_slice(['vip', 'regular', 'wholesale', 'retail', 'new', 'premium', 'loyal'], 0, rand(1, 4)),
+            'last_order_at' => rand(0, 10) > 2 ? Carbon::now()->subDays(rand(1, 180)) : null,
+            'created_at' => Carbon::now()->subDays(rand(1, 365)),
+            'updated_at' => Carbon::now()->subDays(rand(0, 30))
+        ]);
     }
 
     private function seedVendors($tenant): void
     {
-        $vendorData = [
+        // Base vendor data
+        $baseVendorData = [
             ['PT Supplier Utama', 'supplier.utama@email.com', '+6281111111111', 'Budi Supplier'],
             ['CV Distributor Jaya', 'distributor.jaya@email.com', '+6281111111112', 'Siti Distributor'],
             ['UD Grosir Murah', 'grosir.murah@email.com', '+6281111111113', 'Ahmad Grosir'],
@@ -141,159 +181,265 @@ class TenantDataSeeder extends Seeder
             ['CV Import Eksport', 'import.eksport@email.com', '+6281111111115', 'Rudi Import']
         ];
 
-        foreach ($vendorData as $data) {
+        // Generate additional vendors (total 20-25 per tenant)
+        $companyPrefixes = ['PT', 'CV', 'UD', 'TBK'];
+        $businessNames = ['Supplier', 'Distributor', 'Manufaktur', 'Trading', 'Ekspor', 'Impor', 'Grosir', 'Retail', 'Industri', 'Logistik'];
+        $descriptors = ['Utama', 'Jaya', 'Makmur', 'Sejahtera', 'Bersama', 'Mandiri', 'Prima', 'Global', 'Nusantara', 'Indonesia'];
+        $contactNames = ['Bambang', 'Sari', 'Agus', 'Nina', 'Hendra', 'Lisa', 'Dedi', 'Maya', 'Rudi', 'Eka'];
+        $cities = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Palembang', 'Makassar'];
+        
+        $vendorCount = rand(20, 25);
+        
+        // Create base vendors
+        foreach ($baseVendorData as $data) {
             [$name, $email, $phone, $contactPerson] = $data;
-            
-            VendorEloquentModel::create([
-                'id' => Str::uuid(),
-                'tenant_id' => $tenant->id,
-                'name' => $name,
-                'email' => $email,
-                'phone' => $phone,
-                'address' => 'Jl. ' . ['Industri', 'Gudang', 'Pabrik', 'Logistik'][rand(0, 3)] . ' No. ' . rand(1, 100) . ', Jakarta',
-                'status' => rand(0, 10) > 1 ? 'active' : 'inactive',
-                'contact_person' => $contactPerson,
-                'notes' => rand(0, 5) > 3 ? 'Vendor notes for ' . $name : null
-            ]);
+            $this->createVendor($tenant, $name, $email, $phone, $contactPerson);
         }
+        
+        // Create additional vendors
+        for ($i = 6; $i <= $vendorCount; $i++) {
+            $prefix = $companyPrefixes[array_rand($companyPrefixes)];
+            $businessName = $businessNames[array_rand($businessNames)];
+            $descriptor = $descriptors[array_rand($descriptors)];
+            $contactName = $contactNames[array_rand($contactNames)];
+            
+            $name = "{$prefix} {$businessName} {$descriptor}";
+            $email = strtolower(str_replace([' ', '.'], ['', ''], $name)) . "{$i}@vendor.com";
+            $phone = '+628' . rand(1000000000, 9999999999);
+            $contactPerson = $contactName . ' ' . ['Manager', 'Director', 'Sales', 'Owner'][rand(0, 3)];
+            
+            $this->createVendor($tenant, $name, $email, $phone, $contactPerson);
+        }
+    }
+    
+    private function createVendor($tenant, $name, $email, $phone, $contactPerson): void
+    {
+        $streets = ['Industri', 'Gudang', 'Pabrik', 'Logistik', 'Raya', 'Perdagangan', 'Bisnis'];
+        $cities = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Palembang', 'Makassar'];
+        
+        $address = 'Jl. ' . $streets[rand(0, count($streets) - 1)] . ' No. ' . rand(1, 100) . ', ' . $cities[rand(0, count($cities) - 1)];
+        
+        // Create contact person array
+        $contacts = [
+            [
+                'name' => $contactPerson,
+                'position' => ['Manager', 'Director', 'Sales', 'Owner'][rand(0, 3)],
+                'phone' => $phone,
+                'email' => $email
+            ]
+        ];
+        
+        $metadata = [];
+        if (rand(0, 5) > 2) {
+            $metadata['notes'] = 'Partnership since ' . rand(2018, 2024) . '. ' . ['Reliable supplier', 'Good quality products', 'Competitive pricing', 'Fast delivery'][rand(0, 3)];
+        }
+        
+        VendorEloquentModel::create([
+            'tenant_id' => $tenant->id,
+            'name' => $name,
+            'company_name' => $name,
+            'email' => $email,
+            'phone' => $phone,
+            'address' => $address,
+            'status' => rand(0, 15) > 1 ? 'active' : 'inactive', // 93% active
+            'tax_id' => '01.' . rand(100, 999) . '.' . rand(100, 999) . '.1-011.000',
+            'contacts' => $contacts,
+            'payment_terms' => [
+                'method' => ['cash', 'transfer', 'credit'][rand(0, 2)],
+                'terms' => ['NET 30', 'NET 60', 'COD', 'Prepaid'][rand(0, 3)],
+                'discount' => rand(0, 10) > 7 ? rand(2, 10) : 0
+            ],
+            'metadata' => !empty($metadata) ? $metadata : null,
+            'created_at' => Carbon::now()->subDays(rand(30, 730)),
+            'updated_at' => Carbon::now()->subDays(rand(0, 30))
+        ]);
     }
 
     private function seedProducts($tenant): void
     {
         $productCategories = [
-            'electronics' => ['Laptop', 'Smartphone', 'Tablet', 'Headphone', 'Speaker'],
-            'fashion' => ['T-Shirt', 'Jeans', 'Dress', 'Shoes', 'Bag'],
-            'food' => ['Coffee', 'Tea', 'Snack', 'Beverage', 'Cookies'],
-            'automotive' => ['Engine Oil', 'Tire', 'Battery', 'Filter', 'Brake Pad'],
-            'home' => ['Chair', 'Table', 'Lamp', 'Curtain', 'Carpet']
+            'electronics' => ['Laptop', 'Smartphone', 'Tablet', 'Headphone', 'Speaker', 'Camera', 'Monitor', 'Keyboard', 'Mouse', 'Webcam'],
+            'fashion' => ['T-Shirt', 'Jeans', 'Dress', 'Shoes', 'Bag', 'Jacket', 'Sweater', 'Hat', 'Belt', 'Watch'],
+            'food' => ['Coffee', 'Tea', 'Snack', 'Beverage', 'Cookies', 'Cake', 'Bread', 'Juice', 'Water', 'Energy Drink'],
+            'automotive' => ['Engine Oil', 'Tire', 'Battery', 'Filter', 'Brake Pad', 'Spark Plug', 'Coolant', 'Wiper', 'Light Bulb', 'Fuse'],
+            'home' => ['Chair', 'Table', 'Lamp', 'Curtain', 'Carpet', 'Sofa', 'Bed', 'Mirror', 'Vase', 'Clock'],
+            'etching' => ['Aluminum Plate', 'Steel Sheet', 'Glass Panel', 'Acrylic Board', 'Copper Foil', 'Etching Acid', 'Resist Film', 'Template', 'Engraving Tool', 'Finishing Spray']
         ];
 
-        $businessType = $tenant->data['business_type'] ?? 'general';
+        $businessType = $tenant->settings['business_type'] ?? 'general';
         $category = match($businessType) {
             'electronics_retail' => 'electronics',
             'fashion_retail' => 'fashion',
             'food_beverage' => 'food',
             'automotive_service' => 'automotive',
-            default => array_keys($productCategories)[rand(0, 4)]
+            'home_decor' => 'home',
+            'etching' => 'etching',
+            default => array_keys($productCategories)[rand(0, count($productCategories) - 1)]
         };
 
-        $products = $productCategories[$category];
-
-        foreach ($products as $index => $productName) {
-            $price = rand(50000, 5000000);
-            $stock = rand(0, 100);
-            
-            ProductEloquentModel::create([
-                'id' => Str::uuid(),
-                'tenant_id' => $tenant->id,
-                'name' => $productName . ' ' . ['Premium', 'Standard', 'Economy', 'Deluxe', 'Basic'][rand(0, 4)],
-                'sku' => strtoupper(substr($category, 0, 3)) . '-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
-                'description' => 'High quality ' . $productName . ' with excellent features and durability.',
-                'price' => $price,
-                'currency' => 'IDR',
-                'status' => rand(0, 10) > 2 ? 'published' : 'draft',
-                'type' => ['physical', 'digital', 'service'][rand(0, 2)],
-                'stock_quantity' => $stock,
-                'low_stock_threshold' => rand(5, 20),
-                'images' => [
-                    '/images/products/' . strtolower($productName) . '_1.jpg',
-                    '/images/products/' . strtolower($productName) . '_2.jpg'
-                ],
-                'categories' => [$category, 'featured'],
-                'tags' => array_slice(['new', 'popular', 'discount', 'trending', 'bestseller'], 0, rand(1, 3)),
-                'weight' => rand(100, 5000) / 100, // 1-50kg
-                'dimensions' => [
-                    'length' => rand(10, 100),
-                    'width' => rand(10, 100), 
-                    'height' => rand(5, 50)
-                ],
-                'track_stock' => true,
-                'allow_backorder' => rand(0, 1) === 1,
-                'published_at' => Carbon::now()->subDays(rand(1, 30))
-            ]);
+        $baseProducts = $productCategories[$category];
+        $qualifiers = ['Premium', 'Standard', 'Economy', 'Deluxe', 'Basic', 'Pro', 'Max', 'Mini', 'Plus', 'Elite', 'Special', 'Limited'];
+        $productCount = rand(40, 50);
+        
+        // Create base category products
+        foreach ($baseProducts as $index => $productName) {
+            $this->createProduct($tenant, $productName, $category, $index + 1, $qualifiers);
         }
-
-        // Add some additional products
-        for ($i = 0; $i < 15; $i++) {
-            $price = rand(25000, 2500000);
-            $stock = rand(0, 200);
-            
-            ProductEloquentModel::create([
-                'id' => Str::uuid(),
-                'tenant_id' => $tenant->id,
-                'name' => 'Product ' . ($i + 6) . ' - ' . ['Pro', 'Max', 'Mini', 'Plus', 'Elite'][rand(0, 4)],
-                'sku' => 'PRD-' . str_pad($i + 6, 3, '0', STR_PAD_LEFT),
-                'description' => 'Quality product with great value for money and customer satisfaction.',
-                'price' => $price,
-                'currency' => 'IDR',
-                'status' => rand(0, 10) > 3 ? 'published' : 'draft',
-                'type' => ['physical', 'digital'][rand(0, 1)],
-                'stock_quantity' => $stock,
-                'low_stock_threshold' => rand(5, 15),
-                'images' => ['/images/products/product_' . ($i + 6) . '.jpg'],
-                'categories' => [$category],
-                'tags' => array_slice(['sale', 'new', 'featured'], 0, rand(1, 2)),
-                'weight' => rand(50, 3000) / 100,
-                'dimensions' => [
-                    'length' => rand(5, 80),
-                    'width' => rand(5, 80),
-                    'height' => rand(3, 30)
-                ],
-                'track_stock' => rand(0, 1) === 1,
-                'allow_backorder' => rand(0, 1) === 1,
-                'published_at' => rand(0, 1) ? Carbon::now()->subDays(rand(1, 60)) : null
-            ]);
+        
+        // Create additional products to reach target count
+        $additionalCount = $productCount - count($baseProducts);
+        for ($i = 0; $i < $additionalCount; $i++) {
+            $baseProduct = $baseProducts[array_rand($baseProducts)];
+            $variant = ['Variant', 'Model', 'Type', 'Series', 'Edition'][rand(0, 4)] . ' ' . chr(65 + rand(0, 25));
+            $productName = $baseProduct . ' ' . $variant;
+            $this->createProduct($tenant, $productName, $category, count($baseProducts) + $i + 1, $qualifiers);
         }
+    }
+    
+    private function createProduct($tenant, $productName, $category, $index, $qualifiers): void
+    {
+        $qualifier = $qualifiers[array_rand($qualifiers)];
+        $price = rand(25000, 15000000); // Wider price range
+        $stock = rand(0, 500); // Higher stock variety
+        $isDigital = rand(0, 10) > 7; // 30% chance for digital/service
+        
+        ProductEloquentModel::create([
+            'tenant_id' => $tenant->id,
+            'name' => $productName . ' ' . $qualifier,
+            'sku' => strtoupper(substr($category, 0, 3)) . '-' . str_pad($index, 4, '0', STR_PAD_LEFT),
+            'slug' => Str::slug($productName . ' ' . $qualifier) . '-' . $index,
+            'description' => $this->generateProductDescription($productName, $qualifier),
+            'price' => $price,
+            'currency' => 'IDR',
+            'status' => rand(0, 10) > 2 ? 'published' : 'draft', // 80% published
+            'type' => $isDigital ? ['digital', 'service'][rand(0, 1)] : 'physical',
+            'stock_quantity' => $isDigital ? 0 : $stock,
+            'low_stock_threshold' => $isDigital ? 0 : rand(5, 25),
+            'images' => [
+                '/images/products/' . Str::slug($productName) . '_1.jpg',
+                '/images/products/' . Str::slug($productName) . '_2.jpg',
+                '/images/products/' . Str::slug($productName) . '_3.jpg'
+            ],
+            'categories' => [$category, rand(0, 5) > 3 ? 'featured' : 'regular'],
+            'tags' => array_slice(['new', 'popular', 'discount', 'trending', 'bestseller', 'premium', 'sale', 'limited'], 0, rand(2, 5)),
+            'dimensions' => $isDigital ? null : [
+                'length' => rand(5, 200),
+                'width' => rand(5, 200),
+                'height' => rand(2, 100),
+                'weight' => rand(100, 10000) / 100 // 1-100kg
+            ],
+            'track_inventory' => !$isDigital,
+            'created_at' => Carbon::now()->subDays(rand(7, 365)),
+            'updated_at' => Carbon::now()->subDays(rand(0, 30))
+        ]);
+    }
+    
+    private function generateProductDescription($productName, $qualifier): string
+    {
+        $descriptions = [
+            "High quality {$productName} {$qualifier} with excellent features and durability. Perfect for both personal and professional use.",
+            "Premium {$productName} {$qualifier} designed with latest technology and superior materials for outstanding performance.",
+            "Professional grade {$productName} {$qualifier} built to meet the highest standards of quality and reliability.",
+            "Advanced {$productName} {$qualifier} featuring innovative design and exceptional functionality for maximum satisfaction.",
+            "Top-tier {$productName} {$qualifier} crafted with precision and attention to detail for superior user experience."
+        ];
+        
+        return $descriptions[array_rand($descriptions)];
     }
 
     private function seedOrders($tenant): void
     {
         $customers = CustomerEloquentModel::where('tenant_id', $tenant->id)->get();
-        $products = ProductEloquentModel::where('tenant_id', $tenant->id)->get();
+        $products = ProductEloquentModel::where('tenant_id', $tenant->id)->where('status', 'published')->get();
 
         if ($customers->isEmpty() || $products->isEmpty()) {
+            $this->command->warn("   Skipping orders for {$tenant->name} - insufficient customers or products");
             return;
         }
 
-        for ($i = 0; $i < 25; $i++) {
+        $orderCount = rand(50, 80); // Higher order volume for performance testing
+        $orderStatuses = [
+            'pending' => 15,      // 15%
+            'processing' => 20,   // 20%
+            'shipped' => 25,      // 25%  
+            'delivered' => 35,    // 35% (changed from completed)
+            'cancelled' => 5      // 5%
+        ];
+        
+        for ($i = 0; $i < $orderCount; $i++) {
             $customer = $customers->random();
-            $orderProducts = $products->random(rand(1, 4));
+            $orderProducts = $products->random(rand(1, 6)); // 1-6 items per order
             $totalAmount = 0;
             $items = [];
+            $discountAmount = 0;
 
             foreach ($orderProducts as $product) {
-                $quantity = rand(1, 5);
-                $price = $product->price;
+                $quantity = rand(1, 8); // Higher quantities
+                $basePrice = (int) $product->price;
+                
+                // Apply random discount to some items
+                $hasDiscount = rand(0, 10) > 7; // 30% chance
+                $discountPercent = $hasDiscount ? rand(5, 25) : 0;
+                $price = (int) ($basePrice * (1 - $discountPercent / 100));
                 $subtotal = $price * $quantity;
                 $totalAmount += $subtotal;
+                
+                if ($hasDiscount) {
+                    $discountAmount += ($basePrice - $price) * $quantity;
+                }
 
                 $items[] = [
                     'product_id' => $product->id,
                     'product_name' => $product->name,
                     'product_sku' => $product->sku,
                     'quantity' => $quantity,
-                    'unit_price' => $price,
+                    'unit_price' => $basePrice,
+                    'discount_percent' => $discountPercent,
+                    'final_price' => $price,
                     'subtotal' => $subtotal
                 ];
             }
+            
+            // Apply shipping cost
+            $shippingCost = $this->calculateShippingCost($totalAmount);
 
-            $orderDate = Carbon::now()->subDays(rand(1, 90));
-            $orderNumber = 'ORD-' . $orderDate->format('Ymd') . '-' . strtoupper(Str::random(6));
+            $orderDate = Carbon::now()->subDays(rand(1, 365)); // Orders up to 1 year ago
+            $orderNumber = $this->generateOrderNumber($tenant->slug, $orderDate, $i + 1);
+            
+            // Determine status based on weighted distribution
+            $status = $this->getRandomOrderStatus($orderStatuses);
+            
+            // More realistic status progression based on order date
+            if ($orderDate->diffInDays(now()) < 2) {
+                $status = ['pending', 'processing'][rand(0, 1)];
+            } elseif ($orderDate->diffInDays(now()) > 90 && $status === 'pending') {
+                $status = ['delivered', 'cancelled'][rand(0, 1)];
+            }
 
+            // Convert address string to shipping address array
+            $shippingAddress = [
+                'name' => $customer->first_name . ' ' . $customer->last_name,
+                'company' => $customer->company_name,
+                'address' => $customer->address,
+                'phone' => $customer->phone,
+                'email' => $customer->email
+            ];
+            
             OrderEloquentModel::create([
-                'id' => Str::uuid(),
                 'tenant_id' => $tenant->id,
                 'customer_id' => $customer->id,
                 'order_number' => $orderNumber,
-                'status' => ['pending', 'processing', 'shipped', 'completed', 'cancelled'][rand(0, 4)],
+                'status' => $status,
                 'total_amount' => $totalAmount,
+                'shipping_cost' => $shippingCost,
                 'currency' => 'IDR',
                 'items' => $items,
-                'shipping_address' => $customer->address,
-                'billing_address' => $customer->address,
-                'notes' => rand(0, 5) > 3 ? 'Order notes: ' . $orderNumber : null,
+                'shipping_address' => $shippingAddress,
+                'payment_method' => ['cash', 'transfer', 'credit_card', 'e_wallet'][rand(0, 3)],
+                'payment_status' => $this->getPaymentStatus($status),
+                'notes' => rand(0, 5) > 2 ? $this->generateOrderNotes($customer, $status) : null,
                 'created_at' => $orderDate,
-                'updated_at' => $orderDate->copy()->addHours(rand(1, 48))
+                'updated_at' => $this->getOrderUpdateDate($orderDate, $status)
             ]);
 
             // Update customer's last_order_at
@@ -301,5 +447,76 @@ class TenantDataSeeder extends Seeder
                 $customer->update(['last_order_at' => $orderDate]);
             }
         }
+    }
+    
+    private function calculateShippingCost($totalAmount): int
+    {
+        if ($totalAmount > 500000) return 0; // Free shipping over 500k
+        if ($totalAmount > 200000) return 15000; // Reduced shipping
+        return rand(25000, 50000); // Standard shipping
+    }
+    
+    private function generateOrderNumber($tenantSlug, $orderDate, $sequence): string
+    {
+        $prefix = strtoupper(substr($tenantSlug, 0, 3));
+        return $prefix . '-' . $orderDate->format('ymd') . '-' . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+    }
+    
+    private function getRandomOrderStatus($statusWeights): string
+    {
+        $rand = rand(1, 100);
+        $cumulative = 0;
+        
+        foreach ($statusWeights as $status => $weight) {
+            $cumulative += $weight;
+            if ($rand <= $cumulative) {
+                return $status;
+            }
+        }
+        
+        return 'delivered';
+    }
+    
+    private function getPaymentStatus($orderStatus): string
+    {
+        return match($orderStatus) {
+            'pending' => 'pending',
+            'cancelled' => 'failed',
+            default => 'paid'
+        };
+    }
+    
+    private function generateOrderNotes($customer, $status): string
+    {
+        $notes = [
+            'Customer requested express delivery',
+            'Special packaging required for fragile items',
+            'Corporate bulk order with NET 30 terms',
+            'Gift wrapping requested',
+            'Delivery to office address during business hours',
+            'Customer is a VIP client - priority handling',
+            'Follow up required for customer satisfaction'
+        ];
+        
+        $statusNotes = match($status) {
+            'cancelled' => ['Customer requested cancellation', 'Payment failed - order cancelled', 'Out of stock - order cancelled'],
+            'delivered' => ['Order delivered successfully', 'Customer satisfied with delivery', 'Repeat customer - excellent service'],
+            default => $notes
+        };
+        
+        return $statusNotes[array_rand($statusNotes)];
+    }
+    
+    private function getOrderUpdateDate($orderDate, $status): Carbon
+    {
+        $baseUpdate = $orderDate->copy();
+        
+        return match($status) {
+            'pending' => $baseUpdate->addHours(rand(1, 24)),
+            'processing' => $baseUpdate->addDays(rand(1, 3)),
+            'shipped' => $baseUpdate->addDays(rand(2, 7)),
+            'delivered' => $baseUpdate->addDays(rand(3, 14)),
+            'cancelled' => $baseUpdate->addHours(rand(2, 72)),
+        };
     }
 }

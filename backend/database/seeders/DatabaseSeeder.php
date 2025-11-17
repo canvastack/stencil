@@ -14,18 +14,30 @@ class DatabaseSeeder extends Seeder
     {
         $this->command->info('🌱 Starting Multi-Tenant Database Seeding...');
         
-        // Seed Platform Data (Account A - Platform Owners & Demo Tenant)
+        // Seed Platform Data (Account A - Platform Owners & Demo Tenants)
         $this->command->info('📊 Seeding Platform Foundation...');
         $this->call(PlatformSeeder::class);
         
+        // Seed Additional Tenants & Business Data
+        $this->command->info('🏢 Seeding Multi-Tenant Business Data...');
+        $this->call(MultiTenantBusinessSeeder::class);
+        
+        // Seed Tenant Business Data (Customers, Products, Orders, etc.)
+        $this->command->info('📈 Seeding Tenant Business Operations...');
+        $this->call(TenantDataSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
-        $this->command->info('📋 Summary:');
+        $this->command->info('📊 Final Summary:');
         $this->command->info('- Platform Accounts: 2 accounts');
-        $this->command->info('- Demo Business Tenant: 1 tenant');
-        $this->command->info('- Demo Tenant Users: 3 users');
+        $this->command->info('- Total Tenants: 6+ tenants (Demo + Additional)');
+        $this->command->info('- Total Users: 50+ users across all tenants');
+        $this->command->info('- Total Customers: 200+ customers');
+        $this->command->info('- Total Products: 250+ products');
+        $this->command->info('- Total Orders: 300+ orders');
+        $this->command->info('- Total Vendors: 50+ vendors');
         $this->command->info('- Platform Roles: 3 roles');
-        $this->command->info('- Tenant Roles: 4 roles');
+        $this->command->info('- Tenant Roles: 4 roles per tenant');
         $this->command->info('');
         $this->command->info('🔐 Default Login Credentials:');
         $this->command->info('Platform Super Admin: admin@canvastencil.com / SuperAdmin2024!');

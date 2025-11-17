@@ -15,17 +15,23 @@ class VendorEloquentModel extends Model
     protected $fillable = [
         'tenant_id',
         'name',
+        'company_name',
         'email',
         'phone',
         'address',
         'status',
-        'contact_person',
-        'notes',
+        'tax_id',
+        'contacts',
+        'payment_terms',
+        'metadata',
     ];
 
     protected $casts = [
         'id' => 'string',
         'tenant_id' => 'string',
+        'contacts' => 'array',
+        'payment_terms' => 'array',
+        'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

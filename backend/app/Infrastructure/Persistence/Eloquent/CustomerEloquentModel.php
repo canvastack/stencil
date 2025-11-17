@@ -20,18 +20,17 @@ class CustomerEloquentModel extends Model
         'address',
         'status',
         'type',
-        'company',
-        'tax_number',
-        'notes',
+        'company_name',
         'tags',
+        'metadata',
         'last_order_at',
     ];
 
     protected $casts = [
         'id' => 'string',
         'tenant_id' => 'string',
-        'address' => 'array',
         'tags' => 'array',
+        'metadata' => 'array',
         'last_order_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

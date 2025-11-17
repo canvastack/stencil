@@ -164,8 +164,7 @@ class PlatformSeeder extends Seeder
                 'name' => 'Demo Custom Etching Business',
                 'slug' => 'demo-etching',
                 'domain' => null,
-                'database' => null,
-                'data' => [
+                'settings' => [
                     'business_type' => 'etching',
                     'industry' => 'manufacturing',
                     'setup_completed' => true
