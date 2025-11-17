@@ -11,7 +11,7 @@ class ProductSku
     public function __construct(string $value)
     {
         $this->validate($value);
-        $this->value = strtoupper(trim($value));
+        $this->value = strtolower(trim($value));
     }
 
     public function getValue(): string

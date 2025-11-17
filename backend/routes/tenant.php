@@ -5,6 +5,7 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\DashboardController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\UserController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\CustomerController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductCategoryController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\OrderController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\AnalyticsController;
@@ -87,6 +88,22 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/inventory/low-stock', [ProductController::class, 'lowStock'])->name('tenant.products.low_stock');
             Route::get('/inventory/out-of-stock', [ProductController::class, 'outOfStock'])->name('tenant.products.out_of_stock');
             Route::get('/search', [ProductController::class, 'search'])->name('tenant.products.search');
+        });
+        
+        // Product Category Management
+        Route::prefix('product-categories')->group(function () {
+            Route::get('/', [ProductCategoryController::class, 'index'])->name('tenant.product_categories.index');
+            Route::post('/', [ProductCategoryController::class, 'store'])->name('tenant.product_categories.store');
+            Route::get('/{category}', [ProductCategoryController::class, 'show'])->name('tenant.product_categories.show');
+            Route::put('/{category}', [ProductCategoryController::class, 'update'])->name('tenant.product_categories.update');
+            Route::delete('/{category}', [ProductCategoryController::class, 'destroy'])->name('tenant.product_categories.destroy');
+            
+            // Category Hierarchy & Structure
+            Route::get('/tree/hierarchy', [ProductCategoryController::class, 'tree'])->name('tenant.product_categories.tree');
+            Route::post('/reorder', [ProductCategoryController::class, 'reorder'])->name('tenant.product_categories.reorder');
+            
+            // Category Products
+            Route::get('/{category}/products', [ProductCategoryController::class, 'products'])->name('tenant.product_categories.products');
         });
         
         // Order Management

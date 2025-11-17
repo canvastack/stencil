@@ -9,6 +9,8 @@ use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 use App\Domain\Tenant\Repositories\DomainMappingRepositoryInterface;
 use App\Domain\Customer\Repositories\CustomerRepositoryInterface;
 use App\Domain\Product\Repositories\ProductRepositoryInterface;
+use App\Domain\Product\Repositories\ProductCategoryRepositoryInterface;
+use App\Domain\Product\Repositories\ProductVariantRepositoryInterface;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Vendor\Repositories\VendorRepositoryInterface;
 
@@ -17,6 +19,8 @@ use App\Infrastructure\Persistence\Repositories\TenantEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\DomainMappingEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\CustomerEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\ProductEloquentRepository;
+use App\Infrastructure\Persistence\Repositories\ProductCategoryEloquentRepository;
+use App\Infrastructure\Persistence\Repositories\ProductVariantEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\OrderEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\VendorEloquentRepository;
 
@@ -25,6 +29,8 @@ use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\DomainMappingEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\ProductCategoryEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\ProductVariantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\OrderEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\VendorEloquentModel;
 
@@ -73,6 +79,14 @@ class DomainServiceProvider extends ServiceProvider
         // Product Domain
         $this->app->bind(ProductRepositoryInterface::class, function ($app) {
             return new ProductEloquentRepository(new ProductEloquentModel());
+        });
+
+        $this->app->bind(ProductCategoryRepositoryInterface::class, function ($app) {
+            return new ProductCategoryEloquentRepository(new ProductCategoryEloquentModel());
+        });
+
+        $this->app->bind(ProductVariantRepositoryInterface::class, function ($app) {
+            return new ProductVariantEloquentRepository(new ProductVariantEloquentModel());
         });
 
         // Order Domain
@@ -159,6 +173,8 @@ class DomainServiceProvider extends ServiceProvider
             DomainMappingRepositoryInterface::class,
             CustomerRepositoryInterface::class,
             ProductRepositoryInterface::class,
+            ProductCategoryRepositoryInterface::class,
+            ProductVariantRepositoryInterface::class,
             OrderRepositoryInterface::class,
             VendorRepositoryInterface::class,
             'tenant.context',
