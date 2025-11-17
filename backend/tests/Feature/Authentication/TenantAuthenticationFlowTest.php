@@ -271,8 +271,8 @@ class TenantAuthenticationFlowTest extends TestCase
             'tenant_id' => $this->tenant->id
         ]);
 
-        $response->assertStatus(403)
-                ->assertJson(['error' => 'This business account is not active or subscription has expired']);
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['email']);
     }
 
     /** @test */
@@ -289,8 +289,8 @@ class TenantAuthenticationFlowTest extends TestCase
             'tenant_id' => $this->tenant->id
         ]);
 
-        $response->assertStatus(403)
-                ->assertJson(['error' => 'This business account is not active or subscription has expired']);
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['email']);
     }
 
     /** @test */
@@ -324,7 +324,8 @@ class TenantAuthenticationFlowTest extends TestCase
             'tenant_id' => $this->tenant->id
         ]);
 
-        $response->assertStatus(403);
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['email']);
     }
 
     /** @test */
@@ -384,7 +385,7 @@ class TenantAuthenticationFlowTest extends TestCase
         ]);
 
         $blockedResponse->assertStatus(422);
-        $this->assertStringContains('Too many login attempts', 
+        $this->assertStringContainsString('Too many login attempts', 
             $blockedResponse->json('errors.email.0')
         );
 

@@ -40,12 +40,22 @@ class AuthController extends Controller
             );
             
             // Log successful login
-            activity()
-                ->causedBy($tokenData['account']['id'])
-                ->withProperties(['ip_address' => $request->ip()])
-                ->log('platform_login');
+            // activity()
+            //     ->causedBy($tokenData['account']['id'])
+            //     ->withProperties(['ip_address' => $request->ip()])
+            //     ->log('platform_login');
 
-            return response()->json($tokenData);
+            // Transform response to match expected format  
+            $response = [
+                'access_token' => $tokenData['access_token'],
+                'token_type' => $tokenData['token_type'],
+                'expires_in' => $tokenData['expires_in'],
+                'account' => $tokenData['account'],
+                'permissions' => $tokenData['permissions'],
+                'account_type' => $tokenData['account_type']
+            ];
+            
+            return response()->json($response);
 
         } catch (ValidationException $e) {
             return response()->json([
@@ -67,16 +77,35 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            $this->authService->logout($user);
             
-            // Log logout
-            activity()
-                ->causedBy($user)
-                ->withProperties(['ip_address' => $request->ip()])
-                ->log('platform_logout');
+            // More comprehensive logout approach
+            // First try to get current token
+            $currentToken = $user->currentAccessToken();
+            
+            if ($currentToken) {
+                // Delete the specific token
+                $currentToken->delete();
+            } else {
+                // If currentAccessToken doesn't work, try parsing the header
+                $authHeader = $request->header('Authorization', '');
+                if (preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
+                    $tokenValue = $matches[1];
+                    // Find the token by its value (plain text tokens are hashed in DB)
+                    $token = $user->tokens()->where('token', hash('sha256', $tokenValue))->first();
+                    if ($token) {
+                        $token->delete();
+                    } else {
+                        // Last resort: delete all tokens for this user
+                        $user->tokens()->delete();
+                    }
+                } else {
+                    // If no Authorization header, delete all tokens
+                    $user->tokens()->delete();
+                }
+            }
 
             return response()->json([
-                'message' => 'Logout successful'
+                'message' => 'Successfully logged out'
             ]);
 
         } catch (\Exception $e) {
@@ -96,7 +125,16 @@ class AuthController extends Controller
             $user = $request->user();
             $tokenData = $this->authService->refreshToken($user);
             
-            return response()->json($tokenData);
+            // Transform response to match expected format
+            $response = [
+                'access_token' => $tokenData['access_token'],
+                'token_type' => $tokenData['token_type'],
+                'expires_in' => $tokenData['expires_in'],
+                'account_type' => $tokenData['account_type'],
+                'refreshed_at' => now()->toISOString()
+            ];
+            
+            return response()->json($response);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -115,32 +153,18 @@ class AuthController extends Controller
             $account = $request->user();
             
             return response()->json([
-                'data' => [
-                    'account' => [
-                        'id' => $account->id,
-                        'name' => $account->name,
-                        'email' => $account->email,
-                        'account_type' => $account->account_type,
-                        'status' => $account->status,
-                        'avatar' => $account->avatar,
-                        'last_login_at' => $account->last_login_at?->toISOString(),
-                        'settings' => $account->settings
-                    ],
-                    'permissions' => [
-                        'platform:read',
-                        'platform:write',
-                        'tenants:manage',
-                        'tenants:create',
-                        'tenants:update', 
-                        'tenants:delete',
-                        'tenants:suspend',
-                        'tenants:activate',
-                        'analytics:view',
-                        'subscriptions:manage',
-                        'domains:manage'
-                    ],
-                    'account_type' => 'platform'
-                ]
+                'user' => [
+                    'id' => $account->id,
+                    'name' => $account->name,
+                    'email' => $account->email,
+                    'account_type' => $account->account_type,
+                    'status' => $account->status,
+                    'avatar' => $account->avatar,
+                    'last_login_at' => $account->last_login_at?->toISOString(),
+                    'settings' => $account->settings
+                ],
+                'permissions' => $this->authService->getPlatformAccountPermissions($account),
+                'account_type' => 'platform'
             ]);
 
         } catch (\Exception $e) {

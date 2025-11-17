@@ -155,7 +155,7 @@ class TenantIsolationTest extends TestCase
             'tenant_id' => $this->tenantB->id,
             'customer_id' => $customerB->id,
             'order_number' => 'ORD-B001',
-            'status' => 'completed',
+            'status' => 'delivered',
             'total_amount' => 200000,
             'currency' => 'IDR',
             'items' => []

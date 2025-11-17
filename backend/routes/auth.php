@@ -25,7 +25,7 @@ Route::prefix('platform')->group(function () {
         Route::post('/logout', [PlatformAuthController::class, 'logout'])->name('platform.auth.logout');
         Route::post('/refresh', [PlatformAuthController::class, 'refresh'])->name('platform.auth.refresh');
         Route::get('/me', [PlatformAuthController::class, 'me'])->name('platform.auth.me');
-        Route::post('/validate', [PlatformAuthController::class, 'validate'])->name('platform.auth.validate');
+        Route::post('/validate', [PlatformAuthController::class, 'validateToken'])->name('platform.auth.validate');
     });
 });
 
@@ -40,7 +40,7 @@ Route::prefix('tenant')->group(function () {
         Route::post('/logout', [TenantAuthController::class, 'logout'])->name('tenant.auth.logout');
         Route::post('/refresh', [TenantAuthController::class, 'refresh'])->name('tenant.auth.refresh');
         Route::get('/me', [TenantAuthController::class, 'me'])->name('tenant.auth.me');
-        Route::post('/validate', [TenantAuthController::class, 'validate'])->name('tenant.auth.validate');
+        Route::post('/validate', [TenantAuthController::class, 'validateToken'])->name('tenant.auth.validate');
         Route::post('/switch-role', [TenantAuthController::class, 'switchRole'])->name('tenant.auth.switch_role');
     });
 });

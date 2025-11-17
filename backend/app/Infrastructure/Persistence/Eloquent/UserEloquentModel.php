@@ -5,14 +5,14 @@ namespace App\Infrastructure\Persistence\Eloquent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 
 class UserEloquentModel extends Authenticatable
 {
-    use HasApiTokens, HasUuids, Notifiable;
+    use HasApiTokens, Notifiable;
 
     protected $table = 'users';
 
@@ -50,7 +50,7 @@ class UserEloquentModel extends Authenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
-            RoleEloquentModel::class,
+            \App\Infrastructure\Persistence\Eloquent\RoleEloquentModel::class,
             'user_roles',
             'user_id',
             'role_id'
@@ -127,6 +127,11 @@ class UserEloquentModel extends Authenticatable
 
     public function getAllPermissions(): array
     {
+        // Load roles if not already loaded
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+        
         $permissions = [];
         foreach ($this->roles as $role) {
             $permissions = array_merge($permissions, $role->abilities ?? []);
@@ -136,7 +141,7 @@ class UserEloquentModel extends Authenticatable
 
     public function assignRole(string $roleSlug): void
     {
-        $role = RoleEloquentModel::where('tenant_id', $this->tenant_id)
+        $role = \App\Infrastructure\Persistence\Eloquent\RoleEloquentModel::where('tenant_id', $this->tenant_id)
             ->where('slug', $roleSlug)
             ->first();
             
@@ -147,7 +152,7 @@ class UserEloquentModel extends Authenticatable
 
     public function removeRole(string $roleSlug): void
     {
-        $role = RoleEloquentModel::where('tenant_id', $this->tenant_id)
+        $role = \App\Infrastructure\Persistence\Eloquent\RoleEloquentModel::where('tenant_id', $this->tenant_id)
             ->where('slug', $roleSlug)
             ->first();
             

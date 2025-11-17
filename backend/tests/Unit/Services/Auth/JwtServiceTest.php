@@ -266,7 +266,7 @@ class JwtServiceTest extends TestCase
         $this->authService->authenticateTenantUser(
             'user@tenant.test',
             'password123',
-            'nonexistent-tenant-id',
+            99999, // Non-existent tenant ID
             '127.0.0.1'
         );
     }

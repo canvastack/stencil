@@ -64,7 +64,7 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(200)
                 ->assertJsonStructure([
-                    'access_token',
+                    'token',
                     'token_type',
                     'expires_in',
                     'user' => [
@@ -242,7 +242,7 @@ class AuthControllerTest extends TestCase
             'tenant_id' => $this->tenant->id
         ]);
 
-        $token = $loginResponse->json('access_token');
+        $token = $loginResponse->json('token');
 
         // Then logout
         $response = $this->postJson('/api/tenant/logout', [], [
@@ -263,7 +263,7 @@ class AuthControllerTest extends TestCase
             'tenant_id' => $this->tenant->id
         ]);
 
-        $token = $loginResponse->json('access_token');
+        $token = $loginResponse->json('token');
 
         // Get user info
         $response = $this->getJson('/api/tenant/me', [
@@ -336,7 +336,8 @@ class AuthControllerTest extends TestCase
             'tenant_id' => $this->tenant->id
         ]);
 
-        $response->assertStatus(422);
+        $response->assertStatus(422)
+                ->assertJsonValidationErrors(['email']);
     }
 
     /** @test */

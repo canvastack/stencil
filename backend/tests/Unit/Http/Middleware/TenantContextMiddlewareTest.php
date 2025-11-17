@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Middleware;
 
 use Tests\TestCase;
-use App\Infrastructure\Http\Middleware\TenantContextMiddleware;
+use App\Infrastructure\Presentation\Http\Middleware\TenantContextMiddleware;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\UserEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;

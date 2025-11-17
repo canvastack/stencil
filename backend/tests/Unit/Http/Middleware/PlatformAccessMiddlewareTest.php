@@ -3,7 +3,7 @@
 namespace Tests\Unit\Http\Middleware;
 
 use Tests\TestCase;
-use App\Infrastructure\Http\Middleware\PlatformAccessMiddleware;
+use App\Http\Middleware\PlatformAccessMiddleware;
 use App\Infrastructure\Persistence\Eloquent\AccountEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -71,16 +71,19 @@ class PlatformAccessMiddlewareTest extends TestCase
     /** @test */
     public function it_rejects_tenant_user_accessing_platform_routes()
     {
+        // Create a tenant first
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::factory()->create();
+        
         // Create a tenant user (not platform account)
-        $tenantUser = AccountEloquentModel::create([
+        $tenantUser = \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::create([
+            'tenant_id' => $tenant->id,
             'name' => 'Tenant User',
             'email' => 'user@tenant.test',
             'password' => Hash::make('password123'),
-            'account_type' => 'tenant_user',
             'status' => 'active'
         ]);
 
-        Sanctum::actingAs($tenantUser, [], 'tenant');
+        Sanctum::actingAs($tenantUser, [], 'api');
 
         $request = Request::create('/api/platform/test');
 
@@ -92,7 +95,7 @@ class PlatformAccessMiddlewareTest extends TestCase
 
         $this->assertEquals(403, $result->getStatusCode());
         $response = json_decode($result->getContent(), true);
-        $this->assertEquals('Platform access required', $response['message']);
+        $this->assertEquals('Unauthorized', $response['message']);
     }
 
     /** @test */

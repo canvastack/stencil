@@ -176,7 +176,7 @@ class AuthControllerTest extends TestCase
 
         $response->assertStatus(200)
                 ->assertJsonStructure([
-                    'account' => [
+                    'user' => [
                         'id',
                         'name',
                         'email',

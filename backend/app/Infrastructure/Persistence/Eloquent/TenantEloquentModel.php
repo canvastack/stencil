@@ -5,30 +5,32 @@ namespace App\Infrastructure\Persistence\Eloquent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Spatie\Multitenancy\Models\Tenant as SpatieTenant;
 
 class TenantEloquentModel extends SpatieTenant
 {
-    use HasUuids;
+    use HasFactory;
 
     protected $table = 'tenants';
 
     protected $fillable = [
         'name',
         'slug',
-        'domain', 
-        'database',
-        'data',
+        'domain',
         'status',
         'subscription_status',
         'trial_ends_at',
         'subscription_ends_at',
-        'created_by'
+        'created_by',
+        'settings',
+        'features'
     ];
 
     protected $casts = [
-        'data' => 'array',
+        'settings' => 'array',
+        'features' => 'array',
         'trial_ends_at' => 'datetime',
         'subscription_ends_at' => 'datetime'
     ];
@@ -78,9 +80,22 @@ class TenantEloquentModel extends SpatieTenant
     // Business Logic Methods (delegated to Domain Entity)
     public function isActive(): bool
     {
-        return $this->status === 'active' && 
-               $this->subscription_status === 'active' &&
-               ($this->subscription_ends_at === null || $this->subscription_ends_at->isFuture());
+        // Tenant must have active status
+        if ($this->status !== 'active') {
+            return false;
+        }
+        
+        // Check if tenant is on a valid trial
+        if ($this->subscription_status === 'trial') {
+            return $this->trial_ends_at && $this->trial_ends_at->isFuture();
+        }
+        
+        // Check if tenant has active subscription
+        if ($this->subscription_status === 'active') {
+            return $this->subscription_ends_at === null || $this->subscription_ends_at->isFuture();
+        }
+        
+        return false;
     }
 
     public function isOnTrial(): bool

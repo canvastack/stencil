@@ -27,7 +27,7 @@ class AuthenticationService
             ]);
         }
 
-        $account = AccountEloquentModel::where('email', $email)->first();
+        $account = AccountEloquentModel::whereRaw('LOWER(email) = LOWER(?)', [$email])->first();
 
         if (!$account || !Hash::check($password, $account->password)) {
             RateLimiter::hit($key, 60);
@@ -95,7 +95,7 @@ class AuthenticationService
 
         // Find user within tenant context
         $user = UserEloquentModel::where('tenant_id', $tenantId)
-            ->where('email', $email)
+            ->whereRaw('LOWER(email) = LOWER(?)', [$email])
             ->first();
 
         if (!$user || !Hash::check($password, $user->password)) {
@@ -167,7 +167,16 @@ class AuthenticationService
      */
     public function logout($user): void
     {
-        $user->currentAccessToken()->delete();
+        // Try to get the current token
+        $currentToken = $user->currentAccessToken();
+        
+        if ($currentToken) {
+            // Delete the specific token
+            $currentToken->delete();
+        } else {
+            // If no current token, delete all tokens for this user
+            $user->tokens()->delete();
+        }
     }
 
     /**
@@ -201,19 +210,28 @@ class AuthenticationService
      */
     private function getPlatformPermissions(AccountEloquentModel $account): array
     {
-        return [
-            'platform:read',
-            'platform:write',
-            'tenants:manage',
-            'tenants:create',
-            'tenants:update', 
-            'tenants:delete',
-            'tenants:suspend',
-            'tenants:activate',
-            'analytics:view',
-            'subscriptions:manage',
-            'domains:manage'
-        ];
+        return $this->getPlatformAccountPermissions($account);
+    }
+    
+    /**
+     * Get Platform Account Permissions from Roles
+     */
+    public function getPlatformAccountPermissions(AccountEloquentModel $account): array
+    {
+        // Load roles if not already loaded
+        if (!$account->relationLoaded('roles')) {
+            $account->load('roles');
+        }
+        
+        // Collect all abilities from all roles
+        $permissions = collect();
+        foreach ($account->roles as $role) {
+            if (is_array($role->abilities)) {
+                $permissions = $permissions->merge($role->abilities);
+            }
+        }
+        
+        return $permissions->unique()->values()->toArray();
     }
 
     /**
@@ -238,6 +256,11 @@ class AuthenticationService
      */
     private function formatUserResponse(UserEloquentModel $user): array
     {
+        // Load roles if not already loaded
+        if (!$user->relationLoaded('roles')) {
+            $user->load('roles');
+        }
+        
         return [
             'id' => $user->id,
             'tenant_id' => $user->tenant_id,

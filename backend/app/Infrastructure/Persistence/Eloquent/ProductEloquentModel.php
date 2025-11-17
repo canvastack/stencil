@@ -3,13 +3,12 @@
 namespace App\Infrastructure\Persistence\Eloquent;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class ProductEloquentModel extends Model
 {
-    use HasUuids;
 
     protected $table = 'products';
 
@@ -24,14 +23,18 @@ class ProductEloquentModel extends Model
         'type',
         'stock_quantity',
         'low_stock_threshold',
+        'track_inventory',
         'images',
         'categories',
         'tags',
-        'weight',
+        'slug',
+        'vendor_price',
+        'markup_percentage',
+        'vendor_id',
+        'seo_title',
+        'seo_description',
+        'metadata',
         'dimensions',
-        'track_stock',
-        'allow_backorder',
-        'published_at',
     ];
 
     protected $casts = [
@@ -64,6 +67,20 @@ class ProductEloquentModel extends Model
                 $tenant = app('current_tenant');
                 if ($tenant) {
                     $builder->where('tenant_id', $tenant->id);
+                }
+            }
+        });
+        
+        static::creating(function ($product) {
+            if (empty($product->slug) && !empty($product->name)) {
+                $product->slug = Str::slug($product->name);
+                
+                // Ensure uniqueness by adding a suffix if needed
+                $originalSlug = $product->slug;
+                $counter = 1;
+                while (static::where('slug', $product->slug)->exists()) {
+                    $product->slug = $originalSlug . '-' . $counter;
+                    $counter++;
                 }
             }
         });

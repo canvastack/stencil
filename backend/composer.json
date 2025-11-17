@@ -11,6 +11,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "ramsey/uuid": "^4.9",
+        "spatie/laravel-activitylog": "*",
         "spatie/laravel-multitenancy": "^3.2",
         "spatie/laravel-permission": "^6.23",
         "spatie/laravel-query-builder": "^6.3"
