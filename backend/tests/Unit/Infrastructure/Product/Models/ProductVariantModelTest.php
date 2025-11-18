@@ -5,7 +5,8 @@ namespace Tests\Unit\Infrastructure\Product\Models;
 use Tests\TestCase;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
-use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel as Tenant;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
+use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -13,12 +14,23 @@ class ProductVariantModelTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected Tenant $tenant;
+
     protected function setUp(): void
     {
         parent::setUp();
         
+        // Create test tenant in database
+        $this->tenant = Tenant::create([
+            'uuid' => '987e6543-e21c-34d5-b678-123456789012',
+            'name' => 'Test Tenant',
+            'slug' => 'test-tenant',
+            'status' => 'active',
+            'subscription_status' => 'active',
+        ]);
+        
         // Set up test tenant context
-        app()->instance('currentTenant', (object) ['id' => 1, 'uuid' => '987e6543-e21c-34d5-b678-123456789012']);
+        app()->instance('currentTenant', (object) ['id' => $this->tenant->id, 'uuid' => $this->tenant->uuid]);
     }
 
     /** @test */
@@ -27,22 +39,40 @@ class ProductVariantModelTest extends TestCase
         $expectedFillable = [
             'uuid',
             'tenant_id',
+            'product_id',
             'category_id',
+            'name',
+            'sku',
             'material',
             'quality',
-            'sku',
+            'thickness',
+            'color',
+            'color_hex',
+            'dimensions',
+            'price_adjustment',
+            'markup_percentage',
+            'vendor_price',
+            'stock_quantity',
+            'low_stock_threshold',
+            'track_inventory',
+            'allow_backorder',
+            'is_active',
+            'is_default',
+            'sort_order',
+            'lead_time_days',
+            'lead_time_note',
+            'images',
+            'custom_fields',
+            'special_notes',
+            'weight',
+            'shipping_dimensions',
+            'etching_specifications',
             'base_price',
             'selling_price',
             'retail_price',
             'cost_price',
-            'stock_quantity',
-            'low_stock_threshold',
             'length',
             'width',
-            'thickness',
-            'weight',
-            'etching_specifications',
-            'is_active',
         ];
 
         $variant = new ProductVariant();
@@ -54,16 +84,30 @@ class ProductVariantModelTest extends TestCase
     public function it_casts_attributes_correctly(): void
     {
         $expectedCasts = [
-            'base_price' => 'decimal:2',
-            'selling_price' => 'decimal:2',
-            'retail_price' => 'decimal:2',
-            'cost_price' => 'decimal:2',
-            'length' => 'decimal:2',
-            'width' => 'decimal:2',
-            'thickness' => 'decimal:2',
-            'weight' => 'decimal:2',
-            'etching_specifications' => 'array',
+            'dimensions' => 'array',
+            'price_adjustment' => 'integer',
+            'markup_percentage' => 'float',
+            'vendor_price' => 'integer',
+            'stock_quantity' => 'integer',
+            'low_stock_threshold' => 'integer',
+            'track_inventory' => 'boolean',
+            'allow_backorder' => 'boolean',
             'is_active' => 'boolean',
+            'is_default' => 'boolean',
+            'sort_order' => 'integer',
+            'lead_time_days' => 'integer',
+            'images' => 'array',
+            'custom_fields' => 'array',
+            'weight' => 'float',
+            'thickness' => 'float',
+            'shipping_dimensions' => 'array',
+            'etching_specifications' => 'array',
+            'base_price' => 'float',
+            'selling_price' => 'float',
+            'retail_price' => 'float',
+            'cost_price' => 'float',
+            'length' => 'float',
+            'width' => 'float',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
@@ -79,21 +123,22 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_can_create_product_variant_with_basic_attributes(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'name' => 'Akrilik Standard Variant',
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'akrilik-standard',
             'stock_quantity' => 0,
         ]);
 
         $this->assertInstanceOf(ProductVariant::class, $variant);
-        $this->assertEquals('akrilik', $variant->material);
-        $this->assertEquals('standard', $variant->quality);
+        $this->assertEquals('Akrilik', $variant->material);
+        $this->assertEquals('Standard', $variant->quality);
         $this->assertEquals('akrilik-standard', $variant->sku);
         $this->assertTrue($variant->is_active);
         $this->assertEquals(0, $variant->stock_quantity);
@@ -102,13 +147,13 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_auto_generates_uuid_on_creation(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = new ProductVariant([
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'kuningan-tinggi',
         ]);
 
@@ -145,24 +190,24 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_scopes_active_variants(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'active-variant',
             'is_active' => true,
         ]);
 
         ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'inactive-variant',
             'is_active' => false,
         ]);
@@ -176,88 +221,88 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_scopes_variants_by_material(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'akrilik-variant',
         ]);
 
         ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'kuningan-variant',
         ]);
 
-        $akrlikVariants = ProductVariant::byMaterial('akrilik')->get();
-        $kuninganVariants = ProductVariant::byMaterial('kuningan')->get();
+        $akrlikVariants = ProductVariant::byMaterial('Akrilik')->get();
+        $kuninganVariants = ProductVariant::byMaterial('Kuningan')->get();
 
         $this->assertCount(1, $akrlikVariants);
         $this->assertCount(1, $kuninganVariants);
-        $this->assertEquals('akrilik', $akrlikVariants[0]->material);
-        $this->assertEquals('kuningan', $kuninganVariants[0]->material);
+        $this->assertEquals('Akrilik', $akrlikVariants[0]->material);
+        $this->assertEquals('Kuningan', $kuninganVariants[0]->material);
     }
 
     /** @test */
     public function it_scopes_variants_by_quality(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'standard-variant',
         ]);
 
         ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'premium',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'premium-variant',
         ]);
 
-        $standardVariants = ProductVariant::byQuality('standard')->get();
-        $premiumVariants = ProductVariant::byQuality('premium')->get();
+        $standardVariants = ProductVariant::byQuality('Standard')->get();
+        $tinggiVariants = ProductVariant::byQuality('Tinggi')->get();
 
         $this->assertCount(1, $standardVariants);
-        $this->assertCount(1, $premiumVariants);
-        $this->assertEquals('standard', $standardVariants[0]->quality);
-        $this->assertEquals('premium', $premiumVariants[0]->quality);
+        $this->assertCount(1, $tinggiVariants);
+        $this->assertEquals('Standard', $standardVariants[0]->quality);
+        $this->assertEquals('Tinggi', $tinggiVariants[0]->quality);
     }
 
     /** @test */
     public function it_scopes_variants_in_stock(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'in-stock-variant',
             'stock_quantity' => 50,
         ]);
 
         ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'out-of-stock-variant',
             'stock_quantity' => 0,
         ]);
@@ -272,24 +317,24 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_scopes_variants_out_of_stock(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'in-stock-variant',
             'stock_quantity' => 50,
         ]);
 
         ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'out-of-stock-variant',
             'stock_quantity' => 0,
         ]);
@@ -304,14 +349,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_scopes_variants_low_stock(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'normal-stock-variant',
             'stock_quantity' => 50,
             'low_stock_threshold' => 10,
@@ -319,10 +364,10 @@ class ProductVariantModelTest extends TestCase
 
         ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'low-stock-variant',
             'stock_quantity' => 5,
             'low_stock_threshold' => 10,
@@ -338,24 +383,24 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_scopes_variants_by_price_range(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'cheap-variant',
             'selling_price' => 50000.00,
         ]);
 
         ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'premium',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'expensive-variant',
             'selling_price' => 250000.00,
         ]);
@@ -372,24 +417,24 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_checks_if_variant_has_stock(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $inStockVariant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'in-stock-variant',
             'stock_quantity' => 50,
         ]);
 
         $outOfStockVariant = ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'out-of-stock-variant',
             'stock_quantity' => 0,
         ]);
@@ -401,14 +446,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_checks_if_variant_is_low_stock(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $normalStockVariant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'normal-stock-variant',
             'stock_quantity' => 50,
             'low_stock_threshold' => 10,
@@ -416,10 +461,10 @@ class ProductVariantModelTest extends TestCase
 
         $lowStockVariant = ProductVariant::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'tinggi',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'low-stock-variant',
             'stock_quantity' => 5,
             'low_stock_threshold' => 10,
@@ -432,14 +477,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_calculates_profit_margin(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'test-variant',
             'base_price' => 100000.00,
             'selling_price' => 130000.00,
@@ -455,14 +500,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_handles_zero_base_price_in_margin_calculation(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'test-variant',
             'base_price' => 0.00,
             'selling_price' => 130000.00,
@@ -476,14 +521,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_calculates_dimensions(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'test-variant',
             'length' => 10.50,
             'width' => 15.25,
@@ -500,14 +545,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_generates_display_name(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'kuningan',
-            'quality' => 'premium',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Kuningan',
+            'quality' => 'Tinggi',
             'sku' => 'kuningan-premium',
         ]);
 
@@ -519,7 +564,7 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_stores_etching_specifications_as_array(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
         $specs = [
             'finish' => 'glossy',
             'edge_treatment' => 'polished',
@@ -529,10 +574,10 @@ class ProductVariantModelTest extends TestCase
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'premium',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Tinggi',
             'sku' => 'custom-variant',
             'etching_specifications' => $specs,
         ]);
@@ -545,14 +590,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_casts_prices_as_decimal(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'test-variant',
             'base_price' => 123456.78,
             'selling_price' => 150000.99,
@@ -574,14 +619,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_casts_dimensions_as_decimal(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'test-variant',
             'length' => 10.75,
             'width' => 15.25,
@@ -603,14 +648,14 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_uses_soft_deletes(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'test-variant',
         ]);
 
@@ -629,30 +674,45 @@ class ProductVariantModelTest extends TestCase
     /** @test */
     public function it_maintains_category_relationship(): void
     {
-        $category = $this->createTestCategory();
+        $product = $this->createTestProduct();
+        $category = ProductCategory::first();
 
         $variant = ProductVariant::create([
             'uuid' => '123e4567-e89b-12d3-a456-426614174000',
-            'tenant_id' => 1,
-            'category_id' => $category->id,
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product->id,
+            'category_id' => $category?->id,
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'test-variant',
         ]);
 
+        $this->assertNotNull($category);
         $this->assertEquals($category->id, $variant->category_id);
         $this->assertEquals($category->name, $variant->category->name);
     }
 
-    private function createTestCategory(): ProductCategory
+    private function createTestProduct(): Product
     {
-        return ProductCategory::create([
+        $category = ProductCategory::create([
             'uuid' => '456e7890-e12b-34c5-d678-901234567890',
-            'tenant_id' => 1,
+            'tenant_id' => $this->tenant->id,
             'name' => 'Test Category',
             'slug' => 'test-category',
             'level' => 0,
             'sort_order' => 0,
+        ]);
+
+        return Product::create([
+            'uuid' => '789e0123-e45b-67c8-d901-234567890123',
+            'tenant_id' => $this->tenant->id,
+            'category_id' => $category->id,
+            'name' => 'Test Product',
+            'sku' => 'TEST-PROD-001',
+            'description' => 'Test product for variants',
+            'price' => 10000, // 100.00 in cents
+            'status' => 'published',
+            'slug' => 'test-product',
         ]);
     }
 }

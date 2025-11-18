@@ -2046,3 +2046,578 @@
         $ref: '#/components/responses/Forbidden'
       '500':
         $ref: '#/components/responses/ServerError'
+
+/vendors/{vendorId}/evaluations:
+  get:
+    tags:
+    - Vendor Performance
+    summary: List Vendor Performance Evaluations
+    description: 'Retrieve historical performance evaluations, SLA results, and audit findings for a vendor.
+
+
+      **Insights:**
+
+      - Quality, delivery, and communication scores
+
+      - SLA adherence with breach logs
+
+      - Compliance checkpoints and certification status
+
+      - Order-level profitability contributions
+
+      - Trend analysis with rolling averages
+      '
+    operationId: listVendorEvaluations
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Vendor ID
+    - name: period
+      in: query
+      schema:
+        type: string
+        enum:
+        - monthly
+        - quarterly
+        - yearly
+      description: Aggregate evaluations by period
+    - name: include
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - order_details
+          - attachments
+          - escalation_logs
+      style: form
+      explode: false
+      description: Include related resources
+    responses:
+      '200':
+        description: Vendor evaluations retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        evaluated_at:
+                          type: string
+                          format: date-time
+                        evaluator:
+                          type: string
+                        quality_score:
+                          type: number
+                          format: double
+                        delivery_score:
+                          type: number
+                          format: double
+                        communication_score:
+                          type: number
+                          format: double
+                        compliance_score:
+                          type: number
+                          format: double
+                        composite_score:
+                          type: number
+                          format: double
+                        sla_breaches:
+                          type: integer
+                        related_order_id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        notes:
+                          type: string
+                          nullable: true
+                        attachments:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              url:
+                                type: string
+                                format: uri
+                              filename:
+                                type: string
+                              uploaded_at:
+                                type: string
+                                format: date-time
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+            example:
+              success: true
+              data:
+              - id: "27c362f3-3924-4d61-918c-5a944d9d5e8a"
+                evaluated_at: '2025-11-10T09:00:00Z'
+                evaluator: operations_manager
+                quality_score: 4.6
+                delivery_score: 4.2
+                communication_score: 4.8
+                compliance_score: 5
+                composite_score: 4.65
+                sla_breaches: 0
+                related_order_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                notes: Excellent turnaround and proactive communication
+                attachments: []
+              meta:
+                page: 1
+                limit: 20
+                total: 8
+    
+  post:
+    tags:
+    - Vendor Performance
+    summary: Record Vendor Evaluation
+    description: 'Submit a new performance evaluation entry with SLA outcome and corrective actions.
+
+
+      **Scoring Dimensions:**
+
+      - Quality (defect rates, rework)
+
+      - Delivery (on-time percentage)
+
+      - Communication (responsiveness, clarity)
+
+      - Compliance (certification, documentation)
+
+      - Sustainability and ESG checkpoints
+      '
+    operationId: createVendorEvaluation
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - evaluation_date
+            - evaluator_role
+            - quality_score
+            - delivery_score
+            - communication_score
+            - compliance_score
+            properties:
+              evaluation_date:
+                type: string
+                format: date
+              evaluator_role:
+                type: string
+              related_order_id:
+                type: string
+                format: uuid
+                nullable: true
+              quality_score:
+                type: number
+                format: double
+                minimum: 0
+                maximum: 5
+              delivery_score:
+                type: number
+                format: double
+                minimum: 0
+                maximum: 5
+              communication_score:
+                type: number
+                format: double
+                minimum: 0
+                maximum: 5
+              compliance_score:
+                type: number
+                format: double
+                minimum: 0
+                maximum: 5
+              sustainability_score:
+                type: number
+                format: double
+                minimum: 0
+                maximum: 5
+                nullable: true
+              sla_breach_count:
+                type: integer
+                minimum: 0
+              breach_reason_codes:
+                type: array
+                items:
+                  type: string
+                  enum:
+                  - late_delivery
+                  - quality_issue
+                  - documentation_missing
+                  - safety_incident
+                  - communication_gap
+              corrective_actions:
+                type: array
+                items:
+                  type: string
+              next_review_date:
+                type: string
+                format: date
+                nullable: true
+              attachments:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      format: uri
+                    filename:
+                      type: string
+                    mime_type:
+                      type: string
+              notes:
+                type: string
+                nullable: true
+          example:
+            evaluation_date: '2025-11-15'
+            evaluator_role: purchasing_manager
+            related_order_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+            quality_score: 4.5
+            delivery_score: 3.8
+            communication_score: 4.2
+            compliance_score: 5
+            sustainability_score: 4
+            sla_breach_count: 1
+            breach_reason_codes:
+            - late_delivery
+            corrective_actions:
+            - Conduct vendor site audit
+            - Request updated production schedule
+            next_review_date: '2025-12-15'
+            notes: Delivery delayed by 1 day due to supplier outage
+    responses:
+      '201':
+        description: Vendor evaluation recorded successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      evaluation_id:
+                        type: string
+                        format: uuid
+                      composite_score:
+                        type: number
+                        format: double
+                      risk_level:
+                        type: string
+                        enum:
+                        - low
+                        - medium
+                        - high
+                        - critical
+                      next_review_date:
+                        type: string
+                        format: date
+                        nullable: true
+            example:
+              success: true
+              data:
+                evaluation_id: "f0a5bd2c-8b6e-4ad3-80f5-8a31d782cb2b"
+                composite_score: 4.38
+                risk_level: medium
+                next_review_date: '2025-12-15'
+              message: Evaluation stored and risk profile updated
+              meta:
+                timestamp: '2025-11-18T09:30:00Z'
+    
+/vendors/{vendorId}/sla:
+  get:
+    tags:
+    - Vendor Performance
+    summary: Get Vendor SLA Overview
+    description: 'Retrieve SLA agreements, fulfillment metrics, and breach insights for a vendor.
+
+
+      **Metrics:**
+
+      - Contracted vs actual lead time
+
+      - Response time commitments
+
+      - Quality defect thresholds
+
+      - Active escalations and penalties
+
+      - Risk scoring with trend analysis
+      '
+    operationId: getVendorSLA
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Vendor SLA data retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      vendor_id:
+                        type: string
+                        format: uuid
+                      contractual_lead_time_days:
+                        type: integer
+                      average_actual_lead_time_days:
+                        type: number
+                        format: double
+                      response_time_target_minutes:
+                        type: integer
+                      average_response_time_minutes:
+                        type: number
+                        format: double
+                      quality_threshold_ppm:
+                        type: integer
+                      current_defect_ppm:
+                        type: integer
+                      breach_history:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            breach_date:
+                              type: string
+                              format: date
+                            breach_type:
+                              type: string
+                            order_id:
+                              type: string
+                              format: uuid
+                            penalty_applied:
+                              type: number
+                              format: double
+                            resolved_at:
+                              type: string
+                              format: date-time
+                              nullable: true
+                      risk_index:
+                        type: number
+                        format: double
+                      risk_level:
+                        type: string
+                        enum:
+                        - low
+                        - medium
+                        - high
+                        - critical
+            example:
+              success: true
+              data:
+                vendor_id: "550e8400-e29b-41d4-a716-446655440000"
+                contractual_lead_time_days: 12
+                average_actual_lead_time_days: 13.4
+                response_time_target_minutes: 120
+                average_response_time_minutes: 95
+                quality_threshold_ppm: 500
+                current_defect_ppm: 320
+                breach_history:
+                - breach_date: '2025-10-04'
+                  breach_type: lead_time_exceeded
+                  order_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                  penalty_applied: 1500000
+                  resolved_at: '2025-10-06T13:45:00Z'
+                risk_index: 58.2
+                risk_level: medium
+              meta:
+                timestamp: '2025-11-18T09:35:00Z'
+    
+  patch:
+    tags:
+    - Vendor Performance
+    summary: Update Vendor SLA Commitments
+    description: 'Adjust SLA terms, escalation contacts, or penalty structures with full audit logging.
+
+
+      **Usage:**
+
+      - Renew annual SLA contracts
+
+      - Modify lead time commitments
+
+      - Update escalation owners and penalty rules
+
+      - Pause SLA monitoring during maintenance windows
+
+      - Sync SLA changes from external ERP/contract systems
+      '
+    operationId: updateVendorSLA
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              contractual_lead_time_days:
+                type: integer
+                minimum: 1
+              response_time_target_minutes:
+                type: integer
+                minimum: 1
+              quality_threshold_ppm:
+                type: integer
+                minimum: 0
+              penalty_rules:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    breach_type:
+                      type: string
+                    penalty_amount:
+                      type: number
+                      format: double
+                    apply_after_minutes:
+                      type: integer
+                      nullable: true
+              escalation_contacts:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                    user_id:
+                      type: string
+                      format: uuid
+                    email:
+                      type: string
+                    phone:
+                      type: string
+              pause_until:
+                type: string
+                format: date-time
+                nullable: true
+              reason:
+                type: string
+              notify_roles:
+                type: array
+                items:
+                  type: string
+          example:
+            contractual_lead_time_days: 10
+            response_time_target_minutes: 90
+            quality_threshold_ppm: 400
+            penalty_rules:
+            - breach_type: late_delivery
+              penalty_amount: 2000000
+              apply_after_minutes: 1440
+            escalation_contacts:
+            - role: operations_manager
+              user_id: "f3aee2f5-92b3-4c1b-9c1d-34bb0c3fe11f"
+              email: ops.manager@stencil.id
+              phone: '+628123000111'
+            pause_until: null
+            reason: SLA renewal for 2025
+            notify_roles:
+            - procurement_lead
+            - finance_controller
+    responses:
+      '200':
+        description: Vendor SLA updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      vendor_id:
+                        type: string
+                        format: uuid
+                      audit_id:
+                        type: string
+                        format: uuid
+                      previous_risk_level:
+                        type: string
+                        enum:
+                        - low
+                        - medium
+                        - high
+                        - critical
+                        nullable: true
+                      new_risk_level:
+                        type: string
+                        enum:
+                        - low
+                        - medium
+                        - high
+                        - critical
+              example:
+                success: true
+                data:
+                  vendor_id: "550e8400-e29b-41d4-a716-446655440000"
+                  audit_id: "aa9d4c36-b513-4a62-9dfd-4f93a1f3dcf7"
+                  previous_risk_level: high
+                  new_risk_level: medium
+                message: SLA updated and audit logged
+                meta:
+                  timestamp: '2025-11-18T09:38:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '404':
+        $ref: '#/components/responses/NotFound'

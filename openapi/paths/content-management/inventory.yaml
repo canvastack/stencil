@@ -1070,6 +1070,367 @@
       '500':
         $ref: '#/components/responses/ServerError'
 
+/admin/inventory/reconciliation:
+  get:
+    tags:
+      - Inventory Reconciliation
+    summary: List Reconciliation Batches
+    description: |
+      Retrieve reconciliation batches, variances, and audit summaries across multi-tenant locations.
+    operationId: listInventoryReconciliations
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - inventory.reconciliation.list
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [pending, processing, completed, needs_review]
+      - name: location_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+      - name: created_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: created_to
+        in: query
+        schema:
+          type: string
+          format: date
+    responses:
+      '200':
+        description: Reconciliation batches retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          started_at:
+                            type: string
+                            format: date-time
+                          completed_at:
+                            type: string
+                            format: date-time
+                            nullable: true
+                          status:
+                            type: string
+                          location_scope:
+                            type: array
+                            items:
+                              type: string
+                              format: uuid
+                          variance_count:
+                            type: integer
+                          variance_value:
+                            type: number
+                            format: double
+                          created_by:
+                            type: string
+                    meta:
+                      $ref: '#/components/schemas/PaginationMeta'
+            examples:
+              ok:
+                summary: Reconciliation list
+                value:
+                  success: true
+                  data:
+                    - id: "8f26c0b1-496f-4f33-953b-5ef5589c7d92"
+                      started_at: '2025-11-15T01:30:00Z'
+                      completed_at: '2025-11-15T04:45:00Z'
+                      status: completed
+                      location_scope:
+                        - "b6d5ff46-9d8a-448b-9079-7f98d6d3a111"
+                      variance_count: 12
+                      variance_value: -1850000.00
+                      created_by: 'inventory_controller'
+                  meta:
+                    page: 1
+                    per_page: 20
+                    total: 3
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+  post:
+    tags:
+      - Inventory Reconciliation
+    summary: Start Reconciliation Job
+    description: |
+      Launch reconciliation workflow comparing system balances with counted quantities, including tolerance and escalation rules.
+    operationId: startInventoryReconciliation
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - inventory.reconciliation.create
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - counted_at
+              - locations
+            properties:
+              counted_at:
+                type: string
+                format: date-time
+              locations:
+                type: array
+                minItems: 1
+                items:
+                  type: object
+                  required:
+                    - location_id
+                  properties:
+                    location_id:
+                      type: string
+                      format: uuid
+                    counted_by:
+                      type: string
+                    notes:
+                      type: string
+                      nullable: true
+              include_categories:
+                type: array
+                items:
+                  type: string
+              exclude_item_types:
+                type: array
+                items:
+                  type: string
+              auto_create_adjustments:
+                type: boolean
+                default: false
+              tolerance_ruleset_id:
+                type: string
+                format: uuid
+                nullable: true
+              notify_roles:
+                type: array
+                items:
+                  type: string
+          examples:
+            reconciliation_request:
+              summary: Full warehouse reconciliation
+              value:
+                counted_at: '2025-11-17T23:00:00Z'
+                locations:
+                  - location_id: "b6d5ff46-9d8a-448b-9079-7f98d6d3a111"
+                    counted_by: 'night_shift_team'
+                include_categories:
+                  - Raw Materials
+                  - Finished Goods
+                auto_create_adjustments: false
+                tolerance_ruleset_id: "173c49e1-904a-44f1-9f55-0a61edba2b80"
+                notify_roles:
+                  - operations_manager
+                  - finance_controller
+    responses:
+      '202':
+        description: Reconciliation job accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        reconciliation_id:
+                          type: string
+                          format: uuid
+                        status:
+                          type: string
+                        expected_completion_at:
+                          type: string
+                          format: date-time
+            examples:
+              ok:
+                summary: Job accepted
+                value:
+                  success: true
+                  data:
+                    reconciliation_id: "8f26c0b1-496f-4f33-953b-5ef5589c7d92"
+                    status: pending
+                    expected_completion_at: '2025-11-18T02:00:00Z'
+                  message: Reconciliation started
+                  meta:
+                    timestamp: '2025-11-17T23:05:00Z'
+      '400':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '409':
+        $ref: '#/components/responses/Conflict'
+      '500':
+        $ref: '#/components/responses/ServerError'
+
+/admin/inventory/analytics:
+  get:
+    tags:
+      - Inventory Analytics
+    summary: Inventory Analytics Dashboard
+    description: |
+      Provide multi-tenant inventory analytics including aging, turnover, valuation, and SLA compliance metrics.
+    operationId: getInventoryAnalytics
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - inventory.analytics.read
+    parameters:
+      - $ref: '#/components/parameters/TenantHeader'
+      - name: range
+        in: query
+        schema:
+          type: string
+          enum: [daily, weekly, monthly, quarterly]
+        description: Reporting interval
+      - name: location_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Filter analytics by location
+      - name: category
+        in: query
+        schema:
+          type: string
+        description: Filter analytics by category
+    responses:
+      '200':
+        description: Analytics data retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        stock_valuation:
+                          type: object
+                          properties:
+                            total_value:
+                              type: number
+                              format: double
+                            currency:
+                              type: string
+                            breakdown:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  category:
+                                    type: string
+                                  value:
+                                    type: number
+                                    format: double
+                        turnover_ratio:
+                          type: number
+                          format: double
+                        aging_buckets:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              bucket:
+                                type: string
+                              quantity:
+                                type: number
+                                format: double
+                        reservation_utilization:
+                          type: object
+                          properties:
+                            total_reserved:
+                              type: number
+                              format: double
+                            fulfillment_rate:
+                              type: number
+                              format: double
+                        sla_compliance:
+                          type: object
+                          properties:
+                            movement_sla:
+                              type: number
+                              format: double
+                            count_completion_sla:
+                              type: number
+                              format: double
+                        alerts_summary:
+                          type: object
+                          properties:
+                            low_stock:
+                              type: integer
+                            quality_hold:
+                              type: integer
+                            expiring:
+                              type: integer
+            examples:
+              ok:
+                summary: Analytics snapshot
+                value:
+                  success: true
+                  data:
+                    stock_valuation:
+                      total_value: 125750000.00
+                      currency: IDR
+                      breakdown:
+                        - category: Raw Materials
+                          value: 80500000.00
+                        - category: Finished Goods
+                          value: 45250000.00
+                    turnover_ratio: 5.4
+                    aging_buckets:
+                      - bucket: 0-30 days
+                        quantity: 340
+                      - bucket: 31-60 days
+                        quantity: 145
+                      - bucket: 61-90 days
+                        quantity: 62
+                      - bucket: 90+ days
+                        quantity: 18
+                    reservation_utilization:
+                      total_reserved: 128
+                      fulfillment_rate: 92.5
+                    sla_compliance:
+                      movement_sla: 96.4
+                      count_completion_sla: 88.1
+                    alerts_summary:
+                      low_stock: 12
+                      quality_hold: 4
+                      expiring: 3
+                  meta:
+                    timestamp: '2025-11-18T09:42:00Z'
+
 # Inventory Suppliers Management
 /admin/inventory/suppliers:
   get:

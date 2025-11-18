@@ -12,6 +12,8 @@ class ProductCategory extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $table = 'product_categories';
+
     protected $fillable = [
         'uuid',
         'tenant_id',
@@ -57,6 +59,15 @@ class ProductCategory extends Model
         'created_at',
         'updated_at',
         'deleted_at',
+    ];
+
+    protected $attributes = [
+        'is_active' => true,
+        'is_featured' => false,
+        'show_in_menu' => true,
+        'requires_quote' => false,
+        'level' => 0,
+        'sort_order' => 0,
     ];
 
     /**

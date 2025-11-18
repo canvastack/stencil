@@ -47,8 +47,8 @@ class ProductVariantEloquentRepositoryTest extends TestCase
         $this->assertDatabaseHas('product_variants', [
             'tenant_id' => 1, // Using integer ID for database
             'uuid' => $variant->getId()->getValue(),
-            'material' => 'akrilik',
-            'quality' => 'standard',
+            'material' => 'Akrilik',
+            'quality' => 'Standard',
             'sku' => 'akrilik-standard',
             'is_active' => true,
         ]);

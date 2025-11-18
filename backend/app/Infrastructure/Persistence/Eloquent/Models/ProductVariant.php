@@ -15,6 +15,7 @@ class ProductVariant extends Model
         'uuid',
         'tenant_id',
         'product_id',
+        'category_id',
         'name',
         'sku',
         'material',
@@ -40,12 +41,29 @@ class ProductVariant extends Model
         'special_notes',
         'weight',
         'shipping_dimensions',
+        'etching_specifications',
+        'base_price',
+        'selling_price', 
+        'retail_price',
+        'cost_price',
+        'length',
+        'width',
+    ];
+
+    protected $attributes = [
+        'stock_quantity' => 0,
+        'price_adjustment' => 0,
+        'track_inventory' => true,
+        'allow_backorder' => false,
+        'is_active' => true,
+        'is_default' => false,
+        'sort_order' => 0,
     ];
 
     protected $casts = [
         'dimensions' => 'array',
         'price_adjustment' => 'integer',
-        'markup_percentage' => 'decimal:2',
+        'markup_percentage' => 'float',
         'vendor_price' => 'integer',
         'stock_quantity' => 'integer',
         'low_stock_threshold' => 'integer',
@@ -57,8 +75,16 @@ class ProductVariant extends Model
         'lead_time_days' => 'integer',
         'images' => 'array',
         'custom_fields' => 'array',
-        'weight' => 'decimal:2',
+        'weight' => 'float',
+        'thickness' => 'float',
         'shipping_dimensions' => 'array',
+        'etching_specifications' => 'array',
+        'base_price' => 'float',
+        'selling_price' => 'float',
+        'retail_price' => 'float',
+        'cost_price' => 'float',
+        'length' => 'float',
+        'width' => 'float',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -84,6 +110,14 @@ class ProductVariant extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the category this variant belongs to
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ProductCategory::class, 'category_id');
     }
 
     /**
@@ -194,7 +228,8 @@ class ProductVariant extends Model
         }
         
         if ($this->quality) {
-            $parts[] = $this->quality;
+            $qualityDisplay = $this->quality === 'Tinggi' ? 'Premium' : $this->quality;
+            $parts[] = $qualityDisplay;
         }
         
         if ($this->thickness) {
@@ -205,7 +240,7 @@ class ProductVariant extends Model
             $parts[] = $this->color;
         }
 
-        return !empty($parts) ? implode(' ', $parts) : $this->name;
+        return !empty($parts) ? implode(' - ', $parts) : $this->name;
     }
 
     /**
@@ -236,6 +271,71 @@ class ProductVariant extends Model
     }
 
     /**
+     * Scope to filter variants by price range
+     */
+    public function scopePriceRange($query, $minPrice, $maxPrice)
+    {
+        return $query->whereBetween('selling_price', [$minPrice, $maxPrice]);
+    }
+
+    /**
+     * Check if variant has stock (alias method for tests)
+     */
+    public function hasStock(): bool
+    {
+        return $this->isInStock();
+    }
+
+    /**
+     * Get profit margin amount
+     */
+    public function getProfitMargin(): float
+    {
+        if (!$this->base_price || !$this->selling_price) {
+            return 0.0;
+        }
+
+        return (float) ($this->selling_price - $this->base_price);
+    }
+
+    /**
+     * Get profit margin percentage
+     */
+    public function getProfitMarginPercentage(): float
+    {
+        if (!$this->base_price || $this->base_price == 0) {
+            return 0.0;
+        }
+
+        $margin = $this->getProfitMargin();
+        return ($margin / $this->base_price) * 100;
+    }
+
+    /**
+     * Calculate area from dimensions
+     */
+    public function getArea(): float
+    {
+        if (!$this->length || !$this->width) {
+            return 0.0;
+        }
+
+        return (float) ($this->length * $this->width);
+    }
+
+    /**
+     * Calculate volume from dimensions
+     */
+    public function getVolume(): float
+    {
+        if (!$this->length || !$this->width || !$this->thickness) {
+            return 0.0;
+        }
+
+        return (float) ($this->length * $this->width * $this->thickness);
+    }
+
+    /**
      * Boot method to handle model events
      */
     protected static function boot()
@@ -246,6 +346,24 @@ class ProductVariant extends Model
         static::creating(function ($model) {
             if (empty($model->uuid)) {
                 $model->uuid = \Ramsey\Uuid\Uuid::uuid4()->toString();
+            }
+            
+            // Auto-generate name if not provided
+            if (empty($model->name)) {
+                $name = '';
+                if ($model->material) {
+                    $name .= ucfirst($model->material);
+                }
+                if ($model->quality) {
+                    $name .= ' ' . ucfirst($model->quality);
+                }
+                if ($model->thickness) {
+                    $name .= ' ' . $model->thickness;
+                }
+                if (empty($name)) {
+                    $name = 'Product Variant';
+                }
+                $model->name = trim($name);
             }
         });
 

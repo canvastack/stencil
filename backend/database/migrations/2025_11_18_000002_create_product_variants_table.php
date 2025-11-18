@@ -24,6 +24,7 @@ return new class extends Migration
             
             // Product reference
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
             
             // Variant Information
             $table->string('name'); // e.g., "Akrilik Standard 5mm Hitam"
@@ -31,16 +32,21 @@ return new class extends Migration
             
             // Etching-specific attributes
             $table->enum('material', ['Akrilik', 'Kuningan', 'Tembaga', 'Stainless Steel', 'Aluminum'])->nullable();
-            $table->enum('quality', ['Standard', 'Tinggi'])->nullable();
-            $table->string('thickness')->nullable(); // "5mm", "10mm", etc.
+            $table->enum('quality', ['Standard', 'Tinggi', 'Premium'])->nullable();
+            $table->decimal('thickness', 8, 2)->nullable();
             $table->string('color')->nullable(); // Color name or hex code
             $table->string('color_hex')->nullable(); // Hex code for exact color
             $table->json('dimensions')->nullable(); // width, height, depth
+            $table->json('etching_specifications')->nullable();
             
             // Pricing per variant
             $table->bigInteger('price_adjustment')->default(0); // Price difference from base product
             $table->decimal('markup_percentage', 5, 2)->nullable(); // Override product markup
             $table->bigInteger('vendor_price')->nullable(); // Vendor cost for this specific variant
+            $table->decimal('base_price', 12, 2)->nullable();
+            $table->decimal('selling_price', 12, 2)->nullable();
+            $table->decimal('retail_price', 12, 2)->nullable();
+            $table->decimal('cost_price', 12, 2)->nullable();
             
             // Inventory per variant
             $table->integer('stock_quantity')->default(0);
@@ -66,15 +72,19 @@ return new class extends Migration
             
             // Weight and shipping
             $table->decimal('weight', 8, 2)->nullable();
+            $table->decimal('length', 8, 2)->nullable();
+            $table->decimal('width', 8, 2)->nullable();
             $table->json('shipping_dimensions')->nullable();
             
             // Timestamps
             $table->timestamps();
+            $table->softDeletes();
             
             // Indexes
             $table->index('uuid');
             $table->index('tenant_id');
             $table->index('product_id');
+            $table->index('category_id');
             $table->index('sku');
             $table->index('material');
             $table->index('quality');
