@@ -3,21 +3,24 @@ repos:
     hooks:
       - id: openapi-yaml-validation
         name: Validate OpenAPI YAML files
-        entry: bash -c 'cd openapi && node tools/validate-all.js'
+        entry: >-
+          bash -c 'cd openapi && node tools/validate-all.js'
         language: system
         files: 'openapi/.*\.yaml$'
         pass_filenames: false
         
       - id: openapi-security-check
         name: OpenAPI Security Check
-        entry: bash -c 'cd openapi && node security-audit.cjs && SCORE=$(node -e "console.log(JSON.parse(require("fs").readFileSync("generated/security-audit.json")).summary.overallScore)") && if [ "$SCORE" -lt 50 ]; then echo "Security score too low: $SCORE"; exit 1; fi'
+        entry: >-
+          bash -c "cd openapi && node security-audit.cjs && SCORE=$(node -e \"console.log(JSON.parse(require('fs').readFileSync('generated/security-audit.json')).summary.overallScore)\") && if [ \"$SCORE\" -lt 50 ]; then echo \"Security score too low: $SCORE\"; exit 1; fi"
         language: system
         files: 'openapi/.*\.yaml$'
         pass_filenames: false
         
       - id: openapi-performance-check
         name: OpenAPI Performance Check  
-        entry: bash -c 'cd openapi && node performance-test.cjs'
+        entry: >-
+          bash -c 'cd openapi && node performance-test.cjs'
         language: system
         files: 'openapi/.*\.yaml$'
         pass_filenames: false

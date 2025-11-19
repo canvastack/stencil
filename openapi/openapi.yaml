@@ -472,6 +472,264 @@ paths:
   /api/v1/admin/products/quotation-eligible:
     $ref: './paths/content-management/products.yaml#/~1admin~1products~1quotation-eligible'
   
+  # Tenant Inventory Management
+  /api/v1/tenant/inventory/items:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items'
+  /api/v1/tenant/inventory/items/{item}:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{item}'
+  /api/v1/tenant/inventory/locations:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1locations'
+  /api/v1/tenant/inventory/locations/{location}:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1locations~1{location}'
+  /api/v1/tenant/inventory/items/{product}/locations/{location}/stock:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1locations~1{location}~1stock'
+  /api/v1/tenant/inventory/items/{product}/locations/{location}/adjust:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1locations~1{location}~1adjust'
+  /api/v1/tenant/inventory/items/{product}/transfer:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1transfer'
+  /api/v1/tenant/inventory/items/{product}/reserve:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1reserve'
+  /api/v1/tenant/inventory/reservations:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reservations'
+  /api/v1/tenant/inventory/reservations/{reservation}/release:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reservations~1{reservation}~1release'
+  /api/v1/tenant/inventory/reconciliations:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reconciliations'
+  /api/v1/tenant/inventory/reconciliations/run:
+    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reconciliations~1run'
+  
+  /api/v1/tenant/customers/search:
+    $ref: './paths/content-management/customers.yaml#/~1tenant~1customers~1search'
+
+  /api/v1/tenant/customers/export:
+    $ref: './paths/content-management/customers.yaml#/~1tenant~1customers~1export'
+
+  /api/v1/tenant/vendors/search:
+    $ref: './paths/content-management/vendors.yaml#/~1tenant~1vendors~1search'
+
+  /api/v1/tenant/vendors/export:
+    $ref: './paths/content-management/vendors.yaml#/~1tenant~1vendors~1export'
+
+  /api/v1/tenant/products/search:
+    get:
+      summary: "Search tenant products"
+      tags:
+        - Tenant Products
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: category_id
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: include_inventory
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Hasil pencarian produk
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: object
+        '422':
+          $ref: './components/responses.yaml#/ValidationError'
+        '500':
+          $ref: './components/responses.yaml#/ServerError'
+
+  /api/v1/tenant/products/categories:
+    get:
+      summary: "Daftar kategori produk tenant"
+      tags:
+        - Tenant Products
+      parameters:
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+        - name: featured_only
+          in: query
+          schema:
+            type: boolean
+        - name: parent_id
+          in: query
+          schema:
+            type: integer
+        - name: include_children
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Daftar kategori produk
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: object
+        '500':
+          $ref: './components/responses.yaml#/ServerError'
+
+  /api/v1/tenant/products/tags:
+    get:
+      summary: "Daftar tag produk tenant"
+      tags:
+        - Tenant Products
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Daftar tag produk
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: object
+        '500':
+          $ref: './components/responses.yaml#/ServerError'
+
+  /api/v1/tenant/analytics/customers/segmentation:
+    get:
+      summary: "Analitik segmentasi pelanggan"
+      tags:
+        - Tenant Analytics
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Ringkasan segmentasi pelanggan
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      distribution:
+                        type: object
+                      topCustomers:
+                        type: array
+                        items:
+                          type: object
+                      atRiskCustomers:
+                        type: array
+                        items:
+                          type: object
+                  meta:
+                    type: object
+        '500':
+          $ref: './components/responses.yaml#/ServerError'
+
+  /api/v1/tenant/analytics/vendors:
+    get:
+      summary: "Analitik performa vendor"
+      tags:
+        - Tenant Analytics
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+        - name: underperforming_threshold
+          in: query
+          schema:
+            type: number
+            format: float
+      responses:
+        '200':
+          description: Ringkasan performa vendor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        type: object
+                      topPerformers:
+                        type: array
+                        items:
+                          type: object
+                      underperformingVendors:
+                        type: array
+                        items:
+                          type: object
+                      slaSnapshot:
+                        type: array
+                        items:
+                          type: object
+                  meta:
+                    type: object
+        '500':
+          $ref: './components/responses.yaml#/ServerError'
+  
   # ===== THEME MANAGEMENT ENDPOINTS =====
   
   # Theme Marketplace

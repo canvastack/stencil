@@ -4,6 +4,9 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Domain\Inventory\Jobs\InventoryReconciliationJob;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\User;
 
 class Kernel extends ConsoleKernel
 {
@@ -12,7 +15,19 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->call(function () {
+            TenantEloquentModel::where('status', 'active')->chunk(50, function ($tenants) {
+                foreach ($tenants as $tenant) {
+                    $userId = User::where('tenant_id', $tenant->id)
+                        ->where('status', 'active')
+                        ->orderBy('id')
+                        ->value('id');
+                    if ($userId) {
+                        InventoryReconciliationJob::dispatch($tenant->id, $userId, 'scheduled');
+                    }
+                }
+            });
+        })->hourly();
     }
 
     /**

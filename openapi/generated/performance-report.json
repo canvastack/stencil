@@ -1,15 +1,15 @@
 {
-  "timestamp": "2025-11-13T16:32:12.044Z",
+  "timestamp": "2025-11-19T08:28:54.636Z",
   "summary": {
-    "totalFiles": 48,
-    "totalSizeMB": "1.91",
-    "averageParseTime": "70.90",
+    "totalFiles": 51,
+    "totalSizeMB": "2.14",
+    "averageParseTime": "104.67",
     "performanceScore": 80
   },
   "details": {
-    "totalFiles": 48,
-    "totalSize": 2004404,
-    "averageParseTime": 70.90219166666667,
+    "totalFiles": 51,
+    "totalSize": 2248411,
+    "averageParseTime": 104.67405686274505,
     "schemaComplexity": {
       "totalSchemas": 0,
       "totalProperties": 0,
@@ -18,136 +18,192 @@
       "complexSchemas": []
     },
     "fileOptimization": {
-      "totalOriginalSize": 2004404,
-      "totalOptimizedSize": 1967047,
-      "totalSavings": 37357,
-      "totalSavingsPercent": "1.9",
+      "totalOriginalSize": 2248411,
+      "totalOptimizedSize": 2176439,
+      "totalSavings": 71972,
+      "totalSavingsPercent": "3.2",
       "suggestions": [
         {
           "file": "components\\parameters.yaml",
-          "originalSize": 8423,
-          "optimizedSize": 7974,
-          "savings": 449,
-          "savingsPercent": "5.3"
+          "originalSize": 8768,
+          "optimizedSize": 8298,
+          "savings": 470,
+          "savingsPercent": "5.4"
+        },
+        {
+          "file": "components\\responses.yaml",
+          "originalSize": 12203,
+          "optimizedSize": 11782,
+          "savings": 421,
+          "savingsPercent": "3.4"
         },
         {
           "file": "components\\schemas.yaml",
-          "originalSize": 7239,
-          "optimizedSize": 6941,
-          "savings": 298,
-          "savingsPercent": "4.1"
+          "originalSize": 16447,
+          "optimizedSize": 15731,
+          "savings": 716,
+          "savingsPercent": "4.4"
         },
         {
           "file": "openapi.yaml",
-          "originalSize": 23224,
-          "optimizedSize": 22987,
-          "savings": 237,
-          "savingsPercent": "1.0"
+          "originalSize": 40387,
+          "optimizedSize": 40126,
+          "savings": 261,
+          "savingsPercent": "0.6"
         },
         {
-          "file": "paths\\content-management\\customers.yaml",
-          "originalSize": 64672,
-          "optimizedSize": 62766,
-          "savings": 1906,
-          "savingsPercent": "2.9"
+          "file": "paths\\content-management\\about.yaml",
+          "originalSize": 71634,
+          "optimizedSize": 69297,
+          "savings": 2337,
+          "savingsPercent": "3.3"
         },
         {
-          "file": "paths\\content-management\\documentation.yaml",
-          "originalSize": 59401,
-          "optimizedSize": 57571,
-          "savings": 1830,
+          "file": "paths\\content-management\\contact.yaml",
+          "originalSize": 19978,
+          "optimizedSize": 19355,
+          "savings": 623,
           "savingsPercent": "3.1"
         },
         {
+          "file": "paths\\content-management\\customers.yaml",
+          "originalSize": 61680,
+          "optimizedSize": 59617,
+          "savings": 2063,
+          "savingsPercent": "3.3"
+        },
+        {
+          "file": "paths\\content-management\\documentation.yaml",
+          "originalSize": 70171,
+          "optimizedSize": 67965,
+          "savings": 2206,
+          "savingsPercent": "3.1"
+        },
+        {
+          "file": "paths\\content-management\\faq.yaml",
+          "originalSize": 34678,
+          "optimizedSize": 33576,
+          "savings": 1102,
+          "savingsPercent": "3.2"
+        },
+        {
           "file": "paths\\content-management\\financial.yaml",
-          "originalSize": 50398,
-          "optimizedSize": 50241,
-          "savings": 157,
-          "savingsPercent": "0.3"
+          "originalSize": 47076,
+          "optimizedSize": 45486,
+          "savings": 1590,
+          "savingsPercent": "3.4"
+        },
+        {
+          "file": "paths\\content-management\\homepage.yaml",
+          "originalSize": 26360,
+          "optimizedSize": 25475,
+          "savings": 885,
+          "savingsPercent": "3.4"
         },
         {
           "file": "paths\\content-management\\language.yaml",
-          "originalSize": 65800,
-          "optimizedSize": 63293,
-          "savings": 2507,
+          "originalSize": 71702,
+          "optimizedSize": 68988,
+          "savings": 2714,
           "savingsPercent": "3.8"
         },
         {
           "file": "paths\\content-management\\media.yaml",
-          "originalSize": 69151,
-          "optimizedSize": 67024,
-          "savings": 2127,
-          "savingsPercent": "3.1"
-        },
-        {
-          "file": "paths\\content-management\\orders.yaml",
-          "originalSize": 53768,
-          "optimizedSize": 53502,
-          "savings": 266,
-          "savingsPercent": "0.5"
-        },
-        {
-          "file": "paths\\content-management\\plugins.yaml",
-          "originalSize": 68848,
-          "optimizedSize": 66556,
-          "savings": 2292,
-          "savingsPercent": "3.3"
-        },
-        {
-          "file": "paths\\content-management\\products.yaml",
-          "originalSize": 40964,
-          "optimizedSize": 39658,
-          "savings": 1306,
+          "originalSize": 75304,
+          "optimizedSize": 72884,
+          "savings": 2420,
           "savingsPercent": "3.2"
         },
         {
+          "file": "paths\\content-management\\orders.yaml",
+          "originalSize": 75879,
+          "optimizedSize": 75647,
+          "savings": 232,
+          "savingsPercent": "0.3"
+        },
+        {
+          "file": "paths\\content-management\\plugins.yaml",
+          "originalSize": 62599,
+          "optimizedSize": 60360,
+          "savings": 2239,
+          "savingsPercent": "3.6"
+        },
+        {
+          "file": "paths\\content-management\\products.yaml",
+          "originalSize": 45463,
+          "optimizedSize": 43891,
+          "savings": 1572,
+          "savingsPercent": "3.5"
+        },
+        {
           "file": "paths\\content-management\\reviews.yaml",
-          "originalSize": 48240,
-          "optimizedSize": 48050,
-          "savings": 190,
-          "savingsPercent": "0.4"
+          "originalSize": 51250,
+          "optimizedSize": 49530,
+          "savings": 1720,
+          "savingsPercent": "3.4"
         },
         {
           "file": "paths\\content-management\\seo.yaml",
-          "originalSize": 28943,
-          "optimizedSize": 28042,
-          "savings": 901,
-          "savingsPercent": "3.1"
+          "originalSize": 27738,
+          "optimizedSize": 26834,
+          "savings": 904,
+          "savingsPercent": "3.3"
+        },
+        {
+          "file": "paths\\content-management\\settings.yaml",
+          "originalSize": 75436,
+          "optimizedSize": 73151,
+          "savings": 2285,
+          "savingsPercent": "3.0"
         },
         {
           "file": "paths\\content-management\\suppliers.yaml",
-          "originalSize": 64204,
-          "optimizedSize": 64024,
-          "savings": 180,
-          "savingsPercent": "0.3"
+          "originalSize": 75690,
+          "optimizedSize": 73304,
+          "savings": 2386,
+          "savingsPercent": "3.2"
         },
         {
           "file": "paths\\content-management\\theme.yaml",
-          "originalSize": 66041,
-          "optimizedSize": 65740,
-          "savings": 301,
-          "savingsPercent": "0.5"
+          "originalSize": 68949,
+          "optimizedSize": 66570,
+          "savings": 2379,
+          "savingsPercent": "3.5"
         },
         {
           "file": "paths\\content-management\\users.yaml",
-          "originalSize": 60469,
-          "optimizedSize": 60301,
-          "savings": 168,
-          "savingsPercent": "0.3"
+          "originalSize": 64639,
+          "optimizedSize": 62416,
+          "savings": 2223,
+          "savingsPercent": "3.4"
         },
         {
           "file": "paths\\content-management\\vendors.yaml",
-          "originalSize": 61927,
-          "optimizedSize": 61733,
-          "savings": 194,
-          "savingsPercent": "0.3"
+          "originalSize": 80091,
+          "optimizedSize": 79927,
+          "savings": 164,
+          "savingsPercent": "0.2"
+        },
+        {
+          "file": "paths\\platform\\platform-licensing.yaml",
+          "originalSize": 33093,
+          "optimizedSize": 31905,
+          "savings": 1188,
+          "savingsPercent": "3.6"
         },
         {
           "file": "schemas\\common\\auth.yaml",
-          "originalSize": 13415,
-          "optimizedSize": 12867,
-          "savings": 548,
+          "originalSize": 13673,
+          "optimizedSize": 13118,
+          "savings": 555,
           "savingsPercent": "4.1"
+        },
+        {
+          "file": "schemas\\common\\base.yaml",
+          "originalSize": 12061,
+          "optimizedSize": 11617,
+          "savings": 444,
+          "savingsPercent": "3.7"
         },
         {
           "file": "schemas\\common\\error.yaml",
@@ -171,6 +227,13 @@
           "savingsPercent": "3.5"
         },
         {
+          "file": "schemas\\content-management\\contact.yaml",
+          "originalSize": 25956,
+          "optimizedSize": 25051,
+          "savings": 905,
+          "savingsPercent": "3.5"
+        },
+        {
           "file": "schemas\\content-management\\customers.yaml",
           "originalSize": 35982,
           "optimizedSize": 34628,
@@ -185,25 +248,32 @@
           "savingsPercent": "5.7"
         },
         {
+          "file": "schemas\\content-management\\faq.yaml",
+          "originalSize": 23099,
+          "optimizedSize": 22273,
+          "savings": 826,
+          "savingsPercent": "3.6"
+        },
+        {
           "file": "schemas\\content-management\\financial.yaml",
-          "originalSize": 35348,
-          "optimizedSize": 33766,
-          "savings": 1582,
-          "savingsPercent": "4.5"
+          "originalSize": 44833,
+          "optimizedSize": 42917,
+          "savings": 1916,
+          "savingsPercent": "4.3"
         },
         {
           "file": "schemas\\content-management\\homepage.yaml",
-          "originalSize": 77104,
+          "originalSize": 79846,
           "optimizedSize": 76910,
-          "savings": 194,
-          "savingsPercent": "0.3"
+          "savings": 2936,
+          "savingsPercent": "3.7"
         },
         {
           "file": "schemas\\content-management\\inventory.yaml",
-          "originalSize": 56052,
-          "optimizedSize": 55402,
-          "savings": 650,
-          "savingsPercent": "1.2"
+          "originalSize": 56628,
+          "optimizedSize": 55977,
+          "savings": 651,
+          "savingsPercent": "1.1"
         },
         {
           "file": "schemas\\content-management\\language.yaml",
@@ -221,10 +291,10 @@
         },
         {
           "file": "schemas\\content-management\\orders.yaml",
-          "originalSize": 64728,
-          "optimizedSize": 63715,
-          "savings": 1013,
-          "savingsPercent": "1.6"
+          "originalSize": 68924,
+          "optimizedSize": 65466,
+          "savings": 3458,
+          "savingsPercent": "5.0"
         },
         {
           "file": "schemas\\content-management\\plugins.yaml",
@@ -234,18 +304,25 @@
           "savingsPercent": "3.6"
         },
         {
+          "file": "schemas\\content-management\\products.yaml",
+          "originalSize": 22991,
+          "optimizedSize": 22020,
+          "savings": 971,
+          "savingsPercent": "4.2"
+        },
+        {
           "file": "schemas\\content-management\\reviews.yaml",
-          "originalSize": 32776,
+          "originalSize": 33893,
           "optimizedSize": 32503,
-          "savings": 273,
-          "savingsPercent": "0.8"
+          "savings": 1390,
+          "savingsPercent": "4.1"
         },
         {
           "file": "schemas\\content-management\\seo.yaml",
-          "originalSize": 60780,
+          "originalSize": 62887,
           "optimizedSize": 60620,
-          "savings": 160,
-          "savingsPercent": "0.3"
+          "savings": 2267,
+          "savingsPercent": "3.6"
         },
         {
           "file": "schemas\\content-management\\settings.yaml",
@@ -256,38 +333,52 @@
         },
         {
           "file": "schemas\\content-management\\suppliers.yaml",
-          "originalSize": 61456,
-          "optimizedSize": 59171,
-          "savings": 2285,
+          "originalSize": 63630,
+          "optimizedSize": 61263,
+          "savings": 2367,
           "savingsPercent": "3.7"
         },
         {
           "file": "schemas\\content-management\\theme.yaml",
-          "originalSize": 47337,
-          "optimizedSize": 45621,
-          "savings": 1716,
+          "originalSize": 48972,
+          "optimizedSize": 47192,
+          "savings": 1780,
           "savingsPercent": "3.6"
         },
         {
           "file": "schemas\\content-management\\users.yaml",
-          "originalSize": 34949,
-          "optimizedSize": 33684,
-          "savings": 1265,
+          "originalSize": 35090,
+          "optimizedSize": 33821,
+          "savings": 1269,
           "savingsPercent": "3.6"
+        },
+        {
+          "file": "schemas\\content-management\\vendors.yaml",
+          "originalSize": 45942,
+          "optimizedSize": 44203,
+          "savings": 1739,
+          "savingsPercent": "3.8"
+        },
+        {
+          "file": "schemas\\platform\\platform-licensing.yaml",
+          "originalSize": 39538,
+          "optimizedSize": 38091,
+          "savings": 1447,
+          "savingsPercent": "3.7"
         }
       ]
     },
     "documentationMetrics": {
       "HTML Documentation": {
-        "generationTime": "116.16",
+        "generationTime": "111.16",
         "status": "success"
       },
       "Postman Collection": {
-        "generationTime": "100.21",
+        "generationTime": "102.76",
         "status": "success"
       },
       "Validation Pipeline": {
-        "generationTime": "114.21",
+        "generationTime": "113.32",
         "status": "success"
       }
     },

@@ -10,6 +10,7 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\OrderController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\AnalyticsController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\SettingsController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\InventoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -106,6 +107,23 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/{category}/products', [ProductCategoryController::class, 'products'])->name('tenant.product_categories.products');
         });
         
+        // Inventory Management
+        Route::prefix('inventory')->group(function () {
+            Route::get('/items', [InventoryController::class, 'index'])->name('tenant.inventory.items.index');
+            Route::get('/items/{item}', [InventoryController::class, 'show'])->name('tenant.inventory.items.show');
+            Route::get('/locations', [InventoryController::class, 'locations'])->name('tenant.inventory.locations.index');
+            Route::post('/locations', [InventoryController::class, 'storeLocation'])->name('tenant.inventory.locations.store');
+            Route::put('/locations/{location}', [InventoryController::class, 'updateLocation'])->name('tenant.inventory.locations.update');
+            Route::post('/items/{product}/locations/{location}/stock', [InventoryController::class, 'setLocationStock'])->name('tenant.inventory.locations.set_stock');
+            Route::post('/items/{product}/locations/{location}/adjust', [InventoryController::class, 'adjustLocationStock'])->name('tenant.inventory.locations.adjust_stock');
+            Route::post('/items/{product}/transfer', [InventoryController::class, 'transferStock'])->name('tenant.inventory.items.transfer');
+            Route::post('/items/{product}/reserve', [InventoryController::class, 'reserveStock'])->name('tenant.inventory.items.reserve');
+            Route::post('/reservations/{reservation}/release', [InventoryController::class, 'releaseReservation'])->name('tenant.inventory.reservations.release');
+            Route::get('/reservations', [InventoryController::class, 'reservations'])->name('tenant.inventory.reservations.index');
+            Route::get('/reconciliations', [InventoryController::class, 'reconciliations'])->name('tenant.inventory.reconciliations.index');
+            Route::post('/reconciliations/run', [InventoryController::class, 'runReconciliation'])->name('tenant.inventory.reconciliations.run');
+        });
+        
         // Order Management
         Route::prefix('orders')->group(function () {
             Route::get('/', [OrderController::class, 'index'])->name('tenant.orders.index');
@@ -123,6 +141,8 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{order}/refund', [OrderController::class, 'refund'])->name('tenant.orders.refund');
             
             // Order Filters
+            Route::get('/{order}/available-transitions', [OrderController::class, 'availableTransitions'])->name('tenant.orders.available_transitions');
+            Route::get('/{order}/quotations', [OrderController::class, 'quotations'])->name('tenant.orders.quotations');
             Route::get('/status/{status}', [OrderController::class, 'byStatus'])->name('tenant.orders.by_status');
             Route::get('/customer/{customer}', [OrderController::class, 'byCustomer'])->name('tenant.orders.by_customer');
             Route::get('/recent', [OrderController::class, 'recent'])->name('tenant.orders.recent');
@@ -141,6 +161,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{vendor}/activate', [VendorController::class, 'activate'])->name('tenant.vendors.activate');
             Route::post('/{vendor}/deactivate', [VendorController::class, 'deactivate'])->name('tenant.vendors.deactivate');
             Route::get('/search', [VendorController::class, 'search'])->name('tenant.vendors.search');
+            Route::get('/export', [VendorController::class, 'export'])->name('tenant.vendors.export');
         });
         
         // Analytics & Reports
@@ -148,6 +169,8 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/overview', [AnalyticsController::class, 'overview'])->name('tenant.analytics.overview');
             Route::get('/sales', [AnalyticsController::class, 'sales'])->name('tenant.analytics.sales');
             Route::get('/customers', [AnalyticsController::class, 'customers'])->name('tenant.analytics.customers');
+            Route::get('/customers/segmentation', [AnalyticsController::class, 'customerSegmentation'])->name('tenant.analytics.customers.segmentation');
+            Route::get('/vendors', [AnalyticsController::class, 'vendors'])->name('tenant.analytics.vendors');
             Route::get('/products', [AnalyticsController::class, 'products'])->name('tenant.analytics.products');
             Route::get('/inventory', [AnalyticsController::class, 'inventory'])->name('tenant.analytics.inventory');
             

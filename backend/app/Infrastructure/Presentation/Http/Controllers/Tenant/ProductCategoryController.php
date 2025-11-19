@@ -3,17 +3,18 @@
 namespace App\Infrastructure\Presentation\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
-use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
+use App\Infrastructure\Presentation\Http\Requests\Product\StoreProductCategoryRequest;
+use App\Infrastructure\Presentation\Http\Requests\Product\UpdateProductCategoryRequest;
+use App\Infrastructure\Presentation\Http\Resources\Product\ProductCategoryResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class ProductCategoryController extends Controller
 {
     public function __construct()
     {
-        // TODO: Add dependency injection when domain layer is fully implemented
     }
 
     /**
@@ -22,37 +23,44 @@ class ProductCategoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'parent_id' => 'nullable|integer|exists:product_categories,id',
-                'active_only' => 'boolean',
-                'with_products' => 'boolean',
-                'sort_by' => 'in:name,order,created_at',
-                'sort_order' => 'in:asc,desc'
-            ]);
+            $query = ProductCategory::with('children');
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+            if ($request->filled('parent_id')) {
+                $query->where('parent_id', $request->parent_id);
             }
 
-            $parentId = $request->parent_id;
-            $activeOnly = $request->boolean('active_only', true);
-            $withProducts = $request->boolean('with_products', false);
-            $sortBy = $request->get('sort_by', 'order');
-            $sortOrder = $request->get('sort_order', 'asc');
+            if ($request->boolean('active_only', false)) {
+                $query->where('is_active', true);
+            }
 
-            // TODO: Replace with proper repository when domain layer is complete
-            return response()->json([
-                'message' => 'Product categories listing not yet fully implemented',
-                'data' => []
-            ]);
+            if ($request->boolean('root_only', false)) {
+                $query->whereNull('parent_id');
+            }
+
+            if ($request->filled('is_featured')) {
+                $query->where('is_featured', $request->boolean('is_featured'));
+            }
+
+            $sortBy = $request->get('sort_by', 'sort_order');
+            $sortOrder = $request->get('sort_order', 'asc');
+            $query->orderBy($sortBy, $sortOrder);
+
+            if ($request->has('per_page')) {
+                $categories = $query->paginate($request->get('per_page', 20));
+                return ProductCategoryResource::collection($categories)
+                    ->response()
+                    ->setStatusCode(200);
+            }
+
+            $categories = $query->get();
+            return ProductCategoryResource::collection($categories)
+                ->response()
+                ->setStatusCode(200);
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve categories',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil daftar kategori produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
@@ -63,16 +71,20 @@ class ProductCategoryController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         try {
-            // TODO: Replace with proper repository when domain layer is complete
-            return response()->json([
-                'message' => 'Product category show not yet fully implemented',
-                'data' => null
-            ]);
+            $category = ProductCategory::with(['children', 'parent'])->findOrFail($id);
 
+            return (new ProductCategoryResource($category))
+                ->response()
+                ->setStatusCode(200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Kategori produk tidak ditemukan'
+            ], 404);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve category',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil detail kategori produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
@@ -80,40 +92,33 @@ class ProductCategoryController extends Controller
     /**
      * Create a new product category
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreProductCategoryRequest $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'parent_id' => 'nullable|integer|exists:product_categories,id',
-                'image' => 'nullable|string|url',
-                'order' => 'integer|min:0',
-                'is_active' => 'boolean'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
+            $categoryData = $request->validated();
+            
+            if (empty($categoryData['slug']) && !empty($categoryData['name'])) {
+                $categoryData['slug'] = Str::slug($categoryData['name']);
+                
+                $originalSlug = $categoryData['slug'];
+                $counter = 1;
+                while (ProductCategory::where('slug', $categoryData['slug'])->exists()) {
+                    $categoryData['slug'] = $originalSlug . '-' . $counter;
+                    $counter++;
+                }
             }
 
-            // TODO: Replace with proper use case when domain layer is complete
-            return response()->json([
-                'message' => 'Product category creation not yet fully implemented',
-                'data' => null
-            ], 201);
+            $category = ProductCategory::create($categoryData);
+            $category->load(['children', 'parent']);
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
+            return (new ProductCategoryResource($category))
+                ->response()
+                ->setStatusCode(201);
+
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to create category',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal membuat kategori produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
@@ -121,69 +126,55 @@ class ProductCategoryController extends Controller
     /**
      * Update an existing category
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateProductCategoryRequest $request, int $id): JsonResponse
     {
         try {
-            $category = ProductCategoryEloquentModel::findOrFail($id);
-
-            $validator = Validator::make($request->all(), [
-                'name' => 'string|max:255',
-                'description' => 'nullable|string',
-                'parent_id' => 'nullable|integer|exists:product_categories,id',
-                'image' => 'nullable|string|url',
-                'order' => 'integer|min:0',
-                'is_active' => 'boolean'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            // Validate parent relationship to prevent circular references
+            $category = ProductCategory::findOrFail($id);
+            $categoryData = $request->validated();
+            
             if ($request->filled('parent_id') && $request->parent_id !== null) {
-                $parentId = $request->parent_id;
-                
-                // Check if trying to set self as parent
-                if ($parentId == $id) {
+                if ($request->parent_id == $id) {
                     return response()->json([
-                        'message' => 'Cannot set category as its own parent',
-                        'errors' => ['parent_id' => ['Invalid parent category']]
+                        'message' => 'Kategori tidak dapat menjadi induk dari dirinya sendiri',
+                        'errors' => ['parent_id' => ['ID induk tidak valid']]
                     ], 422);
                 }
 
-                // Check if parent is a descendant (would create circular reference)
-                $descendants = $this->categoryRepository->getDescendants($id);
-                if (in_array($parentId, $descendants)) {
+                $descendants = $this->getDescendantIds($category);
+                if (in_array($request->parent_id, $descendants)) {
                     return response()->json([
-                        'message' => 'Cannot set descendant as parent',
-                        'errors' => ['parent_id' => ['Invalid parent category']]
+                        'message' => 'Kategori turunan tidak dapat menjadi induk',
+                        'errors' => ['parent_id' => ['ID induk tidak valid - referensi melingkar']]
                     ], 422);
                 }
             }
 
-            $category->update($validator->validated());
+            if ($request->has('name') && $categoryData['name'] !== $category->name) {
+                $slug = Str::slug($categoryData['name']);
+                $originalSlug = $slug;
+                $counter = 1;
+                while (ProductCategory::where('slug', $slug)->where('id', '!=', $id)->exists()) {
+                    $slug = $originalSlug . '-' . $counter;
+                    $counter++;
+                }
+                $categoryData['slug'] = $slug;
+            }
 
-            return response()->json([
-                'message' => 'Category updated successfully',
-                'data' => $category->toArray()
-            ]);
+            $category->update($categoryData);
+            $category->load(['children', 'parent']);
+
+            return (new ProductCategoryResource($category))
+                ->response()
+                ->setStatusCode(200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Category not found'
+                'message' => 'Kategori produk tidak ditemukan'
             ], 404);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to update category',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal memperbarui kategori produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
@@ -194,42 +185,51 @@ class ProductCategoryController extends Controller
     public function destroy(Request $request, int $id): JsonResponse
     {
         try {
-            $category = ProductCategoryEloquentModel::findOrFail($id);
+            $category = ProductCategory::findOrFail($id);
             
-            // Check if category has products
-            $productsCount = $this->categoryRepository->getProductsCount($id);
-            if ($productsCount > 0) {
+            if ($category->hasProducts()) {
                 return response()->json([
-                    'message' => 'Cannot delete category with existing products',
-                    'error' => 'Category contains products'
+                    'message' => 'Tidak dapat menghapus kategori yang memiliki produk',
+                    'error' => 'Kategori memiliki produk'
                 ], 409);
             }
 
-            // Check if category has children
-            $children = $this->categoryRepository->findByParent($id, false);
-            if (!empty($children)) {
+            if ($category->hasChildren()) {
                 return response()->json([
-                    'message' => 'Cannot delete category with subcategories',
-                    'error' => 'Category has subcategories'
+                    'message' => 'Tidak dapat menghapus kategori yang memiliki sub-kategori',
+                    'error' => 'Kategori memiliki sub-kategori'
                 ], 409);
             }
 
             $category->delete();
 
             return response()->json([
-                'message' => 'Category deleted successfully'
-            ]);
+                'message' => 'Kategori produk berhasil dihapus'
+            ], 200);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Category not found'
+                'message' => 'Kategori produk tidak ditemukan'
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to delete category',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal menghapus kategori produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
+    }
+
+    private function getDescendantIds(ProductCategory $category): array
+    {
+        $ids = [];
+        $children = $category->children;
+        
+        foreach ($children as $child) {
+            $ids[] = $child->id;
+            $ids = array_merge($ids, $this->getDescendantIds($child));
+        }
+        
+        return $ids;
     }
 
     /**
@@ -238,93 +238,23 @@ class ProductCategoryController extends Controller
     public function tree(Request $request): JsonResponse
     {
         try {
-            $activeOnly = $request->boolean('active_only', true);
-            $withProducts = $request->boolean('with_products', false);
-            
-            $tree = $this->categoryRepository->getHierarchy($activeOnly);
+            $query = ProductCategory::with('descendants');
 
-            if ($withProducts) {
-                $this->addProductsCount($tree);
+            if ($request->boolean('active_only', false)) {
+                $query->where('is_active', true);
             }
 
-            return response()->json([
-                'data' => $tree
-            ]);
+            $query->whereNull('parent_id')->ordered();
+            $tree = $query->get();
+
+            return ProductCategoryResource::collection($tree)
+                ->response()
+                ->setStatusCode(200);
 
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve category tree',
-                'error' => 'An unexpected error occurred'
-            ], 500);
-        }
-    }
-
-    /**
-     * Get products for a specific category
-     */
-    public function products(Request $request, int $categoryId): JsonResponse
-    {
-        try {
-            $category = $this->categoryRepository->findById($categoryId);
-            
-            if (!$category) {
-                return response()->json([
-                    'message' => 'Category not found'
-                ], 404);
-            }
-
-            $validator = Validator::make($request->all(), [
-                'page' => 'integer|min:1',
-                'per_page' => 'integer|min:1|max:100',
-                'include_subcategories' => 'boolean',
-                'status' => 'in:draft,published,archived',
-                'sort_by' => 'in:name,price,created_at',
-                'sort_order' => 'in:asc,desc'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $includeSubcategories = $request->boolean('include_subcategories', false);
-            $status = $request->get('status', 'published');
-            $sortBy = $request->get('sort_by', 'name');
-            $sortOrder = $request->get('sort_order', 'asc');
-            $perPage = $request->get('per_page', 20);
-
-            $products = $this->categoryRepository->getProducts(
-                $categoryId,
-                $includeSubcategories,
-                $status,
-                $sortBy,
-                $sortOrder,
-                $perPage
-            );
-
-            return response()->json([
-                'data' => $products->items(),
-                'category' => $category->toArray(),
-                'pagination' => [
-                    'current_page' => $products->currentPage(),
-                    'per_page' => $products->perPage(),
-                    'total' => $products->total(),
-                    'last_page' => $products->lastPage(),
-                    'has_more_pages' => $products->hasMorePages(),
-                ]
-            ]);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to retrieve category products',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil hierarki kategori produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
@@ -335,54 +265,26 @@ class ProductCategoryController extends Controller
     public function reorder(Request $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
+            $request->validate([
                 'categories' => 'required|array',
                 'categories.*.id' => 'required|integer|exists:product_categories,id',
-                'categories.*.order' => 'required|integer|min:0'
+                'categories.*.sort_order' => 'required|integer|min:0'
             ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $categories = $request->categories;
-            
-            foreach ($categories as $categoryData) {
-                ProductCategoryEloquentModel::where('id', $categoryData['id'])
-                    ->update(['order' => $categoryData['order']]);
+            foreach ($request->categories as $categoryData) {
+                ProductCategory::where('id', $categoryData['id'])
+                    ->update(['sort_order' => $categoryData['sort_order']]);
             }
 
             return response()->json([
-                'message' => 'Categories reordered successfully'
-            ]);
+                'message' => 'Urutan kategori berhasil diperbarui'
+            ], 200);
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to reorder categories',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal memperbarui urutan kategori',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
-        }
-    }
-
-    /**
-     * Add products count to category tree recursively
-     */
-    private function addProductsCount(array &$categories): void
-    {
-        foreach ($categories as &$category) {
-            $category['products_count'] = $this->categoryRepository->getProductsCount($category['id']);
-            
-            if (!empty($category['children'])) {
-                $this->addProductsCount($category['children']);
-            }
         }
     }
 }

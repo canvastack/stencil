@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Presentation\Http\Middleware;
 
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
@@ -10,42 +11,139 @@ use Illuminate\Database\Eloquent\Model;
 
 class EnsureTenantScopedQueries
 {
+    private static bool $scopesRegistered = false;
+
     public function handle(Request $request, Closure $next)
     {
-        $tenant = $request->get('current_tenant');
+        if (!self::$scopesRegistered) {
+            $this->registerTenantScopes();
+            self::$scopesRegistered = true;
+        }
 
-        if ($tenant instanceof TenantEloquentModel) {
-            $this->applyGlobalTenantScope($tenant);
+        $tenant = $this->resolveTenant($request);
+
+        if ($tenant) {
+            if (!config('multitenancy.current_tenant')) {
+                config(['multitenancy.current_tenant' => $tenant]);
+            }
+
+            if (!$request->attributes->has('tenant')) {
+                $request->attributes->set('tenant', $tenant);
+            }
+
+            if (!$request->attributes->has('current_tenant')) {
+                $request->attributes->set('current_tenant', $tenant);
+            }
+
+            if (!$request->get('current_tenant')) {
+                $request->merge(['current_tenant' => $tenant]);
+            }
         }
 
         return $next($request);
     }
 
-    private function applyGlobalTenantScope(TenantEloquentModel $tenant): void
+    private function registerTenantScopes(): void
     {
-        // Apply global scope to ensure all tenant-scoped models automatically filter by tenant_id
-        $this->addTenantScopeToModels($tenant);
-    }
+        foreach ($this->tenantScopedModels() as $modelClass) {
+            if (!class_exists($modelClass) || $this->modelUsesTenantTrait($modelClass)) {
+                continue;
+            }
 
-    private function addTenantScopeToModels(TenantEloquentModel $tenant): void
-    {
-        $tenantScopedModels = [
-            \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::class,
-            // Add other tenant-scoped models here as they're created
-        ];
+            $modelClass::addGlobalScope('tenant_middleware', function (Builder $builder) {
+                $tenant = self::currentTenant();
 
-        foreach ($tenantScopedModels as $modelClass) {
-            $this->addTenantScopeToModel($modelClass, $tenant);
-        }
-    }
-
-    private function addTenantScopeToModel(string $modelClass, TenantEloquentModel $tenant): void
-    {
-        if (class_exists($modelClass)) {
-            $modelClass::addGlobalScope('tenant', function (Builder $builder) use ($tenant) {
-                $builder->where('tenant_id', $tenant->id);
+                if ($tenant) {
+                    $builder->where($builder->getModel()->getTable() . '.tenant_id', $tenant->id);
+                }
             });
         }
+    }
+
+    private function tenantScopedModels(): array
+    {
+        return [
+            \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::class,
+            \App\Infrastructure\Persistence\Eloquent\OrderEloquentModel::class,
+            \App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel::class,
+            \App\Infrastructure\Persistence\Eloquent\ProductEloquentModel::class,
+            \App\Infrastructure\Persistence\Eloquent\VendorEloquentModel::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\Order::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\Customer::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\Vendor::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\Product::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\ProductCategory::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\ProductVariant::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation::class,
+            \App\Infrastructure\Persistence\Eloquent\Models\OrderPaymentTransaction::class,
+        ];
+    }
+
+    private function modelUsesTenantTrait(string $modelClass): bool
+    {
+        $traits = class_uses_recursive($modelClass);
+
+        return in_array(BelongsToTenant::class, $traits, true);
+    }
+
+    private function resolveTenant(Request $request): ?TenantEloquentModel
+    {
+        $candidate = $request->attributes->get('tenant')
+            ?? $request->attributes->get('current_tenant')
+            ?? $request->get('current_tenant');
+
+        if ($candidate instanceof TenantEloquentModel) {
+            return $candidate;
+        }
+
+        return self::currentTenant();
+    }
+
+    private static function currentTenant(): ?TenantEloquentModel
+    {
+        if (function_exists('tenant')) {
+            $tenant = tenant();
+
+            if ($tenant instanceof TenantEloquentModel) {
+                return $tenant;
+            }
+        }
+
+        if (app()->bound('tenant.current')) {
+            $tenant = app('tenant.current');
+
+            if ($tenant instanceof TenantEloquentModel) {
+                return $tenant;
+            }
+        }
+
+        if (app()->bound('current_tenant')) {
+            $tenant = app('current_tenant');
+
+            if ($tenant instanceof TenantEloquentModel) {
+                return $tenant;
+            }
+        }
+
+        $configTenant = config('multitenancy.current_tenant');
+
+        if ($configTenant instanceof TenantEloquentModel) {
+            return $configTenant;
+        }
+
+        if (app()->bound('request')) {
+            $request = app('request');
+
+            $tenant = $request->attributes->get('tenant')
+                ?? $request->attributes->get('current_tenant')
+                ?? $request->get('current_tenant');
+
+            if ($tenant instanceof TenantEloquentModel) {
+                return $tenant;
+            }
+        }
+
+        return null;
     }
 }
 

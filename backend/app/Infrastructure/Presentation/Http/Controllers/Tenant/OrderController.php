@@ -3,414 +3,481 @@
 namespace App\Infrastructure\Presentation\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Domain\Order\Enums\OrderStatus;
+use App\Domain\Order\Events\OrderCreated;
+use App\Domain\Order\Services\OrderStateMachine;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
+use App\Infrastructure\Presentation\Http\Requests\Order\StoreOrderRequest;
+use App\Infrastructure\Presentation\Http\Requests\Order\UpdateOrderRequest;
+use App\Infrastructure\Presentation\Http\Requests\Order\UpdateOrderStatusRequest;
+use App\Infrastructure\Presentation\Http\Resources\Order\OrderResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\Builder;
+use Spatie\Multitenancy\Models\Tenant as BaseTenant;
 
 class OrderController extends Controller
 {
-    public function __construct()
+    protected OrderStateMachine $stateMachine;
+
+    public function __construct(OrderStateMachine $stateMachine)
     {
-        // TODO: Inject order use cases and repositories when implemented
+        $this->stateMachine = $stateMachine;
     }
 
-    /**
-     * List all orders
-     */
     public function index(Request $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'page' => 'integer|min:1',
-                'per_page' => 'integer|min:1|max:100',
-                'status' => 'string|max:50',
-                'customer_id' => 'integer|exists:customers,id',
-                'date_from' => 'date',
-                'date_to' => 'date',
-                'sort_by' => 'in:order_number,customer_name,total_amount,order_date,status',
-                'sort_order' => 'in:asc,desc'
-            ]);
+            $query = $this->tenantScopedOrders($request)->with(['customer', 'vendor']);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
+            $this->applyOrderFilters($request, $query);
 
-            // TODO: Implement order listing logic
-            return response()->json([
-                'message' => 'Order listing not yet implemented',
-                'data' => []
-            ]);
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            $perPage = $request->get('per_page', 20);
 
+            $orders = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+
+            return OrderResource::collection($orders)
+                ->response()
+                ->setStatusCode(200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve orders',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil daftar pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Show a specific order
-     */
     public function show(Request $request, int $id): JsonResponse
     {
         try {
-            // TODO: Implement order show logic
-            return response()->json([
-                'message' => 'Order show not yet implemented',
-                'data' => null
-            ]);
-
+            $order = $this->tenantScopedOrders($request)
+                ->with(['customer', 'vendor'])
+                ->findOrFail($id);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve order',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil detail pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Create a new order
-     */
-    public function store(Request $request): JsonResponse
+    public function store(StoreOrderRequest $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'customer_id' => 'required|integer|exists:customers,id',
-                'items' => 'required|array|min:1',
-                'items.*.product_id' => 'required|integer|exists:products,id',
-                'items.*.quantity' => 'required|integer|min:1',
-                'items.*.unit_price' => 'required|numeric|min:0',
-                'shipping_address' => 'required|string',
-                'billing_address' => 'nullable|string',
-                'customer_notes' => 'nullable|string',
-                'payment_method' => 'nullable|string|max:100'
-            ]);
+            $tenant = $this->resolveTenant($request);
+            $payload = $request->validated();
+            $payload['tenant_id'] = $tenant->id;
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            // TODO: Implement order creation logic
+            $order = Order::create($payload);
+            $order->load(['customer', 'vendor']);
+            
+            event(new OrderCreated($order));
+            
+            return (new OrderResource($order))->response()->setStatusCode(201);
+        } catch (\RuntimeException $e) {
             return response()->json([
-                'message' => 'Order creation not yet implemented',
-                'data' => null
-            ], 201);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
+                'message' => $e->getMessage(),
+            ], 400);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to create order',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal membuat pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Update an existing order
-     */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateOrderRequest $request, int $id): JsonResponse
     {
         try {
-            // TODO: Implement order update logic
-            return response()->json([
-                'message' => 'Order update not yet implemented',
-                'data' => null
-            ]);
-
+            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $order->update($request->validated());
+            $order->load(['customer', 'vendor']);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to update order',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal memperbarui pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Delete an order
-     */
     public function destroy(Request $request, int $id): JsonResponse
     {
         try {
-            // TODO: Implement order deletion logic
-            return response()->json([
-                'message' => 'Order deletion not yet implemented'
-            ]);
-
+            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $order->delete();
+            return response()->json(['message' => 'Pesanan berhasil dihapus'], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to delete order',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal menghapus pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Update order status
-     */
-    public function updateStatus(Request $request, int $id): JsonResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, int $id): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'status' => 'required|string|max:50',
-                'notes' => 'nullable|string'
-            ]);
-
-            if ($validator->fails()) {
+            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $newStatus = OrderStatus::fromString($request->status);
+            
+            $validationErrors = $this->stateMachine->validateTransition($order, $newStatus, $request->metadata ?? []);
+            if (!empty($validationErrors)) {
                 return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'message' => 'Validasi transisi status gagal',
+                    'errors' => $validationErrors
                 ], 422);
             }
 
-            // TODO: Implement order status update logic
-            return response()->json([
-                'message' => 'Order status update not yet implemented',
-                'data' => null
-            ]);
+            $this->stateMachine->transitionTo($order, $newStatus, $request->metadata ?? []);
+            
+            if ($request->filled('payment_status')) {
+                $order->payment_status = $request->payment_status;
+                $order->save();
+            }
 
+            $order->load(['customer', 'vendor']);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to update order status',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal memperbarui status pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Process order
-     */
-    public function process(Request $request, int $id): JsonResponse
+    public function process(UpdateOrderStatusRequest $request, int $id): JsonResponse
     {
-        try {
-            // TODO: Implement order processing logic
-            return response()->json([
-                'message' => 'Order processing not yet implemented',
-                'data' => null
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to process order',
-                'error' => 'An unexpected error occurred'
-            ], 500);
-        }
+        return $this->updateStatus($request, $id);
     }
 
-    /**
-     * Ship order
-     */
     public function ship(Request $request, int $id): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'tracking_number' => 'nullable|string|max:255',
-                'courier' => 'nullable|string|max:100',
-                'estimated_delivery' => 'nullable|date'
+            $request->validate([
+                'tracking_number' => 'required|string|max:255',
             ]);
 
-            if ($validator->fails()) {
+            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $metadata = ['tracking_number' => $request->tracking_number];
+            
+            $validationErrors = $this->stateMachine->validateTransition($order, OrderStatus::SHIPPED, $metadata);
+            if (!empty($validationErrors)) {
                 return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'message' => 'Validasi pengiriman gagal',
+                    'errors' => $validationErrors
                 ], 422);
             }
 
-            // TODO: Implement order shipping logic
-            return response()->json([
-                'message' => 'Order shipping not yet implemented',
-                'data' => null
-            ]);
-
+            $this->stateMachine->transitionTo($order, OrderStatus::SHIPPED, $metadata);
+            
+            $order->load(['customer', 'vendor']);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to ship order',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengirim pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Complete order
-     */
     public function complete(Request $request, int $id): JsonResponse
     {
         try {
-            // TODO: Implement order completion logic
-            return response()->json([
-                'message' => 'Order completion not yet implemented',
-                'data' => null
-            ]);
-
+            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $metadata = ['delivered_at' => now()->toIso8601String()];
+            
+            $this->stateMachine->transitionTo($order, OrderStatus::COMPLETED, $metadata);
+            
+            $order->load(['customer', 'vendor']);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to complete order',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal menyelesaikan pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Cancel order
-     */
     public function cancel(Request $request, int $id): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'reason' => 'nullable|string|max:500'
-            ]);
-
-            if ($validator->fails()) {
+            $request->validate(['reason' => 'required|string|max:500']);
+            
+            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $metadata = ['cancellation_reason' => $request->reason];
+            
+            $validationErrors = $this->stateMachine->validateTransition($order, OrderStatus::CANCELLED, $metadata);
+            if (!empty($validationErrors)) {
                 return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'message' => 'Validasi pembatalan gagal',
+                    'errors' => $validationErrors
                 ], 422);
             }
 
-            // TODO: Implement order cancellation logic
-            return response()->json([
-                'message' => 'Order cancellation not yet implemented',
-                'data' => null
-            ]);
-
+            $this->stateMachine->transitionTo($order, OrderStatus::CANCELLED, $metadata);
+            
+            $order->load(['customer', 'vendor']);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to cancel order',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal membatalkan pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Refund order
-     */
-    public function refund(Request $request, int $id): JsonResponse
+    public function refund(UpdateOrderStatusRequest $request, int $id): JsonResponse
     {
-        try {
-            $validator = Validator::make($request->all(), [
-                'amount' => 'nullable|numeric|min:0',
-                'reason' => 'nullable|string|max:500'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            // TODO: Implement order refund logic
-            return response()->json([
-                'message' => 'Order refund not yet implemented',
-                'data' => null
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to refund order',
-                'error' => 'An unexpected error occurred'
-            ], 500);
-        }
+        return $this->updateStatus($request, $id);
     }
 
-    /**
-     * Get orders by status
-     */
     public function byStatus(Request $request, string $status): JsonResponse
     {
         try {
-            // TODO: Implement orders by status logic
-            return response()->json([
-                'message' => 'Orders by status not yet implemented',
-                'data' => []
-            ]);
+            $query = $this->tenantScopedOrders($request)
+                ->with(['customer', 'vendor'])
+                ->where('status', $status);
 
+            $this->applyOrderFilters($request, $query);
+
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            $perPage = $request->get('per_page', 20);
+
+            $orders = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+
+            return OrderResource::collection($orders)
+                ->response()
+                ->setStatusCode(200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve orders by status',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil pesanan berdasarkan status',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Get orders by customer
-     */
     public function byCustomer(Request $request, int $customerId): JsonResponse
     {
         try {
-            // TODO: Implement orders by customer logic
-            return response()->json([
-                'message' => 'Orders by customer not yet implemented',
-                'data' => []
-            ]);
+            $query = $this->tenantScopedOrders($request)
+                ->with(['customer', 'vendor'])
+                ->where('customer_id', $customerId);
 
+            $this->applyOrderFilters($request, $query);
+
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+            $perPage = $request->get('per_page', 20);
+
+            $orders = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+
+            return OrderResource::collection($orders)
+                ->response()
+                ->setStatusCode(200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve orders by customer',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil pesanan berdasarkan pelanggan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Get recent orders
-     */
     public function recent(Request $request): JsonResponse
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'limit' => 'integer|min:1|max:100'
-            ]);
+            $limit = (int) $request->get('limit', 10);
+            $limit = $limit > 0 ? min($limit, 100) : 10;
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
+            $query = $this->tenantScopedOrders($request)->with(['customer', 'vendor']);
 
-            // TODO: Implement recent orders logic
-            return response()->json([
-                'message' => 'Recent orders not yet implemented',
-                'data' => []
-            ]);
+            $this->applyOrderFilters($request, $query);
 
+            $orders = $query->orderByDesc('created_at')->limit($limit)->get();
+
+            return OrderResource::collection($orders)
+                ->response()
+                ->setStatusCode(200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to retrieve recent orders',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengambil pesanan terbaru',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
     }
 
-    /**
-     * Export orders
-     */
     public function export(Request $request): JsonResponse
     {
         try {
-            // TODO: Implement order export logic
-            return response()->json([
-                'message' => 'Order export not yet implemented'
-            ]);
+            $query = $this->tenantScopedOrders($request)->with(['customer', 'vendor']);
 
+            $this->applyOrderFilters($request, $query);
+
+            $sortBy = $request->get('sort_by', 'created_at');
+            $sortOrder = $request->get('sort_order', 'desc');
+
+            $orders = $query->orderBy($sortBy, $sortOrder)->get();
+
+            return OrderResource::collection($orders)
+                ->additional([
+                    'meta' => [
+                        'total' => $orders->count(),
+                    ],
+                ])
+                ->response()
+                ->setStatusCode(200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to export orders',
-                'error' => 'An unexpected error occurred'
+                'message' => 'Gagal mengekspor pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
+    }
+
+    public function quotations(Request $request, int $id): JsonResponse
+    {
+        try {
+            $order = $this->tenantScopedOrders($request)
+                ->with(['vendorNegotiations.vendor'])
+                ->findOrFail($id);
+
+            $quotations = $order->vendorNegotiations->map(function ($quotation) {
+                return [
+                    'id' => $quotation->id,
+                    'uuid' => $quotation->uuid,
+                    'tenantId' => $quotation->tenant_id,
+                    'orderId' => $quotation->order_id,
+                    'vendorId' => $quotation->vendor_id,
+                    'status' => $quotation->status,
+                    'initialOffer' => $quotation->initial_offer,
+                    'latestOffer' => $quotation->latest_offer,
+                    'currency' => $quotation->currency,
+                    'terms' => $quotation->terms,
+                    'history' => $quotation->history,
+                    'round' => $quotation->round,
+                    'expiresAt' => $quotation->expires_at?->toIso8601String(),
+                    'closedAt' => $quotation->closed_at?->toIso8601String(),
+                    'vendor' => $quotation->vendor ? [
+                        'id' => $quotation->vendor->id,
+                        'name' => $quotation->vendor->name,
+                        'code' => $quotation->vendor->code,
+                    ] : null,
+                ];
+            })->values();
+
+            return response()->json([
+                'message' => 'Daftar quotation berhasil diambil',
+                'data' => $quotations,
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil data quotation',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function availableTransitions(Request $request, int $id): JsonResponse
+    {
+        try {
+            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $transitions = $this->stateMachine->getAvailableTransitions($order);
+            
+            return response()->json([
+                'message' => 'Transisi status yang tersedia berhasil diambil',
+                'data' => [
+                    'currentStatus' => $order->status,
+                    'availableTransitions' => $transitions,
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil transisi status',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    private function applyOrderFilters(Request $request, Builder $query): void
+    {
+        if ($request->filled('search')) {
+            $query->where('order_number', 'ILIKE', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('payment_status')) {
+            $query->where('payment_status', $request->payment_status);
+        }
+
+        if ($request->filled('customer_id')) {
+            $query->where('customer_id', $request->customer_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+    }
+
+    private function tenantScopedOrders(Request $request): Builder
+    {
+        $tenant = $this->resolveTenant($request);
+
+        return Order::forTenant($tenant);
+    }
+
+    private function resolveTenant(Request $request): BaseTenant
+    {
+        $candidate = $request->get('current_tenant')
+            ?? $request->attributes->get('tenant')
+            ?? (function_exists('tenant') ? tenant() : null);
+
+        if (! $candidate && app()->bound('tenant.current')) {
+            $candidate = app('tenant.current');
+        }
+
+        if (! $candidate && app()->bound('current_tenant')) {
+            $candidate = app('current_tenant');
+        }
+
+        if (! $candidate) {
+            $candidate = config('multitenancy.current_tenant');
+        }
+
+        if ($candidate instanceof BaseTenant) {
+            return $candidate;
+        }
+
+        throw new \RuntimeException('Tenant context tidak ditemukan');
     }
 }

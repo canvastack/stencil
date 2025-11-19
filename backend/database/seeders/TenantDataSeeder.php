@@ -5,11 +5,19 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Domain\Product\Services\InventoryService;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\OrderEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\VendorEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\InventoryItem;
+use App\Infrastructure\Persistence\Eloquent\Models\InventoryLocation;
+use App\Infrastructure\Persistence\Eloquent\Models\InventoryReservation;
+use App\Infrastructure\Persistence\Eloquent\Models\InventoryAdjustment;
+use App\Infrastructure\Persistence\Eloquent\Models\InventoryCount;
+use App\Infrastructure\Persistence\Eloquent\Models\InventoryReconciliation;
+use App\Infrastructure\Persistence\Eloquent\UserEloquentModel;
 use Carbon\Carbon;
 
 class TenantDataSeeder extends Seeder
@@ -30,6 +38,7 @@ class TenantDataSeeder extends Seeder
             $this->seedVendors($tenant);
             $this->seedProducts($tenant);
             $this->seedOrders($tenant);
+            $this->seedInventory($tenant);
         }
 
         $this->command->info('✅ Tenant business data seeded successfully!');
@@ -39,12 +48,24 @@ class TenantDataSeeder extends Seeder
         $totalProducts = ProductEloquentModel::count();
         $totalOrders = OrderEloquentModel::count();
         $totalVendors = VendorEloquentModel::count();
+        $totalInventoryItems = InventoryItem::count();
+        $totalInventoryLocations = InventoryLocation::count();
+        $totalInventoryReservations = InventoryReservation::count();
+        $totalInventoryAdjustments = InventoryAdjustment::count();
+        $totalInventoryCounts = InventoryCount::count();
+        $totalInventoryReconciliations = InventoryReconciliation::count();
         
         $this->command->info("📈 Data Summary:");
         $this->command->info("   - Customers: {$totalCustomers}");
         $this->command->info("   - Products: {$totalProducts}");
         $this->command->info("   - Orders: {$totalOrders}");
         $this->command->info("   - Vendors: {$totalVendors}");
+        $this->command->info("   - Inventory Items: {$totalInventoryItems}");
+        $this->command->info("   - Inventory Locations: {$totalInventoryLocations}");
+        $this->command->info("   - Inventory Reservations: {$totalInventoryReservations}");
+        $this->command->info("   - Inventory Adjustments: {$totalInventoryAdjustments}");
+        $this->command->info("   - Inventory Counts: {$totalInventoryCounts}");
+        $this->command->info("   - Inventory Reconciliations: {$totalInventoryReconciliations}");
     }
 
     private function seedAdditionalTenantUsers($tenant): void
@@ -446,6 +467,228 @@ class TenantDataSeeder extends Seeder
             if (!$customer->last_order_at || $orderDate->gt($customer->last_order_at)) {
                 $customer->update(['last_order_at' => $orderDate]);
             }
+        }
+    }
+
+    private function seedInventory($tenant): void
+    {
+        $userId = UserEloquentModel::where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->value('id');
+
+        if (!$userId) {
+            return;
+        }
+
+        $inventoryService = app(InventoryService::class);
+
+        $locationDefinitions = [
+            ['code' => 'WH-A', 'name' => 'Warehouse A', 'type' => 'warehouse'],
+            ['code' => 'WH-B', 'name' => 'Warehouse B', 'type' => 'warehouse'],
+            ['code' => 'PROD', 'name' => 'Production Floor', 'type' => 'production'],
+            ['code' => 'QC', 'name' => 'Quality Control', 'type' => 'quality_control'],
+            ['code' => 'SHIP', 'name' => 'Shipping Dock', 'type' => 'shipping'],
+        ];
+
+        $locations = [];
+        foreach ($locationDefinitions as $definition) {
+            $location = InventoryLocation::where('tenant_id', $tenant->id)
+                ->where('location_code', $definition['code'])
+                ->first();
+
+            if (!$location) {
+                $location = $inventoryService->createLocation([
+                    'tenant_id' => $tenant->id,
+                    'location_code' => $definition['code'],
+                    'location_name' => $definition['name'],
+                    'location_type' => $definition['type'],
+                    'is_active' => true,
+                    'is_primary' => $definition['code'] === 'WH-A',
+                ], $userId);
+            }
+
+            $locations[] = $location;
+        }
+
+        $locationTypes = ['warehouse', 'production', 'quality_control', 'shipping', 'returns', 'showroom', 'staging', 'micro_fulfillment'];
+        $streets = ['Gatot Subroto', 'Sudirman', 'Thamrin', 'Kuningan', 'Senayan', 'Merdeka', 'Diponegoro', 'Ahmad Yani'];
+        $cities = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Makassar', 'Yogyakarta', 'Denpasar'];
+        $provinces = ['DKI Jakarta', 'Jawa Timur', 'Jawa Barat', 'Sumatera Utara', 'Jawa Tengah', 'Sulawesi Selatan', 'DI Yogyakarta', 'Bali'];
+
+        for ($i = 1; $i <= 20; $i++) {
+            $code = 'LOC-' . str_pad((string) $i, 3, '0', STR_PAD_LEFT);
+            $exists = InventoryLocation::where('tenant_id', $tenant->id)
+                ->where('location_code', $code)
+                ->exists();
+            if ($exists) {
+                continue;
+            }
+
+            $temperatureControlled = rand(0, 10) > 7;
+            $humidityControlled = rand(0, 10) > 5;
+            $totalCapacity = rand(120, 900);
+            $usedCapacity = round($totalCapacity * (rand(10, 60) / 100), 2);
+
+            $location = $inventoryService->createLocation([
+                'tenant_id' => $tenant->id,
+                'location_code' => $code,
+                'location_name' => 'Location ' . str_pad((string) $i, 3, '0', STR_PAD_LEFT),
+                'location_type' => $locationTypes[array_rand($locationTypes)],
+                'description' => 'Automated seeded location ' . $i,
+                'location_level' => rand(1, 4),
+                'address_line_1' => 'Jl. ' . $streets[array_rand($streets)] . ' No. ' . rand(10, 299),
+                'city' => $cities[array_rand($cities)],
+                'state_province' => $provinces[array_rand($provinces)],
+                'postal_code' => (string) rand(10000, 99999),
+                'country' => 'Indonesia',
+                'total_capacity' => $totalCapacity,
+                'used_capacity' => $usedCapacity,
+                'capacity_unit' => rand(0, 1) ? 'pallet' : 'cubic_meter',
+                'temperature_controlled' => $temperatureControlled,
+                'temperature_min' => $temperatureControlled ? rand(2, 12) : null,
+                'temperature_max' => $temperatureControlled ? rand(13, 22) : null,
+                'humidity_controlled' => $humidityControlled,
+                'humidity_max' => $humidityControlled ? rand(55, 85) : null,
+                'security_level' => rand(0, 10) > 2 ? 'standard' : 'high',
+                'is_active' => rand(0, 20) > 1,
+                'is_primary' => false,
+                'operational_hours' => [
+                    'monday' => ['open' => '08:00', 'close' => '17:00'],
+                    'tuesday' => ['open' => '08:00', 'close' => '17:00'],
+                    'wednesday' => ['open' => '08:00', 'close' => '17:00'],
+                    'thursday' => ['open' => '08:00', 'close' => '17:00'],
+                    'friday' => ['open' => '08:00', 'close' => '17:00'],
+                ],
+                'contact_information' => [
+                    'name' => 'Supervisor ' . $i,
+                    'phone' => '+628' . rand(1000000000, 9999999999),
+                    'email' => 'location' . $i . '@' . $tenant->slug . '.local',
+                ],
+            ], $userId);
+
+            $locations[] = $location;
+        }
+
+        if (empty($locations)) {
+            return;
+        }
+
+        $products = ProductEloquentModel::where('tenant_id', $tenant->id)
+            ->where('track_inventory', true)
+            ->inRandomOrder()
+            ->take(45)
+            ->get();
+
+        if ($products->isEmpty()) {
+            return;
+        }
+
+        foreach ($products as $index => $product) {
+            $item = $inventoryService->ensureInventoryItem($product, $userId);
+            $item->minimum_stock_level = rand(15, 40);
+            $item->reorder_point = rand(8, (int) $item->minimum_stock_level);
+            $item->reorder_quantity = rand(5, 20);
+            $cost = $product->vendor_price ?? rand(15000, 350000);
+            $item->standard_cost = $cost;
+            $item->average_cost = $cost;
+            $item->save();
+
+            $totalStock = rand(60, 200);
+            $remaining = $totalStock;
+            $locationCount = count($locations);
+            foreach ($locations as $idx => $location) {
+                $remainingLocations = $locationCount - $idx - 1;
+                if ($remainingLocations <= 0) {
+                    $quantity = $remaining;
+                } else {
+                    $minAlloc = 5;
+                    $maxAlloc = max($minAlloc, $remaining - ($remainingLocations * $minAlloc));
+                    $quantity = rand($minAlloc, $maxAlloc);
+                    $remaining -= $quantity;
+                }
+                $inventoryService->setLocationStock($product, $location, (float) $quantity, $userId, 'initial_seed');
+            }
+
+            if ($remaining > 0) {
+                $inventoryService->adjustLocationStock($product, $locations[0], (float) $remaining, $userId, 'balancing_seed');
+            }
+
+            if ($index % 3 === 0) {
+                $difference = rand(-4, 6);
+                if ($difference !== 0) {
+                    $inventoryService->adjustLocationStock($product, $locations[array_rand($locations)], (float) $difference, $userId, 'cycle_adjustment_seed');
+                }
+            }
+
+            if ($index % 4 === 0) {
+                $reservationQty = rand(1, 6);
+                $inventoryService->reserveStock(
+                    $product,
+                    (float) $reservationQty,
+                    $locations[array_rand($locations)],
+                    'order',
+                    Str::uuid()->toString(),
+                    $userId,
+                    Carbon::now()->addDays(rand(3, 12))
+                );
+            }
+
+            if ($index % 6 === 0) {
+                $inventoryService->reserveStock(
+                    $product,
+                    (float) rand(1, 4),
+                    null,
+                    'project',
+                    Str::uuid()->toString(),
+                    $userId,
+                    null
+                );
+            }
+
+            if ($index % 5 === 0) {
+                $item->minimum_stock_level = max($item->minimum_stock_level, $item->current_stock + rand(5, 15));
+                $item->save();
+            }
+        }
+
+        foreach ($locations as $location) {
+            $cycles = rand(3, 5);
+            for ($i = 0; $i < $cycles; $i++) {
+                $inventoryService->scheduleCycleCount($location, $userId, Carbon::now()->addDays(rand(5, 25)));
+            }
+        }
+
+        $inventoryService->runBalancingForTenant($tenant->id, $userId, 'seed');
+
+        $discrepancyItems = InventoryItem::where('tenant_id', $tenant->id)
+            ->inRandomOrder()
+            ->take(20)
+            ->get();
+
+        foreach ($discrepancyItems as $idx => $discrepancyItem) {
+            $variance = rand(-7, 9);
+            if ($variance === 0) {
+                $variance = 4;
+            }
+            $location = $locations[array_rand($locations)];
+            $status = $idx % 3 === 0 ? 'resolved' : 'open';
+            InventoryReconciliation::create([
+                'tenant_id' => $tenant->id,
+                'inventory_item_id' => $discrepancyItem->id,
+                'inventory_location_id' => $location->id,
+                'expected_quantity' => (float) $discrepancyItem->current_stock,
+                'counted_quantity' => (float) $discrepancyItem->current_stock + $variance,
+                'variance_quantity' => (float) $variance,
+                'variance_value' => (float) ($variance * max($discrepancyItem->average_cost, 1)),
+                'status' => $status,
+                'source' => 'seed',
+                'initiated_by' => $userId,
+                'initiated_at' => Carbon::now()->subDays(rand(1, 7)),
+                'resolved_by' => $status === 'resolved' ? $userId : null,
+                'resolved_at' => $status === 'resolved' ? Carbon::now()->subDays(rand(1, 3)) : null,
+                'metadata' => ['notes' => 'Seeded variance for testing'],
+            ]);
         }
     }
     

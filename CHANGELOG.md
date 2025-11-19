@@ -7,6 +7,144 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🚧 In Progress - Phase 3 Core Business Logic (November 18, 2025)
+
+**Progress Update**: Core business logic features for products, orders, inventory, and analytics have been delivered, while customer segmentation/vendor evaluation exposure, documentation alignment, and workflow validation remain outstanding.
+
+##### Outstanding Work
+- Expose customer segmentation and vendor evaluation outputs through analytics and dashboard APIs.
+- Implement tenant-routed customer/vendor search & export endpoints and product taxonomy helpers.
+- Reconcile tenant routes and response envelopes with the OpenAPI specification and re-run validation.
+- Expand end-to-end test coverage for analytics exports, reconciliation jobs, and contract verification.
+
+#### **Order Management System Enhancement**
+- **OrderStateMachine Service** (292 lines)
+  - 14 comprehensive order states with Indonesian labels
+  - State validation methods: `canBeUpdated()`, `canBeCancelled()`, `canBeRefunded()`, `isActive()`, `requiresPayment()`, `requiresVendor()`
+  - Complete state transition map with `getAllowedTransitions()` and `canTransitionTo()`
+  - Status-specific side effect handlers for all 14 states
+  - Transaction-safe state changes with metadata support
+  - Comprehensive logging for audit trails
+  - Event dispatching integration for notification system
+
+- **Order Events & Notifications System**
+  - 6 domain events: `OrderStatusChanged`, `OrderCreated`, `OrderShipped`, `OrderDelivered`, `OrderCancelled`, `PaymentReceived`
+  - 8 notification classes with base `OrderNotification` (mail + database channels)
+  - Queued notifications for async processing
+  - Indonesian message templates for all notifications
+  - Event listener `SendOrderNotifications` with comprehensive error handling
+  - Integration with `EventServiceProvider` for automatic event subscription
+
+#### **Customer Intelligence System**
+- **CustomerSegmentationService** (456 lines)
+  - RFM (Recency, Frequency, Monetary) scoring algorithm
+  - 10 customer segments: Champions, Loyal Customers, New Customers, Potential Loyalists, Promising, At Risk, Can't Lose Them, Hibernating, Lost, Need Attention
+  - Lifetime Value (LTV) calculation with predictive modeling (3-year forecast)
+  - Churn risk analysis with 4 levels (low/medium/high/critical) and actionable recommendations
+  - High-value customer identification and at-risk customer detection
+  - Segment distribution analytics with percentage calculations
+  - Average days between orders calculation for retention metrics
+
+#### **Vendor Performance Management**
+- **VendorEvaluationService** (715 lines)
+  - 5-metric vendor scoring system:
+    - Delivery Performance (on-time rate, average lead time)
+    - Quality Score (acceptance rate, defect tracking)
+    - Response Time (average response hours)
+    - Price Competitiveness (market comparison with industry benchmarks)
+    - Reliability (completion rate, cancellation tracking)
+  - Overall score calculation with weighted metrics (quality 30%, delivery 25%, response/price/reliability 15% each)
+  - Performance ratings: A (Excellent 90+), B (Good 80-89), C (Satisfactory 70-79), D (Needs Improvement 60-69), F (Poor <60)
+  - SLA tracking with compliance monitoring and violation identification
+  - Vendor comparison tools for side-by-side evaluation
+  - 6-month performance trend analysis with performance trajectory calculation
+  - Top performing and underperforming vendor identification
+  - Automated recommendations based on performance metrics
+
+#### **Business Intelligence & Analytics**
+- **DashboardController** (237 lines)
+  - `index()`: Comprehensive metrics (total orders/customers/products/vendors, monthly stats, order status breakdown, low stock alerts, active customer/vendor counts)
+  - `stats()`: Period-based analytics (7/30/90 days, 1 year) with orders by status, payment status breakdown, daily revenue charts, top 10 products/customers
+  - `recent()`: Recent orders, customers, and products with configurable limits
+  - Eager loading to prevent N+1 queries, camelCase JSON responses
+
+- **AnalyticsController** (587 lines)
+  - **Overview analytics**: Total orders, revenue, average order value, customer conversion rates, order completion rates
+  - **Sales analytics**: Daily sales trends, sales by status/production type, payment method breakdown, monthly growth analysis
+  - **Customer analytics**: Segmentation by type/status, top spending customers, acquisition trends, lifetime value calculations, repeat customer rate
+  - **Product analytics**: Products by status, featured/customizable/quote-required counts, top viewed/rated products, inventory health metrics
+  - **Inventory analytics**: Stock summary, health categorization (healthy/low/out of stock), detailed low stock and out-of-stock product lists, stock value by status
+  - **Reporting methods**: Sales, customer, and inventory reports with date range filtering and type breakdown
+  - **Export methods**: Sales, customer, and inventory export with full relationships
+  - Private `getStartDate()` helper using PHP 8 match expressions for period-based filtering
+
+#### **Inventory Management System**
+- **InventoryService** (228 lines)
+  - Core stock management: `updateStock()`, `incrementStock()`, `decrementStock()` with transaction safety
+  - Stock status checking: `isLowStock()`, `isOutOfStock()`, `checkAndAlertLowStock()`
+  - Stock filtering: `getLowStockProducts()`, `getOutOfStockProducts()`
+  - Order reservation system: `reserveStock()`, `releaseReservedStock()` for preventing overselling
+  - `validateStockAvailability()` for pre-order validation
+  - `getStockSummary()` for aggregate statistics
+  - `bulkUpdateStock()` with success/failure tracking
+  - Comprehensive logging for all stock movements with tenant context
+
+#### **Enhanced Domain Models**
+- **OrderStatus Enum Enhancement** (200 lines)
+  - Expanded from 5 to 14 states aligned with PT CEX etching business workflow
+  - States: NEW, SOURCING_VENDOR, VENDOR_NEGOTIATION, CUSTOMER_QUOTATION, WAITING_PAYMENT, PAYMENT_RECEIVED, IN_PRODUCTION, QUALITY_CHECK, READY_TO_SHIP, SHIPPED, DELIVERED, COMPLETED, CANCELLED, REFUNDED
+  - Indonesian labels and descriptions for each state
+  - State validation methods and comprehensive transition map
+  - `getAllowedTransitions()` and `canTransitionTo()` for runtime validation
+
+- **Customer Model Enhancement**
+  - Added `Notifiable` trait for notification system integration
+  - `updateOrderStats()` method for maintaining customer metrics
+  - Support for email and database notification channels
+
+- **Vendor Model Enhancement**
+  - Added `orders()` relationship for vendor order tracking
+  - Support for vendor evaluation and SLA tracking integration
+
+#### **Comprehensive Test Suite**
+- **Unit Tests** (300+ lines, 22 test cases)
+  - `OrderStateMachineTest.php`: 12 tests covering transitions, validation, side effects, metadata handling, event dispatch
+  - `CustomerSegmentationServiceTest.php`: 10 tests for RFM scoring, segmentation, LTV, churn risk, high-value/at-risk identification
+
+- **Feature Tests** (400+ lines, 28 test cases)
+  - `OrderApiTest.php`: 14 tests for full CRUD, status transitions, search/filter, shipping, cancellation, available transitions, tenant isolation
+  - `MultiTenantIsolationTest.php`: 14 tests verifying complete data isolation across orders, customers, products, vendors, analytics, dashboard stats
+
+#### **Technical Achievements**
+- **PHP 8 Modern Features**: Match expressions, typed properties, constructor property promotion, enum integration
+- **Database Optimization**: Eager loading with `with()`, aggregate queries with `selectRaw()`, proper indexing
+- **Transaction Safety**: All state transitions and stock updates wrapped in `DB::transaction()`
+- **Metadata Pattern**: Flexible JSON metadata field for context-specific data (quotations, cancellations, refunds)
+- **Logging Strategy**: Comprehensive structured logging for audit trails and compliance
+- **Error Handling**: Differentiated `DomainException` (business rule violations) from system exceptions
+- **Indonesian Localization**: All user-facing messages in Bahasa Indonesia
+- **Carbon Date Handling**: ISO8601 format for API responses, flexible parsing for inputs
+- **PostgreSQL Optimization**: ILIKE for case-insensitive searches maintained throughout
+
+#### **Files Created/Modified**
+- **Events**: 6 new event classes (Domain/Order/Events/)
+- **Notifications**: 8 notification classes (Domain/Order/Notifications/)
+- **Listeners**: 1 event listener (Domain/Order/Listeners/)
+- **Services**: 3 major domain services (OrderStateMachine, CustomerSegmentationService, VendorEvaluationService)
+- **Controllers**: 2 enhanced controllers (DashboardController, AnalyticsController)
+- **Tests**: 4 comprehensive test files with 50+ test cases
+- **Total New Code**: ~3,500 lines of production code + tests
+
+#### **Business Impact**
+- **Order Processing**: Complete state machine enables proper workflow management for PT CEX etching business
+- **Customer Retention**: RFM segmentation and churn prediction enable proactive retention strategies
+- **Vendor Management**: 5-metric evaluation system ensures quality vendor partnerships and SLA compliance
+- **Business Intelligence**: Real-time analytics enable data-driven decision making
+- **Automation**: Event-driven notifications reduce manual communication overhead
+- **Audit Compliance**: Comprehensive logging provides complete audit trail for financial and operational compliance
+
+---
+
 ### ✅ Added - OpenAPI Security Enhancements
 - **Multi-Tenant Parameter Enhancement** (100% compliance achieved)
   - Verified TenantHeader parameters across all endpoint definitions

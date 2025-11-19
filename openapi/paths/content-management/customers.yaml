@@ -1947,3 +1947,269 @@
         $ref: '#/components/responses/Forbidden'
       '500':
         $ref: '#/components/responses/InternalServerError'
+
+/tenant/customers/search:
+  get:
+    tags:
+    - Customers
+    summary: Search Customers
+    description: >
+      Advanced search across tenant customers with optional segmentation
+      insights including recency, frequency, monetary scoring and churn risk.
+    operationId: tenantSearchCustomers
+    security:
+    - bearerAuth: []
+      tenantHeader: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: query
+      in: query
+      schema:
+        type: string
+        maxLength: 255
+      description: Free-text search across customer name, email, and company
+      example: tech
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+        - active
+        - inactive
+        - blocked
+      description: Filter by customer status
+      example: active
+    - name: customer_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - individual
+        - business
+      description: Filter by customer type
+      example: business
+    - name: segments[]
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: true
+      description: Filter by customer segments (segment codes)
+      example:
+      - champions
+      - at_risk
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+      description: Maximum number of results to return
+      example: 25
+    - name: sort_by
+      in: query
+      schema:
+        type: string
+        enum:
+        - name
+        - created_at
+        - total_spent
+        - total_orders
+        default: name
+      description: Sort field
+      example: total_spent
+    - name: sort_order
+      in: query
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+        default: asc
+      description: Sort direction
+      example: desc
+    - name: include_segmentation
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include segmentation metrics (RFM and churn risk)
+      example: true
+    responses:
+      '200':
+        description: Customers retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      query:
+                        type: string
+                        nullable: true
+                      results:
+                        type: array
+                        description: Customer results matching the query
+                        items:
+                          type: object
+                          additionalProperties: true
+                    required:
+                    - results
+                  meta:
+                    type: object
+                    properties:
+                      limit:
+                        type: integer
+                      count:
+                        type: integer
+                      filters:
+                        type: object
+                        additionalProperties: true
+                      generatedAt:
+                        type: string
+                        format: date-time
+                    required:
+                    - limit
+                    - count
+                    - generatedAt
+            example:
+              success: true
+              message: Pencarian customer berhasil
+              data:
+                query: tech
+                results:
+                - id: 12
+                  uuid: 550e8400-e29b-41d4-a716-446655440000
+                  name: PT Tech Solutions Indonesia
+                  email: contact@techsolutions.id
+                  customerType: business
+                  status: active
+                  stats:
+                    totalOrders: 15
+                    totalSpent: 25500000
+                    lastOrderDate: '2025-11-10T14:45:00Z'
+                  segmentation:
+                    rfm:
+                      rfm_score: '555'
+                      segment: champions
+                      recency_days: 12
+                      frequency_count: 15
+                      monetary_value: 25500000
+                    churnRisk:
+                      churn_risk_score: 8.5
+                      risk_level: low
+                      recommendation: Pertahankan engagement melalui kampanye loyalitas
+              meta:
+                limit: 25
+                count: 1
+                filters:
+                  status: active
+                  include_segmentation: true
+                generatedAt: '2025-11-19T08:45:00Z'
+      '422':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/InternalServerError'
+
+/tenant/customers/export:
+  get:
+    tags:
+    - Customers
+    summary: Export Customers
+    description: >
+      Export tenant customer records in CSV format with optional segment
+      filtering. When no matching customers are found, a summary payload is
+      returned instead of a file stream.
+    operationId: tenantExportCustomers
+    security:
+    - bearerAuth: []
+      tenantHeader: []
+    parameters:
+    - $ref: '#/components/parameters/TenantHeader'
+    - name: query
+      in: query
+      schema:
+        type: string
+        maxLength: 255
+      description: Free-text search filter
+      example: tech
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+        - active
+        - inactive
+        - blocked
+      description: Filter by customer status
+      example: active
+    - name: customer_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - individual
+        - business
+      description: Filter by customer type
+      example: business
+    - name: segments[]
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: true
+      description: Restrict export to specified segments
+      example:
+      - champions
+    responses:
+      '200':
+        description: Customer export stream
+        content:
+          text/csv:
+            schema:
+              type: string
+              format: binary
+            example: "ID,UUID,Name,Email,Customer Type,Status,Total Orders,Total Spent\n1,550e8400-e29b-41d4-a716-446655440000,PT Tech Solutions Indonesia,contact@techsolutions.id,business,active,15,25500000\n"
+          application/json:
+            schema:
+              allOf:
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      exported:
+                        type: integer
+                      filename:
+                        type: string
+                        nullable: true
+                required:
+                - data
+            example:
+              success: true
+              message: Tidak ada data customer yang cocok untuk diekspor
+              data:
+                exported: 0
+                filename: null
+      '422':
+        $ref: '#/components/responses/ValidationError'
+      '401':
+        $ref: '#/components/responses/Unauthorized'
+      '403':
+        $ref: '#/components/responses/Forbidden'
+      '500':
+        $ref: '#/components/responses/InternalServerError'

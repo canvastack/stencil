@@ -31,4 +31,19 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'whatsapp' => [
+        'enabled' => env('WHATSAPP_NOTIFICATIONS_ENABLED', false),
+        'endpoint' => env('WHATSAPP_API_ENDPOINT'),
+        'token' => env('WHATSAPP_API_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'sender' => env('WHATSAPP_SENDER_ALIAS'),
+    ],
+
+    'sms' => [
+        'enabled' => env('SMS_NOTIFICATIONS_ENABLED', false),
+        'endpoint' => env('SMS_API_ENDPOINT'),
+        'token' => env('SMS_API_TOKEN'),
+        'sender' => env('SMS_SENDER_ID'),
+    ],
+
 ];

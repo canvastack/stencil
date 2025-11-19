@@ -30,7 +30,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_can_authenticate_platform_account_with_valid_credentials()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);
@@ -58,7 +58,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_rejects_invalid_credentials()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'wrong-password'
         ]);
@@ -70,7 +70,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_rejects_non_existent_account()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'nonexistent@test.com',
             'password' => 'password123'
         ]);
@@ -84,7 +84,7 @@ class AuthControllerTest extends TestCase
     {
         $this->account->update(['status' => 'inactive']);
 
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);
@@ -96,7 +96,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_validates_required_fields()
     {
-        $response = $this->postJson('/api/platform/login', []);
+        $response = $this->postJson('/api/v1/platform/login', []);
 
         $response->assertStatus(422)
                 ->assertJsonValidationErrors(['email', 'password']);
@@ -105,7 +105,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_validates_email_format()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'invalid-email',
             'password' => 'password123'
         ]);
@@ -119,14 +119,14 @@ class AuthControllerTest extends TestCase
     {
         // Make 5 failed login attempts
         for ($i = 0; $i < 5; $i++) {
-            $this->postJson('/api/platform/login', [
+            $this->postJson('/api/v1/platform/login', [
                 'email' => 'admin@test.com',
                 'password' => 'wrong-password'
             ]);
         }
 
         // 6th attempt should be rate limited
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'wrong-password'
         ]);
@@ -142,7 +142,7 @@ class AuthControllerTest extends TestCase
     public function it_can_logout_successfully()
     {
         // First authenticate
-        $loginResponse = $this->postJson('/api/platform/login', [
+        $loginResponse = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);
@@ -150,7 +150,7 @@ class AuthControllerTest extends TestCase
         $token = $loginResponse->json('access_token');
 
         // Then logout
-        $response = $this->postJson('/api/platform/logout', [], [
+        $response = $this->postJson('/api/v1/platform/logout', [], [
             'Authorization' => 'Bearer ' . $token
         ]);
 
@@ -162,7 +162,7 @@ class AuthControllerTest extends TestCase
     public function it_can_get_authenticated_user_info()
     {
         // First authenticate
-        $loginResponse = $this->postJson('/api/platform/login', [
+        $loginResponse = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);
@@ -170,7 +170,7 @@ class AuthControllerTest extends TestCase
         $token = $loginResponse->json('access_token');
 
         // Get user info
-        $response = $this->getJson('/api/platform/me', [
+        $response = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer ' . $token
         ]);
 
@@ -190,7 +190,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_requires_authentication_for_protected_endpoints()
     {
-        $response = $this->getJson('/api/platform/me');
+        $response = $this->getJson('/api/v1/platform/me');
 
         $response->assertStatus(401);
     }
@@ -198,7 +198,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_rejects_invalid_tokens()
     {
-        $response = $this->getJson('/api/platform/me', [
+        $response = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer invalid-token'
         ]);
 
@@ -210,7 +210,7 @@ class AuthControllerTest extends TestCase
     {
         $this->account->update(['status' => 'suspended']);
 
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);
@@ -224,7 +224,7 @@ class AuthControllerTest extends TestCase
     {
         $originalTime = $this->account->last_login_at;
 
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);
@@ -239,7 +239,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_includes_proper_expiration_time()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);
@@ -253,7 +253,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_includes_bearer_token_type()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@test.com',
             'password' => 'password123'
         ]);

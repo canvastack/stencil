@@ -20,6 +20,10 @@ class EventServiceProvider extends ServiceProvider
         ],
     ];
 
+    protected $subscribe = [
+        \App\Domain\Order\Listeners\SendOrderNotifications::class,
+    ];
+
     /**
      * Register any events for your application.
      */

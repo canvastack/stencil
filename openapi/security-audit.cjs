@@ -48,8 +48,8 @@ class SecurityAuditor {
                 crossTenant: /cross[_-]?tenant/i
             },
             dataProtection: {
-                sensitiveData: /password|secret|key|token|private/i,
-                encryption: /encrypt|hash|secure/i,
+                sensitiveData: /password|secret|api[_-]?key|access[_-]?key|secret[_-]?key|private[_-]?key|client[_-]?secret|token|refresh[_-]?token|auth[_-]?token|jwt/i,
+                encryption: /encrypt|hash|secure|bcrypt|argon/i,
                 pii: /email|phone|address|ssn|personal/i,
                 readOnly: /readOnly.*true/
             },

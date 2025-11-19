@@ -19,6 +19,10 @@ class TenantContextMiddleware
         $tenant = $this->identifyTenant($request);
 
         if (!$tenant) {
+            $tenant = $this->resolveTenantFromAuthenticatedUser($request);
+        }
+
+        if (!$tenant) {
             return $this->handleTenantNotFound($request);
         }
 
@@ -41,24 +45,59 @@ class TenantContextMiddleware
         return $next($request);
     }
 
+    private function resolveTenantFromAuthenticatedUser(Request $request): ?TenantEloquentModel
+    {
+        $guards = ['tenant', 'api', config('auth.defaults.guard')];
+
+        foreach (array_filter(array_unique($guards)) as $guard) {
+            $tenant = $this->tenantFromUser(auth()->guard($guard)->user());
+
+            if ($tenant) {
+                return $tenant;
+            }
+        }
+
+        return $this->tenantFromUser($request->user());
+    }
+
+    private function tenantFromUser($user): ?TenantEloquentModel
+    {
+        if (!$user || !isset($user->tenant_id)) {
+            return null;
+        }
+
+        $relationTenant = $user->tenant;
+
+        if ($relationTenant instanceof TenantEloquentModel) {
+            return $relationTenant;
+        }
+
+        if (method_exists($user, 'tenant')) {
+            $tenant = $user->tenant()->first();
+
+            if ($tenant instanceof TenantEloquentModel) {
+                return $tenant;
+            }
+        }
+
+        return TenantEloquentModel::find($user->tenant_id);
+    }
+
     private function identifyTenant(Request $request): ?TenantEloquentModel
     {
         $host = $request->getHost();
         $path = $request->path();
 
-        // Check for custom domain first
         $tenant = $this->getTenantByDomain($host);
         if ($tenant) {
             return $tenant;
         }
 
-        // Check for subdomain pattern (tenant.canvastencil.com)
         if ($this->isSubdomainPattern($host)) {
             $subdomain = $this->extractSubdomain($host);
             return TenantEloquentModel::where('slug', $subdomain)->first();
         }
 
-        // Check for path-based tenant (canvastencil.com/tenant_slug)
         if ($this->isMainDomain($host)) {
             $tenantSlug = $this->extractTenantSlugFromPath($path);
             if ($tenantSlug) {
@@ -105,9 +144,14 @@ class TenantContextMiddleware
     {
         $segments = explode('/', trim($path, '/'));
         
-        // Handle /api/tenant/{tenant_slug} pattern
+        // Handle /api/tenant/{tenant_slug} pattern (legacy)
         if (count($segments) >= 3 && $segments[0] === 'api' && $segments[1] === 'tenant') {
             return $segments[2];
+        }
+
+        // Handle /api/v1/tenant/{tenant_slug} pattern
+        if (count($segments) >= 4 && $segments[0] === 'api' && $segments[1] === 'v1' && $segments[2] === 'tenant') {
+            return $segments[3];
         }
         
         // Handle /{tenant_slug} pattern (for main domain)
@@ -139,6 +183,8 @@ class TenantContextMiddleware
         app()->singleton('tenant.current', function () use ($tenant) {
             return $tenant;
         });
+
+        app()->instance('current_tenant', $tenant);
     }
 
     private function handleTenantNotFound(Request $request): Response|JsonResponse
@@ -193,7 +239,7 @@ class TenantContextMiddleware
     private function isPlatformRoute(Request $request): bool
     {
         $path = $request->path();
-        $platformPrefixes = ['admin', 'api/platform', 'platform', 'auth/platform'];
+        $platformPrefixes = ['admin', 'api/platform', 'api/v1/platform', 'platform', 'auth/platform'];
         
         foreach ($platformPrefixes as $prefix) {
             if (str_starts_with($path, $prefix)) {

@@ -56,7 +56,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_can_authenticate_tenant_user_with_valid_credentials()
     {
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -93,7 +93,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_rejects_invalid_credentials()
     {
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'wrong-password',
             'tenant_id' => $this->tenant->id
@@ -106,7 +106,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_rejects_non_existent_user()
     {
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'nonexistent@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -126,7 +126,7 @@ class AuthControllerTest extends TestCase
             'subscription_status' => 'active'
         ]);
 
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $otherTenant->id
@@ -141,7 +141,7 @@ class AuthControllerTest extends TestCase
     {
         $this->tenant->update(['status' => 'inactive']);
 
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -159,7 +159,7 @@ class AuthControllerTest extends TestCase
             'subscription_ends_at' => now()->subDays(1)
         ]);
 
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -174,7 +174,7 @@ class AuthControllerTest extends TestCase
     {
         $this->user->update(['status' => 'inactive']);
 
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -187,7 +187,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_validates_required_fields()
     {
-        $response = $this->postJson('/api/tenant/login', []);
+        $response = $this->postJson('/api/v1/tenant/login', []);
 
         $response->assertStatus(422)
                 ->assertJsonValidationErrors(['email', 'password', 'tenant_id']);
@@ -196,7 +196,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_validates_email_format()
     {
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'invalid-email',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -211,7 +211,7 @@ class AuthControllerTest extends TestCase
     {
         // Make 5 failed login attempts
         for ($i = 0; $i < 5; $i++) {
-            $this->postJson('/api/tenant/login', [
+            $this->postJson('/api/v1/tenant/login', [
                 'email' => 'user@test.com',
                 'password' => 'wrong-password',
                 'tenant_id' => $this->tenant->id
@@ -219,7 +219,7 @@ class AuthControllerTest extends TestCase
         }
 
         // 6th attempt should be rate limited
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'wrong-password',
             'tenant_id' => $this->tenant->id
@@ -236,7 +236,7 @@ class AuthControllerTest extends TestCase
     public function it_can_logout_successfully()
     {
         // First authenticate
-        $loginResponse = $this->postJson('/api/tenant/login', [
+        $loginResponse = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -245,7 +245,7 @@ class AuthControllerTest extends TestCase
         $token = $loginResponse->json('token');
 
         // Then logout
-        $response = $this->postJson('/api/tenant/logout', [], [
+        $response = $this->postJson('/api/v1/tenant/logout', [], [
             'Authorization' => 'Bearer ' . $token
         ]);
 
@@ -257,7 +257,7 @@ class AuthControllerTest extends TestCase
     public function it_can_get_authenticated_user_info()
     {
         // First authenticate
-        $loginResponse = $this->postJson('/api/tenant/login', [
+        $loginResponse = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -266,7 +266,7 @@ class AuthControllerTest extends TestCase
         $token = $loginResponse->json('token');
 
         // Get user info
-        $response = $this->getJson('/api/tenant/me', [
+        $response = $this->getJson('/api/v1/tenant/me', [
             'Authorization' => 'Bearer ' . $token
         ]);
 
@@ -292,7 +292,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_includes_user_permissions_in_response()
     {
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -312,7 +312,7 @@ class AuthControllerTest extends TestCase
     {
         $this->user->update(['status' => 'suspended']);
 
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -330,7 +330,7 @@ class AuthControllerTest extends TestCase
             'trial_ends_at' => now()->subDays(1)
         ]);
 
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -348,7 +348,7 @@ class AuthControllerTest extends TestCase
             'trial_ends_at' => now()->addDays(7)
         ]);
 
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id
@@ -360,7 +360,7 @@ class AuthControllerTest extends TestCase
     /** @test */
     public function it_includes_tenant_context_in_response()
     {
-        $response = $this->postJson('/api/tenant/login', [
+        $response = $this->postJson('/api/v1/tenant/login', [
             'email' => 'user@test.com',
             'password' => 'password123',
             'tenant_id' => $this->tenant->id

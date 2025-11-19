@@ -1414,7 +1414,7 @@ InventoryReservation:
         priority:
           type: string
           enum: [low, normal, high, urgent]
-        default: normal
+          default: normal
           description: Reservation priority
           example: "high"
         status:

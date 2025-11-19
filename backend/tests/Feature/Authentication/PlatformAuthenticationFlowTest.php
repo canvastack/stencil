@@ -76,7 +76,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     public function complete_platform_authentication_flow_works()
     {
         // 1. Login
-        $loginResponse = $this->postJson('/api/platform/login', [
+        $loginResponse = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -101,7 +101,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         $this->assertNotEmpty($token);
 
         // 2. Access protected resource
-        $meResponse = $this->getJson('/api/platform/me', [
+        $meResponse = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer ' . $token
         ]);
 
@@ -117,14 +117,14 @@ class PlatformAuthenticationFlowTest extends TestCase
         $this->assertContains('tenant.create', $permissions);
 
         // 4. Access another protected endpoint
-        $healthResponse = $this->getJson('/api/auth/health', [
+        $healthResponse = $this->getJson('/api/v1/auth/health', [
             'Authorization' => 'Bearer ' . $token
         ]);
 
         $healthResponse->assertStatus(200);
 
         // 5. Logout
-        $logoutResponse = $this->postJson('/api/platform/logout', [], [
+        $logoutResponse = $this->postJson('/api/v1/platform/logout', [], [
             'Authorization' => 'Bearer ' . $token
         ]);
 
@@ -141,7 +141,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         // is properly deleted from the database, which we've verified above.
         
         // 7. Test with a fresh login to ensure logout doesn't break subsequent logins
-        $freshLoginResponse = $this->postJson('/api/platform/login', [
+        $freshLoginResponse = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -151,7 +151,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         $this->assertNotEquals($token, $newToken, 'New login should generate different token');
         
         // Fresh token should work
-        $freshMeResponse = $this->getJson('/api/platform/me', [
+        $freshMeResponse = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer ' . $newToken
         ]);
         $freshMeResponse->assertStatus(200);
@@ -160,7 +160,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     /** @test */
     public function platform_manager_has_limited_permissions()
     {
-        $loginResponse = $this->postJson('/api/platform/login', [
+        $loginResponse = $this->postJson('/api/v1/platform/login', [
             'email' => 'manager@canvastencil.com',
             'password' => 'Manager2024!'
         ]);
@@ -168,7 +168,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         $loginResponse->assertStatus(200);
         $token = $loginResponse->json('access_token');
 
-        $meResponse = $this->getJson('/api/platform/me', [
+        $meResponse = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer ' . $token
         ]);
 
@@ -189,7 +189,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     {
         // Make 5 failed login attempts
         for ($i = 0; $i < 5; $i++) {
-            $response = $this->postJson('/api/platform/login', [
+            $response = $this->postJson('/api/v1/platform/login', [
                 'email' => 'admin@canvastencil.com',
                 'password' => 'wrong-password'
             ]);
@@ -200,7 +200,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         }
 
         // 6th attempt should be rate limited
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'wrong-password'
         ]);
@@ -211,7 +211,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         );
 
         // Even correct password should be blocked
-        $blockedResponse = $this->postJson('/api/platform/login', [
+        $blockedResponse = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -224,7 +224,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     {
         $this->superAdmin->update(['status' => 'inactive']);
 
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -241,7 +241,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     {
         $this->superAdmin->update(['status' => 'suspended']);
 
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -255,7 +255,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     {
         $originalTime = $this->superAdmin->last_login_at;
 
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -271,7 +271,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     public function token_refresh_works()
     {
         // Login first
-        $loginResponse = $this->postJson('/api/platform/login', [
+        $loginResponse = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -279,7 +279,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         $originalToken = $loginResponse->json('access_token');
 
         // Refresh token
-        $refreshResponse = $this->postJson('/api/platform/refresh', [], [
+        $refreshResponse = $this->postJson('/api/v1/platform/refresh', [], [
             'Authorization' => 'Bearer ' . $originalToken
         ]);
 
@@ -296,7 +296,7 @@ class PlatformAuthenticationFlowTest extends TestCase
         $this->assertNotEquals($originalToken, $newToken);
 
         // New token should work
-        $meResponse = $this->getJson('/api/platform/me', [
+        $meResponse = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer ' . $newToken
         ]);
 
@@ -306,7 +306,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     /** @test */
     public function invalid_email_format_is_rejected()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'invalid-email-format',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -318,7 +318,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     /** @test */
     public function empty_credentials_are_rejected()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => '',
             'password' => ''
         ]);
@@ -330,7 +330,7 @@ class PlatformAuthenticationFlowTest extends TestCase
     /** @test */
     public function case_insensitive_email_login_works()
     {
-        $response = $this->postJson('/api/platform/login', [
+        $response = $this->postJson('/api/v1/platform/login', [
             'email' => 'ADMIN@CANVASTENCIL.COM',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -345,13 +345,13 @@ class PlatformAuthenticationFlowTest extends TestCase
     public function concurrent_logins_are_allowed()
     {
         // First login
-        $login1 = $this->postJson('/api/platform/login', [
+        $login1 = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
 
         // Second login
-        $login2 = $this->postJson('/api/platform/login', [
+        $login2 = $this->postJson('/api/v1/platform/login', [
             'email' => 'admin@canvastencil.com',
             'password' => 'SuperAdmin2024!'
         ]);
@@ -363,11 +363,11 @@ class PlatformAuthenticationFlowTest extends TestCase
         $token2 = $login2->json('access_token');
 
         // Both tokens should work
-        $response1 = $this->getJson('/api/platform/me', [
+        $response1 = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer ' . $token1
         ]);
 
-        $response2 = $this->getJson('/api/platform/me', [
+        $response2 = $this->getJson('/api/v1/platform/me', [
             'Authorization' => 'Bearer ' . $token2
         ]);
 

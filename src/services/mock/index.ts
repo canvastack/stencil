@@ -6,3 +6,4 @@ export * from './vendors';
 export * from './reviews';
 export * from './dashboard';
 export * from './settings';
+export * from './inventory';

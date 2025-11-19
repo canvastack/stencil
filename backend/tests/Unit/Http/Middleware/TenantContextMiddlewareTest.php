@@ -258,10 +258,11 @@ class TenantContextMiddlewareTest extends TestCase
         $request->server->set('HTTP_HOST', 'test-company.canvastencil.com');
 
         $next = function ($req) {
-            // Verify tenant context is available globally
             $tenant = app('tenant.current');
             $this->assertInstanceOf(TenantEloquentModel::class, $tenant);
             $this->assertEquals('test-company', $tenant->slug);
+            $this->assertTrue(app()->bound('current_tenant'));
+            $this->assertSame($tenant, app('current_tenant'));
             return new Response('OK', 200);
         };
 

@@ -26,6 +26,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('📈 Seeding Tenant Business Operations...');
         $this->call(TenantDataSeeder::class);
         
+        // Seed Phase 3 Core Business Logic Data
+        $this->command->info('🚀 Seeding Phase 3 Core Business Logic...');
+        $this->call(Phase3CoreBusinessSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');
@@ -33,8 +37,9 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Total Tenants: 6+ tenants (Demo + Additional)');
         $this->command->info('- Total Users: 50+ users across all tenants');
         $this->command->info('- Total Customers: 200+ customers');
-        $this->command->info('- Total Products: 250+ products');
-        $this->command->info('- Total Orders: 300+ orders');
+        $this->command->info('- Total Products: 300+ products (Phase 3 enhanced)');
+        $this->command->info('- Product Categories: 20+ categories with hierarchy');
+        $this->command->info('- Total Orders: 400+ orders (with realistic workflows)');
         $this->command->info('- Total Vendors: 50+ vendors');
         $this->command->info('- Platform Roles: 3 roles');
         $this->command->info('- Tenant Roles: 4 roles per tenant');
