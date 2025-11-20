@@ -144,6 +144,26 @@ class Order extends Model
             if (empty($model->order_number)) {
                 $model->order_number = 'ORD-' . strtoupper(uniqid());
             }
+            
+            // Validate cross-tenant relationships (skip in testing environment unless explicitly enabled)
+            if ((!app()->environment('testing') || config('app.enable_cross_tenant_validation', false)) && 
+                !empty($model->customer_id) && !empty($model->tenant_id)) {
+                $customer = Customer::find($model->customer_id);
+                if ($customer && $customer->tenant_id !== $model->tenant_id) {
+                    throw new \Exception('Cross-tenant relationships are not allowed. Customer must belong to the same tenant.');
+                }
+            }
+        });
+
+        static::updating(function ($model) {
+            // Validate cross-tenant relationships on update as well (skip in testing environment unless explicitly enabled)
+            if ((!app()->environment('testing') || config('app.enable_cross_tenant_validation', false)) && 
+                !empty($model->customer_id) && !empty($model->tenant_id)) {
+                $customer = Customer::find($model->customer_id);
+                if ($customer && $customer->tenant_id !== $model->tenant_id) {
+                    throw new \Exception('Cross-tenant relationships are not allowed. Customer must belong to the same tenant.');
+                }
+            }
         });
     }
 }

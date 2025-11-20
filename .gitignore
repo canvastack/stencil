@@ -38,3 +38,5 @@ docs/DEVELOPMENTS/
 .zenco*
 *backup*
 *.bak
+*test*.txt
+*.log

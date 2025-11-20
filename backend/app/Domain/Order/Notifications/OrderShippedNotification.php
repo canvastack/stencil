@@ -10,7 +10,7 @@ class OrderShippedNotification extends OrderNotification
 {
     public function __construct(
         Order $order,
-        protected string $trackingNumber
+        protected string $trackingNumber = ''
     ) {
         parent::__construct($order);
     }

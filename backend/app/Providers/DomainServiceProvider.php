@@ -27,12 +27,12 @@ use App\Infrastructure\Persistence\Repositories\VendorEloquentRepository;
 // Eloquent Models
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\DomainMappingEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\ProductCategoryEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\ProductVariantEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\OrderEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\VendorEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Customer;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
+use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
+use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
+use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 
 class DomainServiceProvider extends ServiceProvider
 {
@@ -73,30 +73,30 @@ class DomainServiceProvider extends ServiceProvider
 
         // Customer Domain
         $this->app->bind(CustomerRepositoryInterface::class, function ($app) {
-            return new CustomerEloquentRepository(new CustomerEloquentModel());
+            return new CustomerEloquentRepository(new Customer());
         });
 
         // Product Domain
         $this->app->bind(ProductRepositoryInterface::class, function ($app) {
-            return new ProductEloquentRepository(new ProductEloquentModel());
+            return new ProductEloquentRepository(new Product());
         });
 
         $this->app->bind(ProductCategoryRepositoryInterface::class, function ($app) {
-            return new ProductCategoryEloquentRepository(new ProductCategoryEloquentModel());
+            return new ProductCategoryEloquentRepository(new ProductCategory());
         });
 
         $this->app->bind(ProductVariantRepositoryInterface::class, function ($app) {
-            return new ProductVariantEloquentRepository(new ProductVariantEloquentModel());
+            return new ProductVariantEloquentRepository(new ProductVariant());
         });
 
         // Order Domain
         $this->app->bind(OrderRepositoryInterface::class, function ($app) {
-            return new OrderEloquentRepository(new OrderEloquentModel());
+            return new OrderEloquentRepository(new Order());
         });
 
         // Vendor Domain
         $this->app->bind(VendorRepositoryInterface::class, function ($app) {
-            return new VendorEloquentRepository(new VendorEloquentModel());
+            return new VendorEloquentRepository(new Vendor());
         });
     }
 
@@ -149,10 +149,10 @@ class DomainServiceProvider extends ServiceProvider
     private function applyTenantScope($model): void
     {
         $tenantAwareModels = [
-            CustomerEloquentModel::class,
-            ProductEloquentModel::class,
-            OrderEloquentModel::class,
-            VendorEloquentModel::class,
+            Customer::class,
+            Product::class,
+            Order::class,
+            Vendor::class,
         ];
 
         if (in_array(get_class($model), $tenantAwareModels)) {

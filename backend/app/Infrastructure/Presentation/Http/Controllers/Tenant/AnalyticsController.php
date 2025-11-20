@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Domain\Customer\Services\CustomerSegmentationService;
 use App\Domain\Vendor\Services\VendorEvaluationService;
 use Illuminate\Http\Request;
@@ -55,18 +55,16 @@ class AnalyticsController extends Controller
             return response()->json([
                 'message' => 'Ikhtisar analitik berhasil diambil',
                 'data' => [
+                    'totalOrders' => $totalOrders,
+                    'totalRevenue' => $totalRevenue,
+                    'averageOrderValue' => round($averageOrderValue, 2),
+                    'newCustomers' => $newCustomers,
+                    'activeCustomers' => $activeCustomers,
+                    'conversionRate' => round($conversionRate, 2),
+                    'completedOrders' => $completedOrders,
+                    'completionRate' => round($completionRate, 2),
                     'period' => $period,
                     'startDate' => $startDate->toIso8601String(),
-                    'metrics' => [
-                        'totalOrders' => $totalOrders,
-                        'totalRevenue' => $totalRevenue,
-                        'averageOrderValue' => round($averageOrderValue, 2),
-                        'newCustomers' => $newCustomers,
-                        'activeCustomers' => $activeCustomers,
-                        'conversionRate' => round($conversionRate, 2),
-                        'completedOrders' => $completedOrders,
-                        'completionRate' => round($completionRate, 2),
-                    ]
                 ]
             ], 200);
         } catch (\Exception $e) {
@@ -234,32 +232,32 @@ class AnalyticsController extends Controller
             $period = $request->input('period', '30days');
             $startDate = $this->getStartDate($period);
 
-            $productsByStatus = ProductEloquentModel::select('status', DB::raw('COUNT(*) as count'))
+            $productsByStatus = Product::select('status', DB::raw('COUNT(*) as count'))
                 ->groupBy('status')
                 ->get()
                 ->pluck('count', 'status');
 
-            $featuredProducts = ProductEloquentModel::where('featured', true)->count();
-            $customizableProducts = ProductEloquentModel::where('customizable', true)->count();
-            $productsRequiringQuote = ProductEloquentModel::where('requires_quote', true)->count();
+            $featuredProducts = Product::where('featured', true)->count();
+            $customizableProducts = Product::where('customizable', true)->count();
+            $productsRequiringQuote = Product::where('requires_quote', true)->count();
 
-            $topViewedProducts = ProductEloquentModel::select('id', 'name', 'sku', 'slug', 'view_count', 'price', 'status')
+            $topViewedProducts = Product::select('id', 'name', 'sku', 'slug', 'view_count', 'price', 'status')
                 ->orderByDesc('view_count')
                 ->limit(20)
                 ->get();
 
-            $topRatedProducts = ProductEloquentModel::select('id', 'name', 'sku', 'slug', 'average_rating', 'review_count', 'price')
+            $topRatedProducts = Product::select('id', 'name', 'sku', 'slug', 'average_rating', 'review_count', 'price')
                 ->where('review_count', '>', 0)
                 ->orderByDesc('average_rating')
                 ->limit(20)
                 ->get();
 
-            $productsByProductionType = ProductEloquentModel::select('production_type', DB::raw('COUNT(*) as count'))
+            $productsByProductionType = Product::select('production_type', DB::raw('COUNT(*) as count'))
                 ->groupBy('production_type')
                 ->get()
                 ->pluck('count', 'production_type');
 
-            $inventoryHealth = ProductEloquentModel::where('track_inventory', true)
+            $inventoryHealth = Product::where('track_inventory', true)
                 ->selectRaw('
                     COUNT(CASE WHEN stock_quantity > low_stock_threshold THEN 1 END) as in_stock,
                     COUNT(CASE WHEN stock_quantity <= low_stock_threshold AND stock_quantity > 0 THEN 1 END) as low_stock,
@@ -299,10 +297,10 @@ class AnalyticsController extends Controller
     public function inventory(Request $request): JsonResponse
     {
         try {
-            $totalProducts = ProductEloquentModel::count();
-            $trackedProducts = ProductEloquentModel::where('track_inventory', true)->count();
+            $totalProducts = Product::count();
+            $trackedProducts = Product::where('track_inventory', true)->count();
 
-            $stockSummary = ProductEloquentModel::where('track_inventory', true)
+            $stockSummary = Product::where('track_inventory', true)
                 ->selectRaw('
                     SUM(stock_quantity) as total_stock,
                     AVG(stock_quantity) as average_stock,
@@ -312,7 +310,7 @@ class AnalyticsController extends Controller
                 ')
                 ->first();
 
-            $lowStockProducts = ProductEloquentModel::where('track_inventory', true)
+            $lowStockProducts = Product::where('track_inventory', true)
                 ->whereRaw('stock_quantity <= low_stock_threshold')
                 ->where('stock_quantity', '>', 0)
                 ->select('id', 'name', 'sku', 'stock_quantity', 'low_stock_threshold', 'price')
@@ -320,13 +318,13 @@ class AnalyticsController extends Controller
                 ->limit(50)
                 ->get();
 
-            $outOfStockProducts = ProductEloquentModel::where('track_inventory', true)
+            $outOfStockProducts = Product::where('track_inventory', true)
                 ->where('stock_quantity', 0)
                 ->select('id', 'name', 'sku', 'price', 'status')
                 ->limit(50)
                 ->get();
 
-            $stockValueByStatus = ProductEloquentModel::where('track_inventory', true)
+            $stockValueByStatus = Product::where('track_inventory', true)
                 ->select(
                     'status',
                     DB::raw('COUNT(*) as product_count'),
@@ -336,7 +334,7 @@ class AnalyticsController extends Controller
                 ->groupBy('status')
                 ->get();
 
-            $totalStockValue = ProductEloquentModel::where('track_inventory', true)
+            $totalStockValue = Product::where('track_inventory', true)
                 ->selectRaw('SUM(stock_quantity * price) as total_value')
                 ->first();
 
@@ -408,14 +406,14 @@ class AnalyticsController extends Controller
 
             $topPerformers = $evaluations->take($limit)->values();
             $underperforming = $evaluations
-                ->filter(fn ($evaluation) => $evaluation['overall_score'] < $threshold)
+                ->filter(fn ($evaluation) => $evaluation->overall_score < $threshold)
                 ->values();
 
-            $slaSnapshot = $topPerformers->map(function (array $evaluation) {
-                $metrics = $evaluation['metrics']['delivery_performance'] ?? [];
+            $slaSnapshot = $topPerformers->map(function ($evaluation) {
+                $metrics = $evaluation->metrics->delivery_performance ?? [];
                 return [
-                    'vendorId' => $evaluation['vendor_id'],
-                    'vendorName' => $evaluation['vendor_name'],
+                    'vendorId' => $evaluation->vendor_id,
+                    'vendorName' => $evaluation->vendor_name,
                     'onTimeRate' => $metrics['on_time_rate'] ?? null,
                     'avgLeadTimeDays' => $metrics['avg_lead_time_days'] ?? null,
                 ];
@@ -548,7 +546,7 @@ class AnalyticsController extends Controller
     public function inventoryReport(Request $request): JsonResponse
     {
         try {
-            $products = ProductEloquentModel::where('track_inventory', true)
+            $products = Product::where('track_inventory', true)
                 ->select(
                     'id', 'name', 'sku', 'stock_quantity', 'low_stock_threshold', 
                     'price', 'status', 'featured'
@@ -648,7 +646,7 @@ class AnalyticsController extends Controller
         try {
             $format = $request->input('format', 'json');
             
-            $products = ProductEloquentModel::where('track_inventory', true)
+            $products = Product::where('track_inventory', true)
                 ->select(
                     'id', 'name', 'sku', 'slug', 'stock_quantity', 'low_stock_threshold',
                     'price', 'status', 'featured', 'created_at', 'updated_at'

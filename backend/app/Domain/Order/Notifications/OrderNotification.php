@@ -135,6 +135,32 @@ abstract class OrderNotification extends Notification implements ShouldQueue
             return (bool) $notifiable->prefersNotificationChannel($channel);
         }
 
+        $metadata = $notifiable->metadata ?? null;
+
+        if (is_array($metadata) && isset($metadata['notifications']) && is_array($metadata['notifications'])) {
+            $notifications = $metadata['notifications'];
+
+            if (array_key_exists('enabled', $notifications) && !$notifications['enabled']) {
+                return false;
+            }
+
+            if (isset($notifications['disabled']) && is_array($notifications['disabled']) && in_array($channel, $notifications['disabled'], true)) {
+                return false;
+            }
+
+            if (isset($notifications['channels']) && is_array($notifications['channels'])) {
+                return in_array($channel, $notifications['channels'], true);
+            }
+
+            return true;
+        }
+
+        if (is_array($metadata)) {
+            if (isset($metadata['notification_channels']) && is_array($metadata['notification_channels'])) {
+                return in_array($channel, $metadata['notification_channels'], true);
+            }
+        }
+
         $preferences = $notifiable->notification_preferences ?? null;
 
         if (is_array($preferences)) {
@@ -144,26 +170,6 @@ abstract class OrderNotification extends Notification implements ShouldQueue
 
             if (isset($preferences['channels']) && is_array($preferences['channels'])) {
                 return in_array($channel, $preferences['channels'], true);
-            }
-        }
-
-        $metadata = $notifiable->metadata ?? null;
-
-        if (is_array($metadata)) {
-            if (isset($metadata['notifications']) && is_array($metadata['notifications'])) {
-                $notifications = $metadata['notifications'];
-
-                if (isset($notifications['disabled']) && is_array($notifications['disabled']) && in_array($channel, $notifications['disabled'], true)) {
-                    return false;
-                }
-
-                if (isset($notifications['channels']) && is_array($notifications['channels'])) {
-                    return in_array($channel, $notifications['channels'], true);
-                }
-            }
-
-            if (isset($metadata['notification_channels']) && is_array($metadata['notification_channels'])) {
-                return in_array($channel, $metadata['notification_channels'], true);
             }
         }
 

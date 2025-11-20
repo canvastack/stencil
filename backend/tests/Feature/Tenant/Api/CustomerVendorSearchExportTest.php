@@ -137,24 +137,37 @@ class CustomerVendorSearchExportTest extends TestCase
             'code' => 'LV-001',
         ]);
 
-        foreach ([$highVendor, $lowVendor] as $index => $vendor) {
-            Order::factory()->create([
-                'tenant_id' => $this->tenant->id,
-                'vendor_id' => $vendor->id,
-                'status' => 'completed',
-                'payment_status' => 'paid',
-                'total_amount' => $index === 0 ? 9000000 : 1500000,
-                'total_paid_amount' => $index === 0 ? 9000000 : 1500000,
-                'delivered_at' => Carbon::now()->subDays(5),
-                'estimated_delivery' => Carbon::now()->subDays(5),
-                'metadata' => [
-                    'vendor_response_time_hours' => $index === 0 ? 4 : 36,
-                    'quality_issues' => $index === 0 ? false : true,
-                ],
-            ]);
-        }
+        Order::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'vendor_id' => $highVendor->id,
+            'status' => 'completed',
+            'payment_status' => 'paid',
+            'total_amount' => 9000000,
+            'total_paid_amount' => 9000000,
+            'delivered_at' => Carbon::now()->subDays(5),
+            'estimated_delivery' => Carbon::now()->subDays(5),
+            'metadata' => [
+                'vendor_response_time_hours' => 4,
+                'quality_issues' => false,
+            ],
+        ]);
 
-        $response = $this->get('/api/v1/tenant/vendors/export?min_score=70');
+        Order::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'vendor_id' => $lowVendor->id,
+            'status' => 'completed',
+            'payment_status' => 'paid',
+            'total_amount' => 1500000,
+            'total_paid_amount' => 1500000,
+            'delivered_at' => Carbon::now()->subDays(15),
+            'estimated_delivery' => Carbon::now()->subDays(5),
+            'metadata' => [
+                'vendor_response_time_hours' => 72,
+                'quality_issues' => true,
+            ],
+        ]);
+
+        $response = $this->get('/api/v1/tenant/vendors/export?min_score=74');
 
         $response->assertStatus(200);
         $csv = $response->streamedContent();

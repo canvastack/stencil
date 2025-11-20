@@ -34,6 +34,7 @@ class CustomerSegmentationServiceTest extends TestCase
             'total_amount' => 5000000,
         ]);
 
+        $customer->load('orders');
         $rfm = $this->service->calculateRFMScore($customer);
 
         $this->assertEquals($customer->id, $rfm['customer_id']);
@@ -58,6 +59,7 @@ class CustomerSegmentationServiceTest extends TestCase
             'total_amount' => 1000000,
         ]);
 
+        $customer->load('orders');
         $rfm = $this->service->calculateRFMScore($customer);
 
         $this->assertEquals(5, $rfm['recency_score']);
@@ -108,6 +110,7 @@ class CustomerSegmentationServiceTest extends TestCase
             'created_at' => Carbon::now()->subMonths(rand(1, 6)),
         ]);
 
+        $customer->load('orders');
         $ltv = $this->service->getLifetimeValue($customer);
 
         $this->assertEquals($customer->id, $ltv['customer_id']);

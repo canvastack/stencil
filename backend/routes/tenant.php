@@ -53,14 +53,16 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
         Route::prefix('customers')->group(function () {
             Route::get('/', [CustomerController::class, 'index'])->name('tenant.customers.index');
             Route::post('/', [CustomerController::class, 'store'])->name('tenant.customers.store');
-            Route::get('/{customer}', [CustomerController::class, 'show'])->name('tenant.customers.show');
-            Route::put('/{customer}', [CustomerController::class, 'update'])->name('tenant.customers.update');
-            Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('tenant.customers.destroy');
             
-            // Customer Actions
+            // Customer Actions (must come before /{customer})
             Route::get('/search', [CustomerController::class, 'search'])->name('tenant.customers.search');
             Route::get('/export', [CustomerController::class, 'export'])->name('tenant.customers.export');
             Route::get('/inactive', [CustomerController::class, 'inactive'])->name('tenant.customers.inactive');
+            
+            // Customer by ID (catch-all - must come last)
+            Route::get('/{customer}', [CustomerController::class, 'show'])->name('tenant.customers.show');
+            Route::put('/{customer}', [CustomerController::class, 'update'])->name('tenant.customers.update');
+            Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('tenant.customers.destroy');
             Route::get('/{customer}/orders', [CustomerController::class, 'orders'])->name('tenant.customers.orders');
             
             // Customer Tags
@@ -72,38 +74,36 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
         Route::prefix('products')->group(function () {
             Route::get('/', [ProductController::class, 'index'])->name('tenant.products.index');
             Route::post('/', [ProductController::class, 'store'])->name('tenant.products.store');
-            Route::get('/{product}', [ProductController::class, 'show'])->name('tenant.products.show');
-            Route::put('/{product}', [ProductController::class, 'update'])->name('tenant.products.update');
-            Route::delete('/{product}', [ProductController::class, 'destroy'])->name('tenant.products.destroy');
             
-            // Product Actions
-            Route::post('/{product}/publish', [ProductController::class, 'publish'])->name('tenant.products.publish');
-            Route::post('/{product}/unpublish', [ProductController::class, 'unpublish'])->name('tenant.products.unpublish');
-            Route::put('/{product}/stock', [ProductController::class, 'updateStock'])->name('tenant.products.update_stock');
-            
-            // Product Categories & Tags
+            // Product Actions (must come before /{product})
             Route::get('/categories', [ProductController::class, 'categories'])->name('tenant.products.categories');
             Route::get('/tags', [ProductController::class, 'tags'])->name('tenant.products.tags');
-            
-            // Inventory
             Route::get('/inventory/low-stock', [ProductController::class, 'lowStock'])->name('tenant.products.low_stock');
             Route::get('/inventory/out-of-stock', [ProductController::class, 'outOfStock'])->name('tenant.products.out_of_stock');
             Route::get('/search', [ProductController::class, 'search'])->name('tenant.products.search');
+            
+            // Product by ID (catch-all - must come last)
+            Route::get('/{product}', [ProductController::class, 'show'])->name('tenant.products.show');
+            Route::put('/{product}', [ProductController::class, 'update'])->name('tenant.products.update');
+            Route::delete('/{product}', [ProductController::class, 'destroy'])->name('tenant.products.destroy');
+            Route::post('/{product}/publish', [ProductController::class, 'publish'])->name('tenant.products.publish');
+            Route::post('/{product}/unpublish', [ProductController::class, 'unpublish'])->name('tenant.products.unpublish');
+            Route::put('/{product}/stock', [ProductController::class, 'updateStock'])->name('tenant.products.update_stock');
         });
         
         // Product Category Management
         Route::prefix('product-categories')->group(function () {
             Route::get('/', [ProductCategoryController::class, 'index'])->name('tenant.product_categories.index');
             Route::post('/', [ProductCategoryController::class, 'store'])->name('tenant.product_categories.store');
-            Route::get('/{category}', [ProductCategoryController::class, 'show'])->name('tenant.product_categories.show');
-            Route::put('/{category}', [ProductCategoryController::class, 'update'])->name('tenant.product_categories.update');
-            Route::delete('/{category}', [ProductCategoryController::class, 'destroy'])->name('tenant.product_categories.destroy');
             
-            // Category Hierarchy & Structure
+            // Category Hierarchy & Structure (must come before /{category})
             Route::get('/tree/hierarchy', [ProductCategoryController::class, 'tree'])->name('tenant.product_categories.tree');
             Route::post('/reorder', [ProductCategoryController::class, 'reorder'])->name('tenant.product_categories.reorder');
             
-            // Category Products
+            // Category by ID (catch-all - must come last)
+            Route::get('/{category}', [ProductCategoryController::class, 'show'])->name('tenant.product_categories.show');
+            Route::put('/{category}', [ProductCategoryController::class, 'update'])->name('tenant.product_categories.update');
+            Route::delete('/{category}', [ProductCategoryController::class, 'destroy'])->name('tenant.product_categories.destroy');
             Route::get('/{category}/products', [ProductCategoryController::class, 'products'])->name('tenant.product_categories.products');
         });
         
@@ -128,40 +128,42 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
         Route::prefix('orders')->group(function () {
             Route::get('/', [OrderController::class, 'index'])->name('tenant.orders.index');
             Route::post('/', [OrderController::class, 'store'])->name('tenant.orders.store');
+            
+            // Order Filters (must come before /{order})
+            Route::get('/status/{status}', [OrderController::class, 'byStatus'])->name('tenant.orders.by_status');
+            Route::get('/customer/{customer}', [OrderController::class, 'byCustomer'])->name('tenant.orders.by_customer');
+            Route::get('/recent', [OrderController::class, 'recent'])->name('tenant.orders.recent');
+            Route::get('/export', [OrderController::class, 'export'])->name('tenant.orders.export');
+            
+            // Order by ID (catch-all - must come last)
             Route::get('/{order}', [OrderController::class, 'show'])->name('tenant.orders.show');
             Route::put('/{order}', [OrderController::class, 'update'])->name('tenant.orders.update');
             Route::delete('/{order}', [OrderController::class, 'destroy'])->name('tenant.orders.destroy');
-            
-            // Order Status Management
             Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('tenant.orders.update_status');
             Route::post('/{order}/process', [OrderController::class, 'process'])->name('tenant.orders.process');
             Route::post('/{order}/ship', [OrderController::class, 'ship'])->name('tenant.orders.ship');
             Route::post('/{order}/complete', [OrderController::class, 'complete'])->name('tenant.orders.complete');
             Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('tenant.orders.cancel');
             Route::post('/{order}/refund', [OrderController::class, 'refund'])->name('tenant.orders.refund');
-            
-            // Order Filters
             Route::get('/{order}/available-transitions', [OrderController::class, 'availableTransitions'])->name('tenant.orders.available_transitions');
             Route::get('/{order}/quotations', [OrderController::class, 'quotations'])->name('tenant.orders.quotations');
-            Route::get('/status/{status}', [OrderController::class, 'byStatus'])->name('tenant.orders.by_status');
-            Route::get('/customer/{customer}', [OrderController::class, 'byCustomer'])->name('tenant.orders.by_customer');
-            Route::get('/recent', [OrderController::class, 'recent'])->name('tenant.orders.recent');
-            Route::get('/export', [OrderController::class, 'export'])->name('tenant.orders.export');
         });
         
         // Vendor Management
         Route::prefix('vendors')->group(function () {
             Route::get('/', [VendorController::class, 'index'])->name('tenant.vendors.index');
             Route::post('/', [VendorController::class, 'store'])->name('tenant.vendors.store');
+            
+            // Vendor Actions (must come before /{vendor})
+            Route::get('/search', [VendorController::class, 'search'])->name('tenant.vendors.search');
+            Route::get('/export', [VendorController::class, 'export'])->name('tenant.vendors.export');
+            
+            // Vendor by ID (catch-all - must come last)
             Route::get('/{vendor}', [VendorController::class, 'show'])->name('tenant.vendors.show');
             Route::put('/{vendor}', [VendorController::class, 'update'])->name('tenant.vendors.update');
             Route::delete('/{vendor}', [VendorController::class, 'destroy'])->name('tenant.vendors.destroy');
-            
-            // Vendor Actions
             Route::post('/{vendor}/activate', [VendorController::class, 'activate'])->name('tenant.vendors.activate');
             Route::post('/{vendor}/deactivate', [VendorController::class, 'deactivate'])->name('tenant.vendors.deactivate');
-            Route::get('/search', [VendorController::class, 'search'])->name('tenant.vendors.search');
-            Route::get('/export', [VendorController::class, 'export'])->name('tenant.vendors.export');
         });
         
         // Analytics & Reports

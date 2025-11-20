@@ -64,10 +64,6 @@ class EnsureTenantScopedQueries
     {
         return [
             \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::class,
-            \App\Infrastructure\Persistence\Eloquent\OrderEloquentModel::class,
-            \App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel::class,
-            \App\Infrastructure\Persistence\Eloquent\ProductEloquentModel::class,
-            \App\Infrastructure\Persistence\Eloquent\VendorEloquentModel::class,
             \App\Infrastructure\Persistence\Eloquent\Models\Order::class,
             \App\Infrastructure\Persistence\Eloquent\Models\Customer::class,
             \App\Infrastructure\Persistence\Eloquent\Models\Vendor::class,

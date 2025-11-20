@@ -120,6 +120,7 @@ enum OrderStatus: string
         return match ($this) {
             self::NEW => [
                 self::SOURCING_VENDOR,
+                self::VENDOR_NEGOTIATION,
                 self::CUSTOMER_QUOTATION,
                 self::CANCELLED,
             ],
@@ -194,7 +195,7 @@ enum OrderStatus: string
             'completed' => self::COMPLETED,
             'cancelled' => self::CANCELLED,
             'refunded' => self::REFUNDED,
-            default => throw new \InvalidArgumentException("Status pesanan tidak valid: {$status}"),
+            default => throw new \ValueError("Status pesanan tidak valid: {$status}"),
         };
     }
 }

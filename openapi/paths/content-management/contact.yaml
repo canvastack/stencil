@@ -11,8 +11,8 @@
     operationId: getContactPage
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/AcceptLanguage'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/AcceptLanguage'
     responses:
       '200':
         description: Contact page content retrieved successfully
@@ -20,11 +20,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ContactPageData'
+                    $ref: '../../components/schemas.yaml#/ContactPageData'
             examples:
               success:
                 summary: Successful contact page retrieval
@@ -90,9 +90,9 @@
                     timestamp: '2024-01-15T10:30:00Z'
                     version: '1.0'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /contact/submit:
   post:
     tags:
@@ -117,13 +117,13 @@
     operationId: submitContactForm
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ContactFormSubmissionInput'
+            $ref: '../../components/schemas.yaml#/ContactFormSubmissionInput'
           examples:
             general_inquiry:
               summary: General inquiry form submission
@@ -146,13 +146,13 @@
                   company: ABC Corporation
     responses:
       '201':
-        $ref: '#/components/responses/CreatedResponse'
+        $ref: '../../components/responses.yaml#/CreatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /admin/pages/contact:
   get:
     tags:
@@ -167,7 +167,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Contact page admin data retrieved successfully
@@ -175,11 +175,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ContactPageData'
+                    $ref: '../../components/schemas.yaml#/ContactPageData'
             example:
               success: true
               data:
@@ -193,11 +193,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Contact Management
@@ -223,13 +223,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ContactPageUpdateInput'
+            $ref: '../../components/schemas.yaml#/ContactPageUpdateInput'
           examples:
             full_update:
               summary: Complete page configuration update
@@ -279,15 +279,15 @@
                   enabled: true
     responses:
       '200':
-        $ref: '#/components/responses/UpdatedResponse'
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /admin/contact/forms:
   get:
     tags:
@@ -302,7 +302,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Contact forms retrieved successfully
@@ -310,13 +310,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ContactForm'
+                      $ref: '../../components/schemas.yaml#/ContactForm'
             examples:
               success:
                 summary: List of contact forms
@@ -341,11 +341,11 @@
                       fieldLabel: Email Address
                       isRequired: true
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /admin/contact/submissions:
   get:
     tags:
@@ -371,10 +371,10 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
     - name: status
       in: query
       description: Filter by submission status
@@ -420,16 +420,16 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ContactSubmission'
+                      $ref: '../../components/schemas.yaml#/ContactSubmission'
                   meta:
                     allOf:
-                    - $ref: '#/components/schemas/PaginationMeta'
+                    - $ref: '../../components/schemas.yaml#/PaginationMeta'
                     - type: object
                       properties:
                         filters:
@@ -479,11 +479,11 @@
                     tenant: main
                     timestamp: '2024-01-15T15:00:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /admin/contact/submissions/{submissionId}:
   get:
     tags:
@@ -494,7 +494,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: submissionId
       in: path
       required: true
@@ -510,11 +510,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ContactSubmission'
+                    $ref: '../../components/schemas.yaml#/ContactSubmission'
             example:
               success: true
               data:
@@ -528,13 +528,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   patch:
     tags:
     - Contact Management
@@ -549,7 +549,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: submissionId
       in: path
       required: true
@@ -563,7 +563,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ContactSubmissionUpdateInput'
+            $ref: '../../components/schemas.yaml#/ContactSubmissionUpdateInput'
           examples:
             mark_replied:
               summary: Mark as replied with message
@@ -577,14 +577,14 @@
                 status: archived
     responses:
       '200':
-        $ref: '#/components/responses/UpdatedResponse'
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

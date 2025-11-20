@@ -690,3 +690,1719 @@ PaginationInfo:
     - total_pages
     - has_next_page
     - has_prev_page
+
+# ============================================================================
+# Customer Schemas
+# ============================================================================
+
+CustomerRecord:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique customer identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant identifier for multi-tenant isolation
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    customer_code:
+      type: string
+      description: Auto-generated customer code
+      example: "CUST-2025-0001"
+    customer_number:
+      type: integer
+      description: Sequential customer number
+      example: 1
+    name:
+      type: string
+      maxLength: 255
+      description: Customer full name or business name
+      example: "PT Tech Solutions Indonesia"
+    email:
+      type: string
+      format: email
+      description: Customer email address
+      example: "contact@techsolutions.id"
+    phone:
+      type: string
+      description: Customer contact phone number
+      example: "+62 21 5678 9012"
+    customer_type:
+      type: string
+      enum: [individual, business]
+      description: Type of customer
+      example: "business"
+    status:
+      type: string
+      enum: [active, inactive, blocked]
+      description: Customer status
+      example: "active"
+    customer_stage:
+      type: string
+      enum: [prospect, lead, customer, advocate]
+      description: Customer lifecycle stage
+      example: "customer"
+    company:
+      type: string
+      description: Company name for business customers
+      example: "PT Tech Solutions Indonesia"
+    total_orders:
+      type: integer
+      minimum: 0
+      description: Total number of orders
+      example: 15
+    total_spent:
+      type: number
+      format: double
+      description: Total amount spent in base currency
+      example: 25500000.00
+    is_vip:
+      type: boolean
+      description: Whether customer is VIP tier
+      example: true
+    loyalty_tier:
+      type: string
+      enum: [bronze, silver, gold, platinum]
+      description: Customer loyalty tier based on RFM analysis
+      example: "gold"
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - tenant_id
+    - customer_code
+    - name
+    - email
+    - customer_type
+    - status
+    - customer_stage
+
+CustomerListResponse:
+  allOf:
+    - $ref: '#/SuccessResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/CustomerRecord'
+        meta:
+          type: object
+          properties:
+            current_page:
+              type: integer
+              example: 1
+            per_page:
+              type: integer
+              example: 20
+            total:
+              type: integer
+              example: 150
+            total_pages:
+              type: integer
+              example: 8
+            has_more:
+              type: boolean
+              example: true
+          required:
+            - current_page
+            - per_page
+            - total
+            - total_pages
+        filters:
+          type: object
+          description: Applied filters for the current query
+          additionalProperties: true
+
+# ============================================================================
+# Order Schemas
+# ============================================================================
+
+OrderItem:
+  type: object
+  properties:
+    product_name:
+      type: string
+      maxLength: 255
+      description: Name of the product being ordered
+      example: "Custom Etched Brass Plate"
+    quantity:
+      type: integer
+      minimum: 1
+      description: Quantity ordered
+      example: 5
+    unit_price:
+      type: number
+      format: double
+      description: Price per unit
+      example: 150000.00
+    customization:
+      type: object
+      description: Product-specific customization fields
+      additionalProperties: true
+      example:
+        bahan: "Kuningan"
+        kualitas: "premium"
+        ketebalan: "2mm"
+        ukuran: "30cm x 20cm"
+    design_file_url:
+      type: string
+      format: uri
+      nullable: true
+      description: URL to design file if provided
+      example: "https://storage.example.com/designs/logo.png"
+  required:
+    - product_name
+    - quantity
+    - unit_price
+
+CreateOrderRequest:
+  type: object
+  properties:
+    customer:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Customer name
+          example: "Budi Santoso"
+        email:
+          type: string
+          format: email
+          description: Customer email
+          example: "budi@example.com"
+        phone:
+          type: string
+          description: Customer phone number
+          example: "+628123456789"
+        company:
+          type: string
+          nullable: true
+          description: Company name for business customers
+          example: "PT Example Indonesia"
+        type:
+          type: string
+          enum: [individual, business]
+          description: Customer type
+          example: "business"
+      required:
+        - name
+        - email
+        - phone
+        - type
+    items:
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/OrderItem'
+      description: Order items list
+    shipping_address:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Street address
+          example: "Jl. Sudirman No. 123, Blok A-5"
+        city:
+          type: string
+          description: City
+          example: "Jakarta Pusat"
+        province:
+          type: string
+          description: Province/State
+          example: "DKI Jakarta"
+        postal_code:
+          type: string
+          description: Postal code
+          example: "10110"
+        country:
+          type: string
+          description: Country
+          example: "Indonesia"
+      required:
+        - address
+        - city
+        - province
+        - postal_code
+        - country
+    customer_notes:
+      type: string
+      nullable: true
+      description: Customer special instructions or notes
+      example: "Please pack carefully for corporate event"
+    priority:
+      type: string
+      enum: [low, normal, high, urgent]
+      default: "normal"
+      description: Order priority level
+      example: "normal"
+  required:
+    - customer
+    - items
+    - shipping_address
+
+# ============================================================================
+# Inventory Schemas
+# ============================================================================
+
+InventoryItemDetail:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    product_name:
+      type: string
+      description: Product name
+      example: "Brass Plate 10x10"
+    sku:
+      type: string
+      description: Stock keeping unit
+      example: "BP-1010-001"
+    current_stock:
+      type: number
+      format: double
+      description: Current stock quantity
+      example: 150.5
+    reserved_stock:
+      type: number
+      format: double
+      description: Stock reserved for pending orders
+      example: 25.0
+    available_stock:
+      type: number
+      format: double
+      description: Available stock for sale
+      example: 125.5
+    unit_cost:
+      type: number
+      format: double
+      description: Unit cost price
+      example: 75000.00
+    reorder_level:
+      type: number
+      format: double
+      description: Minimum stock level before reorder
+      example: 50.0
+    status:
+      type: string
+      enum: [active, discontinued, discontinued_with_stock]
+      example: "active"
+  required:
+    - id
+    - product_name
+    - sku
+    - current_stock
+    - available_stock
+
+InventoryPageData:
+  allOf:
+    - $ref: '#/SuccessResponse'
+    - type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/InventoryItemDetail'
+        meta:
+          type: object
+          properties:
+            current_page:
+              type: integer
+              example: 1
+            per_page:
+              type: integer
+              example: 20
+            total:
+              type: integer
+              example: 250
+            total_pages:
+              type: integer
+              example: 13
+            total_stock_value:
+              type: number
+              format: double
+              description: Total value of all inventory
+              example: 1250000.00
+          required:
+            - current_page
+            - per_page
+            - total
+            - total_pages
+
+# ============================================================================
+# Language/Localization Schemas
+# ============================================================================
+
+Language:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Language unique identifier
+    language_code:
+      type: string
+      pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+      description: ISO 639-1 language code with optional country code
+      example: "en-US"
+    language_name:
+      type: string
+      maxLength: 100
+      description: Display name of language
+      example: "English (United States)"
+    native_name:
+      type: string
+      maxLength: 100
+      description: Native name of language
+      example: "English"
+    is_active:
+      type: boolean
+      description: Whether language is enabled for this tenant
+      example: true
+    is_default:
+      type: boolean
+      description: Whether this is the default language
+      example: true
+    flag_icon:
+      type: string
+      nullable: true
+      description: Flag emoji or icon code
+      example: "🇺🇸"
+    sort_order:
+      type: integer
+      description: Display order
+      example: 1
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - language_code
+    - language_name
+    - is_active
+    - is_default
+
+# ============================================================================
+# Media Schemas
+# ============================================================================
+
+MediaFileCreateInput:
+  type: object
+  properties:
+    filename:
+      type: string
+      maxLength: 255
+      description: Original filename
+      example: "product-image.jpg"
+    file_type:
+      type: string
+      description: MIME type
+      example: "image/jpeg"
+    file_size:
+      type: integer
+      description: File size in bytes
+      example: 245632
+    file_path:
+      type: string
+      description: Storage path or URL
+      example: "s3://bucket/tenant-123/uploads/product-image.jpg"
+    alt_text:
+      type: string
+      nullable: true
+      maxLength: 255
+      description: Alternative text for accessibility
+      example: "Brass etching product sample"
+    title:
+      type: string
+      nullable: true
+      maxLength: 255
+      description: Image title for display
+      example: "Product Sample"
+    description:
+      type: string
+      nullable: true
+      description: Detailed description
+      example: "High quality brass etching sample photo"
+    tags:
+      type: array
+      items:
+        type: string
+      description: Tags for categorization
+      example: ["product", "etching", "brass"]
+    category:
+      type: string
+      enum: [product, hero, banner, icon, document, video, other]
+      description: Media category
+      example: "product"
+    is_public:
+      type: boolean
+      default: true
+      description: Whether file is publicly accessible
+      example: true
+  required:
+    - filename
+    - file_type
+    - file_size
+    - file_path
+    - category
+
+# ============================================================================
+# SEO Schemas
+# ============================================================================
+
+SEOMetadataResponse:
+  allOf:
+    - $ref: '#/SuccessResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            page_url:
+              type: string
+              format: uri
+              description: Page URL being optimized
+              example: "/products/brass-plates"
+            page_title:
+              type: string
+              maxLength: 60
+              description: SEO page title (60 characters recommended)
+              example: "Premium Brass Etching Plates | Custom Designs"
+            meta_description:
+              type: string
+              maxLength: 160
+              description: SEO meta description (160 characters recommended)
+              example: "High-quality custom brass etching plates for corporate awards and gifts. Fast delivery and premium quality guaranteed."
+            meta_keywords:
+              type: string
+              description: SEO keywords (comma-separated)
+              example: "brass etching, custom plates, awards"
+            og_title:
+              type: string
+              nullable: true
+              description: Open Graph title for social sharing
+            og_description:
+              type: string
+              nullable: true
+              description: Open Graph description
+            og_image:
+              type: string
+              format: uri
+              nullable: true
+              description: Open Graph image URL
+            og_url:
+              type: string
+              format: uri
+              nullable: true
+              description: Canonical URL for social sharing
+            twitter_card:
+              type: string
+              enum: [summary, summary_large_image, app, player]
+              nullable: true
+              description: Twitter card type
+            canonical_url:
+              type: string
+              format: uri
+              nullable: true
+              description: Canonical URL for search engines
+            robots:
+              type: string
+              nullable: true
+              description: Robots meta tag directives
+              example: "index, follow"
+            is_index:
+              type: boolean
+              description: Whether page should be indexed
+              example: true
+            is_follow:
+              type: boolean
+              description: Whether links should be followed
+              example: true
+          required:
+            - id
+            - page_url
+            - page_title
+            - meta_description
+
+# ============================================================================
+# Settings Schemas
+# ============================================================================
+
+SettingsDashboard:
+  allOf:
+    - $ref: '#/SuccessResponse'
+    - type: object
+      properties:
+        data:
+          type: object
+          properties:
+            general:
+              type: object
+              properties:
+                site_name:
+                  type: string
+                  example: "PT Custom Etching Xenial"
+                site_url:
+                  type: string
+                  format: uri
+                  example: "https://example.com"
+                timezone:
+                  type: string
+                  example: "Asia/Jakarta"
+                currency:
+                  type: string
+                  example: "IDR"
+                language:
+                  type: string
+                  example: "id"
+            business:
+              type: object
+              properties:
+                business_name:
+                  type: string
+                business_type:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                address:
+                  type: string
+                city:
+                  type: string
+                province:
+                  type: string
+                postal_code:
+                  type: string
+                country:
+                  type: string
+            payment:
+              type: object
+              properties:
+                min_down_payment_percent:
+                  type: integer
+                  minimum: 0
+                  maximum: 100
+                  example: 50
+                accepted_payment_methods:
+                  type: array
+                  items:
+                    type: string
+                  example: ["cash", "bank_transfer", "credit_card"]
+                payment_gateway_enabled:
+                  type: boolean
+                  example: true
+            email:
+              type: object
+              properties:
+                smtp_host:
+                  type: string
+                smtp_port:
+                  type: integer
+                smtp_user:
+                  type: string
+                smtp_password:
+                  type: string
+                from_address:
+                  type: string
+                  format: email
+                from_name:
+                  type: string
+
+# ============================================================================
+# User Schemas
+# ============================================================================
+
+UserCreateInput:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: User full name
+      example: "John Doe"
+    email:
+      type: string
+      format: email
+      description: User email address (unique per tenant)
+      example: "john@example.com"
+    password:
+      type: string
+      format: password
+      minLength: 8
+      description: User password (minimum 8 characters)
+      example: "SecurePassword123!"
+    role:
+      type: string
+      enum: [admin, manager, staff, customer_service, vendor, customer]
+      description: User role/permission level
+      example: "staff"
+    phone:
+      type: string
+      nullable: true
+      description: User phone number
+      example: "+628123456789"
+    department:
+      type: string
+      nullable: true
+      description: Department assignment
+      example: "Sales"
+    is_active:
+      type: boolean
+      default: true
+      description: Whether user account is active
+      example: true
+    send_activation_email:
+      type: boolean
+      default: true
+      description: Send activation email to new user
+      example: true
+  required:
+    - name
+    - email
+    - password
+    - role
+
+# ============================================================================
+# Platform Licensing Schemas
+# ============================================================================
+
+CreatePlatformLicenseRequest:
+  type: object
+  properties:
+    owner_name:
+      type: string
+      maxLength: 255
+      description: Name of license owner
+      example: "John Smith"
+    owner_email:
+      type: string
+      format: email
+      description: Email of license owner
+      example: "john@company.com"
+    owner_organization:
+      type: string
+      maxLength: 255
+      description: Organization name
+      example: "Acme Corporation"
+    license_type:
+      type: string
+      enum: [master, delegated]
+      description: Type of license (master controls platform, delegated is for resellers)
+      example: "master"
+    features:
+      type: array
+      items:
+        type: string
+        enum:
+          - platform_management
+          - tenant_billing
+          - analytics
+          - theme_management
+          - plugin_management
+          - user_management
+          - advanced_reporting
+      description: Features included in this license
+      example:
+        - "platform_management"
+        - "tenant_billing"
+        - "analytics"
+    max_tenants:
+      type: integer
+      minimum: 1
+      description: Maximum number of tenants allowed
+      example: 100
+    max_users:
+      type: integer
+      minimum: 1
+      description: Maximum number of users allowed
+      example: 1000
+    valid_from:
+      type: string
+      format: date-time
+      description: License start date/time
+      example: "2025-01-01T00:00:00Z"
+    valid_until:
+      type: string
+      format: date-time
+      description: License expiration date/time
+      example: "2025-12-31T23:59:59Z"
+    auto_renewal:
+      type: boolean
+      default: true
+      description: Auto-renew license before expiration
+      example: true
+  required:
+    - owner_name
+    - owner_email
+    - owner_organization
+    - license_type
+    - features
+    - max_tenants
+    - max_users
+    - valid_from
+    - valid_until
+
+# ============================================================================
+# About/Company Schemas
+# ============================================================================
+
+AboutHero:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: About hero section unique identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Associated tenant identifier
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    page_id:
+      type: string
+      format: uuid
+      description: Associated page identifier
+      nullable: true
+    title:
+      type: string
+      maxLength: 255
+      description: Hero section title
+      example: "Welcome to Our Company"
+    subtitle:
+      type: string
+      nullable: true
+      description: Hero section subtitle
+      example: "Your trusted partner in innovation"
+    description:
+      type: string
+      nullable: true
+      description: Hero section description
+      example: "We have been serving customers for over 20 years"
+    image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Hero image URL
+    cta_text:
+      type: string
+      nullable: true
+      description: Call-to-action button text
+    cta_link:
+      type: string
+      nullable: true
+      description: Call-to-action button link
+    is_active:
+      type: boolean
+      description: Whether this section is active
+      example: true
+    sort_order:
+      type: integer
+      description: Display order
+      example: 1
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - tenant_id
+    - title
+    - is_active
+
+CompanyProfile:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Company profile unique identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Associated tenant identifier
+    company_name:
+      type: string
+      maxLength: 255
+      description: Official company name
+      example: "PT Innovation Indonesia"
+    tagline:
+      type: string
+      nullable: true
+      description: Company tagline/motto
+      example: "Innovating for Tomorrow"
+    description:
+      type: string
+      nullable: true
+      description: Company description
+      example: "We are a leading provider of innovative solutions"
+    founded_year:
+      type: integer
+      nullable: true
+      description: Year company was founded
+      example: 2000
+    logo_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Company logo URL
+    website:
+      type: string
+      format: uri
+      nullable: true
+      description: Company website
+    email:
+      type: string
+      format: email
+      nullable: true
+      description: Company contact email
+    phone:
+      type: string
+      nullable: true
+      description: Company contact phone
+    address:
+      type: string
+      nullable: true
+      description: Company street address
+    city:
+      type: string
+      nullable: true
+      description: City
+    country:
+      type: string
+      nullable: true
+      description: Country
+    is_active:
+      type: boolean
+      description: Whether profile is active
+      example: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - tenant_id
+    - company_name
+
+MissionVision:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Mission/Vision statement unique identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Associated tenant identifier
+    type:
+      type: string
+      enum: [mission, vision, values]
+      description: Type of statement
+      example: "mission"
+    title:
+      type: string
+      maxLength: 255
+      description: Statement title
+      example: "Our Mission"
+    content:
+      type: string
+      nullable: true
+      description: Statement content
+      example: "To provide innovative solutions that create positive impact"
+    icon_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Icon URL
+    sort_order:
+      type: integer
+      description: Display order
+      example: 1
+    is_active:
+      type: boolean
+      description: Whether statement is active
+      example: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - tenant_id
+    - type
+    - title
+
+# ============================================================================
+# Purchase Order Schemas
+# ============================================================================
+
+PurchaseOrder:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Purchase order unique identifier
+    order_code:
+      type: string
+      description: Order reference code
+      example: "ORD-2025-11-0001"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Associated tenant identifier
+    customer_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Associated customer identifier
+    customer_name:
+      type: string
+      maxLength: 255
+      description: Customer name
+      example: "Budi Santoso"
+    customer_email:
+      type: string
+      format: email
+      description: Customer email
+      example: "budi@example.com"
+    customer_phone:
+      type: string
+      description: Customer phone number
+    customer_type:
+      type: string
+      enum: [individual, business]
+      description: Customer type
+      example: "business"
+    status:
+      type: string
+      enum: [new, confirmed, production, ready, shipped, delivered, cancelled, pending_payment]
+      description: Order status
+      example: "new"
+    priority:
+      type: string
+      enum: [low, normal, high, urgent]
+      description: Order priority
+      example: "normal"
+    total_amount:
+      type: number
+      format: double
+      description: Total order amount
+      example: 1500000.00
+    items_count:
+      type: integer
+      description: Number of items in order
+      example: 5
+    shipping_address:
+      type: object
+      description: Shipping address details
+      additionalProperties: true
+    notes:
+      type: string
+      nullable: true
+      description: Order notes
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - order_code
+    - tenant_id
+    - customer_name
+    - customer_email
+    - status
+
+OrdersPageData:
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/PurchaseOrder'
+      description: List of orders
+    meta:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 100
+        total_pages:
+          type: integer
+          example: 5
+        has_more:
+          type: boolean
+          example: true
+      required:
+        - current_page
+        - per_page
+        - total
+        - total_pages
+
+OrderQuotation:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Quotation unique identifier
+    order_id:
+      type: string
+      format: uuid
+      description: Associated purchase order ID
+    quotation_code:
+      type: string
+      description: Quotation reference code
+      example: "QT-2025-11-0001"
+    status:
+      type: string
+      enum: [draft, sent, accepted, rejected, expired]
+      description: Quotation status
+      example: "sent"
+    total_amount:
+      type: number
+      format: double
+      description: Total quotation amount
+      example: 1500000.00
+    valid_until:
+      type: string
+      format: date-time
+      description: Quotation validity date
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - order_id
+    - quotation_code
+    - status
+
+OrderNegotiation:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Negotiation record unique identifier
+    order_id:
+      type: string
+      format: uuid
+      description: Associated purchase order ID
+    type:
+      type: string
+      enum: [price, delivery, specifications, payment_terms]
+      description: Type of negotiation
+      example: "price"
+    status:
+      type: string
+      enum: [pending, accepted, rejected, resolved]
+      description: Negotiation status
+      example: "pending"
+    proposed_value:
+      type: object
+      description: Proposed change details
+      additionalProperties: true
+    response_notes:
+      type: string
+      nullable: true
+      description: Response or comments
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - order_id
+    - type
+    - status
+
+OrderPayment:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Payment record unique identifier
+    order_id:
+      type: string
+      format: uuid
+      description: Associated purchase order ID
+    payment_code:
+      type: string
+      description: Payment reference code
+      example: "PAY-2025-11-0001"
+    amount:
+      type: number
+      format: double
+      description: Payment amount
+      example: 750000.00
+    status:
+      type: string
+      enum: [pending, processing, completed, failed, refunded]
+      description: Payment status
+      example: "completed"
+    method:
+      type: string
+      enum: [cash, bank_transfer, credit_card, check, other]
+      description: Payment method
+      example: "bank_transfer"
+    bank_name:
+      type: string
+      nullable: true
+      description: Bank name for transfers
+    reference_number:
+      type: string
+      nullable: true
+      description: Payment reference/invoice number
+    paid_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Payment completion date
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - order_id
+    - payment_code
+    - amount
+    - status
+
+OrderShipment:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Shipment record unique identifier
+    order_id:
+      type: string
+      format: uuid
+      description: Associated purchase order ID
+    shipment_code:
+      type: string
+      description: Shipment tracking code
+      example: "SHIP-2025-11-0001"
+    status:
+      type: string
+      enum: [pending, packed, picked_up, in_transit, delivered, cancelled]
+      description: Shipment status
+      example: "in_transit"
+    carrier:
+      type: string
+      nullable: true
+      description: Shipping carrier name
+      example: "JNE"
+    tracking_number:
+      type: string
+      nullable: true
+      description: Tracking number
+    shipped_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Shipment date
+    delivered_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Delivery date
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - order_id
+    - shipment_code
+    - status
+
+OrderStatusHistory:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Status history record unique identifier
+    order_id:
+      type: string
+      format: uuid
+      description: Associated purchase order ID
+    previous_status:
+      type: string
+      description: Previous order status
+      example: "new"
+    new_status:
+      type: string
+      description: New order status
+      example: "confirmed"
+    changed_by:
+      type: string
+      format: uuid
+      nullable: true
+      description: User ID who made the change
+    reason:
+      type: string
+      nullable: true
+      description: Reason for status change
+    notes:
+      type: string
+      nullable: true
+      description: Additional notes
+    created_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - order_id
+    - previous_status
+    - new_status
+
+# ============================================================================
+# Product Schemas
+# ============================================================================
+
+Product:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Product unique identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Associated tenant identifier
+    name:
+      type: string
+      maxLength: 255
+      description: Product name
+      example: "Custom Etched Brass Plate"
+    description:
+      type: string
+      nullable: true
+      description: Product description
+    sku:
+      type: string
+      description: Stock keeping unit
+      example: "BRASS-ETCH-001"
+    category:
+      type: string
+      description: Product category
+      example: "Metal Etching"
+    base_price:
+      type: number
+      format: double
+      description: Base product price
+      example: 150000.00
+    status:
+      type: string
+      enum: [active, inactive, draft, discontinued]
+      description: Product status
+      example: "active"
+    image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Product image URL
+    is_featured:
+      type: boolean
+      description: Whether product is featured
+      example: false
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - tenant_id
+    - name
+    - sku
+    - base_price
+    - status
+
+PublicProduct:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Product unique identifier
+    name:
+      type: string
+      maxLength: 255
+      description: Product name
+      example: "Custom Etched Brass Plate"
+    description:
+      type: string
+      nullable: true
+      description: Product description
+    category:
+      type: string
+      description: Product category
+      example: "Metal Etching"
+    base_price:
+      type: number
+      format: double
+      description: Base product price
+      example: 150000.00
+    image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Product image URL
+    is_featured:
+      type: boolean
+      description: Whether product is featured
+      example: false
+  required:
+    - id
+    - name
+    - base_price
+
+CategoryFilter:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Category unique identifier
+    name:
+      type: string
+      description: Category name
+      example: "Metal Etching"
+    count:
+      type: integer
+      description: Number of products in category
+      example: 15
+  required:
+    - id
+    - name
+    - count
+
+ProductsSummary:
+  type: object
+  properties:
+    total_products:
+      type: integer
+      description: Total number of products
+      example: 150
+    active_products:
+      type: integer
+      description: Number of active products
+      example: 145
+    inactive_products:
+      type: integer
+      description: Number of inactive products
+      example: 5
+    total_categories:
+      type: integer
+      description: Total number of categories
+      example: 8
+  required:
+    - total_products
+    - active_products
+    - inactive_products
+
+CreateProductRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Product name
+      example: "Custom Etched Brass Plate"
+    description:
+      type: string
+      nullable: true
+      description: Product description
+    category:
+      type: string
+      description: Product category
+      example: "Metal Etching"
+    sku:
+      type: string
+      description: Stock keeping unit
+      example: "BRASS-ETCH-001"
+    base_price:
+      type: number
+      format: double
+      description: Base product price
+      example: 150000.00
+    image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Product image URL
+  required:
+    - name
+    - sku
+    - base_price
+    - category
+
+UpdateProductRequest:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Product name
+      example: "Custom Etched Brass Plate"
+    description:
+      type: string
+      nullable: true
+      description: Product description
+    category:
+      type: string
+      description: Product category
+      example: "Metal Etching"
+    base_price:
+      type: number
+      format: double
+      description: Base product price
+      example: 150000.00
+    image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Product image URL
+    status:
+      type: string
+      enum: [active, inactive, draft, discontinued]
+      description: Product status
+      example: "active"
+
+# ============================================================================
+# Theme Schemas
+# ============================================================================
+
+Theme:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Theme unique identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Associated tenant identifier
+    name:
+      type: string
+      maxLength: 255
+      description: Theme name
+      example: "Modern Dark"
+    version:
+      type: string
+      description: Theme version
+      example: "1.0.0"
+    description:
+      type: string
+      nullable: true
+      description: Theme description
+    status:
+      type: string
+      enum: [active, inactive, archived]
+      description: Theme status
+      example: "active"
+    preview_image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Theme preview image
+    is_custom:
+      type: boolean
+      description: Whether theme is custom or built-in
+      example: true
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - tenant_id
+    - name
+    - version
+    - status
+
+ThemeListResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      type: array
+      items:
+        $ref: '#/Theme'
+      description: List of themes
+    meta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 5
+        count:
+          type: integer
+          example: 5
+  required:
+    - success
+    - data
+    - meta
+
+ThemeDetailsResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    data:
+      $ref: '#/Theme'
+  required:
+    - success
+    - data
+
+ThemeCreateInput:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Theme name
+      example: "Modern Dark"
+    description:
+      type: string
+      nullable: true
+      description: Theme description
+    preview_image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Theme preview image
+    settings:
+      type: object
+      nullable: true
+      description: Theme settings/configuration
+      additionalProperties: true
+  required:
+    - name
+
+ThemeUpdateInput:
+  type: object
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      description: Theme name
+      example: "Modern Dark"
+    description:
+      type: string
+      nullable: true
+      description: Theme description
+    preview_image_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Theme preview image
+    settings:
+      type: object
+      nullable: true
+      description: Theme settings/configuration
+      additionalProperties: true
+    status:
+      type: string
+      enum: [active, inactive, archived]
+      description: Theme status
+      example: "active"
+
+ThemeInstallation:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Installation record unique identifier
+    theme_id:
+      type: string
+      format: uuid
+      description: Associated theme identifier
+    installed_at:
+      type: string
+      format: date-time
+      description: Installation timestamp
+    status:
+      type: string
+      enum: [pending, installing, installed, failed]
+      description: Installation status
+      example: "installed"
+    error_message:
+      type: string
+      nullable: true
+      description: Error message if installation failed
+  required:
+    - id
+    - theme_id
+    - installed_at
+    - status
+
+ThemeInstallationInput:
+  type: object
+  properties:
+    theme_id:
+      type: string
+      format: uuid
+      description: Theme ID to install
+    auto_activate:
+      type: boolean
+      default: false
+      description: Automatically activate after installation
+  required:
+    - theme_id

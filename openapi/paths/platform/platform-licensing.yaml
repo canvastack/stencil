@@ -28,7 +28,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreatePlatformLicenseRequest'
+            $ref: '../../components/schemas.yaml#/CreatePlatformLicenseRequest'
     responses:
       '201':
         description: Platform license created successfully
@@ -36,19 +36,19 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PlatformLicense'
+                    $ref: '../../components/schemas.yaml#/PlatformLicense'
                   license_installation:
-                    $ref: '#/components/schemas/PlatformLicenseInstallation'
+                    $ref: '../../components/schemas.yaml#/PlatformLicenseInstallation'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
 
   get:
     tags:
@@ -69,7 +69,7 @@
     x-permissions:
       - licensing.platform.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: status
         in: query
         schema:
@@ -107,21 +107,21 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PlatformLicense'
+                      $ref: '../../components/schemas.yaml#/PlatformLicense'
                   pagination:
-                    $ref: '#/components/schemas/PaginationInfo'
+                    $ref: '../../components/schemas.yaml#/PaginationInfo'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
 
 /platform/licenses/{license_id}:
   get:
@@ -143,7 +143,7 @@
     x-permissions:
       - licensing.platform.read
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: license_id
         in: path
         required: true
@@ -158,15 +158,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PlatformLicenseDetailed'
+                    $ref: '../../components/schemas.yaml#/PlatformLicenseDetailed'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
 
   patch:
     tags:
@@ -187,7 +187,7 @@
     x-permissions:
       - licensing.platform.update
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: license_id
         in: path
         required: true
@@ -200,7 +200,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdatePlatformLicenseRequest'
+            $ref: '../../components/schemas.yaml#/UpdatePlatformLicenseRequest'
     responses:
       '200':
         description: Platform license updated successfully
@@ -208,15 +208,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PlatformLicense'
+                    $ref: '../../components/schemas.yaml#/PlatformLicense'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 
   delete:
     tags:
@@ -237,7 +237,7 @@
     x-permissions:
       - licensing.platform.revoke
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: license_id
         in: path
         required: true
@@ -264,7 +264,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -282,9 +282,9 @@
                       revocation_reason:
                         type: string
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 
 # ===== TENANT SERVICE LICENSE MANAGEMENT =====
 
@@ -308,7 +308,7 @@
     x-permissions:
       - licensing.tenant.create
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -321,7 +321,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreateTenantServiceLicenseRequest'
+            $ref: '../../components/schemas.yaml#/CreateTenantServiceLicenseRequest'
     responses:
       '201':
         description: Tenant service license created successfully
@@ -329,15 +329,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TenantServiceLicense'
+                    $ref: '../../components/schemas.yaml#/TenantServiceLicense'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 
   get:
     tags:
@@ -359,7 +359,7 @@
     x-permissions:
       - licensing.tenant.read
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -374,13 +374,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TenantServiceLicenseDetailed'
+                    $ref: '../../components/schemas.yaml#/TenantServiceLicenseDetailed'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 
   patch:
     tags:
@@ -401,7 +401,7 @@
     x-permissions:
       - licensing.tenant.update
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -451,15 +451,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TenantServiceLicense'
+                    $ref: '../../components/schemas.yaml#/TenantServiceLicense'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 
   delete:
     tags:
@@ -480,7 +480,7 @@
     x-permissions:
       - licensing.tenant.cancel
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -516,7 +516,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -537,7 +537,7 @@
                       cancellation_reason:
                         type: string
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 
 /platform/tenants/{tenant_id}/usage:
   get:
@@ -560,7 +560,7 @@
     x-permissions:
       - licensing.analytics.read
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: tenant_id
         in: path
         required: true
@@ -581,17 +581,17 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UsageStatisticsResponse'
+                    $ref: '../../components/schemas.yaml#/UsageStatisticsResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
 
 # ===== LICENSE VALIDATION =====
 
@@ -615,7 +615,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/LicenseValidationRequest'
+            $ref: '../../components/schemas.yaml#/LicenseValidationRequest'
     responses:
       '200':
         description: License validation result
@@ -623,11 +623,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/LicenseValidationResponse'
+                    $ref: '../../components/schemas.yaml#/LicenseValidationResponse'
       '400':
         description: Invalid license key format
         content:
@@ -665,7 +665,7 @@
                   format: date-time
                   example: "2024-12-31T23:59:59Z"
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
 
 /platform/validation-history:
   get:
@@ -687,7 +687,7 @@
     x-permissions:
       - licensing.platform.history.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: days
         in: query
         schema:
@@ -728,19 +728,19 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/LicenseValidationHistoryResponse'
+                    $ref: '../../components/schemas.yaml#/LicenseValidationHistoryResponse'
                   pagination:
-                    $ref: '#/components/schemas/PaginationInfo'
+                    $ref: '../../components/schemas.yaml#/PaginationInfo'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
 
 # ===== BULK OPERATIONS =====
 
@@ -764,7 +764,7 @@
     x-permissions:
       - licensing.platform.bulk_update
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -807,7 +807,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -833,7 +833,7 @@
                               type: string
                               nullable: true
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 
 /platform/service-licenses/bulk:
   patch:
@@ -855,7 +855,7 @@
     x-permissions:
       - licensing.tenant.bulk_update
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -905,7 +905,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -931,7 +931,7 @@
                               type: string
                               nullable: true
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 
 # ===== REPORTING & ANALYTICS =====
 
@@ -955,7 +955,7 @@
     x-permissions:
       - licensing.analytics
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: period
         in: query
         schema:
@@ -969,7 +969,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1056,8 +1056,8 @@
                             type: integer
                             example: 123
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'

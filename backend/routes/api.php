@@ -43,8 +43,10 @@ require __DIR__.'/auth.php';
 // Platform Routes (Account A)
 require __DIR__.'/platform.php';
 
-// Tenant Routes (Account B) 
-require __DIR__.'/tenant.php';
+// Tenant Routes (Account B)
+Route::prefix('tenant')->group(function () {
+    require __DIR__.'/tenant.php';
+});
 
 // Public API (No authentication required)
 Route::prefix('public')->group(function () {

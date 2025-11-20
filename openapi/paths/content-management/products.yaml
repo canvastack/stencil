@@ -35,8 +35,8 @@
     operationId: getProductsCatalog
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/AcceptLanguage'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/AcceptLanguage'
     - name: search
       in: query
       schema:
@@ -113,7 +113,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -122,16 +122,16 @@
                       products:
                         type: array
                         items:
-                          $ref: '#/components/schemas/PublicProduct'
+                          $ref: '../../schemas/content-management/products.yaml#/PublicProduct'
                       categories:
                         type: array
                         items:
-                          $ref: '#/components/schemas/CategoryFilter'
+                          $ref: '../../schemas/content-management/products.yaml#/CategoryFilter'
                   meta:
                     type: object
                     properties:
                       pagination:
-                        $ref: '#/components/schemas/PaginationInfo'
+                        $ref: '../../components/schemas.yaml#/PaginationInfo'
                       filters_applied:
                         type: object
                         description: Currently active filters
@@ -181,7 +181,7 @@
                       total: 120
                       last_page: 5
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 /products/{slug}:
   get:
     tags:
@@ -207,8 +207,8 @@
     operationId: getProductBySlug
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/AcceptLanguage'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/AcceptLanguage'
     - name: slug
       in: path
       required: true
@@ -223,11 +223,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PublicProduct'
+                    $ref: '../../schemas/content-management/products.yaml#/PublicProduct'
             examples:
               brass_plate_product:
                 summary: Brass plate product details
@@ -277,7 +277,7 @@
                     seo_title: Custom Brass Etching Plate - Premium Quality
                     seo_description: Premium brass plates with precision etching...
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /products/categories:
   get:
     tags:
@@ -300,7 +300,7 @@
     operationId: getProductCategories
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Categories retrieved successfully
@@ -308,13 +308,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/CategoryFilter'
+                      $ref: '../../schemas/content-management/products.yaml#/CategoryFilter'
             example:
               success: true
               data:
@@ -353,7 +353,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: page
       in: query
       schema:
@@ -431,20 +431,20 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Product'
+                      $ref: '../../schemas/content-management/products.yaml#/Product'
                   meta:
                     type: object
                     properties:
                       pagination:
-                        $ref: '#/components/schemas/PaginationInfo'
+                        $ref: '../../components/schemas.yaml#/PaginationInfo'
                       summary:
-                        $ref: '#/components/schemas/ProductsSummary'
+                        $ref: '../../schemas/content-management/products.yaml#/ProductsSummary'
             example:
               success: true
               data:
@@ -458,9 +458,9 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
   post:
     tags:
     - Product Management
@@ -492,13 +492,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreateProductRequest'
+            $ref: '../../components/schemas.yaml#/CreateProductRequest'
           examples:
             etching_product:
               summary: Create etching product with vendor production
@@ -550,11 +550,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Product'
+                    $ref: '../../schemas/content-management/products.yaml#/Product'
             example:
               success: true
               data:
@@ -565,9 +565,9 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 /admin/products/{id}:
   get:
     tags:
@@ -578,7 +578,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -593,11 +593,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Product'
+                    $ref: '../../schemas/content-management/products.yaml#/Product'
             example:
               success: true
               data:
@@ -611,7 +611,7 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
   put:
     tags:
     - Product Management
@@ -624,7 +624,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -636,7 +636,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdateProductRequest'
+            $ref: '../../components/schemas.yaml#/UpdateProductRequest'
           example:
             title: Updated Products Title
             description: Updated description for products
@@ -648,11 +648,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Product'
+                    $ref: '../../schemas/content-management/products.yaml#/Product'
             example:
               success: true
               data:
@@ -662,11 +662,11 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
   delete:
     tags:
     - Product Management
@@ -687,7 +687,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -698,7 +698,7 @@
       '204':
         description: Product deleted successfully
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/products/{id}/restore:
   post:
     tags:
@@ -709,7 +709,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -723,11 +723,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Product'
+                    $ref: '../../schemas/content-management/products.yaml#/Product'
             example:
               success: true
               data:
@@ -737,7 +737,7 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/products/bulk:
   post:
     tags:
@@ -767,13 +767,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BulkProductRequest'
+            $ref: '../../schemas/content-management/products.yaml#/BulkProductRequest'
           examples:
             publish_products:
               summary: Publish multiple products
@@ -789,7 +789,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -828,7 +828,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: include_inactive
       in: query
       schema:
@@ -842,13 +842,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ProductCategory'
+                      $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
             example:
               success: true
               data:
@@ -870,13 +870,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreateCategoryRequest'
+            $ref: '../../components/schemas.yaml#/CreateCategoryRequest'
           examples:
             main_category:
               summary: Create main category
@@ -897,11 +897,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ProductCategory'
+                    $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
             example:
               success: true
               data:
@@ -921,7 +921,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -933,7 +933,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdateCategoryRequest'
+            $ref: '../../components/schemas.yaml#/UpdateCategoryRequest'
           example:
             title: Updated Products Title
             description: Updated description for products
@@ -945,11 +945,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ProductCategory'
+                    $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
             example:
               success: true
               data:
@@ -979,7 +979,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -992,7 +992,7 @@
       '400':
         description: Cannot delete category with child categories
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/products/analytics/dashboard:
   get:
     tags:
@@ -1018,7 +1018,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: period
       in: query
       schema:
@@ -1037,14 +1037,14 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: object
                     properties:
                       summary:
-                        $ref: '#/components/schemas/ProductsSummary'
+                        $ref: '../../schemas/content-management/products.yaml#/ProductsSummary'
                       recent_products:
                         type: array
                         items:
@@ -1118,7 +1118,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: format
       in: query
       schema:
@@ -1222,7 +1222,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1267,7 +1267,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1316,7 +1316,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1358,7 +1358,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1405,7 +1405,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: category_id
       in: query
       schema:
@@ -1427,14 +1427,14 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
                       allOf:
-                      - $ref: '#/components/schemas/Product'
+                      - $ref: '../../schemas/content-management/products.yaml#/Product'
                       - type: object
                         properties:
                           quotation_info:

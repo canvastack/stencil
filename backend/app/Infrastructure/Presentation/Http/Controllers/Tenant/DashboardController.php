@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +22,7 @@ class DashboardController extends Controller
 
             $totalOrders = Order::count();
             $totalCustomers = Customer::count();
-            $totalProducts = ProductEloquentModel::count();
+            $totalProducts = Product::count();
             $totalVendors = Vendor::count();
             $totalRevenue = Order::sum('total_paid_amount');
 
@@ -34,7 +34,7 @@ class DashboardController extends Controller
             $activeOrders = Order::whereIn('status', ['in_production', 'quality_check', 'ready_to_ship'])->count();
             $completedOrders = Order::where('status', 'completed')->count();
 
-            $lowStockProducts = ProductEloquentModel::where('track_inventory', true)
+            $lowStockProducts = Product::where('track_inventory', true)
                 ->whereRaw('stock_quantity <= low_stock_threshold')
                 ->count();
 
@@ -44,29 +44,19 @@ class DashboardController extends Controller
             return response()->json([
                 'message' => 'Data dashboard berhasil diambil',
                 'data' => [
-                    'overview' => [
-                        'totalOrders' => $totalOrders,
-                        'totalCustomers' => $totalCustomers,
-                        'totalProducts' => $totalProducts,
-                        'totalVendors' => $totalVendors,
-                        'totalRevenue' => $totalRevenue,
-                    ],
-                    'monthly' => [
-                        'ordersThisMonth' => $ordersThisMonth,
-                        'revenueThisMonth' => $revenueThisMonth,
-                    ],
-                    'orders' => [
-                        'pending' => $pendingOrders,
-                        'active' => $activeOrders,
-                        'completed' => $completedOrders,
-                    ],
-                    'alerts' => [
-                        'lowStockProducts' => $lowStockProducts,
-                    ],
-                    'status' => [
-                        'activeCustomers' => $activeCustomers,
-                        'activeVendors' => $activeVendors,
-                    ],
+                    'totalOrders' => $totalOrders,
+                    'totalCustomers' => $totalCustomers,
+                    'totalProducts' => $totalProducts,
+                    'totalVendors' => $totalVendors,
+                    'totalRevenue' => $totalRevenue,
+                    'ordersThisMonth' => $ordersThisMonth,
+                    'revenueThisMonth' => $revenueThisMonth,
+                    'pendingOrders' => $pendingOrders,
+                    'activeOrders' => $activeOrders,
+                    'completedOrders' => $completedOrders,
+                    'lowStockProducts' => $lowStockProducts,
+                    'activeCustomers' => $activeCustomers,
+                    'activeVendors' => $activeVendors,
                 ]
             ], 200);
 
@@ -114,7 +104,7 @@ class DashboardController extends Controller
                 ->orderBy('date', 'asc')
                 ->get();
 
-            $topProducts = ProductEloquentModel::select('products.id', 'products.name', 'products.sku', 'products.price')
+            $topProducts = Product::select('products.id', 'products.name', 'products.sku', 'products.price')
                 ->selectRaw('COUNT(DISTINCT orders.id) as order_count')
                 ->selectRaw('SUM(JSON_EXTRACT(orders.items, "$[*].quantity")) as total_quantity')
                 ->leftJoin('orders', function($join) {
@@ -200,7 +190,7 @@ class DashboardController extends Controller
                     ];
                 });
 
-            $recentProducts = ProductEloquentModel::select('id', 'name', 'sku', 'slug', 'price', 'status', 'featured', 'created_at')
+            $recentProducts = Product::select('id', 'name', 'sku', 'slug', 'price', 'status', 'featured', 'created_at')
                 ->latest()
                 ->limit($limit)
                 ->get()

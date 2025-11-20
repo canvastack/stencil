@@ -62,6 +62,14 @@ trait BelongsToTenant
             }
         }
 
+        $user = auth()->user();
+        if ($user && isset($user->tenant_id)) {
+            $tenant = $user->tenant ?? BaseTenant::find($user->tenant_id);
+            if ($tenant instanceof BaseTenant) {
+                return $tenant;
+            }
+        }
+
         return null;
     }
 

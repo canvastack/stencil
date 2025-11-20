@@ -36,11 +36,14 @@ class Customer extends Model
         'total_orders',
         'total_spent',
         'last_order_date',
+        'metadata',
+        'notification_preferences',
     ];
 
     protected $casts = [
         'location' => 'array',
         'metadata' => 'array',
+        'notification_preferences' => 'array',
         'total_orders' => 'integer',
         'total_spent' => 'integer',
         'last_order_date' => 'datetime',

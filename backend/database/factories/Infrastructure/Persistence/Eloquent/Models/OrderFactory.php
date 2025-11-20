@@ -18,6 +18,7 @@ class OrderFactory extends Factory
 
         return [
             'tenant_id' => $tenantFactory,
+            'order_number' => 'ORD-' . strtoupper(Str::random(8)),
             'customer_id' => Customer::factory()->for($tenantFactory, 'tenant'),
             'vendor_id' => null,
             'status' => 'new',

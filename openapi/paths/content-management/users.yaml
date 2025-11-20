@@ -20,13 +20,13 @@
     operationId: registerUser
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UserCreateInput'
+            $ref: '../../components/schemas.yaml#/UserCreateInput'
           examples:
             new_user:
               summary: New user registration
@@ -46,11 +46,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/User'
+                    $ref: '../../components/schemas.yaml#/User'
                   message:
                     type: string
                     example: User registered successfully. Please check your email
@@ -65,20 +65,20 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '409':
         description: Email already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: EMAIL_EXISTS
                 message: Email address already registered
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /auth/login:
   post:
     tags:
@@ -104,7 +104,7 @@
     operationId: loginUser
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -144,7 +144,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthResponse'
+              $ref: '../../components/schemas.yaml#/AuthResponse'
             example:
               success: true
               data:
@@ -154,13 +154,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         description: Invalid credentials or account locked
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             examples:
               invalid_credentials:
                 summary: Invalid email or password
@@ -182,14 +182,14 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: 2FA_REQUIRED
                 message: Two-factor authentication code required
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /auth/logout:
   post:
     tags:
@@ -208,7 +208,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -223,9 +223,9 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /auth/verify-email:
   post:
     tags:
@@ -260,7 +260,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -279,14 +279,14 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: INVALID_TOKEN
                 message: Verification token is invalid or expired
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /auth/forgot-password:
   post:
     tags:
@@ -323,7 +323,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -339,9 +339,9 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /auth/reset-password:
   post:
     tags:
@@ -387,7 +387,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -402,9 +402,9 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users:
   get:
     tags:
@@ -431,10 +431,10 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
     - name: search
       in: query
       description: Search in name, email, phone
@@ -504,20 +504,20 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/UserProfile'
+                      $ref: '../../components/schemas.yaml#/UserProfile'
                   meta:
                     allOf:
-                    - $ref: '#/components/schemas/PaginationMeta'
+                    - $ref: '../../components/schemas.yaml#/PaginationMeta'
                     - type: object
                       properties:
                         statistics:
-                          $ref: '#/components/schemas/UserStatistics'
+                          $ref: '../../components/schemas.yaml#/UserStatistics'
             example:
               success: true
               data:
@@ -531,11 +531,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - User Management
@@ -559,13 +559,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UserCreateInput'
+            $ref: '../../components/schemas.yaml#/UserCreateInput'
           examples:
             basic_user:
               summary: Basic user creation
@@ -591,21 +591,21 @@
                 send_invitation: false
     responses:
       '201':
-        $ref: '#/components/responses/CreatedResponse'
+        $ref: '../../components/responses.yaml#/CreatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Email already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users/{id}:
   get:
     tags:
@@ -619,7 +619,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -654,11 +654,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UserProfile'
+                    $ref: '../../components/schemas.yaml#/UserProfile'
             example:
               success: true
               data:
@@ -672,13 +672,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - User Management
@@ -701,7 +701,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -715,7 +715,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UserUpdateInput'
+            $ref: '../../components/schemas.yaml#/UserUpdateInput'
           examples:
             profile_update:
               summary: Profile information update
@@ -730,17 +730,17 @@
                 status: suspended
     responses:
       '200':
-        $ref: '#/components/responses/UpdatedResponse'
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - User Management
@@ -761,7 +761,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -784,7 +784,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -803,7 +803,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
@@ -813,13 +813,13 @@
                   active_tenants: 2
                   active_orders: 3
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users/{id}/tenant-assignments:
   post:
     tags:
@@ -843,7 +843,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -857,7 +857,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TenantUserAssignInput'
+            $ref: '../../components/schemas.yaml#/TenantUserAssignInput'
           examples:
             basic_assignment:
               summary: Basic user assignment
@@ -884,11 +884,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TenantUser'
+                    $ref: '../../components/schemas.yaml#/TenantUser'
                   message:
                     type: string
                     example: User assigned to tenant successfully
@@ -902,19 +902,19 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: User already assigned to tenant
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - User Management
@@ -926,7 +926,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -942,7 +942,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -957,13 +957,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users/me:
   get:
     tags:
@@ -977,7 +977,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Current user profile retrieved successfully
@@ -985,11 +985,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UserProfile'
+                    $ref: '../../components/schemas.yaml#/UserProfile'
             example:
               success: true
               data:
@@ -1003,9 +1003,9 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - User Management
@@ -1062,13 +1062,13 @@
                 timezone: Asia/Jakarta
     responses:
       '200':
-        $ref: '#/components/responses/UpdatedResponse'
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users/me/password:
   put:
     tags:
@@ -1115,7 +1115,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -1130,20 +1130,20 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         description: Current password incorrect
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: INVALID_PASSWORD
                 message: Current password is incorrect
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /roles:
   get:
     tags:
@@ -1167,9 +1167,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: scope
       in: query
       description: Filter by role scope
@@ -1218,13 +1218,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/RoleDetail'
+                      $ref: '../../components/schemas.yaml#/RoleDetail'
             example:
               success: true
               data:
@@ -1238,11 +1238,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Role Management
@@ -1265,13 +1265,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/RoleCreateInput'
+            $ref: '../../components/schemas.yaml#/RoleCreateInput'
           examples:
             basic_role:
               summary: Basic role creation
@@ -1298,21 +1298,21 @@
                 - 123e4567-e89b-12d3-a456-426614174000
     responses:
       '201':
-        $ref: '#/components/responses/CreatedResponse'
+        $ref: '../../components/responses.yaml#/CreatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Role code already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /roles/{id}:
   get:
     tags:
@@ -1326,7 +1326,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1342,11 +1342,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/RoleDetail'
+                    $ref: '../../components/schemas.yaml#/RoleDetail'
             example:
               success: true
               data:
@@ -1360,13 +1360,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Role Management
@@ -1378,7 +1378,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1422,17 +1422,17 @@
                 - 123e4567-e89b-12d3-a456-426614174000
     responses:
       '200':
-        $ref: '#/components/responses/UpdatedResponse'
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - Role Management
@@ -1453,7 +1453,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1469,7 +1469,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -1488,7 +1488,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             examples:
               system_role:
                 summary: Cannot delete system role
@@ -1507,13 +1507,13 @@
                     details:
                       user_count: 5
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /permissions:
   get:
     tags:
@@ -1584,7 +1584,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1592,7 +1592,7 @@
                     additionalProperties:
                       type: array
                       items:
-                        $ref: '#/components/schemas/PermissionDetail'
+                        $ref: '../../components/schemas.yaml#/PermissionDetail'
                     example:
                       E-Commerce:
                       - id: 550e8400-e29b-41d4-a716-446655440000
@@ -1621,11 +1621,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /permissions/check:
   post:
     tags:
@@ -1650,13 +1650,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PermissionCheckInput'
+            $ref: '../../components/schemas.yaml#/PermissionCheckInput'
           examples:
             basic_check:
               summary: Basic permission check
@@ -1680,11 +1680,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PermissionCheckResult'
+                    $ref: '../../components/schemas.yaml#/PermissionCheckResult'
             example:
               success: true
               data:
@@ -1694,11 +1694,11 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users/{id}/permissions:
   get:
     tags:
@@ -1712,7 +1712,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1742,7 +1742,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1755,7 +1755,7 @@
                           type: object
                           properties:
                             permission:
-                              $ref: '#/components/schemas/Permission'
+                              $ref: '../../components/schemas.yaml#/Permission'
                             granted_by_role:
                               type: string
                               example: product_manager
@@ -1767,7 +1767,7 @@
                         description: Directly assigned permissions
                         items:
                           allOf:
-                          - $ref: '#/components/schemas/Permission'
+                          - $ref: '../../components/schemas.yaml#/Permission'
                           - type: object
                             properties:
                               is_granted:
@@ -1781,7 +1781,7 @@
                         type: array
                         description: Resource-specific permissions (if requested)
                         items:
-                          $ref: '#/components/schemas/ResourcePermission'
+                          $ref: '../../components/schemas.yaml#/ResourcePermission'
             example:
               success: true
               data:
@@ -1795,13 +1795,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /user-permissions:
   post:
     tags:
@@ -1825,7 +1825,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1890,15 +1890,15 @@
                 reason: Security restriction per management directive
     responses:
       '201':
-        $ref: '#/components/responses/CreatedResponse'
+        $ref: '../../components/responses.yaml#/CreatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /user-permissions/{id}:
   delete:
     tags:
@@ -1911,7 +1911,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1927,7 +1927,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -1942,13 +1942,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users/bulk:
   post:
     tags:
@@ -1962,13 +1962,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BulkUserOperationInput'
+            $ref: '../../components/schemas.yaml#/BulkUserOperationInput'
           examples:
             activate_users:
               summary: Activate multiple users
@@ -1992,7 +1992,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2032,13 +2032,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /users/statistics:
   get:
     tags:
@@ -2064,7 +2064,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: period
       in: query
       description: Statistics period
@@ -2085,11 +2085,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/UserStatistics'
+                    $ref: '../../components/schemas.yaml#/UserStatistics'
             example:
               success: true
               data:
@@ -2103,8 +2103,8 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

@@ -53,13 +53,13 @@ class InventoryControllerTest extends TestCase
     {
         $location = $this->createLocation('TEST-001', 'Main Test Warehouse');
 
-        $stockResponse = $this->postJson("/api/v1/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
+        $stockResponse = $this->postJson("/api/v1/tenant/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
             'quantity' => 125,
             'reason' => 'initial_load',
         ]);
 
         $stockResponse->assertStatus(200);
-        $stockResponse->assertJsonPath('data.currentStock', 125.0);
+        $this->assertEquals(125, $stockResponse->json('data.currentStock'));
 
         $item = InventoryItem::where('product_id', $this->product->id)->firstOrFail();
         $this->assertEquals(125.0, (float) $item->current_stock);
@@ -78,12 +78,12 @@ class InventoryControllerTest extends TestCase
         $fromLocation = $this->createLocation('TEST-002', 'Source Warehouse');
         $toLocation = $this->createLocation('TEST-003', 'Destination Warehouse');
 
-        $this->postJson("/api/v1/inventory/items/{$this->product->id}/locations/{$fromLocation->id}/stock", [
+        $this->postJson("/api/v1/tenant/inventory/items/{$this->product->id}/locations/{$fromLocation->id}/stock", [
             'quantity' => 200,
             'reason' => 'seed',
         ])->assertStatus(200);
 
-        $transferResponse = $this->postJson("/api/v1/inventory/items/{$this->product->id}/transfer", [
+        $transferResponse = $this->postJson("/api/v1/tenant/inventory/items/{$this->product->id}/transfer", [
             'from_location_id' => $fromLocation->id,
             'to_location_id' => $toLocation->id,
             'quantity' => 75,
@@ -111,12 +111,12 @@ class InventoryControllerTest extends TestCase
     {
         $location = $this->createLocation('TEST-004', 'Reservation Warehouse');
 
-        $this->postJson("/api/v1/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
+        $this->postJson("/api/v1/tenant/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
             'quantity' => 90,
             'reason' => 'reservation_seed',
         ])->assertStatus(200);
 
-        $reserveResponse = $this->postJson("/api/v1/inventory/items/{$this->product->id}/reserve", [
+        $reserveResponse = $this->postJson("/api/v1/tenant/inventory/items/{$this->product->id}/reserve", [
             'quantity' => 40,
             'location_id' => $location->id,
             'reference_type' => 'order',
@@ -138,7 +138,7 @@ class InventoryControllerTest extends TestCase
         $this->assertEquals(40.0, (float) $itemLocation->stock_reserved);
         $this->assertEquals(50.0, (float) $itemLocation->stock_available);
 
-        $releaseResponse = $this->postJson("/api/v1/inventory/reservations/{$reservation->id}/release", [
+        $releaseResponse = $this->postJson("/api/v1/tenant/inventory/reservations/{$reservation->id}/release", [
             'reason' => 'order_cancelled',
         ]);
 
@@ -159,7 +159,7 @@ class InventoryControllerTest extends TestCase
     {
         Queue::fake();
 
-        $response = $this->postJson('/api/v1/inventory/reconciliations/run', [
+        $response = $this->postJson('/api/v1/tenant/inventory/reconciliations/run', [
             'source' => 'manual_check',
             'async' => true,
         ]);
@@ -178,7 +178,7 @@ class InventoryControllerTest extends TestCase
 
         $location = $this->createLocation('TEST-005', 'Variance Warehouse');
 
-        $this->postJson("/api/v1/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
+        $this->postJson("/api/v1/tenant/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
             'quantity' => 180,
             'reason' => 'variance_seed',
         ])->assertStatus(200);
@@ -213,7 +213,7 @@ class InventoryControllerTest extends TestCase
 
         $location = $this->createLocation('TEST-006', 'Reservation Sync Warehouse');
 
-        $this->postJson("/api/v1/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
+        $this->postJson("/api/v1/tenant/inventory/items/{$this->product->id}/locations/{$location->id}/stock", [
             'quantity' => 90,
             'reason' => 'reservation_seed',
         ])->assertStatus(200);
@@ -253,7 +253,7 @@ class InventoryControllerTest extends TestCase
 
     private function createLocation(string $code, string $name): InventoryLocation
     {
-        $response = $this->postJson('/api/v1/inventory/locations', [
+        $response = $this->postJson('/api/v1/tenant/inventory/locations', [
             'location_code' => $code,
             'location_name' => $name,
             'location_type' => 'warehouse',

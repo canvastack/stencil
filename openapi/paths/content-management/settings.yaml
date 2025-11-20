@@ -24,7 +24,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Settings dashboard retrieved successfully
@@ -32,11 +32,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsDashboard'
+                    $ref: '../../components/schemas.yaml#/SettingsDashboard'
             example:
               success: true
               data:
@@ -50,11 +50,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/health:
   get:
     tags:
@@ -67,7 +67,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Settings health status retrieved
@@ -75,7 +75,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -137,9 +137,9 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/site:
   get:
     tags:
@@ -151,7 +151,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Site settings retrieved successfully
@@ -159,11 +159,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SiteSettings'
+                    $ref: '../../components/schemas.yaml#/SiteSettings'
             example:
               success: true
               data:
@@ -177,20 +177,20 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Site settings not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: SITE_SETTINGS_NOT_FOUND
                 message: Site settings not configured for this tenant
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Site Settings
@@ -214,13 +214,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SiteSettingsInput'
+            $ref: '../../components/schemas.yaml#/SiteSettingsInput'
           examples:
             basic_update:
               summary: Basic site information update
@@ -251,11 +251,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SiteSettings'
+                    $ref: '../../components/schemas.yaml#/SiteSettings'
                   message:
                     type: string
                     example: Site settings updated successfully
@@ -268,24 +268,24 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Site URL already in use
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: SITE_URL_EXISTS
                 message: Site URL is already in use by another tenant
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/email:
   get:
     tags:
@@ -301,7 +301,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Email settings retrieved successfully
@@ -309,11 +309,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/EmailSettings'
+                    $ref: '../../components/schemas.yaml#/EmailSettings'
             example:
               success: true
               data:
@@ -327,20 +327,20 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Email settings not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: EMAIL_SETTINGS_NOT_FOUND
                 message: Email settings not configured for this tenant
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Email Settings
@@ -366,13 +366,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/EmailSettingsInput'
+            $ref: '../../components/schemas.yaml#/EmailSettingsInput'
           examples:
             smtp_config:
               summary: SMTP provider configuration
@@ -413,11 +413,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/EmailSettings'
+                    $ref: '../../components/schemas.yaml#/EmailSettings'
                   message:
                     type: string
                     example: Email settings updated and tested successfully
@@ -430,24 +430,24 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '422':
         description: Email provider connection failed
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: EMAIL_CONNECTION_FAILED
                 message: Unable to connect to SMTP server. Please check your credentials.
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/email/test:
   post:
     tags:
@@ -460,7 +460,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -494,11 +494,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsTestResult'
+                    $ref: '../../components/schemas.yaml#/SettingsTestResult'
             example:
               success: true
               data:
@@ -508,20 +508,20 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '422':
         description: Email test failed
         content:
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsTestResult'
+                    $ref: '../../components/schemas.yaml#/SettingsTestResult'
             example:
               success: false
               data:
@@ -532,7 +532,7 @@
                 message: Connection timeout - unable to reach SMTP server
                 tested_at: '2025-11-12T14:30:00Z'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/payment:
   get:
     tags:
@@ -548,7 +548,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Payment settings retrieved successfully
@@ -556,11 +556,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PaymentSettings'
+                    $ref: '../../components/schemas.yaml#/PaymentSettings'
             example:
               success: true
               data:
@@ -574,15 +574,15 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Payment settings not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Payment Settings
@@ -606,7 +606,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -714,11 +714,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PaymentSettings'
+                    $ref: '../../components/schemas.yaml#/PaymentSettings'
                   message:
                     type: string
                     example: Payment settings updated and validated successfully
@@ -731,24 +731,24 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '422':
         description: Payment provider validation failed
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: PAYMENT_VALIDATION_FAILED
                 message: Invalid payment gateway credentials provided
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/payment/test:
   post:
     tags:
@@ -761,7 +761,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Payment gateway test completed successfully
@@ -769,11 +769,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsTestResult'
+                    $ref: '../../components/schemas.yaml#/SettingsTestResult'
             example:
               success: true
               data:
@@ -783,20 +783,20 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '422':
         description: Payment gateway test failed
         content:
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsTestResult'
+                    $ref: '../../components/schemas.yaml#/SettingsTestResult'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/analytics:
   get:
     tags:
@@ -812,7 +812,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Analytics settings retrieved successfully
@@ -820,11 +820,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/AnalyticsSettings'
+                    $ref: '../../components/schemas.yaml#/AnalyticsSettings'
             example:
               success: true
               data:
@@ -838,15 +838,15 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Analytics settings not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Analytics Settings
@@ -858,7 +858,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -927,11 +927,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/AnalyticsSettings'
+                    $ref: '../../components/schemas.yaml#/AnalyticsSettings'
                   message:
                     type: string
                     example: Analytics settings updated successfully
@@ -944,13 +944,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/integrations:
   get:
     tags:
@@ -966,7 +966,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Integration settings retrieved successfully
@@ -974,11 +974,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/IntegrationSettings'
+                    $ref: '../../components/schemas.yaml#/IntegrationSettings'
             example:
               success: true
               data:
@@ -992,15 +992,15 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Integration settings not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Integration Settings
@@ -1013,7 +1013,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1096,11 +1096,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/IntegrationSettings'
+                    $ref: '../../components/schemas.yaml#/IntegrationSettings'
                   message:
                     type: string
                     example: Integration settings updated successfully
@@ -1113,13 +1113,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/backup:
   get:
     tags:
@@ -1135,7 +1135,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Backup settings retrieved successfully
@@ -1143,11 +1143,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/BackupSettings'
+                    $ref: '../../components/schemas.yaml#/BackupSettings'
             example:
               success: true
               data:
@@ -1161,15 +1161,15 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Backup settings not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Backup Settings
@@ -1181,7 +1181,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1276,11 +1276,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/BackupSettings'
+                    $ref: '../../components/schemas.yaml#/BackupSettings'
                   message:
                     type: string
                     example: Backup settings updated successfully
@@ -1293,13 +1293,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/backup/manual:
   post:
     tags:
@@ -1312,7 +1312,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: false
       content:
@@ -1346,7 +1346,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1366,24 +1366,24 @@
                     type: string
                     example: Manual backup initiated successfully
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Backup already in progress
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: BACKUP_IN_PROGRESS
                 message: A backup operation is already in progress
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/templates:
   get:
     tags:
@@ -1397,9 +1397,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: category
       in: query
       description: Filter by template category
@@ -1442,14 +1442,14 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/SettingsTemplate'
+                      $ref: '../../components/schemas.yaml#/SettingsTemplate'
             example:
               success: true
               data:
@@ -1463,9 +1463,9 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Settings Templates
@@ -1478,7 +1478,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1587,11 +1587,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsTemplate'
+                    $ref: '../../components/schemas.yaml#/SettingsTemplate'
                   message:
                     type: string
                     example: Settings template created successfully
@@ -1605,13 +1605,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/templates/{template_id}:
   get:
     tags:
@@ -1624,7 +1624,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: template_id
       in: path
       required: true
@@ -1640,11 +1640,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsTemplate'
+                    $ref: '../../components/schemas.yaml#/SettingsTemplate'
             example:
               success: true
               data:
@@ -1658,15 +1658,15 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Settings template not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Settings Templates
@@ -1678,7 +1678,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: template_id
       in: path
       required: true
@@ -1750,11 +1750,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsTemplate'
+                    $ref: '../../components/schemas.yaml#/SettingsTemplate'
                   message:
                     type: string
                     example: Settings template updated successfully
@@ -1767,19 +1767,19 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Settings template not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - Settings Templates
@@ -1791,7 +1791,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: template_id
       in: path
       required: true
@@ -1806,7 +1806,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -1821,28 +1821,28 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Settings template not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '409':
         description: Cannot delete system template
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: CANNOT_DELETE_SYSTEM_TEMPLATE
                 message: System templates cannot be deleted
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/templates/{template_id}/apply:
   post:
     tags:
@@ -1856,7 +1856,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: template_id
       in: path
       required: true
@@ -1919,7 +1919,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1962,24 +1962,24 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Settings template not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '422':
         description: Template validation failed
         content:
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2018,7 +2018,7 @@
                   severity: error
               message: Template validation failed. Please provide required customizations.
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/validation:
   post:
     tags:
@@ -2031,7 +2031,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: false
       content:
@@ -2078,11 +2078,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsValidationResult'
+                    $ref: '../../components/schemas.yaml#/SettingsValidationResult'
             example:
               success: true
               data:
@@ -2092,11 +2092,11 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/validation/results:
   get:
     tags:
@@ -2109,9 +2109,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: validation_type
       in: query
       description: Filter by validation type
@@ -2148,14 +2148,14 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/SettingsValidationResult'
+                      $ref: '../../components/schemas.yaml#/SettingsValidationResult'
             example:
               success: true
               data:
@@ -2169,9 +2169,9 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /settings/validation/{validation_id}:
   get:
     tags:
@@ -2184,7 +2184,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: validation_id
       in: path
       required: true
@@ -2199,11 +2199,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/SettingsValidationResult'
+                    $ref: '../../components/schemas.yaml#/SettingsValidationResult'
             example:
               success: true
               data:
@@ -2217,12 +2217,12 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Validation result not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

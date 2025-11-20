@@ -8,10 +8,10 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
     - name: page_id
       in: query
       schema:
@@ -30,13 +30,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/AboutHero'
+                      $ref: '../../schemas/content-management/about.yaml#/AboutHero'
             example:
               success: true
               data:
@@ -50,13 +50,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - About Us
@@ -65,7 +65,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -149,11 +149,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/AboutHero'
+                    $ref: '../../schemas/content-management/about.yaml#/AboutHero'
             example:
               success: true
               data:
@@ -164,15 +164,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
-        $ref: '#/components/responses/Conflict'
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/hero/{id}:
   get:
     tags:
@@ -182,7 +182,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -203,11 +203,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/AboutHero'
+                    $ref: '../../schemas/content-management/about.yaml#/AboutHero'
             example:
               success: true
               data:
@@ -221,13 +221,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - About Us
@@ -236,7 +236,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -313,11 +313,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/AboutHero'
+                    $ref: '../../schemas/content-management/about.yaml#/AboutHero'
             example:
               success: true
               data:
@@ -327,15 +327,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - About Us
@@ -344,7 +344,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -356,13 +356,13 @@
       '204':
         description: About hero section deleted successfully
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/company:
   get:
     tags:
@@ -372,9 +372,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: page_id
       in: query
       schema:
@@ -388,13 +388,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/CompanyProfile'
+                      $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
             example:
               success: true
               data:
@@ -408,13 +408,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - About Us
@@ -423,7 +423,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -547,11 +547,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CompanyProfile'
+                    $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
             example:
               success: true
               data:
@@ -562,15 +562,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
-        $ref: '#/components/responses/Conflict'
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/company/{id}:
   get:
     tags:
@@ -580,7 +580,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -595,11 +595,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CompanyProfile'
+                    $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
             example:
               success: true
               data:
@@ -613,13 +613,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - About Us
@@ -628,7 +628,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -753,11 +753,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CompanyProfile'
+                    $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
             example:
               success: true
               data:
@@ -767,15 +767,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - About Us
@@ -784,7 +784,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -796,13 +796,13 @@
       '204':
         description: Company profile deleted successfully
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/mission-vision:
   get:
     tags:
@@ -812,7 +812,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: page_id
       in: query
       schema:
@@ -833,13 +833,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/MissionVision'
+                      $ref: '../../schemas/content-management/about.yaml#/MissionVision'
             example:
               success: true
               data:
@@ -853,13 +853,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - About Us
@@ -868,7 +868,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -960,11 +960,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/MissionVision'
+                    $ref: '../../schemas/content-management/about.yaml#/MissionVision'
             example:
               success: true
               data:
@@ -975,15 +975,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
-        $ref: '#/components/responses/Conflict'
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/mission-vision/{id}:
   get:
     tags:
@@ -993,7 +993,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1015,11 +1015,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/MissionVision'
+                    $ref: '../../schemas/content-management/about.yaml#/MissionVision'
             example:
               success: true
               data:
@@ -1033,13 +1033,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - About Us
@@ -1048,7 +1048,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1136,11 +1136,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/MissionVision'
+                    $ref: '../../schemas/content-management/about.yaml#/MissionVision'
             example:
               success: true
               data:
@@ -1150,15 +1150,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - About Us
@@ -1167,7 +1167,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1179,13 +1179,13 @@
       '204':
         description: Mission & vision content deleted successfully
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/team:
   get:
     tags:
@@ -1195,10 +1195,10 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
     - name: page_id
       in: query
       schema:
@@ -1227,13 +1227,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/TeamMember'
+                      $ref: '../../schemas/content-management/about.yaml#/TeamMember'
             example:
               success: true
               data:
@@ -1247,13 +1247,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - About Us
@@ -1262,7 +1262,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1333,11 +1333,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TeamMember'
+                    $ref: '../../schemas/content-management/about.yaml#/TeamMember'
             example:
               success: true
               data:
@@ -1348,13 +1348,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/team/{id}:
   get:
     tags:
@@ -1364,7 +1364,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1379,11 +1379,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TeamMember'
+                    $ref: '../../schemas/content-management/about.yaml#/TeamMember'
             example:
               success: true
               data:
@@ -1397,13 +1397,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - About Us
@@ -1412,7 +1412,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1479,11 +1479,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TeamMember'
+                    $ref: '../../schemas/content-management/about.yaml#/TeamMember'
             example:
               success: true
               data:
@@ -1493,15 +1493,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - About Us
@@ -1510,7 +1510,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1522,13 +1522,13 @@
       '204':
         description: Team member deleted successfully
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/timeline:
   get:
     tags:
@@ -1538,9 +1538,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: page_id
       in: query
       schema:
@@ -1576,13 +1576,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/TimelineEvent'
+                      $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
             example:
               success: true
               data:
@@ -1596,13 +1596,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - About Us
@@ -1611,7 +1611,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1674,11 +1674,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TimelineEvent'
+                    $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
             example:
               success: true
               data:
@@ -1689,13 +1689,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/timeline/{id}:
   get:
     tags:
@@ -1705,7 +1705,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1720,11 +1720,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TimelineEvent'
+                    $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
             example:
               success: true
               data:
@@ -1738,13 +1738,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - About Us
@@ -1753,7 +1753,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1811,11 +1811,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/TimelineEvent'
+                    $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
             example:
               success: true
               data:
@@ -1825,15 +1825,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - About Us
@@ -1842,7 +1842,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1854,13 +1854,13 @@
       '204':
         description: Timeline event deleted successfully
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/certifications:
   get:
     tags:
@@ -1870,9 +1870,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: page_id
       in: query
       schema:
@@ -1913,13 +1913,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Certification'
+                      $ref: '../../schemas/content-management/about.yaml#/Certification'
             example:
               success: true
               data:
@@ -1933,13 +1933,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - About Us
@@ -1948,7 +1948,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -2023,11 +2023,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Certification'
+                    $ref: '../../schemas/content-management/about.yaml#/Certification'
             example:
               success: true
               data:
@@ -2038,13 +2038,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/certifications/{id}:
   get:
     tags:
@@ -2054,7 +2054,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2069,11 +2069,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Certification'
+                    $ref: '../../schemas/content-management/about.yaml#/Certification'
             example:
               success: true
               data:
@@ -2087,13 +2087,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - About Us
@@ -2102,7 +2102,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2172,11 +2172,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Certification'
+                    $ref: '../../schemas/content-management/about.yaml#/Certification'
             example:
               success: true
               data:
@@ -2186,15 +2186,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - About Us
@@ -2203,7 +2203,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2215,13 +2215,13 @@
       '204':
         description: Certification deleted successfully
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/complete:
   get:
     tags:
@@ -2231,7 +2231,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: page_id
       in: query
       required: true
@@ -2259,11 +2259,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/AboutPageComplete'
+                    $ref: '../../components/schemas.yaml#/AboutPageComplete'
             example:
               success: true
               data:
@@ -2277,15 +2277,15 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /about/bulk:
   post:
     tags:
@@ -2295,13 +2295,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/AboutBulkOperation'
+            $ref: '../../schemas/content-management/about.yaml#/AboutBulkOperation'
           example:
             title: New About Title
             description: Sample description for about
@@ -2313,11 +2313,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/AboutBulkResult'
+                    $ref: '../../schemas/content-management/about.yaml#/AboutBulkResult'
             example:
               success: true
               data:
@@ -2327,10 +2327,10 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

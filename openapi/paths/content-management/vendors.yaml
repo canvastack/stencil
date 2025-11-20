@@ -24,10 +24,10 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
     - name: search
       in: query
       description: Search in company name, brand name, email, phone
@@ -142,7 +142,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorListResponse'
+              $ref: '../../components/schemas.yaml#/VendorListResponse'
             example:
               success: true
               data:
@@ -163,13 +163,13 @@
                 hasNext: true
                 hasPrev: false
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Vendor Management
@@ -201,13 +201,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorCreateInput'
+            $ref: '../../components/schemas.yaml#/VendorCreateInput'
           examples:
             new_vendor:
               summary: New premium vendor
@@ -244,7 +244,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorResponse'
+              $ref: '../../components/schemas.yaml#/VendorResponse'
             example:
               success: true
               message: Vendor created successfully
@@ -259,24 +259,24 @@
                 is_verified: false
                 created_at: '2025-11-13T10:30:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Vendor already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: VENDOR_EXISTS
                 message: Vendor with this email already exists
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{id}:
   get:
     tags:
@@ -303,7 +303,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -338,7 +338,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorResponse'
+              $ref: '../../components/schemas.yaml#/VendorResponse'
             example:
               success: true
               data:
@@ -352,24 +352,24 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Vendor not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: VENDOR_NOT_FOUND
                 message: Vendor not found
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Vendor Management
@@ -404,7 +404,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -418,7 +418,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorUpdateInput'
+            $ref: '../../components/schemas.yaml#/VendorUpdateInput'
           examples:
             update_capacity:
               summary: Update capacity and contact
@@ -440,7 +440,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorResponse'
+              $ref: '../../components/schemas.yaml#/VendorResponse'
             example:
               success: true
               data:
@@ -450,19 +450,19 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Vendor not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - Vendor Management
@@ -476,7 +476,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -499,7 +499,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   message:
@@ -518,20 +518,20 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: VENDOR_HAS_ACTIVE_ORDERS
                 message: Cannot delete vendor with active orders
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{vendorId}/specializations:
   get:
     tags:
@@ -557,7 +557,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -600,7 +600,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorSpecializationListResponse'
+              $ref: '../../components/schemas.yaml#/VendorSpecializationListResponse'
             example:
               success: true
               data:
@@ -614,13 +614,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Vendor Specializations
@@ -643,7 +643,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -657,7 +657,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorSpecializationCreateInput'
+            $ref: '../../components/schemas.yaml#/VendorSpecializationCreateInput'
           examples:
             stainless_steel_premium:
               summary: Premium stainless steel specialization
@@ -684,11 +684,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/VendorSpecialization'
+                    $ref: '../../components/schemas.yaml#/VendorSpecialization'
             example:
               success: true
               data:
@@ -699,24 +699,24 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Specialization already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: SPECIALIZATION_EXISTS
                 message: Vendor already has specialization for this material type
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{vendorId}/specializations/{id}:
   put:
     tags:
@@ -730,7 +730,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -750,7 +750,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorSpecializationUpdateInput'
+            $ref: '../../components/schemas.yaml#/VendorSpecializationUpdateInput'
           example:
             title: Updated Vendors Title
             description: Updated description for vendors
@@ -762,11 +762,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/VendorSpecialization'
+                    $ref: '../../components/schemas.yaml#/VendorSpecialization'
             example:
               success: true
               data:
@@ -776,15 +776,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - Vendor Specializations
@@ -798,7 +798,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -819,7 +819,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
             example:
               success: true
               data:
@@ -833,15 +833,15 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{vendorId}/contacts:
   get:
     tags:
@@ -854,7 +854,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -879,7 +879,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorContactListResponse'
+              $ref: '../../components/schemas.yaml#/VendorContactListResponse'
             example:
               success: true
               data:
@@ -893,13 +893,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Vendor Contacts
@@ -922,7 +922,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -935,7 +935,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorContactCreateInput'
+            $ref: '../../components/schemas.yaml#/VendorContactCreateInput'
           examples:
             sales_manager:
               summary: Sales Manager contact
@@ -959,11 +959,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/VendorContact'
+                    $ref: '../../components/schemas.yaml#/VendorContact'
             example:
               success: true
               data:
@@ -974,13 +974,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{vendorId}/contacts/{id}:
   put:
     tags:
@@ -993,7 +993,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -1013,7 +1013,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorContactUpdateInput'
+            $ref: '../../components/schemas.yaml#/VendorContactUpdateInput'
           example:
             title: Updated Vendors Title
             description: Updated description for vendors
@@ -1025,11 +1025,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/VendorContact'
+                    $ref: '../../components/schemas.yaml#/VendorContact'
             example:
               success: true
               data:
@@ -1039,15 +1039,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - Vendor Contacts
@@ -1061,7 +1061,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -1082,7 +1082,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
             example:
               success: true
               data:
@@ -1096,15 +1096,15 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{vendorId}/ratings:
   get:
     tags:
@@ -1128,9 +1128,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: vendorId
       in: path
       required: true
@@ -1184,7 +1184,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorRatingListResponse'
+              $ref: '../../components/schemas.yaml#/VendorRatingListResponse'
             example:
               success: true
               data:
@@ -1198,13 +1198,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Vendor Ratings
@@ -1219,7 +1219,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -1232,7 +1232,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorRatingCreateInput'
+            $ref: '../../components/schemas.yaml#/VendorRatingCreateInput'
           examples:
             excellent_rating:
               summary: Excellent performance rating
@@ -1261,11 +1261,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/VendorRating'
+                    $ref: '../../components/schemas.yaml#/VendorRating'
             example:
               success: true
               data:
@@ -1276,24 +1276,24 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Rating already exists for this order
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: RATING_EXISTS
                 message: Rating already exists for this order
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{vendorId}/ratings/{id}:
   put:
     tags:
@@ -1308,7 +1308,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -1328,7 +1328,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/VendorRatingUpdateInput'
+            $ref: '../../components/schemas.yaml#/VendorRatingUpdateInput'
           example:
             title: Updated Vendors Title
             description: Updated description for vendors
@@ -1340,11 +1340,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/VendorRating'
+                    $ref: '../../components/schemas.yaml#/VendorRating'
             example:
               success: true
               data:
@@ -1354,15 +1354,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/statistics:
   get:
     tags:
@@ -1390,7 +1390,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: period
       in: query
       description: Time period for statistics
@@ -1432,7 +1432,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VendorStatsResponse'
+              $ref: '../../components/schemas.yaml#/VendorStatsResponse'
             example:
               success: true
               data:
@@ -1458,11 +1458,11 @@
                   company_name: CV Precision Metal
                   overall_rating: 4.6
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/{id}/performance:
   get:
     tags:
@@ -1488,7 +1488,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1520,7 +1520,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1606,13 +1606,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/search:
   post:
     tags:
@@ -1651,7 +1651,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1762,7 +1762,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1781,9 +1781,9 @@
                           type: object
                           properties:
                             vendor:
-                              $ref: '#/components/schemas/Vendor'
+                              $ref: '../../components/schemas.yaml#/Vendor'
                             specialization:
-                              $ref: '#/components/schemas/VendorSpecialization'
+                              $ref: '../../components/schemas.yaml#/VendorSpecialization'
                             match_score:
                               type: number
                               format: decimal
@@ -1855,13 +1855,13 @@
                   - Fast lead time
                   - Local vendor
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /vendors/bulk:
   post:
     tags:
@@ -1887,7 +1887,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1993,7 +1993,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2039,13 +2039,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /vendors/{vendorId}/evaluations:
   get:
@@ -2071,7 +2071,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -2108,7 +2108,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2162,7 +2162,7 @@
                                 type: string
                                 format: date-time
                   meta:
-                    $ref: '#/components/schemas/PaginationMeta'
+                    $ref: '../../components/schemas.yaml#/PaginationMeta'
             example:
               success: true
               data:
@@ -2206,7 +2206,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -2322,7 +2322,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2380,7 +2380,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -2394,7 +2394,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2491,7 +2491,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: vendorId
       in: path
       required: true
@@ -2576,7 +2576,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2614,13 +2614,13 @@
                 meta:
                   timestamp: '2025-11-18T09:38:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 
 /tenant/vendors/search:
   get:
@@ -2634,7 +2634,7 @@
     - bearerAuth: []
       tenantHeader: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: query
       in: query
       schema:
@@ -2714,7 +2714,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -2762,13 +2762,13 @@
                   include_performance: true
                 generatedAt: '2025-11-19T08:45:00Z'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 
 /tenant/vendors/export:
   get:
@@ -2783,7 +2783,7 @@
     - bearerAuth: []
       tenantHeader: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: query
       in: query
       schema:
@@ -2830,7 +2830,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -2850,10 +2850,10 @@
                 exported: 0
                 filename: null
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'

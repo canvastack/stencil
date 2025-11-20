@@ -22,10 +22,10 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
-      - $ref: '#/components/parameters/SortParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
       - name: search
         in: query
         description: Search in plugin name, description, author
@@ -84,7 +84,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginListResponse'
+              $ref: '../../components/schemas.yaml#/PluginListResponse'
             example:
               success: true
               data:
@@ -108,11 +108,11 @@
                   shipping: 8
                   analytics: 12
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -131,13 +131,13 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PluginCreateInput'
+            $ref: '../../components/schemas.yaml#/PluginCreateInput'
           examples:
             payment_plugin:
               summary: Payment gateway plugin
@@ -161,31 +161,31 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/Plugin'
+                      $ref: '../../components/schemas.yaml#/Plugin'
                     message:
                       type: string
                       example: "Plugin created successfully. Submit for review to publish."
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '409':
         description: Plugin slug already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: "PLUGIN_SLUG_EXISTS"
                 message: "Plugin with this slug already exists"
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/{id}:
   get:
@@ -205,7 +205,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -229,17 +229,17 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/Plugin'
+                      $ref: '../../components/schemas.yaml#/Plugin'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   put:
     tags:
@@ -257,7 +257,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -271,7 +271,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PluginUpdateInput'
+            $ref: '../../components/schemas.yaml#/PluginUpdateInput'
     responses:
       '200':
         description: Plugin updated successfully
@@ -279,19 +279,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/Plugin'
+                      $ref: '../../components/schemas.yaml#/Plugin'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   delete:
     tags:
@@ -309,7 +309,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -332,7 +332,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     message:
@@ -343,7 +343,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
@@ -352,11 +352,11 @@
                 details:
                   active_installations: 15
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # PLUGIN INSTALLATION ENDPOINTS
@@ -378,10 +378,10 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
-      - $ref: '#/components/parameters/SortParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
       - name: status
         in: query
         description: Filter by installation status
@@ -410,17 +410,17 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/PluginInstallation'
+                        $ref: '../../components/schemas.yaml#/PluginInstallation'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -438,13 +438,13 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PluginInstallationInput'
+            $ref: '../../components/schemas.yaml#/PluginInstallationInput'
           examples:
             premium_plugin:
               summary: Install premium plugin with license
@@ -459,17 +459,17 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginInstallationResponse'
+              $ref: '../../components/schemas.yaml#/PluginInstallationResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '402':
         description: Payment required for premium plugin
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
@@ -480,14 +480,14 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: "PLUGIN_ALREADY_INSTALLED"
                 message: "Plugin is already installed for this tenant"
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/installations/{id}:
   get:
@@ -507,7 +507,7 @@
     
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -531,13 +531,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginInstallationResponse'
+              $ref: '../../components/schemas.yaml#/PluginInstallationResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   patch:
     tags:
@@ -554,7 +554,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -588,15 +588,15 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginInstallationResponse'
+              $ref: '../../components/schemas.yaml#/PluginInstallationResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   delete:
     tags:
@@ -614,7 +614,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -637,18 +637,18 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     message:
                       type: string
                       example: "Plugin uninstalled successfully"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/installations/{id}/activate:
   post:
@@ -667,7 +667,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -682,13 +682,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginInstallationResponse'
+              $ref: '../../components/schemas.yaml#/PluginInstallationResponse'
       '400':
         description: Plugin cannot be activated (missing configuration, etc.)
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
@@ -697,11 +697,11 @@
                 details:
                   missing_settings: ["stripe_api_key", "webhook_secret"]
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/installations/{id}/deactivate:
   post:
@@ -720,7 +720,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -735,13 +735,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginInstallationResponse'
+              $ref: '../../components/schemas.yaml#/PluginInstallationResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # PLUGIN SETTINGS ENDPOINTS
@@ -763,7 +763,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -792,19 +792,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/PluginSetting'
+                        $ref: '../../components/schemas.yaml#/PluginSetting'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -822,7 +822,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -836,7 +836,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PluginSettingInput'
+            $ref: '../../components/schemas.yaml#/PluginSettingInput'
           examples:
             api_key_setting:
               summary: Encrypted API key setting
@@ -855,30 +855,30 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/PluginSetting'
+                      $ref: '../../components/schemas.yaml#/PluginSetting'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '409':
         description: Setting key already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: "SETTING_KEY_EXISTS"
                 message: "Setting with this key already exists"
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/installations/{installationId}/settings/{settingId}:
   get:
@@ -896,7 +896,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: installationId
         in: path
         required: true
@@ -920,17 +920,17 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/PluginSetting'
+                      $ref: '../../components/schemas.yaml#/PluginSetting'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   put:
     tags:
@@ -948,7 +948,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: installationId
         in: path
         required: true
@@ -996,19 +996,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/PluginSetting'
+                      $ref: '../../components/schemas.yaml#/PluginSetting'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   delete:
     tags:
@@ -1025,7 +1025,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: installationId
         in: path
         required: true
@@ -1049,7 +1049,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     message:
@@ -1060,18 +1060,18 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: "REQUIRED_SETTING"
                 message: "Cannot delete required plugin setting"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # PLUGIN HOOK SYSTEM ENDPOINTS
@@ -1093,9 +1093,9 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
       - name: hook_name
         in: query
         description: Filter by hook name
@@ -1129,17 +1129,17 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/PluginHook'
+                        $ref: '../../components/schemas.yaml#/PluginHook'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/installations/{id}/hooks:
   get:
@@ -1157,7 +1157,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -1173,19 +1173,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/PluginHook'
+                        $ref: '../../components/schemas.yaml#/PluginHook'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -1203,7 +1203,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -1258,19 +1258,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/PluginHook'
+                      $ref: '../../components/schemas.yaml#/PluginHook'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # MARKETPLACE ENDPOINTS
@@ -1292,9 +1292,9 @@
     operationId: browseMarketplacePlugins
     security: []
     parameters:
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
-      - $ref: '#/components/parameters/SortParam'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
       - name: search
         in: query
         description: Search in plugin name, description
@@ -1337,9 +1337,9 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MarketplaceListingResponse'
+              $ref: '../../components/schemas.yaml#/MarketplaceListingResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /marketplace/plugins/{id}:
   get:
@@ -1372,20 +1372,20 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       allOf:
-                        - $ref: '#/components/schemas/PluginMarketplaceListing'
+                        - $ref: '../../components/schemas.yaml#/PluginMarketplaceListing'
                         - type: object
                           properties:
                             plugin:
-                              $ref: '#/components/schemas/Plugin'
+                              $ref: '../../components/schemas.yaml#/Plugin'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # PLUGIN PURCHASE ENDPOINTS
@@ -1407,7 +1407,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -1453,24 +1453,24 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/PluginPurchase'
+                      $ref: '../../components/schemas.yaml#/PluginPurchase'
                     message:
                       type: string
                       example: "Plugin purchased successfully. License key sent to your email."
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '402':
         description: Payment failed
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
@@ -1481,14 +1481,14 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: "ALREADY_PURCHASED"
                 message: "Plugin is already purchased for this tenant"
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/purchases:
   get:
@@ -1507,9 +1507,9 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
       - name: status
         in: query
         description: Filter by purchase status
@@ -1531,17 +1531,17 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/PluginPurchase'
+                        $ref: '../../components/schemas.yaml#/PluginPurchase'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # PLUGIN ANALYTICS ENDPOINTS
@@ -1563,7 +1563,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -1599,13 +1599,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginAnalyticsResponse'
+              $ref: '../../components/schemas.yaml#/PluginAnalyticsResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # PLUGIN HEALTH & MONITORING ENDPOINTS
@@ -1627,18 +1627,18 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Plugin health check completed
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PluginHealthResponse'
+              $ref: '../../components/schemas.yaml#/PluginHealthResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/installations/{id}/health:
   get:
@@ -1657,7 +1657,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -1673,7 +1673,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1720,11 +1720,11 @@
                               format: float
                               example: 12.5
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # PLUGIN EVENTS & LOGS ENDPOINTS
@@ -1746,7 +1746,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -1755,8 +1755,8 @@
           type: string
           format: uuid
         example: "550e8400-e29b-41d4-a716-446655440000"
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
       - name: event_type
         in: query
         description: Filter by event type
@@ -1792,19 +1792,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/PluginEvent'
+                        $ref: '../../components/schemas.yaml#/PluginEvent'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # BULK OPERATIONS ENDPOINTS
@@ -1826,7 +1826,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1852,7 +1852,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1896,11 +1896,11 @@
                               type: integer
                               example: 1
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /plugins/bulk/deactivate:
   post:
@@ -1919,7 +1919,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1945,7 +1945,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1986,8 +1986,8 @@
                             failed:
                               type: integer
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

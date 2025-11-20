@@ -35,10 +35,6 @@ class CustomerPhone
 
     public function getInternationalFormat(): string
     {
-        if ($this->countryCode === '+62') {
-            return $this->formatIndonesianNumber();
-        }
-        
         return $this->getFormattedValue();
     }
 
@@ -85,7 +81,9 @@ class CustomerPhone
     {
         $normalized = preg_replace('/[^0-9]/', '', $value);
         
-        if (strpos($normalized, '0') === 0) {
+        if (strpos($normalized, '62') === 0) {
+            $normalized = substr($normalized, 2);
+        } elseif (strpos($normalized, '0') === 0) {
             $normalized = substr($normalized, 1);
         }
         

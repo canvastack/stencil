@@ -29,7 +29,7 @@
     x-permissions:
       - inventory.dashboard.read
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: location_id
         in: query
         schema:
@@ -60,11 +60,11 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/InventoryPageData'
+                      $ref: '../../components/schemas.yaml#/InventoryPageData'
             examples:
               ok:
                 summary: Dashboard snapshot
@@ -100,13 +100,13 @@
                     tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
                     cache_expires: "2025-01-15T10:35:00Z"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Inventory Items Management
 /admin/inventory/items:
@@ -130,10 +130,10 @@
     x-permissions:
       - inventory.item.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
-      - $ref: '#/components/parameters/SortParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
       - name: search
         in: query
         schema:
@@ -181,20 +181,20 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/PaginatedResponse'
+                - $ref: '../../components/schemas.yaml#/PaginatedResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventoryItem'
+                        $ref: '../../components/schemas.yaml#/InventoryItem'
                     meta:
                       allOf:
-                        - $ref: '#/components/schemas/PaginationMeta'
+                        - $ref: '../../components/schemas.yaml#/PaginationMeta'
                         - type: object
                           properties:
                             summary:
-                              $ref: '#/components/schemas/InventorySummary'
+                              $ref: '../../components/schemas.yaml#/InventorySummary'
             examples:
               ok:
                 summary: Items list
@@ -216,13 +216,13 @@
                     per_page: 10
                     total: 2
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -244,13 +244,13 @@
     x-permissions:
       - inventory.item.create
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/InventoryItemCreateInput'
+            $ref: '../../components/schemas.yaml#/InventoryItemCreateInput'
           examples:
             brass_material:
               summary: Create brass sheet material
@@ -270,17 +270,17 @@
                 is_active: true
     responses:
       '201':
-        $ref: '#/components/responses/CreatedResponse'
+        $ref: '../../components/responses.yaml#/CreatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
-        $ref: '#/components/responses/Conflict'
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /admin/inventory/items/{id}:
   get:
@@ -296,7 +296,7 @@
     x-permissions:
       - inventory.item.read
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -319,11 +319,11 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/InventoryItem'
+                      $ref: '../../components/schemas.yaml#/InventoryItem'
             examples:
               ok:
                 summary: Item detail
@@ -337,13 +337,13 @@
                     current_stock: 30.0
                     reorder_point: 25.0
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   put:
     tags:
@@ -358,7 +358,7 @@
     x-permissions:
       - inventory.item.update
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -371,7 +371,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/InventoryItemUpdateInput'
+            $ref: '../../components/schemas.yaml#/InventoryItemUpdateInput'
           examples:
             update_item:
               summary: Update item basics
@@ -381,17 +381,17 @@
                 minimum_stock_level: 20.0
     responses:
       '200':
-        $ref: '#/components/responses/UpdatedResponse'
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   delete:
     tags:
@@ -405,7 +405,7 @@
     x-permissions:
       - inventory.item.delete
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -415,13 +415,13 @@
         description: Inventory item ID
     responses:
       '200':
-        $ref: '#/components/responses/DeletedResponse'
+        $ref: '../../components/responses.yaml#/DeletedResponse'
       '400':
         description: Cannot delete item with existing stock or movements
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             examples:
               has_stock:
                 summary: Deletion blocked - stock present
@@ -431,13 +431,13 @@
                     code: "HAS_STOCK"
                     message: "Item cannot be deleted because stock exists"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Inventory Locations Management
 /admin/inventory/locations:
@@ -453,7 +453,7 @@
     x-permissions:
       - inventory.location.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: location_type
         in: query
         schema:
@@ -473,13 +473,13 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventoryLocation'
+                        $ref: '../../components/schemas.yaml#/InventoryLocation'
             examples:
               ok:
                 summary: Locations list
@@ -499,13 +499,13 @@
                       total_capacity: 50.0
                       is_active: true
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -519,13 +519,13 @@
     x-permissions:
       - inventory.location.create
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/InventoryLocationCreateInput'
+            $ref: '../../components/schemas.yaml#/InventoryLocationCreateInput'
           examples:
             main_warehouse:
               summary: Create main warehouse location
@@ -538,17 +538,17 @@
                 is_active: true
     responses:
       '201':
-        $ref: '#/components/responses/CreatedResponse'
+        $ref: '../../components/responses.yaml#/CreatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
-        $ref: '#/components/responses/Conflict'
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Inventory Movements Management
 /admin/inventory/movements:
@@ -573,9 +573,9 @@
     x-permissions:
       - inventory.movement.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
       - name: item_id
         in: query
         schema:
@@ -619,15 +619,15 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/PaginatedResponse'
+                - $ref: '../../components/schemas.yaml#/PaginatedResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventoryMovement'
+                        $ref: '../../components/schemas.yaml#/InventoryMovement'
                     meta:
-                      $ref: '#/components/schemas/PaginationMeta'
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
             examples:
               ok:
                 summary: Movements list
@@ -649,13 +649,13 @@
                     per_page: 10
                     total: 2
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -669,13 +669,13 @@
     x-permissions:
       - inventory.movement.create
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/InventoryMovementCreateInput'
+            $ref: '../../components/schemas.yaml#/InventoryMovementCreateInput'
           examples:
             stock_receipt:
               summary: Stock receipt from supplier
@@ -692,15 +692,15 @@
                 notes: "Received from supplier XYZ Corp"
     responses:
       '201':
-        $ref: '#/components/responses/CreatedResponse'
+        $ref: '../../components/responses.yaml#/CreatedResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /admin/inventory/movements/{id}/approve:
   post:
@@ -715,7 +715,7 @@
     x-permissions:
       - inventory.movement.approve
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -740,11 +740,11 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/InventoryMovement'
+                      $ref: '../../components/schemas.yaml#/InventoryMovement'
             examples:
               ok:
                 summary: Movement approved
@@ -758,13 +758,13 @@
       '400':
         description: Movement cannot be approved (invalid status)
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Inventory Adjustments Management
 /admin/inventory/adjustments:
@@ -780,9 +780,9 @@
     x-permissions:
       - inventory.adjustment.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
       - name: adjustment_type
         in: query
         schema:
@@ -802,15 +802,15 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/PaginatedResponse'
+                - $ref: '../../components/schemas.yaml#/PaginatedResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventoryAdjustment'
+                        $ref: '../../components/schemas.yaml#/InventoryAdjustment'
                     meta:
-                      $ref: '#/components/schemas/PaginationMeta'
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
             examples:
               ok:
                 summary: Adjustments list
@@ -830,13 +830,13 @@
                     per_page: 10
                     total: 2
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Inventory Alerts Management
 /admin/inventory/alerts:
@@ -852,7 +852,7 @@
     x-permissions:
       - inventory.alert.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: alert_type
         in: query
         schema:
@@ -878,13 +878,13 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventoryAlert'
+                        $ref: '../../components/schemas.yaml#/InventoryAlert'
             examples:
               ok:
                 summary: Alerts list
@@ -903,13 +903,13 @@
                       title: "Expiry Warning: Chemical A"
                       expires_in_days: 12
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /admin/inventory/alerts/{id}/acknowledge:
   post:
@@ -924,7 +924,7 @@
     x-permissions:
       - inventory.alert.acknowledge
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -934,15 +934,15 @@
         description: Alert ID
     responses:
       '200':
-        $ref: '#/components/responses/SuccessResponse'
+        $ref: '../../components/responses.yaml#/SuccessResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Inventory Count Sessions
 /admin/inventory/counts:
@@ -958,7 +958,7 @@
     x-permissions:
       - inventory.count.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: status
         in: query
         schema:
@@ -978,13 +978,13 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventoryCount'
+                        $ref: '../../components/schemas.yaml#/InventoryCount'
             examples:
               ok:
                 summary: Counts list
@@ -998,13 +998,13 @@
                       count_type: "full_physical"
                       status: "completed"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Inventory Reservations Management
 /admin/inventory/reservations:
@@ -1020,7 +1020,7 @@
     x-permissions:
       - inventory.reservation.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: reservation_type
         in: query
         schema:
@@ -1040,13 +1040,13 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventoryReservation'
+                        $ref: '../../components/schemas.yaml#/InventoryReservation'
             examples:
               ok:
                 summary: Reservations list
@@ -1062,13 +1062,13 @@
                       status: "fulfilled"
                       reference_number: "MO-2025-010"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /admin/inventory/reconciliation:
   get:
@@ -1083,7 +1083,7 @@
     x-permissions:
       - inventory.reconciliation.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: status
         in: query
         schema:
@@ -1111,7 +1111,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1144,7 +1144,7 @@
                           created_by:
                             type: string
                     meta:
-                      $ref: '#/components/schemas/PaginationMeta'
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
             examples:
               ok:
                 summary: Reconciliation list
@@ -1165,11 +1165,11 @@
                     per_page: 20
                     total: 3
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -1183,7 +1183,7 @@
     x-permissions:
       - inventory.reconciliation.create
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1255,7 +1255,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1282,15 +1282,15 @@
                   meta:
                     timestamp: '2025-11-17T23:05:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
-        $ref: '#/components/responses/Conflict'
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /admin/inventory/analytics:
   get:
@@ -1305,7 +1305,7 @@
     x-permissions:
       - inventory.analytics.read
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: range
         in: query
         schema:
@@ -1330,7 +1330,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1445,7 +1445,7 @@
     x-permissions:
       - inventory.supplier.list
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: item_id
         in: query
         schema:
@@ -1471,13 +1471,13 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/InventorySupplier'
+                        $ref: '../../components/schemas.yaml#/InventorySupplier'
             examples:
               ok:
                 summary: Item suppliers list
@@ -1493,13 +1493,13 @@
                       lead_time_days: 10
                       is_preferred: false
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Bulk Operations
 /admin/inventory/bulk/stock-update:
@@ -1516,13 +1516,13 @@
     x-permissions:
       - inventory.bulk.stock_update
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BulkStockUpdateInput'
+            $ref: '../../components/schemas.yaml#/BulkStockUpdateInput'
           examples:
             physical_count_update:
               summary: Bulk update from physical count
@@ -1543,7 +1543,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1573,13 +1573,13 @@
                       - item_id: "770fa610-a39d-62f6-c938-668877662222"
                         error: "NOT_FOUND"
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # Reports & Analytics
 /admin/inventory/reports/low-stock:
@@ -1595,7 +1595,7 @@
     x-permissions:
       - inventory.report.lowstock
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: category
         in: query
         schema:
@@ -1621,11 +1621,11 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/LowStockReport'
+                      $ref: '../../components/schemas.yaml#/LowStockReport'
             examples:
               ok:
                 summary: Low stock report
@@ -1639,13 +1639,13 @@
                         reorder_point: 25.0
                         recommended_action: "Increase PO by 10kg"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /admin/inventory/reports/valuation:
   get:
@@ -1660,7 +1660,7 @@
     x-permissions:
       - inventory.report.valuation
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: as_of_date
         in: query
         schema:
@@ -1686,7 +1686,7 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
@@ -1709,7 +1709,7 @@
                             type: object
                             properties:
                               item:
-                                $ref: '#/components/schemas/InventoryItem'
+                                $ref: '../../components/schemas.yaml#/InventoryItem'
                               quantity:
                                 type: number
                                 format: decimal
@@ -1745,10 +1745,10 @@
                         unit_cost: 65000.0
                         total_value: 1966250.0
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '429':
-        $ref: '#/components/responses/RateLimitExceeded'
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

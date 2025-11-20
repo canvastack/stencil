@@ -6,9 +6,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\OrderEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Customer;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use Illuminate\Support\Str;
 
 class TenantIsolationTest extends TestCase
@@ -24,7 +24,7 @@ class TenantIsolationTest extends TestCase
         
         // Create two test tenants
         $this->tenantA = TenantEloquentModel::create([
-            'id' => Str::uuid(),
+            'uuid' => Str::uuid(),
             'name' => 'Test Company A',
             'slug' => 'test-company-a',
             'status' => 'active',
@@ -32,7 +32,7 @@ class TenantIsolationTest extends TestCase
         ]);
 
         $this->tenantB = TenantEloquentModel::create([
-            'id' => Str::uuid(),
+            'uuid' => Str::uuid(),
             'name' => 'Test Company B', 
             'slug' => 'test-company-b',
             'status' => 'active',
@@ -44,31 +44,29 @@ class TenantIsolationTest extends TestCase
     public function tenant_a_cannot_access_tenant_b_customers(): void
     {
         // Create customers for each tenant
-        $customerA = CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        $customerA = Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
-            'first_name' => 'Customer',
-            'last_name' => 'A',
+            'name' => 'Customer A',
             'email' => 'customer-a@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
-        $customerB = CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        $customerB = Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantB->id,
-            'first_name' => 'Customer',
-            'last_name' => 'B',
+            'name' => 'Customer B',
             'email' => 'customer-b@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
         // Mock tenant context for Tenant A
         $this->app->instance('current_tenant', $this->tenantA);
 
         // Query customers - should only return Tenant A's customer
-        $customers = CustomerEloquentModel::all();
+        $customers = Customer::all();
         
         $this->assertCount(1, $customers);
         $this->assertEquals($customerA->id, $customers->first()->id);
@@ -79,27 +77,29 @@ class TenantIsolationTest extends TestCase
     public function tenant_b_cannot_access_tenant_a_products(): void
     {
         // Create products for each tenant
-        $productA = ProductEloquentModel::create([
-            'id' => Str::uuid(),
+        $productA = Product::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
             'name' => 'Product A',
+            'slug' => 'product-a',
             'sku' => 'PRD-A001',
             'price' => 100000,
             'currency' => 'IDR',
             'status' => 'published',
-            'type' => 'physical',
+            'production_type' => 'vendor',
             'stock_quantity' => 10
         ]);
 
-        $productB = ProductEloquentModel::create([
-            'id' => Str::uuid(),
+        $productB = Product::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantB->id,
             'name' => 'Product B',
+            'slug' => 'product-b',
             'sku' => 'PRD-B001', 
             'price' => 200000,
             'currency' => 'IDR',
             'status' => 'published',
-            'type' => 'physical',
+            'production_type' => 'vendor',
             'stock_quantity' => 5
         ]);
 
@@ -107,7 +107,7 @@ class TenantIsolationTest extends TestCase
         $this->app->instance('current_tenant', $this->tenantB);
 
         // Query products - should only return Tenant B's product
-        $products = ProductEloquentModel::all();
+        $products = Product::all();
         
         $this->assertCount(1, $products);
         $this->assertEquals($productB->id, $products->first()->id);
@@ -118,59 +118,61 @@ class TenantIsolationTest extends TestCase
     public function orders_are_properly_scoped_to_tenant(): void
     {
         // Create customers for each tenant
-        $customerA = CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        $customerA = Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
-            'first_name' => 'Customer',
-            'last_name' => 'A',
+            'name' => 'Customer A',
             'email' => 'customer-a@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
-        $customerB = CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        $customerB = Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantB->id,
-            'first_name' => 'Customer',
-            'last_name' => 'B',
+            'name' => 'Customer B',
             'email' => 'customer-b@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
         // Create orders for each tenant
-        $orderA = OrderEloquentModel::create([
-            'id' => Str::uuid(),
+        $orderA = Order::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
             'customer_id' => $customerA->id,
             'order_number' => 'ORD-A001',
-            'status' => 'pending',
+            'status' => 'new',
+            'payment_status' => 'pending',
             'total_amount' => 100000,
             'currency' => 'IDR',
+            'production_type' => 'vendor',
             'items' => []
         ]);
 
-        $orderB = OrderEloquentModel::create([
-            'id' => Str::uuid(),
+        $orderB = Order::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantB->id,
             'customer_id' => $customerB->id,
             'order_number' => 'ORD-B001',
             'status' => 'delivered',
+            'payment_status' => 'paid',
             'total_amount' => 200000,
             'currency' => 'IDR',
+            'production_type' => 'vendor',
             'items' => []
         ]);
 
         // Test Tenant A context
         $this->app->instance('current_tenant', $this->tenantA);
-        $ordersA = OrderEloquentModel::all();
+        $ordersA = Order::all();
         
         $this->assertCount(1, $ordersA);
         $this->assertEquals($orderA->id, $ordersA->first()->id);
 
         // Test Tenant B context
         $this->app->instance('current_tenant', $this->tenantB);
-        $ordersB = OrderEloquentModel::all();
+        $ordersB = Order::all();
         
         $this->assertCount(1, $ordersB);
         $this->assertEquals($orderB->id, $ordersB->first()->id);
@@ -179,73 +181,77 @@ class TenantIsolationTest extends TestCase
     /** @test */
     public function cross_tenant_relationships_are_prevented(): void
     {
+        // Enable cross-tenant validation for this specific test
+        config(['app.enable_cross_tenant_validation' => true]);
+        
         // Create customer in Tenant A
-        $customerA = CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        $customerA = Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
-            'first_name' => 'Customer',
-            'last_name' => 'A',
+            'name' => 'Customer A',
             'email' => 'customer-a@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
         // Try to create order in Tenant B with Tenant A's customer (should fail)
         $this->expectException(\Exception::class);
         
-        OrderEloquentModel::create([
-            'id' => Str::uuid(),
+        Order::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantB->id,
             'customer_id' => $customerA->id, // Cross-tenant reference
             'order_number' => 'ORD-INVALID',
-            'status' => 'pending',
+            'status' => 'new',
+            'payment_status' => 'pending',
             'total_amount' => 100000,
             'currency' => 'IDR',
+            'production_type' => 'vendor',
             'items' => []
         ]);
+        
+        // Reset config after test
+        config(['app.enable_cross_tenant_validation' => false]);
     }
 
     /** @test */
     public function tenant_data_counts_are_isolated(): void
     {
         // Create data for Tenant A
-        CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
-            'first_name' => 'Customer',
-            'last_name' => 'A1',
+            'name' => 'Customer A1',
             'email' => 'customer-a1@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
-        CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
-            'first_name' => 'Customer',
-            'last_name' => 'A2',
+            'name' => 'Customer A2',
             'email' => 'customer-a2@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
         // Create data for Tenant B
-        CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantB->id,
-            'first_name' => 'Customer',
-            'last_name' => 'B1',
+            'name' => 'Customer B1',
             'email' => 'customer-b1@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
         // Test counts are isolated
         $this->app->instance('current_tenant', $this->tenantA);
-        $countA = CustomerEloquentModel::count();
+        $countA = Customer::count();
         
         $this->app->instance('current_tenant', $this->tenantB);
-        $countB = CustomerEloquentModel::count();
+        $countB = Customer::count();
 
         $this->assertEquals(2, $countA);
         $this->assertEquals(1, $countB);
@@ -255,37 +261,35 @@ class TenantIsolationTest extends TestCase
     public function tenant_switching_works_correctly(): void
     {
         // Create data for both tenants
-        $customerA = CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        $customerA = Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantA->id,
-            'first_name' => 'Customer',
-            'last_name' => 'A',
+            'name' => 'Customer A',
             'email' => 'customer-a@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
-        $customerB = CustomerEloquentModel::create([
-            'id' => Str::uuid(),
+        $customerB = Customer::create([
+            'uuid' => Str::uuid(),
             'tenant_id' => $this->tenantB->id,
-            'first_name' => 'Customer',
-            'last_name' => 'B',
+            'name' => 'Customer B',
             'email' => 'customer-b@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
         // Switch to Tenant A
         $this->app->instance('current_tenant', $this->tenantA);
-        $customers = CustomerEloquentModel::all();
+        $customers = Customer::all();
         $this->assertCount(1, $customers);
-        $this->assertEquals('Customer A', $customers->first()->first_name . ' ' . $customers->first()->last_name);
+        $this->assertEquals('Customer A', $customers->first()->name);
 
         // Switch to Tenant B
         $this->app->instance('current_tenant', $this->tenantB);
-        $customers = CustomerEloquentModel::all();
+        $customers = Customer::all();
         $this->assertCount(1, $customers);
-        $this->assertEquals('Customer B', $customers->first()->first_name . ' ' . $customers->first()->last_name);
+        $this->assertEquals('Customer B', $customers->first()->name);
     }
 
     /** @test */
@@ -295,13 +299,12 @@ class TenantIsolationTest extends TestCase
         $this->app->instance('current_tenant', $this->tenantA);
 
         // Create customer without explicitly setting tenant_id
-        $customer = new CustomerEloquentModel([
-            'id' => Str::uuid(),
-            'first_name' => 'Auto',
-            'last_name' => 'Tenant',
+        $customer = new Customer([
+            'uuid' => Str::uuid(),
+            'name' => 'Auto Tenant',
             'email' => 'auto-tenant@test.com',
             'status' => 'active',
-            'type' => 'individual'
+            'customer_type' => 'individual'
         ]);
 
         // The model should automatically get the tenant_id from context

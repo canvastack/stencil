@@ -23,10 +23,10 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
-      - $ref: '#/components/parameters/SortParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
       - name: search
         in: query
         description: Search in description, reference number
@@ -103,15 +103,15 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FinancialTransactionListResponse'
+              $ref: '../../components/schemas.yaml#/FinancialTransactionListResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -131,13 +131,13 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/FinancialTransactionCreateInput'
+            $ref: '../../components/schemas.yaml#/FinancialTransactionCreateInput'
           examples:
             income_transaction:
               summary: Customer payment for etching service
@@ -174,22 +174,22 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/FinancialTransaction'
+                      $ref: '../../components/schemas.yaml#/FinancialTransaction'
                     message:
                       type: string
                       example: "Financial transaction created successfully"
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/transactions/{transactionId}:
   get:
@@ -209,7 +209,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: transactionId
         in: path
         required: true
@@ -225,22 +225,22 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/FinancialTransaction'
+                      $ref: '../../components/schemas.yaml#/FinancialTransaction'
                     message:
                       type: string
                       example: "Financial transaction retrieved successfully"
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   patch:
     tags:
@@ -258,7 +258,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: transactionId
         in: path
         required: true
@@ -270,7 +270,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/FinancialTransactionUpdateInput'
+            $ref: '../../components/schemas.yaml#/FinancialTransactionUpdateInput'
     responses:
       '200':
         description: Transaction updated successfully
@@ -278,21 +278,21 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/FinancialTransaction'
+                      $ref: '../../components/schemas.yaml#/FinancialTransaction'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   delete:
     tags:
@@ -310,7 +310,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: transactionId
         in: path
         required: true
@@ -323,21 +323,21 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '409':
         description: Cannot delete approved transaction
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/transactions/{transactionId}/approve:
   post:
@@ -357,7 +357,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: transactionId
         in: path
         required: true
@@ -382,25 +382,25 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/FinancialTransaction'
+                      $ref: '../../components/schemas.yaml#/FinancialTransaction'
       '400':
         description: Transaction cannot be approved
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/transactions/{transactionId}/reject:
   post:
@@ -413,7 +413,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: transactionId
         in: path
         required: true
@@ -439,17 +439,17 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # FINANCIAL REPORTS ENDPOINTS
@@ -471,10 +471,10 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
-      - $ref: '#/components/parameters/SortParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
       - name: search
         in: query
         description: Search in report name
@@ -515,13 +515,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FinancialReportListResponse'
+              $ref: '../../components/schemas.yaml#/FinancialReportListResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -541,13 +541,13 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/FinancialReportGenerateInput'
+            $ref: '../../components/schemas.yaml#/FinancialReportGenerateInput'
           examples:
             profit_loss_report:
               summary: Monthly Profit & Loss Report
@@ -580,22 +580,22 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/FinancialReport'
+                      $ref: '../../components/schemas.yaml#/FinancialReport'
                     message:
                       type: string
                       example: "Financial report generation started successfully"
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/reports/{reportId}:
   get:
@@ -614,7 +614,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: reportId
         in: path
         required: true
@@ -629,19 +629,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/FinancialReport'
+                      $ref: '../../components/schemas.yaml#/FinancialReport'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   delete:
     tags:
@@ -653,7 +653,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: reportId
         in: path
         required: true
@@ -666,15 +666,15 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/reports/{reportId}/export:
   get:
@@ -692,7 +692,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: reportId
         in: path
         required: true
@@ -728,15 +728,15 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # BUDGET MANAGEMENT ENDPOINTS
@@ -758,10 +758,10 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
-      - $ref: '#/components/parameters/PageParam'
-      - $ref: '#/components/parameters/PerPageParam'
-      - $ref: '#/components/parameters/SortParam'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
       - name: budget_type
         in: query
         description: Filter by budget type
@@ -788,13 +788,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BudgetPlanListResponse'
+              $ref: '../../components/schemas.yaml#/BudgetPlanListResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   post:
     tags:
@@ -812,13 +812,13 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BudgetPlanCreateInput'
+            $ref: '../../components/schemas.yaml#/BudgetPlanCreateInput'
           examples:
             annual_budget:
               summary: Annual Budget for FY 2025
@@ -849,19 +849,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/BudgetPlan'
+                      $ref: '../../components/schemas.yaml#/BudgetPlan'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/budgets/{budgetId}:
   get:
@@ -880,7 +880,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: budgetId
         in: path
         required: true
@@ -895,19 +895,19 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/BudgetPlan'
+                      $ref: '../../components/schemas.yaml#/BudgetPlan'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
   patch:
     tags:
@@ -919,7 +919,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: budgetId
         in: path
         required: true
@@ -931,7 +931,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BudgetPlanCreateInput'
+            $ref: '../../components/schemas.yaml#/BudgetPlanCreateInput'
     responses:
       '200':
         description: Budget plan updated successfully
@@ -939,21 +939,21 @@
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
                 - type: object
                   properties:
                     data:
-                      $ref: '#/components/schemas/BudgetPlan'
+                      $ref: '../../components/schemas.yaml#/BudgetPlan'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/budgets/{budgetId}/submit:
   post:
@@ -966,7 +966,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: budgetId
         in: path
         required: true
@@ -979,21 +979,21 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
       '400':
         description: Budget cannot be submitted
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/budgets/{budgetId}/approve:
   post:
@@ -1006,7 +1006,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: budgetId
         in: path
         required: true
@@ -1030,21 +1030,21 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
       '400':
         description: Budget cannot be approved
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # FINANCIAL ANALYTICS ENDPOINTS
@@ -1068,7 +1068,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: period
         in: query
         description: Analysis period
@@ -1104,15 +1104,15 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FinancialAnalyticsResponse'
+              $ref: '../../components/schemas.yaml#/FinancialAnalyticsResponse'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/analytics/cash-flow:
   get:
@@ -1125,7 +1125,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: months
         in: query
         description: Number of months to analyze
@@ -1194,11 +1194,11 @@
                             type: number
                             format: decimal
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/analytics/profitability:
   get:
@@ -1211,7 +1211,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: group_by
         in: query
         description: Group profitability analysis by
@@ -1290,13 +1290,13 @@
                             type: number
                             format: decimal
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
 # BULK OPERATIONS ENDPOINTS
@@ -1319,7 +1319,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1381,19 +1381,19 @@
                       format: uuid
                       description: Import batch ID for tracking
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '413':
         description: File too large
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 
 /financial/reports/bulk-generate:
   post:
@@ -1406,7 +1406,7 @@
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '#/components/parameters/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1419,7 +1419,7 @@
               reports:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FinancialReportGenerateInput'
+                  $ref: '../../components/schemas.yaml#/FinancialReportGenerateInput'
                 description: List of reports to generate
                 minItems: 1
                 maxItems: 10
@@ -1452,10 +1452,10 @@
                   type: string
                   example: "Bulk report generation started successfully"
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

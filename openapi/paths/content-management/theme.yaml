@@ -25,9 +25,9 @@
     operationId: listThemes
     security: []
     parameters:
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
     - name: search
       in: query
       description: Search in theme name, description, and tags
@@ -99,7 +99,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ThemeListResponse'
+              $ref: '../../schemas/content-management/theme.yaml#/ThemeListResponse'
             examples:
               marketplace_browse:
                 summary: Marketplace browse result
@@ -143,9 +143,9 @@
                       min: 0
                       max: 299.99
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Theme Management
@@ -175,7 +175,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ThemeCreateInput'
+            $ref: '../../schemas/content-management/theme.yaml#/ThemeCreateInput'
           examples:
             new_business_theme:
               summary: New business theme
@@ -218,11 +218,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Theme'
+                    $ref: '../../schemas/content-management/theme.yaml#/Theme'
                   message:
                     type: string
                     example: Theme created successfully
@@ -236,24 +236,24 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Theme slug already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: THEME_SLUG_EXISTS
                 message: Theme with this slug already exists
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /themes/{themeId}:
   get:
     tags:
@@ -286,7 +286,7 @@
     - bearerAuth: []
     - {}
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: themeId
       in: path
       required: true
@@ -307,7 +307,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ThemeDetailsResponse'
+              $ref: '../../schemas/content-management/theme.yaml#/ThemeDetailsResponse'
             example:
               success: true
               data:
@@ -325,14 +325,14 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: THEME_NOT_FOUND
                 message: Theme not found
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   patch:
     tags:
     - Theme Management
@@ -362,7 +362,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ThemeUpdateInput'
+            $ref: '../../schemas/content-management/theme.yaml#/ThemeUpdateInput'
           examples:
             update_pricing:
               summary: Update theme pricing
@@ -381,11 +381,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Theme'
+                    $ref: '../../schemas/content-management/theme.yaml#/Theme'
                   message:
                     type: string
                     example: Theme updated successfully
@@ -398,19 +398,19 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Theme not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - Theme Management
@@ -444,7 +444,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   message:
@@ -459,28 +459,28 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Theme not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '409':
         description: Cannot delete theme with active installations
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: THEME_HAS_INSTALLATIONS
                 message: Cannot delete theme with active installations
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes:
   get:
     tags:
@@ -505,9 +505,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: status
       in: query
       description: Filter by installation status
@@ -539,18 +539,18 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
                       allOf:
-                      - $ref: '#/components/schemas/ThemeInstallation'
+                      - $ref: '../../schemas/content-management/theme.yaml#/ThemeInstallation'
                       - type: object
                         properties:
                           theme:
-                            $ref: '#/components/schemas/Theme'
+                            $ref: '../../schemas/content-management/theme.yaml#/Theme'
                           has_updates:
                             type: boolean
                             description: Whether updates are available
@@ -572,11 +572,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Theme Installation
@@ -605,13 +605,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ThemeInstallationInput'
+            $ref: '../../schemas/content-management/theme.yaml#/ThemeInstallationInput'
           examples:
             install_etching_theme:
               summary: Install Etching Professional theme
@@ -626,7 +626,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -651,17 +651,17 @@
                     type: string
                     example: Theme installation started
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Theme already installed or conflicts
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             examples:
               already_installed:
                 summary: Theme already installed
@@ -678,7 +678,7 @@
                     code: LICENSE_REQUIRED
                     message: Valid license required to install this paid theme
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes/{installationId}:
   get:
     tags:
@@ -702,7 +702,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: installationId
       in: path
       required: true
@@ -724,7 +724,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InstallationStatusResponse'
+              $ref: '../../schemas/content-management/theme.yaml#/InstallationStatusResponse'
             example:
               success: true
               data:
@@ -738,15 +738,15 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
         description: Installation not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
     - Theme Installation
@@ -775,7 +775,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: installationId
       in: path
       required: true
@@ -798,28 +798,28 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   message:
                     type: string
                     example: Theme uninstallation started
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Installation not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '409':
         description: Cannot uninstall active theme
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
@@ -827,7 +827,7 @@
                 message: Cannot uninstall currently active theme. Please activate
                   another theme first.
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes/{installationId}/activate:
   post:
     tags:
@@ -857,7 +857,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: installationId
       in: path
       required: true
@@ -873,11 +873,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ThemeInstallation'
+                    $ref: '../../schemas/content-management/theme.yaml#/ThemeInstallation'
                   message:
                     type: string
                     example: Theme activated successfully
@@ -894,7 +894,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             examples:
               incompatible_version:
                 summary: Incompatible Stencil version
@@ -911,17 +911,17 @@
                     code: THEME_VALIDATION_FAILED
                     message: Theme failed security validation
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Installation not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes/{installationId}/deactivate:
   post:
     tags:
@@ -938,7 +938,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: installationId
       in: path
       required: true
@@ -954,7 +954,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   message:
@@ -969,17 +969,17 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Installation not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes/{installationId}/settings:
   get:
     tags:
@@ -1003,7 +1003,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: installationId
       in: path
       required: true
@@ -1019,12 +1019,12 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     allOf:
-                    - $ref: '#/components/schemas/ThemeSettings'
+                    - $ref: '../../schemas/content-management/theme.yaml#/ThemeSettings'
                     - type: object
                       properties:
                         schema:
@@ -1056,17 +1056,17 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Installation or settings not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
     - Theme Customization
@@ -1093,7 +1093,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: installationId
       in: path
       required: true
@@ -1114,7 +1114,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ThemeSettingsInput'
+            $ref: '../../schemas/content-management/theme.yaml#/ThemeSettingsInput'
           examples:
             update_colors:
               summary: Update theme colors
@@ -1139,11 +1139,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ThemeSettings'
+                    $ref: '../../schemas/content-management/theme.yaml#/ThemeSettings'
                   message:
                     type: string
                     example: Theme settings updated successfully
@@ -1160,7 +1160,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ValidationErrorResponse'
+              $ref: '../../components/schemas.yaml#/ValidationErrorResponse'
             example:
               success: false
               error:
@@ -1172,17 +1172,17 @@
                   container_width:
                   - Value must be between 1024 and 1920
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Installation not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes/{installationId}/settings/reset:
   post:
     tags:
@@ -1198,7 +1198,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: installationId
       in: path
       required: true
@@ -1214,11 +1214,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ThemeSettings'
+                    $ref: '../../schemas/content-management/theme.yaml#/ThemeSettings'
                   message:
                     type: string
                     example: Theme settings reset to defaults
@@ -1231,17 +1231,17 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Installation not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /admin/themes/marketplace:
   get:
     tags:
@@ -1270,9 +1270,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
     - name: status
       in: query
       description: Filter by submission status
@@ -1304,18 +1304,18 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
                       allOf:
-                      - $ref: '#/components/schemas/ThemeMarketplaceListing'
+                      - $ref: '../../schemas/content-management/theme.yaml#/ThemeMarketplaceListing'
                       - type: object
                         properties:
                           theme:
-                            $ref: '#/components/schemas/Theme'
+                            $ref: '../../schemas/content-management/theme.yaml#/Theme'
                           vendor_info:
                             type: object
                             properties:
@@ -1340,11 +1340,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /admin/themes/marketplace/{listingId}/approve:
   post:
     tags:
@@ -1402,11 +1402,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ThemeMarketplaceListing'
+                    $ref: '../../schemas/content-management/theme.yaml#/ThemeMarketplaceListing'
                   message:
                     type: string
                     example: Theme approved and published to marketplace
@@ -1419,23 +1419,23 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Marketplace listing not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '409':
         description: Theme already approved
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /admin/themes/marketplace/{listingId}/reject:
   post:
     tags:
@@ -1489,7 +1489,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   message:
@@ -1504,17 +1504,17 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Marketplace listing not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /themes/{themeId}/validate:
   post:
     tags:
@@ -1597,7 +1597,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1616,19 +1616,19 @@
                     type: string
                     example: Theme validation started
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Theme not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /themes/{themeId}/validation-results:
   get:
     tags:
@@ -1694,7 +1694,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -1717,11 +1717,11 @@
                       results:
                         type: array
                         items:
-                          $ref: '#/components/schemas/ThemeValidationResult'
+                          $ref: '../../schemas/content-management/theme.yaml#/ThemeValidationResult'
                       security_scans:
                         type: array
                         items:
-                          $ref: '#/components/schemas/ThemeSecurityScan'
+                          $ref: '../../schemas/content-management/theme.yaml#/ThemeSecurityScan'
                       summary:
                         type: object
                         properties:
@@ -1750,17 +1750,17 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Theme or validation results not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /themes/{themeId}/versions:
   get:
     tags:
@@ -1804,13 +1804,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/ThemeVersion'
+                      $ref: '../../schemas/content-management/theme.yaml#/ThemeVersion'
             example:
               success: true
               data:
@@ -1828,9 +1828,9 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
     - Theme Versions
@@ -1933,11 +1933,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ThemeVersion'
+                    $ref: '../../schemas/content-management/theme.yaml#/ThemeVersion'
                   message:
                     type: string
                     example: Theme version created successfully
@@ -1951,25 +1951,25 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Theme not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '409':
         description: Version already exists
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /themes/{themeId}/purchase:
   post:
     tags:
@@ -1997,7 +1997,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: themeId
       in: path
       required: true
@@ -2074,16 +2074,16 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: object
                     properties:
                       purchase:
-                        $ref: '#/components/schemas/ThemePurchase'
+                        $ref: '../../schemas/content-management/theme.yaml#/ThemePurchase'
                       license:
-                        $ref: '#/components/schemas/ThemeLicense'
+                        $ref: '../../schemas/content-management/theme.yaml#/ThemeLicense'
                       invoice_url:
                         type: string
                         format: uri
@@ -2102,36 +2102,36 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '402':
         description: Payment failed
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
             example:
               success: false
               error:
                 code: PAYMENT_FAILED
                 message: Payment processing failed. Please check your payment details.
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         description: Theme not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '409':
         description: Theme already purchased
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ErrorResponse'
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'
 /tenant/theme-purchases:
   get:
     tags:
@@ -2155,9 +2155,9 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: status
       in: query
       description: Filter by payment status
@@ -2183,22 +2183,22 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
                       allOf:
-                      - $ref: '#/components/schemas/ThemePurchase'
+                      - $ref: '../../schemas/content-management/theme.yaml#/ThemePurchase'
                       - type: object
                         properties:
                           theme:
-                            $ref: '#/components/schemas/Theme'
+                            $ref: '../../schemas/content-management/theme.yaml#/Theme'
                           licenses:
                             type: array
                             items:
-                              $ref: '#/components/schemas/ThemeLicense'
+                              $ref: '../../schemas/content-management/theme.yaml#/ThemeLicense'
             example:
               success: true
               data:
@@ -2212,8 +2212,8 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/ServerError'
+        $ref: '../../components/responses.yaml#/ServerError'

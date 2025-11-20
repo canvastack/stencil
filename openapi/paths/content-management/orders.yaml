@@ -35,13 +35,13 @@
     operationId: createOrder
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreateOrderRequest'
+            $ref: '../../components/schemas.yaml#/CreateOrderRequest'
           examples:
             etching_order:
               summary: Etching order with customization
@@ -79,11 +79,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PurchaseOrder'
+                    $ref: '../../schemas/content-management/orders.yaml#/PurchaseOrder'
             examples:
               success:
                 summary: Order created successfully
@@ -100,9 +100,9 @@
                     currency: IDR
                     created_at: '2025-01-15T10:30:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 /orders/{order_code}/status:
   get:
     tags:
@@ -127,7 +127,7 @@
     operationId: checkOrderStatus
     security: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: order_code
       in: path
       required: true
@@ -143,7 +143,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -193,7 +193,7 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/orders:
   get:
     tags:
@@ -231,7 +231,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: status
       in: query
       schema:
@@ -310,10 +310,10 @@
       style: form
       explode: false
       description: Filter by tags
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
-    - $ref: '#/components/parameters/OrderParam'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - $ref: '../../components/parameters.yaml#/OrderParam'
     responses:
       '200':
         description: Orders list retrieved successfully
@@ -321,13 +321,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/OrdersPageData'
+                    $ref: '../../components/schemas.yaml#/OrdersPageData'
                   meta:
-                    $ref: '#/components/schemas/PaginationMeta'
+                    $ref: '../../components/schemas.yaml#/PaginationMeta'
             example:
               success: true
               data:
@@ -341,9 +341,9 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
   post:
     tags:
     - Orders Management
@@ -368,13 +368,13 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreateOrderRequest'
+            $ref: '../../components/schemas.yaml#/CreateOrderRequest'
           example:
             title: New Orders Title
             description: Sample description for orders
@@ -386,11 +386,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PurchaseOrder'
+                    $ref: '../../schemas/content-management/orders.yaml#/PurchaseOrder'
             example:
               success: true
               data:
@@ -401,13 +401,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 /admin/orders/{id}:
   get:
     tags:
@@ -439,7 +439,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -454,38 +454,38 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: object
                     properties:
                       order:
-                        $ref: '#/components/schemas/PurchaseOrder'
+                        $ref: '../../schemas/content-management/orders.yaml#/PurchaseOrder'
                       items:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrderItem'
+                          $ref: '../../schemas/content-management/orders.yaml#/OrderItem'
                       quotations:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrderQuotation'
+                          $ref: '../../schemas/content-management/orders.yaml#/OrderQuotation'
                       negotiations:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrderNegotiation'
+                          $ref: '../../components/schemas.yaml#/OrderNegotiation'
                       payments:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrderPayment'
+                          $ref: '../../components/schemas.yaml#/OrderPayment'
                       shipments:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrderShipment'
+                          $ref: '../../components/schemas.yaml#/OrderShipment'
                       status_history:
                         type: array
                         items:
-                          $ref: '#/components/schemas/OrderStatusHistory'
+                          $ref: '../../components/schemas.yaml#/OrderStatusHistory'
             example:
               success: true
               data:
@@ -499,11 +499,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
   put:
     tags:
     - Orders Management
@@ -537,7 +537,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -598,11 +598,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PurchaseOrder'
+                    $ref: '../../schemas/content-management/orders.yaml#/PurchaseOrder'
             example:
               success: true
               data:
@@ -612,15 +612,15 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
   delete:
     tags:
     - Orders Management
@@ -645,7 +645,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -681,7 +681,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BaseResponse'
+              $ref: '../../components/schemas.yaml#/BaseResponse'
             example:
               success: true
               data:
@@ -691,13 +691,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/orders/{id}/assign-vendor:
   post:
     tags:
@@ -712,7 +712,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -758,7 +758,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -786,13 +786,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/orders/{id}/status:
   patch:
     tags:
@@ -831,7 +831,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -844,7 +844,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdateOrderStatusRequest'
+            $ref: '../../schemas/content-management/orders.yaml#/UpdateOrderStatusRequest'
           examples:
             production_complete:
               summary: Mark production as complete
@@ -859,7 +859,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -886,13 +886,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/orders/{id}/communications:
   get:
     tags:
@@ -926,7 +926,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -963,7 +963,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -992,7 +992,7 @@
                           type: object
                           additionalProperties: true
                   meta:
-                    $ref: '#/components/schemas/PaginationMeta'
+                    $ref: '../../components/schemas.yaml#/PaginationMeta'
             example:
               success: true
               data:
@@ -1032,7 +1032,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1132,7 +1132,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1160,13 +1160,13 @@
                 timestamp: '2025-11-18T09:45:10Z'
                 tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 
 /admin/orders/{id}/sla:
   get:
@@ -1192,7 +1192,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1207,7 +1207,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1314,7 +1314,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1376,7 +1376,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1420,13 +1420,13 @@
                 timestamp: '2025-11-18T09:45:15Z'
                 tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 
 /admin/orders/{id}/quotations:
   get:
@@ -1451,7 +1451,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1479,13 +1479,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/OrderQuotation'
+                      $ref: '../../schemas/content-management/orders.yaml#/OrderQuotation'
             example:
               success: true
               data:
@@ -1499,11 +1499,11 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
   post:
     tags:
     - Quotations Management
@@ -1528,7 +1528,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1541,7 +1541,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreateQuotationRequest'
+            $ref: '../../schemas/content-management/orders.yaml#/CreateQuotationRequest'
           example:
             title: New Orders Title
             description: Sample description for orders
@@ -1553,11 +1553,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/OrderQuotation'
+                    $ref: '../../schemas/content-management/orders.yaml#/OrderQuotation'
             example:
               success: true
               data:
@@ -1568,13 +1568,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
 /admin/orders/{id}/quotations/{quotation_id}:
   get:
     tags:
@@ -1585,7 +1585,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1605,11 +1605,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/OrderQuotation'
+                    $ref: '../../schemas/content-management/orders.yaml#/OrderQuotation'
             example:
               success: true
               data:
@@ -1623,7 +1623,7 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/orders/{id}/quotations/{quotation_id}/approve:
   post:
     tags:
@@ -1637,7 +1637,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1679,7 +1679,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -1704,9 +1704,9 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/orders/{id}/negotiations:
   get:
     tags:
@@ -1732,7 +1732,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1757,13 +1757,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/OrderNegotiation'
+                      $ref: '../../components/schemas.yaml#/OrderNegotiation'
             example:
               success: true
               data:
@@ -1800,7 +1800,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1854,11 +1854,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/OrderNegotiation'
+                    $ref: '../../components/schemas.yaml#/OrderNegotiation'
             example:
               success: true
               data:
@@ -1893,7 +1893,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1920,13 +1920,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/OrderPayment'
+                      $ref: '../../components/schemas.yaml#/OrderPayment'
             example:
               success: true
               data:
@@ -1963,7 +1963,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2035,11 +2035,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/OrderPayment'
+                    $ref: '../../components/schemas.yaml#/OrderPayment'
             example:
               success: true
               data:
@@ -2074,7 +2074,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2118,7 +2118,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2169,7 +2169,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2183,13 +2183,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/OrderShipment'
+                      $ref: '../../components/schemas.yaml#/OrderShipment'
             example:
               success: true
               data:
@@ -2226,7 +2226,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2286,11 +2286,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/OrderShipment'
+                    $ref: '../../components/schemas.yaml#/OrderShipment'
             example:
               success: true
               data:
@@ -2326,7 +2326,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -2340,11 +2340,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/ProfitabilityReport'
+                    $ref: '../../schemas/content-management/orders.yaml#/ProfitabilityReport'
             example:
               success: true
               data:
@@ -2358,7 +2358,7 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
 /admin/orders/analytics/dashboard:
   get:
     tags:
@@ -2386,7 +2386,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: period
       in: query
       schema:
@@ -2418,14 +2418,14 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
                     type: object
                     properties:
                       summary:
-                        $ref: '#/components/schemas/OrdersSummary'
+                        $ref: '../../schemas/content-management/orders.yaml#/OrdersSummary'
                       trends:
                         type: object
                       performance_metrics:
@@ -2469,7 +2469,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -2505,7 +2505,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:
@@ -2557,7 +2557,7 @@
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -2603,7 +2603,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/BaseResponse'
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
               - type: object
                 properties:
                   data:

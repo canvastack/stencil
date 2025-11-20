@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 use App\Domain\Product\Services\InventoryService;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\ProductEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\OrderEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\VendorEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryItem;
@@ -45,7 +45,7 @@ class TenantDataSeeder extends Seeder
         
         // Summary
         $totalCustomers = CustomerEloquentModel::count();
-        $totalProducts = ProductEloquentModel::count();
+        $totalProducts = Product::count();
         $totalOrders = OrderEloquentModel::count();
         $totalVendors = VendorEloquentModel::count();
         $totalInventoryItems = InventoryItem::count();
@@ -181,7 +181,7 @@ class TenantDataSeeder extends Seeder
             'phone' => $phone,
             'address' => $addressText,
             'status' => rand(0, 20) > 1 ? 'active' : 'suspended', // 95% active
-            'type' => $type,
+            'customer_type' => $type,
             'company_name' => $type === 'business' ? $firstName : null,
             'metadata' => !empty($metadata) ? $metadata : null,
             'tags' => array_slice(['vip', 'regular', 'wholesale', 'retail', 'new', 'premium', 'loyal'], 0, rand(1, 4)),
@@ -324,7 +324,7 @@ class TenantDataSeeder extends Seeder
         $stock = rand(0, 500); // Higher stock variety
         $isDigital = rand(0, 10) > 7; // 30% chance for digital/service
         
-        ProductEloquentModel::create([
+        Product::create([
             'tenant_id' => $tenant->id,
             'name' => $productName . ' ' . $qualifier,
             'sku' => strtoupper(substr($category, 0, 3)) . '-' . str_pad($index, 4, '0', STR_PAD_LEFT),
@@ -371,7 +371,7 @@ class TenantDataSeeder extends Seeder
     private function seedOrders($tenant): void
     {
         $customers = CustomerEloquentModel::where('tenant_id', $tenant->id)->get();
-        $products = ProductEloquentModel::where('tenant_id', $tenant->id)->where('status', 'published')->get();
+        $products = Product::where('tenant_id', $tenant->id)->where('status', 'published')->get();
 
         if ($customers->isEmpty() || $products->isEmpty()) {
             $this->command->warn("   Skipping orders for {$tenant->name} - insufficient customers or products");
@@ -574,7 +574,7 @@ class TenantDataSeeder extends Seeder
             return;
         }
 
-        $products = ProductEloquentModel::where('tenant_id', $tenant->id)
+        $products = Product::where('tenant_id', $tenant->id)
             ->where('track_inventory', true)
             ->inRandomOrder()
             ->take(45)
@@ -600,12 +600,12 @@ class TenantDataSeeder extends Seeder
             foreach ($locations as $idx => $location) {
                 $remainingLocations = $locationCount - $idx - 1;
                 if ($remainingLocations <= 0) {
-                    $quantity = $remaining;
+                    $quantity = max(0, $remaining); // Ensure non-negative
                 } else {
                     $minAlloc = 5;
                     $maxAlloc = max($minAlloc, $remaining - ($remainingLocations * $minAlloc));
-                    $quantity = rand($minAlloc, $maxAlloc);
-                    $remaining -= $quantity;
+                    $quantity = max(0, rand($minAlloc, $maxAlloc)); // Ensure non-negative
+                    $remaining = max(0, $remaining - $quantity); // Ensure remaining stays non-negative
                 }
                 $inventoryService->setLocationStock($product, $location, (float) $quantity, $userId, 'initial_seed');
             }

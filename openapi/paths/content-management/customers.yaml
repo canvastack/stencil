@@ -24,7 +24,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: page
       in: query
       schema:
@@ -131,7 +131,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerListResponse'
+              $ref: '../../components/schemas.yaml#/CustomerListResponse'
             examples:
               business_customers:
                 summary: Business customers list
@@ -164,13 +164,13 @@
                     customer_type: business
                     status: active
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
   post:
     tags:
     - Customers
@@ -195,13 +195,13 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CustomerCreateInput'
+            $ref: '../../components/schemas.yaml#/CustomerCreateInput'
           examples:
             business_customer:
               summary: Business customer creation
@@ -240,11 +240,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CustomerResponse'
+                    $ref: '../../components/schemas.yaml#/CustomerResponse'
             examples:
               created_customer:
                 summary: Successfully created customer
@@ -279,7 +279,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerValidationError'
+              $ref: '../../components/schemas.yaml#/CustomerValidationError'
             examples:
               validation_error:
                 summary: Validation error example
@@ -293,9 +293,9 @@
                     - The phone field is required
                   code: VALIDATION_ERROR
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         description: Duplicate customer
         content:
@@ -310,7 +310,7 @@
                   type: string
                   example: Customer with this email already exists
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customers/{id}:
   get:
     tags:
@@ -339,7 +339,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -361,11 +361,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CustomerResponse'
+                    $ref: '../../components/schemas.yaml#/CustomerResponse'
             examples:
               customer_detail:
                 summary: Complete customer details
@@ -401,13 +401,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
   put:
     tags:
     - Customers
@@ -420,7 +420,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -434,7 +434,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CustomerUpdateInput'
+            $ref: '../../components/schemas.yaml#/CustomerUpdateInput'
           examples:
             status_update:
               summary: Update customer status to VIP
@@ -459,11 +459,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Customer'
+                    $ref: '../../components/schemas.yaml#/Customer'
             example:
               success: true
               data:
@@ -477,19 +477,19 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerValidationError'
+              $ref: '../../components/schemas.yaml#/CustomerValidationError'
       '404':
         description: Customer not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
   delete:
     tags:
     - Customers
@@ -513,7 +513,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -528,7 +528,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/responses/SuccessResponse'
+              $ref: '../../components/responses.yaml#/SuccessResponse'
             examples:
               deleted_customer:
                 summary: Customer deletion success
@@ -554,13 +554,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customers/{id}/addresses:
   get:
     tags:
@@ -584,7 +584,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -617,13 +617,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/CustomerAddress'
+                      $ref: '../../components/schemas.yaml#/CustomerAddress'
             examples:
               customer_addresses:
                 summary: Customer addresses list
@@ -654,13 +654,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
   post:
     tags:
     - Customer Addresses
@@ -683,7 +683,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -697,7 +697,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CustomerAddressInput'
+            $ref: '../../components/schemas.yaml#/CustomerAddressInput'
           examples:
             shipping_address:
               summary: Add shipping address
@@ -730,11 +730,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CustomerAddress'
+                    $ref: '../../components/schemas.yaml#/CustomerAddress'
             example:
               success: true
               data:
@@ -749,19 +749,19 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerValidationError'
+              $ref: '../../components/schemas.yaml#/CustomerValidationError'
       '404':
         description: Customer not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customers/{id}/addresses/{addressId}:
   put:
     tags:
@@ -785,7 +785,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -807,7 +807,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CustomerAddressInput'
+            $ref: '../../components/schemas.yaml#/CustomerAddressInput'
           examples:
             update_address:
               summary: Update address details
@@ -823,11 +823,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CustomerAddress'
+                    $ref: '../../components/schemas.yaml#/CustomerAddress'
             example:
               success: true
               data:
@@ -841,7 +841,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerValidationError'
+              $ref: '../../components/schemas.yaml#/CustomerValidationError'
       '404':
         description: Customer or address not found
         content:
@@ -856,11 +856,11 @@
                   type: string
                   example: Address with ID address-001 not found for this customer
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
   delete:
     tags:
     - Customer Addresses
@@ -882,7 +882,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -905,7 +905,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/responses/SuccessResponse'
+              $ref: '../../components/responses.yaml#/SuccessResponse'
             example:
               success: true
               data:
@@ -941,11 +941,11 @@
                   type: string
                   example: Address with ID address-002 not found
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customers/{id}/analytics:
   get:
     tags:
@@ -960,7 +960,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -989,11 +989,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CustomerAnalyticsResponse'
+                    $ref: '../../components/schemas.yaml#/CustomerAnalyticsResponse'
             examples:
               customer_analytics:
                 summary: Customer analytics example
@@ -1032,13 +1032,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customers/{id}/interactions:
   get:
     tags:
@@ -1064,7 +1064,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1132,7 +1132,7 @@
                 data:
                   type: array
                   items:
-                    $ref: '#/components/schemas/CustomerInteraction'
+                    $ref: '../../components/schemas.yaml#/CustomerInteraction'
                 meta:
                   type: object
                   properties:
@@ -1185,13 +1185,13 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
   post:
     tags:
     - Customer Interactions
@@ -1216,7 +1216,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1324,11 +1324,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CustomerInteraction'
+                    $ref: '../../components/schemas.yaml#/CustomerInteraction'
             example:
               success: true
               data:
@@ -1343,19 +1343,19 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerValidationError'
+              $ref: '../../components/schemas.yaml#/CustomerValidationError'
       '404':
         description: Customer not found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerNotFoundError'
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customers/search:
   get:
     tags:
@@ -1381,7 +1381,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: q
       in: query
       schema:
@@ -1447,7 +1447,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerListResponse'
+              $ref: '../../components/schemas.yaml#/CustomerListResponse'
             example:
               success: true
               data:
@@ -1481,13 +1481,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customers/bulk:
   post:
     tags:
@@ -1514,7 +1514,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1621,13 +1621,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/BadRequest'
+        $ref: '../../components/responses.yaml#/BadRequest'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customer-segments:
   get:
     tags:
@@ -1652,7 +1652,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: segment_type
       in: query
       schema:
@@ -1676,13 +1676,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/CustomerSegment'
+                      $ref: '../../components/schemas.yaml#/CustomerSegment'
             examples:
               customer_segments:
                 summary: Customer segments list
@@ -1705,11 +1705,11 @@
                     total_revenue: 5200000000
                     is_active: true
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
   post:
     tags:
     - Customer Segmentation
@@ -1730,7 +1730,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1812,11 +1812,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/CustomerSegment'
+                    $ref: '../../components/schemas.yaml#/CustomerSegment'
             example:
               success: true
               data:
@@ -1831,7 +1831,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerValidationError'
+              $ref: '../../components/schemas.yaml#/CustomerValidationError'
       '409':
         description: Segment code already exists
         content:
@@ -1846,11 +1846,11 @@
                   type: string
                   example: A segment with code HV_RECENT_2025 already exists
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 /customer-segments/{id}/customers:
   get:
     tags:
@@ -1874,7 +1874,7 @@
     security:
     - BearerAuth: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: id
       in: path
       required: true
@@ -1907,15 +1907,15 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/responses/SuccessResponse'
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Customer'
+                      $ref: '../../components/schemas.yaml#/Customer'
                   segment_info:
-                    $ref: '#/components/schemas/CustomerSegment'
+                    $ref: '../../components/schemas.yaml#/CustomerSegment'
             example:
               success: true
               data:
@@ -1942,11 +1942,11 @@
                   type: string
                   example: Customer segment with ID segment-001 not found
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 
 /tenant/customers/search:
   get:
@@ -1961,7 +1961,7 @@
     - bearerAuth: []
       tenantHeader: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: query
       in: query
       schema:
@@ -2045,7 +2045,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -2114,13 +2114,13 @@
                   include_segmentation: true
                 generatedAt: '2025-11-19T08:45:00Z'
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'
 
 /tenant/customers/export:
   get:
@@ -2136,7 +2136,7 @@
     - bearerAuth: []
       tenantHeader: []
     parameters:
-    - $ref: '#/components/parameters/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: query
       in: query
       schema:
@@ -2186,7 +2186,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
@@ -2206,10 +2206,10 @@
                 exported: 0
                 filename: null
       '422':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
-        $ref: '#/components/responses/InternalServerError'
+        $ref: '../../components/responses.yaml#/InternalServerError'

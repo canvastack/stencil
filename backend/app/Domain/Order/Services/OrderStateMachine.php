@@ -474,6 +474,9 @@ class OrderStateMachine
     {
         $policy = $this->getSlaPolicy($status);
         $metadata = $order->metadata ?? [];
+        if (!is_array($metadata)) {
+            $metadata = [];
+        }
         $slaMetadata = $metadata['sla'] ?? [];
 
         if (!$policy) {
@@ -636,14 +639,6 @@ class OrderStateMachine
                 $dueAt = $startedAt->copy()->addMinutes($thresholdMinutes);
 
                 if ($now->lt($dueAt)) {
-                    $this->dispatchSlaJob(
-                        $order->id,
-                        $status->value,
-                        null,
-                        true,
-                        $dueAt,
-                        false
-                    );
                     return;
                 }
 
@@ -678,14 +673,6 @@ class OrderStateMachine
                     $triggerAt = $startedAt->copy()->addMinutes($afterMinutes);
 
                     if ($now->lt($triggerAt)) {
-                        $this->dispatchSlaJob(
-                            $order->id,
-                            $status->value,
-                            $escalationIndex,
-                            false,
-                            $triggerAt,
-                            false
-                        );
                         return;
                     }
                 }
@@ -789,6 +776,10 @@ class OrderStateMachine
             $errors[] = "Transisi dari {$currentStatus->label()} ke {$newStatus->label()} tidak diperbolehkan";
         }
 
+        if ($order->total_amount < 0) {
+            $errors[] = 'Total jumlah pesanan tidak boleh negatif';
+        }
+
         switch ($newStatus) {
             case OrderStatus::VENDOR_NEGOTIATION:
                 if (!isset($metadata['vendor_id']) && !$order->vendor_id) {
@@ -799,6 +790,8 @@ class OrderStateMachine
             case OrderStatus::CUSTOMER_QUOTATION:
                 if (!isset($metadata['quotation_amount'])) {
                     $errors[] = 'Jumlah penawaran harus diisi';
+                } elseif ((int) $metadata['quotation_amount'] <= 0) {
+                    $errors[] = 'Jumlah penawaran harus lebih besar dari 0';
                 }
                 break;
 

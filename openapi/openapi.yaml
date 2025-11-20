@@ -471,33 +471,7 @@ paths:
     $ref: './paths/content-management/products.yaml#/~1admin~1products~1{id}~1stock'
   /api/v1/admin/products/quotation-eligible:
     $ref: './paths/content-management/products.yaml#/~1admin~1products~1quotation-eligible'
-  
-  # Tenant Inventory Management
-  /api/v1/tenant/inventory/items:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items'
-  /api/v1/tenant/inventory/items/{item}:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{item}'
-  /api/v1/tenant/inventory/locations:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1locations'
-  /api/v1/tenant/inventory/locations/{location}:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1locations~1{location}'
-  /api/v1/tenant/inventory/items/{product}/locations/{location}/stock:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1locations~1{location}~1stock'
-  /api/v1/tenant/inventory/items/{product}/locations/{location}/adjust:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1locations~1{location}~1adjust'
-  /api/v1/tenant/inventory/items/{product}/transfer:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1transfer'
-  /api/v1/tenant/inventory/items/{product}/reserve:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1items~1{product}~1reserve'
-  /api/v1/tenant/inventory/reservations:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reservations'
-  /api/v1/tenant/inventory/reservations/{reservation}/release:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reservations~1{reservation}~1release'
-  /api/v1/tenant/inventory/reconciliations:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reconciliations'
-  /api/v1/tenant/inventory/reconciliations/run:
-    $ref: './paths/content-management/inventory.yaml#/~1tenant~1inventory~1reconciliations~1run'
-  
+
   /api/v1/tenant/customers/search:
     $ref: './paths/content-management/customers.yaml#/~1tenant~1customers~1search'
 
@@ -912,13 +886,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#components/schemas/ErrorResponse'
         '422':
           description: Validation error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#components/schemas/ErrorResponse'
 
   /auth/logout:
     post:
@@ -938,7 +912,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#components/schemas/ErrorResponse'
 
 # Tags for API Organization
 tags:

@@ -19,7 +19,7 @@ class CustomerEloquentModel extends Model
         'phone',
         'address',
         'status',
-        'type',
+        'customer_type',
         'company_name',
         'tags',
         'metadata',

@@ -12,11 +12,11 @@
     - bearerAuth: []
     - tenantHeader: []
     parameters:
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
-    - $ref: '#/components/parameters/SortParam'
-    - $ref: '#/components/parameters/OrderParam'
-    - $ref: '#/components/parameters/SearchParam'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - $ref: '../../components/parameters.yaml#/OrderParam'
+    - $ref: '../../components/parameters.yaml#/SearchParam'
     - name: page_type
       in: query
       required: false
@@ -76,7 +76,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
@@ -85,7 +85,7 @@
                       items:
                         type: array
                         items:
-                          $ref: '#/components/schemas/Page'
+                          $ref: '../../components/schemas.yaml#/Page'
             examples:
               success:
                 summary: Successful page listing
@@ -112,9 +112,9 @@
                     timestamp: '2025-11-12T13:00:00Z'
                     request_id: req_123456789
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
   post:
     tags:
     - Content Management
@@ -129,7 +129,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CreatePageRequest'
+            $ref: '../../components/schemas.yaml#/CreatePageRequest'
           examples:
             basic_page:
               summary: Basic page creation
@@ -156,11 +156,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Page'
+                    $ref: '../../components/schemas.yaml#/Page'
             examples:
               created:
                 summary: Successfully created page
@@ -180,13 +180,13 @@
                     timestamp: '2025-11-12T13:00:00Z'
                     request_id: req_123456789
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
       '409':
-        $ref: '#/components/responses/Conflict'
+        $ref: '../../components/responses.yaml#/Conflict'
 /pages/{id}:
   get:
     tags:
@@ -235,11 +235,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Page'
+                    $ref: '../../components/schemas.yaml#/Page'
             examples:
               success:
                 summary: Page with sections included
@@ -273,11 +273,11 @@
                   meta:
                     timestamp: '2025-11-12T13:00:00Z'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
   put:
     tags:
     - Content Management
@@ -304,7 +304,7 @@
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdatePageRequest'
+            $ref: '../../components/schemas.yaml#/UpdatePageRequest'
           examples:
             update_title:
               summary: Update page title and status
@@ -325,11 +325,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Page'
+                    $ref: '../../components/schemas.yaml#/Page'
             example:
               success: true
               data:
@@ -339,13 +339,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
-        $ref: '#/components/responses/ValidationError'
+        $ref: '../../components/responses.yaml#/ValidationError'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
   delete:
     tags:
     - Content Management
@@ -380,7 +380,7 @@
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SuccessResponse'
+              $ref: '../../components/schemas.yaml#/SuccessResponse'
             examples:
               soft_delete:
                 summary: Soft delete (archived)
@@ -399,11 +399,11 @@
                   meta:
                     timestamp: '2025-11-12T13:00:00Z'
       '404':
-        $ref: '#/components/responses/NotFound'
+        $ref: '../../components/responses.yaml#/NotFound'
       '401':
-        $ref: '#/components/responses/Unauthorized'
+        $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
-        $ref: '#/components/responses/Forbidden'
+        $ref: '../../components/responses.yaml#/Forbidden'
 /pages/{id}/sections:
   get:
     tags:
@@ -459,13 +459,13 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PageSection'
+                      $ref: '../../components/schemas.yaml#/PageSection'
             example:
               success: true
               data:
@@ -560,11 +560,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PageSection'
+                    $ref: '../../components/schemas.yaml#/PageSection'
             example:
               success: true
               data:
@@ -630,11 +630,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PageAnalytics'
+                    $ref: '../../components/schemas.yaml#/PageAnalytics'
             example:
               success: true
               data:
@@ -658,8 +658,8 @@
 
       '
     parameters:
-    - $ref: '#/components/parameters/PageParam'
-    - $ref: '#/components/parameters/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
     - name: category
       in: query
       required: false
@@ -686,7 +686,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/PaginatedResponse'
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
               - type: object
                 properties:
                   data:
@@ -695,7 +695,7 @@
                       items:
                         type: array
                         items:
-                          $ref: '#/components/schemas/PageTemplate'
+                          $ref: '../../components/schemas.yaml#/PageTemplate'
             example:
               success: true
               data:
@@ -733,11 +733,11 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/PageTemplate'
+                    $ref: '../../components/schemas.yaml#/PageTemplate'
             example:
               success: true
               data:
@@ -822,7 +822,7 @@
           application/json:
             schema:
               allOf:
-              - $ref: '#/components/schemas/SuccessResponse'
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
               - type: object
                 properties:
                   data:

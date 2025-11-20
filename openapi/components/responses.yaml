@@ -177,6 +177,93 @@ ValidationError:
             meta:
               timestamp: "2025-01-01T12:00:00Z"
 
+BadRequest:
+  description: Bad Request - Invalid request parameters or malformed request body
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: false
+          error:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "BAD_REQUEST"
+              message:
+                type: string
+                example: "Invalid request parameters or malformed request body."
+              details:
+                type: object
+                description: Additional error details
+                additionalProperties: true
+          meta:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                example: "2025-01-01T12:00:00Z"
+      examples:
+        invalidParameters:
+          summary: Invalid request parameters
+          value:
+            success: false
+            error:
+              code: "BAD_REQUEST"
+              message: "Invalid request parameters."
+            meta:
+              timestamp: "2025-01-01T12:00:00Z"
+        malformedBody:
+          summary: Malformed request body
+          value:
+            success: false
+            error:
+              code: "BAD_REQUEST"
+              message: "Malformed request body. Expected valid JSON."
+            meta:
+              timestamp: "2025-01-01T12:00:00Z"
+
+InternalServerError:
+  description: Internal Server Error
+  content:
+    application/json:
+      schema:
+        type: object
+        properties:
+          success:
+            type: boolean
+            example: false
+          error:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "INTERNAL_SERVER_ERROR"
+              message:
+                type: string
+                example: "An unexpected error occurred. Please try again later."
+          meta:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+                example: "2025-01-01T12:00:00Z"
+      examples:
+        internalError:
+          summary: Internal server error
+          value:
+            success: false
+            error:
+              code: "INTERNAL_SERVER_ERROR"
+              message: "An unexpected error occurred. Please try again later."
+            meta:
+              timestamp: "2025-01-01T12:00:00Z"
+
 ServerError:
   description: Internal Server Error
   content:

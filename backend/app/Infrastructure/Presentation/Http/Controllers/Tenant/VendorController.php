@@ -105,7 +105,7 @@ class VendorController extends Controller
                 if ($includePerformance) {
                     $evaluation = $vendorEvaluationService->evaluateVendor($vendor);
 
-                    if ($minScore !== null && $evaluation['overall_score'] < $minScore) {
+                    if ($minScore !== null && $evaluation['overall_score'] <= $minScore) {
                         continue;
                     }
 
@@ -212,7 +212,7 @@ class VendorController extends Controller
                 foreach ($vendors as $vendor) {
                     $evaluation = $vendorEvaluationService->evaluateVendor($vendor);
 
-                    if ($minScore !== null && $evaluation['overall_score'] < $minScore) {
+                    if ($minScore !== null && $evaluation['overall_score'] <= $minScore) {
                         continue;
                     }
 

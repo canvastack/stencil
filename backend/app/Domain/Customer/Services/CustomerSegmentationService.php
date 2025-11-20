@@ -68,26 +68,26 @@ class CustomerSegmentationService
                 'total_value' => $group->sum('monetary_value'),
                 'avg_frequency' => round($group->avg('frequency_count'), 2),
             ];
-        });
+        })->toArray();
 
         $totalCustomers = $segments->count();
-        foreach ($distribution as $segment => $data) {
-            $distribution[$segment]['percentage'] = $totalCustomers > 0 
+        foreach ($distribution as $segment => &$data) {
+            $data['percentage'] = $totalCustomers > 0 
                 ? round(($data['count'] / $totalCustomers) * 100, 2) 
                 : 0;
         }
+        unset($data);
 
-        return $distribution->toArray();
+        return $distribution;
     }
 
     public function getLifetimeValue(Customer $customer): array
     {
-        $orders = $customer->orders()
+        $orders = $customer->orders
             ->where('status', 'completed')
-            ->where('payment_status', 'paid')
-            ->get();
+            ->where('payment_status', 'paid');
 
-        $totalValue = $orders->sum('total_amount');
+        $totalValue = (int) $orders->sum('total_amount');
         $orderCount = $orders->count();
         $avgOrderValue = $orderCount > 0 ? $totalValue / $orderCount : 0;
 
@@ -157,6 +157,7 @@ class CustomerSegmentationService
                 return in_array($customer['segment'], ['champions', 'loyal_customers', 'potential_loyalists']);
             })
             ->sortByDesc('monetary_value')
+            ->values()
             ->take($limit);
     }
 
@@ -172,6 +173,7 @@ class CustomerSegmentationService
                 return in_array($data['risk_level'], ['high', 'critical']);
             })
             ->sortByDesc('churn_risk_score')
+            ->values()
             ->take($limit);
     }
 
@@ -186,12 +188,12 @@ class CustomerSegmentationService
 
     protected function calculateFrequency(Customer $customer): int
     {
-        return $customer->orders()->count();
+        return $customer->orders->count();
     }
 
     protected function calculateMonetary(Customer $customer): int
     {
-        return $customer->orders()
+        return (int) $customer->orders
             ->where('status', 'completed')
             ->where('payment_status', 'paid')
             ->sum('total_amount');
@@ -308,21 +310,31 @@ class CustomerSegmentationService
 
     protected function calculateAvgDaysBetweenOrders(Customer $customer): float
     {
-        $orders = $customer->orders()
-            ->orderBy('created_at', 'asc')
-            ->pluck('created_at')
-            ->toArray();
-
-        if (count($orders) < 2) {
+        if ($customer->orders->count() < 2) {
             return 90;
         }
 
+        $sortedOrders = $customer->orders
+            ->sortBy('created_at')
+            ->values();
+
         $intervals = [];
-        for ($i = 1; $i < count($orders); $i++) {
-            $intervals[] = Carbon::parse($orders[$i])->diffInDays(Carbon::parse($orders[$i - 1]));
+        for ($i = 1; $i < $sortedOrders->count(); $i++) {
+            $date1 = $sortedOrders[$i]->created_at;
+            $date2 = $sortedOrders[$i - 1]->created_at;
+            
+            if ($date1 && $date2) {
+                try {
+                    $d1 = $date1 instanceof Carbon ? $date1 : Carbon::parse($date1);
+                    $d2 = $date2 instanceof Carbon ? $date2 : Carbon::parse($date2);
+                    $intervals[] = $d1->diffInDays($d2);
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
         }
 
-        return array_sum($intervals) / count($intervals);
+        return count($intervals) > 0 ? array_sum($intervals) / count($intervals) : 90;
     }
 
     protected function calculateChurnRiskScore(int $recencyDays, int $frequency, int $daysOverdue): float

@@ -55,23 +55,28 @@ class VendorEvaluationService
 
     public function evaluateAllVendors(): Collection
     {
-        $vendors = Vendor::with('orders')->active()->get();
+        $vendors = Vendor::with('orders')->get();
         
-        return $vendors->map(function ($vendor) {
-            return $this->evaluateVendor($vendor);
-        })->sortByDesc('overall_score');
+        $evaluated = $vendors->map(function ($vendor) {
+            $evaluation = $this->evaluateVendor($vendor);
+            return (object) $evaluation;
+        });
+
+        return $evaluated->sortBy(function ($item) {
+            return -$item->overall_score;
+        })->values();
     }
 
     public function getTopPerformingVendors(int $limit = 10): Collection
     {
-        return $this->evaluateAllVendors()->take($limit);
+        return $this->evaluateAllVendors()->take($limit)->values();
     }
 
     public function getUnderperformingVendors(float $threshold = 60.0): Collection
     {
         return $this->evaluateAllVendors()
             ->filter(function ($evaluation) use ($threshold) {
-                return $evaluation['overall_score'] < $threshold;
+                return $evaluation->overall_score < $threshold;
             });
     }
 
@@ -128,7 +133,8 @@ class VendorEvaluationService
         $vendors = Vendor::whereIn('id', $vendorIds)->get();
         
         return $vendors->map(function ($vendor) {
-            return $this->evaluateVendor($vendor);
+            $evaluation = $this->evaluateVendor($vendor);
+            return (object) $evaluation;
         })->sortByDesc('overall_score')->values();
     }
 

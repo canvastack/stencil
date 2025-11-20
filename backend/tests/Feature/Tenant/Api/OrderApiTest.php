@@ -475,12 +475,16 @@ class OrderApiTest extends TestCase
 
     private function tenantUri(string $uri): string
     {
-        if (str_starts_with($uri, '/api/v1/')) {
+        if (str_starts_with($uri, '/api/v1/tenant/')) {
             return $uri;
         }
 
+        if (str_starts_with($uri, '/api/v1/')) {
+            return '/api/v1/tenant/' . ltrim(substr($uri, 8), '/');
+        }
+
         if (str_starts_with($uri, '/api/')) {
-            return '/api/v1/' . ltrim(substr($uri, 5), '/');
+            return '/api/v1/tenant/' . ltrim(substr($uri, 5), '/');
         }
 
         return $uri;
