@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 
 export const AdminHeader = () => {
-  const { sidebarCollapsed, toggleSidebar } = useAdminStore();
+  const toggleSidebar = useAdminStore((state) => state.toggleSidebar);
   const [isDark, setIsDark] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
 

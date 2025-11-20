@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -32,155 +41,166 @@ import {
   User,
   MapPin,
   ArrowUpDown,
+  Trash2,
+  Edit2,
+  Loader2,
+  Filter,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { OrderItem } from '@/types/order';
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  items: OrderItem[];
-  totalAmount: number;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
-  paymentStatus: 'unpaid' | 'paid' | 'refunded';
-  shippingAddress: string;
-  notes: string;
-  orderDate: string;
-  estimatedDelivery: string;
-}
-
-const mockOrders: Order[] = [
-  {
-    id: '1',
-    orderNumber: 'ORD-2025-001',
-    customerName: 'Budi Santoso',
-    customerEmail: 'budi@email.com',
-    customerPhone: '+62 812 3456 7890',
-    items: [
-      {
-        productId: 'prod-001',
-        productName: 'Crystal Award Trophy',
-        quantity: 5,
-        price: 350000,
-        customization: {
-          customText: 'Best Employee 2025',
-        },
-      },
-    ],
-    totalAmount: 1750000,
-    status: 'processing',
-    paymentStatus: 'paid',
-    shippingAddress: 'Jl. Sudirman No. 123, Jakarta Pusat, DKI Jakarta',
-    notes: 'Mohon dikemas dengan extra hati-hati',
-    orderDate: '2025-01-15',
-    estimatedDelivery: '2025-01-25',
-  },
-  {
-    id: '2',
-    orderNumber: 'ORD-2025-002',
-    customerName: 'Siti Nurhaliza',
-    customerEmail: 'siti@email.com',
-    customerPhone: '+62 813 9876 5432',
-    items: [
-      {
-        productId: 'prod-002',
-        productName: 'Stainless Steel Plaque',
-        quantity: 10,
-        price: 250000,
-        customization: {
-          size: '30cm x 20cm',
-          material: 'Stainless Steel 304',
-        },
-      },
-    ],
-    totalAmount: 2500000,
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    shippingAddress: 'Jl. Thamrin No. 45, Jakarta Selatan, DKI Jakarta',
-    notes: '',
-    orderDate: '2025-01-16',
-    estimatedDelivery: '2025-01-23',
-  },
-  {
-    id: '3',
-    orderNumber: 'ORD-2025-003',
-    customerName: 'Ahmad Dhani',
-    customerEmail: 'ahmad@email.com',
-    customerPhone: '+62 821 5555 4444',
-    items: [
-      {
-        productId: 'prod-005',
-        productName: 'Acrylic LED Sign Custom',
-        quantity: 2,
-        price: 450000,
-        customization: {
-          size: '40cm x 30cm',
-          color: 'RGB',
-        },
-      },
-    ],
-    totalAmount: 900000,
-    status: 'completed',
-    paymentStatus: 'paid',
-    shippingAddress: 'Jl. Gatot Subroto No. 789, Bandung, Jawa Barat',
-    notes: 'Tolong kirim sebelum tanggal 20',
-    orderDate: '2025-01-10',
-    estimatedDelivery: '2025-01-20',
-  },
-];
-
-// columns are declared inside the component so local handlers (e.g. handleViewOrder)
-// are available and we can safely reference row.original for non-accessor fields.
+import { useOrders } from '@/hooks/useOrders';
+import { OrderStatus, PaymentStatus, type Order, type OrderItem } from '@/types/order';
 
 export default function OrderManagement() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const {
+    orders,
+    pagination,
+    isLoading,
+    isSaving,
+    error,
+    fetchOrders,
+    fetchOrderById,
+    deleteOrder,
+    transitionOrderState,
+  } = useOrders();
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
-  const handleViewOrder = (order: Order) => {
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    paymentStatus: '',
+    dateFrom: '',
+    dateTo: '',
+  });
+
+  useEffect(() => {
+    fetchOrders({
+      page: pagination.page,
+      per_page: pagination.per_page,
+      search: filters.search || undefined,
+      status: filters.status || undefined,
+    });
+  }, []);
+
+  const handleSearch = (value: string) => {
+    setFilters((prev) => ({ ...prev, search: value }));
+  };
+
+  const handleApplyFilters = () => {
+    fetchOrders({
+      page: 1,
+      per_page: pagination.per_page,
+      search: filters.search || undefined,
+      status: filters.status || undefined,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      paymentStatus: '',
+      dateFrom: '',
+      dateTo: '',
+    });
+    fetchOrders({
+      page: 1,
+      per_page: pagination.per_page,
+    });
+  };
+
+  const handleViewOrder = async (order: Order) => {
     setSelectedOrder(order);
     setIsDetailDialogOpen(true);
   };
 
-  const handleUpdateStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-    toast.success('Order status updated');
+  const handleDeleteOrder = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setIsDeleteDialogOpen(true);
   };
 
-  const handleUpdatePaymentStatus = (
-    orderId: string,
-    newStatus: Order['paymentStatus']
-  ) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, paymentStatus: newStatus } : order
-      )
-    );
-    toast.success('Payment status updated');
+  const confirmDelete = async () => {
+    if (orderToDelete) {
+      await deleteOrder(orderToDelete);
+      setIsDeleteDialogOpen(false);
+      setOrderToDelete(null);
+      await fetchOrders({
+        page: pagination.page,
+        per_page: pagination.per_page,
+      });
+    }
   };
 
-  const totalRevenue = orders
-    .filter((o) => o.paymentStatus === 'paid')
-    .reduce((sum, o) => sum + o.totalAmount, 0);
-  const pendingOrders = orders.filter((o) => o.status === 'pending').length;
-  const processingOrders = orders.filter((o) => o.status === 'processing').length;
-  const completedOrders = orders.filter((o) => o.status === 'completed').length;
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    if (!selectedOrder) return;
+    
+    try {
+      await transitionOrderState(orderId, {
+        action: newStatus,
+        notes: `Status changed to ${newStatus}`,
+      });
+      
+      setSelectedOrder((prev) =>
+        prev ? { ...prev, status: newStatus as OrderStatus } : null
+      );
+    } catch (err) {
+      toast.error('Failed to update order status');
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    fetchOrders({
+      page: newPage,
+      per_page: pagination.per_page,
+      search: filters.search || undefined,
+      status: filters.status || undefined,
+    });
+  };
+
+  const getStatusVariant = (status: string) => {
+    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      [OrderStatus.New]: 'default',
+      [OrderStatus.SourcingVendor]: 'secondary',
+      [OrderStatus.VendorNegotiation]: 'secondary',
+      [OrderStatus.CustomerQuotation]: 'default',
+      [OrderStatus.WaitingPayment]: 'default',
+      [OrderStatus.PaymentReceived]: 'default',
+      [OrderStatus.InProduction]: 'default',
+      [OrderStatus.QualityCheck]: 'default',
+      [OrderStatus.ReadyToShip]: 'secondary',
+      [OrderStatus.Shipped]: 'secondary',
+      [OrderStatus.Delivered]: 'default',
+      [OrderStatus.Completed]: 'outline',
+      [OrderStatus.Cancelled]: 'destructive',
+      [OrderStatus.Refunded]: 'destructive',
+    };
+    return variants[status] || 'default';
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      [PaymentStatus.Unpaid]: 'bg-red-500/10 text-red-500',
+      [PaymentStatus.PartiallyPaid]: 'bg-yellow-500/10 text-yellow-500',
+      [PaymentStatus.Paid]: 'bg-green-500/10 text-green-500',
+      [PaymentStatus.Refunded]: 'bg-orange-500/10 text-orange-500',
+      [PaymentStatus.Cancelled]: 'bg-red-500/10 text-red-500',
+    };
+    return colors[status] || 'bg-gray-500/10 text-gray-500';
+  };
 
   const columns: ColumnDef<Order>[] = [
     {
-      accessorKey: "orderNumber",
+      accessorKey: 'orderNumber',
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Order Number
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -188,149 +208,172 @@ export default function OrderManagement() {
       ),
     },
     {
-      accessorKey: "customerName",
+      accessorKey: 'customerName',
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Customer
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const customerName = row.getValue("customerName") as string;
-        const customerEmail = (row.original as Order).customerEmail;
-        const customerPhone = (row.original as Order).customerPhone;
+        const order = row.original;
         return (
           <div>
-            <p className="font-medium">{customerName}</p>
-            <p className="text-xs text-muted-foreground">{customerEmail}</p>
-            <p className="text-xs text-muted-foreground">{customerPhone}</p>
+            <p className="font-medium">{order.customerName}</p>
+            <p className="text-xs text-muted-foreground">{order.customerEmail}</p>
           </div>
         );
       },
     },
     {
-      accessorKey: "items",
-      header: "Items",
+      accessorKey: 'items',
+      header: 'Items',
       cell: ({ row }) => {
-        const items = row.getValue("items") as OrderItem[];
+        const items = row.getValue('items') as OrderItem[];
         return `${items.length} item(s)`;
       },
     },
     {
-      accessorKey: "totalAmount",
+      accessorKey: 'totalAmount',
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Total
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const totalAmount = row.getValue("totalAmount") as number;
-        return (
-          <span className="font-semibold">Rp {totalAmount.toLocaleString('id-ID')}</span>
-        );
+        const totalAmount = row.getValue('totalAmount') as number;
+        return <span className="font-semibold">Rp {totalAmount.toLocaleString('id-ID')}</span>;
       },
     },
     {
-      accessorKey: "status",
+      accessorKey: 'status',
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Status
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const status = row.getValue("status") as Order['status'];
-        const variants = {
-          pending: 'secondary',
-          processing: 'default',
-          completed: 'default',
-          cancelled: 'destructive',
-        };
+        const status = row.getValue('status') as string;
         return (
-          <Badge variant={variants[status] as any}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+          <Badge variant={getStatusVariant(status)}>
+            {status
+              .split('_')
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')}
           </Badge>
         );
       },
     },
     {
-      accessorKey: "paymentStatus",
+      accessorKey: 'paymentStatus',
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Payment
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const paymentStatus = row.getValue("paymentStatus") as Order['paymentStatus'];
-        const colors = {
-          unpaid: 'bg-red-500/10 text-red-500',
-          paid: 'bg-green-500/10 text-green-500',
-          refunded: 'bg-orange-500/10 text-orange-500',
-        };
+        const paymentStatus = row.getValue('paymentStatus') as string;
         return (
-          <Badge className={colors[paymentStatus]}>
-            {paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1)}
+          <Badge className={getPaymentStatusColor(paymentStatus)}>
+            {paymentStatus
+              .split('_')
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')}
           </Badge>
         );
       },
     },
     {
-      accessorKey: "orderDate",
+      accessorKey: 'orderDate',
       header: ({ column }) => (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Order Date
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
       cell: ({ row }) => {
-        const orderDate = row.getValue("orderDate") as string;
+        const orderDate = row.getValue('orderDate') as string;
         return new Date(orderDate).toLocaleDateString('id-ID');
       },
     },
     {
-      id: "actions",
-      header: "Actions",
+      id: 'actions',
+      header: 'Actions',
       cell: ({ row }) => {
         const order = row.original;
         return (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleViewOrder(order)}
-          >
-            <Eye className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleViewOrder(order)}
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleDeleteOrder(order.id)}
+              disabled={isSaving}
+            >
+              <Trash2 className="w-4 h-4 text-red-500" />
+            </Button>
+          </div>
         );
       },
     },
   ];
 
+  const totalRevenue = orders
+    .filter((o) => o.paymentStatus === PaymentStatus.Paid)
+    .reduce((sum, o) => sum + o.totalAmount, 0);
+
+  const statsByStatus = {
+    [OrderStatus.New]: orders.filter((o) => o.status === OrderStatus.New).length,
+    [OrderStatus.WaitingPayment]: orders.filter((o) => o.status === OrderStatus.WaitingPayment).length,
+    [OrderStatus.InProduction]: orders.filter((o) => o.status === OrderStatus.InProduction).length,
+    [OrderStatus.Completed]: orders.filter((o) => o.status === OrderStatus.Completed).length,
+  };
+
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-red-500">Error Loading Orders</h1>
+          <p className="text-muted-foreground mt-2">{error}</p>
+          <Button className="mt-4" onClick={() => fetchOrders()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Order Management</h1>
         <p className="text-muted-foreground">Manage customer orders and track status</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
@@ -339,7 +382,7 @@ export default function OrderManagement() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{orders.length}</p>
+              <p className="text-2xl font-bold">{pagination.total}</p>
             </div>
           </div>
         </Card>
@@ -349,8 +392,10 @@ export default function OrderManagement() {
               <Clock className="w-6 h-6 text-yellow-500" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold">{pendingOrders}</p>
+              <p className="text-sm text-muted-foreground">New / Waiting</p>
+              <p className="text-2xl font-bold">
+                {statsByStatus[OrderStatus.New] + statsByStatus[OrderStatus.WaitingPayment]}
+              </p>
             </div>
           </div>
         </Card>
@@ -360,8 +405,8 @@ export default function OrderManagement() {
               <Package className="w-6 h-6 text-blue-500" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Processing</p>
-              <p className="text-2xl font-bold">{processingOrders}</p>
+              <p className="text-sm text-muted-foreground">In Production</p>
+              <p className="text-2xl font-bold">{statsByStatus[OrderStatus.InProduction]}</p>
             </div>
           </div>
         </Card>
@@ -371,26 +416,164 @@ export default function OrderManagement() {
               <DollarSign className="w-6 h-6 text-green-500" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Revenue</p>
-              <p className="text-2xl font-bold">
-                Rp {totalRevenue.toLocaleString('id-ID')}
-              </p>
+              <p className="text-sm text-muted-foreground">Revenue (Paid)</p>
+              <p className="text-2xl font-bold">Rp {totalRevenue.toLocaleString('id-ID')}</p>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Orders Table */}
-      <Card className="p-6">
-        <DataTable
-          columns={columns}
-          data={orders}
-          searchKey="orderNumber"
-          searchPlaceholder="Search by order number, customer name, or email..."
-        />
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              {showFilters ? 'Hide Filters' : 'Show Filters'}
+            </Button>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.last_page}
+          </div>
+        </div>
+
+        {showFilters && (
+          <div className="space-y-4 border-t pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label className="mb-2 block">Search</Label>
+                <Input
+                  placeholder="Order number, customer name..."
+                  value={filters.search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="mb-2 block">Order Status</Label>
+                <Select value={filters.status} onValueChange={(value) => setFilters((prev) => ({ ...prev, status: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value={OrderStatus.New}>New</SelectItem>
+                    <SelectItem value={OrderStatus.WaitingPayment}>Waiting Payment</SelectItem>
+                    <SelectItem value={OrderStatus.InProduction}>In Production</SelectItem>
+                    <SelectItem value={OrderStatus.Shipped}>Shipped</SelectItem>
+                    <SelectItem value={OrderStatus.Completed}>Completed</SelectItem>
+                    <SelectItem value={OrderStatus.Cancelled}>Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-2 block">Payment Status</Label>
+                <Select value={filters.paymentStatus} onValueChange={(value) => setFilters((prev) => ({ ...prev, paymentStatus: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All payments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All Payment Status</SelectItem>
+                    <SelectItem value={PaymentStatus.Unpaid}>Unpaid</SelectItem>
+                    <SelectItem value={PaymentStatus.PartiallyPaid}>Partially Paid</SelectItem>
+                    <SelectItem value={PaymentStatus.Paid}>Paid</SelectItem>
+                    <SelectItem value={PaymentStatus.Refunded}>Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end gap-2">
+                <Button
+                  onClick={handleApplyFilters}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Filtering...
+                    </>
+                  ) : (
+                    'Apply'
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleClearFilters}
+                  disabled={isLoading}
+                  size="icon"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
-      {/* Order Detail Dialog */}
+      <Card className="p-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="ml-2">Loading orders...</span>
+          </div>
+        ) : (
+          <>
+            <DataTable
+              columns={columns}
+              data={orders}
+              searchKey="orderNumber"
+              searchPlaceholder="Search by order number..."
+            />
+            
+            {orders.length > 0 && (
+              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(pagination.page - 1) * pagination.per_page + 1} to{' '}
+                  {Math.min(pagination.page * pagination.per_page, pagination.total)} of{' '}
+                  {pagination.total} orders
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1 || isLoading}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, pagination.last_page) }, (_, i) => {
+                      const pageNum = Math.max(1, pagination.page - 2) + i;
+                      if (pageNum > pagination.last_page) return null;
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={pageNum === pagination.page ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.last_page || isLoading}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -413,29 +596,17 @@ export default function OrderManagement() {
                   </h3>
                   <div className="space-y-3">
                     {selectedOrder.items.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-start border-b pb-3"
-                      >
+                      <div key={index} className="flex justify-between items-start border-b pb-3">
                         <div className="flex-1">
                           <p className="font-medium">{item.productName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Quantity: {item.quantity}
-                          </p>
+                          <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                           {item.customization && (
                             <div className="text-xs text-muted-foreground mt-1">
-                              {item.customization.size && (
-                                <p>Size: {item.customization.size}</p>
-                              )}
-                              {item.customization.material && (
-                                <p>Material: {item.customization.material}</p>
-                              )}
-                              {item.customization.color && (
-                                <p>Color: {item.customization.color}</p>
-                              )}
-                              {item.customization.customText && (
-                                <p>Custom Text: "{item.customization.customText}"</p>
-                              )}
+                              {Object.entries(item.customization).map(([key, value]) => (
+                                <p key={key}>
+                                  {key.charAt(0).toUpperCase() + key.slice(1)}: {String(value)}
+                                </p>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -466,13 +637,24 @@ export default function OrderManagement() {
                   <p className="text-muted-foreground">{selectedOrder.shippingAddress}</p>
                 </Card>
 
-                {selectedOrder.notes && (
+                {(selectedOrder.customerNotes || selectedOrder.internalNotes) && (
                   <Card className="p-4">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                       <FileText className="w-5 h-5" />
                       Notes
                     </h3>
-                    <p className="text-muted-foreground">{selectedOrder.notes}</p>
+                    {selectedOrder.customerNotes && (
+                      <div className="mb-3">
+                        <p className="text-xs font-medium text-muted-foreground">Customer Notes:</p>
+                        <p className="text-muted-foreground">{selectedOrder.customerNotes}</p>
+                      </div>
+                    )}
+                    {selectedOrder.internalNotes && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">Internal Notes:</p>
+                        <p className="text-muted-foreground">{selectedOrder.internalNotes}</p>
+                      </div>
+                    )}
                   </Card>
                 )}
               </TabsContent>
@@ -490,15 +672,11 @@ export default function OrderManagement() {
                     </div>
                     <div>
                       <Label>Email</Label>
-                      <p className="text-muted-foreground">
-                        {selectedOrder.customerEmail}
-                      </p>
+                      <p className="text-muted-foreground">{selectedOrder.customerEmail}</p>
                     </div>
                     <div>
                       <Label>Phone</Label>
-                      <p className="text-muted-foreground">
-                        {selectedOrder.customerPhone}
-                      </p>
+                      <p className="text-muted-foreground">{selectedOrder.customerPhone}</p>
                     </div>
                     <div>
                       <Label>Order Date</Label>
@@ -511,20 +689,19 @@ export default function OrderManagement() {
                         })}
                       </p>
                     </div>
-                    <div>
-                      <Label>Estimated Delivery</Label>
-                      <p className="text-muted-foreground">
-                        {new Date(selectedOrder.estimatedDelivery).toLocaleDateString(
-                          'id-ID',
-                          {
+                    {selectedOrder.estimatedDelivery && (
+                      <div>
+                        <Label>Estimated Delivery</Label>
+                        <p className="text-muted-foreground">
+                          {new Date(selectedOrder.estimatedDelivery).toLocaleDateString('id-ID', {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
-                          }
-                        )}
-                      </p>
-                    </div>
+                          })}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </Card>
               </TabsContent>
@@ -535,39 +712,45 @@ export default function OrderManagement() {
                     <Label>Order Status</Label>
                     <Select
                       value={selectedOrder.status}
-                      onValueChange={(v: any) =>
-                        handleUpdateStatus(selectedOrder.id, v)
-                      }
+                      onValueChange={(v) => handleUpdateOrderStatus(selectedOrder.id, v)}
+                      disabled={isSaving}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="processing">Processing</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value={OrderStatus.New}>New</SelectItem>
+                        <SelectItem value={OrderStatus.SourcingVendor}>Sourcing Vendor</SelectItem>
+                        <SelectItem value={OrderStatus.VendorNegotiation}>Vendor Negotiation</SelectItem>
+                        <SelectItem value={OrderStatus.CustomerQuotation}>Customer Quotation</SelectItem>
+                        <SelectItem value={OrderStatus.WaitingPayment}>Waiting Payment</SelectItem>
+                        <SelectItem value={OrderStatus.PaymentReceived}>Payment Received</SelectItem>
+                        <SelectItem value={OrderStatus.InProduction}>In Production</SelectItem>
+                        <SelectItem value={OrderStatus.QualityCheck}>Quality Check</SelectItem>
+                        <SelectItem value={OrderStatus.ReadyToShip}>Ready To Ship</SelectItem>
+                        <SelectItem value={OrderStatus.Shipped}>Shipped</SelectItem>
+                        <SelectItem value={OrderStatus.Delivered}>Delivered</SelectItem>
+                        <SelectItem value={OrderStatus.Completed}>Completed</SelectItem>
+                        <SelectItem value={OrderStatus.Cancelled}>Cancelled</SelectItem>
+                        <SelectItem value={OrderStatus.Refunded}>Refunded</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
                     <Label>Payment Status</Label>
-                    <Select
-                      value={selectedOrder.paymentStatus}
-                      onValueChange={(v: any) =>
-                        handleUpdatePaymentStatus(selectedOrder.id, v)
-                      }
-                    >
+                    <Select value={selectedOrder.paymentStatus} disabled>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="unpaid">Unpaid</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="refunded">Refunded</SelectItem>
+                        <SelectItem value={PaymentStatus.Unpaid}>Unpaid</SelectItem>
+                        <SelectItem value={PaymentStatus.PartiallyPaid}>Partially Paid</SelectItem>
+                        <SelectItem value={PaymentStatus.Paid}>Paid</SelectItem>
+                        <SelectItem value={PaymentStatus.Refunded}>Refunded</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">Payment status is managed separately</p>
                   </div>
                 </Card>
               </TabsContent>
@@ -575,10 +758,38 @@ export default function OrderManagement() {
           )}
 
           <DialogFooter>
-            <Button onClick={() => setIsDetailDialogOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Delete Order</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this order? This action cannot be undone.
+          </AlertDialogDescription>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isSaving}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -105,7 +105,9 @@ const defaultTheme: Theme = {
 
 // Register theme at module load so it's available synchronously
 try {
-  themeManager.registerTheme('default', defaultTheme);
+  if (!themeManager.isThemeRegistered('default')) {
+    themeManager.registerThemeSync('default', defaultTheme);
+  }
 } catch (e) {
   // swallow registration errors during build time or tests
   // registration will be attempted again if needed

@@ -3,6 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Presentation\Http\Controllers\Platform\AuthController as PlatformAuthController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\AuthController as TenantAuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\RegistrationController;
+use App\Http\Controllers\RefundController;
+use App\Http\Controllers\PaymentRefundController;
+use App\Http\Controllers\ShippingController;
+use App\Http\Controllers\MediaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +27,20 @@ Route::prefix('platform')->group(function () {
     // Public authentication routes
     Route::post('/login', [PlatformAuthController::class, 'login'])->name('platform.auth.login');
     
+    // Password reset routes (public)
+    Route::post('/forgot-password', [PasswordResetController::class, 'forgotPasswordPlatform'])->name('platform.password.email');
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPasswordPlatform'])->name('platform.password.reset');
+    Route::post('/validate-token', [PasswordResetController::class, 'validateTokenPlatform'])->name('platform.password.validate');
+    
+    // Email verification routes (public)
+    Route::post('/send-verification', [EmailVerificationController::class, 'sendPlatformVerification'])->name('platform.email.verify.send');
+    Route::post('/verify-email', [EmailVerificationController::class, 'verify'])->name('platform.email.verify');
+    Route::get('/verification-status', [EmailVerificationController::class, 'checkVerificationStatus'])->name('platform.email.verify.status');
+    
+    // Registration routes (public)
+    Route::post('/register', [RegistrationController::class, 'registerPlatformAccount'])->name('platform.register');
+    Route::post('/check-email', [RegistrationController::class, 'checkEmailAvailability'])->name('platform.check.email');
+    
     // Protected authentication routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [PlatformAuthController::class, 'logout'])->name('platform.auth.logout');
@@ -34,6 +55,21 @@ Route::prefix('tenant')->group(function () {
     // Public authentication routes
     Route::post('/login', [TenantAuthController::class, 'login'])->name('tenant.auth.login');
     Route::post('/context-login', [TenantAuthController::class, 'contextLogin'])->name('tenant.auth.context_login');
+    
+    // Password reset routes (public) - tenant specific
+    Route::post('/{tenantId}/forgot-password', [PasswordResetController::class, 'forgotPasswordTenant'])->name('tenant.password.email');
+    Route::post('/{tenantId}/reset-password', [PasswordResetController::class, 'resetPasswordTenant'])->name('tenant.password.reset');
+    Route::post('/{tenantId}/validate-token', [PasswordResetController::class, 'validateTokenTenant'])->name('tenant.password.validate');
+    
+    // Email verification routes (public) - tenant specific
+    Route::post('/{tenantId}/send-verification', [EmailVerificationController::class, 'sendTenantVerification'])->name('tenant.email.verify.send');
+    Route::post('/{tenantId}/verify-email', [EmailVerificationController::class, 'verify'])->name('tenant.email.verify');
+    Route::get('/{tenantId}/verification-status', [EmailVerificationController::class, 'checkVerificationStatus'])->name('tenant.email.verify.status');
+    
+    // Registration routes (public) - tenant specific  
+    Route::post('/{tenantId}/register', [RegistrationController::class, 'registerTenantUser'])->name('tenant.register');
+    Route::post('/{tenantId}/check-email', [RegistrationController::class, 'checkEmailAvailability'])->name('tenant.check.email');
+    Route::get('/{tenantId}/registration-stats', [RegistrationController::class, 'getRegistrationStats'])->name('tenant.registration.stats');
     
     // Protected authentication routes  
     Route::middleware('auth:sanctum')->group(function () {
@@ -96,4 +132,82 @@ Route::prefix('auth')->group(function () {
             'message' => 'Logout successful'
         ]);
     });
+    
+    // Public registration routes for tenant creation
+    Route::post('/register-tenant', [RegistrationController::class, 'registerTenantWithAdmin'])->name('auth.register.tenant');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Refund Management Routes
+|--------------------------------------------------------------------------
+|
+| API routes for payment refund management:
+| - Refund CRUD operations
+| - Approval workflow management
+| - Payment gateway integration
+|
+*/
+
+Route::prefix('api/v1/refunds')->middleware(['auth:sanctum'])->group(function () {
+    // Main refund CRUD operations
+    Route::get('/', [RefundController::class, 'index'])->name('refunds.index');
+    Route::post('/', [RefundController::class, 'store'])->name('refunds.store');
+    Route::get('/{refund}', [RefundController::class, 'show'])->name('refunds.show');
+    Route::patch('/{refund}', [RefundController::class, 'update'])->name('refunds.update');
+    Route::delete('/{refund}', [RefundController::class, 'destroy'])->name('refunds.destroy');
+    
+    // Refund statistics and reporting
+    Route::get('/statistics/summary', [RefundController::class, 'statistics'])->name('refunds.statistics');
+    Route::get('/export/data', [RefundController::class, 'export'])->name('refunds.export');
+    
+    // Order-related refund operations
+    Route::get('/orders/{orderId}/summary', [RefundController::class, 'orderSummary'])->name('refunds.order.summary');
+    
+    // Workflow management
+    Route::get('/{refund}/workflow-history', [RefundController::class, 'workflowHistory'])->name('refunds.workflow.history');
+    Route::get('/workflows/pending', [RefundController::class, 'pendingWorkflows'])->name('refunds.workflows.pending');
+    
+    // Refund processing operations
+    Route::post('/{refund}/approve', [PaymentRefundController::class, 'approve'])->name('refunds.approve');
+    Route::post('/{refund}/reject', [PaymentRefundController::class, 'reject'])->name('refunds.reject');
+    Route::post('/{refund}/process', [PaymentRefundController::class, 'process'])->name('refunds.process');
+    Route::post('/{refund}/retry', [PaymentRefundController::class, 'retry'])->name('refunds.retry');
+    Route::get('/{refund}/check-status', [PaymentRefundController::class, 'checkStatus'])->name('refunds.check.status');
+    
+    // Workflow step operations
+    Route::post('/workflows/{workflow}/approve', [PaymentRefundController::class, 'approveWorkflowStep'])->name('refunds.workflows.approve');
+    Route::post('/workflows/{workflow}/escalate', [PaymentRefundController::class, 'escalateWorkflow'])->name('refunds.workflows.escalate');
+    
+    // Bulk operations
+    Route::post('/bulk/approve', [PaymentRefundController::class, 'bulkApprove'])->name('refunds.bulk.approve');
+    
+    // System information
+    Route::get('/processing-options', [PaymentRefundController::class, 'processingOptions'])->name('refunds.processing.options');
+});
+
+// Shipping & Logistics Routes
+Route::middleware('auth:sanctum')->prefix('shipping')->group(function () {
+    Route::get('/methods', [ShippingController::class, 'shippingMethods'])->name('shipping.methods');
+    Route::post('/calculate', [ShippingController::class, 'calculateShipping'])->name('shipping.calculate');
+    Route::post('/create', [ShippingController::class, 'createShipment'])->name('shipping.create');
+    
+    Route::get('/', [ShippingController::class, 'listShipments'])->name('shipments.index');
+    Route::get('/{shipment}', [ShippingController::class, 'showShipment'])->name('shipments.show');
+    Route::post('/{shipment}/process', [ShippingController::class, 'processShipment'])->name('shipments.process');
+    Route::post('/{shipment}/tracking', [ShippingController::class, 'updateTracking'])->name('shipments.tracking');
+    Route::post('/{shipment}/cancel', [ShippingController::class, 'cancelShipment'])->name('shipments.cancel');
+});
+
+// Media & File Management Routes
+Route::middleware('auth:sanctum')->prefix('media')->group(function () {
+    Route::post('/upload', [MediaController::class, 'uploadFile'])->name('media.upload');
+    Route::get('/files', [MediaController::class, 'listFiles'])->name('media.files.list');
+    Route::get('/files/{mediaFile}', [MediaController::class, 'getFile'])->name('media.files.show');
+    Route::patch('/files/{mediaFile}', [MediaController::class, 'updateFile'])->name('media.files.update');
+    Route::delete('/files/{mediaFile}', [MediaController::class, 'deleteFile'])->name('media.files.delete');
+    Route::post('/files/{mediaFile}/move', [MediaController::class, 'moveFile'])->name('media.files.move');
+    
+    Route::post('/folders', [MediaController::class, 'createFolder'])->name('media.folders.create');
+    Route::get('/folders', [MediaController::class, 'listFolders'])->name('media.folders.list');
 });

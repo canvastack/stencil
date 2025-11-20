@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutDashboard, FileText, Package, Users, TrendingUp, Eye, Loader2 } from 'lucide-react';
-import { dashboardService } from '@/services/mock';
+import { dashboardService } from '@/services/api/dashboard';
 import { DashboardStat, Activity, ContentOverviewItem } from '@/types/dashboard';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 
@@ -13,7 +13,11 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Eye,
 };
 
-export default function Dashboard() {
+const Dashboard = memo(function Dashboard() {
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  console.log(`Dashboard component rendered #${renderCount.current}`);
+  
   const [stats, setStats] = useState<DashboardStat[]>([]);
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
   const [contentOverview, setContentOverview] = useState<ContentOverviewItem[]>([]);
@@ -21,22 +25,81 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    let isInitialized = false;
+    
     const fetchDashboardData = async () => {
+      if (!isMounted || isInitialized) return;
+      
       try {
+        isInitialized = true;
         setLoading(true);
+        setError(null);
+        
         const data = await dashboardService.getDashboardStats();
-        setStats(data.stats);
-        setRecentActivities(data.recentActivities);
-        setContentOverview(data.contentOverview);
+        
+        if (isMounted) {
+          setStats(data.stats);
+          setRecentActivities(data.recentActivities);
+          setContentOverview(data.contentOverview);
+          setError(null);
+        }
       } catch (err) {
-        setError('Failed to load dashboard data');
-        console.error('Dashboard data fetch error:', err);
+        if (isMounted) {
+          const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard data';
+          setError(errorMessage);
+          console.error('Dashboard data fetch error:', err);
+          
+          // Set fallback data when API fails
+          setStats([
+            {
+              title: 'Total Customers',
+              value: '-',
+              icon: 'Users',
+              trend: 'API unavailable',
+              color: 'text-gray-400',
+              bgColor: 'bg-gray-100',
+            },
+            {
+              title: 'Total Revenue',
+              value: '-',
+              icon: 'TrendingUp',
+              trend: 'API unavailable',
+              color: 'text-gray-400',
+              bgColor: 'bg-gray-100',
+            },
+            {
+              title: 'Total Orders',
+              value: '-',
+              icon: 'Package',
+              trend: 'API unavailable',
+              color: 'text-gray-400',
+              bgColor: 'bg-gray-100',
+            },
+            {
+              title: 'Active Vendors',
+              value: '-',
+              icon: 'Users',
+              trend: 'API unavailable',
+              color: 'text-gray-400',
+              bgColor: 'bg-gray-100',
+            },
+          ]);
+          setRecentActivities([]);
+          setContentOverview([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchDashboardData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {
@@ -155,4 +218,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
+});
+
+export default Dashboard;

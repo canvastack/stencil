@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
+use App\Infrastructure\Persistence\Eloquent\Contracts\TenantAwareModel;
 
-class Vendor extends Model
+class Vendor extends Model implements TenantAwareModel
 {
     use HasFactory, SoftDeletes, BelongsToTenant;
 

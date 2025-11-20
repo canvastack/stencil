@@ -75,7 +75,5 @@ export const DataTable = withLazyLoading(
   React.lazy(() => import('./data-table').then(mod => ({ default: mod.DataTable })))
 );
 
-// Skeleton
-export const Skeleton = withLazyLoading(
-  React.lazy(() => import('./skeleton').then(mod => ({ default: mod.Skeleton })))
-);
+// Skeleton - exported as static to avoid duplicate import (needed synchronously in fallbacks)
+export { Skeleton } from './skeleton';

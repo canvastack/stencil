@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
+use App\Infrastructure\Persistence\Eloquent\Contracts\TenantAwareModel;
 
-class Customer extends Model
+class Customer extends Model implements TenantAwareModel
 {
     use HasFactory, SoftDeletes, Notifiable, BelongsToTenant;
 

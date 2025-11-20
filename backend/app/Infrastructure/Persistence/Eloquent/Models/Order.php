@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
+use App\Infrastructure\Persistence\Eloquent\Contracts\TenantAwareModel;
 
-class Order extends Model
+class Order extends Model implements TenantAwareModel
 {
     use HasFactory, SoftDeletes, BelongsToTenant;
 
@@ -120,6 +121,11 @@ class Order extends Model
     public function vendorDisbursements(): HasMany
     {
         return $this->paymentTransactions()->where('direction', 'outgoing');
+    }
+
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class);
     }
 
     public function scopeByStatus($query, $status)

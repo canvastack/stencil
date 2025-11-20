@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,69 +26,23 @@ import { toast } from 'sonner';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import type { Vendor } from '@/types/vendor';
-
-const mockVendors: Vendor[] = [
-  {
-    id: '1',
-    name: 'PT Material Utama',
-    code: 'VEN001',
-    email: 'sales@materialutama.com',
-    phone: '+62 21 1234567',
-    contactPerson: 'Budi Santoso',
-    category: 'Raw Material',
-    status: 'active',
-    rating: 4.5,
-    totalOrders: 156,
-    location: {
-      latitude: -6.2088,
-      longitude: 106.8456,
-      city: 'Jakarta Pusat',
-      district: 'Menteng',
-      subdistrict: 'Kebon Sirih',
-      village: 'Kebon Sirih',
-      municipality: 'Jakarta Pusat',
-      province: 'DKI Jakarta',
-      country: 'Indonesia',
-      address: 'Jl. Kebon Sirih No. 12, Jakarta Pusat',
-    },
-    notes: 'Vendor utama untuk stainless steel',
-    paymentTerms: 'NET 30',
-    taxId: '01.234.567.8-901.000',
-  },
-  {
-    id: '2',
-    name: 'CV Glass Premium',
-    code: 'VEN002',
-    email: 'info@glasspremium.co.id',
-    phone: '+62 21 9876543',
-    contactPerson: 'Siti Nurhaliza',
-    category: 'Glass Supplier',
-    status: 'active',
-    rating: 4.8,
-    totalOrders: 89,
-    location: {
-      latitude: -6.1751,
-      longitude: 106.8650,
-      city: 'Jakarta Timur',
-      district: 'Cakung',
-      subdistrict: 'Cakung Barat',
-      village: 'Cakung Barat',
-      municipality: 'Jakarta Timur',
-      province: 'DKI Jakarta',
-      country: 'Indonesia',
-      address: 'Jl. Cakung Cilincing No. 45, Jakarta Timur',
-    },
-    notes: 'Spesialis glass crystal dan mirror',
-    paymentTerms: 'COD',
-    taxId: '02.345.678.9-012.000',
-  },
-];
+import { vendorsService } from '@/services/api/vendors';
+import { Loader2, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function VendorManagement() {
-  const [vendors, setVendors] = useState<Vendor[]>(mockVendors);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Vendor>>({
     name: '',
     code: '',
@@ -103,6 +57,51 @@ export default function VendorManagement() {
     paymentTerms: '',
     taxId: '',
   });
+
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await vendorsService.getVendors({ per_page: 100 });
+        const apiVendors = response.data || [];
+        
+        const uiVendors: Vendor[] = apiVendors.map(v => ({
+          id: v.id,
+          name: v.name,
+          code: v.name.substring(0, 6).toUpperCase(),
+          email: v.email,
+          phone: v.phone || '',
+          contactPerson: v.name,
+          category: 'General',
+          status: (v.status as any) || 'active',
+          rating: v.rating || 0,
+          totalOrders: v.total_orders || 0,
+          location: {
+            latitude: 0,
+            longitude: 0,
+            city: v.city || '',
+            country: v.country || '',
+            address: v.company || '',
+          },
+          notes: '',
+          paymentTerms: 'NET 30',
+          taxId: '',
+          bankAccount: v.bank_account,
+        }));
+        
+        setVendors(uiVendors);
+      } catch (err) {
+        console.error('Failed to fetch vendors:', err);
+        setError('Failed to load vendors. Please try again.');
+        toast.error('Failed to load vendors');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, []);
 
   const columns: ColumnDef<Vendor>[] = [
     {
@@ -212,33 +211,99 @@ export default function VendorManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteVendor = (id: string) => {
-    setVendors(vendors.filter((v) => v.id !== id));
-    toast.success('Vendor deleted successfully');
+  const handleDeleteVendor = async (id: string) => {
+    try {
+      await vendorsService.deleteVendor(id);
+      setVendors(vendors.filter((v) => v.id !== id));
+      toast.success('Vendor deleted successfully');
+    } catch (err) {
+      console.error('Failed to delete vendor:', err);
+      toast.error('Failed to delete vendor. Please try again.');
+    }
   };
 
-  const handleSaveVendor = () => {
-    if (editingVendor) {
-      setVendors(
-        vendors.map((v) =>
-          v.id === editingVendor.id ? { ...editingVendor, ...formData } : v
-        )
-      );
-      toast.success('Vendor updated successfully');
-    } else {
-      const newVendor: Vendor = {
-        id: Date.now().toString(),
-        ...formData,
-      } as Vendor;
-      setVendors([...vendors, newVendor]);
-      toast.success('Vendor added successfully');
+  const handleSaveVendor = async () => {
+    try {
+      setSaving(true);
+      if (editingVendor) {
+        await vendorsService.updateVendor(editingVendor.id, {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.contactPerson,
+          status: formData.status,
+          bank_account: formData.bankAccount,
+        });
+        
+        setVendors(
+          vendors.map((v) =>
+            v.id === editingVendor.id ? { ...editingVendor, ...formData } : v
+          )
+        );
+        toast.success('Vendor updated successfully');
+      } else {
+        const response = await vendorsService.createVendor({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.contactPerson,
+          bank_account: formData.bankAccount,
+        });
+        
+        const newVendor: Vendor = {
+          id: response.id,
+          name: response.name,
+          code: (formData.code as string) || response.name.substring(0, 6).toUpperCase(),
+          email: response.email,
+          phone: response.phone || '',
+          contactPerson: formData.contactPerson || response.name,
+          category: (formData.category as string) || 'General',
+          status: (response.status as any) || 'active',
+          rating: formData.rating || 0,
+          totalOrders: response.total_orders || 0,
+          location: {
+            latitude: 0,
+            longitude: 0,
+            city: response.city || '',
+            country: response.country || '',
+            address: response.company || '',
+          },
+          notes: (formData.notes as string) || '',
+          paymentTerms: (formData.paymentTerms as string) || 'NET 30',
+          taxId: (formData.taxId as string) || '',
+          bankAccount: response.bank_account,
+        };
+        setVendors([...vendors, newVendor]);
+        toast.success('Vendor added successfully');
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error('Failed to save vendor:', err);
+      toast.error('Failed to save vendor. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    setIsDialogOpen(false);
   };
 
   const handleLocationSelect = (location: LocationData) => {
     setFormData({ ...formData, location });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -248,7 +313,7 @@ export default function VendorManagement() {
           <h1 className="text-3xl font-bold">Vendor Management</h1>
           <p className="text-muted-foreground">Manage suppliers and vendors</p>
         </div>
-        <Button onClick={handleAddVendor}>
+        <Button onClick={handleAddVendor} disabled={saving}>
           <Plus className="mr-2 h-4 w-4" />
           Add Vendor
         </Button>
@@ -473,11 +538,16 @@ export default function VendorManagement() {
           </Tabs>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSaveVendor}>
-              {editingVendor ? 'Update' : 'Add'} Vendor
+            <Button onClick={handleSaveVendor} disabled={!formData.name || !formData.email || !formData.phone || saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : editingVendor ? 'Update Vendor' : 'Add Vendor'}
             </Button>
           </DialogFooter>
         </DialogContent>

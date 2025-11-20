@@ -30,7 +30,7 @@ export function ThemeProvider({
   const [state, setState] = useState<ThemeState>({
     currentTheme: null,
     currentThemeName: initialTheme,
-    isLoading: true,
+    isLoading: false,
     error: null,
     availableThemes: []
   });
@@ -38,14 +38,34 @@ export function ThemeProvider({
   // Update available themes list
   const updateAvailableThemes = useCallback(() => {
     const themes = themeManager.getThemeNames();
-    setState(prev => ({ ...prev, availableThemes: themes }));
+    setState(prev => {
+      // Only update if themes actually changed
+      const currentThemes = prev.availableThemes;
+      if (JSON.stringify(currentThemes) !== JSON.stringify(themes)) {
+        return { ...prev, availableThemes: themes };
+      }
+      return prev;
+    });
   }, []);
 
   // Load theme with comprehensive error handling
   const loadTheme = useCallback(async (themeName: string, isInitial = false) => {
+    // Prevent loading if already loaded and not initial
+    if (!isInitial && state.currentThemeName === themeName && state.currentTheme && !state.isLoading) {
+      console.log(`Theme '${themeName}' is already loaded and active`);
+      return;
+    }
+
+    // Prevent re-loading if already loading
+    if (state.isLoading && !isInitial) {
+      console.log(`Theme is already loading, skipping load for '${themeName}'`);
+      return;
+    }
+
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log('Loading theme:', themeName);
       doAction(THEME_HOOKS.THEME_BEFORE_LOAD, themeName);
       
       let theme = themeManager.getTheme(themeName);
@@ -59,6 +79,7 @@ export function ThemeProvider({
         
         await themeManager.activateTheme(themeName);
         
+        console.log('Theme loaded successfully with components:', Object.keys(theme.components || {}));
         setState(prev => ({
           ...prev,
           currentTheme: theme,
@@ -102,18 +123,33 @@ export function ThemeProvider({
 
   // Initialize theme on mount
   useEffect(() => {
-    loadTheme(initialTheme, true);
+    let isMounted = true;
+    let isInitialized = false;
+    
+    const initializeTheme = async () => {
+      if (isMounted && !isInitialized && !state.currentTheme) {
+        console.log('Initializing theme:', initialTheme);
+        isInitialized = true;
+        await loadTheme(initialTheme, true);
+      }
+    };
+
+    initializeTheme();
 
     // Set up theme manager event listeners
     const handleThemeRegistered = () => {
-      updateAvailableThemes();
+      if (isMounted) {
+        updateAvailableThemes();
+      }
     };
 
     const handleThemeUnregistered = (themeName: string) => {
-      updateAvailableThemes();
-      // If the current theme was unregistered, switch to fallback
-      if (state.currentThemeName === themeName) {
-        loadTheme(fallbackTheme);
+      if (isMounted) {
+        updateAvailableThemes();
+        // If the current theme was unregistered, switch to fallback
+        if (state.currentThemeName === themeName) {
+          loadTheme(fallbackTheme);
+        }
       }
     };
 
@@ -121,29 +157,45 @@ export function ThemeProvider({
     themeManager.on('themeUnregistered', handleThemeUnregistered);
 
     return () => {
+      isMounted = false;
       themeManager.off('themeRegistered');
       themeManager.off('themeUnregistered');
     };
-  }, [initialTheme, loadTheme, fallbackTheme, state.currentThemeName, updateAvailableThemes]);
+  }, [initialTheme]);
 
   // Theme switching function with validation
   const setTheme = useCallback(async (themeName: string) => {
-    if (themeName === state.currentThemeName) {
-      return; // Already active
-    }
+    setState(currentState => {
+      if (themeName === currentState.currentThemeName) {
+        console.log('Theme is already active:', themeName);
+        return currentState; // Already active
+      }
 
-    if (state.isLoading) {
-      console.warn('Theme is currently loading, please wait');
-      return;
-    }
+      if (currentState.isLoading) {
+        console.warn('Theme is currently loading, please wait');
+        return currentState;
+      }
 
-    await loadTheme(themeName);
-  }, [state.currentThemeName, state.isLoading, loadTheme]);
+      // Trigger loadTheme in next tick to avoid state update in render cycle
+      setTimeout(() => {
+        loadTheme(themeName);
+      }, 0);
+
+      return currentState;
+    });
+  }, [loadTheme]);
 
   // Reload current theme
   const reloadTheme = useCallback(async () => {
-    await loadTheme(state.currentThemeName);
-  }, [state.currentThemeName, loadTheme]);
+    setState(currentState => {
+      // Trigger loadTheme in next tick
+      setTimeout(() => {
+        loadTheme(currentState.currentThemeName);
+      }, 0);
+      
+      return currentState;
+    });
+  }, [loadTheme]);
 
   // Get theme metadata
   const getThemeMetadata = useCallback(async (themeName: string) => {

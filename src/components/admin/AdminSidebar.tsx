@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Palette, 
@@ -15,11 +15,15 @@ import {
   ShoppingCart,
   PackageSearch,
   TrendingUp,
-  Globe
+  Globe,
+  BarChart3,
+  Zap,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAdminStore } from '@/stores/adminStore';
+import { useAuthState } from '@/hooks/useAuthState';
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +40,8 @@ interface MenuItem {
     title: string;
     path: string;
   }[];
+  visibleFor?: 'platform' | 'tenant' | 'both';
+  requiredRoles?: string[];
 }
 
 const menuItems: MenuItem[] = [
@@ -43,10 +49,30 @@ const menuItems: MenuItem[] = [
     title: 'Dashboard',
     icon: LayoutDashboard,
     path: '/admin',
+    visibleFor: 'both',
+  },
+  {
+    title: 'Tenants',
+    icon: Building2,
+    path: '/admin/tenants',
+    visibleFor: 'platform',
+  },
+  {
+    title: 'Subscriptions',
+    icon: Zap,
+    path: '/admin/subscriptions',
+    visibleFor: 'platform',
+  },
+  {
+    title: 'Analytics',
+    icon: BarChart3,
+    path: '/admin/analytics',
+    visibleFor: 'platform',
   },
   {
     title: 'Content Management',
     icon: FileText,
+    visibleFor: 'tenant',
     children: [
       { title: 'Home Page', path: '/admin/content/home' },
       { title: 'About Page', path: '/admin/content/about' },
@@ -57,6 +83,8 @@ const menuItems: MenuItem[] = [
   {
     title: 'Products',
     icon: Package,
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
     children: [
       { title: 'All Products', path: '/admin/products' },
       { title: 'Add Product', path: '/admin/products/new' },
@@ -66,74 +94,115 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: 'Reviews',
-    icon: Star,
-    path: '/admin/reviews',
-    badge: '3',
-  },
-  {
-    title: 'Media Library',
-    icon: Image,
-    path: '/admin/media',
-  },
-  {
-    title: 'User Management',
-    icon: Users,
-    children: [
-      { title: 'Users', path: '/admin/users' },
-      { title: 'Roles', path: '/admin/roles' },
-      { title: 'Customers', path: '/admin/customers' },
-    ],
-  },
-  {
     title: 'Orders',
     icon: ShoppingCart,
     path: '/admin/orders',
+    visibleFor: 'tenant',
+  },
+  {
+    title: 'Customers',
+    icon: Users,
+    path: '/admin/customers',
+    visibleFor: 'tenant',
+  },
+  {
+    title: 'Reviews',
+    icon: Star,
+    path: '/admin/reviews',
+    visibleFor: 'tenant',
+    badge: '3',
   },
   {
     title: 'Vendors',
     icon: Building2,
     path: '/admin/vendors',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
   },
   {
     title: 'Inventory',
     icon: PackageSearch,
     path: '/admin/inventory',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
   },
   {
     title: 'Financial Report',
     icon: TrendingUp,
     path: '/admin/financial-report',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
   },
   {
     title: 'Appearance',
     icon: Palette,
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
     children: [
       { title: '3D Manager', path: '/admin/3d-manager' },
       { title: 'Themes', path: '/admin/themes' },
     ],
   },
   {
+    title: 'User Management',
+    icon: Users,
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
+    children: [
+      { title: 'Users', path: '/admin/users' },
+      { title: 'Roles', path: '/admin/roles' },
+    ],
+  },
+  {
     title: 'Language',
     icon: Globe,
     path: '/admin/language',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
+  },
+  {
+    title: 'Media Library',
+    icon: Image,
+    path: '/admin/media',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
   },
   {
     title: 'Documentation',
     icon: BookOpen,
     path: '/admin/documentation',
+    visibleFor: 'tenant',
   },
   {
     title: 'Settings',
     icon: Settings,
     path: '/admin/settings',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
   },
 ];
 
 export const AdminSidebar = () => {
   const location = useLocation();
-  const { sidebarCollapsed } = useAdminStore();
+  const navigate = useNavigate();
+  const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
+  const { accountType, roles, user, account, logout } = useAuthState();
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['Content Management']);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Get current user info based on account type
+  const currentUser = accountType === 'platform' ? account : user;
+  const userName = currentUser?.name || 'Unknown User';
+  const userEmail = currentUser?.email || 'unknown@email.com';
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const toggleMenu = (title: string) => {
     setExpandedMenus((prev) =>
@@ -141,6 +210,19 @@ export const AdminSidebar = () => {
         ? prev.filter((item) => item !== title)
         : [...prev, title]
     );
+  };
+
+  const isMenuItemVisible = (item: MenuItem): boolean => {
+    if (!item.visibleFor) return true;
+    
+    if (item.visibleFor === 'both') return true;
+    if (item.visibleFor === 'platform' && accountType === 'platform') return true;
+    if (item.visibleFor === 'tenant' && accountType === 'tenant') {
+      if (!item.requiredRoles) return true;
+      return item.requiredRoles.some((role) => roles.includes(role));
+    }
+    
+    return false;
   };
 
   const isActive = (path?: string) => {
@@ -287,33 +369,64 @@ export const AdminSidebar = () => {
 
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-elegant">
-          {menuItems.map(renderMenuItem)}
+          {menuItems.filter(isMenuItemVisible).map(renderMenuItem)}
         </nav>
 
         {/* User Profile */}
         <div className="border-t p-4">
           {sidebarCollapsed ? (
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">AD</span>
-                  </div>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Admin User</p>
-              </TooltipContent>
-            </Tooltip>
+            <div className="space-y-2">
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-12 h-12 rounded-full">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">{userInitials}</span>
+                    </div>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{userName}</p>
+                  <p className="text-xs text-muted-foreground">{userEmail}</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-12 h-12 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Logout</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-sm">AD</span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-sm">{userInitials}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">Admin User</p>
-                <p className="text-xs text-muted-foreground truncate">admin@example.com</p>
-              </div>
+              
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                onClick={handleLogout}
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm">Logout</span>
+              </Button>
             </div>
           )}
         </div>

@@ -8,8 +8,10 @@ import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useAuthState } from '@/hooks/useAuthState';
 
 const ForgotPassword = () => {
+  const { forgotPassword, isLoading, error: authError } = useAuthState();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -19,7 +21,7 @@ const ForgotPassword = () => {
     return emailRegex.test(email);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email) {
@@ -32,9 +34,14 @@ const ForgotPassword = () => {
       return;
     }
 
-    // Dummy forgot password
-    toast.success('Link reset password telah dikirim ke email Anda');
-    setIsSubmitted(true);
+    try {
+      setError('');
+      await forgotPassword({ email });
+      toast.success('Link reset password telah dikirim ke email Anda');
+      setIsSubmitted(true);
+    } catch (err) {
+      toast.error(authError || 'Gagal mengirim link reset password');
+    }
   };
 
   return (
@@ -54,6 +61,12 @@ const ForgotPassword = () => {
 
           {!isSubmitted ? (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {(error || authError) && (
+                <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md">
+                  <p className="text-sm text-destructive">{error || authError}</p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -65,15 +78,16 @@ const ForgotPassword = () => {
                     setEmail(e.target.value);
                     setError('');
                   }}
-                  className={error ? 'border-destructive' : ''}
+                  disabled={isLoading}
+                  className={error || authError ? 'border-destructive' : ''}
                 />
-                {error && (
-                  <p className="text-sm text-destructive">{error}</p>
+                {(error || authError) && !error && (
+                  <p className="text-sm text-destructive">{authError}</p>
                 )}
               </div>
 
-              <Button type="submit" className="w-full" size="lg">
-                Kirim Link Reset Password
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? 'Mengirim...' : 'Kirim Link Reset Password'}
               </Button>
 
               <div className="text-center">

@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Menu, X, ShoppingCart } from "lucide-react";
+import { Moon, Sun, Menu, X, ShoppingCart, LogOut } from "lucide-react";
 import type { HeaderProps } from "@/core/engine/interfaces";
 import { useThemeComponents } from "@/hooks/useThemeComponents";
+import { useAuthState } from "@/hooks/useAuthState";
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
   const [isDark, setIsDark] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout, user, account } = useAuthState();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -95,14 +98,34 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
               )}
             </Button>
 
-            <Button
-              className="hidden md:flex bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow"
-              asChild
-            >
-              <Link to="/login">
-                Login
-              </Link>
-            </Button>
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10">
+                  <span className="text-sm font-medium text-foreground">
+                    {user?.name || account?.name || 'User'}
+                  </span>
+                </div>
+                <Button
+                  className="hidden md:flex bg-destructive hover:bg-destructive/90 text-white"
+                  onClick={async () => {
+                    await logout();
+                    navigate('/');
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Button
+                className="hidden md:flex bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow"
+                asChild
+              >
+                <Link to="/login">
+                  Login
+                </Link>
+              </Button>
+            )}
 
             {/* Mobile Menu Button */}
             <Button
@@ -148,14 +171,35 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                   Keranjang
                 </Link>
               </Button>
-              <Button
-                className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
-                asChild
-              >
-                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  Login
-                </Link>
-              </Button>
+              {isAuthenticated ? (
+                <>
+                  <div className="px-4 py-3 rounded-lg bg-primary/10">
+                    <span className="text-sm font-medium text-foreground">
+                      {user?.name || account?.name || 'User'}
+                    </span>
+                  </div>
+                  <Button
+                    className="w-full bg-destructive hover:bg-destructive/90 text-white justify-start"
+                    onClick={async () => {
+                      await logout();
+                      setIsMobileMenuOpen(false);
+                      navigate('/');
+                    }}
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
+                  asChild
+                >
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    Login
+                  </Link>
+                </Button>
+              )}
             </nav>
           </div>
         )}

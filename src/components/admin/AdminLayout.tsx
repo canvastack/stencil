@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router-dom';
+import { memo, useRef } from 'react';
 import { AdminSidebar } from './AdminSidebar';
 import { AdminHeader } from './AdminHeader';
 import { AdminFooter } from './AdminFooter';
@@ -13,8 +14,11 @@ if (process.env.NODE_ENV === 'development') {
   import('@/lib/overflowDebug');
 }
 
-export const AdminLayout = () => {
-  const { sidebarCollapsed } = useAdminStore();
+export const AdminLayout = memo(() => {
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+  console.log(`AdminLayout rendered #${renderCount.current}`);
+  const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
 
   return (
     <TooltipProvider>
@@ -50,4 +54,4 @@ export const AdminLayout = () => {
       </div>
     </TooltipProvider>
   );
-};
+});

@@ -9,9 +9,11 @@ import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useAuthState } from '@/hooks/useAuthState';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { register, isLoading, error } = useAuthState();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,7 +36,7 @@ const Register = () => {
     return phoneRegex.test(phone.replace(/[\s-]/g, ''));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
@@ -73,14 +75,18 @@ const Register = () => {
       return;
     }
 
-    // Dummy registration
-    toast.success('Registrasi berhasil! Silakan login.');
-    localStorage.setItem('registeredUser', JSON.stringify({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-    }));
-    navigate('/login');
+    try {
+      await register({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+      toast.success('Registrasi berhasil! Email verifikasi telah dikirim.');
+      navigate('/verify-email');
+    } catch (err) {
+      toast.error(error || 'Registrasi gagal. Silakan coba lagi.');
+    }
   };
 
   return (
@@ -94,6 +100,12 @@ const Register = () => {
             <p className="text-muted-foreground">Bergabunglah dengan kami</p>
           </div>
 
+          {error && (
+            <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md mb-6">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="name">Nama Lengkap</Label>
@@ -106,6 +118,7 @@ const Register = () => {
                   setFormData({ ...formData, name: e.target.value });
                   setErrors({ ...errors, name: '' });
                 }}
+                disabled={isLoading}
                 className={errors.name ? 'border-destructive' : ''}
               />
               {errors.name && (
@@ -124,6 +137,7 @@ const Register = () => {
                   setFormData({ ...formData, email: e.target.value });
                   setErrors({ ...errors, email: '' });
                 }}
+                disabled={isLoading}
                 className={errors.email ? 'border-destructive' : ''}
               />
               {errors.email && (
@@ -142,6 +156,7 @@ const Register = () => {
                   setFormData({ ...formData, phone: e.target.value });
                   setErrors({ ...errors, phone: '' });
                 }}
+                disabled={isLoading}
                 className={errors.phone ? 'border-destructive' : ''}
               />
               {errors.phone && (
@@ -161,12 +176,14 @@ const Register = () => {
                     setFormData({ ...formData, password: e.target.value });
                     setErrors({ ...errors, password: '' });
                   }}
+                  disabled={isLoading}
                   className={errors.password ? 'border-destructive' : ''}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  disabled={isLoading}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -188,12 +205,14 @@ const Register = () => {
                     setFormData({ ...formData, confirmPassword: e.target.value });
                     setErrors({ ...errors, confirmPassword: '' });
                   }}
+                  disabled={isLoading}
                   className={errors.confirmPassword ? 'border-destructive' : ''}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  disabled={isLoading}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -212,6 +231,7 @@ const Register = () => {
                     setFormData({ ...formData, agreeToTerms: checked as boolean });
                     setErrors({ ...errors, agreeToTerms: '' });
                   }}
+                  disabled={isLoading}
                 />
                 <label
                   htmlFor="terms"
@@ -229,8 +249,8 @@ const Register = () => {
               )}
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Daftar Sekarang
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+              {isLoading ? 'Mendaftar...' : 'Daftar Sekarang'}
             </Button>
           </form>
 

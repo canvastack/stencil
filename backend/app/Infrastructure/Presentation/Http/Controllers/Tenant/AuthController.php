@@ -23,7 +23,8 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
-            'tenant_id' => 'required|exists:tenants,id',
+            'tenant_id' => 'nullable|exists:tenants,id',
+            'tenant_slug' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -33,11 +34,31 @@ class AuthController extends Controller
             ], 422);
         }
 
+        if (!$request->tenant_id && !$request->tenant_slug) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => ['tenant_id' => ['Either tenant_id or tenant_slug is required']]
+            ], 422);
+        }
+
         try {
+            $tenantId = $request->tenant_id;
+            
+            if ($request->tenant_slug && !$tenantId) {
+                $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('slug', $request->tenant_slug)->first();
+                if (!$tenant) {
+                    return response()->json([
+                        'message' => 'Validation failed',
+                        'errors' => ['tenant_slug' => ['Tenant not found']]
+                    ], 422);
+                }
+                $tenantId = $tenant->id;
+            }
+
             $tokenData = $this->authService->authenticateTenantUser(
                 $request->email,
                 $request->password,
-                $request->tenant_id,
+                $tenantId,
                 $request->ip()
             );
             

@@ -1,152 +1,218 @@
-import { Product, ProductFilters } from '@/types/product';
 import apiClient from './client';
+import { Product, ProductFilters } from '@/types/product';
+import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import * as mockProducts from '@/services/mock/products';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
 
-export async function getProducts(filters?: ProductFilters): Promise<Product[]> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.getProducts(filters));
-  }
-  
-  try {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, String(value));
-        }
+export interface CreateProductRequest {
+  name: string;
+  slug: string;
+  description: string;
+  longDescription?: string;
+  images: string[];
+  category: string;
+  subcategory?: string;
+  tags?: string[];
+  material: string;
+  price: number;
+  currency?: string;
+  priceUnit?: string;
+  minOrder?: number;
+  specifications?: Array<{ key: string; value: string }>;
+  customizable?: boolean;
+  customOptions?: any[];
+  inStock: boolean;
+  stockQuantity?: number;
+  leadTime?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  status?: string;
+  featured?: boolean;
+}
+
+export interface UpdateProductRequest extends Partial<CreateProductRequest> {}
+
+class ProductsService {
+  async getProducts(filters?: ProductFilters): Promise<PaginatedResponse<Product>> {
+    if (USE_MOCK) {
+      const mockData = mockProducts.getProducts(filters);
+      return Promise.resolve({
+        data: Array.isArray(mockData) ? mockData : [],
+        current_page: filters?.page || 1,
+        per_page: filters?.per_page || 10,
+        total: Array.isArray(mockData) ? mockData.length : 0,
+        last_page: 1,
       });
     }
-    
-    const response = await apiClient.get<Product[]>(`/admin/products?${params.toString()}`);
-    return response as unknown as Product[];
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.getProducts(filters);
+
+    try {
+      const params = new URLSearchParams();
+      if (filters) {
+        if (filters.page) params.append('page', filters.page.toString());
+        if (filters.per_page) params.append('per_page', filters.per_page.toString());
+        if (filters.search) params.append('search', filters.search);
+        if (filters.sort) params.append('sort', filters.sort);
+        if (filters.order) params.append('order', filters.order);
+        if (filters.category) params.append('category', filters.category);
+        if (filters.subcategory) params.append('subcategory', filters.subcategory);
+        if (filters.status) params.append('status', filters.status);
+        if (filters.featured !== undefined) params.append('featured', String(filters.featured));
+        if (filters.inStock !== undefined) params.append('in_stock', String(filters.inStock));
+        if (filters.priceMin !== undefined) params.append('price_min', filters.priceMin.toString());
+        if (filters.priceMax !== undefined) params.append('price_max', filters.priceMax.toString());
+      }
+
+      const response = await apiClient.get<PaginatedResponse<Product>>(
+        `/products?${params.toString()}`
+      );
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      const mockData = mockProducts.getProducts(filters);
+      return {
+        data: Array.isArray(mockData) ? mockData : [],
+        current_page: filters?.page || 1,
+        per_page: filters?.per_page || 10,
+        total: Array.isArray(mockData) ? mockData.length : 0,
+        last_page: 1,
+      };
+    }
+  }
+
+  async getProductById(id: string): Promise<Product> {
+    if (USE_MOCK) {
+      return Promise.resolve(mockProducts.getProductById(id));
+    }
+
+    try {
+      const response = await apiClient.get<Product>(`/products/${id}`);
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      return mockProducts.getProductById(id);
+    }
+  }
+
+  async getProductBySlug(slug: string): Promise<Product> {
+    if (USE_MOCK) {
+      return Promise.resolve(mockProducts.getProductBySlug(slug));
+    }
+
+    try {
+      const response = await apiClient.get<Product>(`/products/slug/${slug}`);
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      return mockProducts.getProductBySlug(slug);
+    }
+  }
+
+  async createProduct(data: CreateProductRequest): Promise<Product> {
+    if (USE_MOCK) {
+      return Promise.resolve(mockProducts.createProduct(data));
+    }
+
+    try {
+      const response = await apiClient.post<Product>('/products', data);
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      return mockProducts.createProduct(data);
+    }
+  }
+
+  async updateProduct(id: string, data: UpdateProductRequest): Promise<Product> {
+    if (USE_MOCK) {
+      const updated = mockProducts.updateProduct(id, data);
+      if (!updated) throw new Error('Product not found');
+      return Promise.resolve(updated);
+    }
+
+    try {
+      const response = await apiClient.put<Product>(`/products/${id}`, data);
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      const updated = mockProducts.updateProduct(id, data);
+      if (!updated) throw new Error('Product not found');
+      return updated;
+    }
+  }
+
+  async deleteProduct(id: string): Promise<{ message: string }> {
+    if (USE_MOCK) {
+      mockProducts.deleteProduct(id);
+      return Promise.resolve({ message: 'Product deleted' });
+    }
+
+    try {
+      const response = await apiClient.delete<{ message: string }>(`/products/${id}`);
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      mockProducts.deleteProduct(id);
+      return { message: 'Product deleted' };
+    }
+  }
+
+  async getFeaturedProducts(limit?: number): Promise<Product[]> {
+    if (USE_MOCK) {
+      return Promise.resolve(mockProducts.getFeaturedProducts(limit));
+    }
+
+    try {
+      const params = limit ? `?limit=${limit}` : '';
+      const response = await apiClient.get<Product[]>(`/products/featured${params}`);
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      return mockProducts.getFeaturedProducts(limit);
+    }
+  }
+
+  async getProductsByCategory(category: string, limit?: number): Promise<Product[]> {
+    if (USE_MOCK) {
+      return Promise.resolve(mockProducts.getProductsByCategory(category, limit));
+    }
+
+    try {
+      const params = limit ? `?limit=${limit}` : '';
+      const response = await apiClient.get<Product[]>(`/products/category/${category}${params}`);
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      return mockProducts.getProductsByCategory(category, limit);
+    }
+  }
+
+  async searchProducts(query: string): Promise<Product[]> {
+    if (USE_MOCK) {
+      return Promise.resolve(mockProducts.searchProducts(query));
+    }
+
+    try {
+      const response = await apiClient.get<Product[]>(
+        `/products/search?q=${encodeURIComponent(query)}`
+      );
+      return response;
+    } catch (error) {
+      console.error('API call failed, falling back to mock data:', error);
+      return mockProducts.searchProducts(query);
+    }
+  }
+
+  async getProductVariants(id: string): Promise<any[]> {
+    try {
+      const response = await apiClient.get<any[]>(`/products/${id}/variants`);
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch product variants:', error);
+      return [];
+    }
   }
 }
 
-export async function getProductById(id: string): Promise<Product | undefined> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.getProductById(id));
-  }
-  
-  try {
-    const response = await apiClient.get<Product>(`/admin/products/${id}`);
-    return response as unknown as Product;
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.getProductById(id);
-  }
-}
-
-export async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.getProductBySlug(slug));
-  }
-  
-  try {
-    const response = await apiClient.get<Product>(`/admin/products/slug/${slug}`);
-    return response as unknown as Product;
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.getProductBySlug(slug);
-  }
-}
-
-export async function createProduct(data: Partial<Product>): Promise<Product> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.createProduct(data));
-  }
-  
-  try {
-    const response = await apiClient.post<Product>('/admin/products', data);
-    return response as unknown as Product;
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.createProduct(data);
-  }
-}
-
-export async function updateProduct(id: string, data: Partial<Product>): Promise<Product> {
-  if (USE_MOCK) {
-    const updated = mockProducts.updateProduct(id, data);
-    if (!updated) throw new Error('Product not found');
-    return Promise.resolve(updated);
-  }
-  
-  try {
-    const response = await apiClient.put<Product>(`/admin/products/${id}`, data);
-    return response as unknown as Product;
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    const updated = mockProducts.updateProduct(id, data);
-    if (!updated) throw new Error('Product not found');
-    return updated;
-  }
-}
-
-export async function deleteProduct(id: string): Promise<boolean> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.deleteProduct(id));
-  }
-  
-  try {
-    await apiClient.delete(`/admin/products/${id}`);
-    return true;
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.deleteProduct(id);
-  }
-}
-
-export async function getFeaturedProducts(limit?: number): Promise<Product[]> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.getFeaturedProducts(limit));
-  }
-  
-  try {
-    const params = limit ? `?limit=${limit}` : '';
-    const response = await apiClient.get<Product[]>(`/admin/products/featured${params}`);
-    return response as unknown as Product[];
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.getFeaturedProducts(limit);
-  }
-}
-
-export async function getProductsByCategory(category: string, limit?: number): Promise<Product[]> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.getProductsByCategory(category, limit));
-  }
-  
-  try {
-    const params = limit ? `?limit=${limit}` : '';
-    const response = await apiClient.get<Product[]>(`/admin/products/category/${category}${params}`);
-    return response as unknown as Product[];
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.getProductsByCategory(category, limit);
-  }
-}
-
-export async function searchProducts(query: string): Promise<Product[]> {
-  if (USE_MOCK) {
-    return Promise.resolve(mockProducts.searchProducts(query));
-  }
-  
-  try {
-    const response = await apiClient.get<Product[]>(`/admin/products/search?q=${encodeURIComponent(query)}`);
-    return response as unknown as Product[];
-  } catch (error) {
-    console.error('API call failed, falling back to mock data:', error);
-    return mockProducts.searchProducts(query);
-  }
-}
-
-export function resetProducts(): void {
-  if (USE_MOCK) {
-    mockProducts.resetProducts();
-  }
-}
+export const productsService = new ProductsService();
+export default productsService;

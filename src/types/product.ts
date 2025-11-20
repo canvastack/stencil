@@ -68,6 +68,11 @@ export interface ProductCategory {
 }
 
 export interface ProductFilters {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  sort?: string;
+  order?: string;
   category?: string;
   subcategory?: string;
   featured?: boolean;
@@ -75,8 +80,5 @@ export interface ProductFilters {
   inStock?: boolean;
   priceMin?: number;
   priceMax?: number;
-  search?: string;
   tags?: string[];
-  limit?: number;
-  offset?: number;
 }

@@ -33,6 +33,8 @@ use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
+use App\Domain\Shipping\Services\ShippingService;
+use App\Domain\Media\Services\MediaService;
 
 class DomainServiceProvider extends ServiceProvider
 {
@@ -123,6 +125,16 @@ class DomainServiceProvider extends ServiceProvider
                 }
             };
         });
+
+        // Shipping Services
+        $this->app->singleton(ShippingService::class, function ($app) {
+            return new ShippingService();
+        });
+
+        // Media Services
+        $this->app->singleton(MediaService::class, function ($app) {
+            return new MediaService();
+        });
     }
 
     /**
@@ -180,6 +192,8 @@ class DomainServiceProvider extends ServiceProvider
             'tenant.context',
             'domain.events',
             'uuid.generator',
+            ShippingService::class,
+            MediaService::class,
         ];
     }
 }

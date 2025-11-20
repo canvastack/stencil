@@ -379,7 +379,7 @@ const mockReconciliations: InventoryReconciliation[] = [
 
 const paginate = <T>(items: T[], filters?: { page?: number; perPage?: number }): PaginatedResponse<T> => {
   const page = filters?.page ?? 1;
-  const perPage = filters?.perPage ?? items.length || 1;
+  const perPage = (filters?.perPage ?? items.length) || 1;
   const start = (page - 1) * perPage;
   const paginated = items.slice(start, start + perPage);
 

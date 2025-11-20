@@ -33,14 +33,16 @@ class ThemeManager {
     }
   }
 
-  async registerTheme(name: string, theme: Theme): Promise<void> {
+  async registerTheme(name: string, theme: Theme, skipValidation = false): Promise<void> {
     try {
-      // Validate theme before registration
-      const isValid = await validateTheme(theme);
-      if (!isValid) {
-        const error = new Error(`Theme validation failed for ${name}`);
-        this.emit('themeValidationFailed', name, error);
-        throw error;
+      // Skip validation for default theme or when explicitly requested
+      if (!skipValidation) {
+        const isValid = await validateTheme(theme);
+        if (!isValid) {
+          const error = new Error(`Theme validation failed for ${name}`);
+          this.emit('themeValidationFailed', name, error);
+          throw error;
+        }
       }
 
       this.registry.themes[name] = theme;
@@ -49,6 +51,17 @@ class ThemeManager {
       console.log(`Theme '${name}' registered successfully`);
     } catch (error) {
       console.error(`Failed to register theme '${name}':`, error);
+      throw error;
+    }
+  }
+
+  registerThemeSync(name: string, theme: Theme): void {
+    try {
+      this.registry.themes[name] = theme;
+      this.emit('themeRegistered', name, theme);
+      console.log(`Theme '${name}' registered successfully`);
+    } catch (error) {
+      console.error(`Failed to register theme '${name}' synchronously:`, error);
       throw error;
     }
   }
@@ -86,12 +99,32 @@ class ThemeManager {
   }
 
   async loadTheme(name: string): Promise<Theme> {
-    if (this.loadingThemes.has(name)) {
-      throw new Error(`Theme ${name} is already being loaded`);
-    }
-
+    // Return existing theme if already loaded
     if (this.registry.themes[name]) {
       return this.registry.themes[name];
+    }
+
+    // If already loading, wait for it to complete instead of throwing error
+    if (this.loadingThemes.has(name)) {
+      return new Promise((resolve, reject) => {
+        const checkInterval = setInterval(() => {
+          if (!this.loadingThemes.has(name)) {
+            clearInterval(checkInterval);
+            const theme = this.registry.themes[name];
+            if (theme) {
+              resolve(theme);
+            } else {
+              reject(new Error(`Theme ${name} failed to load`));
+            }
+          }
+        }, 50);
+        
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          reject(new Error(`Theme ${name} loading timeout`));
+        }, 5000);
+      });
     }
 
     this.loadingThemes.add(name);

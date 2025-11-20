@@ -5,7 +5,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/core/engine/ThemeProvider";
 import { themeManager } from "@/core/engine/ThemeManager";
-import '@/themes/default';
+// Import default theme to ensure registration
+import "@/themes/default/index";
 import { 
   BrowserRouter,
   Routes,
@@ -15,6 +16,9 @@ import { ThemeScrollToTop } from "@/core/engine/ThemeComponent";
 import { CartProvider } from "@/contexts/CartContext";
 import { ContentProvider } from "@/contexts/ContentContext";
 import { HelmetProvider } from "react-helmet-async";
+import { ApiServiceProvider } from "@/contexts/ApiServiceContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 import Home from "@/themes/default/pages/Home";
 import About from "@/themes/default/pages/About";
@@ -28,6 +32,9 @@ import Cart from "@/themes/default/pages/Cart";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import UserProfile from "./pages/admin/UserProfile";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -77,6 +84,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
     },
   },
 });
@@ -86,20 +97,21 @@ function App() {
   // happens synchronously before ThemeProvider mounts.
 
   return (
-    <React.StrictMode>
-      <HelmetProvider>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider initialTheme="default">
-            <ContentProvider>
-              <CartProvider>
-                <Toaster />
-                <Sonner />
+    <ErrorBoundary>
+        <HelmetProvider>
+          <QueryClientProvider client={queryClient}>
+            <ApiServiceProvider>
+              <ThemeProvider initialTheme="default">
+                <ContentProvider>
+                  <CartProvider>
+                    <Toaster />
+                    <Sonner />
                 {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
                     import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
                     Fallback to '/' when empty. */}
                 <BrowserRouter
                   basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
-                  future={{ v7_startTransition: true }}
+                  future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
                 >
                 <Routes>
                   {/* Public Routes */}
@@ -113,9 +125,15 @@ function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/verify-email" element={<VerifyEmail />} />
                   
                 {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }>
                   <Route index element={<Dashboard />} />
                   <Route path="content/home" element={<Suspense fallback={<LoadingFallback />}><PageHome /></Suspense>} />
                   <Route path="content/about" element={<Suspense fallback={<LoadingFallback />}><PageAbout /></Suspense>} />
@@ -149,19 +167,21 @@ function App() {
                   <Route path="themes/packaging" element={<Suspense fallback={<LoadingFallback />}><ThemePackaging /></Suspense>} />
                   <Route path="documentation" element={<Suspense fallback={<LoadingFallback />}><Documentation /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
+                  <Route path="profile" element={<UserProfile />} />
                 </Route>
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                <ThemeScrollToTop />
-                </BrowserRouter>
-              </CartProvider>
-            </ContentProvider>
-          </ThemeProvider>
-        </QueryClientProvider>
-      </HelmetProvider>
-    </React.StrictMode>
+                    <ThemeScrollToTop />
+                  </BrowserRouter>
+                  </CartProvider>
+                </ContentProvider>
+              </ThemeProvider>
+            </ApiServiceProvider>
+          </QueryClientProvider>
+        </HelmetProvider>
+      </ErrorBoundary>
   );
 }
 

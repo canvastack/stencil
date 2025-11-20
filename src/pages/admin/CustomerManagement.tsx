@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   UserCircle,
   Plus,
@@ -52,53 +52,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import type { Customer } from '@/types/customer';
-
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    name: 'Alice Johnson',
-    email: 'alice.j@email.com',
-    phone: '+62 821 1234 5678',
-    customerType: 'individual',
-    status: 'active',
-    totalOrders: 15,
-    totalSpent: 25500000,
-    createdAt: '2024-01-10',
-    lastOrderDate: '2024-11-01',
-  },
-  {
-    id: '2',
-    name: 'Tech Corp Indonesia',
-    email: 'procurement@techcorp.id',
-    phone: '+62 822 2345 6789',
-    company: 'Tech Corp Indonesia',
-    customerType: 'business',
-    status: 'active',
-    totalOrders: 42,
-    totalSpent: 125000000,
-    createdAt: '2023-08-15',
-    lastOrderDate: '2024-10-28',
-    notes: 'VIP customer - priority handling',
-  },
-  {
-    id: '3',
-    name: 'David Lee',
-    email: 'david.lee@email.com',
-    phone: '+62 823 3456 7890',
-    customerType: 'individual',
-    status: 'inactive',
-    totalOrders: 3,
-    totalSpent: 4500000,
-    createdAt: '2024-06-20',
-    lastOrderDate: '2024-07-15',
-  },
-];
+import { customersService } from '@/services/api/customers';
+import { Loader2 } from 'lucide-react';
 
 export default function CustomerManagement() {
-  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -109,6 +73,41 @@ export default function CustomerManagement() {
     notes: '',
   });
   const [locationData, setLocationData] = useState<LocationData | undefined>();
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await customersService.getCustomers({ per_page: 100 });
+        const apiCustomers = response.data || [];
+        
+        const uiCustomers: Customer[] = apiCustomers.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone || '',
+          company: c.company,
+          customerType: (c.type === 'business' ? 'business' : 'individual') as 'individual' | 'business',
+          status: (c.status as any) || 'active',
+          totalOrders: c.total_orders || 0,
+          totalSpent: c.lifetime_value || 0,
+          createdAt: c.created_at,
+          updatedAt: c.updated_at,
+        }));
+        
+        setCustomers(uiCustomers);
+      } catch (err) {
+        console.error('Failed to fetch customers:', err);
+        setError('Failed to load customers. Please try again.');
+        toast.error('Failed to load customers');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   const handleOpenDialog = (customer?: Customer) => {
     if (customer) {
@@ -139,32 +138,68 @@ export default function CustomerManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (editingCustomer) {
-      setCustomers(customers.map(c => 
-        c.id === editingCustomer.id 
-          ? { ...c, ...formData, location: locationData }
-          : c
-      ));
-      toast.success('Customer updated successfully!');
-    } else {
-      const newCustomer: Customer = {
-        id: Date.now().toString(),
-        ...formData,
-        location: locationData,
-        totalOrders: 0,
-        totalSpent: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setCustomers([...customers, newCustomer]);
-      toast.success('Customer created successfully!');
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      if (editingCustomer) {
+        await customersService.updateCustomer(editingCustomer.id, {
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          status: formData.status,
+        });
+        
+        setCustomers(customers.map(c => 
+          c.id === editingCustomer.id 
+            ? { ...c, ...formData, location: locationData }
+            : c
+        ));
+        toast.success('Customer updated successfully!');
+      } else {
+        const response = await customersService.createCustomer({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          type: formData.customerType,
+        });
+        
+        const newCustomer: Customer = {
+          id: response.id,
+          name: response.name,
+          email: response.email,
+          phone: response.phone || '',
+          company: response.company,
+          customerType: (response.type === 'business' ? 'business' : 'individual') as 'individual' | 'business',
+          status: (response.status as any) || 'active',
+          location: locationData,
+          totalOrders: 0,
+          totalSpent: 0,
+          createdAt: response.created_at,
+          updatedAt: response.updated_at,
+        };
+        setCustomers([...customers, newCustomer]);
+        toast.success('Customer created successfully!');
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error('Failed to save customer:', err);
+      toast.error('Failed to save customer. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setCustomers(customers.filter(c => c.id !== id));
-    toast.success('Customer deleted successfully!');
+  const handleDelete = async (id: string) => {
+    try {
+      await customersService.deleteCustomer(id);
+      setCustomers(customers.filter(c => c.id !== id));
+      toast.success('Customer deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete customer:', err);
+      toast.error('Failed to delete customer. Please try again.');
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -294,6 +329,22 @@ export default function CustomerManagement() {
     },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -306,7 +357,7 @@ export default function CustomerManagement() {
             Manage customer information and order history
           </p>
         </div>
-        <Button onClick={() => handleOpenDialog()} className="gap-2">
+        <Button onClick={() => handleOpenDialog()} className="gap-2" disabled={saving}>
           <Plus className="w-4 h-4" />
           Add Customer
         </Button>
@@ -502,11 +553,16 @@ export default function CustomerManagement() {
           </Tabs>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={!formData.name || !formData.email || !formData.phone}>
-              {editingCustomer ? 'Update Customer' : 'Create Customer'}
+            <Button onClick={handleSave} disabled={!formData.name || !formData.email || !formData.phone || saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : editingCustomer ? 'Update Customer' : 'Create Customer'}
             </Button>
           </DialogFooter>
         </DialogContent>
