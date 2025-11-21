@@ -367,7 +367,7 @@ export class ThemePackageManager {
   }
 
   private normalizePath(path: string): string {
-    let normalized = path.replace(/\\/g, '/');
+    const normalized = path.replace(/\\/g, '/');
     const parts = normalized.split('/');
     if (parts[0] && !parts[0].includes('.')) {
       parts.shift();

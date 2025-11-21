@@ -131,7 +131,7 @@ export default function MapPicker({ onLocationSelect, initialLocation, value }: 
         attribution: '© OpenStreetMap contributors'
       }).addTo(map);
 
-      let marker = L.marker([position.lat, position.lng]).addTo(map);
+      const marker = L.marker([position.lat, position.lng]).addTo(map);
 
       map.on('click', (e: any) => {
         const { lat, lng } = e.latlng;

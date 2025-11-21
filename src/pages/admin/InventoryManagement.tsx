@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
 import {
   Card,
@@ -16,6 +16,8 @@ import {
 import { Search, Plus, Edit, Package, AlertTriangle, TrendingUp, TrendingDown, ArrowUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
+import { getInventoryItems, getInventoryLocations } from '@/services/api/inventory';
+import { InventoryItem as APIInventoryItem, InventoryLocation } from '@/types/inventory';
 
 interface InventoryItem {
   id: string;
@@ -186,70 +188,49 @@ const getColumns = (handleEdit: (item: InventoryItem) => void): ColumnDef<Invent
   },
 ];
 
-const mockInventory: InventoryItem[] = [
-  {
-    id: '1',
-    productName: 'Stainless Steel 304 Sheet',
-    sku: 'SS304-001',
-    category: 'Raw Material',
-    stock: 45,
-    minStock: 20,
-    unit: 'sheets',
-    location: 'Warehouse A - Rack 1',
-    lastUpdated: '2024-01-15',
-  },
-  {
-    id: '2',
-    productName: 'Brass Plate 2mm',
-    sku: 'BP-2MM-001',
-    category: 'Raw Material',
-    stock: 12,
-    minStock: 15,
-    unit: 'sheets',
-    location: 'Warehouse A - Rack 2',
-    lastUpdated: '2024-01-14',
-  },
-  {
-    id: '3',
-    productName: 'Crystal Glass Premium',
-    sku: 'CG-PRE-001',
-    category: 'Raw Material',
-    stock: 8,
-    minStock: 10,
-    unit: 'sheets',
-    location: 'Warehouse B - Rack 1',
-    lastUpdated: '2024-01-13',
-  },
-  {
-    id: '4',
-    productName: 'Etching Chemical Solution',
-    sku: 'ECS-001',
-    category: 'Consumables',
-    stock: 25,
-    minStock: 10,
-    unit: 'liters',
-    location: 'Chemical Storage',
-    lastUpdated: '2024-01-12',
-  },
-  {
-    id: '5',
-    productName: 'Aluminum Sheet 1mm',
-    sku: 'AL-1MM-001',
-    category: 'Raw Material',
-    stock: 35,
-    minStock: 15,
-    unit: 'sheets',
-    location: 'Warehouse A - Rack 3',
-    lastUpdated: '2024-01-11',
-  },
-];
-
 export default function InventoryManagement() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(mockInventory);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [formData, setFormData] = useState<Partial<InventoryItem>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch inventory data from API
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await getInventoryItems({ per_page: 100 });
+        const apiItems = response.data || [];
+        
+        // Transform API data to UI format
+        const uiItems: InventoryItem[] = apiItems.map(item => ({
+          id: item.id?.toString() || item.uuid,
+          productName: item.product?.name || `Product ${item.product_id}`,
+          sku: item.product?.sku || 'N/A',
+          category: item.product?.category || 'Uncategorized',
+          stock: item.current_quantity || 0,
+          minStock: item.minimum_quantity || 0,
+          unit: item.unit_of_measurement || 'units',
+          location: item.location_details?.location_name || 'Unknown Location',
+          lastUpdated: item.updated_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        }));
+        
+        setInventory(uiItems);
+      } catch (err) {
+        console.error('Failed to fetch inventory:', err);
+        setError('Failed to load inventory data');
+        toast.error('Failed to load inventory data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInventory();
+  }, []);
 
   const filteredInventory = inventory.filter((item) =>
     item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||

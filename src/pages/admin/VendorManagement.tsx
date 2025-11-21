@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,9 @@ import {
 export default function VendorManagement() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,6 +105,27 @@ export default function VendorManagement() {
 
     fetchVendors();
   }, []);
+
+  // Filter vendors based on search and filters
+  const filteredVendors = React.useMemo(() => {
+    return vendors.filter(vendor => {
+      const matchesSearch = !searchQuery || 
+        vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        vendor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (vendor.company && vendor.company.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesStatus = statusFilter === 'all' || vendor.status === statusFilter;
+      
+      const matchesRating = ratingFilter === 'all' || 
+        (ratingFilter === 'high' && vendor.rating >= 4) ||
+        (ratingFilter === 'medium' && vendor.rating >= 3 && vendor.rating < 4) ||
+        (ratingFilter === 'low' && vendor.rating < 3);
+      
+      const matchesLocation = locationFilter === 'all' || vendor.city === locationFilter;
+
+      return matchesSearch && matchesStatus && matchesRating && matchesLocation;
+    });
+  }, [vendors, searchQuery, statusFilter, ratingFilter, locationFilter]);
 
   const columns: ColumnDef<Vendor>[] = [
     {
@@ -374,10 +398,69 @@ export default function VendorManagement() {
       </div>
 
       {/* Vendors Table */}
-      <Card className="p-6">
+      <Card className="p-6 space-y-4">
+        {/* Advanced Search and Filters */}
+        <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by name, email, or company..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={ratingFilter} onValueChange={setRatingFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by rating" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Ratings</SelectItem>
+              <SelectItem value="high">4+ Stars</SelectItem>
+              <SelectItem value="medium">3+ Stars</SelectItem>
+              <SelectItem value="low">Below 3 Stars</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by city" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cities</SelectItem>
+              {Array.from(new Set(vendors.map(v => v.city).filter(Boolean))).map(city => (
+                <SelectItem key={city} value={city}>{city}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(searchQuery || statusFilter !== 'all' || ratingFilter !== 'all' || locationFilter !== 'all') && (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('all');
+                setRatingFilter('all');
+                setLocationFilter('all');
+              }}
+              className="whitespace-nowrap"
+            >
+              Clear Filters
+            </Button>
+          )}
+        </div>
+        
         <DataTable
           columns={columns}
-          data={vendors}
+          data={filteredVendors}
           searchPlaceholder="Search vendors by name, code, or email..."
           searchKey="name"
         />

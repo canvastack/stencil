@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
+import { productsService } from '@/services/api/products';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
@@ -73,18 +74,7 @@ export default function ProductEditor() {
   };
   
   const [formData, setFormData] = useState(defaultFormData);
-
-  // Save form data to sessionStorage whenever it changes
-  useEffect(() => {
-    sessionStorage.setItem('productDraft', JSON.stringify({
-      ...formData,
-      // Convert values to match ProductDetail format
-      images: formData.images.length > 0 ? formData.images : ['https://via.placeholder.com/800x600?text=Product+Image'],
-      specifications: formData.specifications.map(spec => ({ key: spec.key, value: spec.value })),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }));
-  }, [formData]);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isNew) {
@@ -112,9 +102,78 @@ export default function ProductEditor() {
     }
   }, [product, isNew]);
 
-  const handleSave = () => {
-    toast.success(isNew ? 'Product created successfully' : 'Product updated successfully');
-    navigate('/admin/products');
+  const handleSave = async () => {
+    if (!formData.name || !formData.slug) {
+      toast.error('Product name and slug are required');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (isNew) {
+        await productsService.createProduct({
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description,
+          longDescription: formData.longDescription,
+          price: formData.price,
+          currency: formData.currency,
+          priceUnit: formData.priceUnit,
+          minOrder: formData.minOrder,
+          category: formData.category,
+          subcategory: formData.subcategory,
+          tags: formData.tags,
+          material: formData.material,
+          images: formData.images.length > 0 ? formData.images : [],
+          inStock: formData.inStock,
+          stockQuantity: formData.stockQuantity,
+          leadTime: formData.leadTime,
+          seoTitle: formData.seoTitle,
+          seoDescription: formData.seoDescription,
+          seoKeywords: formData.seoKeywords,
+          status: formData.status,
+          featured: formData.featured,
+          specifications: formData.specifications,
+          customizable: formData.customizable,
+          customOptions: formData.customOptions,
+        });
+        toast.success('Product created successfully');
+      } else {
+        await productsService.updateProduct(id || '', {
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description,
+          longDescription: formData.longDescription,
+          price: formData.price,
+          currency: formData.currency,
+          priceUnit: formData.priceUnit,
+          minOrder: formData.minOrder,
+          category: formData.category,
+          subcategory: formData.subcategory,
+          tags: formData.tags,
+          material: formData.material,
+          images: formData.images.length > 0 ? formData.images : [],
+          inStock: formData.inStock,
+          stockQuantity: formData.stockQuantity,
+          leadTime: formData.leadTime,
+          seoTitle: formData.seoTitle,
+          seoDescription: formData.seoDescription,
+          seoKeywords: formData.seoKeywords,
+          status: formData.status,
+          featured: formData.featured,
+          specifications: formData.specifications,
+          customizable: formData.customizable,
+          customOptions: formData.customOptions,
+        });
+        toast.success('Product updated successfully');
+      }
+      navigate('/admin/products');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error(isNew ? 'Failed to create product' : 'Failed to update product');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddSpecification = () => {
@@ -187,9 +246,27 @@ export default function ProductEditor() {
             <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
-          <Button onClick={handleSave}>
-            <Save className="mr-2 h-4 w-4" />
-            Save
+          {!isNew && id && (
+            <Button 
+              variant="outline"
+              onClick={() => navigate(`/admin/products/${id}`)}
+            >
+              <Package className="mr-2 h-4 w-4" />
+              Manage Variants
+            </Button>
+          )}
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <div className="h-4 w-4 mr-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </>
+            )}
           </Button>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
+import { BulkDataTable, BulkAction } from '@/components/ui/bulk-data-table';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, Edit, Trash2, Eye, ArrowUpDown, Filter, X, AlertCircle } from 'lucide-react';
+import { Plus, MoreHorizontal, Edit, Trash2, Eye, ArrowUpDown, Filter, X, AlertCircle, Package } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 
 const columns: ColumnDef<Product>[] = [
@@ -227,6 +227,67 @@ export default function ProductList() {
     }
   };
 
+  const handleBulkDelete = async (selectedProducts: Product[]) => {
+    if (selectedProducts.length === 0) return;
+    
+    const confirmBulk = window.confirm(
+      `Are you sure you want to delete ${selectedProducts.length} product${selectedProducts.length > 1 ? 's' : ''}?`
+    );
+    
+    if (!confirmBulk) return;
+
+    try {
+      setIsSaving(true);
+      for (const product of selectedProducts) {
+        await deleteProduct(product.id);
+      }
+      await fetchProducts({
+        page: pagination.page,
+        per_page: pagination.per_page,
+      });
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBulkStatusUpdate = async (selectedProducts: Product[], status: string) => {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+      setIsSaving(true);
+      // Mock bulk status update - replace with real API
+      console.log(`Updating ${selectedProducts.length} products to status: ${status}`);
+      await fetchProducts({
+        page: pagination.page,
+        per_page: pagination.per_page,
+      });
+    } catch (error) {
+      console.error('Bulk status update failed:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const bulkActions: BulkAction[] = [
+    {
+      label: 'Publish Selected',
+      action: (products: Product[]) => handleBulkStatusUpdate(products, 'published'),
+      icon: Plus,
+    },
+    {
+      label: 'Archive Selected',
+      action: (products: Product[]) => handleBulkStatusUpdate(products, 'archived'),
+    },
+    {
+      label: 'Delete Selected',
+      action: handleBulkDelete,
+      variant: 'destructive',
+      icon: Trash2,
+    },
+  ];
+
   const handlePreviousPage = () => {
     if (pagination.page > 1) {
       fetchProducts({
@@ -279,6 +340,12 @@ export default function ProductList() {
                 <Link to={`/admin/products/${product.id}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to={`/admin/products/${product.id}`}>
+                  <Package className="mr-2 h-4 w-4" />
+                  Manage Variants
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -409,11 +476,13 @@ export default function ProductList() {
           </div>
         ) : (
           <>
-            <DataTable
+            <BulkDataTable
               columns={actionColumns}
               data={products}
               searchKey="name"
               searchPlaceholder="Search products..."
+              bulkActions={bulkActions}
+              enableBulkSelect={true}
             />
 
             <div className="flex items-center justify-between pt-4 border-t">

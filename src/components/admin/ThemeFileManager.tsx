@@ -192,7 +192,7 @@ export function ThemeFileManager() {
   }, [currentTheme, currentThemeName]);
 
   const getFilteredFiles = () => {
-    let filtered = state.files.filter(file => {
+    const filtered = state.files.filter(file => {
       // Filter by current path
       const pathMatch = state.currentPath === '/' 
         ? !file.path.includes('/', 1) || file.path === '/'

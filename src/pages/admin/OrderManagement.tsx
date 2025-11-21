@@ -46,13 +46,16 @@ import {
   Loader2,
   Filter,
   X,
+  MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderStatus, PaymentStatus, type Order, type OrderItem } from '@/types/order';
+import { useNavigate } from 'react-router-dom';
 
 export default function OrderManagement() {
+  const navigate = useNavigate();
   const {
     orders,
     pagination,
@@ -123,6 +126,11 @@ export default function OrderManagement() {
   const handleDeleteOrder = (orderId: string) => {
     setOrderToDelete(orderId);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleViewQuotes = (order: Order) => {
+    // Navigate to quotes page with order filter
+    navigate(`/admin/quotes?order_id=${order.id}`);
   };
 
   const confirmDelete = async () => {
@@ -325,14 +333,25 @@ export default function OrderManagement() {
               variant="ghost"
               size="icon"
               onClick={() => handleViewOrder(order)}
+              title="View Details"
             >
               <Eye className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => handleViewQuotes(order)}
+              title="View Quotes"
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => handleDeleteOrder(order.id)}
               disabled={isSaving}
+              title="Delete Order"
             >
               <Trash2 className="w-4 h-4 text-red-500" />
             </Button>

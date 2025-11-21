@@ -40,8 +40,11 @@ import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useProductReviews, useReviews } from "@/hooks/useReviews.tsx";
-import { useProductBySlug, useProducts } from "@/hooks/useProducts";
+import { useProductBySlug, useProducts as useProductsConsumer } from "@/hooks/useProducts.tsx";
 import { resolveImageUrl } from '@/utils/imageUtils';
+import { reviewService } from "@/services/api/reviews";
+import { ordersService } from "@/services/api/orders";
+import { customersService } from "@/services/api/customers";
 import { RatingStars } from "@/components/ui/rating-stars";
 
 const ProductDetail = () => {
@@ -50,13 +53,38 @@ const ProductDetail = () => {
   const { toast } = useToast();
   const { addToCart } = useCart();
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
 
   const handleSubmitReview = async (review: { rating: number; comment: string }) => {
-    // TODO: Replace with actual API call
-    toast({
-      title: "Ulasan Terkirim!",
-      description: "Terima kasih telah memberikan ulasan Anda.",
-    });
+    if (!product) return;
+    
+    setReviewLoading(true);
+    try {
+      await reviewService.createReview({
+        productId: product.id,
+        userName: formData.name || "Anonymous",
+        rating: review.rating,
+        comment: review.comment,
+        verified: true,
+      });
+      
+      toast({
+        title: "Ulasan Terkirim!",
+        description: "Terima kasih telah memberikan ulasan Anda.",
+      });
+      
+      setReviewModalOpen(false);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      toast({
+        title: "Gagal Mengirim Ulasan",
+        description: "Terjadi kesalahan saat mengirim ulasan. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setReviewLoading(false);
+    }
   };
   const searchParams = new URLSearchParams(window.location.search);
   const isPreview = searchParams.get('preview') === 'true';
@@ -69,7 +97,7 @@ const ProductDetail = () => {
   const { reviews: allReviews = [] } = useReviews();
   const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(product?.id || '');
   
-  const { products: allProductsForRelated = [] } = useProducts({ 
+  const { products: allProductsForRelated = [] } = useProductsConsumer({ 
     category: product?.category,
     limit: 4
   });
@@ -213,7 +241,7 @@ const ProductDetail = () => {
     { name: "Tembaga", hex: "#B87333" },
   ];
 
-  const handleOrder = () => {
+  const handleOrder = async () => {
     if (!formData.name || !formData.phone || !formData.quantity || !formData.bahan || !formData.kualitas || !formData.warna || !formData.notes) {
       toast({
         title: "Form Belum Lengkap",
@@ -223,10 +251,78 @@ const ProductDetail = () => {
       return;
     }
 
-    toast({
-      title: "Pesanan Diterima!",
-      description: "Tim kami akan segera menghubungi Anda untuk konfirmasi.",
-    });
+    if (!product) return;
+
+    setOrderLoading(true);
+    try {
+      let customerId: string | null = null;
+      
+      try {
+        const customers = await customersService.getCustomers({
+          search: formData.email || formData.phone,
+          per_page: 1,
+        });
+        if (customers.data && customers.data.length > 0) {
+          customerId = customers.data[0].id;
+        }
+      } catch (error) {
+        console.log('Error searching for customer, will create new one:', error);
+      }
+
+      if (!customerId) {
+        const newCustomer = await customersService.createCustomer({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          type: 'individual',
+        });
+        customerId = newCustomer.id;
+      }
+
+      const quantity = parseInt(formData.quantity) || 1;
+      await ordersService.createOrder({
+        customer_id: customerId,
+        items: [
+          {
+            product_id: product.id,
+            quantity,
+            price: product.price,
+          },
+        ],
+        notes: `Bahan: ${formData.bahan}, Kualitas: ${formData.kualitas}, Warna: ${formData.warna}, Catatan: ${formData.notes}`,
+      });
+
+      toast({
+        title: "Pesanan Diterima!",
+        description: "Tim kami akan segera menghubungi Anda untuk konfirmasi.",
+      });
+
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        quantity: "1",
+        productType: "",
+        size: "",
+        material: "",
+        bahan: "",
+        kualitas: "",
+        ketebalan: "",
+        warna: "",
+        designFile: null,
+        customTexts: [{ text: "", placement: "depan", position: "atas", color: "#000000" }],
+        notes: "",
+      });
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast({
+        title: "Gagal Membuat Pesanan",
+        description: "Terjadi kesalahan saat membuat pesanan. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    } finally {
+      setOrderLoading(false);
+    }
   };
 
   const handleWhatsApp = () => {
@@ -787,9 +883,17 @@ const ProductDetail = () => {
                     </Button>
                     <Button
                       onClick={handleOrder}
-                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
+                      disabled={orderLoading}
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Pesan Sekarang
+                      {orderLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2 inline-block"></div>
+                          Memproses...
+                        </>
+                      ) : (
+                        "Pesan Sekarang"
+                      )}
                     </Button>
                     <Button
                       onClick={handleWhatsApp}
@@ -814,7 +918,7 @@ const ProductDetail = () => {
                   <h2 className="text-3xl font-bold text-foreground">Ulasan Pelanggan</h2>
                   
                   {/* Sort Dropdown */}
-                  <Select value={reviewSort} onValueChange={(value) => setReviewSort(value as any)}>
+                  <Select value={reviewSort} onValueChange={(value) => setReviewSort(value as 'rating-high' | 'rating-low' | 'newest' | 'oldest')}>
                     <SelectTrigger className="w-[180px] bg-background border-border">
                       <ArrowUpDown className="w-4 h-4 mr-2" />
                       <SelectValue placeholder="Urutkan" />
@@ -976,6 +1080,7 @@ const ProductDetail = () => {
         onOpenChange={setReviewModalOpen}
         title="Tulis Ulasan"
         submitLabel="Kirim Ulasan"
+        isSubmitting={reviewLoading}
         onSubmit={() => {
           const formElement = document.querySelector('form');
           if (formElement) {

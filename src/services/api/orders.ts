@@ -1,6 +1,7 @@
 import apiClient from './client';
 import { Order } from '@/types/order';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
+import { orderNotificationService } from '../notifications/orderNotificationService';
 
 export interface OrderFilters extends ListRequestParams {
   status?: string;
@@ -67,7 +68,35 @@ class OrdersService {
   }
 
   async updateOrder(id: string, data: UpdateOrderRequest): Promise<Order> {
+    // Get current order to track status change
+    const currentOrder = await this.getOrderById(id);
+    const previousStatus = currentOrder.status;
+
     const response = await apiClient.put<Order>(`/orders/${id}`, data);
+    const updatedOrder = response;
+
+    // If status changed, send notification
+    if (data.status && data.status !== previousStatus) {
+      try {
+        await orderNotificationService.sendOrderStatusNotification({
+          orderId: id,
+          previousStatus: previousStatus,
+          newStatus: data.status,
+          customerName: updatedOrder.customer?.name || 'Unknown Customer',
+          orderTotal: updatedOrder.total,
+          notificationChannels: ['inApp', 'email'],
+          metadata: {
+            updatedBy: localStorage.getItem('user_id') || 'system',
+            timestamp: new Date().toISOString(),
+            notes: data.notes,
+          },
+        });
+      } catch (notificationError) {
+        console.warn('Failed to send order status notification:', notificationError);
+        // Don't fail the order update if notification fails
+      }
+    }
+
     return response;
   }
 
@@ -80,7 +109,35 @@ class OrdersService {
     id: string,
     data: OrderStateTransitionRequest
   ): Promise<Order> {
+    // Get current order to track status change
+    const currentOrder = await this.getOrderById(id);
+    const previousStatus = currentOrder.status;
+
     const response = await apiClient.post<Order>(`/orders/${id}/transition-state`, data);
+    const updatedOrder = response;
+
+    // Send notification for state transition
+    try {
+      await orderNotificationService.sendOrderStatusNotification({
+        orderId: id,
+        previousStatus: previousStatus,
+        newStatus: updatedOrder.status,
+        customerName: updatedOrder.customer?.name || 'Unknown Customer',
+        orderTotal: updatedOrder.total,
+        notificationChannels: ['inApp', 'email'],
+        metadata: {
+          action: data.action,
+          updatedBy: localStorage.getItem('user_id') || 'system',
+          timestamp: new Date().toISOString(),
+          notes: data.notes,
+          transitionData: data.data,
+        },
+      });
+    } catch (notificationError) {
+      console.warn('Failed to send order transition notification:', notificationError);
+      // Don't fail the transition if notification fails
+    }
+
     return response;
   }
 
@@ -105,6 +162,13 @@ class OrdersService {
   ): Promise<any> {
     const response = await apiClient.post(`/orders/${orderId}/payments`, data);
     return response;
+  }
+
+  /**
+   * Test order status notification (development only)
+   */
+  async testOrderNotification(orderId: string = 'TEST-001'): Promise<void> {
+    await orderNotificationService.sendTestOrderNotification(orderId);
   }
 }
 

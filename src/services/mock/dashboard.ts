@@ -3,7 +3,7 @@ import dashboardData from './data/dashboard-stats.json';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-let dashboardStats: DashboardStats = { ...dashboardData };
+const dashboardStats: DashboardStats = { ...dashboardData };
 
 export const dashboardService = {
   async getDashboardStats(): Promise<DashboardStats> {

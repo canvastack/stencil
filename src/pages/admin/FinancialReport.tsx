@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,8 @@ import { DollarSign, TrendingUp, TrendingDown, Download, FileText, Calendar } fr
 import { toast } from 'sonner';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
+import { financialService } from '@/services/api/financial';
+import { Transaction as APITransaction } from '@/services/api/financial';
 
 interface Transaction {
   id: string;
@@ -25,78 +27,55 @@ interface Transaction {
   paymentMethod: string;
 }
 
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    date: '2024-01-15',
-    type: 'income',
-    category: 'Product Sales',
-    description: 'Custom Brass Plaque - Order #1234',
-    amount: 2500000,
-    paymentMethod: 'Bank Transfer',
-  },
-  {
-    id: '2',
-    date: '2024-01-14',
-    type: 'income',
-    category: 'Product Sales',
-    description: 'Glass Trophy Set - Order #1233',
-    amount: 4500000,
-    paymentMethod: 'Credit Card',
-  },
-  {
-    id: '3',
-    date: '2024-01-14',
-    type: 'expense',
-    category: 'Raw Materials',
-    description: 'Stainless Steel Sheets Purchase',
-    amount: 1500000,
-    paymentMethod: 'Bank Transfer',
-  },
-  {
-    id: '4',
-    date: '2024-01-13',
-    type: 'expense',
-    category: 'Equipment',
-    description: 'Laser Etching Machine Maintenance',
-    amount: 3000000,
-    paymentMethod: 'Cash',
-  },
-  {
-    id: '5',
-    date: '2024-01-12',
-    type: 'income',
-    category: 'Product Sales',
-    description: 'Metal Nameplate - Order #1232',
-    amount: 1800000,
-    paymentMethod: 'E-wallet',
-  },
-  {
-    id: '6',
-    date: '2024-01-11',
-    type: 'expense',
-    category: 'Utilities',
-    description: 'Electricity Bill - January',
-    amount: 2500000,
-    paymentMethod: 'Bank Transfer',
-  },
-  {
-    id: '7',
-    date: '2024-01-10',
-    type: 'income',
-    category: 'Custom Services',
-    description: 'Custom Engraving Service',
-    amount: 3200000,
-    paymentMethod: 'Bank Transfer',
-  },
-];
+
 
 export default function FinancialReport() {
-  const [transactions] = useState<Transaction[]>(mockTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterPeriod, setFilterPeriod] = useState<string>('month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch transactions from API
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await financialService.getTransactions({ 
+          per_page: 100,
+          type: filterType !== 'all' ? filterType as 'income' | 'expense' : undefined,
+          period: filterPeriod as 'day' | 'week' | 'month' | 'quarter' | 'year',
+          date_from: startDate || undefined,
+          date_to: endDate || undefined
+        });
+        const apiTransactions = response.data || [];
+        
+        // Transform API data to UI format
+        const uiTransactions: Transaction[] = apiTransactions.map(t => ({
+          id: t.id,
+          date: t.date,
+          type: t.type,
+          category: t.category,
+          description: t.description,
+          amount: t.amount,
+          paymentMethod: t.payment_method,
+        }));
+        
+        setTransactions(uiTransactions);
+      } catch (err) {
+        console.error('Failed to fetch transactions:', err);
+        setError('Failed to load financial data');
+        toast.error('Failed to load financial data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [filterType, filterPeriod, startDate, endDate]);
 
   const filteredTransactions = transactions.filter((t) => {
     if (filterType !== 'all' && t.type !== filterType) return false;

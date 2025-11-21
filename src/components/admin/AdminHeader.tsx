@@ -1,14 +1,19 @@
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Menu, Bell, Search } from 'lucide-react';
+import { Moon, Sun, Menu, Search } from 'lucide-react';
 import { useAdminStore } from '@/stores/adminStore';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
+import { NotificationToast } from '@/components/ui/notification-toast';
+import { usePageTracking } from '@/hooks/useActivity';
 
 export const AdminHeader = () => {
   const toggleSidebar = useAdminStore((state) => state.toggleSidebar);
   const [isDark, setIsDark] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  // Track page visits automatically
+  usePageTracking();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -65,14 +70,7 @@ export const AdminHeader = () => {
 
         {/* Right Side */}
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-lg relative"
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
-          </Button>
+          <NotificationToast className="rounded-lg" />
 
           <Button
             variant="ghost"

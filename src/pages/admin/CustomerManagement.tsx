@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   UserCircle,
   Plus,
@@ -49,7 +49,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import MapPicker, { LocationData } from '@/components/admin/MapPicker';
 import { Textarea } from '@/components/ui/textarea';
-import { DataTable } from '@/components/ui/data-table';
+import { BulkDataTable, BulkAction } from '@/components/ui/bulk-data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import type { Customer } from '@/types/customer';
 import { customersService } from '@/services/api/customers';
@@ -58,6 +58,9 @@ import { Loader2 } from 'lucide-react';
 export default function CustomerManagement() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -202,6 +205,60 @@ export default function CustomerManagement() {
     }
   };
 
+  const handleBulkDelete = async (selectedCustomers: Customer[]) => {
+    if (selectedCustomers.length === 0) return;
+    
+    const confirmBulk = window.confirm(
+      `Are you sure you want to delete ${selectedCustomers.length} customer${selectedCustomers.length > 1 ? 's' : ''}?`
+    );
+    
+    if (!confirmBulk) return;
+
+    try {
+      for (const customer of selectedCustomers) {
+        await customersService.deleteCustomer(customer.id);
+      }
+      setCustomers(customers.filter(c => !selectedCustomers.some(sc => sc.id === c.id)));
+      toast.success(`${selectedCustomers.length} customer${selectedCustomers.length > 1 ? 's' : ''} deleted successfully!`);
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+      toast.error('Failed to delete customers. Please try again.');
+    }
+  };
+
+  const handleBulkStatusUpdate = async (selectedCustomers: Customer[], status: string) => {
+    if (selectedCustomers.length === 0) return;
+    
+    try {
+      // Mock bulk status update - replace with real API
+      const updatedCustomers = customers.map(c => 
+        selectedCustomers.some(sc => sc.id === c.id) ? { ...c, status } : c
+      );
+      setCustomers(updatedCustomers);
+      toast.success(`${selectedCustomers.length} customer${selectedCustomers.length > 1 ? 's' : ''} updated to ${status}`);
+    } catch (error) {
+      console.error('Bulk status update failed:', error);
+      toast.error('Failed to update customer status. Please try again.');
+    }
+  };
+
+  const bulkActions: BulkAction[] = [
+    {
+      label: 'Activate Selected',
+      action: (customers: Customer[]) => handleBulkStatusUpdate(customers, 'active'),
+    },
+    {
+      label: 'Deactivate Selected',
+      action: (customers: Customer[]) => handleBulkStatusUpdate(customers, 'inactive'),
+    },
+    {
+      label: 'Delete Selected',
+      action: handleBulkDelete,
+      variant: 'destructive',
+      icon: Trash2,
+    },
+  ];
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -209,6 +266,22 @@ export default function CustomerManagement() {
       minimumFractionDigits: 0,
     }).format(amount);
   };
+
+  // Filter customers based on search and filters
+  const filteredCustomers = React.useMemo(() => {
+    return customers.filter(customer => {
+      const matchesSearch = !searchQuery || 
+        customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (customer.company && customer.company.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesStatus = statusFilter === 'all' || customer.status === statusFilter;
+      const matchesType = typeFilter === 'all' || customer.customerType === typeFilter;
+      const matchesLocation = locationFilter === 'all' || customer.city === locationFilter;
+
+      return matchesSearch && matchesStatus && matchesType && matchesLocation;
+    });
+  }, [customers, searchQuery, statusFilter, typeFilter, locationFilter]);
 
   const columns: ColumnDef<Customer>[] = [
     {
@@ -423,12 +496,74 @@ export default function CustomerManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={customers}
-            searchPlaceholder="Search customers..."
-            searchKey="name"
-          />
+          <div className="space-y-4">
+            {/* Advanced Search and Filters */}
+            <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search by name, email, or company..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="individual">Individual</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={locationFilter} onValueChange={setLocationFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by city" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cities</SelectItem>
+                  {Array.from(new Set(customers.map(c => c.city).filter(Boolean))).map(city => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || locationFilter !== 'all') && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                    setTypeFilter('all');
+                    setLocationFilter('all');
+                  }}
+                  className="whitespace-nowrap"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+            
+            <BulkDataTable
+              columns={columns}
+              data={filteredCustomers}
+              searchPlaceholder="Search customers..."
+              searchKey="name"
+              bulkActions={bulkActions}
+              enableBulkSelect={true}
+            />
+          </div>
         </CardContent>
       </Card>
 

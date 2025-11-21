@@ -1,7 +1,7 @@
 import { Review, ReviewFilters, CreateReviewInput, UpdateReviewInput, ReviewStats } from '@/types/review';
 import reviewsData from './data/reviews.json';
 
-let reviews: Review[] = [...reviewsData];
+const reviews: Review[] = [...reviewsData];
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 

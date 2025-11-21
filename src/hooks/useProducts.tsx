@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Product } from '@/types/product';
-import { getProducts, getProductById, getProductBySlug, getFeaturedProducts, getProductsByCategory } from '@/services/mock/products';
+import { productsService } from '@/services/api/products';
 
 interface UseProductsOptions {
   category?: string;
@@ -18,14 +18,14 @@ export const useProducts = (options: UseProductsOptions = {}) => {
     try {
       setLoading(true);
       
-      const data = getProducts({
+      const response = await productsService.getProducts({
         category: options.category,
         featured: options.featured,
         status: options.status,
         limit: options.limit,
       });
       
-      setProducts(data);
+      setProducts(response.data || []);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load products'));
@@ -43,15 +43,21 @@ export const useProducts = (options: UseProductsOptions = {}) => {
 
 export const useProduct = (id: string) => {
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(!!id); // Only start loading if an id is provided
+  const [loading, setLoading] = useState(!!id);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const loadProduct = async () => {
+      if (!id) {
+        setProduct(null);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         
-        const found = getProductById(id);
+        const found = await productsService.getProductById(id);
         
         if (found) {
           setProduct(found);
@@ -66,9 +72,7 @@ export const useProduct = (id: string) => {
       }
     };
 
-    if (id) {
-      loadProduct();
-    }
+    loadProduct();
   }, [id]);
 
   return { product, loading, error };
@@ -76,15 +80,21 @@ export const useProduct = (id: string) => {
 
 export const useProductBySlug = (slug: string) => {
   const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!slug);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const loadProduct = async () => {
+      if (!slug) {
+        setProduct(null);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         
-        const found = getProductBySlug(slug);
+        const found = await productsService.getProductBySlug(slug);
         
         if (found) {
           setProduct(found);
@@ -99,9 +109,7 @@ export const useProductBySlug = (slug: string) => {
       }
     };
 
-    if (slug) {
-      loadProduct();
-    }
+    loadProduct();
   }, [slug]);
 
   return { product, loading, error };
@@ -117,7 +125,7 @@ export const useFeaturedProducts = (limit = 3) => {
       try {
         setLoading(true);
         
-        const data = getFeaturedProducts(limit);
+        const data = await productsService.getFeaturedProducts(limit);
         
         setProducts(data);
         setError(null);
@@ -136,15 +144,21 @@ export const useFeaturedProducts = (limit = 3) => {
 
 export const useProductsByCategory = (category: string, limit?: number) => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!category);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const loadProductsByCategory = async () => {
+      if (!category) {
+        setProducts([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         
-        const data = getProductsByCategory(category, limit);
+        const data = await productsService.getProductsByCategory(category, limit);
         
         setProducts(data);
         setError(null);
@@ -155,9 +169,7 @@ export const useProductsByCategory = (category: string, limit?: number) => {
       }
     };
 
-    if (category) {
-      loadProductsByCategory();
-    }
+    loadProductsByCategory();
   }, [category, limit]);
 
   return { products, loading, error };
@@ -173,7 +185,8 @@ export const useProductCategories = () => {
       try {
         setLoading(true);
         
-        const data = getProducts();
+        const response = await productsService.getProducts();
+        const data = response.data || [];
         const uniqueCategories = Array.from(new Set(data.map(p => p.category)));
         
         setCategories(uniqueCategories);

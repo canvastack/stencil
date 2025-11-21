@@ -2,7 +2,8 @@ import * as React from "react";
 import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/react-query";
 import { ThemeProvider } from "@/core/engine/ThemeProvider";
 import { themeManager } from "@/core/engine/ThemeManager";
 // Import default theme to ensure registration
@@ -45,6 +46,7 @@ const PageContact = lazy(() => import("./pages/admin/PageContact"));
 const PageFAQ = lazy(() => import("./pages/admin/PageFAQ"));
 const ProductList = lazy(() => import("./pages/admin/ProductList"));
 const ProductEditor = lazy(() => import("./pages/admin/ProductEditor"));
+const ProductDetail = lazy(() => import("./pages/admin/ProductDetail"));
 const ProductPageContent = lazy(() => import("@/features/admin/pages/ProductPageContent"));
 const ProductSettings = lazy(() => import("@/features/admin/pages/ProductSettings"));
 const ReviewList = lazy(() => import("./pages/admin/ReviewList"));
@@ -55,8 +57,13 @@ const ProductCategories = lazy(() => import("./pages/admin/ProductCategories"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
 const CustomerManagement = lazy(() => import("./pages/admin/CustomerManagement"));
+const CustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
 const VendorManagement = lazy(() => import("./pages/admin/VendorManagement"));
+const VendorDetail = lazy(() => import("./pages/admin/VendorDetail"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
+const QuoteManagement = lazy(() => import("./pages/admin/QuoteManagement"));
+const PaymentManagement = lazy(() => import("./pages/admin/PaymentManagement"));
+const ShippingManagement = lazy(() => import("./pages/admin/ShippingManagement"));
 const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 const FinancialReport = lazy(() => import("./pages/admin/FinancialReport"));
 const LanguageSettings = lazy(() => import("./pages/admin/LanguageSettings"));
@@ -70,6 +77,8 @@ const ThemeFiles = lazy(() => import("./pages/admin/ThemeFiles"));
 const ThemeAdvancedEditor = lazy(() => import("./pages/admin/ThemeAdvancedEditor"));
 const ThemeMarketplace = lazy(() => import("./pages/admin/ThemeMarketplace"));
 const ThemePackaging = lazy(() => import("./pages/admin/ThemePackaging"));
+const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
+const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonitoring"));
 
 function LoadingFallback() {
   return (
@@ -79,18 +88,7 @@ function LoadingFallback() {
   );
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-    },
-  },
-});
+
 
 function App() {
   // Default theme is imported at module load (see top-level import) so registration
@@ -142,6 +140,7 @@ function App() {
                   <Route path="products" element={<Suspense fallback={<LoadingFallback />}><ProductList /></Suspense>} />
                   <Route path="products/new" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
                   <Route path="products/:id/edit" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
+                  <Route path="products/:id" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
                   <Route path="products/categories" element={<Suspense fallback={<LoadingFallback />}><ProductCategories /></Suspense>} />
                   <Route path="products/page-content" element={<Suspense fallback={<LoadingFallback />}><ProductPageContent /></Suspense>} />
                   <Route path="products/settings" element={<Suspense fallback={<LoadingFallback />}><ProductSettings /></Suspense>} />
@@ -150,8 +149,13 @@ function App() {
                   <Route path="users" element={<Suspense fallback={<LoadingFallback />}><UserManagement /></Suspense>} />
                   <Route path="roles" element={<Suspense fallback={<LoadingFallback />}><RoleManagement /></Suspense>} />
                   <Route path="customers" element={<Suspense fallback={<LoadingFallback />}><CustomerManagement /></Suspense>} />
+                  <Route path="customers/:id" element={<Suspense fallback={<LoadingFallback />}><CustomerDetail /></Suspense>} />
                   <Route path="vendors" element={<Suspense fallback={<LoadingFallback />}><VendorManagement /></Suspense>} />
+                  <Route path="vendors/:id" element={<Suspense fallback={<LoadingFallback />}><VendorDetail /></Suspense>} />
                   <Route path="orders" element={<Suspense fallback={<LoadingFallback />}><OrderManagement /></Suspense>} />
+                  <Route path="quotes" element={<Suspense fallback={<LoadingFallback />}><QuoteManagement /></Suspense>} />
+                  <Route path="payments" element={<Suspense fallback={<LoadingFallback />}><PaymentManagement /></Suspense>} />
+                  <Route path="shipping" element={<Suspense fallback={<LoadingFallback />}><ShippingManagement /></Suspense>} />
                   <Route path="inventory" element={<Suspense fallback={<LoadingFallback />}><InventoryManagement /></Suspense>} />
                   <Route path="financial-report" element={<Suspense fallback={<LoadingFallback />}><FinancialReport /></Suspense>} />
                   <Route path="language" element={<Suspense fallback={<LoadingFallback />}><LanguageSettings /></Suspense>} />
@@ -167,6 +171,8 @@ function App() {
                   <Route path="themes/packaging" element={<Suspense fallback={<LoadingFallback />}><ThemePackaging /></Suspense>} />
                   <Route path="documentation" element={<Suspense fallback={<LoadingFallback />}><Documentation /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
+                  <Route path="activity-log" element={<Suspense fallback={<LoadingFallback />}><ActivityLog /></Suspense>} />
+                  <Route path="performance" element={<Suspense fallback={<LoadingFallback />}><PerformanceMonitoring /></Suspense>} />
                   <Route path="profile" element={<UserProfile />} />
                 </Route>
                   

@@ -10,7 +10,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Development-only overflow debug helper. Dynamically imported so it doesn't ship in production builds.
 if (process.env.NODE_ENV === 'development') {
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+   
   import('@/lib/overflowDebug');
 }
 

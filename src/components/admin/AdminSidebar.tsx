@@ -18,7 +18,9 @@ import {
   Globe,
   BarChart3,
   Zap,
-  LogOut
+  LogOut,
+  Activity,
+  Store
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -29,7 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface MenuItem {
   title: string;
@@ -39,6 +41,8 @@ interface MenuItem {
   children?: {
     title: string;
     path: string;
+    badge?: string;
+    requiredRoles?: string[];
   }[];
   visibleFor?: 'platform' | 'tenant' | 'both';
   requiredRoles?: string[];
@@ -81,50 +85,27 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: 'Products',
-    icon: Package,
+    title: 'Commerce Management',
+    icon: Store,
     visibleFor: 'tenant',
-    requiredRoles: ['admin', 'manager'],
     children: [
-      { title: 'All Products', path: '/admin/products' },
-      { title: 'Add Product', path: '/admin/products/new' },
-      { title: 'Categories', path: '/admin/products/categories' },
-      { title: 'Page Content', path: '/admin/products/page-content' },
-      { title: 'Settings', path: '/admin/products/settings' },
+      { title: 'All Products', path: '/admin/products', requiredRoles: ['admin', 'manager'] },
+      { title: 'Add Product', path: '/admin/products/new', requiredRoles: ['admin', 'manager'] },
+      { title: 'Categories', path: '/admin/products/categories', requiredRoles: ['admin', 'manager'] },
+      { title: 'Orders', path: '/admin/orders' },
+      { title: 'Quotes', path: '/admin/quotes', requiredRoles: ['admin', 'manager'] },
+      { title: 'Payments', path: '/admin/payments', requiredRoles: ['admin', 'manager'] },
+      { title: 'Shipping', path: '/admin/shipping', requiredRoles: ['admin', 'manager'] },
+      { title: 'Reviews', path: '/admin/reviews', badge: '3' },
+      { title: 'Vendors', path: '/admin/vendors', requiredRoles: ['admin', 'manager'] },
+      { title: 'Inventory', path: '/admin/inventory', requiredRoles: ['admin', 'manager'] },
     ],
-  },
-  {
-    title: 'Orders',
-    icon: ShoppingCart,
-    path: '/admin/orders',
-    visibleFor: 'tenant',
   },
   {
     title: 'Customers',
     icon: Users,
     path: '/admin/customers',
     visibleFor: 'tenant',
-  },
-  {
-    title: 'Reviews',
-    icon: Star,
-    path: '/admin/reviews',
-    visibleFor: 'tenant',
-    badge: '3',
-  },
-  {
-    title: 'Vendors',
-    icon: Building2,
-    path: '/admin/vendors',
-    visibleFor: 'tenant',
-    requiredRoles: ['admin', 'manager'],
-  },
-  {
-    title: 'Inventory',
-    icon: PackageSearch,
-    path: '/admin/inventory',
-    visibleFor: 'tenant',
-    requiredRoles: ['admin', 'manager'],
   },
   {
     title: 'Financial Report',
@@ -174,6 +155,20 @@ const menuItems: MenuItem[] = [
     visibleFor: 'tenant',
   },
   {
+    title: 'Activity Log',
+    icon: Activity,
+    path: '/admin/activity-log',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
+  },
+  {
+    title: 'Performance',
+    icon: Zap,
+    path: '/admin/performance',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
+  },
+  {
     title: 'Settings',
     icon: Settings,
     path: '/admin/settings',
@@ -187,7 +182,18 @@ export const AdminSidebar = () => {
   const navigate = useNavigate();
   const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
   const { accountType, roles, user, account, logout } = useAuthState();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['Content Management']);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+
+  // Load expanded menus from localStorage on mount
+  useEffect(() => {
+    const savedExpandedMenus = localStorage.getItem('admin-sidebar-expanded-menus');
+    if (savedExpandedMenus) {
+      setExpandedMenus(JSON.parse(savedExpandedMenus));
+    } else {
+      // Default expanded menus
+      setExpandedMenus(['Content Management', 'Commerce Management']);
+    }
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -205,11 +211,15 @@ export const AdminSidebar = () => {
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   const toggleMenu = (title: string) => {
-    setExpandedMenus((prev) =>
-      prev.includes(title)
+    setExpandedMenus((prev) => {
+      const newExpanded = prev.includes(title)
         ? prev.filter((item) => item !== title)
-        : [...prev, title]
-    );
+        : [...prev, title];
+      
+      // Save to localStorage
+      localStorage.setItem('admin-sidebar-expanded-menus', JSON.stringify(newExpanded));
+      return newExpanded;
+    });
   };
 
   const isMenuItemVisible = (item: MenuItem): boolean => {
@@ -299,7 +309,12 @@ export const AdminSidebar = () => {
             </Button>
             {isExpanded && (
               <div className="ml-8 space-y-1">
-                {item.children.map((child) => (
+                {item.children
+                  .filter((child) => {
+                    if (!child.requiredRoles) return true;
+                    return child.requiredRoles.some((role) => roles.includes(role));
+                  })
+                  .map((child) => (
                   <Button
                     key={child.path}
                     variant="ghost"
@@ -310,7 +325,16 @@ export const AdminSidebar = () => {
                     )}
                     asChild
                   >
-                    <Link to={child.path}>{child.title}</Link>
+                    <Link to={child.path}>
+                      <span className="flex items-center justify-between w-full">
+                        {child.title}
+                        {child.badge && (
+                          <span className="bg-destructive text-destructive-foreground text-xs px-2 py-0.5 rounded-full">
+                            {child.badge}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
                   </Button>
                 ))}
               </div>

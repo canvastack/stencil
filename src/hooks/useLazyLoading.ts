@@ -41,7 +41,7 @@ export function useLazyLoading() {
           // Last resort: we cannot start preload for this lazy component in a portable way.
           // Return a resolved promise to keep the API consistent.
           // Caller can pass an explicit loader function to guarantee preloading.
-          // eslint-disable-next-line no-console
+           
           console.warn('useLazyLoading: unable to preload provided lazy component on this React version. Pass a loader function instead to guarantee preloading.');
           promise = Promise.resolve();
         }

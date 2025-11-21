@@ -1,5 +1,5 @@
 import apiClient, { clientManager } from './client';
-import { AuthToken, RefreshTokenRequest, RefreshTokenResponse } from '@/types/api';
+import { RefreshTokenResponse } from '@/types/api';
 
 export type AccountType = 'platform' | 'tenant';
 
@@ -147,16 +147,16 @@ class AuthService {
     
     console.log('Making login request to:', endpoint, 'with payload:', { ...payload, password: '[REDACTED]' });
     const response = await apiClient.post<LoginResponse>(endpoint, payload);
-    console.log('Login response received:', response);
+    console.log('Login response received:', response.data);
     console.log('Response structure:', {
-      hasToken: !!(response as LoginResponse).token,
-      hasAccessToken: !!(response as LoginResponse).access_token,
-      tokenType: (response as LoginResponse).token_type,
-      hasUser: !!(response as LoginResponse).user,
-      hasTenant: !!(response as LoginResponse).tenant
+      hasToken: !!response.data.token,
+      hasAccessToken: !!response.data.access_token,
+      tokenType: response.data.token_type,
+      hasUser: !!response.data.user,
+      hasTenant: !!response.data.tenant
     });
     
-    const loginResponse = response as LoginResponse;
+    const loginResponse = response.data;
     if (loginResponse.token || loginResponse.access_token) {
       this.setAuthToken(loginResponse.token || loginResponse.access_token);
       this.setAccountType(accountType);
@@ -180,32 +180,32 @@ class AuthService {
       }
     }
     
-    return response;
+    return response.data;
   }
 
   async register(data: RegisterRequest): Promise<RegisterResponse> {
     const response = await apiClient.post<RegisterResponse>('/auth/register', data);
-    return response;
+    return response.data;
   }
 
   async forgotPassword(data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
     const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', data);
-    return response;
+    return response.data;
   }
 
   async resetPassword(data: ResetPasswordRequest): Promise<ResetPasswordResponse> {
     const response = await apiClient.post<ResetPasswordResponse>('/auth/reset-password', data);
-    return response;
+    return response.data;
   }
 
   async verifyEmail(data: VerifyEmailRequest): Promise<VerifyEmailResponse> {
     const response = await apiClient.post<VerifyEmailResponse>('/auth/verify-email', data);
-    return response;
+    return response.data;
   }
 
   async resendVerification(data: ResendVerificationRequest): Promise<ResendVerificationResponse> {
     const response = await apiClient.post<ResendVerificationResponse>('/auth/resend-verification', data);
-    return response;
+    return response.data;
   }
 
   async logout(): Promise<void> {
@@ -221,21 +221,19 @@ class AuthService {
       refresh_token: refreshToken,
     });
 
-    const refreshResponse = response as RefreshTokenResponse;
+    const refreshResponse = response.data;
     if (refreshResponse.token || refreshResponse.access_token) {
       this.setAuthToken(refreshResponse.token || refreshResponse.access_token);
     }
 
-    return response;
+    return response.data;
   }
 
   async getCurrentUser(): Promise<CurrentUserResponse> {
-    const accountType = this.getAccountType();
-    
     try {
       const response = await apiClient.get<CurrentUserResponse>('/auth/me');
       
-      const currentUserResponse = response as CurrentUserResponse;
+      const currentUserResponse = response.data;
       if (currentUserResponse.user) {
         this.setCurrentUser(currentUserResponse.user);
       }
@@ -246,7 +244,7 @@ class AuthService {
         this.setCurrentTenant(currentUserResponse.tenant);
       }
       
-      return response;
+      return response.data;
     } catch (error) {
       this.clearAuth();
       throw error;
@@ -256,17 +254,17 @@ class AuthService {
   async updateProfile(data: UpdateProfileRequest): Promise<UpdateProfileResponse> {
     const response = await apiClient.put<UpdateProfileResponse>('/auth/profile', data);
     
-    const updateResponse = response as UpdateProfileResponse;
+    const updateResponse = response.data;
     if (updateResponse.user) {
       this.setCurrentUser(updateResponse.user);
     }
     
-    return response;
+    return response.data;
   }
 
   async changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse> {
     const response = await apiClient.post<ChangePasswordResponse>('/auth/change-password', data);
-    return response;
+    return response.data;
   }
 
   private setAuthToken(token: string) {

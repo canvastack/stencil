@@ -212,6 +212,36 @@ class ProductsService {
       return [];
     }
   }
+
+  async createVariant(productId: string, data: any): Promise<any> {
+    try {
+      const response = await apiClient.post<any>(`/products/${productId}/variants`, data);
+      return response;
+    } catch (error) {
+      console.error('Failed to create product variant:', error);
+      throw error;
+    }
+  }
+
+  async updateVariant(productId: string, variantId: string, data: any): Promise<any> {
+    try {
+      const response = await apiClient.put<any>(`/products/${productId}/variants/${variantId}`, data);
+      return response;
+    } catch (error) {
+      console.error('Failed to update product variant:', error);
+      throw error;
+    }
+  }
+
+  async deleteVariant(productId: string, variantId: string): Promise<{ message: string }> {
+    try {
+      const response = await apiClient.delete<{ message: string }>(`/products/${productId}/variants/${variantId}`);
+      return response;
+    } catch (error) {
+      console.error('Failed to delete product variant:', error);
+      throw error;
+    }
+  }
 }
 
 export const productsService = new ProductsService();
