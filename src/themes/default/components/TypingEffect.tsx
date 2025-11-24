@@ -44,7 +44,7 @@ export const TypingEffect = ({
 
   return (
     <span className="inline-block">
-      {currentText}
+      <span>{currentText}</span>
       <span className="animate-pulse ml-1">|</span>
     </span>
   );
