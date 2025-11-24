@@ -1,0 +1,1210 @@
+# TENANT ENDPOINTS ONLY - Orders are tenant business operations
+# Platform does NOT handle tenant business operations
+
+# Customer-facing order creation (public endpoint)
+/tenant/orders:
+  post:
+    tags:
+    - Customer Orders
+    summary: Create New Order
+    description: 'Create a new order from customer (walk-in, phone, or website).
+
+      **Business Workflow:**
+      - Customer submits order with items and customization
+      - System generates unique order code (ORD-YYYY-MM-NNNN)
+      - Order status set to new
+      - Automatic notification sent to admin team
+      - Production type determined based on product specifications
+
+      **Features:**
+      - Multi-item orders with individual customization
+      - Design file upload support
+      - Automatic customer validation
+      - Tenant-scoped order numbering
+      - Real-time inventory checking (if applicable)
+      '
+    operationId: createOrder
+    security: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CreateOrderRequest'
+          examples:
+            etching_order:
+              summary: Etching order with customization
+              value:
+                customer:
+                  name: Budi Santoso
+                  email: budi@example.com
+                  phone: '+628123456789'
+                  company: PT Example Indonesia
+                  type: business
+                items:
+                - product_name: Custom Etched Brass Plate
+                  quantity: 5
+                  customization:
+                    bahan: Kuningan
+                    kualitas: premium
+                    ketebalan: 2mm
+                    ukuran: 30cm x 20cm
+                    warna_background: '#FFFFFF'
+                    custom_text: Best Employee 2025
+                    custom_text_placement: center
+                  design_file_url: https://storage.example.com/designs/logo.png
+                shipping_address:
+                  address: Jl. Sudirman No. 123, Blok A-5
+                  city: Jakarta Pusat
+                  province: DKI Jakarta
+                  postal_code: '10110'
+                  country: Indonesia
+                customer_notes: Please pack carefully for corporate event
+                priority: normal
+    responses:
+      '201':
+        description: Order created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+  get:
+    tags:
+    - Orders Management
+    summary: List All Orders (Tenant)
+    description: 'Retrieve paginated list of all orders with comprehensive filtering and search.
+
+      **Admin Features:**
+      - Multi-status filtering
+      - Date range filtering
+      - Customer and vendor filtering
+      - Full-text search across order details
+      - Advanced sorting options
+      - Real-time statistics
+
+      **Performance:**
+      - Optimized queries with tenant-aware indexing
+      - Pagination for large datasets
+      - Efficient status aggregation
+      '
+    operationId: listOrders
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: status
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+      description: Filter by order status
+    - name: payment_status
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+      description: Filter by payment status
+    - name: production_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - internal
+        - vendor
+      description: Filter by production type
+    - name: customer_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific customer
+    - name: vendor_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific vendor
+    - name: date_from
+      in: query
+      schema:
+        type: string
+        format: date
+      description: Orders from date (YYYY-MM-DD)
+    - name: date_to
+      in: query
+      schema:
+        type: string
+        format: date
+      description: Orders to date (YYYY-MM-DD)
+    - name: search
+      in: query
+      schema:
+        type: string
+      description: Search order code, customer name, email, phone
+    - name: priority
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+      description: Filter by order priority
+    - $ref: '../../components/schemas.yaml#/PageParam'
+    - $ref: '../../components/schemas.yaml#/PerPageParam'
+    - $ref: '../../components/schemas.yaml#/SortParam'
+    - $ref: '../../components/schemas.yaml#/OrderParam'
+    responses:
+      '200':
+        description: Orders list retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrdersPageData'
+                  meta:
+                    $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+
+# Public order status checking (no authentication required)
+/tenant/orders/{order_code}/status:
+  get:
+    tags:
+    - Public Order Status
+    summary: Check Order Status (Public)
+    description: 'Public endpoint for customers to check order status using order code.
+
+      **Public Access:**
+      - No authentication required
+      - Limited information disclosure
+      - Customer-safe data only
+      - Status tracking for transparency
+      '
+    operationId: checkOrderStatus
+    security: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: order_code
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^ORD-\d{4}-\d{2}-\d{4}$'
+      description: Order code (e.g., ORD-2025-01-0001)
+    responses:
+      '200':
+        description: Order status retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/PublicOrderStatus'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Admin order management endpoints
+/tenant/orders/{id}:
+  get:
+    tags:
+    - Orders Management
+    summary: Get Order Details
+    description: 'Retrieve complete order details including all related data.
+
+      **Comprehensive Data:**
+      - Complete order information
+      - All order items with customization
+      - Quotation history and versions
+      - Payment records and verification
+      - Shipment tracking and POD
+      - Complete status history and audit trail
+      - Profitability calculations
+      - Communication logs
+      '
+    operationId: getOrderDetails
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    responses:
+      '200':
+        description: Order details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrderDetail'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+  put:
+    tags:
+    - Orders Management
+    summary: Update Order
+    description: 'Update order information (limited fields for data integrity).
+
+      **Updateable Fields:**
+      - Customer contact information
+      - Shipping/billing addresses
+      - Customer notes and internal notes
+      - Priority level
+      - Tags and metadata
+
+      **Business Rules:**
+      - Cannot update after production starts
+      - Status-dependent field restrictions
+      - Automatic audit trail creation
+      '
+    operationId: updateOrder
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UpdateOrderRequest'
+    responses:
+      '200':
+        description: Order updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Vendor Assignment
+/tenant/orders/{id}/assign-vendor:
+  post:
+    tags:
+    - Orders Management
+    summary: Assign Vendor to Order
+    description: 'Assign vendor for production with automatic vendor matching.
+
+      **Vendor Selection:**
+      - Automatic vendor suggestions based on:
+        - Material specializations
+        - Quality tier requirements
+        - Historical performance ratings
+        - Lead time capacity
+        - Geographic proximity
+      - Manual vendor override capability
+      - Vendor availability checking
+      '
+    operationId: assignVendor
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - vendor_id
+            properties:
+              vendor_id:
+                type: string
+                format: uuid
+                description: Selected vendor ID
+              production_type:
+                type: string
+                enum:
+                - vendor
+                - internal
+                default: vendor
+                description: Production method
+              notes:
+                type: string
+                description: Assignment notes
+              auto_start_negotiation:
+                type: boolean
+                default: true
+                description: Automatically start price negotiation
+    responses:
+      '200':
+        description: Vendor assigned successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      order_id:
+                        type: string
+                        format: uuid
+                      vendor_id:
+                        type: string
+                        format: uuid
+                      vendor_name:
+                        type: string
+                      assigned_at:
+                        type: string
+                        format: date-time
+                      status:
+                        type: string
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Order Status Updates
+/tenant/orders/{id}/status:
+  patch:
+    tags:
+    - Orders Management
+    summary: Update Order Status
+    description: 'Update order status with business workflow validation.
+
+      **Status Transitions:**
+      - Validates status progression rules
+      - Automatic notifications and triggers
+      - Audit trail creation
+      - Integration with production systems
+
+      **Available Statuses:**
+      - new → confirmed → production → quality_check → ready → shipped → delivered
+      - cancelled (from any status except delivered)
+      - on_hold (temporary suspension)
+      '
+    operationId: updateOrderStatus
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - status
+            properties:
+              status:
+                type: string
+                enum:
+                - new
+                - confirmed
+                - vendor_assigned
+                - quoted
+                - production
+                - quality_check
+                - ready
+                - shipped
+                - delivered
+                - cancelled
+                - on_hold
+                description: New order status
+              notes:
+                type: string
+                description: Status change notes
+              notify_customer:
+                type: boolean
+                default: true
+                description: Send notification to customer
+    responses:
+      '200':
+        description: Order status updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Quotations Management
+/tenant/orders/{id}/quotations:
+  get:
+    tags:
+    - Quotations Management
+    summary: List Order Quotations
+    description: 'Retrieve all quotations for specific order.
+
+      **Quotation Types:**
+      - Vendor quotations (from production vendors)
+      - Customer quotations (with markup for customer)
+      - Version history and revisions
+      - Approval status tracking
+      '
+    operationId: listOrderQuotations
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    - name: type
+      in: query
+      schema:
+        type: string
+        enum:
+        - vendor
+        - customer
+      description: Filter by quotation type
+    responses:
+      '200':
+        description: Quotations retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/OrderQuotation'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+  post:
+    tags:
+    - Quotations Management
+    summary: Create Order Quotation
+    description: 'Create new quotation for order (vendor or customer quote).
+
+      **Quotation Creation:**
+      - Vendor quotations: Create from vendor negotiations
+      - Customer quotations: Create with markup calculations
+      - Automatic pricing calculations
+      - Version management for revisions
+      - Approval workflow integration
+      '
+    operationId: createOrderQuotation
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CreateQuotationRequest'
+    responses:
+      '201':
+        description: Quotation created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrderQuotation'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Payments Management  
+/tenant/orders/{id}/payments:
+  get:
+    tags:
+    - Payments Management
+    summary: List Order Payments
+    description: 'Retrieve all payments for specific order.
+
+      **Payment Information:**
+      - Payment history and records
+      - Verification status tracking
+      - Amount and method details
+      - Proof of payment documents
+      '
+    operationId: listOrderPayments
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    responses:
+      '200':
+        description: Payments retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/OrderPayment'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+  post:
+    tags:
+    - Payments Management
+    summary: Record Order Payment
+    description: 'Record customer payment for order.
+
+      **Payment Recording:**
+      - Multiple payment methods support
+      - Partial payment capability
+      - Automatic order status updates
+      - Payment verification workflow
+      - Proof of payment storage
+      '
+    operationId: recordOrderPayment
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - amount
+            - payment_method
+            properties:
+              amount:
+                type: number
+                format: decimal
+                description: Payment amount
+              payment_method:
+                type: string
+                enum:
+                - cash
+                - bank_transfer
+                - credit_card
+                - ewallet
+              payment_date:
+                type: string
+                format: date-time
+              bank_transfer_details:
+                type: object
+                properties:
+                  bank_name:
+                    type: string
+                  account_number:
+                    type: string
+                  reference:
+                    type: string
+              proof_of_payment_url:
+                type: string
+                format: uri
+              notes:
+                type: string
+              auto_verify:
+                type: boolean
+                default: false
+    responses:
+      '201':
+        description: Payment recorded successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrderPayment'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Payment Verification
+/tenant/orders/{id}/payments/{payment_id}/verify:
+  post:
+    tags:
+    - Payments Management
+    summary: Verify Payment
+    description: 'Verify customer payment and update order status.
+
+      **Verification Process:**
+      - Manual verification for bank transfers
+      - Automatic verification for payment gateways
+      - Amount matching validation
+      - Order status progression
+      - Customer and vendor notifications
+      '
+    operationId: verifyOrderPayment
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    - name: payment_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Payment ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - verification_status
+            properties:
+              verification_status:
+                type: string
+                enum:
+                - verified
+                - rejected
+                - pending
+              verification_notes:
+                type: string
+              verified_amount:
+                type: number
+                format: decimal
+    responses:
+      '200':
+        description: Payment verification completed
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrderPayment'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Production Tracking
+/tenant/orders/{id}/production:
+  get:
+    tags:
+    - Production Management
+    summary: Get Production Status
+    description: 'Track production progress and milestones.
+
+      **Production Information:**
+      - Real-time production status
+      - Milestone tracking and updates
+      - Quality checkpoints
+      - Estimated completion dates
+      - Vendor progress reports
+      '
+    operationId: getProductionStatus
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    responses:
+      '200':
+        description: Production status retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/ProductionStatus'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+  patch:
+    tags:
+    - Production Management
+    summary: Update Production Progress
+    description: 'Update production milestone and progress.
+
+      **Progress Updates:**
+      - Milestone completion tracking
+      - Progress percentage updates
+      - Quality checkpoint results
+      - Issue and delay reporting
+      - Photo documentation upload
+      '
+    operationId: updateProductionProgress
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              milestone:
+                type: string
+                enum:
+                - material_prep
+                - design_approval
+                - production_start
+                - half_complete
+                - quality_check
+                - packaging
+                - ready_ship
+              progress_percentage:
+                type: integer
+                minimum: 0
+                maximum: 100
+              notes:
+                type: string
+              issues:
+                type: array
+                items:
+                  type: string
+              photo_urls:
+                type: array
+                items:
+                  type: string
+                  format: uri
+              estimated_completion:
+                type: string
+                format: date-time
+    responses:
+      '200':
+        description: Production progress updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/ProductionStatus'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Shipping Management
+/tenant/orders/{id}/shipment:
+  post:
+    tags:
+    - Shipping Management
+    summary: Create Shipment
+    description: 'Create shipment and tracking information for completed order.
+
+      **Shipment Creation:**
+      - Courier selection and booking
+      - Tracking number generation
+      - Shipping documentation
+      - Customer notification
+      - Delivery estimation
+      '
+    operationId: createShipment
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - courier_name
+            - shipping_method
+            properties:
+              courier_name:
+                type: string
+                description: Courier/shipping company name
+              shipping_method:
+                type: string
+                enum:
+                - regular
+                - express
+                - same_day
+                - pickup
+              tracking_number:
+                type: string
+                description: Tracking number from courier
+              estimated_delivery:
+                type: string
+                format: date-time
+              shipping_cost:
+                type: number
+                format: decimal
+              notes:
+                type: string
+    responses:
+      '201':
+        description: Shipment created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrderShipment'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+  get:
+    tags:
+    - Shipping Management
+    summary: Get Shipment Details
+    description: 'Retrieve shipment tracking and delivery information.
+
+      **Shipment Information:**
+      - Current shipping status
+      - Tracking number and carrier details
+      - Delivery updates and location
+      - Proof of delivery documents
+      - Customer delivery confirmation
+      '
+    operationId: getShipmentDetails
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order ID
+    responses:
+      '200':
+        description: Shipment details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrderShipment'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Bulk Operations
+/tenant/orders/bulk:
+  post:
+    tags:
+    - Orders Management
+    summary: Bulk Operations
+    description: 'Perform bulk operations on multiple orders.
+
+      **Bulk Operations:**
+      - Status updates for multiple orders
+      - Vendor assignment to multiple orders
+      - Export order data to various formats
+      - Mass email notifications
+      '
+    operationId: bulkOrderOperations
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - operation
+            - order_ids
+            properties:
+              operation:
+                type: string
+                enum:
+                - update_status
+                - assign_vendor
+                - export_data
+                - send_notifications
+              order_ids:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+              parameters:
+                type: object
+                description: Operation-specific parameters
+    responses:
+      '200':
+        description: Bulk operation completed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      processed_count:
+                        type: integer
+                      failed_count:
+                        type: integer
+                      errors:
+                        type: array
+                        items:
+                          type: string
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+
+# Analytics & Reports
+/tenant/orders/analytics:
+  get:
+    tags:
+    - Orders Analytics
+    summary: Get Orders Analytics
+    description: 'Retrieve comprehensive analytics and insights for orders.
+
+      **Analytics Data:**
+      - Order volume trends over time
+      - Revenue analysis and forecasting
+      - Customer behavior patterns
+      - Production efficiency metrics
+      - Vendor performance comparisons
+      - Payment collection rates
+      '
+    operationId: getOrdersAnalytics
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: date_from
+      in: query
+      schema:
+        type: string
+        format: date
+      description: Analytics start date
+    - name: date_to
+      in: query
+      schema:
+        type: string
+        format: date
+      description: Analytics end date
+    - name: metrics
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+      style: form
+      explode: false
+      description: Specific metrics to include
+    responses:
+      '200':
+        description: Analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/OrdersAnalytics'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'

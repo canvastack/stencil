@@ -1,31 +1,36 @@
-/languages:
+# ======================================
+# PLATFORM ADMIN LANGUAGE MANAGEMENT
+# ======================================
+# Platform-level language system administration
+# Access: Platform administrators only
+# Context: Multi-tenant language configuration
+
+/platform/languages:
   get:
     tags:
-    - Languages
-    summary: Get All Languages
-    description: 'Retrieve all available languages in the system with optional filtering
-      and sorting.
+    - Platform Languages
+    summary: Get All System Languages (Platform)
+    description: 'Retrieve all system languages for platform-level management.
 
 
-      **Features:**
+      **Platform Features:**
 
-      - Supports pagination and filtering
+      - Cross-tenant language overview
 
-      - Sort by name, code, market priority
+      - System-wide language statistics
 
-      - Filter by active status, RTL support
+      - Platform admin controls
 
-      - Include translation completion statistics
+      - Global language configuration
 
 
-      **Permissions Required:** `languages.view`
+      **Permissions Required:** `platform.languages.view`
 
       '
-    operationId: getLanguages
+    operationId: getPlatformLanguages
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: page
       in: query
       schema:
@@ -41,6 +46,12 @@
         maximum: 100
         default: 20
       description: Number of items per page
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific tenant ID (platform admin only)
     - name: is_active
       in: query
       schema:
@@ -92,7 +103,7 @@
       schema:
         type: boolean
         default: false
-      description: Include translation completion statistics
+      description: Include cross-tenant translation statistics
     responses:
       '200':
         description: Languages retrieved successfully
@@ -129,30 +140,29 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - Languages
-    summary: Create New Language
-    description: 'Create a new language in the system with localization settings.
+    - Platform Languages
+    summary: Create New System Language (Platform)
+    description: 'Create a new language available across all tenants.
 
 
-      **Features:**
+      **Platform Features:**
+
+      - System-wide language deployment
 
       - Language code validation (ISO 639-1)
 
-      - Duplicate prevention
+      - Multi-tenant availability configuration
 
-      - Automatic pluralization rules setup
-
-      - Translation API configuration
+      - Global translation API setup
 
 
-      **Permissions Required:** `languages.manage`
+      **Permissions Required:** `platform.languages.manage`
 
       '
-    operationId: createLanguage
+    operationId: createPlatformLanguage
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -217,11 +227,11 @@
                 message: Language with this code already exists
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/languages/{languageId}:
+/platform/languages/{languageId}:
   get:
     tags:
-    - Languages
-    summary: Get Language Details
+    - Platform Languages
+    summary: Get Platform Language Details
     description: 'Retrieve detailed information about a specific language.
 
 
@@ -423,11 +433,371 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translation-categories:
+
+# ======================================
+# TENANT USER LANGUAGE MANAGEMENT  
+# ======================================
+# Tenant-specific language operations
+# Access: Tenant users with appropriate permissions
+# Context: Single-tenant language configuration
+
+/tenant/languages:
   get:
     tags:
-    - Translation Categories
-    summary: Get All Translation Categories
+    - Tenant Languages
+    summary: Get Available Languages (Tenant)
+    description: 'Retrieve available languages for the current tenant with localization options.
+
+
+      **Tenant Features:**
+
+      - Tenant-specific language availability
+
+      - Translation completion statistics
+
+      - Language preference settings
+
+      - Localized content support
+
+
+      **Permissions Required:** `languages.view`
+
+      '
+    operationId: getTenantLanguages
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+    - name: is_active
+      in: query
+      schema:
+        type: boolean
+      description: Filter by active status
+    - name: is_rtl
+      in: query
+      schema:
+        type: boolean
+      description: Filter by RTL languages
+    - name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+      description: Search by name or native name
+    - name: sort
+      in: query
+      schema:
+        type: string
+        enum:
+        - name
+        - code
+        - sort_order
+        - created_at
+        default: sort_order
+      description: Sort field
+    - name: order
+      in: query
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+        default: asc
+      description: Sort order
+    - name: include_stats
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include translation completion statistics
+    responses:
+      '200':
+        description: Languages retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/Language'
+                  meta:
+                    $ref: '../../components/schemas.yaml#/PaginationMeta'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Language Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Language retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Tenant Languages
+    summary: Request New Language (Tenant)
+    description: 'Request a new language to be enabled for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Language activation requests
+
+      - Tenant-specific customization
+
+      - Translation priority setup
+
+      - Local market configuration
+
+
+      **Permissions Required:** `languages.manage`
+
+      '
+    operationId: requestTenantLanguage
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/TenantLanguageRequestInput'
+          examples:
+            japanese_request:
+              summary: Request Japanese language
+              value:
+                language_code: ja
+                priority: high
+                market_justification: Large Japanese customer base
+                expected_content_volume: 500
+                requested_features:
+                  - rtl_support: false
+                  - pluralization: true
+                  - date_formats: true
+    responses:
+      '201':
+        description: Language request submitted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/TenantLanguageRequest'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                created_at: '2025-11-13T18:58:00Z'
+              message: Language request created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Language already available for tenant
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/languages/{languageId}:
+  get:
+    tags:
+    - Tenant Languages
+    summary: Get Tenant Language Details
+    description: 'Retrieve detailed information about a specific language for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Tenant-specific language configuration
+
+      - Translation completion statistics
+
+      - Usage analytics
+
+      - Customization options
+
+
+      **Permissions Required:** `languages.view`
+
+      '
+    operationId: getTenantLanguage
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: languageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Language UUID
+    - name: include_stats
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include translation completion and usage statistics
+    responses:
+      '200':
+        description: Language details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/Language'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Language Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Language retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  patch:
+    tags:
+    - Tenant Languages
+    summary: Update Tenant Language Settings
+    description: 'Update language configuration for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Tenant-specific language settings
+
+      - Priority adjustment
+
+      - Custom formatting options
+
+      - Activation toggle
+
+
+      **Permissions Required:** `languages.manage`
+
+      '
+    operationId: updateTenantLanguage
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: languageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Language UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/TenantLanguageUpdateInput'
+          examples:
+            update_settings:
+              summary: Update language settings
+              value:
+                is_active: true
+                priority: high
+                custom_date_format: DD/MM/YYYY
+                custom_number_format: "1.234,56"
+    responses:
+      '200':
+        description: Language settings updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/Language'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Language settings updated successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ======================================
+# PLATFORM TRANSLATION CATEGORIES
+# ======================================
+
+/platform/translation-categories:
+  get:
+    tags:
+    - Platform Translation Categories
+    summary: Get All Translation Categories (Platform)
     description: 'Retrieve all translation categories with hierarchical structure.
 
 
@@ -582,7 +952,7 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translation-categories/{categoryId}:
+/platform/translation-categories/{categoryId}:
   get:
     tags:
     - Translation Categories
@@ -762,7 +1132,7 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations:
+/platform/translations:
   get:
     tags:
     - Translations
@@ -1008,7 +1378,7 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/{translationId}:
+/platform/translations/{translationId}:
   get:
     tags:
     - Translations
@@ -1228,7 +1598,7 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/{translationId}/approve:
+/platform/translations/{translationId}/approve:
   post:
     tags:
     - Translations
@@ -1308,7 +1678,7 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/{translationId}/reject:
+/platform/translations/{translationId}/reject:
   post:
     tags:
     - Translations
@@ -1383,7 +1753,7 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/bulk:
+/platform/translations/bulk:
   post:
     tags:
     - Translations
@@ -1513,7 +1883,7 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/import:
+/platform/translations/import:
   post:
     tags:
     - Translations
@@ -1599,7 +1969,7 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/imports/{importId}:
+/platform/translations/imports/{importId}:
   get:
     tags:
     - Translations
@@ -1655,7 +2025,7 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/export:
+/platform/translations/export:
   post:
     tags:
     - Translations
@@ -1759,7 +2129,7 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/analytics:
+/platform/translations/analytics:
   get:
     tags:
     - Translations
@@ -1843,7 +2213,7 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/missing:
+/platform/translations/missing:
   get:
     tags:
     - Translations
@@ -1970,7 +2340,7 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/locale-settings:
+/platform/locale-settings:
   get:
     tags:
     - Locale Settings
@@ -2160,7 +2530,7 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/translations/cache:
+/platform/translations/cache:
   get:
     tags:
     - Translation Cache
@@ -2311,6 +2681,537 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
+
+# ======================================
+# TENANT TRANSLATION MANAGEMENT
+# ======================================
+
+/tenant/translations:
+  get:
+    tags:
+    - Tenant Translations
+    summary: Get Tenant Translations
+    description: 'Retrieve translations for the current tenant with filtering options.
+
+
+      **Tenant Features:**
+
+      - Tenant-scoped translations only
+
+      - Translation completion tracking
+
+      - Content localization support
+
+      - Draft and published content
+
+
+      **Permissions Required:** `translations.view`
+
+      '
+    operationId: getTenantTranslations
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    - name: category_id
+      in: query
+      schema:
+        type: integer
+        format: int64
+      description: Filter by category ID
+    - name: language
+      in: query
+      schema:
+        type: string
+        pattern: ^[a-z]{2}(-[A-Z]{2})?$
+      description: Filter translations containing this language
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+        - draft
+        - review
+        - approved
+        - published
+        - archived
+      description: Filter by translation status
+    - name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 255
+      description: Search in translation keys, descriptions, and content
+    - name: key_prefix
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+      description: Filter by translation key prefix (e.g., "nav.")
+    - name: missing_language
+      in: query
+      schema:
+        type: string
+        pattern: ^[a-z]{2}(-[A-Z]{2})?$
+      description: Show translations missing this language
+    - name: sort
+      in: query
+      schema:
+        type: string
+        enum:
+        - key
+        - usage_count
+        - last_used_at
+        - created_at
+        - updated_at
+        default: key
+      description: Sort field
+    - name: order
+      in: query
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+        default: asc
+      description: Sort order
+    responses:
+      '200':
+        description: Translations retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/Translation'
+                  meta:
+                    $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Tenant Translations
+    summary: Create Tenant Translation
+    description: 'Create a new translation entry for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Tenant-scoped translation creation
+
+      - Multi-language content support
+
+      - Category assignment
+
+      - Draft workflow support
+
+
+      **Permissions Required:** `translations.edit`
+
+      '
+    operationId: createTenantTranslation
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/TranslationCreateInput'
+          examples:
+            simple:
+              summary: Simple translation
+              value:
+                key: nav.menu.dashboard
+                category_id: 1
+                translations:
+                  en: Dashboard
+                  id: Dashboard
+                  ja: "ダッシュボード"
+                description: Main navigation dashboard link
+                context: Main navigation menu
+    responses:
+      '201':
+        description: Translation created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/Translation'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Translation key already exists
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/translation-categories:
+  get:
+    tags:
+    - Tenant Translation Categories
+    summary: Get Tenant Translation Categories
+    description: 'Retrieve translation categories available for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Tenant-specific categories
+
+      - Hierarchical category structure
+
+      - Translation count per category
+
+      - Custom category management
+
+
+      **Permissions Required:** `translations.view`
+
+      '
+    operationId: getTenantTranslationCategories
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: parent_id
+      in: query
+      schema:
+        type: integer
+        format: int64
+      description: Filter by parent category ID (null for root categories)
+    - name: include_children
+      in: query
+      schema:
+        type: boolean
+        default: true
+      description: Include child categories in response
+    - name: include_counts
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include translation counts per category
+    - name: sort
+      in: query
+      schema:
+        type: string
+        enum:
+        - name
+        - slug
+        - sort_order
+        - created_at
+        default: sort_order
+      description: Sort field
+    responses:
+      '200':
+        description: Categories retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/TranslationCategory'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Tenant Translation Categories
+    summary: Create Tenant Translation Category
+    description: 'Create a new translation category for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Tenant-scoped category creation
+
+      - Hierarchical categories support
+
+      - Custom slug generation
+
+      - Sort order management
+
+
+      **Permissions Required:** `translations.edit`
+
+      '
+    operationId: createTenantTranslationCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/TranslationCategoryCreateInput'
+          examples:
+            navigation:
+              summary: Navigation category
+              value:
+                slug: navigation
+                name: Navigation
+                description: Menu items, links, and navigation elements
+                sort_order: 1
+    responses:
+      '201':
+        description: Category created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/TranslationCategory'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Category slug already exists
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/locale-settings:
+  get:
+    tags:
+    - Tenant Locale Settings
+    summary: Get Tenant Locale Settings
+    description: 'Retrieve locale configuration for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Tenant-specific locale configuration
+
+      - Language preferences
+
+      - Custom format settings
+
+      - Timezone configuration
+
+
+      **Permissions Required:** `locale.view`
+
+      '
+    operationId: getTenantLocaleSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Locale settings retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/LocaleSettings'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        description: Locale settings not configured
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Tenant Locale Settings
+    summary: Create Tenant Locale Settings
+    description: 'Create initial locale configuration for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Initial locale setup
+
+      - Language preference configuration
+
+      - Custom format definitions
+
+      - Regional settings
+
+
+      **Permissions Required:** `locale.configure`
+
+      '
+    operationId: createTenantLocaleSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/LocaleSettingsCreateInput'
+          examples:
+            indonesian_locale:
+              summary: Indonesian-focused locale
+              value:
+                default_language: id
+                fallback_language: en
+                available_languages:
+                - id
+                - en
+                timezone: Asia/Jakarta
+                date_format: DD/MM/YYYY
+                currency_format:
+                  symbol: Rp
+                  position: before
+                  spacing: true
+                first_day_of_week: 1
+    responses:
+      '201':
+        description: Locale settings created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/LocaleSettings'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Locale settings already exist for this tenant
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  patch:
+    tags:
+    - Tenant Locale Settings
+    summary: Update Tenant Locale Settings
+    description: 'Update locale configuration for the current tenant.
+
+
+      **Tenant Features:**
+
+      - Flexible locale updates
+
+      - Language preference changes
+
+      - Format customization
+
+      - Regional adjustments
+
+
+      **Permissions Required:** `locale.configure`
+
+      '
+    operationId: updateTenantLocaleSettings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/LocaleSettingsUpdateInput'
+          example:
+            default_language: id
+            timezone: Asia/Jakarta
+            date_format: DD-MM-YYYY
+    responses:
+      '200':
+        description: Locale settings updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/LocaleSettings'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ======================================
+# PUBLIC TRANSLATION ENDPOINTS
+# ======================================
+
 /public/translations/{language}:
   get:
     tags:

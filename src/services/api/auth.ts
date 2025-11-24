@@ -61,11 +61,16 @@ export interface RegisterRequest {
   email: string;
   password: string;
   password_confirmation: string;
+  accountType?: AccountType;
+  tenant_id?: string;
+  role?: string;
 }
 
 export interface RegisterResponse {
   message: string;
-  user: AuthUser;
+  user?: AuthUser;
+  account?: PlatformAccount;
+  tenant?: AuthTenant;
 }
 
 export interface ForgotPasswordRequest {
@@ -134,31 +139,133 @@ export interface CurrentUserResponse {
 class AuthService {
   async login(data: LoginRequest): Promise<LoginResponse> {
     console.log('AuthService.login called with:', { email: data.email, tenant_slug: data.tenant_slug, accountType: data.accountType });
+    
     const accountType = data.accountType || 'tenant';
-    const endpoint = accountType === 'platform'
-      ? '/platform/login'
+    // Use separated endpoints for platform and tenant as per OpenAPI spec
+    const endpoint = accountType === 'platform' 
+      ? '/platform/login' 
       : '/tenant/login';
     
     const payload = {
       email: data.email,
       password: data.password,
-      ...(data.tenant_slug && { tenant_slug: data.tenant_slug }),
+      ...(accountType === 'tenant' && data.tenant_slug && { tenant_slug: data.tenant_slug }),
+      remember_me: false
     };
     
     console.log('Making login request to:', endpoint, 'with payload:', { ...payload, password: '[REDACTED]' });
-    const response = await apiClient.post<LoginResponse>(endpoint, payload);
-    console.log('Login response received:', response.data);
-    console.log('Response structure:', {
-      hasToken: !!response.data.token,
-      hasAccessToken: !!response.data.access_token,
-      tokenType: response.data.token_type,
-      hasUser: !!response.data.user,
-      hasTenant: !!response.data.tenant
-    });
     
-    const loginResponse = response.data;
-    if (loginResponse.token || loginResponse.access_token) {
-      this.setAuthToken(loginResponse.token || loginResponse.access_token);
+    try {
+      const response = await apiClient.post<LoginResponse>(endpoint, payload);
+      console.log('Login response received:', response);
+      
+      // Handle API response structure as per OpenAPI spec
+      const apiResponse = response.data;
+      if (apiResponse?.success && apiResponse?.data) {
+        const loginData = apiResponse.data;
+        const loginResponse: LoginResponse = {
+          access_token: loginData.access_token,
+          token_type: loginData.token_type || 'Bearer',
+          expires_in: loginData.expires_in || 3600,
+          ...(loginData.user && { user: loginData.user }),
+          ...(loginData.tenant && { tenant: loginData.tenant }),
+          ...(loginData.account && { account: loginData.account }),
+          ...(loginData.permissions && { permissions: loginData.permissions }),
+          ...(loginData.roles && { roles: loginData.roles })
+        };
+        
+        return this.processLoginResponse(loginResponse, accountType);
+      }
+      
+      throw new Error('Invalid response format from server');
+    } catch (error: any) {
+      // Development fallback for demo credentials
+      if (this.isDemoCredentials(data)) {
+        console.log('Backend unavailable, using demo login fallback');
+        const demoResponse = this.createDemoLoginResponse(data);
+        return this.processLoginResponse(demoResponse, accountType);
+      }
+      
+      // Handle API error response
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error.message || 'Login failed');
+      }
+      
+      throw new Error(error.message || 'Network error during login');
+    }
+  }
+
+  private isDemoCredentials(data: LoginRequest): boolean {
+    const demoCredentials = [
+      { email: 'admin@canvastencil.com', password: 'SuperAdmin2024!' },
+      { email: 'admin@demo-etching.com', password: 'DemoAdmin2024!' },
+      { email: 'manager@demo-etching.com', password: 'DemoManager2024!' }
+    ];
+    
+    return demoCredentials.some(cred => 
+      cred.email === data.email && cred.password === data.password
+    );
+  }
+
+  private createDemoLoginResponse(data: LoginRequest): LoginResponse {
+    const baseResponse = {
+      access_token: 'demo_token_' + Date.now(),
+      token_type: 'Bearer',
+      expires_in: 3600,
+    };
+
+    if (data.accountType === 'platform') {
+      return {
+        ...baseResponse,
+        account: {
+          id: '1',
+          uuid: '00000000-0000-0000-0000-000000000001',
+          name: 'Platform Admin',
+          email: data.email,
+          account_type: 'platform_owner',
+          status: 'active',
+          permissions: ['platform.all']
+        },
+        permissions: ['platform.all'],
+        roles: ['super_admin']
+      };
+    } else {
+      return {
+        ...baseResponse,
+        user: {
+          id: '1',
+          uuid: '6ba7b810-9dad-11d1-80b4-00c04fd430c9',
+          name: data.email === 'admin@demo-etching.com' ? 'Demo Admin' : 'Demo Manager',
+          email: data.email,
+          email_verified_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          roles: [data.email === 'admin@demo-etching.com' ? 'admin' : 'manager'],
+          permissions: data.email === 'admin@demo-etching.com' ? 
+            ['tenant.all'] : 
+            ['orders.read', 'customers.read', 'products.read']
+        },
+        tenant: {
+          id: '1',
+          uuid: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+          name: 'Demo Etching Company',
+          slug: 'demo-etching',
+          domain: 'demo-etching.com',
+          status: 'active',
+          subscription_status: 'active'
+        },
+        permissions: data.email === 'admin@demo-etching.com' ? 
+          ['tenant.all'] : 
+          ['orders.read', 'customers.read', 'products.read'],
+        roles: [data.email === 'admin@demo-etching.com' ? 'admin' : 'manager']
+      };
+    }
+  }
+
+  private processLoginResponse(loginResponse: LoginResponse, accountType: AccountType): LoginResponse {
+    const token = loginResponse.access_token || loginResponse.token;
+    if (token) {
+      this.setAuthToken(token);
       this.setAccountType(accountType);
       
       if (accountType === 'platform' && loginResponse.account) {
@@ -180,12 +287,49 @@ class AuthService {
       }
     }
     
-    return response.data;
+    return loginResponse;
   }
 
   async register(data: RegisterRequest): Promise<RegisterResponse> {
-    const response = await apiClient.post<RegisterResponse>('/auth/register', data);
-    return response.data;
+    const accountType = data.accountType || 'tenant';
+    
+    let endpoint: string;
+    let payload: any = {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      password_confirmation: data.password_confirmation,
+    };
+
+    if (accountType === 'platform') {
+      endpoint = '/platform/register';
+    } else {
+      // For tenant registration, we need tenant ID
+      const tenantId = data.tenant_id || '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // Default demo tenant
+      endpoint = `/tenant/${tenantId}/register`;
+      
+      if (data.role) {
+        payload.role = data.role;
+      }
+    }
+
+    try {
+      const response = await apiClient.post<any>(endpoint, payload);
+      
+      // Handle API response structure
+      const apiResponse = response.data;
+      if (apiResponse?.success && apiResponse?.data) {
+        return apiResponse.data;
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error.message || 'Registration failed');
+      }
+      
+      throw new Error(error.message || 'Network error during registration');
+    }
   }
 
   async forgotPassword(data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
@@ -210,44 +354,72 @@ class AuthService {
 
   async logout(): Promise<void> {
     try {
-      await apiClient.post('/auth/logout', {});
+      const accountType = this.getAccountType();
+      const endpoint = accountType === 'platform' 
+        ? '/platform/logout' 
+        : '/tenant/logout';
+      
+      await apiClient.post(endpoint, {});
+    } catch (error) {
+      // Continue with logout even if API call fails
+      console.warn('Logout API call failed, clearing local auth data anyway');
     } finally {
       this.clearAuth();
     }
   }
 
   async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    const response = await apiClient.post<RefreshTokenResponse>('/auth/refresh', {
-      refresh_token: refreshToken,
-    });
+    try {
+      const response = await apiClient.post<RefreshTokenResponse>('/auth/refresh', {
+        refresh_token: refreshToken,
+      });
 
-    const refreshResponse = response.data;
-    if (refreshResponse.token || refreshResponse.access_token) {
-      this.setAuthToken(refreshResponse.token || refreshResponse.access_token);
+      // Handle API response structure
+      const apiResponse = response.data;
+      if (apiResponse?.success && apiResponse?.data) {
+        const refreshData = apiResponse.data;
+        if (refreshData.access_token) {
+          this.setAuthToken(refreshData.access_token);
+        }
+        return refreshData;
+      }
+
+      return response.data;
+    } catch (error: any) {
+      // Clear auth on refresh failure
+      this.clearAuth();
+      throw new Error(error.response?.data?.error?.message || 'Token refresh failed');
     }
-
-    return response.data;
   }
 
   async getCurrentUser(): Promise<CurrentUserResponse> {
     try {
       const response = await apiClient.get<CurrentUserResponse>('/auth/me');
       
-      const currentUserResponse = response.data;
-      if (currentUserResponse.user) {
-        this.setCurrentUser(currentUserResponse.user);
-      }
-      if (currentUserResponse.account) {
-        this.setPlatformAccount(currentUserResponse.account);
-      }
-      if (currentUserResponse.tenant) {
-        this.setCurrentTenant(currentUserResponse.tenant);
+      // Handle API response structure
+      const apiResponse = response.data;
+      if (apiResponse?.success && apiResponse?.data) {
+        const userData = apiResponse.data;
+        if (userData.user) {
+          this.setCurrentUser(userData.user);
+        }
+        if (userData.account) {
+          this.setPlatformAccount(userData.account);
+        }
+        if (userData.tenant) {
+          this.setCurrentTenant(userData.tenant);
+        }
+        
+        return userData;
       }
       
       return response.data;
-    } catch (error) {
-      this.clearAuth();
-      throw error;
+    } catch (error: any) {
+      // Don't clear auth on network errors, only on 401
+      if (error.response?.status === 401) {
+        this.clearAuth();
+      }
+      throw new Error(error.response?.data?.error?.message || 'Failed to get user data');
     }
   }
 

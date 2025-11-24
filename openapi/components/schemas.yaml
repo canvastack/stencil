@@ -1379,6 +1379,119 @@ UserCreateInput:
     - password
     - role
 
+User:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique user identifier
+      example: "123e4567-e89b-12d3-a456-426614174000"
+    name:
+      type: string
+      maxLength: 255
+      description: User full name
+      example: "John Doe"
+    email:
+      type: string
+      format: email
+      description: User email address
+      example: "john@example.com"
+    role:
+      type: string
+      description: User role/permission level
+      example: "admin"
+    phone:
+      type: string
+      description: User phone number
+      example: "+1234567890"
+    tenant_id:
+      type: string
+      format: uuid
+      description: Associated tenant ID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    status:
+      type: string
+      enum: [active, inactive, suspended]
+      description: User account status
+      example: "active"
+    created_at:
+      type: string
+      format: date-time
+      description: User creation timestamp
+      example: "2024-01-15T10:30:00Z"
+    updated_at:
+      type: string
+      format: date-time
+      description: Last update timestamp
+      example: "2024-01-15T10:30:00Z"
+    email_verified_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Email verification timestamp
+      example: "2024-01-15T10:35:00Z"
+  required:
+    - id
+    - name
+    - email
+    - role
+    - tenant_id
+    - status
+    - created_at
+    - updated_at
+
+AuthResponse:
+  type: object
+  properties:
+    success:
+      type: boolean
+      example: true
+    message:
+      type: string
+      description: Response message
+      example: "Authentication successful"
+    data:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+          description: JWT authentication token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expires_at:
+          type: string
+          format: date-time
+          description: Token expiration timestamp
+          example: "2024-01-15T18:30:00Z"
+        refresh_token:
+          type: string
+          description: Refresh token for obtaining new access tokens
+          example: "def50200e3b4c5d6f7a8b9c0d1e2f3a4b5c6d7e8f9a0..."
+      required:
+        - user
+        - token
+        - expires_at
+    meta:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+          example: "2024-01-15T10:30:00Z"
+        tenant_id:
+          type: string
+          format: uuid
+          description: Associated tenant ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+  required:
+    - success
+    - message
+    - data
+    - meta
+
 # ============================================================================
 # Platform Licensing Schemas
 # ============================================================================

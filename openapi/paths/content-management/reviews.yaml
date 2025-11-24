@@ -1,7 +1,12 @@
-/products/{productUuid}/reviews:
+# ==========================================
+# TENANT REVIEWS ENDPOINTS
+# ==========================================
+# Customer-facing review operations with tenant-level access
+
+/tenant/products/{productUuid}/reviews:
   get:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Get Product Reviews with Statistics
     description: 'Retrieve reviews for a specific product with filtering, sorting,
       and comprehensive statistics.
@@ -27,7 +32,7 @@
       **Public Access:** No authentication required
 
       '
-    operationId: getProductReviews
+    operationId: getTenantProductReviews
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -186,10 +191,11 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/reviews:
+
+/tenant/reviews:
   post:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Submit New Product Review
     description: 'Submit a new product review with optional image attachments.
 
@@ -214,7 +220,7 @@
       **Rate Limiting:** 3 reviews per user per product per day
 
       '
-    operationId: createReview
+    operationId: createTenantReview
     security:
     - bearerAuth: []
     - {}
@@ -305,10 +311,11 @@
         $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/reviews/{reviewUuid}:
+
+/tenant/reviews/{reviewUuid}:
   get:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Get Single Review Details
     description: 'Retrieve detailed information for a specific review including images,
       replies, and vote counts.
@@ -327,7 +334,7 @@
       - Edit history (if available)
 
       '
-    operationId: getReviewById
+    operationId: getTenantReviewById
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -376,7 +383,7 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Edit Existing Review
     description: 'Edit an existing review. Only the original reviewer can edit within
       24 hours of submission.
@@ -393,7 +400,7 @@
       - Admin notification for significant changes
 
       '
-    operationId: updateReview
+    operationId: updateTenantReview
     security:
     - bearerAuth: []
     parameters:
@@ -443,7 +450,7 @@
               data:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Reviews puted successfully
+              message: Reviews updated successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -466,7 +473,7 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Soft Delete Review
     description: 'Soft delete a review (mark as deleted without permanent removal).
 
@@ -476,7 +483,7 @@
       **Note:** This performs a soft delete to maintain data integrity and analytics.
 
       '
-    operationId: deleteReview
+    operationId: deleteTenantReview
     security:
     - bearerAuth: []
     parameters:
@@ -500,17 +507,18 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/reviews/{reviewUuid}/vote:
+
+/tenant/reviews/{reviewUuid}/vote:
   post:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Vote on Review Helpfulness
     description: "Cast a helpful/unhelpful vote on a review to indicate quality to\
       \ other users.\n\n**Features:**\n- One vote per user per review (enforced by\
       \ database constraints)\n- Guest voting via IP address tracking\n- Vote change\
       \ allowed (helpful \u2194 unhelpful)\n- Real-time vote count updates\n- Spam\
       \ prevention via rate limiting\n"
-    operationId: voteOnReview
+    operationId: voteOnTenantReview
     security:
     - bearerAuth: []
     - {}
@@ -571,7 +579,7 @@
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
                 created_at: '2025-11-13T18:58:00Z'
-              message: Reviews created successfully
+              message: Reviews vote recorded successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -590,10 +598,11 @@
         $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/reviews/{reviewUuid}/replies:
+
+/tenant/reviews/{reviewUuid}/replies:
   get:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Get Review Reply Thread
     description: 'Retrieve all replies for a specific review including nested reply
       chains.
@@ -610,7 +619,7 @@
       - Chronological ordering
 
       '
-    operationId: getReviewReplies
+    operationId: getTenantReviewReplies
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -654,7 +663,7 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Reply to Review
     description: 'Post a reply to a customer review. Restricted to admin, customer
       service, or vendor users.
@@ -671,7 +680,7 @@
       - Official badge displayed for brand responses
 
       '
-    operationId: replyToReview
+    operationId: replyToTenantReview
     security:
     - bearerAuth: []
     parameters:
@@ -727,7 +736,7 @@
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
                 created_at: '2025-11-13T18:58:00Z'
-              message: Reviews created successfully
+              message: Reply posted successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -740,10 +749,11 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/reviews/{reviewUuid}/report:
+
+/tenant/reviews/{reviewUuid}/report:
   post:
     tags:
-    - Reviews Management
+    - Tenant Reviews Management
     summary: Report Inappropriate Review
     description: 'Report a review for inappropriate content, spam, or policy violations.
 
@@ -761,7 +771,7 @@
       - Duplicate report prevention
 
       '
-    operationId: reportReview
+    operationId: reportTenantReview
     security:
     - bearerAuth: []
     - {}
@@ -826,7 +836,7 @@
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
                 created_at: '2025-11-13T18:58:00Z'
-              message: Reviews created successfully
+              message: Report submitted successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -845,16 +855,22 @@
         $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/reviews:
+
+# ==========================================
+# PLATFORM REVIEWS ENDPOINTS 
+# ==========================================
+# Platform-level review management and moderation
+
+/platform/reviews:
   get:
     tags:
-    - Admin - Reviews Management
+    - Platform Reviews Management
     summary: List All Reviews for Moderation
-    description: 'Admin endpoint to list all reviews with advanced filtering for moderation
+    description: 'Platform admin endpoint to list all reviews with advanced filtering for moderation
       purposes.
 
 
-      **Admin Features:**
+      **Platform Admin Features:**
 
       - Filter by approval status (pending, approved, rejected, spam)
 
@@ -868,15 +884,43 @@
 
       - Advanced analytics integration
 
+      - Cross-tenant review management
+
       '
-    operationId: listAllReviews
+    operationId: listPlatformReviews
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
-    - $ref: '../../components/parameters.yaml#/PageParam'
-    - $ref: '../../components/parameters.yaml#/PerPageParam'
-    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: page
+      in: query
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    - name: per_page
+      in: query
+      description: Number of reviews per page (max 100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
+    - name: sort
+      in: query
+      description: Sort field and direction
+      schema:
+        type: string
+        enum:
+        - created_at:asc
+        - created_at:desc
+        - rating:asc
+        - rating:desc
+        - helpful_count:desc
+        default: created_at:desc
+      example: created_at:desc
     - name: approval_status
       in: query
       description: Filter by approval status
@@ -890,6 +934,13 @@
         - all
         default: all
       example: pending
+    - name: tenant_id
+      in: query
+      description: Filter by specific tenant
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
     - name: product_id
       in: query
       description: Filter by specific product
@@ -935,7 +986,7 @@
       example: true
     responses:
       '200':
-        description: Reviews retrieved successfully
+        description: Platform reviews retrieved successfully
         content:
           application/json:
             schema:
@@ -953,26 +1004,27 @@
                 title: Sample Reviews Title
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: Reviews retrieved successfully
+              message: Platform reviews retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                platform_admin: true
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/reviews/{reviewUuid}/moderate:
+
+/platform/reviews/{reviewUuid}/moderate:
   put:
     tags:
-    - Admin - Reviews Management
+    - Platform Reviews Management
     summary: Moderate Review (Approve/Reject/Spam)
-    description: 'Admin endpoint to moderate reviews with approval, rejection, or
+    description: 'Platform admin endpoint to moderate reviews with approval, rejection, or
       spam marking.
 
 
-      **Moderation Actions:**
+      **Platform Moderation Actions:**
 
       - Approve: Make review public and update product statistics
 
@@ -985,11 +1037,10 @@
       - Unfeature: Remove featured status
 
       '
-    operationId: moderateReview
+    operationId: moderatePlatformReview
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: reviewUuid
       in: path
       required: true
@@ -1047,7 +1098,7 @@
               data:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Reviews puted successfully
+              message: Review moderated successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -1060,15 +1111,16 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/reviews/bulk-moderate:
+
+/platform/reviews/bulk-moderate:
   put:
     tags:
-    - Admin - Reviews Management
+    - Platform Reviews Management
     summary: Bulk Moderate Multiple Reviews
-    description: 'Admin endpoint for bulk moderation actions on multiple reviews simultaneously.
+    description: 'Platform admin endpoint for bulk moderation actions on multiple reviews simultaneously.
 
 
-      **Bulk Actions:**
+      **Bulk Platform Actions:**
 
       - Approve multiple pending reviews
 
@@ -1084,11 +1136,10 @@
       **Limitations:** Maximum 100 reviews per request
 
       '
-    operationId: bulkModerateReviews
+    operationId: bulkModeratePlatformReviews
     security:
     - bearerAuth: []
-    parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    parameters: []
     requestBody:
       required: true
       content:
@@ -1151,7 +1202,7 @@
               data:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Reviews puted successfully
+              message: Bulk moderation completed successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -1162,15 +1213,16 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/reviews/reports:
+
+/platform/reviews/reports:
   get:
     tags:
-    - Admin - Reviews Management
+    - Platform Reviews Management
     summary: List Review Reports for Moderation
-    description: 'Admin endpoint to manage review reports submitted by users.
+    description: 'Platform admin endpoint to manage review reports submitted by users.
 
 
-      **Features:**
+      **Platform Report Features:**
 
       - Filter by report status (pending, resolved, dismissed)
 
@@ -1182,14 +1234,30 @@
 
       - Report trend analysis
 
+      - Cross-tenant report management
+
       '
-    operationId: listReviewReports
+    operationId: listPlatformReviewReports
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
-    - $ref: '../../components/parameters.yaml#/PageParam'
-    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - name: page
+      in: query
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      example: 1
+    - name: per_page
+      in: query
+      description: Number of reports per page (max 100)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      example: 20
     - name: status
       in: query
       description: Filter by report status
@@ -1215,6 +1283,13 @@
         - copyright
         - other
       example: spam
+    - name: tenant_id
+      in: query
+      description: Filter reports by tenant
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
     - name: date_from
       in: query
       description: Filter reports from this date
@@ -1224,7 +1299,7 @@
       example: '2024-01-01'
     responses:
       '200':
-        description: Review reports retrieved successfully
+        description: Platform review reports retrieved successfully
         content:
           application/json:
             schema:
@@ -1247,25 +1322,26 @@
                 title: Sample Reviews Title
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: Reviews retrieved successfully
+              message: Platform review reports retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                platform_admin: true
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/reviews/reports/{reportUuid}:
+
+/platform/reviews/reports/{reportUuid}:
   put:
     tags:
-    - Admin - Reviews Management
+    - Platform Reviews Management
     summary: Resolve Review Report
-    description: 'Admin endpoint to resolve or dismiss a review report.
+    description: 'Platform admin endpoint to resolve or dismiss a review report.
 
 
-      **Actions:**
+      **Platform Resolution Actions:**
 
       - Resolve: Take action on the reported review
 
@@ -1274,11 +1350,10 @@
       - Under Review: Mark report as being investigated
 
       '
-    operationId: resolveReviewReport
+    operationId: resolvePlatformReviewReport
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: reportUuid
       in: path
       required: true
@@ -1341,7 +1416,7 @@
               data:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Reviews puted successfully
+              message: Report resolved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -1354,20 +1429,21 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/reviews/analytics:
+
+/platform/reviews/analytics:
   get:
     tags:
-    - Admin - Reviews Analytics
-    summary: Get Review Analytics Summary
-    description: 'Admin endpoint for comprehensive review analytics and performance
-      metrics.
+    - Platform Reviews Analytics
+    summary: Get Platform Review Analytics Summary
+    description: 'Platform admin endpoint for comprehensive review analytics and performance
+      metrics across all tenants.
 
 
-      **Analytics Included:**
+      **Platform Analytics Included:**
 
       - Platform-wide review statistics
 
-      - Moderation queue metrics
+      - Moderation queue metrics across all tenants
 
       - Engagement and quality metrics
 
@@ -1375,12 +1451,13 @@
 
       - Product performance insights
 
+      - Cross-tenant comparison data
+
       '
-    operationId: getReviewAnalytics
+    operationId: getPlatformReviewAnalytics
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: date_from
       in: query
       description: Analytics start date
@@ -1395,6 +1472,13 @@
         type: string
         format: date
       example: '2024-01-31'
+    - name: tenant_id
+      in: query
+      description: Tenant-specific analytics
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
     - name: product_id
       in: query
       description: Product-specific analytics
@@ -1404,7 +1488,7 @@
       example: 550e8400-e29b-41d4-a716-446655440000
     responses:
       '200':
-        description: Review analytics retrieved successfully
+        description: Platform review analytics retrieved successfully
         content:
           application/json:
             schema:
@@ -1416,39 +1500,42 @@
                     $ref: '../../components/schemas.yaml#/ReviewAnalyticsSummary'
             examples:
               success:
-                summary: Comprehensive review analytics
+                summary: Comprehensive platform review analytics
                 value:
                   success: true
-                  message: Review analytics retrieved successfully
+                  message: Platform review analytics retrieved successfully
                   data:
-                    total_reviews: 1547
-                    approved_reviews: 1398
-                    pending_reviews: 127
-                    rejected_reviews: 22
+                    total_reviews: 15470
+                    approved_reviews: 13980
+                    pending_reviews: 1270
+                    rejected_reviews: 220
                     average_rating_platform: 4.4
                     verified_purchase_rate: 73.2
                     photo_review_rate: 38.5
-                    total_helpful_votes: 8743
+                    total_helpful_votes: 87430
                     reply_rate: 24.8
-                    reviews_last_30_days: 156
-                    reviews_last_7_days: 43
+                    reviews_last_30_days: 1560
+                    reviews_last_7_days: 430
                     avg_response_time_hours: 18.5
+                    top_performing_tenants: 5
+                    total_tenants_with_reviews: 127
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/reviews/export:
+
+/platform/reviews/export:
   get:
     tags:
-    - Admin - Reviews Analytics
-    summary: Export Reviews Data
-    description: 'Admin endpoint to export review data in various formats (CSV, Excel,
-      JSON).
+    - Platform Reviews Analytics
+    summary: Export Platform Reviews Data
+    description: 'Platform admin endpoint to export review data in various formats (CSV, Excel,
+      JSON) across all tenants.
 
 
-      **Export Features:**
+      **Platform Export Features:**
 
       - Configurable date ranges
 
@@ -1460,12 +1547,13 @@
 
       - Scheduled export capabilities
 
+      - Cross-tenant data export
+
       '
-    operationId: exportReviewsData
+    operationId: exportPlatformReviewsData
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: format
       in: query
       required: true
@@ -1491,6 +1579,13 @@
         type: string
         format: date
       example: '2024-01-31'
+    - name: tenant_id
+      in: query
+      description: Filter by specific tenant
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
     - name: approval_status
       in: query
       description: Filter by approval status
@@ -1520,7 +1615,7 @@
       example: true
     responses:
       '200':
-        description: Export file generated successfully
+        description: Platform export file generated successfully
         content:
           application/octet-stream:
             schema:
@@ -1534,16 +1629,16 @@
                 title: Sample Reviews Title
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: Reviews retrieved successfully
+              message: Platform reviews retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                platform_admin: true
           text/csv:
             schema:
               type: string
-              example: 'id,product_id,reviewer_name,rating,title,comment,created_at
+              example: 'id,tenant_id,product_id,reviewer_name,rating,title,comment,created_at
 
-                550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-11d1-80b4-00c04fd430c8,Budi
+                550e8400-e29b-41d4-a716-446655440000,6ba7b810-9dad-11d1-80b4-00c04fd430c8,6ba7b810-9dad-11d1-80b4-00c04fd430c8,Budi
                 Santoso,4.5,"Great Quality","Excellent product...",2024-01-15T14:20:00Z
 
                 '
@@ -1555,10 +1650,10 @@
                 title: Sample Reviews Title
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: Reviews retrieved successfully
+              message: Platform reviews retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                platform_admin: true
           application/json:
             schema:
               type: object
@@ -1575,16 +1670,16 @@
                 title: Sample Reviews Title
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: Reviews retrieved successfully
+              message: Platform reviews retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                platform_admin: true
         headers:
           Content-Disposition:
             description: Attachment filename
             schema:
               type: string
-              example: attachment; filename="reviews_export_2024-01-15.csv"
+              example: attachment; filename="platform_reviews_export_2024-01-15.csv"
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':

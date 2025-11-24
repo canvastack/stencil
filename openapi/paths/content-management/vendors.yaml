@@ -1,33 +1,46 @@
-/vendors:
+# ================================================================
+# PLATFORM ADMIN ENDPOINTS - Global Vendor Management
+# ================================================================
+
+/platform/vendors:
   get:
     tags:
-    - Vendor Management
-    summary: List Vendors
-    description: 'Retrieve paginated list of vendors with advanced filtering and search
-      capabilities.
+    - Platform Admin - Vendor Management
+    summary: List All Vendors (Platform Level)
+    description: 'Retrieve paginated list of all vendors across all tenants with advanced filtering and search capabilities.
 
 
-      **Admin Features:**
+      **Platform Admin Features:**
 
-      - Search by company name, brand, email, phone
+      - Global vendor search across all tenants
 
       - Filter by status, quality tier, verification status
 
       - Sort by multiple fields (rating, name, orders count)
 
-      - Export functionality
+      - Tenant-specific filtering
 
-      - Tenant-scoped results
+      - Export functionality for platform management
 
+      - Global statistics and analytics
+      
+
+      **Access Level:** Platform Administrator Only
       '
-    operationId: listVendors
+    operationId: platformListVendors
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - $ref: '../../components/parameters.yaml#/PageParam'
     - $ref: '../../components/parameters.yaml#/PerPageParam'
     - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: tenant_id
+      in: query
+      description: Filter vendors by specific tenant (Platform Admin only)
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
     - name: search
       in: query
       description: Search in company name, brand name, email, phone
@@ -138,7 +151,7 @@
       - contacts
     responses:
       '200':
-        description: Vendors retrieved successfully
+        description: Platform vendors retrieved successfully
         content:
           application/json:
             schema:
@@ -147,6 +160,7 @@
               success: true
               data:
               - id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
                 company_name: PT Etching Indo Prima
                 brand_name: EIP Etching
                 email: info@etchingindo.com
@@ -156,6 +170,7 @@
                 overall_rating: 4.2
                 total_orders: 45
                 is_verified: true
+                created_at: '2025-11-13T10:30:00Z'
               meta:
                 page: 1
                 limit: 20
@@ -172,14 +187,16 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - Vendor Management
-    summary: Create New Vendor
-    description: 'Create a new vendor with complete company information and capabilities.
+    - Platform Admin - Vendor Management
+    summary: Create New Vendor (Platform Level)
+    description: 'Create a new vendor in the platform master database with complete company information and capabilities.
 
 
       **Required Information:**
 
       - Company details (name, contact, address)
+
+      - Tenant assignment (which tenant this vendor belongs to)
 
       - Legal documentation (NPWP, SIUP optional)
 
@@ -196,12 +213,22 @@
 
       - Initial statistics and ratings
 
+      
+      **Access Level:** Platform Administrator Only
+
       '
-    operationId: createVendor
+    operationId: platformCreateVendor
     security:
     - bearerAuth: []
     parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: tenant_id
+      in: query
+      required: true
+      description: Target tenant for vendor creation
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
     requestBody:
       required: true
       content:
@@ -2622,17 +2649,299 @@
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
 
-/tenant/vendors/search:
+# ================================================================
+# TENANT ENDPOINTS - Business-focused Vendor Operations  
+# ================================================================
+
+/tenant/vendors:
   get:
     tags:
-    - Vendor Management
-    summary: Search Vendors
-    description: >
-      Advanced tenant-scoped vendor search with optional performance evaluations.
-    operationId: tenantSearchVendors
+    - Tenant - Vendor Management
+    summary: List Available Vendors for Tenant
+    description: 'Retrieve vendors available for tenant business operations with filtering and search capabilities.
+
+
+      **Tenant Features:**
+
+      - Search vendors available for orders
+
+      - Filter by material specialization and capabilities  
+
+      - Sort by rating, price, lead time, proximity
+
+      - Include tenant-specific rating and performance history
+
+      - Export vendor data for business use
+
+
+      **Access Level:** Tenant User with Vendor Access Permission
+
+      '
+    operationId: tenantListVendors
     security:
     - bearerAuth: []
-      tenantHeader: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: search
+      in: query
+      description: Search in company name, brand name, specialization
+      schema:
+        type: string
+        maxLength: 255
+      example: etching
+    - name: material_type
+      in: query
+      description: Filter by material specialization
+      schema:
+        type: string
+        enum:
+        - akrilik
+        - kuningan
+        - tembaga
+        - stainless_steel
+        - aluminum
+        - kaca
+        - kayu
+        - custom
+      example: stainless_steel
+    - name: quality_tier
+      in: query
+      description: Filter by quality tier
+      schema:
+        type: string
+        enum:
+        - standard
+        - premium
+      example: premium
+    - name: min_rating
+      in: query
+      description: Filter vendors with minimum rating
+      schema:
+        type: number
+        format: decimal
+        minimum: 0
+        maximum: 5
+      example: 4.0
+    - name: max_lead_time_days
+      in: query
+      description: Filter vendors with maximum lead time
+      schema:
+        type: integer
+        minimum: 1
+      example: 14
+    - name: accepts_rush_orders
+      in: query
+      description: Filter vendors accepting rush orders
+      schema:
+        type: boolean
+      example: true
+    - name: city
+      in: query
+      description: Filter by vendor city
+      schema:
+        type: string
+        maxLength: 100
+      example: Jakarta
+    - name: include
+      in: query
+      description: Include related data (specializations, contacts, tenant_ratings)
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - specializations
+          - contacts
+          - tenant_ratings
+          - performance_metrics
+      style: form
+      explode: false
+    responses:
+      '200':
+        description: Available vendors retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/VendorListResponse'
+            example:
+              success: true
+              data:
+              - id: 550e8400-e29b-41d4-a716-446655440000
+                company_name: PT Etching Indo Prima
+                brand_name: EIP Etching
+                email: info@etchingindo.com
+                phone: '+62218765432'
+                status: active
+                quality_tier: premium
+                overall_rating: 4.2
+                tenant_rating: 4.5
+                total_orders_with_tenant: 12
+                is_verified: true
+                available_for_orders: true
+              meta:
+                page: 1
+                limit: 20
+                total: 25
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/vendors/{id}:
+  get:
+    tags:
+    - Tenant - Vendor Management
+    summary: Get Vendor Details for Tenant
+    description: 'Retrieve complete vendor information from tenant perspective including specializations, contacts, and tenant-specific performance metrics.
+
+
+      **Tenant Information:**
+
+      - Vendor profile and capabilities
+
+      - Specializations relevant to tenant business
+
+      - Contact persons and communication preferences
+
+      - Tenant-specific ratings and order history
+
+      - Pricing estimates and lead times
+
+
+      **Access Level:** Tenant User with Vendor Access Permission
+
+      '
+    operationId: tenantGetVendor
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      description: Include related data for business context
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - specializations
+          - contacts
+          - tenant_ratings
+          - order_history
+          - sla_metrics
+      style: form
+      explode: false
+    responses:
+      '200':
+        description: Vendor details retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/VendorResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                company_name: PT Etching Indo Prima
+                brand_name: EIP Etching
+                email: info@etchingindo.com
+                phone: '+62218765432'
+                status: active
+                quality_tier: premium
+                overall_rating: 4.2
+                tenant_rating: 4.5
+                total_orders_with_tenant: 12
+                last_order_date: '2025-11-01T10:30:00Z'
+                is_verified: true
+                available_for_orders: true
+                specializations:
+                - material_type: stainless_steel
+                  quality_tier: premium
+                  lead_time_days_min: 7
+                  lead_time_days_max: 12
+                  price_per_unit_min: 75000
+                  price_per_unit_max: 150000
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        description: Vendor not found or not available for tenant
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: VENDOR_NOT_FOUND
+                message: Vendor not found or not available for this tenant
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/vendors/search:
+  post:
+    tags:
+    - Tenant - Vendor Search
+    summary: Advanced Vendor Search for Order Sourcing
+    description: 'Advanced vendor search and matching for tenant order sourcing with comprehensive business criteria.
+
+
+      **Tenant Search Features:**
+
+      - Material type and quality requirements matching
+
+      - Capacity and lead time filtering
+
+      - Price range expectations
+
+      - Geographic preferences and proximity
+
+      - Rating thresholds and performance metrics
+
+      - Rush order capabilities
+
+
+      **Business Results Include:**
+
+      - Vendor matching score for order requirements
+
+      - Availability status and capacity
+
+      - Estimated pricing ranges based on tenant history
+
+      - Lead time estimates and delivery options
+
+      - Tenant-specific vendor performance data
+
+
+      **Access Level:** Tenant User with Order Management Permission
+
+      '
+    operationId: tenantAdvancedVendorSearch
+    security:
+    - bearerAuth: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: query
@@ -2857,3 +3166,215 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/InternalServerError'
+
+/tenant/vendors/{vendorId}/ratings:
+  get:
+    tags:
+    - Tenant - Vendor Performance
+    summary: Get Tenant-specific Vendor Ratings
+    description: 'Retrieve vendor ratings and reviews from tenant perspective.
+
+
+      **Tenant Rating Features:**
+
+      - Only ratings from this tenant or public ratings
+
+      - Tenant-specific order context and experience
+
+      - Material-specific performance ratings
+
+      - Order value and complexity context
+
+
+      **Access Level:** Tenant User with Vendor Access Permission
+
+      '
+    operationId: tenantGetVendorRatings
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: material_type
+      in: query
+      description: Filter ratings by material type
+      schema:
+        type: string
+        enum:
+        - akrilik
+        - kuningan
+        - tembaga
+        - stainless_steel
+        - aluminum
+        - kaca
+        - kayu
+        - custom
+    - name: min_rating
+      in: query
+      description: Filter ratings above this score
+      schema:
+        type: number
+        format: decimal
+        minimum: 1
+        maximum: 5
+      example: 4.0
+    - name: include_public
+      in: query
+      description: Include public ratings from other tenants
+      schema:
+        type: boolean
+        default: true
+    responses:
+      '200':
+        description: Vendor ratings retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/VendorRatingListResponse'
+            example:
+              success: true
+              data:
+              - id: 123e4567-e89b-12d3-a456-426614174000
+                quality_score: 4.5
+                timeliness_score: 4.0
+                communication_score: 4.2
+                pricing_score: 4.1
+                overall_score: 4.2
+                review_title: Excellent quality, slightly delayed delivery
+                review_text: Great attention to detail, final product exceeded expectations
+                material_type: stainless_steel
+                order_value: 15000000
+                created_at: '2025-11-01T10:30:00Z'
+                is_tenant_rating: true
+              meta:
+                page: 1
+                limit: 20
+                total: 8
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  post:
+    tags:
+    - Tenant - Vendor Performance
+    summary: Create Tenant Vendor Rating
+    description: 'Create a performance rating for a vendor based on tenant order experience.
+
+
+      **Tenant Rating Context:**
+
+      - Must reference a completed order from this tenant
+
+      - Only one rating per order allowed
+
+      - Rating scores based on tenant business criteria
+
+      - Private or public rating visibility option
+
+
+      **Business Impact:**
+
+      - Influences future vendor recommendations
+
+      - Contributes to vendor performance metrics
+
+      - Helps other tenants with vendor selection
+
+
+      **Access Level:** Tenant User with Order Management Permission
+
+      '
+    operationId: tenantCreateVendorRating
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: vendorId
+      in: path
+      required: true
+      description: Vendor ID (UUID)
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/TenantVendorRatingCreateInput'
+          example:
+            order_id: 123e4567-e89b-12d3-a456-426614174000
+            quality_score: 4.5
+            timeliness_score: 4.0
+            communication_score: 4.2
+            pricing_score: 4.1
+            review_title: Excellent quality, slightly delayed delivery
+            review_text: Great attention to detail, final product exceeded expectations
+            pros: High quality finish, professional communication, competitive pricing
+            cons: Delivery was 2 days late due to material sourcing
+            material_type: stainless_steel
+            order_value: 15000000
+            delivery_days_actual: 12
+            delivery_days_promised: 10
+            would_recommend: true
+            is_public: false
+            review_images:
+            - https://cdn.example.com/reviews/tenant-review-1.jpg
+    responses:
+      '201':
+        description: Vendor rating created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/VendorRating'
+            example:
+              success: true
+              data:
+                id: 987e6543-e21b-12d3-a456-426614174000
+                overall_score: 4.2
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                vendor_id: 550e8400-e29b-41d4-a716-446655440000
+                created_at: '2025-11-13T18:58:00Z'
+              message: Vendor rating submitted successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Rating already exists for this order
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: RATING_EXISTS
+                message: Rating already exists for this order
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'

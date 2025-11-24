@@ -3,24 +3,24 @@
 # Security: Bearer Token Authentication + Tenant Scoping
 
 # ================================================================
-# SUPPLIER MANAGEMENT ENDPOINTS
+# TENANT SUPPLIER MANAGEMENT ENDPOINTS
 # ================================================================
-/suppliers:
+/tenant/suppliers:
   get:
     tags:
-      - Supplier Management
-    summary: List Suppliers
+      - Tenant - Supplier Management
+    summary: List Suppliers (Tenant)
     description: |
         Retrieve paginated list of suppliers with advanced filtering and search capabilities.
         
-        **Admin Features:**
+        **Tenant Features:**
         - Search by name, code, company name
         - Filter by type, tier, status, approval status
         - Sort by multiple fields including ratings
         - Export functionality
         - Tenant-scoped results
         - Future feature for internal production planning
-    operationId: listSuppliers
+    operationId: tenantListSuppliers
     security:
       - bearerAuth: []
     x-permissions:
@@ -158,8 +158,8 @@
 
   post:
     tags:
-      - Supplier Management
-    summary: Create New Supplier
+      - Tenant - Supplier Management
+    summary: Create New Supplier (Tenant)
     description: |
       Create a new supplier record with complete business information.
       
@@ -169,7 +169,7 @@
       - Multi-contact management
       - Product catalog integration
       - Quotation management workflow
-    operationId: createSupplier
+    operationId: tenantCreateSupplier
     security:
       - bearerAuth: []
     x-permissions:
@@ -258,11 +258,11 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/suppliers/{supplier_id}:
+/tenant/suppliers/{supplier_id}:
   get:
     tags:
-      - Supplier Management
-    summary: Get Supplier Details
+      - Tenant - Supplier Management
+    summary: Get Supplier Details (Tenant)
     description: |
       Retrieve detailed information about a specific supplier including relationships.
       
@@ -271,7 +271,7 @@
       - Product catalog summary
       - Recent quotations
       - Performance metrics
-    operationId: getSupplier
+    operationId: tenantGetSupplier
     security:
       - bearerAuth: []
     x-permissions:
@@ -329,8 +329,8 @@
 
   put:
     tags:
-      - Supplier Management
-    summary: Update Supplier Information
+      - Tenant - Supplier Management
+    summary: Update Supplier Information (Tenant)
     description: |
       Update supplier information including business details, ratings, and classifications.
       
@@ -339,7 +339,7 @@
       - Automatic audit trail
       - Rating recalculation
       - Approval status management
-    operationId: updateSupplier
+    operationId: tenantUpdateSupplier
     security:
       - bearerAuth: []
     x-permissions:
@@ -413,8 +413,8 @@
 
   delete:
     tags:
-      - Supplier Management
-    summary: Delete Supplier
+      - Tenant - Supplier Management
+    summary: Delete Supplier (Tenant)
     description: |
       Soft delete supplier record. This action is reversible and maintains referential integrity.
       
@@ -423,7 +423,7 @@
       - Maintains historical quotations
       - Cascades to contacts and products
       - Audit trail preserved
-    operationId: deleteSupplier
+    operationId: tenantDeleteSupplier
     security:
       - bearerAuth: []
     x-permissions:
@@ -485,13 +485,13 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# SUPPLIER CONTACTS ENDPOINTS
+# TENANT SUPPLIER CONTACTS ENDPOINTS
 # ================================================================
-/suppliers/{supplier_id}/contacts:
+/tenant/suppliers/{supplier_id}/contacts:
   get:
     tags:
-      - Supplier Contacts
-    summary: List Supplier Contacts
+      - Tenant - Supplier Contacts
+    summary: List Supplier Contacts (Tenant)
     description: |
       Retrieve all contact persons for a specific supplier.
       
@@ -500,7 +500,7 @@
       - Role-based contact types
       - Authorization levels
       - Communication preferences
-    operationId: listSupplierContacts
+    operationId: tenantListSupplierContacts
     security:
       - bearerAuth: []
     x-permissions:
@@ -569,8 +569,8 @@
 
   post:
     tags:
-      - Supplier Contacts
-    summary: Add Supplier Contact
+      - Tenant - Supplier Contacts
+    summary: Add Supplier Contact (Tenant)
     description: |
       Add a new contact person to a supplier.
       
@@ -578,7 +578,7 @@
       - Automatic primary contact assignment
       - Authorization level configuration
       - Communication preference setup
-    operationId: createSupplierContact
+    operationId: tenantCreateSupplierContact
     security:
       - bearerAuth: []
     x-permissions:
@@ -653,14 +653,14 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/suppliers/{supplier_id}/contacts/{contact_id}:
+/tenant/suppliers/{supplier_id}/contacts/{contact_id}:
   get:
     tags:
-      - Supplier Contacts
-    summary: Get Contact Details
+      - Tenant - Supplier Contacts
+    summary: Get Contact Details (Tenant)
     description: |
       Retrieve detailed information about a specific supplier contact.
-    operationId: getSupplierContact
+    operationId: tenantGetSupplierContact
     security:
       - bearerAuth: []
     x-permissions:
@@ -717,11 +717,11 @@
 
   put:
     tags:
-      - Supplier Contacts
-    summary: Update Contact Information
+      - Tenant - Supplier Contacts
+    summary: Update Contact Information (Tenant)
     description: |
       Update supplier contact person information and authorization levels.
-    operationId: updateSupplierContact
+    operationId: tenantUpdateSupplierContact
     security:
       - bearerAuth: []
     x-permissions:
@@ -793,11 +793,11 @@
 
   delete:
     tags:
-      - Supplier Contacts
-    summary: Delete Contact
+      - Tenant - Supplier Contacts
+    summary: Delete Contact (Tenant)
     description: |
       Remove a contact person from supplier. Primary contact cannot be deleted unless another is designated.
-    operationId: deleteSupplierContact
+    operationId: tenantDeleteSupplierContact
     security:
       - bearerAuth: []
     x-permissions:
@@ -860,13 +860,13 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# SUPPLIER PRODUCTS ENDPOINTS  
+# TENANT SUPPLIER PRODUCTS ENDPOINTS  
 # ================================================================
-/suppliers/{supplier_id}/products:
+/tenant/suppliers/{supplier_id}/products:
   get:
     tags:
-      - Supplier Products
-    summary: List Supplier Products
+      - Tenant - Supplier Products
+    summary: List Supplier Products (Tenant)
     description: |
       Retrieve product catalog for a specific supplier with pricing and specifications.
       
@@ -876,7 +876,7 @@
       - Quality certifications
       - Lead time information
       - Stock availability
-    operationId: listSupplierProducts
+    operationId: tenantListSupplierProducts
     security:
       - bearerAuth: []
     x-permissions:
@@ -982,8 +982,8 @@
 
   post:
     tags:
-      - Supplier Products
-    summary: Add Product to Supplier Catalog
+      - Tenant - Supplier Products
+    summary: Add Product to Supplier Catalog (Tenant)
     description: |
       Add a new product to supplier's catalog with complete specifications and pricing.
       
@@ -993,7 +993,7 @@
       - Quality certifications
       - Packaging and shipping details
       - Lead time and availability
-    operationId: createSupplierProduct
+    operationId: tenantCreateSupplierProduct
     security:
       - bearerAuth: []
     x-permissions:
@@ -1092,14 +1092,14 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/suppliers/{supplier_id}/products/{product_id}:
+/tenant/suppliers/{supplier_id}/products/{product_id}:
   get:
     tags:
-      - Supplier Products
-    summary: Get Product Details
+      - Tenant - Supplier Products
+    summary: Get Product Details (Tenant)
     description: |
       Retrieve detailed information about a specific product from supplier catalog.
-    operationId: getSupplierProduct
+    operationId: tenantGetSupplierProduct
     security:
       - bearerAuth: []
     x-permissions:
@@ -1157,11 +1157,11 @@
 
   put:
     tags:
-      - Supplier Products
-    summary: Update Product Information
+      - Tenant - Supplier Products
+    summary: Update Product Information (Tenant)
     description: |
       Update product specifications, pricing, and availability information.
-    operationId: updateSupplierProduct
+    operationId: tenantUpdateSupplierProduct
     security:
       - bearerAuth: []
     x-permissions:
@@ -1232,11 +1232,11 @@
 
   delete:
     tags:
-      - Supplier Products
-    summary: Remove Product from Catalog
+      - Tenant - Supplier Products
+    summary: Remove Product from Catalog (Tenant)
     description: |
       Remove product from supplier catalog. This is a soft delete to maintain historical data.
-    operationId: deleteSupplierProduct
+    operationId: tenantDeleteSupplierProduct
     security:
       - bearerAuth: []
     x-permissions:
@@ -1288,13 +1288,13 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# SUPPLIER QUOTATIONS ENDPOINTS
+# TENANT SUPPLIER QUOTATIONS ENDPOINTS
 # ================================================================
-/suppliers/quotations:
+/tenant/suppliers/quotations:
   get:
     tags:
-      - Supplier Quotations
-    summary: List All Quotations
+      - Tenant - Supplier Quotations
+    summary: List All Quotations (Tenant)
     description: |
       Retrieve paginated list of quotations from all suppliers with advanced filtering.
       
@@ -1304,7 +1304,7 @@
       - Evaluation and scoring
       - Approval workflow
       - Email notifications
-    operationId: listSupplierQuotations
+    operationId: tenantListSupplierQuotations
     security:
       - bearerAuth: []
     x-permissions:
@@ -1410,8 +1410,8 @@
 
   post:
     tags:
-      - Supplier Quotations
-    summary: Create New Quotation Request
+      - Tenant - Supplier Quotations
+    summary: Create New Quotation Request (Tenant)
     description: |
       Create a new quotation request (RFQ) to be sent to suppliers.
       
@@ -1421,7 +1421,7 @@
       - Email notification to suppliers
       - Response tracking
       - Comparison workflow
-    operationId: createSupplierQuotation
+    operationId: tenantCreateSupplierQuotation
     security:
       - bearerAuth: []
     x-permissions:
@@ -1492,14 +1492,14 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/suppliers/quotations/{quotation_id}:
+/tenant/suppliers/quotations/{quotation_id}:
   get:
     tags:
-      - Supplier Quotations
-    summary: Get Quotation Details
+      - Tenant - Supplier Quotations
+    summary: Get Quotation Details (Tenant)
     description: |
       Retrieve detailed information about a specific quotation including all items and evaluation data.
-    operationId: getSupplierQuotation
+    operationId: tenantGetSupplierQuotation
     security:
       - bearerAuth: []
     x-permissions:
@@ -1548,11 +1548,11 @@
 
   put:
     tags:
-      - Supplier Quotations
-    summary: Update Quotation
+      - Tenant - Supplier Quotations
+    summary: Update Quotation (Tenant)
     description: |
       Update quotation information, evaluation scores, and approval status.
-    operationId: updateSupplierQuotation
+    operationId: tenantUpdateSupplierQuotation
     security:
       - bearerAuth: []
     x-permissions:
@@ -1616,11 +1616,11 @@
 
   delete:
     tags:
-      - Supplier Quotations
-    summary: Delete Quotation
+      - Tenant - Supplier Quotations
+    summary: Delete Quotation (Tenant)
     description: |
       Cancel and delete quotation request. This action is reversible through soft delete.
-    operationId: deleteSupplierQuotation
+    operationId: tenantDeleteSupplierQuotation
     security:
       - bearerAuth: []
     x-permissions:
@@ -1666,11 +1666,11 @@
 # ================================================================
 # SUPPLIER EVALUATION & APPROVAL ENDPOINTS
 # ================================================================
-/suppliers/{supplier_id}/approve:
+/tenant/suppliers/{supplier_id}/approve:
   post:
     tags:
-      - Supplier Management
-    summary: Approve Supplier
+      - Tenant - Supplier Management
+    summary: Approve Supplier (Tenant)
     description: |
       Approve a supplier for business operations after evaluation and verification.
       
@@ -1680,7 +1680,7 @@
       - Business evaluation
       - Authorization levels
       - Contract preparation
-    operationId: approveSupplier
+    operationId: tenantApproveSupplier
     security:
       - bearerAuth: []
     x-permissions:
@@ -1766,11 +1766,11 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/suppliers/quotations/{quotation_id}/evaluate:
+/tenant/suppliers/quotations/{quotation_id}/evaluate:
   post:
     tags:
-      - Supplier Quotations
-    summary: Evaluate Quotation
+      - Tenant - Supplier Quotations
+    summary: Evaluate Quotation (Tenant)
     description: |
       Evaluate and score a supplier quotation based on multiple criteria.
       
@@ -1781,7 +1781,7 @@
       - Supplier reputation
       - Technical specifications
       - Terms and conditions
-    operationId: evaluateSupplierQuotation
+    operationId: tenantEvaluateSupplierQuotation
     security:
       - bearerAuth: []
     x-permissions:
@@ -1864,13 +1864,13 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# REPORTING & ANALYTICS ENDPOINTS
+# TENANT REPORTING & ANALYTICS ENDPOINTS
 # ================================================================
-/suppliers/statistics:
+/tenant/suppliers/statistics:
   get:
     tags:
-      - Supplier Analytics
-    summary: Get Supplier Statistics
+      - Tenant - Supplier Analytics
+    summary: Get Supplier Statistics (Tenant)
     description: |
       Retrieve comprehensive supplier statistics and KPIs for dashboard and reporting.
       
@@ -1880,7 +1880,7 @@
       - Quotation activity metrics
       - Approval rates and trends
       - Geographic distribution
-    operationId: getSupplierStatistics
+    operationId: tenantGetSupplierStatistics
     security:
       - bearerAuth: []
     x-permissions:
@@ -1929,11 +1929,11 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/suppliers/{supplier_id}/performance-report:
+/tenant/suppliers/{supplier_id}/performance-report:
   get:
     tags:
-      - Supplier Analytics
-    summary: Get Supplier Performance Report
+      - Tenant - Supplier Analytics
+    summary: Get Supplier Performance Report (Tenant)
     description: |
       Generate comprehensive performance report for a specific supplier.
       
@@ -1943,7 +1943,7 @@
       - Quality and delivery ratings
       - Cost competitiveness analysis
       - Trend analysis over time
-    operationId: getSupplierPerformanceReport
+    operationId: tenantGetSupplierPerformanceReport
     security:
       - bearerAuth: []
     x-permissions:
@@ -2008,13 +2008,13 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# BULK OPERATIONS ENDPOINTS
+# TENANT BULK OPERATIONS ENDPOINTS
 # ================================================================
-/suppliers/bulk/export:
+/tenant/suppliers/bulk/export:
   get:
     tags:
-      - Supplier Management
-    summary: Export Suppliers Data
+      - Tenant - Supplier Management
+    summary: Export Suppliers Data (Tenant)
     description: |
       Export supplier data in various formats (CSV, Excel, PDF) for reporting and analysis.
       
@@ -2023,7 +2023,7 @@
       - Customizable field selection
       - Filtered export based on search criteria
       - Include related data (contacts, products)
-    operationId: exportSuppliers
+    operationId: tenantExportSuppliers
     security:
       - bearerAuth: []
     x-permissions:
@@ -2092,11 +2092,11 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/suppliers/bulk/import:
+/tenant/suppliers/bulk/import:
   post:
     tags:
-      - Supplier Management
-    summary: Import Suppliers Data
+      - Tenant - Supplier Management
+    summary: Import Suppliers Data (Tenant)
     description: |
       Bulk import supplier data from CSV or Excel files.
       
@@ -2106,7 +2106,7 @@
       - Duplicate detection and handling
       - Preview before actual import
       - Progress tracking for large files
-    operationId: importSuppliers
+    operationId: tenantImportSuppliers
     security:
       - bearerAuth: []
     x-permissions:

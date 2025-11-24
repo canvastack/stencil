@@ -1,13 +1,13 @@
-/themes:
+/platform/themes:
   get:
     tags:
-    - Theme Marketplace
-    summary: Browse Theme Marketplace
+    - Platform Theme Management
+    summary: Browse Theme Marketplace (Platform)
     description: 'Browse available themes in the marketplace with advanced filtering
-      and search.
+      and search. Platform-level access to all themes.
 
 
-      **Features:**
+      **Platform Features:**
 
       - Full-text search across theme metadata
 
@@ -21,9 +21,12 @@
 
       - Pagination and sorting
 
+      - Platform admin access to all themes
+
       '
-    operationId: listThemes
-    security: []
+    operationId: platformListThemes
+    security:
+    - bearerAuth: []
     parameters:
     - $ref: '../../components/parameters.yaml#/PageParam'
     - $ref: '../../components/parameters.yaml#/PerPageParam'
@@ -148,12 +151,12 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - Theme Management
-    summary: Create New Theme
-    description: 'Create a new theme in the global registry.
+    - Platform Theme Management
+    summary: Create New Theme (Platform)
+    description: 'Create a new theme in the global registry. Platform-level theme creation.
 
 
-      **Admin/Developer Features:**
+      **Platform Admin Features:**
 
       - Theme metadata definition
 
@@ -163,11 +166,13 @@
 
       - Author information
 
+      - Global theme registry management
 
-      **Required Permissions:** `themes.create`
+
+      **Required Permissions:** `platform.themes.create`
 
       '
-    operationId: createTheme
+    operationId: platformCreateTheme
     security:
     - bearerAuth: []
     requestBody:
@@ -254,34 +259,36 @@
                 message: Theme with this slug already exists
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/themes/{themeId}:
+/platform/themes/{themeId}:
   get:
     tags:
-    - Theme Marketplace
-    summary: Get Theme Details
+    - Platform Theme Management
+    summary: Get Theme Details (Platform)
     description: 'Retrieve detailed information about a specific theme including versions,
-      reviews, and tenant-specific data.
+      reviews, and platform-level data.
 
 
-      **Public Information:**
+      **Platform Information:**
 
-      - Theme metadata and screenshots
+      - Complete theme metadata and screenshots
 
-      - Versions and changelog
+      - All versions and changelog
 
-      - Ratings and reviews
+      - All ratings and reviews across tenants
+
+      - Revenue and analytics data
 
 
-      **Tenant-Specific (Authenticated):**
+      **Platform-Specific Access:**
 
-      - Installation status
+      - Installation status across all tenants
 
-      - Current theme settings
+      - Revenue tracking
 
-      - Purchase history
+      - Performance metrics
 
       '
-    operationId: getTheme
+    operationId: platformGetTheme
     security:
     - bearerAuth: []
     - {}
@@ -335,17 +342,17 @@
         $ref: '../../components/responses.yaml#/ServerError'
   patch:
     tags:
-    - Theme Management
-    summary: Update Theme
-    description: 'Update theme metadata, pricing, and configuration.
+    - Platform Theme Management
+    summary: Update Theme (Platform)
+    description: 'Update theme metadata, pricing, and configuration. Platform-level theme management.
 
 
-      **Required Permissions:** `themes.edit`
+      **Required Permissions:** `platform.themes.edit`
 
-      **Restrictions:** Only theme author or platform admin can update
+      **Platform Access:** Full theme modification capabilities
 
       '
-    operationId: updateTheme
+    operationId: platformUpdateTheme
     security:
     - bearerAuth: []
     parameters:
@@ -413,19 +420,19 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - Theme Management
-    summary: Delete Theme
+    - Platform Theme Management
+    summary: Delete Theme (Platform)
     description: 'Delete a theme from the global registry. This will also remove all
       installations and related data.
 
 
-      **Required Permissions:** `themes.delete`
+      **Required Permissions:** `platform.themes.delete`
 
-      **Warning:** This action cannot be undone and will affect all tenants using
+      **Platform Warning:** This action cannot be undone and will affect all tenants using
       this theme.
 
       '
-    operationId: deleteTheme
+    operationId: platformDeleteTheme
     security:
     - bearerAuth: []
     parameters:
@@ -479,6 +486,127 @@
               error:
                 code: THEME_HAS_INSTALLATIONS
                 message: Cannot delete theme with active installations
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+/tenant/themes/marketplace:
+  get:
+    tags:
+    - Tenant Theme Marketplace
+    summary: Browse Theme Marketplace (Tenant)
+    description: 'Browse available themes in the marketplace from tenant perspective.
+      Shows publicly available themes with purchase options.
+
+
+      **Tenant Features:**
+
+      - Public theme browsing
+
+      - Purchase status checking
+
+      - Installation compatibility verification
+
+      - Pricing and license information
+
+      - Filtering and search capabilities
+
+      '
+    operationId: tenantBrowseThemes
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: search
+      in: query
+      description: Search in theme name, description, and tags
+      schema:
+        type: string
+        maxLength: 255
+      example: business professional
+    - name: pricing_type
+      in: query
+      description: Filter by pricing model
+      schema:
+        type: string
+        enum:
+        - free
+        - paid
+        - subscription
+      example: paid
+    - name: categories
+      in: query
+      description: Filter by categories (comma-separated)
+      schema:
+        type: string
+      example: business,ecommerce
+    - name: tags
+      in: query
+      description: Filter by tags (comma-separated)
+      schema:
+        type: string
+      example: professional,responsive
+    - name: min_rating
+      in: query
+      description: Minimum average rating
+      schema:
+        type: number
+        format: decimal
+        minimum: 0
+        maximum: 5
+      example: 4.0
+    - name: price_max
+      in: query
+      description: Maximum price filter
+      schema:
+        type: number
+        format: decimal
+      example: 100
+    responses:
+      '200':
+        description: Theme marketplace listing retrieved successfully for tenant
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/theme.yaml#/ThemeListResponse'
+            examples:
+              tenant_marketplace_browse:
+                summary: Tenant marketplace browse result
+                value:
+                  success: true
+                  data:
+                  - uuid: 550e8400-e29b-41d4-a716-446655440000
+                    slug: etching-professional
+                    name: Etching Professional
+                    description: Professional theme for etching businesses
+                    version: 1.2.3
+                    author_name: Stencil Team
+                    pricing_type: paid
+                    pricing_price: 79.99
+                    pricing_currency: USD
+                    rating_average: 4.75
+                    rating_count: 123
+                    download_count: 2847
+                    is_official: true
+                    is_featured: true
+                    purchase_status: available
+                    compatibility_status: compatible
+                    screenshots:
+                    - url: https://cdn.stencilcms.com/themes/etching/screenshot1.jpg
+                      caption: Homepage
+                      order: 1
+                  meta:
+                    pagination:
+                      current_page: 1
+                      per_page: 20
+                      total: 150
+                      total_pages: 8
+                    tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes:
@@ -677,6 +805,95 @@
                   error:
                     code: LICENSE_REQUIRED
                     message: Valid license required to install this paid theme
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+/tenant/themes/{themeId}/details:
+  get:
+    tags:
+    - Tenant Theme Marketplace
+    summary: Get Theme Details (Tenant)
+    description: 'Retrieve detailed information about a specific theme from tenant perspective.
+      Includes purchase status and installation compatibility.
+
+
+      **Tenant Information:**
+
+      - Theme metadata and screenshots
+
+      - Available versions and changelog
+
+      - Public ratings and reviews
+
+      - Purchase status for this tenant
+
+      - Installation compatibility status
+
+      - Pricing and license information
+
+      '
+    operationId: tenantGetThemeDetails
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: themeId
+      in: path
+      required: true
+      description: Theme UUID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      description: Additional data to include (comma-separated)
+      schema:
+        type: string
+      example: versions,reviews,compatibility,purchase_status
+    responses:
+      '200':
+        description: Theme details retrieved successfully for tenant
+        content:
+          application/json:
+            schema:
+              $ref: '../../schemas/content-management/theme.yaml#/ThemeDetailsResponse'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                slug: etching-professional
+                name: Etching Professional
+                description: Professional theme for etching businesses
+                version: 1.2.3
+                author_name: Stencil Team
+                pricing_type: paid
+                pricing_price: 79.99
+                pricing_currency: USD
+                rating_average: 4.75
+                rating_count: 123
+                purchase_status: available
+                compatibility_status: compatible
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Theme details retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        description: Theme not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+            example:
+              success: false
+              error:
+                code: THEME_NOT_FOUND
+                message: Theme not found
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 /tenant/themes/{installationId}:
@@ -1515,16 +1732,16 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/themes/{themeId}/validate:
+/platform/themes/{themeId}/validate:
   post:
     tags:
-    - Theme Validation
-    summary: Validate Theme
+    - Platform Theme Validation
+    summary: Validate Theme (Platform)
     description: 'Perform comprehensive theme validation including security, performance,
-      and compatibility checks.
+      and compatibility checks. Platform-level validation with full access.
 
 
-      **Validation Types:**
+      **Platform Validation Types:**
 
       - Structure validation (theme manifest, required files)
 
@@ -1536,11 +1753,13 @@
 
       - Compatibility testing (Stencil version, dependencies)
 
+      - Cross-tenant impact analysis
 
-      **Required Permissions:** `themes.admin` or theme ownership
+
+      **Required Permissions:** `platform.themes.validate`
 
       '
-    operationId: validateTheme
+    operationId: platformValidateTheme
     security:
     - bearerAuth: []
     parameters:
@@ -1629,28 +1848,30 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/themes/{themeId}/validation-results:
+/platform/themes/{themeId}/validation-results:
   get:
     tags:
-    - Theme Validation
-    summary: Get Validation Results
-    description: 'Retrieve theme validation results and security scan findings.
+    - Platform Theme Validation
+    summary: Get Validation Results (Platform)
+    description: 'Retrieve theme validation results and security scan findings. Platform-level access to all validation data.
 
 
-      **Features:**
+      **Platform Features:**
 
-      - Validation status and scores
+      - Validation status and scores across all versions
 
-      - Security scan findings
+      - Complete security scan findings
 
-      - Performance metrics
+      - Performance metrics and benchmarks
 
       - Accessibility compliance report
 
       - Detailed error and warning lists
 
+      - Cross-tenant compatibility analysis
+
       '
-    operationId: getValidationResults
+    operationId: platformGetValidationResults
     security:
     - bearerAuth: []
     parameters:
@@ -1761,16 +1982,16 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/themes/{themeId}/versions:
+/platform/themes/{themeId}/versions:
   get:
     tags:
-    - Theme Versions
-    summary: List Theme Versions
+    - Platform Theme Versions
+    summary: List Theme Versions (Platform)
     description: 'List all available versions of a theme with changelog and compatibility
-      information.
+      information. Platform-level access to all versions.
 
       '
-    operationId: listThemeVersions
+    operationId: platformListThemeVersions
     security:
     - bearerAuth: []
     - {}
@@ -1833,15 +2054,16 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - Theme Versions
-    summary: Create Theme Version
+    - Platform Theme Versions
+    summary: Create Theme Version (Platform)
     description: 'Create a new version of a theme with changelog and package information.
+      Platform-level version management.
 
 
-      **Required Permissions:** `themes.edit` and theme ownership
+      **Required Permissions:** `platform.themes.versions.create`
 
       '
-    operationId: createThemeVersion
+    operationId: platformCreateThemeVersion
     security:
     - bearerAuth: []
     parameters:
@@ -1970,30 +2192,30 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/themes/{themeId}/purchase:
+/tenant/themes/{themeId}/purchase:
   post:
     tags:
-    - Theme Purchases
-    summary: Purchase Theme
+    - Tenant Theme Purchases
+    summary: Purchase Theme (Tenant)
     description: 'Purchase a paid theme for the current tenant. This will process
       payment and generate a license.
 
 
-      **Purchase Flow:**
+      **Tenant Purchase Flow:**
 
-      1. Payment processing
+      1. Payment processing for tenant
 
-      2. License generation
+      2. License generation for tenant
 
-      3. Installation preparation
+      3. Installation preparation for tenant
 
-      4. Receipt generation
+      4. Receipt generation for tenant
 
 
-      **Required Permissions:** `themes.purchase`
+      **Required Permissions:** `tenant.themes.purchase`
 
       '
-    operationId: purchaseTheme
+    operationId: tenantPurchaseTheme
     security:
     - bearerAuth: []
     parameters:

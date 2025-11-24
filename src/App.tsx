@@ -11,7 +11,8 @@ import "@/themes/default/index";
 import { 
   BrowserRouter,
   Routes,
-  Route
+  Route,
+  Navigate
 } from "react-router-dom";
 import { ThemeScrollToTop } from "@/core/engine/ThemeComponent";
 import { CartProvider } from "@/contexts/CartContext";
@@ -20,6 +21,10 @@ import { HelmetProvider } from "react-helmet-async";
 import { ApiServiceProvider } from "@/contexts/ApiServiceContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
+import { TenantAuthProvider } from "@/contexts/TenantAuthContext";
+import { PlatformRouteGuard } from "@/guards/PlatformRouteGuard";
+import { TenantRouteGuard } from "@/guards/TenantRouteGuard";
 
 import Home from "@/themes/default/pages/Home";
 import About from "@/themes/default/pages/About";
@@ -37,7 +42,14 @@ import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import UserProfile from "./pages/admin/UserProfile";
 
-import { AdminLayout } from "@/components/admin/AdminLayout";
+// Platform Components
+import PlatformLogin from "./pages/platform/PlatformLogin";
+import { PlatformLayout } from "@/layouts/PlatformLayout";
+import PlatformDashboard from "./pages/platform/PlatformDashboard";
+
+// Tenant Components
+import TenantLogin from "./pages/tenant/TenantLogin";
+import { TenantLayout } from "@/layouts/TenantLayout";
 import Dashboard from "./pages/admin/Dashboard";
 
 const PageHome = lazy(() => import("./pages/admin/PageHome"));
@@ -99,19 +111,21 @@ function App() {
         <HelmetProvider>
           <QueryClientProvider client={queryClient}>
             <ApiServiceProvider>
-              <ThemeProvider initialTheme="default">
-                <ContentProvider>
-                  <CartProvider>
-                    <Toaster />
-                    <Sonner />
-                {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
-                    import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
-                    Fallback to '/' when empty. */}
-                <BrowserRouter
-                  basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
-                  future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-                >
-                <Routes>
+              <PlatformAuthProvider>
+                <TenantAuthProvider>
+                  <ThemeProvider initialTheme="default">
+                    <ContentProvider>
+                      <CartProvider>
+                        <Toaster />
+                        <Sonner />
+                    {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
+                        import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
+                        Fallback to '/' when empty. */}
+                    <BrowserRouter
+                      basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
+                      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+                    >
+                    <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
@@ -126,11 +140,32 @@ function App() {
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   
-                {/* Admin Routes */}
+                {/* Platform Routes */}
+                <Route path="/platform/login" element={<PlatformLogin />} />
+                <Route path="/platform" element={
+                  <PlatformRouteGuard>
+                    <PlatformLayout />
+                  </PlatformRouteGuard>
+                }>
+                  <Route index element={<Navigate to="/platform/dashboard" replace />} />
+                  <Route path="dashboard" element={<PlatformDashboard />} />
+                  <Route path="tenants" element={<div className="p-6">Tenant Management - Coming Soon</div>} />
+                  <Route path="users" element={<div className="p-6">User Management - Coming Soon</div>} />
+                  <Route path="subscriptions" element={<div className="p-6">Subscriptions - Coming Soon</div>} />
+                  <Route path="licenses" element={<div className="p-6">Licensing - Coming Soon</div>} />
+                  <Route path="domains" element={<div className="p-6">Domains - Coming Soon</div>} />
+                  <Route path="analytics" element={<div className="p-6">Analytics - Coming Soon</div>} />
+                  <Route path="system" element={<div className="p-6">System - Coming Soon</div>} />
+                  <Route path="activity" element={<div className="p-6">Activity Monitor - Coming Soon</div>} />
+                  <Route path="settings" element={<div className="p-6">Settings - Coming Soon</div>} />
+                </Route>
+                
+                {/* Tenant Routes */}
+                <Route path="/admin/login" element={<TenantLogin />} />
                 <Route path="/admin" element={
-                  <ProtectedRoute>
-                    <AdminLayout />
-                  </ProtectedRoute>
+                  <TenantRouteGuard>
+                    <TenantLayout />
+                  </TenantRouteGuard>
                 }>
                   <Route index element={<Dashboard />} />
                   <Route path="content/home" element={<Suspense fallback={<LoadingFallback />}><PageHome /></Suspense>} />
@@ -179,11 +214,13 @@ function App() {
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                    <ThemeScrollToTop />
-                  </BrowserRouter>
-                  </CartProvider>
-                </ContentProvider>
-              </ThemeProvider>
+                        <ThemeScrollToTop />
+                      </BrowserRouter>
+                      </CartProvider>
+                    </ContentProvider>
+                  </ThemeProvider>
+                </TenantAuthProvider>
+              </PlatformAuthProvider>
             </ApiServiceProvider>
           </QueryClientProvider>
         </HelmetProvider>

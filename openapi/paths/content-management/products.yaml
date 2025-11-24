@@ -1,9 +1,1042 @@
-/products:
+# ==============================================================================
+# PLATFORM PRODUCT ENDPOINTS  
+# ==============================================================================
+# Platform-level product management for super admins
+
+/platform/products:
   get:
     tags:
-    - Product Catalog
-    summary: Get Products Catalog
-    description: 'Retrieve public product catalog with filtering, search, and pagination.
+    - Platform Product Management
+    summary: Get All Products Across Tenants (Platform)
+    description: 'Platform admin endpoint to view products across all tenants for monitoring and management.
+    
+      **Platform Features:**
+      - Cross-tenant product visibility
+      - Global product analytics
+      - Tenant-specific filtering
+      - Compliance monitoring
+      - Platform-level insights'
+    operationId: getPlatformProducts
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific tenant
+    - name: search
+      in: query
+      schema:
+        type: string
+      description: Global search across all tenant products
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+        - draft
+        - published
+        - archived
+      description: Filter by product status
+    - name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    responses:
+      '200':
+        description: Platform products retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '../../components/schemas.yaml#/Product'
+                      - type: object
+                        properties:
+                          tenant_info:
+                            type: object
+                            properties:
+                              tenant_id:
+                                type: string
+                                format: uuid
+                              tenant_name:
+                                type: string
+                              tenant_slug:
+                                type: string
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '../../components/schemas.yaml#/PaginationInfo'
+                      tenant_count:
+                        type: integer
+                      total_products:
+                        type: integer
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+/platform/products/{id}:
+  get:
+    tags:
+    - Platform Product Management
+    summary: Get Product Details (Platform)
+    description: Platform admin view of specific product with tenant context
+    operationId: getPlatformProduct
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Product ID
+    responses:
+      '200':
+        description: Product retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/Product'
+                    - type: object
+                      properties:
+                        tenant_info:
+                          type: object
+                          properties:
+                            tenant_id:
+                              type: string
+                              format: uuid
+                            tenant_name:
+                              type: string
+                            tenant_slug:
+                              type: string
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+
+/platform/admin/products:
+  get:
+    tags:
+    - Platform Product Management
+    summary: Get All Products Across Tenants (Platform Admin)
+    description: 'Platform admin endpoint to manage products across all tenants for full visibility and administrative control.
+    
+      **Platform Admin Features:**
+      - Cross-tenant product management
+      - Full CRUD operations
+      - Advanced filtering and sorting
+      - Bulk action support
+      - Complete product analytics'
+    operationId: getPlatformAdminProducts
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific tenant
+    - name: search
+      in: query
+      schema:
+        type: string
+      description: Global search across all tenant products
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+        - draft
+        - published
+        - archived
+      description: Filter by product status
+    - name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    - name: sort
+      in: query
+      schema:
+        type: string
+        enum:
+        - name
+        - price
+        - created_at
+        - updated_at
+        - stock_quantity
+        default: created_at
+    - name: order
+      in: query
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+        default: desc
+    responses:
+      '200':
+        description: Platform products list retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '../../components/schemas.yaml#/Product'
+                      - type: object
+                        properties:
+                          tenant_info:
+                            type: object
+                            properties:
+                              tenant_id:
+                                type: string
+                                format: uuid
+                              tenant_name:
+                                type: string
+                              tenant_slug:
+                                type: string
+                  meta:
+                    type: object
+                    properties:
+                      pagination:
+                        $ref: '../../components/schemas.yaml#/PaginationInfo'
+                      summary:
+                        $ref: '../../components/schemas.yaml#/ProductsSummary'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+  post:
+    tags:
+    - Platform Product Management
+    summary: Create Product (Platform Admin)
+    description: 'Create a new product at platform level with tenant context.
+    
+      **Business Workflow:**
+      - Auto-generate slug if not provided
+      - Set default production type based on tenant configuration
+      - Initialize customization options for etching workflow
+      - Create audit trail entry
+    
+      **Validation:**
+      - Unique slug per tenant
+      - Valid category assignment
+      - Proper price/stock requirements based on production type'
+    operationId: createPlatformProduct
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Target tenant ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CreateProductRequest'
+    responses:
+      '201':
+        description: Product created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/Product'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '422':
+        $ref: '../../components/responses.yaml#/ValidationError'
+
+/platform/admin/products/{id}:
+  get:
+    tags:
+    - Platform Product Management
+    summary: Get Product Details (Platform Admin)
+    description: Get complete product information for platform administrative purposes with tenant context.
+    operationId: getPlatformAdminProduct
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Product ID
+    responses:
+      '200':
+        description: Product details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/Product'
+                    - type: object
+                      properties:
+                        tenant_info:
+                          type: object
+                          properties:
+                            tenant_id:
+                              type: string
+                              format: uuid
+                            tenant_name:
+                              type: string
+                            tenant_slug:
+                              type: string
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+  put:
+    tags:
+    - Platform Product Management
+    summary: Update Product (Platform Admin)
+    description: "Update existing product at platform level with validation and business rule enforcement.\n\n**Business Rules:**\n- Status transitions: draft ↔ published ↔ archived\n- Price requirements based on production type\n- Slug uniqueness validation\n- Audit trail creation\n"
+    operationId: updatePlatformProduct
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UpdateProductRequest'
+    responses:
+      '200':
+        description: Product updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/Product'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '422':
+        $ref: '../../components/responses.yaml#/ValidationError'
+  delete:
+    tags:
+    - Platform Product Management
+    summary: Delete Product (Platform Admin - Soft Delete)
+    description: 'Soft delete product by setting deleted_at timestamp.
+    
+      **Business Logic:**
+      - Product remains in database but hidden from listings
+      - Can be restored via restore endpoint
+      - Order history references remain intact'
+    operationId: deletePlatformProduct
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '204':
+        description: Product deleted successfully
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+
+/platform/admin/products/{id}/restore:
+  post:
+    tags:
+    - Platform Product Management
+    summary: Restore Deleted Product (Platform Admin)
+    description: Restore a soft-deleted product by clearing deleted_at timestamp at platform level.
+    operationId: restorePlatformProduct
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Product restored successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/Product'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+
+/platform/admin/products/bulk:
+  post:
+    tags:
+    - Platform Product Management
+    summary: Bulk Product Actions (Platform Admin)
+    description: 'Perform bulk actions on multiple products across all tenants.
+    
+      **Available Actions:**
+      - publish: Set status to published
+      - unpublish: Set status to draft
+      - archive: Set status to archived
+      - delete: Soft delete products
+      - restore: Restore deleted products
+      - feature: Set featured flag
+      - unfeature: Remove featured flag'
+    operationId: bulkPlatformProductActions
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/BulkProductRequest'
+    responses:
+      '200':
+        description: Bulk action completed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      processed:
+                        type: integer
+                        description: Number of products processed
+                      failed:
+                        type: integer
+                        description: Number of failed operations
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            product_id:
+                              type: string
+                            error:
+                              type: string
+
+/platform/admin/products/categories:
+  get:
+    tags:
+    - Platform Category Management
+    summary: Get Product Categories (Platform Admin)
+    description: Get all product categories across all tenants including inactive ones for administration.
+    operationId: getPlatformAdminCategories
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific tenant
+    - name: include_inactive
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include inactive categories
+    responses:
+      '200':
+        description: Categories retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '../../components/schemas.yaml#/ProductCategory'
+                      - type: object
+                        properties:
+                          tenant_info:
+                            type: object
+                            properties:
+                              tenant_id:
+                                type: string
+                                format: uuid
+                              tenant_name:
+                                type: string
+  post:
+    tags:
+    - Platform Category Management
+    summary: Create Product Category (Platform Admin)
+    description: Create a new product category at platform level with tenant context.
+    operationId: createPlatformCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: Target tenant ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CreateCategoryRequest'
+    responses:
+      '201':
+        description: Category created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/ProductCategory'
+
+/platform/admin/products/categories/{id}:
+  put:
+    tags:
+    - Platform Category Management
+    summary: Update Product Category (Platform Admin)
+    description: Update product category information and hierarchy at platform level.
+    operationId: updatePlatformCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UpdateCategoryRequest'
+    responses:
+      '200':
+        description: Category updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/ProductCategory'
+  delete:
+    tags:
+    - Platform Category Management
+    summary: Delete Product Category (Platform Admin)
+    description: 'Delete product category with proper handling of child categories and assigned products.
+    
+      **Business Logic:**
+      - Cannot delete category with child categories
+      - Products in deleted category become uncategorized (category_id = null)
+      - Cascade delete handling for hierarchical structure'
+    operationId: deletePlatformCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '204':
+        description: Category deleted successfully
+      '400':
+        description: Cannot delete category with child categories
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+
+/platform/admin/products/{id}/vendor-pricing:
+  post:
+    tags:
+    - Platform Product Business Workflow
+    summary: Update Vendor Pricing (Platform Admin)
+    description: 'Update vendor pricing information for products with vendor production type at platform level.
+    
+      **Business Logic:**
+      - Only applicable for production_type = ''vendor''
+      - Updates vendor_price and markup_percentage
+      - Recalculates customer pricing if markup is set
+      - Creates pricing history for audit trail'
+    operationId: updatePlatformVendorPricing
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - vendor_price
+            properties:
+              vendor_price:
+                type: number
+                format: decimal
+                minimum: 0
+                description: Vendor quoted price
+              markup_percentage:
+                type: number
+                format: decimal
+                minimum: 0
+                maximum: 100
+                description: Broker markup percentage
+              effective_date:
+                type: string
+                format: date
+                description: Price effective date
+              notes:
+                type: string
+                description: Pricing notes
+    responses:
+      '200':
+        description: Vendor pricing updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      vendor_price:
+                        type: number
+                        format: decimal
+                      markup_percentage:
+                        type: number
+                        format: decimal
+                      calculated_customer_price:
+                        type: number
+                        format: decimal
+                      profit_margin:
+                        type: number
+                        format: decimal
+
+/platform/admin/products/{id}/stock:
+  put:
+    tags:
+    - Platform Product Business Workflow
+    summary: Update Product Stock (Platform Admin)
+    description: 'Update product stock levels at platform level with audit trail and notifications.
+    
+      **Features:**
+      - Stock adjustment tracking
+      - Low stock alerts
+      - Automatic out-of-stock status updates
+      - Integration with order management'
+    operationId: updatePlatformProductStock
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - stock_quantity
+            properties:
+              stock_quantity:
+                type: integer
+                minimum: 0
+                description: New stock quantity
+              adjustment_type:
+                type: string
+                enum:
+                - restock
+                - sale
+                - adjustment
+                - damage
+                description: Type of stock adjustment
+              notes:
+                type: string
+                description: Adjustment notes
+    responses:
+      '200':
+        description: Stock updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      previous_stock:
+                        type: integer
+                      new_stock:
+                        type: integer
+                      adjustment_amount:
+                        type: integer
+                      in_stock:
+                        type: boolean
+                      low_stock_alert:
+                        type: boolean
+
+/platform/admin/products/quotation-eligible:
+  get:
+    tags:
+    - Platform Product Business Workflow
+    summary: Get Quotation Eligible Products (Platform Admin)
+    description: 'Retrieve products that are eligible for quotation requests at platform level.
+    
+      **Business Logic:**
+      - Products with quotation_required = true
+      - Products with production_type = ''vendor''
+      - Products with hidden pricing (price = null)
+      - Includes vendor information and specifications'
+    operationId: getPlatformQuotationEligibleProducts
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Optional tenant filtering
+    - name: category_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+    - name: vendor_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+    - name: search
+      in: query
+      schema:
+        type: string
+    responses:
+      '200':
+        description: Quotation eligible products retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '../../components/schemas.yaml#/Product'
+                      - type: object
+                        properties:
+                          tenant_info:
+                            type: object
+                            properties:
+                              tenant_id:
+                                type: string
+                                format: uuid
+                              tenant_name:
+                                type: string
+                          quotation_info:
+                            type: object
+                            properties:
+                              requires_vendor_quote:
+                                type: boolean
+                              estimated_lead_time:
+                                type: string
+                              complexity_level:
+                                type: string
+                                enum:
+                                - simple
+                                - moderate
+                                - complex
+
+/platform/products/analytics/dashboard:
+  get:
+    tags:
+    - Platform Product Analytics
+    summary: Get Products Dashboard Analytics (Platform)
+    description: 'Retrieve comprehensive product analytics across all tenants for dashboard display.
+    
+      **Metrics Included:**
+      - Product status distribution
+      - Tenant-wide category performance
+      - Stock levels and alerts
+      - Recent activity summary across tenants
+      - Popular products and trends'
+    operationId: getPlatformProductsDashboard
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Optional tenant filtering
+    - name: period
+      in: query
+      schema:
+        type: string
+        enum:
+        - 7d
+        - 30d
+        - 90d
+        - 1y
+        default: 30d
+      description: Analytics period
+    responses:
+      '200':
+        description: Dashboard analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        $ref: '../../components/schemas.yaml#/ProductsSummary'
+                      recent_products:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            status:
+                              type: string
+                            created_at:
+                              type: string
+                              format: date-time
+                            tenant_id:
+                              type: string
+                              format: uuid
+                      low_stock_alerts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            product_id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            current_stock:
+                              type: integer
+                            min_order:
+                              type: integer
+                            tenant_id:
+                              type: string
+                              format: uuid
+                      category_performance:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            category_name:
+                              type: string
+                            product_count:
+                              type: integer
+                            total_value:
+                              type: number
+                            tenant_id:
+                              type: string
+                              format: uuid
+
+/platform/products/analytics/global:
+  get:
+    tags:
+    - Platform Product Analytics
+    summary: Get Global Product Analytics (Platform)
+    description: 'Platform-wide product analytics across all tenants.
+    
+      **Global Metrics:**
+      - Total products across all tenants
+      - Product distribution by tenant
+      - Status distribution
+      - Category performance
+      - Growth trends'
+    operationId: getPlatformProductAnalytics
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: period
+      in: query
+      schema:
+        type: string
+        enum:
+        - 7d
+        - 30d
+        - 90d
+        - 1y
+        default: 30d
+      description: Analytics period
+    - name: group_by_tenant
+      in: query
+      schema:
+        type: boolean
+        default: true
+      description: Group analytics by tenant
+    responses:
+      '200':
+        description: Global analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      global_summary:
+                        type: object
+                        properties:
+                          total_products:
+                            type: integer
+                          total_tenants:
+                            type: integer
+                          avg_products_per_tenant:
+                            type: number
+                      tenant_breakdown:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tenant_id:
+                              type: string
+                            tenant_name:
+                              type: string
+                            product_count:
+                              type: integer
+                            status_distribution:
+                              type: object
+                      category_performance:
+                        type: array
+                        items:
+                          type: object
+
+# ==============================================================================
+# TENANT PRODUCT ENDPOINTS
+# ==============================================================================
+# Public product catalog endpoints for tenant customers and frontend
+
+/tenant/products:
+  get:
+    tags:
+    - Tenant Product Catalog
+    summary: Get Products Catalog (Tenant)
+    description: 'Retrieve public product catalog with filtering, search, and pagination for tenant customers.
 
 
       **Business Logic:**
@@ -32,7 +1065,7 @@
       - Responsive pagination with meta information
 
       '
-    operationId: getProductsCatalog
+    operationId: getTenantProductsCatalog
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -122,11 +1155,11 @@
                       products:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/products.yaml#/PublicProduct'
+                          $ref: '../../components/schemas.yaml#/PublicProduct'
                       categories:
                         type: array
                         items:
-                          $ref: '../../schemas/content-management/products.yaml#/CategoryFilter'
+                          $ref: '../../components/schemas.yaml#/CategoryFilter'
                   meta:
                     type: object
                     properties:
@@ -182,13 +1215,13 @@
                       last_page: 5
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
-/products/{slug}:
+
+/tenant/products/{slug}:
   get:
     tags:
-    - Product Catalog
-    summary: Get Product Details
-    description: 'Retrieve detailed product information by slug for product detail
-      page.
+    - Tenant Product Catalog
+    summary: Get Product Details (Tenant)
+    description: 'Retrieve detailed product information by slug for tenant product detail page.
 
 
       **Business Logic:**
@@ -204,7 +1237,7 @@
       - SEO metadata for page optimization
 
       '
-    operationId: getProductBySlug
+    operationId: getTenantProductBySlug
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -227,7 +1260,7 @@
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/content-management/products.yaml#/PublicProduct'
+                    $ref: '../../components/schemas.yaml#/PublicProduct'
             examples:
               brass_plate_product:
                 summary: Brass plate product details
@@ -278,12 +1311,13 @@
                     seo_description: Premium brass plates with precision etching...
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
-/products/categories:
+
+/tenant/products/categories:
   get:
     tags:
-    - Product Catalog
-    summary: Get Product Categories
-    description: 'Retrieve hierarchical product categories for navigation and filtering.
+    - Tenant Product Catalog
+    summary: Get Product Categories (Tenant)
+    description: 'Retrieve hierarchical product categories for navigation and filtering in tenant context.
 
 
       **Features:**
@@ -297,7 +1331,7 @@
       - Responsive to tenant configuration
 
       '
-    operationId: getProductCategories
+    operationId: getTenantProductCategories
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -314,7 +1348,7 @@
                   data:
                     type: array
                     items:
-                      $ref: '../../schemas/content-management/products.yaml#/CategoryFilter'
+                      $ref: '../../components/schemas.yaml#/CategoryFilter'
             example:
               success: true
               data:
@@ -327,18 +1361,23 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-/admin/products:
+
+# ==============================================================================
+# TENANT ADMIN PRODUCT ENDPOINTS
+# ==============================================================================
+# Administrative product management endpoints for tenant admins
+
+/tenant/admin/products:
   get:
     tags:
-    - Product Management
-    summary: Get Products List (Admin)
-    description: 'Administrative endpoint for managing products with full access to
-      all statuses.
+    - Tenant Product Management
+    summary: Get Products List (Tenant Admin)
+    description: 'Administrative endpoint for tenant admins to manage products with full access to all statuses.
 
 
       **Features:**
 
-      - View all products regardless of status
+      - View all tenant products regardless of status
 
       - Advanced filtering and sorting options
 
@@ -349,7 +1388,7 @@
       - Performance optimized pagination
 
       '
-    operationId: getAdminProducts
+    operationId: getTenantAdminProducts
     security:
     - bearerAuth: []
     parameters:
@@ -437,14 +1476,14 @@
                   data:
                     type: array
                     items:
-                      $ref: '../../schemas/content-management/products.yaml#/Product'
+                      $ref: '../../components/schemas.yaml#/Product'
                   meta:
                     type: object
                     properties:
                       pagination:
                         $ref: '../../components/schemas.yaml#/PaginationInfo'
                       summary:
-                        $ref: '../../schemas/content-management/products.yaml#/ProductsSummary'
+                        $ref: '../../components/schemas.yaml#/ProductsSummary'
             example:
               success: true
               data:
@@ -463,9 +1502,9 @@
         $ref: '../../components/responses.yaml#/Forbidden'
   post:
     tags:
-    - Product Management
-    summary: Create New Product
-    description: 'Create a new product with full specification and customization options.
+    - Tenant Product Management
+    summary: Create New Product (Tenant Admin)
+    description: 'Create a new product in tenant context with full specification and customization options.
 
 
       **Business Workflow:**
@@ -488,7 +1527,7 @@
       - Proper price/stock requirements based on production type
 
       '
-    operationId: createProduct
+    operationId: createTenantProduct
     security:
     - bearerAuth: []
     parameters:
@@ -554,7 +1593,7 @@
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/content-management/products.yaml#/Product'
+                    $ref: '../../components/schemas.yaml#/Product'
             example:
               success: true
               data:
@@ -568,13 +1607,14 @@
         $ref: '../../components/responses.yaml#/ValidationError'
       '422':
         $ref: '../../components/responses.yaml#/ValidationError'
-/admin/products/{id}:
+
+/tenant/admin/products/{id}:
   get:
     tags:
-    - Product Management
-    summary: Get Product Details (Admin)
-    description: Get complete product information for administrative purposes.
-    operationId: getAdminProduct
+    - Tenant Product Management
+    summary: Get Product Details (Tenant Admin)
+    description: Get complete product information for tenant administrative purposes.
+    operationId: getTenantAdminProduct
     security:
     - bearerAuth: []
     parameters:
@@ -597,7 +1637,7 @@
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/content-management/products.yaml#/Product'
+                    $ref: '../../components/schemas.yaml#/Product'
             example:
               success: true
               data:
@@ -614,13 +1654,13 @@
         $ref: '../../components/responses.yaml#/NotFound'
   put:
     tags:
-    - Product Management
-    summary: Update Product
+    - Tenant Product Management
+    summary: Update Product (Tenant Admin)
     description: "Update existing product with validation and business rule enforcement.\n\
-      \n**Business Rules:**\n- Status transitions: draft \u2194 published \u2194 archived\n\
+      \n**Business Rules:**\n- Status transitions: draft ↔ published ↔ archived\n\
       - Price requirements based on production type\n- Slug uniqueness validation\n\
       - Audit trail creation\n"
-    operationId: updateProduct
+    operationId: updateTenantProduct
     security:
     - bearerAuth: []
     parameters:
@@ -652,7 +1692,7 @@
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/content-management/products.yaml#/Product'
+                    $ref: '../../components/schemas.yaml#/Product'
             example:
               success: true
               data:
@@ -669,8 +1709,8 @@
         $ref: '../../components/responses.yaml#/ValidationError'
   delete:
     tags:
-    - Product Management
-    summary: Delete Product (Soft Delete)
+    - Tenant Product Management
+    summary: Delete Product (Tenant Admin - Soft Delete)
     description: 'Soft delete product by setting deleted_at timestamp.
 
 
@@ -683,7 +1723,7 @@
       - Order history references remain intact
 
       '
-    operationId: deleteProduct
+    operationId: deleteTenantProduct
     security:
     - bearerAuth: []
     parameters:
@@ -699,13 +1739,14 @@
         description: Product deleted successfully
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
-/admin/products/{id}/restore:
+
+/tenant/admin/products/{id}/restore:
   post:
     tags:
-    - Product Management
-    summary: Restore Deleted Product
-    description: Restore a soft-deleted product by clearing deleted_at timestamp.
-    operationId: restoreProduct
+    - Tenant Product Management
+    summary: Restore Deleted Product (Tenant Admin)
+    description: Restore a soft-deleted product by clearing deleted_at timestamp in tenant context.
+    operationId: restoreTenantProduct
     security:
     - bearerAuth: []
     parameters:
@@ -727,7 +1768,7 @@
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/content-management/products.yaml#/Product'
+                    $ref: '../../components/schemas.yaml#/Product'
             example:
               success: true
               data:
@@ -738,12 +1779,13 @@
                 timestamp: '2025-11-13T18:58:00Z'
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
-/admin/products/bulk:
+
+/tenant/admin/products/bulk:
   post:
     tags:
-    - Product Management
-    summary: Bulk Product Actions
-    description: 'Perform bulk actions on multiple products simultaneously.
+    - Tenant Product Management
+    summary: Bulk Product Actions (Tenant Admin)
+    description: 'Perform bulk actions on multiple tenant products simultaneously.
 
 
       **Available Actions:**
@@ -763,7 +1805,7 @@
       - unfeature: Remove featured flag
 
       '
-    operationId: bulkProductActions
+    operationId: bulkTenantProductActions
     security:
     - bearerAuth: []
     parameters:
@@ -773,7 +1815,7 @@
       content:
         application/json:
           schema:
-            $ref: '../../schemas/content-management/products.yaml#/BulkProductRequest'
+            $ref: '../../components/schemas.yaml#/BulkProductRequest'
           examples:
             publish_products:
               summary: Publish multiple products
@@ -818,13 +1860,14 @@
               message: Products posted successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-/admin/products/categories:
+
+/tenant/admin/products/categories:
   get:
     tags:
-    - Category Management
-    summary: Get Product Categories (Admin)
-    description: Get all product categories including inactive ones for administration.
-    operationId: getAdminCategories
+    - Tenant Category Management
+    summary: Get Product Categories (Tenant Admin)
+    description: Get all tenant product categories including inactive ones for administration.
+    operationId: getTenantAdminCategories
     security:
     - bearerAuth: []
     parameters:
@@ -848,7 +1891,7 @@
                   data:
                     type: array
                     items:
-                      $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
+                      $ref: '../../components/schemas.yaml#/ProductCategory'
             example:
               success: true
               data:
@@ -863,10 +1906,10 @@
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
   post:
     tags:
-    - Category Management
-    summary: Create Product Category
-    description: Create a new product category with optional parent-child relationship.
-    operationId: createCategory
+    - Tenant Category Management
+    summary: Create Product Category (Tenant Admin)
+    description: Create a new product category with optional parent-child relationship in tenant context.
+    operationId: createTenantCategory
     security:
     - bearerAuth: []
     parameters:
@@ -901,7 +1944,7 @@
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
+                    $ref: '../../components/schemas.yaml#/ProductCategory'
             example:
               success: true
               data:
@@ -911,13 +1954,14 @@
               message: Products created successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-/admin/products/categories/{id}:
+
+/tenant/admin/products/categories/{id}:
   put:
     tags:
-    - Category Management
-    summary: Update Product Category
-    description: Update product category information and hierarchy.
-    operationId: updateCategory
+    - Tenant Category Management
+    summary: Update Product Category (Tenant Admin)
+    description: Update tenant product category information and hierarchy.
+    operationId: updateTenantCategory
     security:
     - bearerAuth: []
     parameters:
@@ -949,7 +1993,7 @@
               - type: object
                 properties:
                   data:
-                    $ref: '../../schemas/content-management/products.yaml#/ProductCategory'
+                    $ref: '../../components/schemas.yaml#/ProductCategory'
             example:
               success: true
               data:
@@ -960,8 +2004,8 @@
                 timestamp: '2025-11-13T18:58:00Z'
   delete:
     tags:
-    - Category Management
-    summary: Delete Product Category
+    - Tenant Category Management
+    summary: Delete Product Category (Tenant Admin)
     description: 'Delete product category with proper handling of child categories
       and assigned products.
 
@@ -975,7 +2019,7 @@
       - Cascade delete handling for hierarchical structure
 
       '
-    operationId: deleteCategory
+    operationId: deleteTenantCategory
     security:
     - bearerAuth: []
     parameters:
@@ -993,12 +2037,13 @@
         description: Cannot delete category with child categories
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
-/admin/products/analytics/dashboard:
+
+/tenant/admin/products/analytics/dashboard:
   get:
     tags:
-    - Product Analytics
-    summary: Get Products Dashboard Analytics
-    description: 'Retrieve comprehensive product analytics for dashboard display.
+    - Tenant Product Analytics
+    summary: Get Products Dashboard Analytics (Tenant Admin)
+    description: 'Retrieve comprehensive tenant product analytics for dashboard display.
 
 
       **Metrics Included:**
@@ -1014,7 +2059,7 @@
       - Popular products and trends
 
       '
-    operationId: getProductsDashboard
+    operationId: getTenantProductsDashboard
     security:
     - bearerAuth: []
     parameters:
@@ -1044,7 +2089,7 @@
                     type: object
                     properties:
                       summary:
-                        $ref: '../../schemas/content-management/products.yaml#/ProductsSummary'
+                        $ref: '../../components/schemas.yaml#/ProductsSummary'
                       recent_products:
                         type: array
                         items:
@@ -1097,12 +2142,13 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-/admin/products/analytics/export:
+
+/tenant/admin/products/analytics/export:
   get:
     tags:
-    - Product Analytics
-    summary: Export Products Data
-    description: 'Export products data in various formats for reporting and analysis.
+    - Tenant Product Analytics
+    summary: Export Products Data (Tenant Admin)
+    description: 'Export tenant products data in various formats for reporting and analysis.
 
 
       **Export Formats:**
@@ -1114,7 +2160,7 @@
       - JSON: Full data export for system integration
 
       '
-    operationId: exportProducts
+    operationId: exportTenantProducts
     security:
     - bearerAuth: []
     parameters:
@@ -1155,55 +2201,20 @@
             schema:
               type: string
               format: binary
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Products Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Products retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
           application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
             schema:
               type: string
               format: binary
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Products Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Products retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
           application/json:
             schema:
               type: object
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Products Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Products retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-/admin/products/{id}/vendor-pricing:
+
+/tenant/admin/products/{id}/vendor-pricing:
   post:
     tags:
-    - Product Business Workflow
-    summary: Update Vendor Pricing
-    description: 'Update vendor pricing information for products with vendor production
+    - Tenant Product Business Workflow
+    summary: Update Vendor Pricing (Tenant Admin)
+    description: 'Update vendor pricing information for tenant products with vendor production
       type.
 
 
@@ -1218,7 +2229,7 @@
       - Creates pricing history for audit trail
 
       '
-    operationId: updateVendorPricing
+    operationId: updateTenantVendorPricing
     security:
     - bearerAuth: []
     parameters:
@@ -1293,12 +2304,13 @@
               message: Products posted successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-/admin/products/{id}/stock:
+
+/tenant/admin/products/{id}/stock:
   put:
     tags:
-    - Product Business Workflow
-    summary: Update Product Stock
-    description: 'Update product stock levels with audit trail and notifications.
+    - Tenant Product Business Workflow
+    summary: Update Product Stock (Tenant Admin)
+    description: 'Update tenant product stock levels with audit trail and notifications.
 
 
       **Features:**
@@ -1312,7 +2324,7 @@
       - Integration with order management
 
       '
-    operationId: updateProductStock
+    operationId: updateTenantProductStock
     security:
     - bearerAuth: []
     parameters:
@@ -1382,12 +2394,13 @@
               message: Products puted successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-/admin/products/quotation-eligible:
+
+/tenant/admin/products/quotation-eligible:
   get:
     tags:
-    - Product Business Workflow
-    summary: Get Quotation Eligible Products
-    description: 'Retrieve products that are eligible for quotation requests.
+    - Tenant Product Business Workflow
+    summary: Get Quotation Eligible Products (Tenant Admin)
+    description: 'Retrieve tenant products that are eligible for quotation requests.
 
 
       **Business Logic:**
@@ -1401,7 +2414,7 @@
       - Includes vendor information and specifications
 
       '
-    operationId: getQuotationEligibleProducts
+    operationId: getTenantQuotationEligibleProducts
     security:
     - bearerAuth: []
     parameters:
@@ -1434,7 +2447,7 @@
                     type: array
                     items:
                       allOf:
-                      - $ref: '../../schemas/content-management/products.yaml#/Product'
+                      - $ref: '../../components/schemas.yaml#/Product'
                       - type: object
                         properties:
                           quotation_info:

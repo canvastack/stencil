@@ -1,14 +1,178 @@
-/seo:
+# Platform Admin SEO Management Endpoints
+/platform/seo/settings:
   get:
     tags:
-    - SEO Management
+    - Platform SEO Management
+    summary: Get Platform SEO Settings
+    description: 'Retrieve platform-wide SEO settings and configurations.
+
+      **Platform Features:**
+
+      - Global SEO template management
+      
+      - Multi-tenant SEO policy control
+      
+      - Platform-wide SEO analytics
+      
+      - System-wide SEO defaults
+      '
+    operationId: getPlatformSEOSettings
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Platform SEO settings retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      globalTemplates:
+                        type: object
+                        description: Global SEO templates
+                      policySettings:
+                        type: object
+                        description: Platform SEO policies
+                      analytics:
+                        type: object
+                        description: Platform-wide SEO analytics
+            example:
+              success: true
+              message: Platform SEO settings retrieved successfully
+              data:
+                globalTemplates:
+                  defaultTitle: '{siteName} | {page}'
+                  defaultDescription: 'Professional {service} services'
+                policySettings:
+                  allowCustomRobots: true
+                  enforceCanonicalUrls: true
+                analytics:
+                  totalTenants: 150
+                  avgSeoScore: 85.6
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+        
+  put:
+    tags:
+    - Platform SEO Management
+    summary: Update Platform SEO Settings
+    description: 'Update platform-wide SEO settings and configurations.'
+    operationId: updatePlatformSEOSettings
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              globalTemplates:
+                type: object
+                description: Global SEO templates
+              policySettings:
+                type: object
+                description: Platform SEO policies
+    responses:
+      '200':
+        description: Platform SEO settings updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Platform SEO settings updated successfully
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/platform/seo/tenants/{tenantId}/analytics:
+  get:
+    tags:
+    - Platform SEO Management
+    summary: Get Tenant SEO Analytics
+    description: 'Get SEO analytics for a specific tenant from platform perspective.'
+    operationId: getTenantSEOAnalytics
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenantId
+      in: path
+      required: true
+      description: Tenant ID
+      schema:
+        type: string
+        format: uuid
+    responses:
+      '200':
+        description: Tenant SEO analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      seoScore:
+                        type: number
+                        format: float
+                      pagesOptimized:
+                        type: integer
+                      performanceMetrics:
+                        type: object
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Tenant User SEO Management Endpoints
+/tenant/seo:
+  get:
+    tags:
+    - Tenant SEO Management
     summary: Get SEO Metadata for Frontend
-    description: "Retrieve SEO metadata for a specific page/item for frontend rendering.\n\
-      \n**Fallback Hierarchy:**\n1. Custom SEO for specific page/item (if exists)\n\
-      2. Default/Global SEO settings  \n3. System defaults\n\n**Query Options:**\n\
-      - By URL: `?url=/about`\n- By Type & ID: `?type=page&id=2`\n\n**Features:**\n\
-      - Multi-tenant SEO isolation\n- Caching with configurable TTL\n- Fallback hierarchy\
-      \ for missing data\n- Support for dynamic templates\n"
+    description: "Retrieve SEO metadata for a specific page/item for frontend rendering.
+      
+      **Fallback Hierarchy:**
+      1. Custom SEO for specific page/item (if exists)
+      2. Default/Global SEO settings  
+      3. System defaults
+
+      **Query Options:**
+      - By URL: `?url=/about`
+      - By Type & ID: `?type=page&id=2`
+
+      **Features:**
+      - Multi-tenant SEO isolation
+      - Caching with configurable TTL
+      - Fallback hierarchy for missing data
+      - Support for dynamic templates
+      "
     operationId: getSEOMetadata
     security: []
     parameters:
@@ -100,13 +264,13 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/sitemap.xml:
+
+/tenant/sitemap.xml:
   get:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Get XML Sitemap
     description: 'Generate and retrieve XML sitemap for search engines.
-
 
       **Multi-tenant Features:**
 
@@ -115,7 +279,6 @@
       - Custom priority and changefreq settings
 
       - Automatic last modification tracking
-
 
       **Includes:**
 
@@ -126,7 +289,6 @@
       - All public categories
 
       - Custom priority and changefreq settings
-
       '
     operationId: getSitemap
     security: []
@@ -142,23 +304,16 @@
             examples:
               sitemap:
                 summary: Generated XML sitemap
-                value: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"\
-                  http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url>\n    <loc>https://stencilcms.com/</loc>\n\
-                  \    <lastmod>2025-11-12</lastmod>\n    <changefreq>daily</changefreq>\n\
-                  \    <priority>1.0</priority>\n  </url>\n  <url>\n    <loc>https://stencilcms.com/about</loc>\n\
-                  \    <lastmod>2025-11-10</lastmod>\n    <changefreq>monthly</changefreq>\n\
-                  \    <priority>0.8</priority>\n  </url>\n  <url>\n    <loc>https://stencilcms.com/products/premium-etching</loc>\n\
-                  \    <lastmod>2025-11-11</lastmod>\n    <changefreq>weekly</changefreq>\n\
-                  \    <priority>0.9</priority>\n  </url>\n</urlset>\n"
+                value: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n  <url>\n    <loc>https://stencilcms.com/</loc>\n    <lastmod>2025-11-12</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n  <url>\n    <loc>https://stencilcms.com/about</loc>\n    <lastmod>2025-11-10</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.8</priority>\n  </url>\n  <url>\n    <loc>https://stencilcms.com/products/premium-etching</loc>\n    <lastmod>2025-11-11</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n</urlset>\n"
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/robots.txt:
+
+/tenant/robots.txt:
   get:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Get Robots.txt
     description: 'Generate robots.txt file for search engine crawlers.
-
 
       **Generated from:**
 
@@ -169,7 +324,6 @@
       - Custom crawl directives
 
       - Security-based restrictions
-
       '
     operationId: getRobotsTxt
     security: []
@@ -202,17 +356,16 @@
                   # Custom directives
 
                   Crawl-delay: 1
-
                   '
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/seo/settings:
+
+/tenant/seo/settings:
   get:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Get Default SEO Settings
     description: 'Retrieve global/default SEO settings for the current tenant.
-
 
       **Admin Features:**
 
@@ -223,7 +376,6 @@
       - Social media integration
 
       - Search engine verification
-
       '
     operationId: getDefaultSEOSettings
     security:
@@ -276,13 +428,13 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
+
   put:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Update Default SEO Settings
     description: 'Update global/default SEO settings that apply to all pages without
       custom SEO.
-
 
       **Admin Features:**
 
@@ -293,7 +445,6 @@
       - Search engine verification management
 
       - Multi-language locale support
-
       '
     operationId: updateDefaultSEOSettings
     security:
@@ -372,13 +523,13 @@
         $ref: '../../components/responses.yaml#/ValidationError'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/seo/{type}/{id}:
+
+/tenant/seo/{type}/{id}:
   get:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Get SEO for Specific Item
     description: 'Get custom SEO metadata for a specific page/product/category.
-
 
       **Features:**
 
@@ -387,7 +538,6 @@
       - Tenant-scoped access control
 
       - Fallback to default settings if no custom SEO exists
-
       '
     operationId: getItemSEO
     security:
@@ -470,12 +620,12 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
+
   put:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Update SEO for Specific Item
     description: 'Create or update custom SEO metadata for a specific page/product/category.
-
 
       **Features:**
 
@@ -488,7 +638,6 @@
       - Tenant-scoped operations
 
       - Validation for SEO best practices
-
       '
     operationId: updateItemSEO
     security:
@@ -614,14 +763,14 @@
         $ref: '../../components/responses.yaml#/ValidationError'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
+
   delete:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Delete Custom SEO
     description: 'Delete custom SEO metadata for an item.
 
       After deletion, the item will use default SEO settings.
-
 
       **Features:**
 
@@ -630,7 +779,6 @@
       - Automatic fallback to default settings
 
       - Tenant-scoped operations
-
       '
     operationId: deleteItemSEO
     security:
@@ -685,13 +833,13 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/seo/bulk-update:
+
+/tenant/seo/bulk-update:
   post:
     tags:
-    - SEO Management
+    - Tenant SEO Management
     summary: Bulk Update SEO Settings
     description: 'Bulk update SEO settings for multiple items at once.
-
 
       **Features:**
 
@@ -702,7 +850,6 @@
       - Progress tracking
 
       - Error reporting per item
-
       '
     operationId: bulkUpdateSEO
     security:

@@ -1,10 +1,14 @@
-/faq:
+# =============================================================================
+# TENANT FAQ ENDPOINTS - Customer-facing FAQ functionality
+# =============================================================================
+
+/tenant/faq:
   get:
     tags:
-    - FAQ Management
-    summary: Get FAQ Page Content
+    - Tenant FAQ Management
+    summary: Get FAQ Page Content (Tenant)
     description: 'Retrieve complete FAQ page content with categorized questions and
-      answers.
+      answers for tenant users.
 
 
       **Features:**
@@ -20,7 +24,7 @@
       - Multi-language content support
 
       '
-    operationId: getFAQPage
+    operationId: getTenantFAQPage
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -95,17 +99,17 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/faq/categories:
+/tenant/faq/categories:
   get:
     tags:
-    - FAQ Management
-    summary: List FAQ Categories
-    description: 'Retrieve all FAQ categories with question count and basic information.
+    - Tenant FAQ Management
+    summary: List FAQ Categories (Tenant)
+    description: 'Retrieve all FAQ categories with question count and basic information for tenant users.
 
       Used for category navigation and filtering.
 
       '
-    operationId: listFAQCategories
+    operationId: listTenantFAQCategories
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -148,12 +152,12 @@
                     timestamp: '2024-01-15T10:30:00Z'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/faq/search:
+/tenant/faq/search:
   get:
     tags:
-    - FAQ Management
-    summary: Search FAQ Content
-    description: 'Full-text search across questions and answers with relevance scoring.
+    - Tenant FAQ Management
+    summary: Search FAQ Content (Tenant)
+    description: 'Full-text search across questions and answers with relevance scoring for tenant users.
 
 
       **Search Features:**
@@ -169,7 +173,7 @@
       - Highlighted search terms in results
 
       '
-    operationId: searchFAQ
+    operationId: searchTenantFAQ
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -249,13 +253,13 @@
         $ref: '../../components/responses.yaml#/ValidationError'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/faq/{faqId}/helpful:
+/tenant/faq/{faqId}/helpful:
   post:
     tags:
-    - FAQ Management
-    summary: Mark FAQ as Helpful
+    - Tenant FAQ Management
+    summary: Mark FAQ as Helpful (Tenant)
     description: 'Record positive feedback for an FAQ item by incrementing its helpful
-      counter.
+      counter for tenant users.
 
 
       **Rate Limiting & Tracking:**
@@ -269,7 +273,7 @@
       - Helps identify most valuable FAQ content
 
       '
-    operationId: markFAQHelpful
+    operationId: markTenantFAQHelpful
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -325,18 +329,18 @@
         $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/faq/{faqId}/not-helpful:
+/tenant/faq/{faqId}/not-helpful:
   post:
     tags:
-    - FAQ Management
-    summary: Mark FAQ as Not Helpful
+    - Tenant FAQ Management
+    summary: Mark FAQ as Not Helpful (Tenant)
     description: 'Record negative feedback for an FAQ item with optional improvement
-      suggestions.
+      suggestions from tenant users.
 
       Used for content quality improvement and identifying areas needing clarification.
 
       '
-    operationId: markFAQNotHelpful
+    operationId: markTenantFAQNotHelpful
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -394,17 +398,22 @@
         $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/faq/categories:
+
+# =============================================================================
+# TENANT ADMIN FAQ ENDPOINTS - Tenant-specific FAQ administration
+# =============================================================================
+
+/tenant/admin/faq/categories:
   get:
     tags:
-    - FAQ Management
-    summary: List FAQ Categories (Admin)
-    description: 'Retrieve all FAQ categories with detailed admin information including
+    - Tenant FAQ Administration
+    summary: List FAQ Categories (Tenant Admin)
+    description: 'Retrieve all FAQ categories for the specific tenant with detailed admin information including
 
       creation timestamps, question counts, and display order settings.
 
       '
-    operationId: adminListFAQCategories
+    operationId: tenantAdminListFAQCategories
     security:
     - bearerAuth: []
     parameters:
@@ -456,14 +465,14 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - FAQ Management
-    summary: Create FAQ Category
-    description: 'Create a new FAQ category with custom ordering and icon settings.
+    - Tenant FAQ Administration
+    summary: Create FAQ Category (Tenant Admin)
+    description: 'Create a new FAQ category for the specific tenant with custom ordering and icon settings.
 
       Categories help organize questions by topic for better user navigation.
 
       '
-    operationId: createFAQCategory
+    operationId: tenantAdminCreateFAQCategory
     security:
     - bearerAuth: []
     parameters:
@@ -504,13 +513,14 @@
         $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/faq/categories/{categoryId}:
+
+/tenant/admin/faq/categories/{categoryId}:
   get:
     tags:
-    - FAQ Management
-    summary: Get FAQ Category Details
-    description: Retrieve detailed information about a specific FAQ category
-    operationId: getFAQCategory
+    - Tenant FAQ Administration
+    summary: Get FAQ Category Details (Tenant Admin)
+    description: Retrieve detailed information about a specific FAQ category for the tenant
+    operationId: tenantAdminGetFAQCategory
     security:
     - bearerAuth: []
     parameters:
@@ -557,11 +567,11 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - FAQ Management
-    summary: Update FAQ Category
-    description: "Update an existing FAQ category's properties including name, icon,\
+    - Tenant FAQ Administration
+    summary: Update FAQ Category (Tenant Admin)
+    description: "Update an existing FAQ category's properties for the tenant including name, icon,\
       \ \ndescription, display order, and visibility settings.\n"
-    operationId: updateFAQCategory
+    operationId: tenantAdminUpdateFAQCategory
     security:
     - bearerAuth: []
     parameters:
@@ -601,14 +611,14 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - FAQ Management
-    summary: Delete FAQ Category
-    description: 'Delete an FAQ category. All questions in this category will be moved
+    - Tenant FAQ Administration
+    summary: Delete FAQ Category (Tenant Admin)
+    description: 'Delete an FAQ category for the tenant. All questions in this category will be moved
 
       to a default "Uncategorized" category or deleted based on configuration.
 
       '
-    operationId: deleteFAQCategory
+    operationId: tenantAdminDeleteFAQCategory
     security:
     - bearerAuth: []
     parameters:
@@ -643,17 +653,268 @@
         $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/faq/questions:
+
+# =============================================================================
+# PLATFORM FAQ ENDPOINTS - Platform admin FAQ management functionality
+# =============================================================================
+
+/platform/faq/categories:
   get:
     tags:
-    - FAQ Management
-    summary: List FAQ Questions (Admin)
-    description: 'Retrieve FAQ questions with advanced filtering, sorting, and pagination.
+    - Platform FAQ Management
+    summary: List FAQ Categories (Platform Admin)
+    description: 'Retrieve all FAQ categories across all tenants with detailed platform information including
+
+      creation timestamps, question counts, and display order settings.
+
+      '
+    operationId: platformListFAQCategories
+    security:
+    - bearerAuth: []
+    parameters: []
+    responses:
+      '200':
+        description: FAQ categories retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/FAQCategoryAdmin'
+            examples:
+              success:
+                summary: Admin categories list
+                value:
+                  success: true
+                  message: FAQ categories retrieved successfully
+                  data:
+                  - id: 1
+                    categoryName: General
+                    iconName: HelpCircle
+                    description: General questions about our company
+                    questionCount: 5
+                    displayOrder: 1
+                    isVisible: true
+                    createdAt: '2024-01-10T09:00:00Z'
+                    updatedAt: '2024-01-15T14:30:00Z'
+                  - id: 2
+                    categoryName: Products
+                    iconName: Package
+                    description: Questions about products and services
+                    questionCount: 8
+                    displayOrder: 2
+                    isVisible: true
+                    createdAt: '2024-01-10T09:15:00Z'
+                    updatedAt: '2024-01-12T11:20:00Z'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Platform FAQ Management
+    summary: Create FAQ Category (Platform Admin)
+    description: 'Create a new FAQ category across platform with custom ordering and icon settings.
+
+      Platform admins can create categories that can be used by multiple tenants.
+
+      '
+    operationId: platformCreateFAQCategory
+    security:
+    - bearerAuth: []
+    parameters: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/FAQCategoryInput'
+          examples:
+            basic_category:
+              summary: Basic category creation
+              value:
+                categoryName: Billing
+                iconName: CreditCard
+                description: Questions about billing and payments
+                displayOrder: 3
+            advanced_category:
+              summary: Category with custom settings
+              value:
+                categoryName: Technical Support
+                iconName: Settings
+                description: Technical questions and troubleshooting guides
+                displayOrder: 4
+                isVisible: true
+                color: '#2563eb'
+    responses:
+      '201':
+        $ref: '../../components/responses.yaml#/CreatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+/platform/faq/categories/{categoryId}:
+  get:
+    tags:
+    - Platform FAQ Management
+    summary: Get FAQ Category Details (Platform Admin)
+    description: Retrieve detailed information about a specific FAQ category across platform
+    operationId: platformGetFAQCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: categoryId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        description: FAQ category retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/FAQCategoryAdmin'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Faq Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Faq retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  put:
+    tags:
+    - Platform FAQ Management
+    summary: Update FAQ Category (Platform Admin)
+    description: "Update an existing FAQ category's properties across platform including name, icon,\
+      \ \ndescription, display order, and visibility settings.\n"
+    operationId: platformUpdateFAQCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: categoryId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/FAQCategoryInput'
+          example:
+            title: Updated Faq Title
+            description: Updated description for faq
+            is_active: true
+    responses:
+      '200':
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  delete:
+    tags:
+    - Platform FAQ Management
+    summary: Delete FAQ Category (Platform Admin)
+    description: 'Delete an FAQ category across platform. All questions in this category will be moved
+
+      to a default "Uncategorized" category or deleted based on configuration.
+
+      '
+    operationId: platformDeleteFAQCategory
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: categoryId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    - name: moveQuestionsTo
+      in: query
+      description: Category ID to move existing questions to (optional)
+      schema:
+        type: integer
+        minimum: 1
+      example: 2
+    responses:
+      '200':
+        $ref: '../../components/responses.yaml#/DeletedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Tenant Admin FAQ Questions Management
+/tenant/admin/faq/questions:
+  get:
+    tags:
+    - Tenant FAQ Administration
+    summary: List FAQ Questions (Tenant Admin)
+    description: 'Retrieve FAQ questions for the specific tenant with advanced filtering, sorting, and pagination.
 
       Includes analytics data like view counts and helpfulness ratings.
 
 
-      **Admin Features:**
+      **Tenant Admin Features:**
 
       - Filter by category, featured status, or visibility
 
@@ -664,7 +925,7 @@
       - Bulk operations support
 
       '
-    operationId: adminListFAQQuestions
+    operationId: tenantAdminListFAQQuestions
     security:
     - bearerAuth: []
     parameters:
@@ -773,14 +1034,14 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - FAQ Management
-    summary: Create FAQ Question
-    description: 'Create a new FAQ question with rich text answer and categorization.
+    - Tenant FAQ Administration
+    summary: Create FAQ Question (Tenant Admin)
+    description: 'Create a new FAQ question for the tenant with rich text answer and categorization.
 
       Supports markdown formatting and media attachments in answers.
 
       '
-    operationId: createFAQQuestion
+    operationId: tenantAdminCreateFAQQuestion
     security:
     - bearerAuth: []
     parameters:
@@ -826,14 +1087,215 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/faq/questions/{questionId}:
+
+# Platform FAQ Questions Management
+/platform/faq/questions:
   get:
     tags:
-    - FAQ Management
-    summary: Get FAQ Question Details
-    description: Retrieve detailed information about a specific FAQ question including
+    - Platform FAQ Management
+    summary: List FAQ Questions (Platform Admin)
+    description: 'Retrieve FAQ questions across all tenants with advanced filtering, sorting, and pagination.
+
+      Includes analytics data like view counts and helpfulness ratings.
+
+
+      **Platform Admin Features:**
+
+      - View questions across all tenants
+
+      - Filter by category, featured status, visibility, or tenant
+
+      - Sort by popularity, creation date, or alphabetical order
+
+      - Search within questions and answers
+
+      - Bulk operations support
+
+      '
+    operationId: platformListFAQQuestions
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: tenantId
+      in: query
+      description: Filter by specific tenant (optional)
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    - name: categoryId
+      in: query
+      description: Filter by category ID
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    - name: featured
+      in: query
+      description: Filter by featured status
+      schema:
+        type: boolean
+      example: true
+    - name: search
+      in: query
+      description: Search in questions and answers
+      schema:
+        type: string
+        maxLength: 100
+      example: shipping
+    - name: status
+      in: query
+      description: Filter by visibility status
+      schema:
+        type: string
+        enum:
+        - published
+        - draft
+        - archived
+      example: published
+    responses:
+      '200':
+        description: FAQ questions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/FAQItemAdmin'
+                  meta:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/PaginationMeta'
+                    - type: object
+                      properties:
+                        filters:
+                          type: object
+                          properties:
+                            totalQuestions:
+                              type: integer
+                            publishedCount:
+                              type: integer
+                            draftCount:
+                              type: integer
+                            featuredCount:
+                              type: integer
+            examples:
+              success:
+                summary: Paginated FAQ questions
+                value:
+                  success: true
+                  message: FAQ questions retrieved successfully
+                  data:
+                  - id: 1
+                    question: What are your business hours?
+                    answer: We are open Monday to Friday, 9:00 AM - 5:00 PM
+                    categoryId: 1
+                    categoryName: General
+                    isFeatured: true
+                    status: published
+                    displayOrder: 1
+                    viewCount: 245
+                    helpfulCount: 189
+                    notHelpfulCount: 5
+                    createdAt: '2024-01-10T09:30:00Z'
+                    updatedAt: '2024-01-15T14:30:00Z'
+                  meta:
+                    pagination:
+                      page: 1
+                      perPage: 20
+                      total: 45
+                      totalPages: 3
+                    filters:
+                      totalQuestions: 45
+                      publishedCount: 42
+                      draftCount: 3
+                      featuredCount: 8
+                    tenant: main
+                    timestamp: '2024-01-15T15:00:00Z'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Platform FAQ Management
+    summary: Create FAQ Question (Platform Admin)
+    description: 'Create a new FAQ question across platform with rich text answer and categorization.
+
+      Platform admins can create questions for any tenant. Supports markdown formatting and media attachments in answers.
+
+      '
+    operationId: platformCreateFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenantId
+      in: query
+      description: Target tenant ID for the question (required for platform admins)
+      required: true
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/FAQItemInput'
+          examples:
+            basic_question:
+              summary: Basic FAQ question
+              value:
+                categoryId: 1
+                question: How do I reset my password?
+                answer: You can reset your password by clicking 'Forgot Password'
+                  on the login page...
+                isFeatured: false
+                status: published
+            featured_question:
+              summary: Featured FAQ with rich content
+              value:
+                categoryId: 2
+                question: What payment methods do you accept?
+                answer: We accept all major credit cards, PayPal, and bank transfers.
+                  **Note:** Processing times may vary by payment method.
+                isFeatured: true
+                status: published
+                displayOrder: 1
+                tags:
+                - payments
+                - billing
+                - cards
+    responses:
+      '201':
+        $ref: '../../components/responses.yaml#/CreatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+# Tenant Admin FAQ Question Details
+/tenant/admin/faq/questions/{questionId}:
+  get:
+    tags:
+    - Tenant FAQ Administration
+    summary: Get FAQ Question Details (Tenant Admin)
+    description: Retrieve detailed information about a specific FAQ question for the tenant including
       analytics
-    operationId: getFAQQuestion
+    operationId: tenantAdminGetFAQQuestion
     security:
     - bearerAuth: []
     parameters:
@@ -880,11 +1342,11 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - FAQ Management
-    summary: Update FAQ Question
-    description: "Update an existing FAQ question including content, categorization,\
+    - Tenant FAQ Administration
+    summary: Update FAQ Question (Tenant Admin)
+    description: "Update an existing FAQ question for the tenant including content, categorization,\
       \ \nand display settings. Maintains version history for content changes.\n"
-    operationId: updateFAQQuestion
+    operationId: tenantAdminUpdateFAQQuestion
     security:
     - bearerAuth: []
     parameters:
@@ -922,14 +1384,14 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - FAQ Management
-    summary: Delete FAQ Question
-    description: 'Delete an FAQ question. This action is irreversible and will remove
+    - Tenant FAQ Administration
+    summary: Delete FAQ Question (Tenant Admin)
+    description: 'Delete an FAQ question for the tenant. This action is irreversible and will remove
 
       all associated analytics data including view counts and feedback.
 
       '
-    operationId: deleteFAQQuestion
+    operationId: tenantAdminDeleteFAQQuestion
     security:
     - bearerAuth: []
     parameters:
@@ -953,22 +1415,256 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/faq/analytics:
+
+# Platform FAQ Question Details
+/platform/faq/questions/{questionId}:
   get:
     tags:
-    - FAQ Management
-    summary: Get FAQ Analytics Data
-    description: 'Retrieve comprehensive analytics for FAQ content including popular
+    - Platform FAQ Management
+    summary: Get FAQ Question Details (Platform Admin)
+    description: Retrieve detailed information about a specific FAQ question across platform including
+      analytics
+    operationId: platformGetFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: questionId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ question
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        description: FAQ question retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/FAQItemAdmin'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Faq Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Faq retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  put:
+    tags:
+    - Platform FAQ Management
+    summary: Update FAQ Question (Platform Admin)
+    description: "Update an existing FAQ question across platform including content, categorization,\
+      \ \nand display settings. Maintains version history for content changes.\n"
+    operationId: platformUpdateFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: questionId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ question
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/FAQItemInput'
+          example:
+            title: Updated Faq Title
+            description: Updated description for faq
+            is_active: true
+    responses:
+      '200':
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  delete:
+    tags:
+    - Platform FAQ Management
+    summary: Delete FAQ Question (Platform Admin)
+    description: 'Delete an FAQ question across platform. This action is irreversible and will remove
+
+      all associated analytics data including view counts and feedback.
+
+      '
+    operationId: platformDeleteFAQQuestion
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: questionId
+      in: path
+      required: true
+      description: Unique identifier of the FAQ question
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        $ref: '../../components/responses.yaml#/DeletedResponse'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+# Tenant Admin FAQ Analytics
+/tenant/admin/faq/analytics:
+  get:
+    tags:
+    - Tenant FAQ Administration
+    summary: Get FAQ Analytics Data (Tenant Admin)
+    description: 'Retrieve comprehensive analytics for FAQ content for the specific tenant including popular
       questions,
 
       search queries, user feedback trends, and content performance metrics.
 
       '
-    operationId: getFAQAnalytics
+    operationId: tenantAdminGetFAQAnalytics
     security:
     - bearerAuth: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: timeframe
+      in: query
+      description: Analytics time period
+      schema:
+        type: string
+        enum:
+        - 7d
+        - 30d
+        - 90d
+        - 1y
+        - all
+        default: 30d
+      example: 30d
+    - name: categoryId
+      in: query
+      description: Filter analytics by category
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+    responses:
+      '200':
+        description: FAQ analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/FAQAnalytics'
+            examples:
+              success:
+                summary: FAQ analytics overview
+                value:
+                  success: true
+                  message: FAQ analytics retrieved successfully
+                  data:
+                    overview:
+                      totalQuestions: 45
+                      totalViews: 12456
+                      totalSearches: 3245
+                      averageHelpfulRating: 0.87
+                      timeframe: 30d
+                    popularQuestions:
+                    - id: 1
+                      question: What are your business hours?
+                      views: 245
+                      helpfulVotes: 189
+                      helpfulRatio: 0.88
+                    - id: 5
+                      question: How do I place an order?
+                      views: 156
+                      helpfulVotes: 134
+                      helpfulRatio: 0.92
+                    topSearchQueries:
+                    - query: shipping
+                      count: 156
+                      resultsFound: 8
+                    - query: refund policy
+                      count: 89
+                      resultsFound: 3
+                    categoryPerformance:
+                    - categoryId: 1
+                      categoryName: General
+                      questionCount: 5
+                      totalViews: 856
+                      avgHelpfulRating: 0.89
+                    - categoryId: 2
+                      categoryName: Products
+                      questionCount: 8
+                      totalViews: 1234
+                      avgHelpfulRating: 0.91
+                  meta:
+                    generatedAt: '2024-01-15T15:00:00Z'
+                    tenant: main
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Platform FAQ Analytics
+/platform/faq/analytics:
+  get:
+    tags:
+    - Platform FAQ Management
+    summary: Get FAQ Analytics Data (Platform Admin)
+    description: 'Retrieve comprehensive analytics for FAQ content across all tenants including popular
+      questions,
+
+      search queries, user feedback trends, and content performance metrics.
+
+      '
+    operationId: platformGetFAQAnalytics
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenantId
+      in: query
+      description: Filter analytics by specific tenant (optional)
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
     - name: timeframe
       in: query
       description: Analytics time period

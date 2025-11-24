@@ -1,28 +1,28 @@
 # Plugin Marketplace System API Path Items
 # This file contains only path items (no openapi/info/paths wrapper)
+# Refactored to follow platform/tenant separation architecture
 
 # ================================================================
-# PLUGIN REGISTRY ENDPOINTS
+# PLATFORM ADMIN PLUGIN MANAGEMENT ENDPOINTS
 # ================================================================
-/plugins:
+/platform/plugins:
   get:
     tags:
-      - Plugin Registry
-    summary: List All Plugins
+      - Platform Plugin Management
+    summary: List All Platform Plugins
     description: |
-      Retrieve paginated list of plugins with advanced filtering and search capabilities.
+      Retrieve paginated list of all plugins in the global registry for platform administrators.
       
-      **Admin Features:**
-      - Search by name, description, author
-      - Filter by type, status, execution model
-      - Sort by popularity, rating, date
-      - Export functionality
-      - Multi-tenant plugin registry
-    operationId: listPlugins
+      **Platform Admin Features:**
+      - Global plugin registry overview
+      - Plugin approval workflow
+      - Author management
+      - Revenue analytics
+      - Global statistics
+    operationId: platformListPlugins
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - $ref: '../../components/parameters.yaml#/PageParam'
       - $ref: '../../components/parameters.yaml#/PerPageParam'
       - $ref: '../../components/parameters.yaml#/SortParam'
@@ -49,11 +49,18 @@
         example: "backend"
       - name: status
         in: query
-        description: Filter by plugin status
+        description: Filter by plugin status (platform view)
         schema:
           type: string
-          enum: [draft, under_review, approved, published, deprecated, banned]
-        example: "published"
+          enum: [draft, under_review, approved, published, deprecated, banned, rejected]
+        example: "under_review"
+      - name: approval_status
+        in: query
+        description: Filter by approval status
+        schema:
+          type: string
+          enum: [pending, approved, rejected, requires_changes]
+        example: "pending"
       - name: is_premium
         in: query
         description: Filter by premium status
@@ -84,7 +91,7 @@
         content:
           application/json:
             schema:
-              $ref: '../../components/schemas.yaml#/PluginListResponse'
+              $ref: '../../components/schemas.yaml#/PlatformPluginListResponse'
             example:
               success: true
               data:
@@ -116,28 +123,25 @@
 
   post:
     tags:
-      - Plugin Registry
-    summary: Create New Plugin
+      - Platform Plugin Management
+    summary: Create Platform Plugin
     description: |
-      Create a new plugin entry in the registry.
+      Create a new plugin in the global registry (platform admin only).
       
-      **Features:**
-      - Plugin metadata registration
-      - Version management setup
-      - Automatic slug generation
-      - Author verification
-      - Dependency validation
-    operationId: createPlugin
+      **Platform Features:**
+      - Direct publishing capability
+      - Skip review process
+      - Set global policies
+      - Revenue sharing setup
+    operationId: platformCreatePlugin
     security:
       - bearerAuth: []
-    parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '../../components/schemas.yaml#/PluginCreateInput'
+            $ref: '../../components/schemas.yaml#/PlatformPluginCreateInput'
           examples:
             payment_plugin:
               summary: Payment gateway plugin
@@ -187,25 +191,24 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/{id}:
+/platform/plugins/{id}:
   get:
     tags:
-      - Plugin Registry
-    summary: Get Plugin Details
+      - Platform Plugin Management
+    summary: Get Platform Plugin Details
     description: |
-      Retrieve detailed information about a specific plugin.
+      Retrieve detailed plugin information for platform administration.
       
-      **Features:**
-      - Complete plugin metadata
-      - Version history
-      - Dependency information
-      - Statistics and ratings
-      - Installation requirements
-    operationId: getPlugin
+      **Platform Features:**
+      - Complete metadata access
+      - Revenue analytics
+      - Installation statistics
+      - User feedback analysis
+      - Global management controls
+    operationId: platformGetPlugin
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -220,11 +223,11 @@
           type: array
           items:
             type: string
-            enum: [installations, settings, hooks, analytics, files]
-        example: ["installations", "analytics"]
+            enum: [analytics, revenue, installations, reviews, violations]
+        example: ["analytics", "revenue"]
     responses:
       '200':
-        description: Plugin details retrieved successfully
+        description: Platform plugin details retrieved successfully
         content:
           application/json:
             schema:
@@ -233,7 +236,7 @@
                 - type: object
                   properties:
                     data:
-                      $ref: '../../components/schemas.yaml#/Plugin'
+                      $ref: '../../components/schemas.yaml#/PlatformPluginDetail'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '404':
@@ -243,21 +246,20 @@
 
   put:
     tags:
-      - Plugin Registry
-    summary: Update Plugin
+      - Platform Plugin Management
+    summary: Update Platform Plugin
     description: |
-      Update plugin information and metadata.
+      Update plugin information with platform admin privileges.
       
-      **Features:**
-      - Version updates
-      - Metadata modifications
-      - Status changes
-      - Changelog management
-    operationId: updatePlugin
+      **Platform Features:**
+      - Force status changes
+      - Override approval process
+      - Modify revenue settings
+      - Update global policies
+    operationId: platformUpdatePlugin
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -271,7 +273,7 @@
       content:
         application/json:
           schema:
-            $ref: '../../components/schemas.yaml#/PluginUpdateInput'
+            $ref: '../../components/schemas.yaml#/PlatformPluginUpdateInput'
     responses:
       '200':
         description: Plugin updated successfully
@@ -295,21 +297,20 @@
 
   delete:
     tags:
-      - Plugin Registry
+      - Platform Plugin Management
     summary: Delete Plugin
     description: |
-      Delete a plugin from the registry.
+      Delete a plugin from the registry (platform admin only).
       
-      **Features:**
-      - Dependency check before deletion
-      - Installation cleanup
-      - File cleanup
-      - Audit trail
-    operationId: deletePlugin
+      **Platform Features:**
+      - Force deletion with active installations
+      - Global dependency management
+      - Complete installation cleanup
+      - Platform-wide audit trail
+    operationId: platformDeletePlugin
     security:
       - bearerAuth: []
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: id
         in: path
         required: true
@@ -359,13 +360,182 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# PLUGIN INSTALLATION ENDPOINTS
+# TENANT USER PLUGIN ENDPOINTS
+# For tenant-specific plugin management, browsing, purchasing, etc.
 # ================================================================
-/plugins/installations:
+
+/tenant/plugins:
   get:
     tags:
-      - Plugin Installation
-    summary: List Plugin Installations
+      - Tenant Plugin Management
+    summary: List Available Plugins for Tenant
+    description: |
+      Retrieve paginated list of plugins available for installation by tenant.
+      
+      **Tenant Features:**
+      - Browse published plugins
+      - Filter by compatibility
+      - View pricing and licensing
+      - Check installation status
+      - Multi-tenant plugin marketplace
+    operationId: tenantListPlugins
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
+      - name: search
+        in: query
+        description: Search in plugin name, description, author
+        schema:
+          type: string
+          maxLength: 255
+        example: "stripe payment"
+      - name: plugin_type
+        in: query
+        description: Filter by plugin type
+        schema:
+          type: string
+          enum: [payment, shipping, analytics, crm, theme, widget, integration, utility, marketing, security]
+        example: "payment"
+      - name: execution_model
+        in: query
+        description: Filter by execution model
+        schema:
+          type: string
+          enum: [frontend, backend, hybrid]
+        example: "backend"
+      - name: is_premium
+        in: query
+        description: Filter by premium status
+        schema:
+          type: boolean
+        example: false
+      - name: is_featured
+        in: query
+        description: Filter by featured status
+        schema:
+          type: boolean
+        example: true
+      - name: compatibility
+        in: query
+        description: Show only compatible plugins
+        schema:
+          type: boolean
+          default: true
+        example: true
+      - name: installation_status
+        in: query
+        description: Filter by installation status
+        schema:
+          type: string
+          enum: [all, installed, not_installed, available_update]
+        example: "not_installed"
+    responses:
+      '200':
+        description: Tenant plugins retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/TenantPluginListResponse'
+            example:
+              success: true
+              data:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "Stripe Payment Gateway"
+                  slug: "stripe-payment-gateway"
+                  version: "1.2.3"
+                  plugin_type: "payment"
+                  execution_model: "backend"
+                  status: "published"
+                  is_premium: true
+                  price: 49.99
+                  rating_average: 4.7
+                  install_count: 450
+                  is_installed: false
+                  is_compatible: true
+                  tenant_license_required: true
+              meta:
+                page: 1
+                limit: 20
+                total: 125
+                total_by_type:
+                  payment: 15
+                  shipping: 8
+                  analytics: 12
+                installed_count: 5
+                available_updates: 2
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/plugins/{id}:
+  get:
+    tags:
+      - Tenant Plugin Management
+    summary: Get Plugin Details for Tenant
+    description: |
+      Retrieve detailed information about a specific plugin from tenant perspective.
+      
+      **Tenant Features:**
+      - Plugin information and pricing
+      - Compatibility checking
+      - Installation requirements
+      - Reviews and ratings
+      - License information
+    operationId: tenantGetPlugin
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: id
+        in: path
+        required: true
+        description: Plugin ID or slug
+        schema:
+          type: string
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: include
+        in: query
+        description: Additional data to include
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [pricing, reviews, installation_info, compatibility, similar_plugins]
+        example: ["pricing", "reviews"]
+    responses:
+      '200':
+        description: Tenant plugin details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/TenantPluginDetail'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# TENANT PLUGIN INSTALLATION ENDPOINTS
+# ================================================================
+/tenant/plugins/installations:
+  get:
+    tags:
+      - Tenant Plugin Installation
+    summary: List Tenant Plugin Installations
     description: |
       Retrieve paginated list of plugin installations for the current tenant.
       
@@ -374,7 +544,7 @@
       - Status filtering
       - Health monitoring
       - Performance metrics
-    operationId: listPluginInstallations
+    operationId: tenantListPluginInstallations
     security:
       - bearerAuth: []
     parameters:
@@ -424,8 +594,8 @@
 
   post:
     tags:
-      - Plugin Installation
-    summary: Install Plugin
+      - Tenant Plugin Installation
+    summary: Install Plugin for Tenant
     description: |
       Install a plugin for the current tenant.
       
@@ -434,7 +604,7 @@
       - Dependency checking
       - Version compatibility
       - Automatic configuration
-    operationId: installPlugin
+    operationId: tenantInstallPlugin
     security:
       - bearerAuth: []
     parameters:
@@ -489,20 +659,20 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/installations/{id}:
+/tenant/plugins/installations/{id}:
   get:
     tags:
-      - Plugin Installation
-    summary: Get Plugin Installation Details
+      - Tenant Plugin Installation
+    summary: Get Tenant Plugin Installation Details
     description: |
-      Retrieve detailed information about a specific plugin installation.
+      Retrieve detailed information about a specific plugin installation for the tenant.
       
       **Features:**
       - Installation status
       - Performance metrics
       - Error logs
       - Configuration settings
-    operationId: getPluginInstallation
+    operationId: tenantGetPluginInstallation
     security:
     
       - bearerAuth: []
@@ -541,7 +711,7 @@
 
   patch:
     tags:
-      - Plugin Installation
+      - Tenant Plugin Installation
     summary: Update Plugin Installation
     description: |
       Update plugin installation configuration and status.
@@ -550,7 +720,7 @@
       - Enable/disable plugin
       - Toggle auto-update
       - Update installation notes
-    operationId: updatePluginInstallation
+    operationId: tenantUpdatePluginInstallation
     security:
       - bearerAuth: []
     parameters:
@@ -600,7 +770,7 @@
 
   delete:
     tags:
-      - Plugin Installation
+      - Tenant Plugin Installation
     summary: Uninstall Plugin
     description: |
       Uninstall a plugin from the current tenant.
@@ -610,7 +780,7 @@
       - Settings cleanup
       - Hook deregistration
       - File cleanup
-    operationId: uninstallPlugin
+    operationId: tenantUninstallPlugin
     security:
       - bearerAuth: []
     parameters:
@@ -650,10 +820,10 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/installations/{id}/activate:
+/tenant/plugins/installations/{id}/activate:
   post:
     tags:
-      - Plugin Installation
+      - Tenant Plugin Installation
     summary: Activate Plugin
     description: |
       Activate an installed plugin.
@@ -663,7 +833,7 @@
       - Configuration validation
       - Health check
       - Event logging
-    operationId: activatePlugin
+    operationId: tenantActivatePlugin
     security:
       - bearerAuth: []
     parameters:
@@ -703,10 +873,10 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/installations/{id}/deactivate:
+/tenant/plugins/installations/{id}/deactivate:
   post:
     tags:
-      - Plugin Installation
+      - Tenant Plugin Installation
     summary: Deactivate Plugin
     description: |
       Deactivate an active plugin.
@@ -716,7 +886,7 @@
       - Graceful shutdown
       - Event logging
       - State preservation
-    operationId: deactivatePlugin
+    operationId: tenantDeactivatePlugin
     security:
       - bearerAuth: []
     parameters:
@@ -746,7 +916,7 @@
 # ================================================================
 # PLUGIN SETTINGS ENDPOINTS
 # ================================================================
-/plugins/installations/{id}/settings:
+/tenant/plugins/installations/{id}/settings:
   get:
     tags:
       - Plugin Settings
@@ -759,7 +929,7 @@
       - Environment filtering
       - Sensitive data masking
       - Category grouping
-    operationId: getPluginSettings
+    operationId: tenantGetPluginSettings
     security:
       - bearerAuth: []
     parameters:
@@ -818,7 +988,7 @@
       - Validation rules enforcement
       - Environment scoping
       - Type-safe storage
-    operationId: createPluginSetting
+    operationId: tenantCreatePluginSetting
     security:
       - bearerAuth: []
     parameters:
@@ -880,7 +1050,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/installations/{installationId}/settings/{settingId}:
+/tenant/plugins/installations/{installationId}/settings/{settingId}:
   get:
     tags:
       - Plugin Settings
@@ -892,7 +1062,7 @@
       - Individual setting retrieval
       - Sensitive data masking
       - Validation info
-    operationId: getPluginSetting
+    operationId: tenantGetPluginSetting
     security:
       - bearerAuth: []
     parameters:
@@ -944,7 +1114,7 @@
       - Encryption handling
       - Change auditing
       - Plugin restart trigger
-    operationId: updatePluginSetting
+    operationId: tenantUpdatePluginSetting
     security:
       - bearerAuth: []
     parameters:
@@ -1021,7 +1191,7 @@
       - Safe removal with validation
       - Required setting protection
       - Change auditing
-    operationId: deletePluginSetting
+    operationId: tenantDeletePluginSetting
     security:
       - bearerAuth: []
     parameters:
@@ -1076,7 +1246,7 @@
 # ================================================================
 # PLUGIN HOOK SYSTEM ENDPOINTS
 # ================================================================
-/plugins/hooks:
+/tenant/plugins/hooks:
   get:
     tags:
       - Plugin Hooks
@@ -1089,7 +1259,7 @@
       - Performance monitoring
       - Priority ordering
       - Type filtering
-    operationId: listPluginHooks
+    operationId: tenantListPluginHooks
     security:
       - bearerAuth: []
     parameters:
@@ -1141,7 +1311,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/installations/{id}/hooks:
+/tenant/plugins/installations/{id}/hooks:
   get:
     tags:
       - Plugin Hooks
@@ -1153,7 +1323,7 @@
       - Plugin-specific hooks
       - Performance metrics
       - Error tracking
-    operationId: getPluginInstallationHooks
+    operationId: tenantGetPluginInstallationHooks
     security:
       - bearerAuth: []
     parameters:
@@ -1199,7 +1369,7 @@
       - Priority management
       - Parameter validation
       - Condition setup
-    operationId: registerPluginHook
+    operationId: tenantRegisterPluginHook
     security:
       - bearerAuth: []
     parameters:
@@ -1289,7 +1459,7 @@
       - Rating and popularity sort
       - Category navigation
       - Featured plugins
-    operationId: browseMarketplacePlugins
+    operationId: tenantBrowseMarketplacePlugins
     security: []
     parameters:
       - $ref: '../../components/parameters.yaml#/PageParam'
@@ -1355,7 +1525,7 @@
       - Screenshots and media
       - Reviews and ratings
       - Installation instructions
-    operationId: getMarketplacePlugin
+    operationId: tenantGetMarketplacePlugin
     security: []
     parameters:
       - name: id
@@ -1390,7 +1560,7 @@
 # ================================================================
 # PLUGIN PURCHASE ENDPOINTS
 # ================================================================
-/marketplace/plugins/{id}/purchase:
+/tenant/plugins/{id}/purchase:
   post:
     tags:
       - Plugin Marketplace
@@ -1403,7 +1573,7 @@
       - License generation
       - Automatic installation option
       - Transaction tracking
-    operationId: purchasePlugin
+    operationId: tenantPurchasePlugin
     security:
       - bearerAuth: []
     parameters:
@@ -1490,7 +1660,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/purchases:
+/tenant/plugins/purchases:
   get:
     tags:
       - Plugin Marketplace
@@ -1503,7 +1673,7 @@
       - License information
       - Transaction details
       - Status tracking
-    operationId: listPluginPurchases
+    operationId: tenantListPluginPurchases
     security:
       - bearerAuth: []
     parameters:
@@ -1546,7 +1716,7 @@
 # ================================================================
 # PLUGIN ANALYTICS ENDPOINTS
 # ================================================================
-/plugins/installations/{id}/analytics:
+/tenant/plugins/installations/{id}/analytics:
   get:
     tags:
       - Plugin Analytics
@@ -1559,7 +1729,7 @@
       - Performance metrics
       - Error tracking
       - Event analytics
-    operationId: getPluginAnalytics
+    operationId: tenantGetPluginAnalytics
     security:
       - bearerAuth: []
     parameters:
@@ -1610,7 +1780,7 @@
 # ================================================================
 # PLUGIN HEALTH & MONITORING ENDPOINTS
 # ================================================================
-/plugins/health:
+/tenant/plugins/health:
   get:
     tags:
       - Plugin Monitoring
@@ -1623,7 +1793,7 @@
       - Individual plugin status
       - Performance monitoring
       - Error detection
-    operationId: checkPluginsHealth
+    operationId: tenantCheckPluginsHealth
     security:
       - bearerAuth: []
     parameters:
@@ -1640,7 +1810,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/installations/{id}/health:
+/tenant/plugins/installations/{id}/health:
   get:
     tags:
       - Plugin Monitoring
@@ -1653,7 +1823,7 @@
       - Configuration validation
       - Performance metrics
       - Error diagnostics
-    operationId: checkPluginHealth
+    operationId: tenantCheckPluginHealth
     security:
       - bearerAuth: []
     parameters:
@@ -1729,7 +1899,7 @@
 # ================================================================
 # PLUGIN EVENTS & LOGS ENDPOINTS
 # ================================================================
-/plugins/installations/{id}/events:
+/tenant/plugins/installations/{id}/events:
   get:
     tags:
       - Plugin Monitoring
@@ -1742,7 +1912,7 @@
       - Severity filtering
       - Time range filtering
       - Performance tracking
-    operationId: getPluginEvents
+    operationId: tenantGetPluginEvents
     security:
       - bearerAuth: []
     parameters:
@@ -1809,7 +1979,7 @@
 # ================================================================
 # BULK OPERATIONS ENDPOINTS
 # ================================================================
-/plugins/bulk/activate:
+/tenant/plugins/bulk/activate:
   post:
     tags:
       - Plugin Bulk Operations
@@ -1902,7 +2072,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/plugins/bulk/deactivate:
+/tenant/plugins/bulk/deactivate:
   post:
     tags:
       - Plugin Bulk Operations

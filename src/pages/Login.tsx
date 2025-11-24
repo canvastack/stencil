@@ -1,79 +1,65 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { Eye, EyeOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { useAuthState } from '@/hooks/useAuthState';
-import { AccountType } from '@/services/api/auth';
+import { Building2, Store, Eye, EyeOff } from 'lucide-react';
+import { usePlatformAuth } from '@/contexts/PlatformAuthContext';
+import { useTenantAuth } from '@/contexts/TenantAuthContext';
+import { authService, type AccountType } from '@/services/api/auth';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isLoading, error, isAuthenticated } = useAuthState();
+  const { isAuthenticated: isPlatformAuth, login: platformLogin } = usePlatformAuth();
+  const { isAuthenticated: isTenantAuth, login: tenantLogin } = useTenantAuth();
+  
+  const [isPlatformMode, setIsPlatformMode] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [accountType, setAccountType] = useState<AccountType>('tenant');
-  const [selectedTenant, setSelectedTenant] = useState('');
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isPlatformAuth) {
+      navigate('/platform', { replace: true });
+    } else if (isTenantAuth) {
       navigate('/admin', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isPlatformAuth, isTenantAuth, navigate]);
 
-  const demoTenants = [
-    { slug: 'demo-etching', name: 'Demo Etching' },
-  ];
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  const handleModeChange = (checked: boolean) => {
+    setIsPlatformMode(checked);
+    setError('');
+    // Set demo credentials based on mode
+    if (checked) {
+      setEmail('admin@canvastencil.com');
+      setPassword('SuperAdmin2024!');
+    } else {
+      setEmail('admin@demo-etching.com');
+      setPassword('DemoAdmin2024!');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.email) {
-      newErrors.email = 'Email harus diisi';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Format email tidak valid';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password harus diisi';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password minimal 6 karakter';
-    }
-
-    if (accountType === 'tenant' && !selectedTenant) {
-      newErrors.tenant = 'Pilih tenant terlebih dahulu';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    setIsLoading(true);
+    setError('');
 
     try {
-      await login({
-        email: formData.email,
-        password: formData.password,
-        accountType,
-        tenant_slug: selectedTenant || undefined,
-      });
-      toast.success('Login berhasil! Selamat datang.');
-      navigate('/admin');
-    } catch (err) {
-      toast.error(error || 'Login gagal. Silakan coba lagi.');
+      if (isPlatformMode) {
+        await platformLogin(email, password);
+      } else {
+        await tenantLogin(email, password, 'demo-etching');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -81,168 +67,136 @@ const Login = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <div className="flex-1 flex items-center justify-center px-4 py-32 bg-gradient-to-br from-background via-muted/30 to-background">
-        <Card className="w-full max-w-md p-8 shadow-xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Selamat Datang Kembali</h1>
-            <p className="text-muted-foreground">Login ke akun Anda</p>
-          </div>
-
-          {error && (
-            <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Tipe Akun</Label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="accountType"
-                    value="platform"
-                    checked={accountType === 'platform'}
-                    onChange={(e) => {
-                      setAccountType(e.target.value as AccountType);
-                      setErrors({ ...errors, tenant: '' });
-                    }}
-                    disabled={isLoading}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Admin Platform</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="accountType"
-                    value="tenant"
-                    checked={accountType === 'tenant'}
-                    onChange={(e) => {
-                      setAccountType(e.target.value as AccountType);
-                      setErrors({ ...errors, tenant: '' });
-                    }}
-                    disabled={isLoading}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm">Pengguna Tenant</span>
-                </label>
-              </div>
-            </div>
-
-            {accountType === 'tenant' && (
-              <div className="space-y-2">
-                <Label htmlFor="tenant">Pilih Tenant</Label>
-                <select
-                  id="tenant"
-                  value={selectedTenant}
-                  onChange={(e) => {
-                    setSelectedTenant(e.target.value);
-                    setErrors({ ...errors, tenant: '' });
-                  }}
-                  disabled={isLoading}
-                  className={`w-full border rounded px-3 py-2 bg-background ${errors.tenant ? 'border-destructive' : 'border-input'}`}
-                >
-                  <option value="">Pilih tenant...</option>
-                  {demoTenants.map((tenant) => (
-                    <option key={tenant.slug} value={tenant.slug}>
-                      {tenant.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.tenant && (
-                  <p className="text-sm text-destructive">{errors.tenant}</p>
+      <div className="flex-1 flex items-center justify-center px-4 py-16 bg-gradient-to-br from-background via-muted/30 to-background">
+        <div className="w-full max-w-md">
+          <Card className="p-8 shadow-lg">
+            <div className="text-center mb-8">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                {isPlatformMode ? (
+                  <Building2 className="w-8 h-8 text-primary" />
+                ) : (
+                  <Store className="w-8 h-8 text-primary" />
                 )}
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="nama@email.com"
-                value={formData.email}
-                onChange={(e) => {
-                  setFormData({ ...formData, email: e.target.value });
-                  setErrors({ ...errors, email: '' });
-                }}
-                disabled={isLoading}
-                className={errors.email ? 'border-destructive' : ''}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
+              <h1 className="text-2xl font-bold mb-2">
+                {isPlatformMode ? 'Platform Admin Login' : 'Business Admin Login'}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {isPlatformMode 
+                  ? 'Access platform management and system administration'
+                  : 'Access your business operations and management tools'
+                }
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => {
-                    setFormData({ ...formData, password: e.target.value });
-                    setErrors({ ...errors, password: '' });
-                  }}
-                  disabled={isLoading}
-                  className={errors.password ? 'border-destructive' : ''}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground disabled:opacity-50"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+            {/* Account Type Switch */}
+            <div className="flex items-center justify-center gap-4 mb-8 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-green-600" />
+                <span className={`text-sm font-medium ${!isPlatformMode ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  Business
+                </span>
               </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
+              <Switch
+                checked={isPlatformMode}
+                onCheckedChange={handleModeChange}
+                className="data-[state=checked]:bg-blue-600"
+              />
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-600" />
+                <span className={`text-sm font-medium ${isPlatformMode ? 'text-blue-600' : 'text-muted-foreground'}`}>
+                  Platform
+                </span>
+              </div>
+            </div>
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                  {error}
+                </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                    className="w-full pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+
+            {/* Demo Info */}
+            <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+              <p className="text-xs text-center text-muted-foreground mb-2">Demo Credentials:</p>
+              <div className="text-xs text-center space-y-1">
+                {isPlatformMode ? (
+                  <div>
+                    <p><strong>Platform:</strong> admin@canvastencil.com</p>
+                    <p>Password: SuperAdmin2024!</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p><strong>Business:</strong> admin@demo-etching.com</p>
+                    <p>Password: DemoAdmin2024!</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <Link to="/forgot-password" className="text-primary hover:underline">
-                Lupa Password?
-              </Link>
+            <div className="mt-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Need help? Contact our support team or{' '}
+                <Link to="/register" className="text-primary font-medium hover:underline">
+                  create a new account
+                </Link>
+              </p>
             </div>
-
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? 'Logging in...' : 'Login'}
-            </Button>
-
-            <div className="text-center text-sm text-muted-foreground">
-              <p className="mb-2">Demo Account:</p>
-              {accountType === 'platform' ? (
-                <>
-                  <p>Email: <span className="font-mono text-foreground">admin@canvastencil.com</span></p>
-                  <p>Password: <span className="font-mono text-foreground">SuperAdmin2024!</span></p>
-                </>
-              ) : (
-                <>
-                  <p>Email: <span className="font-mono text-foreground">admin@demo-etching.com</span></p>
-                  <p>Password: <span className="font-mono text-foreground">DemoAdmin2024!</span></p>
-                  <p className="mt-2 text-xs">Atau:</p>
-                  <p>Email: <span className="font-mono text-foreground">manager@demo-etching.com</span></p>
-                  <p>Password: <span className="font-mono text-foreground">DemoManager2024!</span></p>
-                </>
-              )}
-            </div>
-          </form>
-
-          <div className="mt-6 text-center text-sm">
-            <p className="text-muted-foreground">
-              Belum punya akun?{' '}
-              <Link to="/register" className="text-primary font-medium hover:underline">
-                Daftar sekarang
-              </Link>
-            </p>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
 
       <Footer />

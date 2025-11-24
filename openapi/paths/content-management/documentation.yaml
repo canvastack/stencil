@@ -1,28 +1,350 @@
-# Documentation & Help Center API Path Items
+# Documentation & Help Center API Path Items - Platform & Tenant Separated
 # This file contains only path items (no openapi/info/paths wrapper)
+# Refactored for platform/tenant endpoint separation compliance
 
 # ================================================================
-# DOCUMENTATION ARTICLES ENDPOINTS
+# PLATFORM DOCUMENTATION ENDPOINTS - Admin Management
 # ================================================================
-/documentation/articles:
+
+# Platform Documentation Articles - Admin management across all tenants
+/platform/documentation/articles:
   get:
     tags:
-      - Documentation Articles
-    summary: List Documentation Articles
+      - Platform Documentation Articles
+    summary: List All Documentation Articles (Platform)
     description: |
-      Retrieve paginated list of documentation articles with advanced filtering and search capabilities.
+      Platform-level endpoint to retrieve paginated list of all documentation articles across all tenants.
       
-      Features:
-      - Search by title, content, tags
-      - Filter by category, status, visibility
-      - Sort by multiple fields (date, views, rating)
-      - Multi-tenant support
-      - Public/customer access control
-    operationId: listDocumentationArticles
+      Platform Admin Features:
+      - Cross-tenant article management
+      - Global search and filtering
+      - Analytics and performance metrics
+      - Content approval workflows
+      - System-wide categorization
+    operationId: platformListDocumentationArticles
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.list
+      - platform.doc.list
+    parameters:
+      - $ref: '../../components/parameters.yaml#/PageParam'
+      - $ref: '../../components/parameters.yaml#/PerPageParam'
+      - $ref: '../../components/parameters.yaml#/SortParam'
+      - name: tenant_id
+        in: query
+        description: Filter by specific tenant UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: search
+        in: query
+        description: Search in title, content, excerpt
+        schema:
+          type: string
+          maxLength: 255
+        example: "etching design"
+      - name: category_id
+        in: query
+        description: Filter by category UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - name: status
+        in: query
+        description: Filter by article status
+        schema:
+          type: string
+          enum: [draft, review, approved, published, archived]
+        example: "published"
+      - name: visibility
+        in: query
+        description: Filter by visibility level
+        schema:
+          type: string
+          enum: [private, internal, public, customer]
+        example: "customer"
+    responses:
+      '200':
+        description: Platform documentation articles retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/DocumentationArticlesResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  post:
+    tags:
+      - Platform Documentation Articles
+    summary: Create Documentation Article (Platform)
+    description: |
+      Platform-level endpoint to create documentation articles with admin privileges.
+    operationId: platformCreateDocumentationArticle
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.doc.create
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../../components/schemas.yaml#/DocumentationArticleInput'
+              - type: object
+                properties:
+                  tenant_id:
+                    type: string
+                    format: uuid
+                    description: Target tenant for article creation
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '201':
+        description: Platform documentation article created successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/DocumentationArticleResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/platform/documentation/articles/{articleId}:
+  get:
+    tags:
+      - Platform Documentation Articles
+    summary: Get Documentation Article (Platform)
+    description: |
+      Platform-level endpoint to retrieve specific documentation article with admin privileges.
+    operationId: platformGetDocumentationArticle
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.doc.read
+    parameters:
+      - name: articleId
+        in: path
+        required: true
+        description: Documentation article UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: Platform documentation article retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/DocumentationArticleResponse'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  patch:
+    tags:
+      - Platform Documentation Articles
+    summary: Update Documentation Article (Platform)
+    description: |
+      Platform-level endpoint to update documentation articles with admin privileges.
+    operationId: platformUpdateDocumentationArticle
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.doc.update
+    parameters:
+      - name: articleId
+        in: path
+        required: true
+        description: Documentation article UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/DocumentationArticleInput'
+    responses:
+      '200':
+        description: Platform documentation article updated successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/DocumentationArticleResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  delete:
+    tags:
+      - Platform Documentation Articles
+    summary: Delete Documentation Article (Platform)
+    description: |
+      Platform-level endpoint to delete documentation articles with admin privileges.
+    operationId: platformDeleteDocumentationArticle
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.doc.delete
+    parameters:
+      - name: articleId
+        in: path
+        required: true
+        description: Documentation article UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: Platform documentation article deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Documentation article deleted successfully"
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Platform Documentation Categories
+/platform/documentation/categories:
+  get:
+    tags:
+      - Platform Documentation Categories
+    summary: List All Documentation Categories (Platform)
+    description: |
+      Platform-level endpoint to manage documentation categories across all tenants.
+    operationId: platformListDocumentationCategories
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.doc.category.list
+    parameters:
+      - name: tenant_id
+        in: query
+        description: Filter by specific tenant UUID
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '200':
+        description: Platform documentation categories retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/DocumentationCategoriesResponse'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  post:
+    tags:
+      - Platform Documentation Categories
+    summary: Create Documentation Category (Platform)
+    description: |
+      Platform-level endpoint to create documentation categories.
+    operationId: platformCreateDocumentationCategory
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.doc.category.create
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '../../components/schemas.yaml#/DocumentationCategoryInput'
+              - type: object
+                properties:
+                  tenant_id:
+                    type: string
+                    format: uuid
+                    description: Target tenant for category creation
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+    responses:
+      '201':
+        description: Platform documentation category created successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/DocumentationCategoryResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# TENANT DOCUMENTATION ENDPOINTS - Tenant-Specific Operations
+# ================================================================
+
+# Tenant Documentation Articles - Tenant-specific operations
+/tenant/documentation/articles:
+  get:
+    tags:
+      - Tenant Documentation Articles
+    summary: List Documentation Articles (Tenant)
+    description: |
+      Tenant-specific endpoint to retrieve documentation articles within tenant scope.
+      
+      Tenant Features:
+      - Tenant-scoped article access
+      - Customer/internal visibility filtering
+      - Tenant-specific categorization
+      - Content personalization
+      - Usage analytics
+    operationId: tenantListDocumentationArticles
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - tenant.doc.list
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - $ref: '../../components/parameters.yaml#/PageParam'
@@ -92,7 +414,7 @@
         example: "2025-12-31"
     responses:
       '200':
-        description: Documentation articles retrieved successfully
+        description: Tenant documentation articles retrieved successfully
         content:
           application/json:
             schema:
@@ -133,22 +455,22 @@
 
   post:
     tags:
-      - Documentation Articles
-    summary: Create Documentation Article
+      - Tenant Documentation Articles
+    summary: Create Documentation Article (Tenant)
     description: |
-      Create a new documentation article with comprehensive content management features.
+      Tenant-specific endpoint to create new documentation articles.
       
-      Admin Features:
+      Tenant Features:
+      - Tenant-scoped article creation
       - Rich content with markdown/HTML support
       - Category assignment and tagging
       - SEO metadata management
       - Version control integration
-      - Multi-tenant isolation
-    operationId: createDocumentationArticle
+    operationId: tenantCreateDocumentationArticle
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.create
+      - tenant.doc.create
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
@@ -177,7 +499,7 @@
                 featured_image_url: "https://cdn.ptcex.com/docs/advanced-etching-featured.jpg"
     responses:
       '201':
-        description: Documentation article created successfully
+        description: Tenant documentation article created successfully
         content:
           application/json:
             schema:
@@ -205,13 +527,13 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/documentation/articles/{articleId}:
+/tenant/documentation/articles/{articleId}:
   get:
     tags:
-      - Documentation Articles
-    summary: Get Documentation Article
+      - Tenant Documentation Articles
+    summary: Get Documentation Article (Tenant)
     description: |
-      Retrieve a specific documentation article by UUID with related content.
+      Tenant-specific endpoint to retrieve specific documentation article.
       
       Features:
       - Article content with metadata
@@ -219,11 +541,11 @@
       - View count tracking
       - Version history access
       - Category information
-    operationId: getDocumentationArticle
+    operationId: tenantGetDocumentationArticle
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.read
+      - tenant.doc.read
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: articleId
@@ -257,7 +579,7 @@
         example: true
     responses:
       '200':
-        description: Documentation article retrieved successfully
+        description: Tenant documentation article retrieved successfully
         content:
           application/json:
             schema:
@@ -285,22 +607,22 @@
 
   patch:
     tags:
-      - Documentation Articles
-    summary: Update Documentation Article
+      - Tenant Documentation Articles
+    summary: Update Documentation Article (Tenant)
     description: |
-      Update an existing documentation article with version control.
+      Tenant-specific endpoint to update documentation articles with version control.
       
-      Admin Features:
+      Tenant Features:
       - Partial updates support
       - Automatic version creation
       - Status workflow management
       - Content approval process
       - SEO metadata updates
-    operationId: updateDocumentationArticle
+    operationId: tenantUpdateDocumentationArticle
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.update
+      - tenant.doc.update
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: articleId
@@ -347,7 +669,7 @@
                 excerpt: "Updated professional etching techniques overview"
     responses:
       '200':
-        description: Documentation article updated successfully
+        description: Tenant documentation article updated successfully
         content:
           application/json:
             schema:
@@ -375,21 +697,21 @@
 
   delete:
     tags:
-      - Documentation Articles
-    summary: Delete Documentation Article
+      - Tenant Documentation Articles
+    summary: Delete Documentation Article (Tenant)
     description: |
-      Delete a documentation article (soft delete to archived status by default).
+      Tenant-specific endpoint to delete documentation articles (soft delete to archived status by default).
       
-      Admin Features:
+      Tenant Features:
       - Soft delete (archive) by default
       - Hard delete option for admins
       - Cascade handling for related content
       - Version history preservation
-    operationId: deleteDocumentationArticle
+    operationId: tenantDeleteDocumentationArticle
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.delete
+      - tenant.doc.delete
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: articleId
@@ -416,7 +738,7 @@
         example: true
     responses:
       '200':
-        description: Documentation article deleted successfully
+        description: Tenant documentation article deleted successfully
         content:
           application/json:
             schema:
@@ -442,25 +764,25 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/documentation/articles/bulk:
+/tenant/documentation/articles/bulk:
   post:
     tags:
-      - Documentation Articles
-    summary: Bulk Operations on Articles
+      - Tenant Documentation Articles
+    summary: Bulk Operations on Articles (Tenant)
     description: |
-      Perform bulk operations on multiple documentation articles.
+      Tenant-specific endpoint to perform bulk operations on multiple documentation articles.
       
-      Admin Operations:
+      Tenant Operations:
       - Bulk publish/unpublish articles
       - Bulk category assignment
       - Bulk status updates
       - Bulk tag management
       - Export selected articles
-    operationId: bulkOperationsDocumentationArticles
+    operationId: tenantBulkOperationsDocumentationArticles
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.update
+      - tenant.doc.update
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
@@ -494,7 +816,7 @@
                   tags: ["updated", "reviewed"]
     responses:
       '200':
-        description: Bulk operation completed successfully
+        description: Tenant bulk operation completed successfully
         content:
           application/json:
             schema:
@@ -544,15 +866,15 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# DOCUMENTATION CATEGORIES ENDPOINTS
+# TENANT DOCUMENTATION CATEGORIES ENDPOINTS
 # ================================================================
-/documentation/categories:
+/tenant/documentation/categories:
   get:
     tags:
-      - Documentation Categories
-    summary: List Documentation Categories
+      - Tenant Documentation Categories
+    summary: List Documentation Categories (Tenant)
     description: |
-      Retrieve hierarchical list of documentation categories with article counts.
+      Tenant-specific endpoint to retrieve hierarchical list of documentation categories with article counts.
       
       Features:
       - Hierarchical tree structure
@@ -560,11 +882,11 @@
       - Visibility filtering
       - Sort order support
       - Featured categories
-    operationId: listDocumentationCategories
+    operationId: tenantListDocumentationCategories
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.category.list
+      - tenant.doc.category.list
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: include_hidden
@@ -597,7 +919,7 @@
         example: true
     responses:
       '200':
-        description: Documentation categories retrieved successfully
+        description: Tenant documentation categories retrieved successfully
         content:
           application/json:
             schema:
@@ -630,22 +952,22 @@
 
   post:
     tags:
-      - Documentation Categories
-    summary: Create Documentation Category
+      - Tenant Documentation Categories
+    summary: Create Documentation Category (Tenant)
     description: |
-      Create a new documentation category with hierarchical support.
+      Tenant-specific endpoint to create new documentation categories with hierarchical support.
       
-      Admin Features:
+      Tenant Features:
       - Parent-child relationships
       - Custom icons and colors
       - Sort order management
       - Visibility controls
       - Metadata storage
-    operationId: createDocumentationCategory
+    operationId: tenantCreateDocumentationCategory
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.category.create
+      - tenant.doc.category.create
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
@@ -678,7 +1000,7 @@
                 sort_order: 5
     responses:
       '201':
-        description: Documentation category created successfully
+        description: Tenant documentation category created successfully
         content:
           application/json:
             schema:
@@ -704,18 +1026,18 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/documentation/categories/{categoryId}:
+/tenant/documentation/categories/{categoryId}:
   get:
     tags:
-      - Documentation Categories
-    summary: Get Documentation Category
+      - Tenant Documentation Categories
+    summary: Get Documentation Category (Tenant)
     description: |
-      Retrieve a specific documentation category with optional subcategories.
-    operationId: getDocumentationCategory
+      Tenant-specific endpoint to retrieve specific documentation category with optional subcategories.
+    operationId: tenantGetDocumentationCategory
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.category.read
+      - tenant.doc.category.read
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: categoryId
@@ -742,7 +1064,7 @@
         example: false
     responses:
       '200':
-        description: Documentation category retrieved successfully
+        description: Tenant documentation category retrieved successfully
         content:
           application/json:
             schema:
@@ -768,15 +1090,15 @@
 
   patch:
     tags:
-      - Documentation Categories
-    summary: Update Documentation Category
+      - Tenant Documentation Categories
+    summary: Update Documentation Category (Tenant)
     description: |
-      Update an existing documentation category.
-    operationId: updateDocumentationCategory
+      Tenant-specific endpoint to update existing documentation categories.
+    operationId: tenantUpdateDocumentationCategory
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.category.update
+      - tenant.doc.category.update
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: categoryId
@@ -801,7 +1123,7 @@
                 is_visible: false
     responses:
       '200':
-        description: Documentation category updated successfully
+        description: Tenant documentation category updated successfully
         content:
           application/json:
             schema:
@@ -830,15 +1152,15 @@
 
   delete:
     tags:
-      - Documentation Categories
-    summary: Delete Documentation Category
+      - Tenant Documentation Categories
+    summary: Delete Documentation Category (Tenant)
     description: |
-      Delete a documentation category with cascade handling.
-    operationId: deleteDocumentationCategory
+      Tenant-specific endpoint to delete documentation categories with cascade handling.
+    operationId: tenantDeleteDocumentationCategory
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.category.delete
+      - tenant.doc.category.delete
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: categoryId
@@ -858,7 +1180,7 @@
         example: "123e4567-e89b-12d3-a456-426614174000"
     responses:
       '200':
-        description: Documentation category deleted successfully
+        description: Tenant documentation category deleted successfully
         content:
           application/json:
             schema:
@@ -887,26 +1209,26 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# HELP TICKETS ENDPOINTS
+# TENANT HELP TICKETS ENDPOINTS
 # ================================================================
-/help/tickets:
+/tenant/help/tickets:
   get:
     tags:
-      - Help Tickets
-    summary: List Help Tickets
+      - Tenant Help Tickets
+    summary: List Help Tickets (Tenant)
     description: |
-      Retrieve paginated list of help tickets with filtering and search.
+      Tenant-specific endpoint to retrieve paginated list of help tickets with filtering and search.
       
       Support Features:
       - Filter by status, priority, assignment
       - Search in subject and description
       - Customer and staff views
       - SLA tracking and metrics
-    operationId: listHelpTickets
+    operationId: tenantListHelpTickets
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.help.list
+      - tenant.doc.help.list
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - $ref: '../../components/parameters.yaml#/PageParam'
@@ -969,7 +1291,7 @@
         example: "2025-12-31"
     responses:
       '200':
-        description: Help tickets retrieved successfully
+        description: Tenant help tickets retrieved successfully
         content:
           application/json:
             schema:
@@ -1008,10 +1330,10 @@
 
   post:
     tags:
-      - Help Tickets
-    summary: Create Help Ticket
+      - Tenant Help Tickets
+    summary: Create Help Ticket (Tenant)
     description: |
-      Create a new help ticket with automatic categorization and article suggestions.
+      Tenant-specific endpoint to create new help tickets with automatic categorization and article suggestions.
       
       Customer Features:
       - Auto-generated ticket numbers
@@ -1019,11 +1341,11 @@
       - File attachment support
       - Email notifications
       - Integration with knowledge base
-    operationId: createHelpTicket
+    operationId: tenantCreateHelpTicket
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.help.create
+      - tenant.doc.help.create
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
@@ -1055,7 +1377,7 @@
                 tags: ["pricing", "inquiry", "plaques"]
     responses:
       '201':
-        description: Help ticket created successfully
+        description: Tenant help ticket created successfully
         content:
           application/json:
             schema:
@@ -1078,18 +1400,18 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/help/tickets/{ticketId}:
+/tenant/help/tickets/{ticketId}:
   get:
     tags:
-      - Help Tickets
-    summary: Get Help Ticket
+      - Tenant Help Tickets
+    summary: Get Help Ticket (Tenant)
     description: |
-      Retrieve a specific help ticket with full details and suggestions.
-    operationId: getHelpTicket
+      Tenant-specific endpoint to retrieve specific help ticket with full details and suggestions.
+    operationId: tenantGetHelpTicket
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.help.read
+      - tenant.doc.help.read
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: ticketId
@@ -1109,26 +1431,11 @@
         example: true
     responses:
       '200':
-        description: Help ticket retrieved successfully
+        description: Tenant help ticket retrieved successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/HelpTicketResponse'
-            examples:
-              ok:
-                summary: Ticket detail
-                value:
-                  success: true
-                  data:
-                    id: "550e8400-e29b-41d4-a716-446655440000"
-                    subject: "Issues with metal etching design file preparation"
-                    status: "open"
-                    priority: "medium"
-                    category: "Technical Support"
-                    suggestions:
-                      - id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
-                        title: "How to prepare your design files for etching"
-                        slug: "prepare-design-files-etching"
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -1138,22 +1445,15 @@
 
   patch:
     tags:
-      - Help Tickets
-    summary: Update Help Ticket
+      - Tenant Help Tickets
+    summary: Update Help Ticket (Tenant)
     description: |
-      Update help ticket status, assignment, and resolution details.
-      
-      Staff Features:
-      - Status workflow management
-      - Assignment and reassignment
-      - Resolution tracking
-      - Customer communication
-      - SLA monitoring
-    operationId: updateHelpTicket
+      Tenant-specific endpoint to update help ticket status, assignment, and resolution details.
+    operationId: tenantUpdateHelpTicket
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.help.update
+      - tenant.doc.help.update
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: ticketId
@@ -1164,13 +1464,6 @@
           type: string
           format: uuid
         example: "550e8400-e29b-41d4-a716-446655440000"
-      - name: send_notification
-        in: query
-        description: Send email notification to customer
-        schema:
-          type: boolean
-          default: true
-        example: true
     requestBody:
       required: true
       content:
@@ -1191,44 +1484,17 @@
                 format: uuid
                 nullable: true
                 example: "123e4567-e89b-12d3-a456-426614174000"
-              category:
-                type: string
-                maxLength: 100
-                nullable: true
-                example: "Technical Support"
               resolution:
                 type: string
                 nullable: true
-                example: "Provided detailed file preparation guide and recommended settings for optimal etching results."
-              related_articles:
-                type: array
-                items:
-                  type: string
-                  format: uuid
-                nullable: true
-                example: ["987fcdeb-51a2-43d1-9f4b-123456789abc"]
-              tags:
-                type: array
-                items:
-                  type: string
-                nullable: true
-                example: ["resolved", "design-help"]
+                example: "Provided detailed file preparation guide."
     responses:
       '200':
-        description: Help ticket updated successfully
+        description: Tenant help ticket updated successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/HelpTicketResponse'
-            examples:
-              ok:
-                summary: Ticket updated
-                value:
-                  success: true
-                  data:
-                    id: "550e8400-e29b-41d4-a716-446655440000"
-                    status: "resolved"
-                    updated_at: "2025-02-16T12:00:00Z"
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1241,26 +1507,20 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# KNOWLEDGE BASE ENDPOINTS
+# TENANT KNOWLEDGE BASE ENDPOINTS
 # ================================================================
-/knowledge-base:
+/tenant/knowledge-base:
   get:
     tags:
-      - Knowledge Base
-    summary: List Knowledge Base Entries
+      - Tenant Knowledge Base
+    summary: List Knowledge Base Entries (Tenant)
     description: |
-      Retrieve knowledge base entries with filtering and search capabilities.
-      
-      Features:
-      - Full-text search in content
-      - Filter by type and category
-      - Sort by helpfulness and views
-      - Featured entries priority
-    operationId: listKnowledgeBase
+      Tenant-specific endpoint to retrieve knowledge base entries with filtering and search capabilities.
+    operationId: tenantListKnowledgeBase
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.kb.list
+      - tenant.doc.kb.list
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - $ref: '../../components/parameters.yaml#/PageParam'
@@ -1308,28 +1568,11 @@
         example: "materials,specifications"
     responses:
       '200':
-        description: Knowledge base entries retrieved successfully
+        description: Tenant knowledge base entries retrieved successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/KnowledgeBaseListResponse'
-            examples:
-              ok:
-                summary: KB list
-                value:
-                  success: true
-                  data:
-                    items:
-                      - id: "550e8400-e29b-41d4-a716-446655440000"
-                        title: "Stainless Steel Etching Specifications"
-                        kb_type: "specification"
-                        status: "published"
-                        category: "Materials"
-                        tags: ["stainless-steel", "specifications"]
-                    meta:
-                      page: 1
-                      per_page: 10
-                      total: 1
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1341,15 +1584,15 @@
 
   post:
     tags:
-      - Knowledge Base
-    summary: Create Knowledge Base Entry
+      - Tenant Knowledge Base
+    summary: Create Knowledge Base Entry (Tenant)
     description: |
-      Create a new knowledge base entry with rich content and attachments.
-    operationId: createKnowledgeBase
+      Tenant-specific endpoint to create new knowledge base entries with rich content and attachments.
+    operationId: tenantCreateKnowledgeBase
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.kb.create
+      - tenant.doc.kb.create
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
@@ -1400,44 +1643,13 @@
                   type: string
                 nullable: true
                 example: ["stainless-steel", "specifications", "materials"]
-              external_url:
-                type: string
-                format: uri
-                nullable: true
-                example: "https://materials.example.com/stainless-steel-guide"
-              attachments:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    url:
-                      type: string
-                      format: uri
-                    size:
-                      type: integer
-                    mime_type:
-                      type: string
-                nullable: true
     responses:
       '201':
-        description: Knowledge base entry created successfully
+        description: Tenant knowledge base entry created successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/KnowledgeBaseResponse'
-            examples:
-              created:
-                summary: KB created
-                value:
-                  success: true
-                  data:
-                    id: "550e8400-e29b-41d4-a716-446655440000"
-                    title: "Stainless Steel Etching Specifications"
-                    kb_type: "specification"
-                    status: "published"
-                    created_at: "2025-02-15T10:00:00Z"
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1448,26 +1660,20 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# USER GUIDES ENDPOINTS
+# TENANT USER GUIDES ENDPOINTS
 # ================================================================
-/user-guides:
+/tenant/user-guides:
   get:
     tags:
-      - User Guides
-    summary: List User Guides
+      - Tenant User Guides
+    summary: List User Guides (Tenant)
     description: |
-      Retrieve interactive user guides with completion tracking.
-      
-      Features:
-      - Step-by-step tutorials
-      - Completion rate tracking
-      - Target audience filtering
-      - Difficulty level sorting
-    operationId: listUserGuides
+      Tenant-specific endpoint to retrieve interactive user guides with completion tracking.
+    operationId: tenantListUserGuides
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.guide.list
+      - tenant.doc.guide.list
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - $ref: '../../components/parameters.yaml#/PageParam'
@@ -1516,28 +1722,11 @@
         example: true
     responses:
       '200':
-        description: User guides retrieved successfully
+        description: Tenant user guides retrieved successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/UserGuidesResponse'
-            examples:
-              ok:
-                summary: Guides list
-                value:
-                  success: true
-                  data:
-                    items:
-                      - id: "550e8400-e29b-41d4-a716-446655440000"
-                        title: "Complete Order Placement Guide"
-                        guide_type: "tutorial"
-                        status: "published"
-                        difficulty_level: "easy"
-                        target_audience: "customers"
-                    meta:
-                      page: 1
-                      per_page: 10
-                      total: 1
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1549,15 +1738,15 @@
 
   post:
     tags:
-      - User Guides
-    summary: Create User Guide
+      - Tenant User Guides
+    summary: Create User Guide (Tenant)
     description: |
-      Create a new interactive user guide with step-by-step instructions.
-    operationId: createUserGuide
+      Tenant-specific endpoint to create new interactive user guides with step-by-step instructions.
+    operationId: tenantCreateUserGuide
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.guide.create
+      - tenant.doc.guide.create
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
@@ -1611,27 +1800,10 @@
                       maxLength: 255
                     content:
                       type: string
-                    image_url:
-                      type: string
-                      format: uri
-                      nullable: true
-                    video_url:
-                      type: string
-                      format: uri
-                      nullable: true
-                    is_optional:
-                      type: boolean
-                      default: false
-                    estimated_time:
-                      type: integer
-                      nullable: true
                 example:
                   - step_number: 1
                     title: "Choose Your Product"
                     content: "Select the type of etching product from our catalog"
-                    image_url: "https://cdn.ptcex.com/guides/step1-choose-product.jpg"
-                    is_optional: false
-                    estimated_time: 2
               category:
                 type: string
                 maxLength: 100
@@ -1647,12 +1819,6 @@
                 enum: [all, customers, vendors, staff]
                 default: "all"
                 example: "customers"
-              prerequisites:
-                type: array
-                items:
-                  type: string
-                nullable: true
-                example: ["Account registration", "Design file ready"]
               tags:
                 type: array
                 items:
@@ -1661,22 +1827,11 @@
                 example: ["orders", "tutorial", "customers"]
     responses:
       '201':
-        description: User guide created successfully
+        description: Tenant user guide created successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/UserGuideResponse'
-            examples:
-              created:
-                summary: Guide created
-                value:
-                  success: true
-                  data:
-                    id: "550e8400-e29b-41d4-a716-446655440000"
-                    title: "Complete Order Placement Guide"
-                    status: "published"
-                    guide_type: "tutorial"
-                    created_at: "2025-02-15T11:00:00Z"
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1687,27 +1842,20 @@
         $ref: '../../components/responses.yaml#/ServerError'
 
 # ================================================================
-# SEARCH & ANALYTICS ENDPOINTS
+# TENANT SEARCH & ANALYTICS ENDPOINTS
 # ================================================================
-/documentation/search:
+/tenant/documentation/search:
   get:
     tags:
-      - Documentation Search
-    summary: Search Documentation Content
+      - Tenant Documentation Search
+    summary: Search Documentation Content (Tenant)
     description: |
-      Comprehensive search across all documentation content types.
-      
-      Search Features:
-      - Full-text search across articles, KB, guides
-      - Faceted search with filters
-      - Search suggestions and auto-complete
-      - Relevance scoring and ranking
-      - Search analytics tracking
-    operationId: searchDocumentation
+      Tenant-specific comprehensive search across all documentation content types.
+    operationId: tenantSearchDocumentation
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.search
+      - tenant.doc.search
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: q
@@ -1755,27 +1903,11 @@
         example: true
     responses:
       '200':
-        description: Search completed successfully
+        description: Tenant search completed successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/DocumentationSearchResponse'
-            examples:
-              ok:
-                summary: Search results
-                value:
-                  success: true
-                  data:
-                    results:
-                      - type: "article"
-                        id: "550e8400-e29b-41d4-a716-446655440000"
-                        title: "Advanced Metal Etching Techniques"
-                        snippet: "... detailed etching techniques ..."
-                      - type: "knowledge_base"
-                        id: "987fcdeb-51a2-43d1-9f4b-123456789abc"
-                        title: "Stainless Steel Etching Specifications"
-                        snippet: "... grade 304 stainless steel ..."
-                    suggestions: ["metal etching", "etching design"]
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1785,25 +1917,18 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/documentation/analytics:
+/tenant/documentation/analytics:
   get:
     tags:
-      - Documentation Analytics
-    summary: Get Documentation Analytics
+      - Tenant Documentation Analytics
+    summary: Get Documentation Analytics (Tenant)
     description: |
-      Comprehensive analytics for documentation system performance.
-      
-      Analytics Data:
-      - Content performance metrics
-      - User engagement statistics
-      - Search analytics and trends
-      - Help desk performance
-      - Knowledge gap identification
-    operationId: getDocumentationAnalytics
+      Tenant-specific analytics for documentation system performance.
+    operationId: tenantGetDocumentationAnalytics
     security:
       - bearerAuth: []
     x-permissions:
-      - doc.analytics
+      - tenant.doc.analytics
     parameters:
       - $ref: '../../components/parameters.yaml#/TenantHeader'
       - name: period
@@ -1823,26 +1948,11 @@
         example: true
     responses:
       '200':
-        description: Documentation analytics retrieved successfully
+        description: Tenant documentation analytics retrieved successfully
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/DocumentationAnalyticsResponse'
-            examples:
-              ok:
-                summary: Analytics summary
-                value:
-                  success: true
-                  data:
-                    content_performance:
-                      top_articles:
-                        - id: "550e8400-e29b-41d4-a716-446655440000"
-                          title: "Advanced Metal Etching Techniques"
-                          views: 1542
-                      total_views: 12045
-                    search_analytics:
-                      total_searches: 893
-                      top_queries: ["etching", "design preparation"]
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':

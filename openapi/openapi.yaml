@@ -374,115 +374,19 @@ components:
 paths:
   # ===== CONTENT MANAGEMENT ENDPOINTS =====
   
-  # About Us Module - Complete implementation
-  /api/v1/about/hero:
-    $ref: './paths/content-management/about.yaml#/~1about~1hero'
-  /api/v1/about/hero/{id}:
-    $ref: './paths/content-management/about.yaml#/~1about~1hero~1{id}'
-  /api/v1/about/company:
-    $ref: './paths/content-management/about.yaml#/~1about~1company'
-  /api/v1/about/company/{id}:
-    $ref: './paths/content-management/about.yaml#/~1about~1company~1{id}'
-  /api/v1/about/mission-vision:
-    $ref: './paths/content-management/about.yaml#/~1about~1mission-vision'
-  /api/v1/about/mission-vision/{id}:
-    $ref: './paths/content-management/about.yaml#/~1about~1mission-vision~1{id}'
-  /api/v1/about/team:
-    $ref: './paths/content-management/about.yaml#/~1about~1team'
-  /api/v1/about/team/{id}:
-    $ref: './paths/content-management/about.yaml#/~1about~1team~1{id}'
-  /api/v1/about/timeline:
-    $ref: './paths/content-management/about.yaml#/~1about~1timeline'
-  /api/v1/about/timeline/{id}:
-    $ref: './paths/content-management/about.yaml#/~1about~1timeline~1{id}'
-  /api/v1/about/certifications:
-    $ref: './paths/content-management/about.yaml#/~1about~1certifications'
-  /api/v1/about/certifications/{id}:
-    $ref: './paths/content-management/about.yaml#/~1about~1certifications~1{id}'
-  /api/v1/about/complete:
-    $ref: './paths/content-management/about.yaml#/~1about~1complete'
-  /api/v1/about/bulk:
-    $ref: './paths/content-management/about.yaml#/~1about~1bulk'
+  # About Us Module - Paths defined in about.yaml
+  # Endpoints accessible at /platform/about/* and /tenant/about/*
   
   # ===== E-COMMERCE ENDPOINTS =====
   
-  # Orders Module - Complete implementation
-  /api/v1/orders:
-    $ref: './paths/content-management/orders.yaml#/~1orders'
-  /api/v1/orders/{order_code}/status:
-    $ref: './paths/content-management/orders.yaml#/~1orders~1{order_code}~1status'
-  /api/v1/admin/orders:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders'
-  /api/v1/admin/orders/{id}:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}'
-  /api/v1/admin/orders/{id}/assign-vendor:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1assign-vendor'
-  /api/v1/admin/orders/{id}/status:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1status'
-  /api/v1/admin/orders/{id}/quotations:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1quotations'
-  /api/v1/admin/orders/{id}/quotations/{quotation_id}:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1quotations~1{quotation_id}'
-  /api/v1/admin/orders/{id}/quotations/{quotation_id}/approve:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1quotations~1{quotation_id}~1approve'
-  /api/v1/admin/orders/{id}/negotiations:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1negotiations'
-  /api/v1/admin/orders/{id}/payments:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1payments'
-  /api/v1/admin/orders/{id}/payments/{payment_id}/verify:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1payments~1{payment_id}~1verify'
-  /api/v1/admin/orders/{id}/shipments:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1shipments'
-  /api/v1/admin/orders/{id}/profitability:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1{id}~1profitability'
-  /api/v1/admin/orders/analytics/dashboard:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1analytics~1dashboard'
-  /api/v1/admin/orders/bulk/update-status:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1bulk~1update-status'
-  /api/v1/admin/orders/export:
-    $ref: './paths/content-management/orders.yaml#/~1admin~1orders~1export'
+  # Orders Module - Paths defined in orders.yaml
+  # Endpoints accessible at /tenant/orders/* and /admin/orders/*
   
-  # Products Module - Complete implementation
-  /api/v1/products:
-    $ref: './paths/content-management/products.yaml#/~1products'
-  /api/v1/products/{slug}:
-    $ref: './paths/content-management/products.yaml#/~1products~1{slug}'
-  /api/v1/products/categories:
-    $ref: './paths/content-management/products.yaml#/~1products~1categories'
-  /api/v1/admin/products:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products'
-  /api/v1/admin/products/{id}:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1{id}'
-  /api/v1/admin/products/{id}/restore:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1{id}~1restore'
-  /api/v1/admin/products/bulk:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1bulk'
-  /api/v1/admin/products/categories:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1categories'
-  /api/v1/admin/products/categories/{id}:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1categories~1{id}'
-  /api/v1/admin/products/analytics/dashboard:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1analytics~1dashboard'
-  /api/v1/admin/products/analytics/export:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1analytics~1export'
-  /api/v1/admin/products/{id}/vendor-pricing:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1{id}~1vendor-pricing'
-  /api/v1/admin/products/{id}/stock:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1{id}~1stock'
-  /api/v1/admin/products/quotation-eligible:
-    $ref: './paths/content-management/products.yaml#/~1admin~1products~1quotation-eligible'
+  # Products Module - Paths defined in products.yaml
+  # Endpoints accessible at /tenant/products/* and /admin/products/*
 
-  /api/v1/tenant/customers/search:
-    $ref: './paths/content-management/customers.yaml#/~1tenant~1customers~1search'
-
-  /api/v1/tenant/customers/export:
-    $ref: './paths/content-management/customers.yaml#/~1tenant~1customers~1export'
-
-  /api/v1/tenant/vendors/search:
-    $ref: './paths/content-management/vendors.yaml#/~1tenant~1vendors~1search'
-
-  /api/v1/tenant/vendors/export:
-    $ref: './paths/content-management/vendors.yaml#/~1tenant~1vendors~1export'
+  # Customers, Vendors modules - Paths defined in respective YAML files
+  # Endpoints accessible at /tenant/customers/*, /tenant/vendors/*, /vendors/*
 
   /api/v1/tenant/products/search:
     get:
@@ -705,74 +609,15 @@ paths:
           $ref: './components/responses.yaml#/ServerError'
   
   # ===== THEME MANAGEMENT ENDPOINTS =====
+  # Theme paths defined in theme.yaml
+  # Endpoints accessible at /themes/*, /tenant/themes/*, /admin/themes/*
   
-  # Theme Marketplace
-  /api/v1/themes:
-    $ref: './paths/content-management/theme.yaml#/~1themes'
-  /api/v1/themes/{themeId}:
-    $ref: './paths/content-management/theme.yaml#/~1themes~1{themeId}'
-  /api/v1/themes/{themeId}/purchase:
-    $ref: './paths/content-management/theme.yaml#/~1themes~1{themeId}~1purchase'
-  /api/v1/themes/{themeId}/validate:
-    $ref: './paths/content-management/theme.yaml#/~1themes~1{themeId}~1validate'
-  /api/v1/themes/{themeId}/validation-results:
-    $ref: './paths/content-management/theme.yaml#/~1themes~1{themeId}~1validation-results'
-  /api/v1/themes/{themeId}/versions:
-    $ref: './paths/content-management/theme.yaml#/~1themes~1{themeId}~1versions'
-  
-  # Theme Installation
-  /api/v1/tenant/themes:
-    $ref: './paths/content-management/theme.yaml#/~1tenant~1themes'
-  /api/v1/tenant/themes/{installationId}:
-    $ref: './paths/content-management/theme.yaml#/~1tenant~1themes~1{installationId}'
-  /api/v1/tenant/themes/{installationId}/activate:
-    $ref: './paths/content-management/theme.yaml#/~1tenant~1themes~1{installationId}~1activate'
-  /api/v1/tenant/themes/{installationId}/deactivate:
-    $ref: './paths/content-management/theme.yaml#/~1tenant~1themes~1{installationId}~1deactivate'
-  /api/v1/tenant/themes/{installationId}/settings:
-    $ref: './paths/content-management/theme.yaml#/~1tenant~1themes~1{installationId}~1settings'
-  /api/v1/tenant/themes/{installationId}/settings/reset:
-    $ref: './paths/content-management/theme.yaml#/~1tenant~1themes~1{installationId}~1settings~1reset'
-  
-  # Theme Purchases
-  /api/v1/tenant/theme-purchases:
-    $ref: './paths/content-management/theme.yaml#/~1tenant~1theme-purchases'
-  
-  # Theme Administration
-  /api/v1/admin/themes/marketplace:
-    $ref: './paths/content-management/theme.yaml#/~1admin~1themes~1marketplace'
-  /api/v1/admin/themes/marketplace/{listingId}/approve:
-    $ref: './paths/content-management/theme.yaml#/~1admin~1themes~1marketplace~1{listingId}~1approve'
-  /api/v1/admin/themes/marketplace/{listingId}/reject:
-    $ref: './paths/content-management/theme.yaml#/~1admin~1themes~1marketplace~1{listingId}~1reject'
+  # ===== PLATFORM VENDOR MANAGEMENT ENDPOINTS =====
+  # Platform vendor paths defined in vendors.yaml
   
   # ===== PLATFORM LICENSING ENDPOINTS =====
-  
-  # Platform License Management
-  /api/v1/platform/licenses:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licenses'
-  /api/v1/platform/licenses/{license_id}:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licenses~1{license_id}'
-  /api/v1/platform/licenses/bulk:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licenses~1bulk'
-  
-  # Tenant Service Licensing
-  /api/v1/platform/tenants/{tenant_id}/service-license:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1tenants~1{tenant_id}~1service-license'
-  /api/v1/platform/tenants/{tenant_id}/usage:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1tenants~1{tenant_id}~1usage'
-  /api/v1/platform/service-licenses/bulk:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1service-licenses~1bulk'
-  
-  # License Validation
-  /api/v1/auth/validate-platform-license:
-    $ref: './paths/platform/platform-licensing.yaml#/~1auth~1validate-platform-license'
-  /api/v1/platform/validation-history:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1validation-history'
-  
-  # Platform Licensing Reports
-  /api/v1/platform/licensing/reports/summary:
-    $ref: './paths/platform/platform-licensing.yaml#/~1platform~1licensing~1reports~1summary'
+  # Platform licensing paths defined in platform-licensing.yaml
+  # Endpoints accessible at /platform/licenses/*, /platform/tenants/*, /auth/*, etc.
   
   # Health Check Endpoint
   /health:
@@ -805,12 +650,12 @@ paths:
                     example: "connected"
 
   # Authentication Endpoints  
-  /auth/login:
+  /platform/login:
     post:
       tags:
-        - Authentication
-      summary: User Login
-      description: Authenticate user and receive JWT token
+        - Platform Authentication
+      summary: Platform Admin Login
+      description: Authenticate platform administrator and receive JWT token
       security: []
       requestBody:
         required: true
@@ -821,30 +666,121 @@ paths:
               required:
                 - email
                 - password
-                - tenant_id
               properties:
                 email:
                   type: string
                   format: email
-                  description: User email address
-                  example: "admin@stencil.com"
+                  description: Platform admin email address
+                  example: "admin@canvastencil.com"
                 password:
                   type: string
                   format: password
-                  description: User password
-                  example: "password123"
-                tenant_id:
-                  type: string
-                  format: uuid
-                  description: Tenant UUID
-                  example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                  description: Platform admin password
+                  example: "SuperAdmin2024!"
                 remember_me:
                   type: boolean
                   default: false
                   description: Extended token expiration
       responses:
         '200':
-          description: Login successful
+          description: Platform login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './components/schemas.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          access_token:
+                            type: string
+                            description: JWT access token
+                            example: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                          token_type:
+                            type: string
+                            example: "Bearer"
+                          expires_in:
+                            type: integer
+                            description: Token expiration in seconds
+                            example: 3600
+                          account:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              uuid:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                              email:
+                                type: string
+                                format: email
+                              account_type:
+                                type: string
+                                example: "platform_owner"
+                              status:
+                                type: string
+                                example: "active"
+                              permissions:
+                                type: array
+                                items:
+                                  type: string
+        '401':
+          description: Invalid platform credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#components/schemas/ErrorResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#components/schemas/ErrorResponse'
+
+  /tenant/login:
+    post:
+      tags:
+        - Tenant Authentication
+      summary: Tenant User Login
+      description: Authenticate tenant user and receive JWT token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - tenant_slug
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Tenant user email address
+                  example: "admin@demo-etching.com"
+                password:
+                  type: string
+                  format: password
+                  description: Tenant user password
+                  example: "DemoAdmin2024!"
+                tenant_slug:
+                  type: string
+                  description: Tenant identifier slug
+                  example: "demo-etching"
+                remember_me:
+                  type: boolean
+                  default: false
+                  description: Extended token expiration
+      responses:
+        '200':
+          description: Tenant login successful
           content:
             application/json:
               schema:
@@ -872,17 +808,54 @@ paths:
                               id:
                                 type: string
                                 format: uuid
+                              uuid:
+                                type: string
+                                format: uuid
                               name:
                                 type: string
                               email:
                                 type: string
                                 format: email
+                              email_verified_at:
+                                type: string
+                                format: date-time
+
+                              created_at:
+                                type: string
+                                format: date-time
+                              updated_at:
+                                type: string
+                                format: date-time
                               roles:
                                 type: array
                                 items:
                                   type: string
+                              permissions:
+                                type: array
+                                items:
+                                  type: string
+                          tenant:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              uuid:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                              slug:
+                                type: string
+                              domain:
+                                type: string
+
+                              status:
+                                type: string
+                              subscription_status:
+                                type: string
         '401':
-          description: Invalid credentials
+          description: Invalid tenant credentials
           content:
             application/json:
               schema:
@@ -894,15 +867,15 @@ paths:
               schema:
                 $ref: '#components/schemas/ErrorResponse'
 
-  /auth/logout:
+  /platform/logout:
     post:
       tags:
-        - Authentication  
-      summary: User Logout
-      description: Invalidate current JWT token
+        - Platform Authentication  
+      summary: Platform Admin Logout
+      description: Invalidate current platform admin JWT token
       responses:
         '200':
-          description: Logout successful
+          description: Platform logout successful
           content:
             application/json:
               schema:
@@ -914,12 +887,232 @@ paths:
               schema:
                 $ref: '#components/schemas/ErrorResponse'
 
+  /tenant/logout:
+    post:
+      tags:
+        - Tenant Authentication  
+      summary: Tenant User Logout
+      description: Invalidate current tenant user JWT token
+      responses:
+        '200':
+          description: Tenant logout successful
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas.yaml#/SuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#components/schemas/ErrorResponse'
+
+  /platform/register:
+    post:
+      tags:
+        - Platform Authentication
+      summary: Platform Account Registration
+      description: Register new platform administrator account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - password_confirmation
+              properties:
+                name:
+                  type: string
+                  description: Full name of platform administrator
+                  example: "John Admin"
+                email:
+                  type: string
+                  format: email
+                  description: Email address for platform account
+                  example: "admin@example.com"
+                password:
+                  type: string
+                  format: password
+                  description: Strong password for account
+                  example: "SecurePassword123!"
+                password_confirmation:
+                  type: string
+                  format: password
+                  description: Password confirmation
+                  example: "SecurePassword123!"
+      responses:
+        '201':
+          description: Platform account created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './components/schemas.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "Platform account created successfully"
+                          account:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              uuid:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                              email:
+                                type: string
+                                format: email
+                              account_type:
+                                type: string
+                                example: "platform_owner"
+                              status:
+                                type: string
+                                example: "active"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#components/schemas/ErrorResponse'
+
+  /tenant/{tenantId}/register:
+    post:
+      tags:
+        - Tenant Authentication
+      summary: Tenant User Registration
+      description: Register new user in specific tenant
+      security: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          description: Tenant UUID
+          schema:
+            type: string
+            format: uuid
+            example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - password_confirmation
+              properties:
+                name:
+                  type: string
+                  description: Full name of user
+                  example: "Jane User"
+                email:
+                  type: string
+                  format: email
+                  description: Email address for tenant account
+                  example: "user@demo-etching.com"
+                password:
+                  type: string
+                  format: password
+                  description: User password
+                  example: "UserPassword123!"
+                password_confirmation:
+                  type: string
+                  format: password
+                  description: Password confirmation
+                  example: "UserPassword123!"
+                role:
+                  type: string
+                  description: User role within tenant
+                  enum: ["admin", "manager", "user"]
+                  default: "user"
+                  example: "user"
+      responses:
+        '201':
+          description: Tenant user created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: './components/schemas.yaml#/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: "User account created successfully"
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              uuid:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                              email:
+                                type: string
+                                format: email
+                              email_verified_at:
+                                type: string
+                                format: date-time
+
+                              created_at:
+                                type: string
+                                format: date-time
+                              updated_at:
+                                type: string
+                                format: date-time
+                              roles:
+                                type: array
+                                items:
+                                  type: string
+                          tenant:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              uuid:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                              slug:
+                                type: string
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#components/schemas/ErrorResponse'
+
 # Tags for API Organization
 tags:
   - name: System
     description: System health and status endpoints
-  - name: Authentication
-    description: User authentication and session management
+  - name: Platform Authentication
+    description: Platform administrator authentication and session management
+  - name: Tenant Authentication
+    description: Tenant user authentication and session management
   - name: Content Management
     description: Homepage, About, Contact, FAQ, and SEO management
   - name: E-Commerce

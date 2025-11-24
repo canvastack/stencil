@@ -1,20 +1,13 @@
 {
   "summary": {
-    "timestamp": "2025-11-13T16:48:11.339Z",
-    "totalFiles": 49,
-    "validFiles": 48,
-    "invalidFiles": 1,
-    "successRate": 98
+    "timestamp": "2025-11-23T23:34:35.606Z",
+    "totalFiles": 53,
+    "validFiles": 53,
+    "invalidFiles": 0,
+    "successRate": 100
   },
   "validation": {
-    "errors": [
-      {
-        "file": ".pre-commit-config.yaml",
-        "type": "YAML_SYNTAX",
-        "message": "Nested mappings are not allowed in compact mappings at line 13, column 16:\n\n        entry: bash -c 'cd openapi && node security-audit.cjs && SC…\n               ^\n",
-        "line": 13
-      }
-    ],
+    "errors": [],
     "warnings": []
   },
   "security": {
@@ -42,17 +35,19 @@
     "overallScore": 91
   },
   "performance": {
-    "analysisTime": 7,
-    "avgFileSize": 39.94,
+    "analysisTime": 13,
+    "avgFileSize": 49.71,
     "largestFile": {
-      "name": "homepage.yaml",
-      "size": 77104,
-      "sizeKB": 75.3
+      "name": "media.yaml",
+      "size": 117217,
+      "sizeKB": 114.47
     },
     "complexityScore": 100,
-    "recommendations": []
+    "recommendations": [
+      "Some schema files are quite large (>100KB). Consider splitting them into smaller files"
+    ]
   },
   "recommendations": [
-    "Fix 1 YAML syntax error(s) to achieve 100% validation success"
+    "Some schema files are quite large (>100KB). Consider splitting them into smaller files"
   ]
 }

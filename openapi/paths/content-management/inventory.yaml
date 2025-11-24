@@ -1,8 +1,324 @@
-# Inventory Management API Path Items
+# Inventory Management API Path Items - Separated Platform/Tenant Architecture
 # This file contains only path items (no openapi/info/paths wrapper)
 
-# Inventory Dashboard & Overview
-/admin/inventory:
+##############################################################################
+# PLATFORM INVENTORY ENDPOINTS - Multi-tenant Management
+##############################################################################
+
+# Platform Inventory Overview - Multi-tenant Management
+/platform/inventory:
+  get:
+    tags:
+      - Platform Inventory Management
+    summary: Get Platform Inventory Overview (Multi-tenant)
+    description: |
+      Platform-level inventory overview across all tenants with aggregate insights.
+      
+      **Platform Admin Features:**
+      - Cross-tenant inventory analytics
+      - Global stock level monitoring
+      - Multi-tenant inventory distribution
+      - System-wide alerts and notifications
+      - Tenant comparison and benchmarking
+      - Resource allocation insights
+      
+      **Global Analytics:**
+      - Total inventory value across all tenants
+      - Cross-tenant stock level analysis
+      - Global supplier performance metrics
+      - System-wide inventory trends
+      - Resource utilization patterns
+    operationId: getPlatformInventoryOverview
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.inventory.overview.read
+    parameters:
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Filter by specific tenant (optional)
+      - name: region
+        in: query
+        schema:
+          type: string
+        description: Filter by geographic region
+      - name: date_range
+        in: query
+        schema:
+          type: string
+          enum: [today, week, month, quarter, year]
+          default: month
+        description: Analytics date range
+      - name: metric_type
+        in: query
+        schema:
+          type: string
+          enum: [value, volume, alerts, trends]
+          default: value
+        description: Primary metric focus
+    responses:
+      '200':
+        description: Platform inventory overview retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        global_summary:
+                          type: object
+                          properties:
+                            total_tenants: { type: integer }
+                            total_inventory_value: { type: number, format: decimal }
+                            total_items_tracked: { type: integer }
+                            active_alerts: { type: integer }
+                        tenant_distribution:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              tenant_id: { type: string, format: uuid }
+                              tenant_name: { type: string }
+                              inventory_value: { type: number, format: decimal }
+                              item_count: { type: integer }
+                              alert_count: { type: integer }
+            examples:
+              platform_overview:
+                summary: Platform inventory overview
+                value:
+                  success: true
+                  message: "Platform inventory overview retrieved successfully"
+                  data:
+                    global_summary:
+                      total_tenants: 15
+                      total_inventory_value: 2850000000.00
+                      total_items_tracked: 12450
+                      active_alerts: 89
+                    tenant_distribution:
+                      - tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                        tenant_name: "PT Custom Etching Xenial"
+                        inventory_value: 125750000.00
+                        item_count: 450
+                        alert_count: 12
+                  meta:
+                    timestamp: "2025-01-15T10:30:00Z"
+                    aggregation_level: "platform"
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '429':
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Platform Tenant Inventory Detail - Access specific tenant's inventory
+/platform/inventory/tenants/{tenantId}:
+  get:
+    tags:
+      - Platform Inventory Management
+    summary: Get Specific Tenant Inventory Overview
+    description: |
+      Platform admin access to detailed inventory overview for a specific tenant.
+      
+      **Platform Admin Features:**
+      - Complete tenant inventory visibility
+      - Detailed stock levels and alerts
+      - Performance metrics and analytics
+      - Compliance and audit information
+      - Historical trends and patterns
+    operationId: getPlatformTenantInventory
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.inventory.tenant.read
+    parameters:
+      - name: tenantId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Tenant ID
+      - name: include_details
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [items, alerts, movements, analytics]
+        description: Include detailed sections
+    responses:
+      '200':
+        description: Tenant inventory details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        tenant_info:
+                          type: object
+                          properties:
+                            tenant_id: { type: string, format: uuid }
+                            tenant_name: { type: string }
+                            tenant_status: { type: string }
+                        inventory_summary:
+                          type: object
+                          properties:
+                            total_items: { type: integer }
+                            total_inventory_value: { type: number, format: decimal }
+                            low_stock_alerts: { type: integer }
+                            out_of_stock_count: { type: integer }
+                            total_locations: { type: integer }
+            examples:
+              tenant_overview:
+                summary: Tenant inventory overview
+                value:
+                  success: true
+                  message: "Tenant inventory overview retrieved successfully"
+                  data:
+                    tenant_info:
+                      tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      tenant_name: "PT Custom Etching Xenial"
+                      tenant_status: "active"
+                    inventory_summary:
+                      total_items: 450
+                      total_inventory_value: 125750000.00
+                      low_stock_alerts: 12
+                      out_of_stock_count: 3
+                      total_locations: 8
+                  meta:
+                    timestamp: "2025-01-15T10:30:00Z"
+                    tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Platform Inventory Analytics - System-wide reporting
+/platform/inventory/analytics:
+  get:
+    tags:
+      - Platform Inventory Analytics
+    summary: Platform Inventory Analytics Dashboard
+    description: |
+      System-wide inventory analytics across all tenants including performance metrics,
+      utilization patterns, and compliance reporting.
+      
+      **Platform Analytics Features:**
+      - Cross-tenant inventory performance comparison
+      - Resource utilization patterns
+      - System-wide alert trends
+      - Compliance and audit metrics
+      - Cost optimization insights
+    operationId: getPlatformInventoryAnalytics
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - platform.inventory.analytics.read
+    parameters:
+      - name: range
+        in: query
+        schema:
+          type: string
+          enum: [daily, weekly, monthly, quarterly, yearly]
+          default: monthly
+        description: Analytics time range
+      - name: tenant_id
+        in: query
+        schema:
+          type: string
+          format: uuid
+        description: Filter by specific tenant (optional)
+      - name: metric_focus
+        in: query
+        schema:
+          type: string
+          enum: [performance, utilization, compliance, costs]
+          default: performance
+        description: Primary analytics focus
+    responses:
+      '200':
+        description: Platform analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        system_metrics:
+                          type: object
+                          properties:
+                            total_value_managed: { type: number, format: decimal }
+                            avg_turnover_ratio: { type: number, format: double }
+                            system_uptime: { type: number, format: double }
+                            alert_response_time: { type: number, format: double }
+                        tenant_performance:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              tenant_id: { type: string, format: uuid }
+                              tenant_name: { type: string }
+                              performance_score: { type: number, format: double }
+                              inventory_value: { type: number, format: decimal }
+                              turnover_ratio: { type: number, format: double }
+            examples:
+              platform_analytics:
+                summary: Platform analytics overview
+                value:
+                  success: true
+                  message: "Platform analytics retrieved successfully"
+                  data:
+                    system_metrics:
+                      total_value_managed: 2850000000.00
+                      avg_turnover_ratio: 4.8
+                      system_uptime: 99.7
+                      alert_response_time: 4.2
+                    tenant_performance:
+                      - tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                        tenant_name: "PT Custom Etching Xenial"
+                        performance_score: 87.5
+                        inventory_value: 125750000.00
+                        turnover_ratio: 5.4
+                  meta:
+                    timestamp: "2025-01-15T10:30:00Z"
+                    aggregation_level: "platform"
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '429':
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+##############################################################################
+# TENANT INVENTORY ENDPOINTS - Single Tenant Operations
+##############################################################################
+
+# Tenant Inventory Dashboard & Overview
+/tenant/inventory:
   get:
     tags:
       - Inventory Management
@@ -108,8 +424,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Items Management
-/admin/inventory/items:
+# Tenant Inventory Items Management
+/tenant/inventory/items:
   get:
     tags:
       - Inventory Items
@@ -282,7 +598,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/admin/inventory/items/{id}:
+/tenant/inventory/items/{id}:
   get:
     tags:
       - Inventory Items
@@ -398,7 +714,8 @@
       - Inventory Items
     summary: Delete Inventory Item
     description: |
-      Soft delete inventory item. Items with stock or pending movements cannot be deleted.
+      Delete inventory item (soft delete - marks as inactive).
+      Items with transaction history cannot be permanently deleted.
     operationId: deleteInventoryItem
     security:
       - bearerAuth: []
@@ -413,34 +730,42 @@
           type: string
           format: uuid
         description: Inventory item ID
+      - name: force_delete
+        in: query
+        schema:
+          type: boolean
+          default: false
+        description: Permanently delete item (dangerous operation)
     responses:
       '200':
         $ref: '../../components/responses.yaml#/DeletedResponse'
       '400':
-        description: Cannot delete item with existing stock or movements
-        content:
-          application/json:
-            schema:
-              $ref: '../../components/schemas.yaml#/ErrorResponse'
-            examples:
-              has_stock:
-                summary: Deletion blocked - stock present
-                value:
-                  success: false
-                  error:
-                    code: "HAS_STOCK"
-                    message: "Item cannot be deleted because stock exists"
+        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
+      '409':
+        description: Cannot delete item with existing transactions
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+            example:
+              success: false
+              message: "Cannot delete item with existing inventory transactions"
+              error_code: "ITEM_HAS_TRANSACTIONS"
+              details:
+                item_id: "550e8400-e29b-41d4-a716-446655440000"
+                transaction_count: 15
+                last_transaction_date: "2025-01-10T14:30:00Z"
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Locations Management
-/admin/inventory/locations:
+# Tenant Inventory Locations Management
+/tenant/inventory/locations:
   get:
     tags:
       - Inventory Locations
@@ -550,8 +875,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Movements Management
-/admin/inventory/movements:
+# Tenant Inventory Movements Management
+/tenant/inventory/movements:
   get:
     tags:
       - Inventory Movements
@@ -702,7 +1027,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/admin/inventory/movements/{id}/approve:
+/tenant/inventory/movements/{id}/approve:
   post:
     tags:
       - Inventory Movements
@@ -766,8 +1091,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Adjustments Management
-/admin/inventory/adjustments:
+# Tenant Inventory Adjustments Management
+/tenant/inventory/adjustments:
   get:
     tags:
       - Inventory Adjustments
@@ -838,8 +1163,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Alerts Management
-/admin/inventory/alerts:
+# Tenant Inventory Alerts Management
+/tenant/inventory/alerts:
   get:
     tags:
       - Inventory Alerts
@@ -911,7 +1236,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/admin/inventory/alerts/{id}/acknowledge:
+/tenant/inventory/alerts/{id}/acknowledge:
   post:
     tags:
       - Inventory Alerts
@@ -944,8 +1269,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Count Sessions
-/admin/inventory/counts:
+# Tenant Inventory Count Sessions
+/tenant/inventory/counts:
   get:
     tags:
       - Inventory Counts
@@ -1006,8 +1331,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Reservations Management
-/admin/inventory/reservations:
+# Tenant Inventory Reservations Management
+/tenant/inventory/reservations:
   get:
     tags:
       - Inventory Reservations
@@ -1070,13 +1395,14 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/admin/inventory/reconciliation:
+# Tenant Inventory Reconciliation
+/tenant/inventory/reconciliation:
   get:
     tags:
       - Inventory Reconciliation
     summary: List Reconciliation Batches
     description: |
-      Retrieve reconciliation batches, variances, and audit summaries across multi-tenant locations.
+      Retrieve reconciliation batches, variances, and audit summaries.
     operationId: listInventoryReconciliations
     security:
       - bearerAuth: []
@@ -1292,13 +1618,14 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/admin/inventory/analytics:
+# Tenant Inventory Analytics
+/tenant/inventory/analytics:
   get:
     tags:
       - Inventory Analytics
     summary: Inventory Analytics Dashboard
     description: |
-      Provide multi-tenant inventory analytics including aging, turnover, valuation, and SLA compliance metrics.
+      Provide inventory analytics including aging, turnover, valuation, and SLA compliance metrics.
     operationId: getInventoryAnalytics
     security:
       - bearerAuth: []
@@ -1430,15 +1757,21 @@
                       expiring: 3
                   meta:
                     timestamp: '2025-11-18T09:42:00Z'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
 
-# Inventory Suppliers Management
-/admin/inventory/suppliers:
+# Tenant Inventory Suppliers Management  
+/tenant/inventory/suppliers:
   get:
     tags:
       - Inventory Suppliers
     summary: List Item Suppliers
     description: |
-      Retrieve supplier relationships for inventory items including pricing and lead times.
+      Retrieve supplier information for inventory items including performance metrics.
     operationId: listInventorySuppliers
     security:
       - bearerAuth: []
@@ -1452,18 +1785,12 @@
           type: string
           format: uuid
         description: Filter by specific item
-      - name: supplier_id
+      - name: supplier_status
         in: query
         schema:
           type: string
-          format: uuid
-        description: Filter by specific supplier
-      - name: active_only
-        in: query
-        schema:
-          type: boolean
-          default: true
-        description: Show only active supplier relationships
+          enum: [active, inactive, suspended]
+        description: Filter by supplier status
     responses:
       '200':
         description: Suppliers retrieved successfully
@@ -1480,18 +1807,20 @@
                         $ref: '../../components/schemas.yaml#/InventorySupplier'
             examples:
               ok:
-                summary: Item suppliers list
+                summary: Suppliers list
                 value:
                   success: true
                   data:
-                    - supplier_id: "987e8400-e29b-41d4-a716-446655449999"
-                      item_id: "550e8400-e29b-41d4-a716-446655440000"
+                    - id: "550e8400-e29b-41d4-a716-446655440000"
+                      supplier_name: "ABC Metal Suppliers"
+                      lead_time_days: 14
+                      minimum_order_quantity: 100.0
+                      last_supply_price: 50000.00
+                    - id: "123e4567-e89b-12d3-a456-426614174000"
+                      supplier_name: "XYZ Industrial"
                       lead_time_days: 7
-                      is_preferred: true
-                    - supplier_id: "abcde400-e29b-41d4-a716-44665544aaaa"
-                      item_id: "550e8400-e29b-41d4-a716-446655440000"
-                      lead_time_days: 10
-                      is_preferred: false
+                      minimum_order_quantity: 50.0
+                      last_supply_price: 52000.00
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -1501,8 +1830,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Bulk Operations
-/admin/inventory/bulk/stock-update:
+# Tenant Bulk Operations
+/tenant/inventory/bulk/stock-update:
   post:
     tags:
       - Inventory Bulk Operations
@@ -1581,8 +1910,8 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-# Reports & Analytics
-/admin/inventory/reports/low-stock:
+# Tenant Reports & Analytics
+/tenant/inventory/reports/low-stock:
   get:
     tags:
       - Inventory Reports
@@ -1647,7 +1976,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/admin/inventory/reports/valuation:
+/tenant/inventory/reports/valuation:
   get:
     tags:
       - Inventory Reports

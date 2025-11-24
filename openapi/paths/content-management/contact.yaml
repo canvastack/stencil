@@ -1,14 +1,118 @@
+# =============================================================================
+# TENANT CONTACT MANAGEMENT ENDPOINTS
+# =============================================================================
+# These endpoints are for tenant-level contact page management and public access
+
+/tenant/contact:
+  get:
+    tags:
+    - Tenant Contact Management
+    summary: Get Tenant Contact Page Content
+    description: "Retrieve tenant-specific contact page content including hero section, contact information,\
+      \ \ndynamic contact form structure, map location, and quick contact options.\n\
+      \n**Features:**\n- Multi-language content support\n- Dynamic form field configuration\n\
+      - Interactive map with location markers\n- Quick contact integration (WhatsApp,\
+      \ Telegram, etc.)\n- Responsive layout configurations\n- Tenant-scoped content\n"
+    operationId: getTenantContactPage
+    security: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/AcceptLanguage'
+    responses:
+      '200':
+        description: Tenant contact page content retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/ContactPageData'
+            examples:
+              success:
+                summary: Successful tenant contact page retrieval
+                value:
+                  success: true
+                  message: Contact page content retrieved successfully
+                  data:
+                    page:
+                      id: 3
+                      slug: contact
+                      title: Contact Us
+                      metaDescription: Get in touch with our team
+                    hero:
+                      title: Get in Touch
+                      subtitle: We're here to help you succeed
+                      backgroundImage: /images/contact-hero.jpg
+                    contactInfo:
+                      enabled: true
+                      items:
+                      - id: 1
+                        iconName: MapPin
+                        title: Our Address
+                        content: 'Jl. Sudirman No. 123
+
+                          Jakarta Pusat 10250'
+                        displayOrder: 1
+                      - id: 2
+                        iconName: Phone
+                        title: Phone Number
+                        content: +62 21 1234 5678
+                        displayOrder: 2
+                    form:
+                      id: 1
+                      enabled: true
+                      title: Send us a Message
+                      subtitle: Fill out the form below and we'll get back to you
+                      successMessage: Thank you! We will contact you soon.
+                      fields:
+                      - id: 1
+                        fieldName: name
+                        fieldType: text
+                        fieldLabel: Full Name
+                        placeholder: Enter your full name
+                        isRequired: true
+                        validationRules:
+                          minLength: 3
+                          maxLength: 100
+                    map:
+                      enabled: true
+                      latitude: -6.2088
+                      longitude: 106.8456
+                      zoomLevel: 15
+                      markerTitle: Our Jakarta Office
+                    quickContacts:
+                    - id: 1
+                      contactType: whatsapp
+                      contactLabel: Chat via WhatsApp
+                      contactValue: '6281234567890'
+                      iconName: MessageCircle
+                      enabled: true
+                  meta:
+                    tenant: main
+                    timestamp: '2024-01-15T10:30:00Z'
+                    version: '1.0'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Legacy endpoint for backward compatibility (will be deprecated)
 /pages/contact:
   get:
     tags:
-    - Contact Management
-    summary: Get Contact Page Content
-    description: "Retrieve contact page content including hero section, contact information,\
+    - Contact Management (Legacy)
+    summary: "[DEPRECATED] Get Contact Page Content"
+    description: "⚠️ **DEPRECATED**: This endpoint is deprecated. Use `/tenant/contact` instead.\
+      \ \n\nRetrieve contact page content including hero section, contact information,\
       \ \ndynamic contact form structure, map location, and quick contact options.\n\
       \n**Features:**\n- Multi-language content support\n- Dynamic form field configuration\n\
       - Interactive map with location markers\n- Quick contact integration (WhatsApp,\
       \ Telegram, etc.)\n- Responsive layout configurations\n"
-    operationId: getContactPage
+    operationId: getContactPageLegacy
+    deprecated: true
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -93,12 +197,12 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/contact/submit:
+/tenant/contact/submit:
   post:
     tags:
-    - Contact Management
-    summary: Submit Contact Form
-    description: 'Submit contact form data with validation and rate limiting.
+    - Tenant Contact Management
+    summary: Submit Tenant Contact Form
+    description: 'Submit tenant contact form data with validation and rate limiting.
 
 
       **Rate Limiting:** 5 submissions per hour per IP address
@@ -113,8 +217,10 @@
 
       - Submission tracking and analytics
 
+      - Tenant-scoped submissions
+
       '
-    operationId: submitContactForm
+    operationId: submitTenantContactForm
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -153,24 +259,386 @@
         $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/admin/pages/contact:
-  get:
-    tags:
-    - Contact Management
-    summary: Get Contact Page Admin Data
-    description: 'Retrieve contact page configuration data for admin panel management.
 
-      Includes all editable sections and form configurations.
+# Legacy endpoint for backward compatibility (will be deprecated)
+/contact/submit:
+  post:
+    tags:
+    - Contact Management (Legacy)
+    summary: "[DEPRECATED] Submit Contact Form"
+    description: '⚠️ **DEPRECATED**: This endpoint is deprecated. Use `/tenant/contact/submit` instead.
+
+      Submit contact form data with validation and rate limiting.
+
+
+      **Rate Limiting:** 5 submissions per hour per IP address
+
+      **Features:**
+
+      - Dynamic form validation based on field configuration
+
+      - Spam protection with reCAPTCHA integration
+
+      - Automatic email notifications
+
+      - Submission tracking and analytics
 
       '
-    operationId: getContactPageAdmin
+    operationId: submitContactFormLegacy
+    deprecated: true
+    security: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/ContactFormSubmissionInput'
+          examples:
+            general_inquiry:
+              summary: General inquiry form submission
+              value:
+                formData:
+                  name: John Doe
+                  email: john@example.com
+                  phone: +62 812-3456-7890
+                  subject: General Inquiry
+                  message: I would like to know more about your services.
+            product_question:
+              summary: Product-specific question
+              value:
+                formData:
+                  name: Jane Smith
+                  email: jane@company.com
+                  phone: +62 813-9876-5432
+                  subject: Product Question
+                  message: Can you provide more details about your pricing plans?
+                  company: ABC Corporation
+    responses:
+      '201':
+        $ref: '../../components/responses.yaml#/CreatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '429':
+        $ref: '../../components/responses.yaml#/RateLimitExceeded'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+# =============================================================================
+# PLATFORM CONTACT MANAGEMENT ENDPOINTS
+# =============================================================================
+# These endpoints are for platform-level contact management across all tenants
+
+/platform/contact:
+  get:
+    tags:
+    - Platform Contact Management
+    summary: Get Platform Contact Management Overview
+    description: 'Retrieve platform-level contact management overview including global statistics,
+      tenant contact configurations, and system-wide contact metrics.
+
+      **Platform Features:**
+
+      - Global contact statistics across all tenants
+      - Tenant contact configuration monitoring
+      - System-wide contact form analytics
+      - Multi-tenant contact management overview
+
+      '
+    operationId: getPlatformContactOverview
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Platform contact overview retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      overview:
+                        type: object
+                        properties:
+                          totalTenants:
+                            type: integer
+                            description: Total number of tenants with contact forms
+                          totalSubmissions:
+                            type: integer
+                            description: Total submissions across all tenants
+                          activeContactForms:
+                            type: integer
+                            description: Total active contact forms
+                      statistics:
+                        type: object
+                        properties:
+                          submissionsToday:
+                            type: integer
+                          submissionsThisWeek:
+                            type: integer
+                          submissionsThisMonth:
+                            type: integer
+                      topTenants:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tenantId:
+                              type: string
+                            tenantName:
+                              type: string
+                            submissionCount:
+                              type: integer
+            example:
+              success: true
+              data:
+                overview:
+                  totalTenants: 150
+                  totalSubmissions: 12845
+                  activeContactForms: 230
+                statistics:
+                  submissionsToday: 47
+                  submissionsThisWeek: 298
+                  submissionsThisMonth: 1205
+                topTenants:
+                - tenantId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                  tenantName: Main Company
+                  submissionCount: 567
+              message: Platform contact overview retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/platform/contact/tenants:
+  get:
+    tags:
+    - Platform Contact Management
+    summary: List Tenant Contact Configurations
+    description: 'Retrieve list of all tenant contact configurations for platform management.
+
+      **Platform Features:**
+
+      - View all tenant contact configurations
+      - Monitor contact form usage across tenants
+      - Access tenant-specific contact statistics
+      - Manage global contact policies
+
+      '
+    operationId: listTenantContactConfigurations
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: status
+      in: query
+      description: Filter by contact form status
+      schema:
+        type: string
+        enum:
+        - active
+        - inactive
+        - pending
+      example: active
+    responses:
+      '200':
+        description: Tenant contact configurations retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tenantId:
+                          type: string
+                        tenantName:
+                          type: string
+                        contactEnabled:
+                          type: boolean
+                        formCount:
+                          type: integer
+                        submissionCount:
+                          type: integer
+                        lastSubmission:
+                          type: string
+                          format: date-time
+                        status:
+                          type: string
+                          enum: [active, inactive, pending]
+                  meta:
+                    $ref: '../../components/schemas.yaml#/PaginationMeta'
+            examples:
+              success:
+                summary: Platform tenant contact list
+                value:
+                  success: true
+                  message: Tenant contact configurations retrieved successfully
+                  data:
+                  - tenantId: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    tenantName: Main Company
+                    contactEnabled: true
+                    formCount: 2
+                    submissionCount: 567
+                    lastSubmission: '2024-01-15T14:30:00Z'
+                    status: active
+                  - tenantId: 7cb8c920-a3ee-22e5-b827-11d4e4e550d9
+                    tenantName: Secondary Corp
+                    contactEnabled: true
+                    formCount: 1
+                    submissionCount: 234
+                    lastSubmission: '2024-01-14T09:15:00Z'
+                    status: active
+                  meta:
+                    pagination:
+                      page: 1
+                      perPage: 20
+                      total: 150
+                      totalPages: 8
+                    timestamp: '2024-01-15T15:00:00Z'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/platform/contact/tenants/{tenantId}:
+  get:
+    tags:
+    - Platform Contact Management
+    summary: Get Specific Tenant Contact Configuration
+    description: 'Retrieve detailed contact configuration for a specific tenant from platform level.
+
+      **Platform Features:**
+
+      - View complete tenant contact setup
+      - Monitor tenant contact form performance
+      - Access tenant contact submission analytics
+      - Manage tenant-specific contact policies
+
+      '
+    operationId: getTenantContactConfiguration
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: tenantId
+      in: path
+      required: true
+      description: Unique identifier of the tenant
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    responses:
+      '200':
+        description: Tenant contact configuration retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/ContactPageData'
+                    - type: object
+                      properties:
+                        tenant:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            status:
+                              type: string
+                        analytics:
+                          type: object
+                          properties:
+                            totalSubmissions:
+                              type: integer
+                            submissionsThisMonth:
+                              type: integer
+                            averageResponseTime:
+                              type: number
+                              description: Average response time in hours
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Contact Us - Main Company
+                tenant:
+                  id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                  name: Main Company
+                  status: active
+                analytics:
+                  totalSubmissions: 567
+                  submissionsThisMonth: 89
+                  averageResponseTime: 4.2
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Tenant contact configuration retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# =============================================================================
+# TENANT CONTACT ADMIN ENDPOINTS
+# =============================================================================
+# These endpoints are for tenant-level contact administration
+
+/tenant/contact/admin:
+  get:
+    tags:
+    - Tenant Contact Management
+    summary: Get Tenant Contact Admin Data
+    description: 'Retrieve tenant contact page configuration data for tenant admin panel management.
+
+      Includes all editable sections and form configurations scoped to the tenant.
+
+      **Tenant Admin Features:**
+
+      - Manage tenant-specific contact page content
+      - Configure contact forms and fields
+      - View tenant contact submission analytics
+      - Customize contact page appearance
+
+      '
+    operationId: getTenantContactPageAdmin
     security:
     - bearerAuth: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
-        description: Contact page admin data retrieved successfully
+        description: Tenant contact page admin data retrieved successfully
         content:
           application/json:
             schema:
@@ -200,26 +668,22 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - Contact Management
-    summary: Update Contact Page Configuration
-    description: 'Update all contact page sections including hero, contact info, form
-      fields,
-
-      map settings, and quick contact options.
+    - Tenant Contact Management
+    summary: Update Tenant Contact Page Configuration
+    description: 'Update all tenant contact page sections including hero, contact info, form
+      fields, map settings, and quick contact options.
 
 
-      **Admin Features:**
+      **Tenant Admin Features:**
 
       - Bulk update of all page sections
-
       - Form field management (add/edit/remove)
-
       - Map configuration with location settings
-
       - Quick contact channel management
+      - Tenant-scoped configuration updates
 
       '
-    operationId: updateContactPage
+    operationId: updateTenantContactPage
     security:
     - bearerAuth: []
     parameters:
@@ -232,7 +696,7 @@
             $ref: '../../components/schemas.yaml#/ContactPageUpdateInput'
           examples:
             full_update:
-              summary: Complete page configuration update
+              summary: Complete tenant page configuration update
               value:
                 hero:
                   title: Get in Touch with Us
@@ -288,17 +752,87 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
+/tenant/contact/forms:
+  get:
+    tags:
+    - Tenant Contact Management
+    summary: List Tenant Contact Form Configurations
+    description: 'Retrieve all tenant-scoped contact form configurations including field definitions,
+
+      validation rules, and form settings.
+
+      **Tenant Admin Features:**
+
+      - View all tenant contact form configurations
+      - Manage tenant-specific form fields
+      - Configure tenant form validation rules
+      - Access tenant form analytics
+
+      '
+    operationId: listTenantContactForms
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Tenant contact forms retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/ContactForm'
+            examples:
+              success:
+                summary: List of tenant contact forms
+                value:
+                  success: true
+                  message: Contact forms retrieved successfully
+                  data:
+                  - id: 1
+                    enabled: true
+                    title: General Contact Form
+                    subtitle: Get in touch with us
+                    successMessage: Thank you for your message!
+                    fields:
+                    - id: 1
+                      fieldName: name
+                      fieldType: text
+                      fieldLabel: Full Name
+                      isRequired: true
+                    - id: 2
+                      fieldName: email
+                      fieldType: email
+                      fieldLabel: Email Address
+                      isRequired: true
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Legacy endpoint for backward compatibility (will be deprecated)
 /admin/contact/forms:
   get:
     tags:
-    - Contact Management
-    summary: List Contact Form Configurations
-    description: 'Retrieve all contact form configurations including field definitions,
+    - Contact Management (Legacy)
+    summary: "[DEPRECATED] List Contact Form Configurations"
+    description: '⚠️ **DEPRECATED**: This endpoint is deprecated. Use `/tenant/contact/forms` instead.
+
+      Retrieve all contact form configurations including field definitions,
 
       validation rules, and form settings.
 
       '
-    operationId: listContactForms
+    operationId: listContactFormsLegacy
+    deprecated: true
     security:
     - bearerAuth: []
     parameters:
@@ -346,12 +880,327 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
+# =============================================================================
+# PLATFORM CONTACT SUBMISSIONS ENDPOINTS
+# =============================================================================
+# These endpoints are for platform-level contact submission management
+
+/platform/contact/submissions:
+  get:
+    tags:
+    - Platform Contact Management
+    summary: List All Platform Contact Submissions
+    description: 'Retrieve contact form submissions from all tenants with filtering, sorting, and pagination.
+
+      Includes cross-tenant submission management and global analytics.
+
+
+      **Platform Features:**
+
+      - View submissions from all tenants
+      - Filter by tenant, status, date range
+      - Global submission analytics
+      - Cross-tenant submission trends
+      - Platform-level response monitoring
+
+      '
+    operationId: listPlatformContactSubmissions
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: tenant_id
+      in: query
+      description: Filter by specific tenant ID
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    - name: status
+      in: query
+      description: Filter by submission status
+      schema:
+        type: string
+        enum:
+        - new
+        - read
+        - replied
+        - archived
+      example: new
+    - name: form_id
+      in: query
+      description: Filter by specific form ID
+      schema:
+        type: integer
+      example: 1
+    - name: date_from
+      in: query
+      description: Filter submissions from this date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-01'
+    - name: date_to
+      in: query
+      description: Filter submissions until this date
+      schema:
+        type: string
+        format: date
+      example: '2024-12-31'
+    - name: search
+      in: query
+      description: Search in submission content
+      schema:
+        type: string
+        maxLength: 255
+      example: product inquiry
+    responses:
+      '200':
+        description: Platform contact submissions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '../../components/schemas.yaml#/ContactSubmission'
+                      - type: object
+                        properties:
+                          tenant:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              name:
+                                type: string
+                  meta:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/PaginationMeta'
+                    - type: object
+                      properties:
+                        filters:
+                          type: object
+                          properties:
+                            global_status_counts:
+                              type: object
+                              properties:
+                                new:
+                                  type: integer
+                                read:
+                                  type: integer
+                                replied:
+                                  type: integer
+                                archived:
+                                  type: integer
+                            tenant_counts:
+                              type: object
+                              properties:
+                                total_tenants:
+                                  type: integer
+                                active_tenants:
+                                  type: integer
+            examples:
+              success:
+                summary: Platform submissions list
+                value:
+                  success: true
+                  message: Platform contact submissions retrieved successfully
+                  data:
+                  - id: 123
+                    formId: 1
+                    submissionData:
+                      name: John Doe
+                      email: john@example.com
+                      subject: Product Inquiry
+                      message: I need more information about your services
+                    status: new
+                    submitterIp: 192.168.1.100
+                    tenant:
+                      id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                      name: Main Company
+                    createdAt: '2024-01-15T14:30:00Z'
+                    updatedAt: '2024-01-15T14:30:00Z'
+                  meta:
+                    pagination:
+                      page: 1
+                      perPage: 20
+                      total: 2356
+                      totalPages: 118
+                    filters:
+                      global_status_counts:
+                        new: 445
+                        read: 967
+                        replied: 732
+                        archived: 212
+                      tenant_counts:
+                        total_tenants: 150
+                        active_tenants: 142
+                    timestamp: '2024-01-15T15:00:00Z'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# =============================================================================
+# TENANT CONTACT SUBMISSIONS ENDPOINTS
+# =============================================================================
+
+/tenant/contact/submissions:
+  get:
+    tags:
+    - Tenant Contact Management
+    summary: List Tenant Contact Form Submissions
+    description: 'Retrieve tenant contact form submissions with filtering, sorting, and pagination.
+
+      Includes tenant submission management and status tracking.
+
+
+      **Tenant Admin Features:**
+
+      - Filter by status, date range, and form type
+      - Search submissions by content
+      - Export submissions to CSV/Excel
+      - Bulk status updates
+      - Tenant-scoped submissions only
+
+      '
+    operationId: listTenantContactSubmissions
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: status
+      in: query
+      description: Filter by submission status
+      schema:
+        type: string
+        enum:
+        - new
+        - read
+        - replied
+        - archived
+      example: new
+    - name: form_id
+      in: query
+      description: Filter by specific form ID
+      schema:
+        type: integer
+      example: 1
+    - name: date_from
+      in: query
+      description: Filter submissions from this date
+      schema:
+        type: string
+        format: date
+      example: '2024-01-01'
+    - name: date_to
+      in: query
+      description: Filter submissions until this date
+      schema:
+        type: string
+        format: date
+      example: '2024-12-31'
+    - name: search
+      in: query
+      description: Search in submission content
+      schema:
+        type: string
+        maxLength: 255
+      example: product inquiry
+    responses:
+      '200':
+        description: Tenant contact submissions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/ContactSubmission'
+                  meta:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/PaginationMeta'
+                    - type: object
+                      properties:
+                        filters:
+                          type: object
+                          properties:
+                            status_counts:
+                              type: object
+                              properties:
+                                new:
+                                  type: integer
+                                read:
+                                  type: integer
+                                replied:
+                                  type: integer
+                                archived:
+                                  type: integer
+            examples:
+              success:
+                summary: Paginated tenant submissions list
+                value:
+                  success: true
+                  message: Tenant contact submissions retrieved successfully
+                  data:
+                  - id: 123
+                    formId: 1
+                    submissionData:
+                      name: John Doe
+                      email: john@example.com
+                      subject: Product Inquiry
+                      message: I need more information about your services
+                    status: new
+                    submitterIp: 192.168.1.100
+                    createdAt: '2024-01-15T14:30:00Z'
+                    updatedAt: '2024-01-15T14:30:00Z'
+                  meta:
+                    pagination:
+                      page: 1
+                      perPage: 20
+                      total: 156
+                      totalPages: 8
+                    filters:
+                      status_counts:
+                        new: 45
+                        read: 67
+                        replied: 32
+                        archived: 12
+                    tenant: main
+                    timestamp: '2024-01-15T15:00:00Z'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Legacy endpoint for backward compatibility (will be deprecated)
 /admin/contact/submissions:
   get:
     tags:
-    - Contact Management
-    summary: List Contact Form Submissions
-    description: 'Retrieve contact form submissions with filtering, sorting, and pagination.
+    - Contact Management (Legacy)
+    summary: "[DEPRECATED] List Contact Form Submissions"
+    description: '⚠️ **DEPRECATED**: This endpoint is deprecated. Use `/tenant/contact/submissions` instead.
+
+      Retrieve contact form submissions with filtering, sorting, and pagination.
 
       Includes submission management and status tracking.
 
@@ -359,15 +1208,13 @@
       **Admin Features:**
 
       - Filter by status, date range, and form type
-
       - Search submissions by content
-
       - Export submissions to CSV/Excel
-
       - Bulk status updates
 
       '
-    operationId: listContactSubmissions
+    operationId: listContactSubmissionsLegacy
+    deprecated: true
     security:
     - bearerAuth: []
     parameters:
@@ -484,13 +1331,217 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
+# Platform individual submission endpoints
+/platform/contact/submissions/{submissionId}:
+  get:
+    tags:
+    - Platform Contact Management
+    summary: Get Platform Contact Submission Details
+    description: 'Retrieve detailed information about a specific contact form submission from platform level.
+      
+      **Platform Features:**
+      
+      - View submission from any tenant
+      - Access complete submission history
+      - View tenant context information
+      - Monitor response tracking across tenants
+      
+      '
+    operationId: getPlatformContactSubmission
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: submissionId
+      in: path
+      required: true
+      description: Unique identifier of the submission
+      schema:
+        type: integer
+        minimum: 1
+      example: 123
+    responses:
+      '200':
+        description: Platform contact submission retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/ContactSubmission'
+                    - type: object
+                      properties:
+                        tenant:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                            status:
+                              type: string
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Contact Title
+                tenant:
+                  id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                  name: Main Company
+                  status: active
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Contact submission retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Tenant individual submission endpoints
+/tenant/contact/submissions/{submissionId}:
+  get:
+    tags:
+    - Tenant Contact Management
+    summary: Get Tenant Contact Submission Details
+    description: 'Retrieve detailed information about a specific tenant contact form submission.
+      
+      **Tenant Admin Features:**
+      
+      - View tenant-scoped submission details
+      - Access submission history and responses
+      - Manage submission status and replies
+      - Track tenant-specific metrics
+      
+      '
+    operationId: getTenantContactSubmission
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: submissionId
+      in: path
+      required: true
+      description: Unique identifier of the submission
+      schema:
+        type: integer
+        minimum: 1
+      example: 123
+    responses:
+      '200':
+        description: Tenant contact submission retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/ContactSubmission'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Sample Contact Title
+                created_at: '2025-11-13T18:58:00Z'
+                updated_at: '2025-11-13T18:58:00Z'
+              message: Contact retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  patch:
+    tags:
+    - Tenant Contact Management
+    summary: Update Tenant Contact Submission Status
+    description: 'Update the status of a tenant contact form submission and optionally add
+      a reply message.
+
+      Used for tenant submission management and tracking follow-up actions.
+      
+      **Tenant Admin Features:**
+      
+      - Update submission status (new, read, replied, archived)
+      - Add reply messages and notes
+      - Track response times and resolution
+      - Tenant-scoped submission management
+
+      '
+    operationId: updateTenantContactSubmissionStatus
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: submissionId
+      in: path
+      required: true
+      description: Unique identifier of the submission
+      schema:
+        type: integer
+        minimum: 1
+      example: 123
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/ContactSubmissionUpdateInput'
+          examples:
+            mark_replied:
+              summary: Mark as replied with message
+              value:
+                status: replied
+                replyMessage: Thank you for your inquiry. We have sent detailed information
+                  to your email.
+            mark_archived:
+              summary: Archive the submission
+              value:
+                status: archived
+    responses:
+      '200':
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Legacy endpoint for backward compatibility (will be deprecated)
 /admin/contact/submissions/{submissionId}:
   get:
     tags:
-    - Contact Management
-    summary: Get Contact Submission Details
-    description: Retrieve detailed information about a specific contact form submission
-    operationId: getContactSubmission
+    - Contact Management (Legacy)
+    summary: "[DEPRECATED] Get Contact Submission Details"
+    description: '⚠️ **DEPRECATED**: This endpoint is deprecated. Use `/tenant/contact/submissions/{submissionId}` instead.
+    
+      Retrieve detailed information about a specific contact form submission'
+    operationId: getContactSubmissionLegacy
+    deprecated: true
     security:
     - bearerAuth: []
     parameters:
@@ -537,15 +1588,18 @@
         $ref: '../../components/responses.yaml#/ServerError'
   patch:
     tags:
-    - Contact Management
-    summary: Update Contact Submission Status
-    description: 'Update the status of a contact form submission and optionally add
+    - Contact Management (Legacy)
+    summary: "[DEPRECATED] Update Contact Submission Status"
+    description: '⚠️ **DEPRECATED**: This endpoint is deprecated. Use `/tenant/contact/submissions/{submissionId}` instead.
+    
+      Update the status of a contact form submission and optionally add
       a reply message.
 
       Used for submission management and tracking follow-up actions.
 
       '
-    operationId: updateContactSubmissionStatus
+    operationId: updateContactSubmissionStatusLegacy
+    deprecated: true
     security:
     - bearerAuth: []
     parameters:

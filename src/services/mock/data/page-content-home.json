@@ -7,12 +7,11 @@
         "static": "Presisi Artistik, Kualitas Teruji",
         "typing": [
           "Presisi Artistik, Kualitas Teruji",
-          "Solusi Cetak Terbaik untuk Anda",
-          "Teknologi Modern, Hasil Sempurna",
-          "Wujudkan Desain Impian Anda"
+          "Partner Terpercaya, Solusi Bisnis Anda",
+          "Hasil Memuaskan, Sesuai Ekspektasi Anda"
         ]
       },
-      "subtitle": "Teknologi laser etching terkini untuk hasil detail sempurna. Layanan profesional, cepat, dan berkualitas tinggi untuk kebutuhan bisnis dan personal Anda.",
+      "subtitle": "Layanan profesional, cepat, dan berkualitas tinggi untuk kebutuhan bisnis dan personal Anda.",
       "carousel": {
         "images": [
           "/images/hero/etching-1.jpg",
@@ -37,8 +36,8 @@
     },
     "socialProof": {
       "enabled": true,
-      "title": "Dipercaya oleh Para Profesional dan Kreator",
-      "subtitle": "Lebih dari 2000+ proyek telah diselesaikan dengan kepuasan klien mencapai 99%",
+      "title": "Partner yang diandalkan oleh para mitra bisnis",
+      "subtitle": "Lebih dari 2000+ proyek telah diselesaikan dengan menjaga kepuasan mitra bisnis kami",
       "stats": [
         {
           "icon": "Users",
@@ -60,16 +59,16 @@
         },
         {
           "icon": "CheckCircle2",
-          "value": "99%",
-          "label": "Tingkat Presisi",
+          "value": "15+",
+          "label": "Jangkauan Layanan di berbagai daerah",
           "color": "text-primary"
         }
       ]
     },
     "process": {
       "enabled": true,
-      "title": "Proses Kerja yang Transparan dan Efisien",
-      "subtitle": "Dari konsultasi awal hingga pengiriman, lacak setiap progres pesanan Anda dengan mudah",
+      "title": "Proses kerja yang teliti dan efisien",
+      "subtitle": "Dari konsultasi, pengerjaan produk hingga pengiriman, mengutamakan kualitas dan kepuasan mitra bisnis",
       "steps": [
         {
           "icon": "MessageSquare",
@@ -79,12 +78,12 @@
         {
           "icon": "Zap",
           "title": "Produksi Presisi",
-          "description": "Proses etching diawasi ketat untuk kualitas terbaik"
+          "description": "Proses etching dilakukan secara teliti untuk kualitas terbaik"
         },
         {
           "icon": "ClipboardCheck",
           "title": "Quality Control",
-          "description": "Pemeriksaan kualitas berlapis sebelum dikirim"
+          "description": "Pemeriksaan kualitas produk sesuai dengan barang pesanan"
         },
         {
           "icon": "Package",
@@ -109,23 +108,23 @@
     "whyChooseUs": {
       "enabled": true,
       "title": "Mengapa Memilih Layanan Etching Kami?",
-      "subtitle": "Komitmen kami untuk memberikan layanan terbaik dengan teknologi canggih",
+      "subtitle": "Komitmen kami untuk memberikan layanan terbaik dengan mengutamakan kepuasan mitra bisnis",
       "items": [
         {
           "icon": "Zap",
-          "title": "Teknologi Canggih",
-          "description": "Menggunakan mesin laser dan CNC terbaru untuk hasil etching dengan detail dan presisi tak tertandingi.",
+          "title": "Presisi",
+          "description": "Presisi menjadi fondasi utama dalam setiap proses etching yang kami lakukan.",
           "color": "orange"
         },
         {
           "icon": "Layers",
           "title": "Material Berkualitas",
-          "description": "Pilihan material premium mulai dari stainless steel, kuningan, hingga akrilik dan kaca berkualitas tinggi.",
+          "description": "Pilihan material premium mulai dari stainless steel, kuningan, hingga akrilik berkualitas tinggi.",
           "color": "blue"
         },
         {
           "icon": "Palette",
-          "title": "Kustomisasi Tanpa Batas",
+          "title": "Kustomisasi Produk",
           "description": "Tim desainer kami siap membantu mewujudkan ide kustom Anda, dari konsep hingga produk jadi.",
           "color": "purple"
         }
@@ -152,11 +151,11 @@
     "services": {
       "enabled": true,
       "title": "Layanan Unggulan Kami",
-      "subtitle": "Menghadirkan berbagai layanan etching berkualitas tinggi untuk kebutuhan personal dan industri",
+      "subtitle": "Memberikan berbagai layanan etching berkualitas tinggi untuk kebutuhan personal dan industri",
       "items": [
         {
           "icon": "Package",
-          "title": "Etching Industri",
+          "title": "Etching Product",
           "description": "Layanan etching presisi tinggi untuk komponen industri dan manufaktur"
         },
         {
@@ -165,24 +164,24 @@
           "description": "Desain dan produksi plakat penghargaan dengan detail menakjubkan"
         },
         {
-          "icon": "Shield",
-          "title": "Label Keamanan",
-          "description": "Label dan segel keamanan dengan fitur anti-pemalsuan"
-        },
-        {
-          "icon": "Palette",
-          "title": "Etching Dekoratif",
-          "description": "Sentuhan artistik untuk dekorasi interior dan eksterior"
-        },
-        {
-          "icon": "Layers",
-          "title": "PCB Prototyping",
-          "description": "Layanan prototyping PCB dengan ketepatan tinggi"
-        },
-        {
           "icon": "MessageSquare",
           "title": "Konsultasi Desain",
           "description": "Bantuan profesional untuk mewujudkan desain impian Anda"
+        },
+        {
+          "icon": "Shield",
+          "title": "Kualitas Produk",
+          "description": "Memastikan aspek pengerjaannya memenuhi standar kepuasan mitra bisnis"
+        },
+        {
+          "icon": "Palette",
+          "title": "Terpercaya & Diandalkan",
+          "description": "Komitmen kami untuk memberikan kualitas produk yang sesuai untuk menjaga relasi bisnis yang berkelanjutan"
+        },
+        {
+          "icon": "Layers",
+          "title": "Jangkauan Layanan",
+          "description": "Menyediakan layanan pengiriman ke berbagai daerah"
         }
       ]
     },

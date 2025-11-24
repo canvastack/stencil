@@ -1,10 +1,226 @@
-/about/hero:
+# ==========================================
+# PLATFORM ENDPOINTS - Multi-tenant management
+# ==========================================
+
+# Platform About Hero Template Management
+/platform/about/hero-templates:
   get:
     tags:
-    - About Us
-    summary: Get About hero sections
-    description: Retrieve all About hero sections for the current tenant with pagination
-      and filtering
+    - Platform About Management
+    summary: Get platform about hero templates
+    description: Retrieve all about hero templates available for tenants with pagination and filtering
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: template_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - default
+        - premium
+        - custom
+      description: Filter by template type
+    - name: is_active
+      in: query
+      schema:
+        type: boolean
+      description: Filter by active status
+    responses:
+      '200':
+        description: Platform about hero templates retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../schemas/content-management/about.yaml#/AboutHeroTemplate'
+            example:
+              success: true
+              data:
+                - id: 550e8400-e29b-41d4-a716-446655440000
+                  template_name: Modern Corporate Hero
+                  template_type: premium
+                  created_at: '2025-11-13T18:58:00Z'
+                  updated_at: '2025-11-13T18:58:00Z'
+              message: Platform hero templates retrieved successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Platform About Management
+    summary: Create platform about hero template
+    description: Create a new about hero template for tenants
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - template_name
+            - layout_config
+            properties:
+              template_name:
+                type: string
+                maxLength: 255
+                example: Corporate Hero Template
+              template_type:
+                type: string
+                enum:
+                - default
+                - premium
+                - custom
+                default: default
+              layout_config:
+                type: object
+                description: Template layout configuration
+              preview_image_url:
+                type: string
+                format: uri
+                nullable: true
+              is_active:
+                type: boolean
+                default: true
+          example:
+            template_name: New Corporate Hero
+            template_type: premium
+            layout_config: {}
+            is_active: true
+    responses:
+      '201':
+        description: Platform about hero template created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/content-management/about.yaml#/AboutHeroTemplate'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                template_name: New Corporate Hero
+                created_at: '2025-11-13T18:58:00Z'
+              message: Platform hero template created successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Platform About Company Template Management
+/platform/about/company-templates:
+  get:
+    tags:
+    - Platform About Management
+    summary: Get platform company profile templates
+    description: Retrieve all company profile templates for tenants
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - name: template_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - startup
+        - corporate
+        - creative
+        - industrial
+      description: Filter by template type
+    responses:
+      '200':
+        description: Platform company profile templates retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../schemas/content-management/about.yaml#/CompanyProfileTemplate'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# Platform Global About Settings
+/platform/about/global-settings:
+  get:
+    tags:
+    - Platform About Management
+    summary: Get platform about global settings
+    description: Retrieve global about page settings and configurations
+    security:
+    - bearerAuth: []
+    responses:
+      '200':
+        description: Platform about global settings retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../schemas/content-management/about.yaml#/GlobalAboutSettings'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ==========================================  
+# TENANT ENDPOINTS - Tenant-specific content
+# ==========================================
+
+# Tenant About Hero Management
+/tenant/about/hero:
+  get:
+    tags:
+    - Tenant About Management
+    summary: Get tenant about hero sections
+    description: Retrieve all about hero sections for the current tenant with pagination and filtering
     security:
     - bearerAuth: []
     parameters:
@@ -25,7 +241,7 @@
       description: Filter by active status
     responses:
       '200':
-        description: About hero sections retrieved successfully
+        description: Tenant about hero sections retrieved successfully
         content:
           application/json:
             schema:
@@ -45,7 +261,7 @@
                 title: Sample About Title
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
+              message: Tenant about hero sections retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
@@ -59,9 +275,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - About Us
-    summary: Create About hero section
-    description: Create a new About hero section
+    - Tenant About Management
+    summary: Create tenant about hero section
+    description: Create a new about hero section for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -144,7 +360,7 @@
             is_active: true
     responses:
       '201':
-        description: About hero section created successfully
+        description: Tenant about hero section created successfully
         content:
           application/json:
             schema:
@@ -160,7 +376,7 @@
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
                 created_at: '2025-11-13T18:58:00Z'
-              message: About created successfully
+              message: Tenant about hero section created successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -173,12 +389,14 @@
         $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/hero/{id}:
+
+# Tenant About Hero by ID
+/tenant/about/hero/{id}:
   get:
     tags:
-    - About Us
-    summary: Get specific About hero section
-    description: Retrieve a specific About hero section by ID
+    - Tenant About Management
+    summary: Get specific tenant about hero section
+    description: Retrieve a specific about hero section by ID for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -198,7 +416,7 @@
       description: Include version history
     responses:
       '200':
-        description: About hero section retrieved successfully
+        description: Tenant about hero section retrieved successfully
         content:
           application/json:
             schema:
@@ -216,7 +434,7 @@
                 title: Sample About Title
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
+              message: Tenant about hero section retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
@@ -230,9 +448,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - About Us
-    summary: Update About hero section
-    description: Update an existing About hero section
+    - Tenant About Management
+    summary: Update tenant about hero section
+    description: Update an existing about hero section for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -308,7 +526,7 @@
             is_active: true
     responses:
       '200':
-        description: About hero section updated successfully
+        description: Tenant about hero section updated successfully
         content:
           application/json:
             schema:
@@ -323,7 +541,7 @@
               data:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: About puted successfully
+              message: Tenant about hero section updated successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -338,9 +556,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - About Us
-    summary: Delete About hero section
-    description: Soft delete an About hero section
+    - Tenant About Management
+    summary: Delete tenant about hero section
+    description: Soft delete an about hero section for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -354,7 +572,7 @@
       description: About hero section ID
     responses:
       '204':
-        description: About hero section deleted successfully
+        description: Tenant about hero section deleted successfully
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -363,12 +581,14 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/company:
+
+# Tenant About Company Management
+/tenant/about/company:
   get:
     tags:
-    - About Us
-    summary: Get company profiles
-    description: Retrieve company profile information
+    - Tenant About Management
+    summary: Get tenant company profiles
+    description: Retrieve company profile information for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -383,7 +603,7 @@
       description: Filter by specific page ID
     responses:
       '200':
-        description: Company profiles retrieved successfully
+        description: Tenant company profiles retrieved successfully
         content:
           application/json:
             schema:
@@ -400,10 +620,10 @@
               data:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
+                company_name: Sample Company
                 created_at: '2025-11-13T18:58:00Z'
                 updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
+              message: Tenant company profiles retrieved successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
@@ -417,9 +637,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - About Us
-    summary: Create company profile
-    description: Create a new company profile
+    - Tenant About Management
+    summary: Create tenant company profile
+    description: Create a new company profile for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -432,117 +652,61 @@
             type: object
             required:
             - page_id
+            - company_name
             properties:
               page_id:
                 type: string
                 format: uuid
+                description: Reference to the About page
+              company_name:
+                type: string
+                maxLength: 255
+                example: Custom Etching Xenial
+              company_tagline:
+                type: string
+                maxLength: 500
+                nullable: true
               founded_year:
                 type: integer
                 minimum: 1800
                 maximum: 2025
                 nullable: true
-              location:
+              headquarters:
                 type: string
                 maxLength: 255
                 nullable: true
-              company_size:
+              employee_count:
                 type: string
                 enum:
-                - startup
-                - small
-                - medium
-                - large
-                - enterprise
+                - "1-10"
+                - "11-50"
+                - "51-200"
+                - "201-500"
+                - "501-1000"
+                - "1000+"
                 nullable: true
-              industry:
+              company_description:
                 type: string
-                maxLength: 100
-                nullable: true
-              website_url:
-                type: string
-                format: uri
-                nullable: true
-              phone:
-                type: string
-                maxLength: 50
-                nullable: true
-              email:
-                type: string
-                format: email
-                nullable: true
-              address_line1:
-                type: string
-                maxLength: 255
-                nullable: true
-              address_line2:
-                type: string
-                maxLength: 255
-                nullable: true
-              city:
-                type: string
-                maxLength: 100
-                nullable: true
-              state_province:
-                type: string
-                maxLength: 100
-                nullable: true
-              postal_code:
-                type: string
-                maxLength: 20
-                nullable: true
-              country:
-                type: string
-                maxLength: 100
-                nullable: true
-              registration_number:
-                type: string
-                maxLength: 100
-                nullable: true
-              tax_id:
-                type: string
-                maxLength: 100
-                nullable: true
-              linkedin_url:
-                type: string
-                format: uri
-                nullable: true
-              twitter_url:
-                type: string
-                format: uri
-                nullable: true
-              facebook_url:
-                type: string
-                format: uri
-                nullable: true
-              instagram_url:
-                type: string
-                format: uri
-                nullable: true
-              youtube_url:
-                type: string
-                format: uri
                 nullable: true
               logo_url:
                 type: string
                 format: uri
                 nullable: true
-              logo_alt_text:
+              website_url:
                 type: string
-                maxLength: 255
+                format: uri
                 nullable: true
-              metadata:
-                type: object
-                additionalProperties: true
               is_active:
                 type: boolean
                 default: true
           example:
-            title: New About Title
-            description: Sample description for about
-            is_active: true
+            page_id: 550e8400-e29b-41d4-a716-446655440000
+            company_name: Custom Etching Xenial
+            company_tagline: Leading innovation in etching industry
+            founded_year: 2015
     responses:
       '201':
-        description: Company profile created successfully
+        description: Tenant company profile created successfully
         content:
           application/json:
             schema:
@@ -552,15 +716,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                created_at: '2025-11-13T18:58:00Z'
-              message: About created successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -571,12 +726,14 @@
         $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/company/{id}:
+
+# Tenant About Company by ID
+/tenant/about/company/{id}:
   get:
     tags:
-    - About Us
-    summary: Get specific company profile
-    description: Retrieve a specific company profile by ID
+    - Tenant About Management
+    summary: Get specific tenant company profile
+    description: Retrieve a specific company profile by ID for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -590,7 +747,7 @@
       description: Company profile ID
     responses:
       '200':
-        description: Company profile retrieved successfully
+        description: Tenant company profile retrieved successfully
         content:
           application/json:
             schema:
@@ -600,18 +757,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -622,9 +767,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - About Us
-    summary: Update company profile
-    description: Update an existing company profile
+    - Tenant About Management
+    summary: Update tenant company profile
+    description: Update an existing company profile for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -643,112 +788,48 @@
           schema:
             type: object
             properties:
+              company_name:
+                type: string
+                maxLength: 255
+              company_tagline:
+                type: string
+                maxLength: 500
+                nullable: true
               founded_year:
                 type: integer
                 minimum: 1800
                 maximum: 2025
                 nullable: true
-              location:
+              headquarters:
                 type: string
                 maxLength: 255
                 nullable: true
-              company_size:
+              employee_count:
                 type: string
                 enum:
-                - startup
-                - small
-                - medium
-                - large
-                - enterprise
+                - "1-10"
+                - "11-50"
+                - "51-200"
+                - "201-500"
+                - "501-1000"
+                - "1000+"
                 nullable: true
-              industry:
+              company_description:
                 type: string
-                maxLength: 100
-                nullable: true
-              website_url:
-                type: string
-                format: uri
-                nullable: true
-              phone:
-                type: string
-                maxLength: 50
-                nullable: true
-              email:
-                type: string
-                format: email
-                nullable: true
-              address_line1:
-                type: string
-                maxLength: 255
-                nullable: true
-              address_line2:
-                type: string
-                maxLength: 255
-                nullable: true
-              city:
-                type: string
-                maxLength: 100
-                nullable: true
-              state_province:
-                type: string
-                maxLength: 100
-                nullable: true
-              postal_code:
-                type: string
-                maxLength: 20
-                nullable: true
-              country:
-                type: string
-                maxLength: 100
-                nullable: true
-              registration_number:
-                type: string
-                maxLength: 100
-                nullable: true
-              tax_id:
-                type: string
-                maxLength: 100
-                nullable: true
-              linkedin_url:
-                type: string
-                format: uri
-                nullable: true
-              twitter_url:
-                type: string
-                format: uri
-                nullable: true
-              facebook_url:
-                type: string
-                format: uri
-                nullable: true
-              instagram_url:
-                type: string
-                format: uri
-                nullable: true
-              youtube_url:
-                type: string
-                format: uri
                 nullable: true
               logo_url:
                 type: string
                 format: uri
                 nullable: true
-              logo_alt_text:
+              website_url:
                 type: string
-                maxLength: 255
+                format: uri
                 nullable: true
-              metadata:
-                type: object
-                additionalProperties: true
               is_active:
                 type: boolean
-          example:
-            title: Updated About Title
-            description: Updated description for about
-            is_active: true
     responses:
       '200':
-        description: Company profile updated successfully
+        description: Tenant company profile updated successfully
         content:
           application/json:
             schema:
@@ -758,14 +839,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/CompanyProfile'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: About puted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '404':
@@ -778,9 +851,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - About Us
-    summary: Delete company profile
-    description: Soft delete a company profile
+    - Tenant About Management
+    summary: Delete tenant company profile
+    description: Soft delete a company profile for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -794,7 +867,7 @@
       description: Company profile ID
     responses:
       '204':
-        description: Company profile deleted successfully
+        description: Tenant company profile deleted successfully
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -803,12 +876,14 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/mission-vision:
+
+# Tenant About Mission & Vision Management
+/tenant/about/mission-vision:
   get:
     tags:
-    - About Us
-    summary: Get mission & vision content
-    description: Retrieve mission and vision content
+    - Tenant About Management
+    summary: Get tenant mission & vision content
+    description: Retrieve mission and vision content for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -828,7 +903,7 @@
       description: Language/locale for translations
     responses:
       '200':
-        description: Mission & vision content retrieved successfully
+        description: Tenant mission & vision content retrieved successfully
         content:
           application/json:
             schema:
@@ -840,18 +915,6 @@
                     type: array
                     items:
                       $ref: '../../schemas/content-management/about.yaml#/MissionVision'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -862,9 +925,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - About Us
-    summary: Create mission & vision content
-    description: Create new mission and vision content
+    - Tenant About Management
+    summary: Create tenant mission & vision content
+    description: Create new mission and vision content for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -881,6 +944,7 @@
               page_id:
                 type: string
                 format: uuid
+                description: Reference to the About page
               mission_title:
                 type: string
                 maxLength: 255
@@ -929,33 +993,12 @@
                 type: string
                 maxLength: 20
                 nullable: true
-              translations:
-                type: object
-                additionalProperties: true
-              mission_alt_text:
-                type: string
-                maxLength: 255
-                nullable: true
-              vision_alt_text:
-                type: string
-                maxLength: 255
-                nullable: true
-              show_mission:
-                type: boolean
-                default: true
-              show_vision:
-                type: boolean
-                default: true
               is_active:
                 type: boolean
                 default: true
-          example:
-            title: New About Title
-            description: Sample description for about
-            is_active: true
     responses:
       '201':
-        description: Mission & vision content created successfully
+        description: Tenant mission & vision content created successfully
         content:
           application/json:
             schema:
@@ -965,15 +1008,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/MissionVision'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                created_at: '2025-11-13T18:58:00Z'
-              message: About created successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -984,12 +1018,14 @@
         $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/mission-vision/{id}:
+
+# Tenant About Mission & Vision by ID
+/tenant/about/mission-vision/{id}:
   get:
     tags:
-    - About Us
-    summary: Get specific mission & vision content
-    description: Retrieve specific mission and vision content by ID
+    - Tenant About Management
+    summary: Get specific tenant mission & vision content
+    description: Retrieve specific mission and vision content by ID for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1001,16 +1037,9 @@
         type: string
         format: uuid
       description: Mission & vision content ID
-    - name: language
-      in: query
-      schema:
-        type: string
-        pattern: ^[a-z]{2}(-[A-Z]{2})?$
-        default: en
-      description: Language/locale for translations
     responses:
       '200':
-        description: Mission & vision content retrieved successfully
+        description: Tenant mission & vision content retrieved successfully
         content:
           application/json:
             schema:
@@ -1020,18 +1049,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/MissionVision'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -1042,9 +1059,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - About Us
-    summary: Update mission & vision content
-    description: Update existing mission and vision content
+    - Tenant About Management
+    summary: Update tenant mission & vision content
+    description: Update existing mission and vision content for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1108,30 +1125,11 @@
                 type: string
                 maxLength: 20
                 nullable: true
-              translations:
-                type: object
-                additionalProperties: true
-              mission_alt_text:
-                type: string
-                maxLength: 255
-                nullable: true
-              vision_alt_text:
-                type: string
-                maxLength: 255
-                nullable: true
-              show_mission:
-                type: boolean
-              show_vision:
-                type: boolean
               is_active:
                 type: boolean
-          example:
-            title: Updated About Title
-            description: Updated description for about
-            is_active: true
     responses:
       '200':
-        description: Mission & vision content updated successfully
+        description: Tenant mission & vision content updated successfully
         content:
           application/json:
             schema:
@@ -1141,14 +1139,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/MissionVision'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: About puted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '404':
@@ -1161,9 +1151,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - About Us
-    summary: Delete mission & vision content
-    description: Soft delete mission and vision content
+    - Tenant About Management
+    summary: Delete tenant mission & vision content
+    description: Soft delete mission and vision content for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1177,7 +1167,7 @@
       description: Mission & vision content ID
     responses:
       '204':
-        description: Mission & vision content deleted successfully
+        description: Tenant mission & vision content deleted successfully
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -1186,12 +1176,14 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/team:
+
+# Tenant About Team Management
+/tenant/about/team:
   get:
     tags:
-    - About Us
-    summary: Get team members
-    description: Retrieve team members with filtering and sorting options
+    - Tenant About Management
+    summary: Get tenant team members
+    description: Retrieve team members for the tenant with filtering and sorting options
     security:
     - bearerAuth: []
     parameters:
@@ -1219,10 +1211,11 @@
       in: query
       schema:
         type: string
-      description: Search by name or position
+        maxLength: 255
+      description: Search in name, position, or department
     responses:
       '200':
-        description: Team members retrieved successfully
+        description: Tenant team members retrieved successfully
         content:
           application/json:
             schema:
@@ -1234,18 +1227,6 @@
                     type: array
                     items:
                       $ref: '../../schemas/content-management/about.yaml#/TeamMember'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1256,9 +1237,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - About Us
-    summary: Create team member
-    description: Add a new team member
+    - Tenant About Management
+    summary: Create tenant team member
+    description: Add a new team member for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1277,20 +1258,27 @@
               page_id:
                 type: string
                 format: uuid
+                description: Reference to the About page
               name:
                 type: string
                 maxLength: 255
-                example: John Doe
               position:
                 type: string
                 maxLength: 255
-                example: Chief Executive Officer
               bio:
                 type: string
                 nullable: true
               photo_url:
                 type: string
                 format: uri
+                nullable: true
+              department:
+                type: string
+                maxLength: 100
+                nullable: true
+              join_date:
+                type: string
+                format: date
                 nullable: true
               email:
                 type: string
@@ -1311,24 +1299,15 @@
               is_featured:
                 type: boolean
                 default: false
-              department:
-                type: string
-                maxLength: 100
-                nullable: true
-              years_experience:
-                type: integer
-                minimum: 0
-                nullable: true
               display_order:
                 type: integer
                 default: 0
-          example:
-            title: New About Title
-            description: Sample description for about
-            is_active: true
+              is_active:
+                type: boolean
+                default: true
     responses:
       '201':
-        description: Team member created successfully
+        description: Tenant team member created successfully
         content:
           application/json:
             schema:
@@ -1338,29 +1317,24 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/TeamMember'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                created_at: '2025-11-13T18:58:00Z'
-              message: About created successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/team/{id}:
+
+# Tenant About Team by ID
+/tenant/about/team/{id}:
   get:
     tags:
-    - About Us
-    summary: Get specific team member
-    description: Retrieve a specific team member by ID
+    - Tenant About Management
+    summary: Get specific tenant team member
+    description: Retrieve a specific team member by ID for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1374,7 +1348,7 @@
       description: Team member ID
     responses:
       '200':
-        description: Team member retrieved successfully
+        description: Tenant team member retrieved successfully
         content:
           application/json:
             schema:
@@ -1384,18 +1358,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/TeamMember'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -1406,9 +1368,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - About Us
-    summary: Update team member
-    description: Update an existing team member
+    - Tenant About Management
+    summary: Update tenant team member
+    description: Update an existing team member for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1440,6 +1402,14 @@
                 type: string
                 format: uri
                 nullable: true
+              department:
+                type: string
+                maxLength: 100
+                nullable: true
+              join_date:
+                type: string
+                format: date
+                nullable: true
               email:
                 type: string
                 format: email
@@ -1458,23 +1428,13 @@
                 nullable: true
               is_featured:
                 type: boolean
-              department:
-                type: string
-                maxLength: 100
-                nullable: true
-              years_experience:
-                type: integer
-                minimum: 0
-                nullable: true
               display_order:
                 type: integer
-          example:
-            title: Updated About Title
-            description: Updated description for about
-            is_active: true
+              is_active:
+                type: boolean
     responses:
       '200':
-        description: Team member updated successfully
+        description: Tenant team member updated successfully
         content:
           application/json:
             schema:
@@ -1484,14 +1444,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/TeamMember'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: About puted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '404':
@@ -1504,9 +1456,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - About Us
-    summary: Delete team member
-    description: Soft delete a team member
+    - Tenant About Management
+    summary: Delete tenant team member
+    description: Soft delete a team member for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1520,7 +1472,7 @@
       description: Team member ID
     responses:
       '204':
-        description: Team member deleted successfully
+        description: Tenant team member deleted successfully
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -1529,12 +1481,14 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/timeline:
+
+# Tenant About Timeline Management
+/tenant/about/timeline:
   get:
     tags:
-    - About Us
-    summary: Get timeline events
-    description: Retrieve company timeline events
+    - Tenant About Management
+    summary: Get tenant timeline events
+    description: Retrieve company timeline events for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1556,7 +1510,7 @@
       in: query
       schema:
         type: integer
-      description: Filter events up to this year
+      description: Filter events to this year
     - name: milestone_type
       in: query
       schema:
@@ -1571,7 +1525,7 @@
       description: Filter by milestone type
     responses:
       '200':
-        description: Timeline events retrieved successfully
+        description: Tenant timeline events retrieved successfully
         content:
           application/json:
             schema:
@@ -1583,18 +1537,6 @@
                     type: array
                     items:
                       $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1605,9 +1547,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - About Us
-    summary: Create timeline event
-    description: Add a new timeline event
+    - Tenant About Management
+    summary: Create tenant timeline event
+    description: Add a new timeline event for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1652,24 +1594,18 @@
                 - product_launch
                 - other
                 default: other
-              importance_level:
-                type: string
-                enum:
-                - low
-                - medium
-                - high
-                - critical
-                default: medium
               display_order:
                 type: integer
                 default: 0
-          example:
-            title: New About Title
-            description: Sample description for about
-            is_active: true
+              is_featured:
+                type: boolean
+                default: false
+              is_active:
+                type: boolean
+                default: true
     responses:
       '201':
-        description: Timeline event created successfully
+        description: Tenant timeline event created successfully
         content:
           application/json:
             schema:
@@ -1679,29 +1615,24 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                created_at: '2025-11-13T18:58:00Z'
-              message: About created successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/timeline/{id}:
+
+# Tenant About Timeline by ID
+/tenant/about/timeline/{id}:
   get:
     tags:
-    - About Us
-    summary: Get specific timeline event
-    description: Retrieve a specific timeline event by ID
+    - Tenant About Management
+    summary: Get specific tenant timeline event
+    description: Retrieve a specific timeline event by ID for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1715,7 +1646,7 @@
       description: Timeline event ID
     responses:
       '200':
-        description: Timeline event retrieved successfully
+        description: Tenant timeline event retrieved successfully
         content:
           application/json:
             schema:
@@ -1725,18 +1656,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -1747,9 +1666,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - About Us
-    summary: Update timeline event
-    description: Update an existing timeline event
+    - Tenant About Management
+    summary: Update tenant timeline event
+    description: Update an existing timeline event for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1791,22 +1710,15 @@
                 - partnership
                 - product_launch
                 - other
-              importance_level:
-                type: string
-                enum:
-                - low
-                - medium
-                - high
-                - critical
               display_order:
                 type: integer
-          example:
-            title: Updated About Title
-            description: Updated description for about
-            is_active: true
+              is_featured:
+                type: boolean
+              is_active:
+                type: boolean
     responses:
       '200':
-        description: Timeline event updated successfully
+        description: Tenant timeline event updated successfully
         content:
           application/json:
             schema:
@@ -1816,14 +1728,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/TimelineEvent'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: About puted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '404':
@@ -1836,9 +1740,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - About Us
-    summary: Delete timeline event
-    description: Soft delete a timeline event
+    - Tenant About Management
+    summary: Delete tenant timeline event
+    description: Soft delete a timeline event for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1852,7 +1756,7 @@
       description: Timeline event ID
     responses:
       '204':
-        description: Timeline event deleted successfully
+        description: Tenant timeline event deleted successfully
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -1861,12 +1765,14 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/certifications:
+
+# Tenant About Certifications Management
+/tenant/about/certifications:
   get:
     tags:
-    - About Us
-    summary: Get certifications
-    description: Retrieve company certifications and awards
+    - Tenant About Management
+    summary: Get tenant certifications
+    description: Retrieve certifications and achievements for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1900,15 +1806,10 @@
         - expired
         - pending_renewal
         - suspended
-      description: Filter by status
-    - name: year
-      in: query
-      schema:
-        type: integer
-      description: Filter by issue year
+      description: Filter by certification status
     responses:
       '200':
-        description: Certifications retrieved successfully
+        description: Tenant certifications retrieved successfully
         content:
           application/json:
             schema:
@@ -1920,18 +1821,6 @@
                     type: array
                     items:
                       $ref: '../../schemas/content-management/about.yaml#/Certification'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1942,9 +1831,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - About Us
-    summary: Create certification
-    description: Add a new certification or award
+    - Tenant About Management
+    summary: Create tenant certification
+    description: Add a new certification or achievement for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -1957,24 +1846,30 @@
             type: object
             required:
             - page_id
-            - name
-            - issuer
+            - title
+            - certification_type
             properties:
               page_id:
                 type: string
                 format: uuid
-              name:
+              title:
                 type: string
                 maxLength: 255
-                example: ISO 9001:2015 Quality Management System
+                example: ISO 9001:2015 Quality Management
+              description:
+                type: string
+                nullable: true
               issuer:
                 type: string
                 maxLength: 255
-                example: International Organization for Standardization
-              issue_year:
-                type: integer
-                minimum: 1900
-                maximum: 2030
+                nullable: true
+              issue_date:
+                type: string
+                format: date
+                nullable: true
+              expiry_date:
+                type: string
+                format: date
                 nullable: true
               certificate_number:
                 type: string
@@ -1984,12 +1879,9 @@
                 type: string
                 format: uri
                 nullable: true
-              description:
+              logo_url:
                 type: string
-                nullable: true
-              expiry_date:
-                type: string
-                format: date
+                format: uri
                 nullable: true
               certification_type:
                 type: string
@@ -2012,13 +1904,12 @@
               display_order:
                 type: integer
                 default: 0
-          example:
-            title: New About Title
-            description: Sample description for about
-            is_active: true
+              is_active:
+                type: boolean
+                default: true
     responses:
       '201':
-        description: Certification created successfully
+        description: Tenant certification created successfully
         content:
           application/json:
             schema:
@@ -2028,29 +1919,24 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/Certification'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                created_at: '2025-11-13T18:58:00Z'
-              message: About created successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/about/certifications/{id}:
+
+# Tenant About Certifications by ID
+/tenant/about/certifications/{id}:
   get:
     tags:
-    - About Us
-    summary: Get specific certification
-    description: Retrieve a specific certification by ID
+    - Tenant About Management
+    summary: Get specific tenant certification
+    description: Retrieve a specific certification by ID for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -2064,7 +1950,7 @@
       description: Certification ID
     responses:
       '200':
-        description: Certification retrieved successfully
+        description: Tenant certification retrieved successfully
         content:
           application/json:
             schema:
@@ -2074,18 +1960,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/Certification'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
       '401':
@@ -2096,9 +1970,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - About Us
-    summary: Update certification
-    description: Update an existing certification
+    - Tenant About Management
+    summary: Update tenant certification
+    description: Update an existing certification for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -2117,16 +1991,23 @@
           schema:
             type: object
             properties:
-              name:
+              title:
                 type: string
                 maxLength: 255
+              description:
+                type: string
+                nullable: true
               issuer:
                 type: string
                 maxLength: 255
-              issue_year:
-                type: integer
-                minimum: 1900
-                maximum: 2030
+                nullable: true
+              issue_date:
+                type: string
+                format: date
+                nullable: true
+              expiry_date:
+                type: string
+                format: date
                 nullable: true
               certificate_number:
                 type: string
@@ -2136,12 +2017,9 @@
                 type: string
                 format: uri
                 nullable: true
-              description:
+              logo_url:
                 type: string
-                nullable: true
-              expiry_date:
-                type: string
-                format: date
+                format: uri
                 nullable: true
               certification_type:
                 type: string
@@ -2161,13 +2039,11 @@
                 - suspended
               display_order:
                 type: integer
-          example:
-            title: Updated About Title
-            description: Updated description for about
-            is_active: true
+              is_active:
+                type: boolean
     responses:
       '200':
-        description: Certification updated successfully
+        description: Tenant certification updated successfully
         content:
           application/json:
             schema:
@@ -2177,14 +2053,6 @@
                 properties:
                   data:
                     $ref: '../../schemas/content-management/about.yaml#/Certification'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: About puted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '404':
@@ -2197,9 +2065,9 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - About Us
-    summary: Delete certification
-    description: Soft delete a certification
+    - Tenant About Management
+    summary: Delete tenant certification
+    description: Soft delete a certification for the tenant
     security:
     - bearerAuth: []
     parameters:
@@ -2213,121 +2081,9 @@
       description: Certification ID
     responses:
       '204':
-        description: Certification deleted successfully
+        description: Tenant certification deleted successfully
       '404':
         $ref: '../../components/responses.yaml#/NotFound'
-      '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
-      '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
-      '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-/about/complete:
-  get:
-    tags:
-    - About Us
-    summary: Get complete About page
-    description: Retrieve all About page content in a single response
-    security:
-    - bearerAuth: []
-    parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
-    - name: page_id
-      in: query
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: About page ID
-    - name: language
-      in: query
-      schema:
-        type: string
-        pattern: ^[a-z]{2}(-[A-Z]{2})?$
-        default: en
-      description: Language/locale for translations
-    - name: include_inactive
-      in: query
-      schema:
-        type: boolean
-        default: false
-      description: Include inactive content sections
-    responses:
-      '200':
-        description: Complete About page retrieved successfully
-        content:
-          application/json:
-            schema:
-              allOf:
-              - $ref: '../../components/schemas.yaml#/SuccessResponse'
-              - type: object
-                properties:
-                  data:
-                    $ref: '../../components/schemas.yaml#/AboutPageComplete'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample About Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: About retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-      '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
-      '404':
-        $ref: '../../components/responses.yaml#/NotFound'
-      '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
-      '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
-      '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-/about/bulk:
-  post:
-    tags:
-    - About Us
-    summary: Bulk operations on About content
-    description: Perform bulk operations (create, update, delete) on About content
-    security:
-    - bearerAuth: []
-    parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '../../schemas/content-management/about.yaml#/AboutBulkOperation'
-          example:
-            title: New About Title
-            description: Sample description for about
-            is_active: true
-    responses:
-      '200':
-        description: Bulk operation completed
-        content:
-          application/json:
-            schema:
-              allOf:
-              - $ref: '../../components/schemas.yaml#/SuccessResponse'
-              - type: object
-                properties:
-                  data:
-                    $ref: '../../schemas/content-management/about.yaml#/AboutBulkResult'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: About posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-      '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':

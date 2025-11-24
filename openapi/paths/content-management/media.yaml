@@ -1,31 +1,49 @@
 # Media Library Management API Path Items
 # This file contains only path items (no openapi/info/paths wrapper)
+# 
+# ARCHITECTURE: Platform/Tenant Separated Endpoints
+# - Platform endpoints (/platform/media/*): For platform administrators managing tenant media
+# - Tenant endpoints (/tenant/media/*): For tenant users managing their own media files
+#
+# This implements the separated endpoint architecture following authentication patterns:
+# - Platform: Bearer token with platform-level permissions  
+# - Tenant: Bearer token + X-Tenant-ID header with tenant-level permissions
 
 # ================================================================
-# MEDIA FILE ENDPOINTS
+# PLATFORM MEDIA FILE ENDPOINTS (Platform Admin)
 # ================================================================
-/media/upload:
+/platform/media/upload:
   post:
     tags:
-      - Media Files
-    summary: Upload Single Media File
+      - Platform Media Files
+    summary: Platform - Upload Single Media File for Tenant
     description: |
-      Upload a single media file with metadata and optional folder assignment.
+      Platform admin upload a single media file for any tenant with metadata and optional folder assignment.
       
-      **Features:**
+      **Platform Features:**
+      - Cross-tenant media file management
+      - Tenant-specific file upload capabilities
+      - Advanced security and compliance controls
       - Multi-format support (image, document, video, design files)
       - Automatic file validation and virus scanning
       - Metadata extraction (EXIF for images)
       - Thumbnail generation for images
       - Cloud storage integration
       - Tag assignment during upload
-    operationId: uploadMediaFile
+    operationId: platformUploadMediaFile
     security:
       - bearerAuth: []
     x-permissions:
-      - media.upload
+      - platform.media.upload
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: X-Target-Tenant-ID
+        in: header
+        required: true
+        description: Target tenant ID for file upload
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
     requestBody:
       required: true
       content:
@@ -118,27 +136,35 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/upload/bulk:
+/platform/media/upload/bulk:
   post:
     tags:
-      - Media Files
-    summary: Upload Multiple Media Files
+      - Platform Media Files
+    summary: Platform - Upload Multiple Media Files for Tenant
     description: |
-      Upload multiple media files in a single request with batch processing.
+      Platform admin upload multiple media files for any tenant in a single request with batch processing.
       
-      **Features:**
-      - Bulk file upload with progress tracking
-      - Batch metadata assignment
-      - Folder organization for all files
-      - Automatic error handling per file
-      - Background processing for large batches
-    operationId: bulkUploadMediaFiles
+      **Platform Features:**
+      - Cross-tenant bulk file upload capabilities
+      - Batch metadata assignment for tenant files
+      - Folder organization across tenant boundaries
+      - Advanced error handling per file with tenant context
+      - Background processing for large tenant file batches
+      - Tenant quota and compliance enforcement
+    operationId: platformBulkUploadMediaFiles
     security:
       - bearerAuth: []
     x-permissions:
-      - media.upload
+      - platform.media.upload
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: X-Target-Tenant-ID
+        in: header
+        required: true
+        description: Target tenant ID for bulk file upload
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
     requestBody:
       required: true
       content:
@@ -236,28 +262,36 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/files:
+/platform/media/files:
   get:
     tags:
-      - Media Files
-    summary: List Media Files
+      - Platform Media Files
+    summary: Platform - List Media Files Across All Tenants
     description: |
-      Retrieve paginated list of media files with advanced filtering and search.
+      Platform admin retrieve paginated list of media files across all tenants with advanced filtering and search.
       
-      **Features:**
-      - Folder-based filtering
-      - File type filtering
-      - Tag-based search
-      - Full-text search in metadata
-      - Sorting by various fields
-      - Include related data (folder, tags, transformations)
-    operationId: listMediaFiles
+      **Platform Features:**
+      - Cross-tenant file management and visibility
+      - Tenant-based filtering and isolation
+      - Advanced compliance and audit filtering
+      - Global file type and metadata filtering
+      - Tag-based search across tenant boundaries
+      - Full-text search in metadata with tenant context
+      - Sorting by various fields with tenant information
+      - Include related data (folder, tags, transformations, tenant)
+    operationId: platformListMediaFiles
     security:
       - bearerAuth: []
     x-permissions:
-      - media.list
+      - platform.media.list
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: tenant_id
+        in: query
+        description: Filter by specific tenant (optional for platform admin)
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
       - $ref: '../../components/parameters.yaml#/PageParam'
       - $ref: '../../components/parameters.yaml#/PerPageParam'
       - $ref: '../../components/parameters.yaml#/SortParam'
@@ -395,28 +429,36 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/files/{uuid}:
+/platform/media/files/{uuid}:
   get:
     tags:
-      - Media Files
-    summary: Get Media File Details
+      - Platform Media Files
+    summary: Platform - Get Media File Details Across Tenants
     description: |
-      Retrieve detailed information about a specific media file including all related data.
+      Platform admin retrieve detailed information about a specific media file from any tenant including all related data.
       
-      **Includes:**
-      - File metadata and properties
-      - Folder information
-      - Associated tags
-      - Available transformations
-      - Usage tracking
-      - Version history
-    operationId: getMediaFile
+      **Platform Includes:**
+      - File metadata and properties with tenant context
+      - Folder information across tenant boundaries
+      - Associated tags with tenant relationships
+      - Available transformations with tenant scope
+      - Usage tracking across tenant applications
+      - Version history with tenant audit trails
+      - Compliance and security metadata
+    operationId: platformGetMediaFile
     security:
       - bearerAuth: []
     x-permissions:
-      - media.read
+      - platform.media.read
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: X-Target-Tenant-ID
+        in: header
+        required: false
+        description: Target tenant ID (auto-detected from file if not provided)
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
       - name: uuid
         in: path
         required: true
@@ -655,26 +697,34 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/files/move:
+/platform/media/files/move:
   post:
     tags:
-      - Media Files
-    summary: Move Multiple Files to Folder
+      - Platform Media Files
+    summary: Platform - Move Multiple Files to Folder Across Tenants
     description: |
-      Move multiple media files to a different folder in bulk operation.
+      Platform admin move multiple media files across tenant boundaries to different folders in bulk operation.
       
-      **Features:**
-      - Bulk file movement
-      - Folder path validation
-      - Permission checking for target folder
-      - Atomic operation (all or nothing)
-    operationId: moveMediaFiles
+      **Platform Features:**
+      - Cross-tenant bulk file movement capabilities
+      - Tenant boundary and quota validation
+      - Advanced permission checking across tenant folders
+      - Atomic operation with full rollback (all or nothing)
+      - Compliance and audit trail maintenance
+    operationId: platformMoveMediaFiles
     security:
       - bearerAuth: []
     x-permissions:
-      - media.move
+      - platform.media.move
     parameters:
-      - $ref: '../../components/parameters.yaml#/TenantHeader'
+      - name: X-Target-Tenant-ID
+        in: header
+        required: true
+        description: Target tenant ID for file movement operations
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
     requestBody:
       required: true
       content:
@@ -749,11 +799,11 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/files/{uuid}/download:
+/platform/media/files/{uuid}/download:
   post:
     tags:
-      - Media Files
-    summary: Generate Secure Download URL
+      - Platform Media Files
+    summary: Platform - Generate Secure Download URL Across Tenants
     description: |
       Generate a secure, time-limited download URL for the media file and track the download.
       
@@ -847,11 +897,11 @@
 # ================================================================
 # MEDIA FOLDER ENDPOINTS
 # ================================================================
-/media/folders:
+/platform/media/folders:
   get:
     tags:
-      - Media Folders
-    summary: List Media Folders
+      - Platform Media Folders
+    summary: Platform - List Media Folders Across All Tenants
     description: |
       Retrieve hierarchical list of media folders with optional tree structure.
       
@@ -1022,7 +1072,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/folders/{uuid}:
+/platform/media/folders/{uuid}:
   get:
     tags:
       - Media Folders
@@ -1315,7 +1365,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/folders/{uuid}/contents:
+/platform/media/folders/{uuid}/contents:
   get:
     tags:
       - Media Folders
@@ -1441,11 +1491,11 @@
 # ================================================================
 # MEDIA TAG ENDPOINTS
 # ================================================================
-/media/tags:
+/platform/media/tags:
   get:
     tags:
-      - Media Tags
-    summary: List Media Tags
+      - Platform Media Tags
+    summary: Platform - List Media Tags Across All Tenants
     description: |
       Retrieve list of media tags with usage statistics and filtering options.
       
@@ -1632,7 +1682,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/tags/{uuid}:
+/platform/media/tags/{uuid}:
   get:
     tags:
       - Media Tags
@@ -1843,7 +1893,7 @@
 # ================================================================
 # MEDIA TRANSFORMATIONS ENDPOINTS
 # ================================================================
-/media/files/{uuid}/transformations:
+/platform/media/files/{uuid}/transformations:
   get:
     tags:
       - Media Transformations
@@ -2080,11 +2130,11 @@
 # ================================================================
 # MEDIA ANALYTICS ENDPOINTS
 # ================================================================
-/media/analytics:
+/platform/media/analytics:
   get:
     tags:
-      - Media Analytics
-    summary: Get Media Analytics Summary
+      - Platform Media Analytics
+    summary: Platform - Get Media Analytics Summary Across All Tenants
     description: |
       Retrieve comprehensive media analytics and usage statistics.
       
@@ -2165,7 +2215,7 @@
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
 
-/media/files/{uuid}/usage:
+/platform/media/files/{uuid}/usage:
   get:
     tags:
       - Media Analytics
@@ -2252,5 +2302,1313 @@
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# ================================================================
+# TENANT MEDIA FILE ENDPOINTS (Tenant Users)
+# ================================================================
+/tenant/media/upload:
+  post:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Upload Single Media File
+    description: |
+      Tenant user uploads a single media file with metadata and optional folder assignment.
+      
+      **Tenant Features:**
+      - File upload within tenant scope
+      - Metadata assignment
+      - Folder organization
+      - Tag management
+      - Multi-format support (image, document, video, design files)
+      - Automatic file validation
+      - Thumbnail generation for images
+      - EXIF data extraction
+    operationId: tenantUploadMediaFile
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.upload
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../../components/schemas.yaml#/MediaFileCreateInput'
+          examples:
+            product_image:
+              summary: Upload product image
+              value:
+                folder_id: "550e8400-e29b-41d4-a716-446655440000"
+                alt_text: "Custom etched glass design"
+                caption: "High-quality etching work"
+                description: "Professional glass etching with company logo"
+                tags: ["123e4567-e89b-12d3-a456-426614174000"]
+                is_public: false
+    responses:
+      '201':
+        description: File uploaded successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+                    message:
+                      type: string
+                      example: "File uploaded successfully"
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '413':
+        $ref: '../../components/responses.yaml#/PayloadTooLarge'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/upload/bulk:
+  post:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Upload Multiple Media Files
+    description: |
+      Tenant user uploads multiple media files with individual metadata settings.
+      
+      **Features:**
+      - Batch upload within tenant scope
+      - Individual metadata per file
+      - Folder assignment per file
+      - Progress tracking for large batches
+    operationId: tenantBulkUploadMediaFiles
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.upload
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            $ref: '../../components/schemas.yaml#/BulkMediaFileCreateInput'
+    responses:
+      '201':
+        description: Files uploaded successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        uploaded_files:
+                          type: array
+                          items:
+                            $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+                        failed_files:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              filename:
+                                type: string
+                              error:
+                                type: string
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '413':
+        $ref: '../../components/responses.yaml#/PayloadTooLarge'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/files:
+  get:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - List Media Files
+    description: |
+      Retrieve a paginated list of media files within tenant scope with filtering options.
+    operationId: tenantListMediaFiles
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        description: Page number (1-based)
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: limit
+        in: query
+        description: Items per page
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: folder_id
+        in: query
+        description: Filter by folder ID
+        schema:
+          type: string
+          format: uuid
+      - name: mime_type
+        in: query
+        description: Filter by MIME type
+        schema:
+          type: string
+      - name: search
+        in: query
+        description: Search in filename, alt_text, caption, and description
+        schema:
+          type: string
+      - name: tags
+        in: query
+        description: Filter by tag IDs (comma-separated)
+        schema:
+          type: string
+      - name: is_public
+        in: query
+        description: Filter by public status
+        schema:
+          type: boolean
+    responses:
+      '200':
+        description: Media files retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/files/{uuid}:
+  get:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Get Media File Details
+    description: Retrieve detailed information about a specific media file within tenant scope.
+    operationId: tenantGetMediaFile
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Media file details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  put:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Update Media File
+    description: Update metadata and properties of a media file within tenant scope.
+    operationId: tenantUpdateMediaFile
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.update
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/MediaFileUpdateInput'
+    responses:
+      '200':
+        description: Media file updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  delete:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Delete Media File
+    description: Delete a media file and its associated data within tenant scope.
+    operationId: tenantDeleteMediaFile
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.delete
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Media file deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/BaseResponse'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '409':
+        description: File is in use and cannot be deleted
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/files/move:
+  put:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Move Multiple Files
+    description: |
+      Move multiple media files to a different folder within tenant scope, with optional metadata updates.
+    operationId: tenantMoveMediaFiles
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.update
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/BulkMediaFilesMoveInput'
+    responses:
+      '200':
+        description: Files moved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        moved_files:
+                          type: array
+                          items:
+                            $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+                        failed_files:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              file_id:
+                                type: string
+                                format: uuid
+                              error:
+                                type: string
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/files/{uuid}/download:
+  get:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Get Secure Download URL
+    description: |
+      Generate a secure, time-limited download URL for a media file within tenant scope.
+    operationId: tenantGetMediaFileDownloadUrl
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+      - name: expires_in
+        in: query
+        description: URL expiration time in seconds (default 3600, max 86400)
+        schema:
+          type: integer
+          minimum: 60
+          maximum: 86400
+          default: 3600
+    responses:
+      '200':
+        description: Download URL generated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        download_url:
+                          type: string
+                          format: uri
+                        expires_at:
+                          type: string
+                          format: date-time
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/folders:
+  get:
+    tags:
+      - Tenant Media Folders
+    summary: Tenant - List Media Folders
+    description: |
+      Retrieve a hierarchical list of media folders within tenant scope with optional filtering.
+    operationId: tenantListMediaFolders
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: parent_id
+        in: query
+        description: Filter by parent folder ID (null for root folders)
+        schema:
+          type: string
+          format: uuid
+      - name: include_files_count
+        in: query
+        description: Include count of files in each folder
+        schema:
+          type: boolean
+          default: false
+    responses:
+      '200':
+        description: Media folders retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/MediaFolderWithRelations'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  post:
+    tags:
+      - Tenant Media Folders
+    summary: Tenant - Create Media Folder
+    description: Create a new media folder within tenant scope for organizing media files.
+    operationId: tenantCreateMediaFolder
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.create
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/MediaFolderCreateInput'
+    responses:
+      '201':
+        description: Media folder created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaFolderWithRelations'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/folders/{uuid}:
+  get:
+    tags:
+      - Tenant Media Folders
+    summary: Tenant - Get Media Folder Details
+    description: Retrieve detailed information about a specific media folder within tenant scope.
+    operationId: tenantGetMediaFolder
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Media folder details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaFolderWithRelations'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  put:
+    tags:
+      - Tenant Media Folders
+    summary: Tenant - Update Media Folder
+    description: Update the properties of a media folder within tenant scope.
+    operationId: tenantUpdateMediaFolder
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.update
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/MediaFolderUpdateInput'
+    responses:
+      '200':
+        description: Media folder updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaFolderWithRelations'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  delete:
+    tags:
+      - Tenant Media Folders
+    summary: Tenant - Delete Media Folder
+    description: Delete a media folder and optionally its contents within tenant scope.
+    operationId: tenantDeleteMediaFolder
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.delete
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+      - name: force
+        in: query
+        description: Force delete folder with contents
+        schema:
+          type: boolean
+          default: false
+    responses:
+      '200':
+        description: Media folder deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/BaseResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '409':
+        description: Folder contains files and force=false
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/folders/{uuid}/contents:
+  get:
+    tags:
+      - Tenant Media Folders
+    summary: Tenant - List Folder Contents
+    description: |
+      Retrieve the contents of a media folder (subfolders and files) within tenant scope with pagination.
+    operationId: tenantListMediaFolderContents
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media folder UUID
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        description: Page number (1-based)
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: limit
+        in: query
+        description: Items per page
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: type
+        in: query
+        description: Filter by content type
+        schema:
+          type: string
+          enum: [all, folders, files]
+          default: all
+    responses:
+      '200':
+        description: Folder contents retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        folders:
+                          type: array
+                          items:
+                            $ref: '../../components/schemas.yaml#/MediaFolderWithRelations'
+                        files:
+                          type: array
+                          items:
+                            $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/tags:
+  get:
+    tags:
+      - Tenant Media Tags
+    summary: Tenant - List Media Tags
+    description: |
+      Retrieve a list of media tags within tenant scope for organizing and categorizing media files.
+    operationId: tenantListMediaTags
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        in: query
+        description: Search tags by name
+        schema:
+          type: string
+      - name: color
+        in: query
+        description: Filter by tag color
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Media tags retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/MediaTagWithRelations'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  post:
+    tags:
+      - Tenant Media Tags
+    summary: Tenant - Create Media Tag
+    description: Create a new media tag within tenant scope for organizing media files.
+    operationId: tenantCreateMediaTag
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.create
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/MediaTagCreateInput'
+    responses:
+      '201':
+        description: Media tag created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaTagWithRelations'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/tags/{uuid}:
+  get:
+    tags:
+      - Tenant Media Tags
+    summary: Tenant - Get Media Tag Details
+    description: Retrieve detailed information about a specific media tag within tenant scope.
+    operationId: tenantGetMediaTag
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media tag UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Media tag details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaTagWithRelations'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  put:
+    tags:
+      - Tenant Media Tags
+    summary: Tenant - Update Media Tag
+    description: Update the properties of a media tag within tenant scope.
+    operationId: tenantUpdateMediaTag
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.update
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media tag UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/MediaTagUpdateInput'
+    responses:
+      '200':
+        description: Media tag updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaTagWithRelations'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  delete:
+    tags:
+      - Tenant Media Tags
+    summary: Tenant - Delete Media Tag
+    description: Delete a media tag within tenant scope.
+    operationId: tenantDeleteMediaTag
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.delete
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media tag UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Media tag deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/BaseResponse'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/files/{uuid}/transformations:
+  get:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Get File Transformation Options
+    description: |
+      Retrieve available transformation options for a media file within tenant scope.
+    operationId: tenantGetMediaFileTransformations
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Transformation options retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        supported_formats:
+                          type: array
+                          items:
+                            type: string
+                        resize_options:
+                          type: object
+                        quality_options:
+                          type: object
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+  post:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Transform Media File
+    description: |
+      Apply transformations to a media file within tenant scope (resize, format conversion, etc.).
+    operationId: tenantTransformMediaFile
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.update
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/MediaFileTransformationInput'
+    responses:
+      '200':
+        description: File transformation completed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaFileWithRelations'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/analytics:
+  get:
+    tags:
+      - Tenant Media Analytics
+    summary: Tenant - Get Media Analytics
+    description: |
+      Retrieve comprehensive analytics about media files within tenant scope including usage statistics.
+    operationId: tenantGetMediaAnalytics
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: period
+        in: query
+        description: Analytics period
+        schema:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+          default: monthly
+      - name: start_date
+        in: query
+        description: Start date for analytics (ISO 8601)
+        schema:
+          type: string
+          format: date
+      - name: end_date
+        in: query
+        description: End date for analytics (ISO 8601)
+        schema:
+          type: string
+          format: date
+    responses:
+      '200':
+        description: Analytics data retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/MediaAnalytics'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/media/files/{uuid}/usage:
+  get:
+    tags:
+      - Tenant Media Files
+    summary: Tenant - Get File Usage Information
+    description: |
+      Retrieve usage information for a specific media file within tenant scope.
+    operationId: tenantGetMediaFileUsage
+    security:
+      - bearerAuth: []
+    x-permissions:
+      - media.read
+    parameters:
+      - name: X-Tenant-ID
+        in: header
+        required: true
+        description: Tenant ID for scoped access
+        schema:
+          type: string
+          format: uuid
+      - name: uuid
+        in: path
+        required: true
+        description: Media file UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: File usage information retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        usage_records:
+                          type: array
+                          items:
+                            $ref: '../../components/schemas.yaml#/MediaUsage'
+                        summary:
+                          type: object
+                          properties:
+                            total_usage:
+                              type: integer
+                            usage_contexts:
+                              type: object
+                              additionalProperties:
+                                type: integer
+                            can_be_deleted:
+                              type: boolean
+                              description: Whether file can be safely deleted
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'

@@ -23,18 +23,18 @@
 <body>
     <div class="header">
         <h1>🔍 OpenAPI Validation Report</h1>
-        <p>Generated on 13/11/2025, 23.48.11</p>
+        <p>Generated on 11/24/2025, 6:34:35 AM</p>
         <div class="metrics">
             <div class="metric">
-                <div class="metric-value danger">98%</div>
+                <div class="metric-value success">100%</div>
                 <div class="metric-label">Success Rate</div>
             </div>
             <div class="metric">
-                <div class="metric-value">48</div>
+                <div class="metric-value">53</div>
                 <div class="metric-label">Valid Files</div>
             </div>
             <div class="metric">
-                <div class="metric-value">49</div>
+                <div class="metric-value">53</div>
                 <div class="metric-label">Total Files</div>
             </div>
         </div>
@@ -59,32 +59,19 @@
             Complexity Score: 100/100
         </div>
         <ul>
-            <li><strong>Analysis Time:</strong> 7ms</li>
-            <li><strong>Average File Size:</strong> 39.94KB</li>
-            <li><strong>Largest File:</strong> homepage.yaml (75.3KB)</li>
+            <li><strong>Analysis Time:</strong> 13ms</li>
+            <li><strong>Average File Size:</strong> 49.71KB</li>
+            <li><strong>Largest File:</strong> media.yaml (114.47KB)</li>
         </ul>
     </div>
 
-    
-    <div class="section">
-        <h2>❌ Validation Errors</h2>
-        
-            <div class="error">
-                <strong>.pre-commit-config.yaml</strong>: Nested mappings are not allowed in compact mappings at line 13, column 16:
-
-        entry: bash -c 'cd openapi && node security-audit.cjs && SC…
-               ^
- (Line 13)
-            </div>
-        
-    </div>
     
 
     
     <div class="section">
         <h2>💡 Recommendations</h2>
         <ul>
-            <li>Fix 1 YAML syntax error(s) to achieve 100% validation success</li>
+            <li>Some schema files are quite large (>100KB). Consider splitting them into smaller files</li>
         </ul>
     </div>
     

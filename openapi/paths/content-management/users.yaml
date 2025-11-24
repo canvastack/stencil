@@ -1,23 +1,370 @@
-/auth/register:
+# =============================================================================
+# PLATFORM USER MANAGEMENT ENDPOINTS
+# =============================================================================
+/platform/users:
+  get:
+    tags:
+    - Platform User Management
+    summary: List All Platform Users (Platform Admin)
+    description: 'Retrieve paginated list of all platform users with advanced filtering and cross-tenant search capabilities.
+
+      **Platform Admin Features:**
+      - Search across all tenants
+      - Filter by tenant, status, role
+      - Export functionality
+      - Global user analytics
+      '
+    operationId: listPlatformUsers
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - name: search
+      in: query
+      description: Search in name, email, phone
+      schema:
+        type: string
+        maxLength: 255
+      example: john
+    - name: tenant_id
+      in: query
+      description: Filter by specific tenant
+      schema:
+        type: string
+        format: uuid
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    - name: status
+      in: query
+      description: Filter by user status
+      schema:
+        type: string
+        enum:
+        - active
+        - inactive
+        - suspended
+        - banned
+      example: active
+    - name: account_type
+      in: query
+      description: Filter by account type
+      schema:
+        type: string
+        enum:
+        - platform
+        - tenant
+      example: platform
+    - name: include
+      in: query
+      description: Include related data
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - tenants
+          - roles
+          - permissions
+          - statistics
+      style: form
+      explode: false
+      example:
+      - tenants
+      - roles
+    responses:
+      '200':
+        description: Platform users retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/UserProfile'
+                  meta:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/PaginationMeta'
+                    - type: object
+                      properties:
+                        statistics:
+                          $ref: '../../components/schemas.yaml#/UserStatistics'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - Authentication
-    summary: Register New User Account
-    description: 'Register a new user account with email verification workflow.
+    - Platform User Management
+    summary: Create New Platform Admin
+    description: 'Create a new platform administrator account.
 
+      **Platform Features:**
+      - Create super admin accounts
+      - Assign platform-level permissions
+      - Cross-tenant access setup
+      '
+    operationId: createPlatformUser
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UserCreateInput'
+          examples:
+            platform_admin:
+              summary: Platform administrator creation
+              value:
+                email: admin@ptcex.com
+                password: AdminPass123!
+                name: Platform Administrator
+                first_name: Platform
+                last_name: Administrator
+                phone: '+62812345679'
+                language: en
+                timezone: Asia/Jakarta
+                account_type: platform
+                send_invitation: false
+    responses:
+      '201':
+        $ref: '../../components/responses.yaml#/CreatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: Email already exists
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/platform/users/{id}:
+  get:
+    tags:
+    - Platform User Management
+    summary: Get Platform User Details
+    description: 'Retrieve detailed platform user information including cross-tenant access.'
+    operationId: getPlatformUserDetails
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      description: Include related data
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - tenants
+          - roles
+          - permissions
+          - activity_log
+          - security_log
+      style: form
+      explode: false
+    responses:
+      '200':
+        description: Platform user details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/UserProfile'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  put:
+    tags:
+    - Platform User Management
+    summary: Update Platform User
+    description: 'Update platform user profile and permissions.'
+    operationId: updatePlatformUser
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UserUpdateInput'
+    responses:
+      '200':
+        $ref: '../../components/responses.yaml#/UpdatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  delete:
+    tags:
+    - Platform User Management
+    summary: Delete Platform User
+    description: 'Delete platform user with validation checks.'
+    operationId: deletePlatformUser
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: Platform user deleted successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: Platform user deleted successfully
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/platform/roles:
+  get:
+    tags:
+    - Platform Role Management
+    summary: List Platform Roles
+    description: 'Retrieve list of platform-level roles.'
+    operationId: listPlatformRoles
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - name: scope
+      in: query
+      description: Filter by role scope
+      schema:
+        type: string
+        enum:
+        - platform
+        - global
+      example: platform
+    responses:
+      '200':
+        description: Platform roles retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '../../components/schemas.yaml#/RoleDetail'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  post:
+    tags:
+    - Platform Role Management
+    summary: Create Platform Role
+    description: 'Create a new platform-level role.'
+    operationId: createPlatformRole
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/RoleCreateInput'
+    responses:
+      '201':
+        $ref: '../../components/responses.yaml#/CreatedResponse'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+# =============================================================================
+# TENANT USER MANAGEMENT ENDPOINTS
+# =============================================================================
+/tenant/auth/register:
+  post:
+    tags:
+    - Tenant Authentication
+    summary: Register New Tenant User Account
+    description: 'Register a new tenant user account with email verification workflow.
 
       **Features:**
-
       - Automatic email verification link
-
       - Password strength validation
-
       - Duplicate email prevention
-
-      - Multi-tenant support
-
+      - Tenant-scoped registration
       '
-    operationId: registerUser
+    operationId: registerTenantUser
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -28,8 +375,8 @@
           schema:
             $ref: '../../components/schemas.yaml#/UserCreateInput'
           examples:
-            new_user:
-              summary: New user registration
+            new_tenant_user:
+              summary: New tenant user registration
               value:
                 email: newuser@ptcex.com
                 password: SecurePass123!
@@ -41,7 +388,7 @@
                 send_invitation: true
     responses:
       '201':
-        description: User registered successfully
+        description: Tenant user registered successfully
         content:
           application/json:
             schema:
@@ -53,17 +400,7 @@
                     $ref: '../../components/schemas.yaml#/User'
                   message:
                     type: string
-                    example: User registered successfully. Please check your email
-                      for verification.
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                created_at: '2025-11-13T18:58:00Z'
-              message: Users created successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
+                    example: User registered successfully. Please check your email for verification.
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '409':
@@ -79,29 +416,21 @@
                 message: Email address already registered
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/auth/login:
+
+/tenant/auth/login:
   post:
     tags:
-    - Authentication
-    summary: User Login
-    description: 'Authenticate user with email and password, returning JWT token and
-      user profile.
-
+    - Tenant Authentication
+    summary: Tenant User Login
+    description: 'Authenticate tenant user with email and password.
 
       **Features:**
-
       - JWT token generation
-
       - Account lockout protection
-
       - 2FA support
-
-      - Tenant list included
-
-      - Login attempt tracking
-
+      - Tenant context validation
       '
-    operationId: loginUser
+    operationId: loginTenantUser
     security: []
     parameters:
     - $ref: '../../components/parameters.yaml#/TenantHeader'
@@ -119,7 +448,7 @@
                 type: string
                 format: email
                 description: User email address
-                example: admin@ptcex.com
+                example: user@ptcex.com
               password:
                 type: string
                 description: User password
@@ -133,11 +462,6 @@
                 type: boolean
                 default: false
                 description: Extended token expiry
-                example: false
-          example:
-            title: New Users Title
-            description: Sample description for users
-            is_active: true
     responses:
       '200':
         description: Login successful
@@ -145,14 +469,6 @@
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/AuthResponse'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -169,38 +485,20 @@
                   error:
                     code: INVALID_CREDENTIALS
                     message: Invalid email or password
-              account_locked:
-                summary: Account temporarily locked
-                value:
-                  success: false
-                  error:
-                    code: ACCOUNT_LOCKED
-                    message: Account locked due to too many failed attempts
-                    locked_until: '2025-11-12T15:30:00Z'
-      '423':
-        description: 2FA verification required
-        content:
-          application/json:
-            schema:
-              $ref: '../../components/schemas.yaml#/ErrorResponse'
-            example:
-              success: false
-              error:
-                code: 2FA_REQUIRED
-                message: Two-factor authentication code required
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/auth/logout:
+
+/tenant/auth/logout:
   post:
     tags:
-    - Authentication
-    summary: User Logout
-    description: 'Revoke current authentication token and log user activity.
-
-      '
-    operationId: logoutUser
+    - Tenant Authentication
+    summary: Tenant User Logout
+    description: 'Revoke current authentication token and log user activity.'
+    operationId: logoutTenantUser
     security:
     - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     responses:
       '200':
         description: Logout successful
@@ -214,28 +512,21 @@
                   message:
                     type: string
                     example: Logged out successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/auth/verify-email:
+
+/tenant/auth/verify-email:
   post:
     tags:
-    - Authentication
+    - Tenant Authentication
     summary: Verify Email Address
-    description: 'Verify user email address using verification token sent via email.
-
-      '
-    operationId: verifyEmail
+    description: 'Verify tenant user email address using verification token sent via email.'
+    operationId: verifyTenantEmail
     security: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -249,10 +540,6 @@
                 type: string
                 description: Email verification token
                 example: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...
-          example:
-            title: New Users Title
-            description: Sample description for users
-            is_active: true
     responses:
       '200':
         description: Email verified successfully
@@ -266,37 +553,25 @@
                   message:
                     type: string
                     example: Email verified successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         description: Invalid or expired token
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/ErrorResponse'
-            example:
-              success: false
-              error:
-                code: INVALID_TOKEN
-                message: Verification token is invalid or expired
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/auth/forgot-password:
+
+/tenant/auth/forgot-password:
   post:
     tags:
-    - Authentication
+    - Tenant Authentication
     summary: Request Password Reset
-    description: 'Send password reset link to user''s email address.
-
-      '
-    operationId: forgotPassword
+    description: 'Send password reset link to tenant user email address.'
+    operationId: forgotTenantPassword
     security: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -311,14 +586,9 @@
                 format: email
                 description: User email address
                 example: user@ptcex.com
-          example:
-            title: New Users Title
-            description: Sample description for users
-            is_active: true
     responses:
       '200':
-        description: Password reset email sent (returns success even if email not
-          found for security)
+        description: Password reset email sent
         content:
           application/json:
             schema:
@@ -328,30 +598,22 @@
                 properties:
                   message:
                     type: string
-                    example: If the email address exists, a password reset link has
-                      been sent
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
+                    example: If the email address exists, a password reset link has been sent
       '429':
         $ref: '../../components/responses.yaml#/RateLimitExceeded'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/auth/reset-password:
+
+/tenant/auth/reset-password:
   post:
     tags:
-    - Authentication
+    - Tenant Authentication
     summary: Reset Password
-    description: 'Reset user password using reset token from email.
-
-      '
-    operationId: resetPassword
+    description: 'Reset tenant user password using reset token from email.'
+    operationId: resetTenantPassword
     security: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -376,10 +638,6 @@
                 type: string
                 description: Password confirmation
                 example: NewSecurePass123!
-          example:
-            title: New Users Title
-            description: Sample description for users
-            is_active: true
     responses:
       '200':
         description: Password reset successful
@@ -393,41 +651,26 @@
                   message:
                     type: string
                     example: Password reset successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/users:
+
+/tenant/users:
   get:
     tags:
-    - User Management
-    summary: List Users
-    description: 'Retrieve paginated list of users with advanced filtering and search
-      capabilities.
+    - Tenant User Management
+    summary: List Tenant Users
+    description: 'Retrieve paginated list of users within current tenant scope.
 
-
-      **Admin Features:**
-
+      **Tenant Features:**
       - Search by name, email, phone
-
-      - Filter by status, tenant, role
-
+      - Filter by status, role within tenant
       - Sort by multiple fields
-
-      - Export functionality
-
-      - Tenant-scoped results
-
+      - Export tenant users
+      - Tenant-scoped results only
       '
-    operationId: listUsers
+    operationId: listTenantUsers
     security:
     - bearerAuth: []
     parameters:
@@ -466,20 +709,6 @@
         type: string
         format: uuid
       example: 550e8400-e29b-41d4-a716-446655440000
-    - name: created_from
-      in: query
-      description: Filter users created after this date
-      schema:
-        type: string
-        format: date
-      example: '2025-01-01'
-    - name: created_to
-      in: query
-      description: Filter users created before this date
-      schema:
-        type: string
-        format: date
-      example: '2025-12-31'
     - name: include
       in: query
       description: Include related data
@@ -488,18 +717,14 @@
         items:
           type: string
           enum:
-          - tenants
           - roles
           - permissions
           - statistics
       style: form
       explode: false
-      example:
-      - tenants
-      - roles
     responses:
       '200':
-        description: Users retrieved successfully
+        description: Tenant users retrieved successfully
         content:
           application/json:
             schema:
@@ -518,18 +743,6 @@
                       properties:
                         statistics:
                           $ref: '../../components/schemas.yaml#/UserStatistics'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -538,24 +751,17 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - User Management
-    summary: Create New User
-    description: 'Create a new user account with optional tenant assignment and role
-      setup.
-
+    - Tenant User Management
+    summary: Create New Tenant User
+    description: 'Create a new user account within current tenant scope.
 
       **Admin Features:**
-
       - Auto-generate secure password
-
       - Send email invitation
-
       - Assign to tenant with roles
-
       - Set initial preferences
-
       '
-    operationId: createUser
+    operationId: createTenantUser
     security:
     - bearerAuth: []
     parameters:
@@ -568,7 +774,7 @@
             $ref: '../../components/schemas.yaml#/UserCreateInput'
           examples:
             basic_user:
-              summary: Basic user creation
+              summary: Basic tenant user creation
               value:
                 email: newuser@ptcex.com
                 password: TempPassword123!
@@ -577,18 +783,6 @@
                 last_name: Doe
                 phone: '+62812345678'
                 send_invitation: true
-            admin_user:
-              summary: Admin user with full details
-              value:
-                email: admin@ptcex.com
-                password: AdminPass123!
-                name: System Administrator
-                first_name: System
-                last_name: Administrator
-                phone: '+62812345679'
-                language: en
-                timezone: Asia/Jakarta
-                send_invitation: false
     responses:
       '201':
         $ref: '../../components/responses.yaml#/CreatedResponse'
@@ -606,16 +800,14 @@
               $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/users/{id}:
+
+/tenant/users/{id}:
   get:
     tags:
-    - User Management
-    summary: Get User Details
-    description: 'Retrieve detailed user information including profile, roles, permissions,
-      and tenant assignments.
-
-      '
-    operationId: getUserDetails
+    - Tenant User Management
+    summary: Get Tenant User Details
+    description: 'Retrieve detailed user information within tenant scope.'
+    operationId: getTenantUserDetails
     security:
     - bearerAuth: []
     parameters:
@@ -636,20 +828,15 @@
         items:
           type: string
           enum:
-          - tenants
           - roles
           - permissions
           - activity_log
           - security_log
       style: form
       explode: false
-      example:
-      - tenants
-      - roles
-      - permissions
     responses:
       '200':
-        description: User details retrieved successfully
+        description: Tenant user details retrieved successfully
         content:
           application/json:
             schema:
@@ -659,18 +846,6 @@
                 properties:
                   data:
                     $ref: '../../components/schemas.yaml#/UserProfile'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -681,23 +856,10 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - User Management
-    summary: Update User Details
-    description: 'Update user profile information and preferences.
-
-
-      **Admin Features:**
-
-      - Update profile fields
-
-      - Change user status
-
-      - Modify preferences
-
-      - Avatar upload
-
-      '
-    operationId: updateUser
+    - Tenant User Management
+    summary: Update Tenant User Details
+    description: 'Update user profile information within tenant scope.'
+    operationId: updateTenantUser
     security:
     - bearerAuth: []
     parameters:
@@ -716,18 +878,6 @@
         application/json:
           schema:
             $ref: '../../components/schemas.yaml#/UserUpdateInput'
-          examples:
-            profile_update:
-              summary: Profile information update
-              value:
-                name: John Smith Updated
-                phone: '+62812345679'
-                language: en
-                timezone: Asia/Singapore
-            status_change:
-              summary: User status change
-              value:
-                status: suspended
     responses:
       '200':
         $ref: '../../components/responses.yaml#/UpdatedResponse'
@@ -743,21 +893,10 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - User Management
-    summary: Delete User
-    description: 'Soft delete user account with validation checks.
-
-
-      **Validation:**
-
-      - Check for active tenant assignments
-
-      - Verify no active orders/transactions
-
-      - Audit trail preservation
-
-      '
-    operationId: deleteUser
+    - Tenant User Management
+    summary: Delete Tenant User
+    description: 'Soft delete user account within tenant scope with validation checks.'
+    operationId: deleteTenantUser
     security:
     - bearerAuth: []
     parameters:
@@ -770,16 +909,9 @@
         type: string
         format: uuid
       example: 550e8400-e29b-41d4-a716-446655440000
-    - name: force
-      in: query
-      description: Force delete even if user has active assignments
-      schema:
-        type: boolean
-        default: false
-      example: false
     responses:
       '200':
-        description: User deleted successfully
+        description: Tenant user deleted successfully
         content:
           application/json:
             schema:
@@ -790,28 +922,12 @@
                   message:
                     type: string
                     example: User deleted successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users deleteed successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         description: Cannot delete user with active assignments
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/ErrorResponse'
-            example:
-              success: false
-              error:
-                code: USER_HAS_ACTIVE_ASSIGNMENTS
-                message: Cannot delete user with active tenant assignments
-                details:
-                  active_tenants: 2
-                  active_orders: 3
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -820,160 +936,14 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/users/{id}/tenant-assignments:
-  post:
-    tags:
-    - User Management
-    summary: Assign User to Tenant
-    description: 'Assign user to current tenant with specified roles.
 
-
-      **Features:**
-
-      - Multi-role assignment
-
-      - Email invitation sending
-
-      - Access level configuration
-
-      - Audit trail logging
-
-      '
-    operationId: assignUserToTenant
-    security:
-    - bearerAuth: []
-    parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
-    - name: id
-      in: path
-      required: true
-      description: User ID
-      schema:
-        type: string
-        format: uuid
-      example: 550e8400-e29b-41d4-a716-446655440000
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '../../components/schemas.yaml#/TenantUserAssignInput'
-          examples:
-            basic_assignment:
-              summary: Basic user assignment
-              value:
-                user_id: 550e8400-e29b-41d4-a716-446655440000
-                role_ids:
-                - 123e4567-e89b-12d3-a456-426614174000
-                can_access_admin_panel: true
-                send_invitation: true
-            manager_assignment:
-              summary: Manager with notes
-              value:
-                user_id: 550e8400-e29b-41d4-a716-446655440000
-                role_ids:
-                - 123e4567-e89b-12d3-a456-426614174000
-                - 456e7890-e89b-12d3-a456-426614174000
-                can_access_admin_panel: true
-                notes: Finance team manager - budget approval authority
-                send_invitation: false
-    responses:
-      '201':
-        description: User assigned to tenant successfully
-        content:
-          application/json:
-            schema:
-              allOf:
-              - $ref: '../../components/schemas.yaml#/BaseResponse'
-              - type: object
-                properties:
-                  data:
-                    $ref: '../../components/schemas.yaml#/TenantUser'
-                  message:
-                    type: string
-                    example: User assigned to tenant successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                created_at: '2025-11-13T18:58:00Z'
-              message: Users created successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-      '400':
-        $ref: '../../components/responses.yaml#/ValidationError'
-      '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
-      '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
-      '409':
-        description: User already assigned to tenant
-        content:
-          application/json:
-            schema:
-              $ref: '../../components/schemas.yaml#/ErrorResponse'
-      '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-  delete:
-    tags:
-    - User Management
-    summary: Remove User from Tenant
-    description: 'Remove user''s assignment from current tenant.
-
-      '
-    operationId: removeUserFromTenant
-    security:
-    - bearerAuth: []
-    parameters:
-    - $ref: '../../components/parameters.yaml#/TenantHeader'
-    - name: id
-      in: path
-      required: true
-      description: User ID
-      schema:
-        type: string
-        format: uuid
-      example: 550e8400-e29b-41d4-a716-446655440000
-    responses:
-      '200':
-        description: User removed from tenant successfully
-        content:
-          application/json:
-            schema:
-              allOf:
-              - $ref: '../../components/schemas.yaml#/BaseResponse'
-              - type: object
-                properties:
-                  message:
-                    type: string
-                    example: User removed from tenant successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users deleteed successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-      '401':
-        $ref: '../../components/responses.yaml#/Unauthorized'
-      '403':
-        $ref: '../../components/responses.yaml#/Forbidden'
-      '404':
-        $ref: '../../components/responses.yaml#/NotFound'
-      '500':
-        $ref: '../../components/responses.yaml#/ServerError'
-/users/me:
+/tenant/users/me:
   get:
     tags:
-    - User Management
+    - Tenant User Management
     summary: Get Current User Profile
-    description: 'Retrieve current authenticated user''s profile with permissions
-      and tenant information.
-
-      '
-    operationId: getCurrentUser
+    description: 'Retrieve current authenticated tenant user profile with permissions and tenant information.'
+    operationId: getCurrentTenantUser
     security:
     - bearerAuth: []
     parameters:
@@ -990,32 +960,20 @@
                 properties:
                   data:
                     $ref: '../../components/schemas.yaml#/UserProfile'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - User Management
+    - Tenant User Management
     summary: Update Own Profile
-    description: 'Update current user''s profile information and preferences.
-
-      '
-    operationId: updateOwnProfile
+    description: 'Update current tenant user profile information and preferences.'
+    operationId: updateOwnTenantProfile
     security:
     - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1052,14 +1010,6 @@
                 enum:
                 - 12h
                 - 24h
-          examples:
-            profile_update:
-              summary: Update profile
-              value:
-                name: John Doe Updated
-                phone: '+62812345680'
-                language: id
-                timezone: Asia/Jakarta
     responses:
       '200':
         $ref: '../../components/responses.yaml#/UpdatedResponse'
@@ -1069,17 +1019,18 @@
         $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/users/me/password:
+
+/tenant/users/me/password:
   put:
     tags:
-    - User Management
+    - Tenant User Management
     summary: Change Own Password
-    description: 'Change current user''s password with current password verification.
-
-      '
-    operationId: changeOwnPassword
+    description: 'Change current tenant user password with current password verification.'
+    operationId: changeOwnTenantPassword
     security:
     - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     requestBody:
       required: true
       content:
@@ -1104,10 +1055,6 @@
                 type: string
                 description: New password confirmation
                 example: NewSecurePass123!
-          example:
-            title: Updated Users Title
-            description: Updated description for users
-            is_active: true
     responses:
       '200':
         description: Password changed successfully
@@ -1121,14 +1068,6 @@
                   message:
                     type: string
                     example: Password changed successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users puted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -1137,33 +1076,16 @@
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/ErrorResponse'
-            example:
-              success: false
-              error:
-                code: INVALID_PASSWORD
-                message: Current password is incorrect
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/roles:
+
+/tenant/roles:
   get:
     tags:
-    - Role Management
-    summary: List Roles
-    description: 'Retrieve list of roles with optional filtering by scope and tenant.
-
-
-      **Features:**
-
-      - Tenant-scoped and platform roles
-
-      - Role hierarchy information
-
-      - Permission counts
-
-      - User assignment counts
-
-      '
-    operationId: listRoles
+    - Tenant Role Management
+    summary: List Tenant Roles
+    description: 'Retrieve list of roles within tenant scope with optional filtering.'
+    operationId: listTenantRoles
     security:
     - bearerAuth: []
     parameters:
@@ -1176,7 +1098,6 @@
       schema:
         type: string
         enum:
-        - platform
         - tenant
         - hybrid
       example: tenant
@@ -1194,26 +1115,9 @@
         type: boolean
         default: false
       example: false
-    - name: include
-      in: query
-      description: Include related data
-      schema:
-        type: array
-        items:
-          type: string
-          enum:
-          - permissions
-          - users
-          - parent
-          - children
-      style: form
-      explode: false
-      example:
-      - permissions
-      - users
     responses:
       '200':
-        description: Roles retrieved successfully
+        description: Tenant roles retrieved successfully
         content:
           application/json:
             schema:
@@ -1225,18 +1129,6 @@
                     type: array
                     items:
                       $ref: '../../components/schemas.yaml#/RoleDetail'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -1245,23 +1137,10 @@
         $ref: '../../components/responses.yaml#/ServerError'
   post:
     tags:
-    - Role Management
-    summary: Create New Role
-    description: 'Create a new role with permissions assignment.
-
-
-      **Features:**
-
-      - Hierarchical role structure
-
-      - Permission assignment
-
-      - Display customization
-
-      - Tenant-scoped creation
-
-      '
-    operationId: createRole
+    - Tenant Role Management
+    summary: Create New Tenant Role
+    description: 'Create a new role within tenant scope with permissions assignment.'
+    operationId: createTenantRole
     security:
     - bearerAuth: []
     parameters:
@@ -1272,30 +1151,6 @@
         application/json:
           schema:
             $ref: '../../components/schemas.yaml#/RoleCreateInput'
-          examples:
-            basic_role:
-              summary: Basic role creation
-              value:
-                code: product_manager
-                name: Product Manager
-                description: Manages product catalog and specifications
-                scope: tenant
-                color: '#17a2b8'
-                icon: box
-                permission_ids:
-                - 550e8400-e29b-41d4-a716-446655440000
-            hierarchical_role:
-              summary: Role with parent inheritance
-              value:
-                code: senior_manager
-                name: Senior Manager
-                description: Senior management role with extended permissions
-                parent_role_id: 123e4567-e89b-12d3-a456-426614174000
-                scope: tenant
-                color: '#28a745'
-                permission_ids:
-                - 550e8400-e29b-41d4-a716-446655440000
-                - 123e4567-e89b-12d3-a456-426614174000
     responses:
       '201':
         $ref: '../../components/responses.yaml#/CreatedResponse'
@@ -1305,24 +1160,16 @@
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
-      '409':
-        description: Role code already exists
-        content:
-          application/json:
-            schema:
-              $ref: '../../components/schemas.yaml#/ErrorResponse'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/roles/{id}:
+
+/tenant/roles/{id}:
   get:
     tags:
-    - Role Management
-    summary: Get Role Details
-    description: 'Retrieve detailed role information including permissions and user
-      assignments.
-
-      '
-    operationId: getRoleDetails
+    - Tenant Role Management
+    summary: Get Tenant Role Details
+    description: 'Retrieve detailed role information within tenant scope.'
+    operationId: getTenantRoleDetails
     security:
     - bearerAuth: []
     parameters:
@@ -1337,7 +1184,7 @@
       example: 550e8400-e29b-41d4-a716-446655440000
     responses:
       '200':
-        description: Role details retrieved successfully
+        description: Tenant role details retrieved successfully
         content:
           application/json:
             schema:
@@ -1347,18 +1194,6 @@
                 properties:
                   data:
                     $ref: '../../components/schemas.yaml#/RoleDetail'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -1369,12 +1204,10 @@
         $ref: '../../components/responses.yaml#/ServerError'
   put:
     tags:
-    - Role Management
-    summary: Update Role
-    description: 'Update role information and permissions.
-
-      '
-    operationId: updateRole
+    - Tenant Role Management
+    summary: Update Tenant Role
+    description: 'Update role information and permissions within tenant scope.'
+    operationId: updateTenantRole
     security:
     - bearerAuth: []
     parameters:
@@ -1410,16 +1243,6 @@
                 items:
                   type: string
                   format: uuid
-          examples:
-            role_update:
-              summary: Update role details
-              value:
-                name: Product Manager Updated
-                description: Updated product management role
-                color: '#6f42c1'
-                permission_ids:
-                - 550e8400-e29b-41d4-a716-446655440000
-                - 123e4567-e89b-12d3-a456-426614174000
     responses:
       '200':
         $ref: '../../components/responses.yaml#/UpdatedResponse'
@@ -1435,21 +1258,10 @@
         $ref: '../../components/responses.yaml#/ServerError'
   delete:
     tags:
-    - Role Management
-    summary: Delete Role
-    description: 'Delete role with validation checks.
-
-
-      **Validation:**
-
-      - Cannot delete system roles
-
-      - Cannot delete roles with assigned users
-
-      - Cannot delete roles with child roles
-
-      '
-    operationId: deleteRole
+    - Tenant Role Management
+    summary: Delete Tenant Role
+    description: 'Delete role within tenant scope with validation checks.'
+    operationId: deleteTenantRole
     security:
     - bearerAuth: []
     parameters:
@@ -1464,7 +1276,7 @@
       example: 550e8400-e29b-41d4-a716-446655440000
     responses:
       '200':
-        description: Role deleted successfully
+        description: Tenant role deleted successfully
         content:
           application/json:
             schema:
@@ -1475,37 +1287,12 @@
                   message:
                     type: string
                     example: Role deleted successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users deleteed successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         description: Cannot delete role
         content:
           application/json:
             schema:
               $ref: '../../components/schemas.yaml#/ErrorResponse'
-            examples:
-              system_role:
-                summary: Cannot delete system role
-                value:
-                  success: false
-                  error:
-                    code: CANNOT_DELETE_SYSTEM_ROLE
-                    message: System roles cannot be deleted
-              has_users:
-                summary: Role has assigned users
-                value:
-                  success: false
-                  error:
-                    code: ROLE_HAS_USERS
-                    message: Cannot delete role with assigned users
-                    details:
-                      user_count: 5
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -1514,29 +1301,18 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/permissions:
+
+/tenant/permissions:
   get:
     tags:
-    - Permission Management
-    summary: List All Permissions
-    description: 'Retrieve complete list of system permissions organized by category.
-
-
-      **Features:**
-
-      - Hierarchical category structure
-
-      - Usage statistics
-
-      - Search and filtering
-
-      - Group organization
-
-      '
-    operationId: listPermissions
+    - Tenant Permission Management
+    summary: List Tenant Permissions
+    description: 'Retrieve tenant-scoped permissions organized by category.'
+    operationId: listTenantPermissions
     security:
     - bearerAuth: []
     parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
     - name: category
       in: query
       description: Filter by permission category
@@ -1555,31 +1331,12 @@
       schema:
         type: string
         enum:
-        - platform
         - tenant
         - global
       example: tenant
-    - name: include_system
-      in: query
-      description: Include system permissions
-      schema:
-        type: boolean
-        default: true
-      example: true
-    - name: group_by
-      in: query
-      description: Group permissions by field
-      schema:
-        type: string
-        enum:
-        - category
-        - resource_type
-        - group_name
-        default: category
-      example: category
     responses:
       '200':
-        description: Permissions retrieved successfully
+        description: Tenant permissions retrieved successfully
         content:
           application/json:
             schema:
@@ -1593,60 +1350,20 @@
                       type: array
                       items:
                         $ref: '../../components/schemas.yaml#/PermissionDetail'
-                    example:
-                      E-Commerce:
-                      - id: 550e8400-e29b-41d4-a716-446655440000
-                        code: products.create
-                        name: Create Products
-                        category: E-Commerce
-                        resource_type: Product
-                        action: create
-                      User Management:
-                      - id: 123e4567-e89b-12d3-a456-426614174000
-                        code: users.view
-                        name: View Users
-                        category: User Management
-                        resource_type: User
-                        action: view
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/permissions/check:
+
+/tenant/permissions/check:
   post:
     tags:
-    - Permission Management
+    - Tenant Permission Management
     summary: Check User Permission
-    description: 'Check if user has specific permission with optional resource-level
-      validation.
-
-
-      **Features:**
-
-      - Role-based permission checking
-
-      - Resource-level ACL validation
-
-      - Inheritance calculation
-
-      - Conditional permissions
-
-      '
-    operationId: checkPermission
+    description: 'Check if user has specific permission within tenant scope with resource-level validation.'
+    operationId: checkTenantPermission
     security:
     - bearerAuth: []
     parameters:
@@ -1657,22 +1374,6 @@
         application/json:
           schema:
             $ref: '../../components/schemas.yaml#/PermissionCheckInput'
-          examples:
-            basic_check:
-              summary: Basic permission check
-              value:
-                permission_code: products.create
-            resource_check:
-              summary: Resource-level permission check
-              value:
-                permission_code: products.edit
-                resource_type: Product
-                resource_id: 550e8400-e29b-41d4-a716-446655440000
-            user_check:
-              summary: Check permission for specific user
-              value:
-                user_id: 123e4567-e89b-12d3-a456-426614174000
-                permission_code: orders.approve
     responses:
       '200':
         description: Permission check completed
@@ -1685,30 +1386,20 @@
                 properties:
                   data:
                     $ref: '../../components/schemas.yaml#/PermissionCheckResult'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/users/{id}/permissions:
+
+/tenant/users/{id}/permissions:
   get:
     tags:
-    - Permission Management
+    - Tenant Permission Management
     summary: Get User's Effective Permissions
-    description: 'Retrieve user''s effective permissions including role-based, direct,
-      and resource-specific permissions.
-
-      '
-    operationId: getUserPermissions
+    description: 'Retrieve user effective permissions within tenant scope.'
+    operationId: getTenantUserPermissions
     security:
     - bearerAuth: []
     parameters:
@@ -1728,13 +1419,6 @@
         type: boolean
         default: true
       example: true
-    - name: include_resource_acl
-      in: query
-      description: Include resource-level permissions
-      schema:
-        type: boolean
-        default: false
-      example: false
     responses:
       '200':
         description: User permissions retrieved successfully
@@ -1750,7 +1434,6 @@
                     properties:
                       role_permissions:
                         type: array
-                        description: Permissions from assigned roles
                         items:
                           type: object
                           properties:
@@ -1758,42 +1441,12 @@
                               $ref: '../../components/schemas.yaml#/Permission'
                             granted_by_role:
                               type: string
-                              example: product_manager
                             is_inherited:
                               type: boolean
-                              example: false
                       direct_permissions:
                         type: array
-                        description: Directly assigned permissions
                         items:
-                          allOf:
-                          - $ref: '../../components/schemas.yaml#/Permission'
-                          - type: object
-                            properties:
-                              is_granted:
-                                type: boolean
-                                example: true
-                              expires_at:
-                                type: string
-                                format: date-time
-                                nullable: true
-                      resource_permissions:
-                        type: array
-                        description: Resource-specific permissions (if requested)
-                        items:
-                          $ref: '../../components/schemas.yaml#/ResourcePermission'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                          $ref: '../../components/schemas.yaml#/Permission'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -1802,26 +1455,108 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/user-permissions:
+
+/tenant/users/{id}/tenant-assignments:
   post:
     tags:
-    - Permission Management
+    - Tenant User Management
+    summary: Assign User to Tenant
+    description: 'Assign user to current tenant with specified roles.'
+    operationId: assignUserToCurrentTenant
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/TenantUserAssignInput'
+    responses:
+      '201':
+        description: User assigned to tenant successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/TenantUser'
+                  message:
+                    type: string
+                    example: User assigned to tenant successfully
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        description: User already assigned to tenant
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/ErrorResponse'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+  delete:
+    tags:
+    - Tenant User Management
+    summary: Remove User from Tenant
+    description: 'Remove user assignment from current tenant.'
+    operationId: removeUserFromCurrentTenant
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      description: User ID
+      schema:
+        type: string
+        format: uuid
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: User removed from tenant successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: User removed from tenant successfully
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../../components/responses.yaml#/ServerError'
+
+/tenant/user-permissions:
+  post:
+    tags:
+    - Tenant Permission Management
     summary: Grant Direct User Permission
-    description: 'Grant direct permission to user, overriding role permissions.
-
-
-      **Use Cases:**
-
-      - Temporary permission grants
-
-      - Exception-based access
-
-      - Time-limited permissions
-
-      - Permission overrides
-
-      '
-    operationId: grantUserPermission
+    description: 'Grant direct permission to user within tenant scope.'
+    operationId: grantTenantUserPermission
     security:
     - bearerAuth: []
     parameters:
@@ -1862,32 +1597,6 @@
                 nullable: true
                 description: Reason for granting permission
                 example: Temporary access for project ABC
-              conditions:
-                type: object
-                nullable: true
-                description: Permission conditions
-                example:
-                  ip_restrictions:
-                  - 192.168.1.0/24
-                  time_restrictions:
-                    start: 09:00
-                    end: '17:00'
-          examples:
-            temporary_access:
-              summary: Temporary permission grant
-              value:
-                user_id: 550e8400-e29b-41d4-a716-446655440000
-                permission_id: 123e4567-e89b-12d3-a456-426614174000
-                is_granted: true
-                expires_at: '2025-12-31T23:59:59Z'
-                reason: Temporary access for Q4 project
-            permission_override:
-              summary: Override role permission (deny)
-              value:
-                user_id: 550e8400-e29b-41d4-a716-446655440000
-                permission_id: 123e4567-e89b-12d3-a456-426614174000
-                is_granted: false
-                reason: Security restriction per management directive
     responses:
       '201':
         $ref: '../../components/responses.yaml#/CreatedResponse'
@@ -1899,15 +1608,14 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/user-permissions/{id}:
+
+/tenant/user-permissions/{id}:
   delete:
     tags:
-    - Permission Management
+    - Tenant Permission Management
     summary: Revoke Direct User Permission
-    description: 'Remove direct user permission assignment.
-
-      '
-    operationId: revokeUserPermission
+    description: 'Remove direct user permission assignment within tenant scope.'
+    operationId: revokeTenantUserPermission
     security:
     - bearerAuth: []
     parameters:
@@ -1933,14 +1641,6 @@
                   message:
                     type: string
                     example: User permission revoked successfully
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users deleteed successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
@@ -1949,16 +1649,14 @@
         $ref: '../../components/responses.yaml#/NotFound'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/users/bulk:
+
+/tenant/users/bulk:
   post:
     tags:
-    - User Management
-    summary: Bulk User Operations
-    description: "Perform bulk operations on multiple users simultaneously.\n\n**Supported\
-      \ Operations:**\n- activate: Activate user accounts\n- deactivate: Deactivate\
-      \ user accounts  \n- suspend: Suspend user accounts\n- delete: Soft delete user\
-      \ accounts\n- verify_email: Mark emails as verified\n"
-    operationId: bulkUserOperation
+    - Tenant User Management
+    summary: Bulk Tenant User Operations
+    description: "Perform bulk operations on multiple tenant users simultaneously."
+    operationId: bulkTenantUserOperation
     security:
     - bearerAuth: []
     parameters:
@@ -1969,22 +1667,6 @@
         application/json:
           schema:
             $ref: '../../components/schemas.yaml#/BulkUserOperationInput'
-          examples:
-            activate_users:
-              summary: Activate multiple users
-              value:
-                user_ids:
-                - 550e8400-e29b-41d4-a716-446655440000
-                - 123e4567-e89b-12d3-a456-426614174000
-                action: activate
-                reason: Monthly user review completed
-            suspend_users:
-              summary: Suspend inactive users
-              value:
-                user_ids:
-                - 789e0123-e89b-12d3-a456-426614174000
-                action: suspend
-                reason: Inactive for over 90 days
     responses:
       '200':
         description: Bulk operation completed
@@ -2019,18 +1701,8 @@
                             user_id:
                               type: string
                               format: uuid
-                              example: 123e4567-e89b-12d3-a456-426614174000
                             error:
                               type: string
-                              example: User has active orders and cannot be deleted
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Users posted successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
       '400':
         $ref: '../../components/responses.yaml#/ValidationError'
       '401':
@@ -2039,28 +1711,14 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '500':
         $ref: '../../components/responses.yaml#/ServerError'
-/users/statistics:
+
+/tenant/users/statistics:
   get:
     tags:
-    - User Management
-    summary: Get User Statistics
-    description: 'Retrieve comprehensive user statistics and analytics.
-
-
-      **Statistics Include:**
-
-      - Total user counts by status
-
-      - Registration trends
-
-      - Login activity
-
-      - Verification status
-
-      - Platform admin counts
-
-      '
-    operationId: getUserStatistics
+    - Tenant User Management
+    summary: Get Tenant User Statistics
+    description: 'Retrieve comprehensive user statistics for current tenant.'
+    operationId: getTenantUserStatistics
     security:
     - bearerAuth: []
     parameters:
@@ -2080,7 +1738,7 @@
       example: month
     responses:
       '200':
-        description: User statistics retrieved successfully
+        description: Tenant user statistics retrieved successfully
         content:
           application/json:
             schema:
@@ -2090,18 +1748,6 @@
                 properties:
                   data:
                     $ref: '../../components/schemas.yaml#/UserStatistics'
-            example:
-              success: true
-              data:
-                id: 550e8400-e29b-41d4-a716-446655440000
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                title: Sample Users Title
-                created_at: '2025-11-13T18:58:00Z'
-                updated_at: '2025-11-13T18:58:00Z'
-              message: Users retrieved successfully
-              meta:
-                timestamp: '2025-11-13T18:58:00Z'
-                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
       '401':
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':

@@ -1,4 +1,749 @@
-/pages:
+# =============================================================================
+# PLATFORM ENDPOINTS - Platform-level page management
+# Used by platform administrators to manage multi-tenant page templates,
+# global page settings, and cross-tenant page analytics
+# =============================================================================
+
+/platform/pages:
+  get:
+    tags:
+    - Platform Management
+    summary: List all pages across platform
+    description: 'Retrieve a paginated list of all pages across the platform.
+      
+      Platform-level endpoint for managing pages across all tenants.
+      Supports filtering by tenant, page type, status, and full-text search.
+      
+      Requires platform-level authentication and permissions.'
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - $ref: '../../components/parameters.yaml#/SortParam'
+    - $ref: '../../components/parameters.yaml#/OrderParam'
+    - $ref: '../../components/parameters.yaml#/SearchParam'
+    - name: tenant_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific tenant
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    - name: page_type
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - home
+        - about
+        - contact
+        - faq
+        - custom
+      description: Filter by page type
+      example: home
+    - name: publish_status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - draft
+        - review
+        - scheduled
+        - published
+        - archived
+      description: Filter by publish status
+      example: published
+    - name: template_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Filter by template
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - sections
+          - analytics
+          - template
+          - seo_meta
+          - tenant
+      style: form
+      explode: false
+      description: Include related data
+      example:
+      - sections
+      - analytics
+      - tenant
+    responses:
+      '200':
+        description: Platform pages retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          allOf:
+                          - $ref: '../../components/schemas.yaml#/Page'
+                          - type: object
+                            properties:
+                              tenant:
+                                $ref: '../../components/schemas.yaml#/TenantSummary'
+            examples:
+              success:
+                summary: Successful platform page listing
+                value:
+                  success: true
+                  data:
+                    items:
+                    - id: 550e8400-e29b-41d4-a716-446655440000
+                      tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                      slug: homepage
+                      title: Welcome to Acme Etching
+                      page_type: home
+                      publish_status: published
+                      published_at: '2025-11-12T10:00:00Z'
+                      created_at: '2025-11-10T08:00:00Z'
+                      updated_at: '2025-11-12T09:30:00Z'
+                      tenant:
+                        id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                        name: Acme Etching Co.
+                        slug: acme-etching
+                        domain: acme-etching.com
+                    - id: 661f9510-f32e-52e5-b827-557766551111
+                      tenant_id: 7cb8c920-aead-22e2-91c5-11d14fe541d9
+                      slug: homepage
+                      title: Premium Manufacturing Services
+                      page_type: home
+                      publish_status: published
+                      published_at: '2025-11-11T14:30:00Z'
+                      created_at: '2025-11-09T12:15:00Z'
+                      updated_at: '2025-11-11T14:15:00Z'
+                      tenant:
+                        id: 7cb8c920-aead-22e2-91c5-11d14fe541d9
+                        name: Premium Manufacturing
+                        slug: premium-mfg
+                        domain: premium-mfg.com
+                    pagination:
+                      current_page: 1
+                      per_page: 15
+                      total: 47
+                      last_page: 4
+                  message: Platform pages retrieved successfully
+                  meta:
+                    timestamp: '2025-11-12T13:00:00Z'
+                    request_id: req_123456789
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+  post:
+    tags:
+    - Platform Management
+    summary: Create platform-level page template
+    description: "Create a new page template at platform level that can be used across tenants.\nRequires 'platform.pages.create' permission.\n"
+    security:
+    - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '../../components/schemas.yaml#/CreatePageRequest'
+            - type: object
+              properties:
+                is_template:
+                  type: boolean
+                  default: true
+                  description: Mark as platform template
+                template_category:
+                  type: string
+                  enum:
+                  - manufacturing
+                  - services
+                  - corporate
+                  - creative
+                  - ecommerce
+                  - portfolio
+                  description: Template category for organization
+                is_premium:
+                  type: boolean
+                  default: false
+                  description: Premium template flag
+          examples:
+            platform_template:
+              summary: Create platform page template
+              value:
+                title: Manufacturing Homepage Template
+                slug: manufacturing-homepage-template
+                page_type: home
+                is_template: true
+                template_category: manufacturing
+                publish_status: published
+                meta_title: Manufacturing Homepage Template
+                meta_description: Professional homepage template for manufacturing businesses
+    responses:
+      '201':
+        description: Platform page template created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/Page'
+                    - type: object
+                      properties:
+                        is_template:
+                          type: boolean
+                        template_category:
+                          type: string
+            examples:
+              created:
+                summary: Successfully created platform template
+                value:
+                  success: true
+                  data:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    tenant_id: null
+                    slug: manufacturing-homepage-template
+                    title: Manufacturing Homepage Template
+                    page_type: home
+                    is_template: true
+                    template_category: manufacturing
+                    publish_status: published
+                    created_at: '2025-11-12T13:00:00Z'
+                    updated_at: '2025-11-12T13:00:00Z'
+                  message: Platform page template created successfully
+                  meta:
+                    timestamp: '2025-11-12T13:00:00Z'
+                    request_id: req_123456789
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '409':
+        $ref: '../../components/responses.yaml#/Conflict'
+
+/platform/pages/{id}:
+  get:
+    tags:
+    - Platform Management
+    summary: Get platform page by ID
+    description: 'Retrieve a single page by its UUID at platform level.
+
+      Requires ''platform.pages.view'' permission.
+
+      '
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Page UUID
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+          - sections
+          - analytics
+          - template
+          - seo_meta
+          - version_history
+          - tenant
+      style: form
+      explode: false
+      description: Include related data
+      example:
+      - sections
+      - analytics
+      - tenant
+    responses:
+      '200':
+        description: Platform page retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/Page'
+                    - type: object
+                      properties:
+                        tenant:
+                          $ref: '../../components/schemas.yaml#/TenantSummary'
+            examples:
+              success:
+                summary: Platform page with sections and tenant info
+                value:
+                  success: true
+                  data:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    slug: homepage
+                    title: Welcome to Acme Etching
+                    page_type: home
+                    publish_status: published
+                    sections:
+                    - id: section_1
+                      section_type: hero
+                      title: Premium Etching Services
+                      sort_order: 1
+                      content_data:
+                        title: Professional Etching Services
+                        description: Transform your ideas into reality
+                        primary_cta:
+                          text: Get Quote
+                          url: /quote
+                          style: primary
+                    analytics:
+                      views:
+                        total: 15420
+                        unique: 12350
+                        today: 145
+                    tenant:
+                      id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                      name: Acme Etching Co.
+                      slug: acme-etching
+                      domain: acme-etching.com
+                  message: Platform page retrieved successfully
+                  meta:
+                    timestamp: '2025-11-12T13:00:00Z'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+  put:
+    tags:
+    - Platform Management
+    summary: Update platform page
+    description: 'Update an existing page at platform level.
+
+      Requires ''platform.pages.edit'' permission.
+
+      '
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Page UUID
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+            - $ref: '../../components/schemas.yaml#/UpdatePageRequest'
+            - type: object
+              properties:
+                is_template:
+                  type: boolean
+                  description: Update template flag
+                template_category:
+                  type: string
+                  enum:
+                  - manufacturing
+                  - services
+                  - corporate
+                  - creative
+                  - ecommerce
+                  - portfolio
+                  description: Update template category
+                is_premium:
+                  type: boolean
+                  description: Update premium flag
+          examples:
+            update_template:
+              summary: Update platform template
+              value:
+                title: Updated Manufacturing Template
+                template_category: manufacturing
+                is_premium: true
+                version_notes: Updated template with premium features
+            global_publish:
+              summary: Publish template globally
+              value:
+                publish_status: published
+                version_notes: Published for global use
+    responses:
+      '200':
+        description: Platform page updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    allOf:
+                    - $ref: '../../components/schemas.yaml#/Page'
+                    - type: object
+                      properties:
+                        tenant:
+                          $ref: '../../components/schemas.yaml#/TenantSummary'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                title: Updated Manufacturing Template
+                template_category: manufacturing
+                is_premium: true
+                updated_at: '2025-11-12T13:00:00Z'
+                tenant:
+                  id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                  name: Acme Etching Co.
+              message: Platform page updated successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        $ref: '../../components/responses.yaml#/ValidationError'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+  delete:
+    tags:
+    - Platform Management
+    summary: Delete platform page
+    description: 'Delete a page at platform level (hard delete for templates).
+
+      Requires ''platform.pages.delete'' permission.
+
+      '
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Page UUID
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: force
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+      description: Force hard delete (permanent)
+    responses:
+      '200':
+        description: Platform page deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/SuccessResponse'
+            examples:
+              hard_delete:
+                summary: Platform page deleted permanently
+                value:
+                  success: true
+                  data: null
+                  message: Platform page deleted permanently
+                  meta:
+                    timestamp: '2025-11-12T13:00:00Z'
+      '404':
+        $ref: '../../components/responses.yaml#/NotFound'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+
+/platform/pages/analytics:
+  get:
+    tags:
+    - Platform Management
+    summary: Get platform-wide page analytics
+    description: 'Retrieve analytics data across all tenants and pages.
+
+      Requires ''platform.analytics.view'' permission.
+
+      '
+    security:
+    - bearerAuth: []
+    parameters:
+    - name: period
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - today
+        - week
+        - month
+        - quarter
+        - year
+        - custom
+        default: month
+      description: Analytics period
+    - name: date_from
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+      description: Start date for custom period
+    - name: date_to
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+      description: End date for custom period
+    - name: tenant_id
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific tenant
+    - name: page_type
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - home
+        - about
+        - contact
+        - faq
+        - custom
+      description: Filter by page type
+    responses:
+      '200':
+        description: Platform analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      overview:
+                        type: object
+                        properties:
+                          total_pages:
+                            type: integer
+                          total_tenants:
+                            type: integer
+                          total_views:
+                            type: integer
+                          total_unique_visitors:
+                            type: integer
+                      by_tenant:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tenant_id:
+                              type: string
+                              format: uuid
+                            tenant_name:
+                              type: string
+                            pages_count:
+                              type: integer
+                            total_views:
+                              type: integer
+                            unique_visitors:
+                              type: integer
+                      by_page_type:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            page_type:
+                              type: string
+                            pages_count:
+                              type: integer
+                            total_views:
+                              type: integer
+                            avg_views_per_page:
+                              type: number
+            example:
+              success: true
+              data:
+                overview:
+                  total_pages: 127
+                  total_tenants: 23
+                  total_views: 45280
+                  total_unique_visitors: 38150
+                by_tenant:
+                - tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                  tenant_name: Acme Etching Co.
+                  pages_count: 8
+                  total_views: 15420
+                  unique_visitors: 12350
+                - tenant_id: 7cb8c920-aead-22e2-91c5-11d14fe541d9
+                  tenant_name: Premium Manufacturing
+                  pages_count: 12
+                  total_views: 22180
+                  unique_visitors: 18920
+                by_page_type:
+                - page_type: home
+                  pages_count: 23
+                  total_views: 28540
+                  avg_views_per_page: 1240.9
+                - page_type: about
+                  pages_count: 21
+                  total_views: 8920
+                  avg_views_per_page: 424.8
+              message: Platform analytics retrieved successfully
+              meta:
+                timestamp: '2025-11-12T13:00:00Z'
+
+/platform/page-templates:
+  get:
+    tags:
+    - Platform Management
+    summary: List platform page templates
+    description: 'Retrieve available platform-level page templates.
+
+      These templates can be used by tenants for creating their pages.
+
+      '
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/PageParam'
+    - $ref: '../../components/parameters.yaml#/PerPageParam'
+    - name: category
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+        - manufacturing
+        - services
+        - corporate
+        - creative
+        - ecommerce
+        - portfolio
+      description: Filter by template category
+    - name: is_premium
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: Filter by premium status
+    - name: search
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Search templates by title or description
+    responses:
+      '200':
+        description: Platform templates retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/PaginatedResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          allOf:
+                          - $ref: '../../components/schemas.yaml#/PageTemplate'
+                          - type: object
+                            properties:
+                              usage_count:
+                                type: integer
+                                description: Number of tenants using this template
+                              last_used_at:
+                                type: string
+                                format: date-time
+                                description: When template was last used
+            example:
+              success: true
+              data:
+                items:
+                - id: 550e8400-e29b-41d4-a716-446655440000
+                  title: Manufacturing Homepage Template
+                  category: manufacturing
+                  is_premium: false
+                  usage_count: 12
+                  last_used_at: '2025-11-12T10:30:00Z'
+                  created_at: '2025-11-10T08:00:00Z'
+                - id: 661f9510-f32e-52e5-b827-557766551111
+                  title: Premium Corporate Homepage
+                  category: corporate
+                  is_premium: true
+                  usage_count: 5
+                  last_used_at: '2025-11-11T14:15:00Z'
+                  created_at: '2025-11-09T12:00:00Z'
+                pagination:
+                  current_page: 1
+                  per_page: 15
+                  total: 18
+                  last_page: 2
+              message: Platform templates retrieved successfully
+              meta:
+                timestamp: '2025-11-12T13:00:00Z'
+
+# =============================================================================
+# TENANT ENDPOINTS - Tenant-specific page management
+# Used by tenant administrators to manage their own pages within their tenant
+# =============================================================================
+
+/tenant/pages:
   get:
     tags:
     - Content Management
@@ -119,8 +864,7 @@
     tags:
     - Content Management
     summary: Create new page
-    description: "Create a new page within the current tenant. \nRequires 'pages.create'\
-      \ permission.\n"
+    description: "Create a new page within the current tenant. \nRequires 'pages.create' permission.\n"
     security:
     - bearerAuth: []
     - tenantHeader: []
@@ -187,7 +931,8 @@
         $ref: '../../components/responses.yaml#/Forbidden'
       '409':
         $ref: '../../components/responses.yaml#/Conflict'
-/pages/{id}:
+
+/tenant/pages/{id}:
   get:
     tags:
     - Content Management
@@ -335,7 +1080,7 @@
               data:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-              message: Homepage puted successfully
+              message: Homepage updated successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
       '400':
@@ -404,7 +1149,8 @@
         $ref: '../../components/responses.yaml#/Unauthorized'
       '403':
         $ref: '../../components/responses.yaml#/Forbidden'
-/pages/{id}/sections:
+
+/tenant/pages/{id}/sections:
   get:
     tags:
     - Content Management
@@ -574,7 +1320,8 @@
               message: Homepage created successfully
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
-/pages/{id}/analytics:
+
+/tenant/pages/{id}/analytics:
   get:
     tags:
     - Content Management
@@ -647,16 +1394,20 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-/page-templates:
+
+/tenant/page-templates:
   get:
     tags:
     - Content Management
     summary: List page templates
-    description: 'Retrieve available page templates.
+    description: 'Retrieve available page templates for the current tenant.
 
-      Public endpoint - no authentication required.
+      Public endpoint within tenant context - no special authentication required.
 
       '
+    security:
+    - bearerAuth: []
+    - tenantHeader: []
     parameters:
     - $ref: '../../components/parameters.yaml#/PageParam'
     - $ref: '../../components/parameters.yaml#/PerPageParam'
@@ -708,16 +1459,20 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-/page-templates/{id}:
+
+/tenant/page-templates/{id}:
   get:
     tags:
     - Content Management
     summary: Get template by ID
     description: 'Retrieve a specific page template with full template data.
 
-      Public endpoint - no authentication required.
+      Public endpoint within tenant context - no special authentication required.
 
       '
+    security:
+    - bearerAuth: []
+    - tenantHeader: []
     parameters:
     - name: id
       in: path
@@ -750,7 +1505,8 @@
               meta:
                 timestamp: '2025-11-13T18:58:00Z'
                 tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-/pages/bulk:
+
+/tenant/pages/bulk:
   post:
     tags:
     - Content Management

@@ -1,7 +1,325 @@
-/customers:
+# =============================================================================
+# CUSTOMER MANAGEMENT ENDPOINTS - SEPARATED ARCHITECTURE
+# =============================================================================
+# This file implements separated endpoint architecture for customer management:
+# - Platform admins: Cross-tenant customer oversight via /platform/customers/*
+# - Tenant users: Tenant-scoped customer operations via /tenant/customers/*
+# =============================================================================
+
+# =============================================================================
+# PLATFORM ADMIN CUSTOMER ENDPOINTS
+# =============================================================================
+# Platform admins manage customers across all tenants for system oversight,
+# reporting, and cross-tenant analytics
+# =============================================================================
+
+/platform/customers:
   get:
     tags:
-    - Customers
+    - Platform Customer Management
+    summary: List All Customers (Platform Admin)
+    description: 'Retrieve a paginated list of customers across all tenants for platform oversight.
+
+
+      **Platform Features:**
+
+      - Cross-tenant customer visibility
+
+      - Advanced filtering by tenant, type, status, stage
+
+      - Global customer analytics and insights
+
+      - Platform-level customer segmentation
+
+      - Multi-tenant revenue analysis
+
+      - Sort by various customer metrics
+
+      '
+    operationId: platformListCustomers
+    security:
+    - BearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter by specific tenant (optional for platform admins)
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    - name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+      example: 1
+    - name: per_page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of customers per page
+      example: 20
+    - name: search
+      in: query
+      schema:
+        type: string
+        maxLength: 100
+      description: Search across customer name, email, phone, company
+      example: tech
+    - name: customer_type
+      in: query
+      schema:
+        type: string
+        enum:
+        - individual
+        - business
+      description: Filter by customer type
+      example: business
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+        - active
+        - inactive
+        - blocked
+      description: Filter by customer status
+      example: active
+    - name: customer_stage
+      in: query
+      schema:
+        type: string
+        enum:
+        - prospect
+        - lead
+        - customer
+        - advocate
+      description: Filter by customer lifecycle stage
+      example: customer
+    - name: is_vip
+      in: query
+      schema:
+        type: boolean
+      description: Filter VIP customers only
+      example: true
+    - name: loyalty_tier
+      in: query
+      schema:
+        type: string
+        enum:
+        - bronze
+        - silver
+        - gold
+        - platinum
+      description: Filter by loyalty tier
+      example: gold
+    - name: tags
+      in: query
+      schema:
+        type: string
+      description: Filter by tags (comma-separated)
+      example: VIP,Enterprise
+    - name: sort_by
+      in: query
+      schema:
+        type: string
+        enum:
+        - name
+        - created_at
+        - last_order_date
+        - total_spent
+        - total_orders
+        default: created_at
+      description: Sort field
+      example: total_spent
+    - name: sort_order
+      in: query
+      schema:
+        type: string
+        enum:
+        - asc
+        - desc
+        default: desc
+      description: Sort order
+      example: desc
+    responses:
+      '200':
+        description: Platform customers retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/CustomerListResponse'
+            examples:
+              platform_customers:
+                summary: Platform-level customer list with tenant info
+                value:
+                  data:
+                  - id: 550e8400-e29b-41d4-a716-446655440000
+                    tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    tenant_name: PT Custom Etching Xenial
+                    customer_code: CUST-2025-0001
+                    customer_number: 1
+                    name: PT Tech Solutions Indonesia
+                    email: contact@techsolutions.id
+                    phone: +62 21 5678 9012
+                    customer_type: business
+                    status: active
+                    customer_stage: customer
+                    company: PT Tech Solutions Indonesia
+                    total_orders: 15
+                    total_spent: 25500000
+                    is_vip: true
+                    loyalty_tier: gold
+                    created_at: '2024-01-15T10:30:00Z'
+                    updated_at: '2025-11-12T14:30:00Z'
+                  meta:
+                    current_page: 1
+                    per_page: 20
+                    total: 150
+                    total_pages: 8
+                    has_more: true
+                  filters:
+                    customer_type: business
+                    status: active
+                    tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+      '400':
+        $ref: '../../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/InternalServerError'
+
+/platform/customers/{id}:
+  get:
+    tags:
+    - Platform Customer Management
+    summary: Get Customer Details (Platform Admin)
+    description: 'Retrieve detailed customer information for platform oversight.
+
+
+      **Platform Features:**
+
+      - Cross-tenant customer access
+
+      - Complete customer profile and audit trail
+
+      - Tenant context information
+
+      - Platform-level analytics
+
+      '
+    operationId: platformGetCustomer
+    security:
+    - BearerAuth: []
+    parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Customer ID
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: Customer details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/CustomerResponse'
+      '404':
+        description: Customer not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/InternalServerError'
+
+/platform/customers/analytics:
+  get:
+    tags:
+    - Platform Customer Analytics
+    summary: Platform Customer Analytics
+    description: 'Retrieve comprehensive customer analytics across all tenants.
+
+
+      **Platform Analytics:**
+
+      - Cross-tenant customer metrics
+
+      - Revenue analytics by tenant
+
+      - Global customer segmentation
+
+      - Platform performance insights
+
+      '
+    operationId: platformCustomerAnalytics
+    security:
+    - BearerAuth: []
+    parameters:
+    - name: tenant_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filter analytics for specific tenant
+      example: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+    - name: period
+      in: query
+      schema:
+        type: string
+        enum:
+        - 7d
+        - 30d
+        - 90d
+        - 1y
+        - all
+        default: all
+      description: Analysis period
+      example: 1y
+    responses:
+      '200':
+        description: Platform analytics retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/SuccessResponse'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/InternalServerError'
+
+# =============================================================================
+# TENANT USER CUSTOMER ENDPOINTS
+# =============================================================================
+# Tenant users manage their own customers within their tenant scope for
+# day-to-day business operations
+# =============================================================================
+
+/tenant/customers:
+  get:
+    tags:
+    - Tenant Customer Management
     summary: List Customers
     description: 'Retrieve a paginated list of customers with filtering and search
       capabilities.
@@ -173,7 +491,7 @@
         $ref: '../../components/responses.yaml#/InternalServerError'
   post:
     tags:
-    - Customers
+    - Tenant Customer Management
     summary: Create Customer
     description: 'Create a new customer record with automatic code generation.
 
@@ -311,13 +629,275 @@
                   example: Customer with this email already exists
       '500':
         $ref: '../../components/responses.yaml#/InternalServerError'
-/customers/{id}:
+
+/tenant/customers/{id}:
   get:
     tags:
-    - Customers
+    - Tenant Customer Management
     summary: Get Customer Details
     description: 'Retrieve detailed customer information including addresses, recent
       interactions, loyalty info, and analytics.
+
+
+      **Includes:**
+
+      - Complete customer profile
+
+      - All customer addresses
+
+      - Recent interactions (last 10)
+
+      - Loyalty program information
+
+      - Customer segments
+
+      - Basic analytics summary
+
+      '
+    operationId: getCustomer
+    security:
+    - BearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Customer ID
+      example: 550e8400-e29b-41d4-a716-446655440000
+    - name: include
+      in: query
+      schema:
+        type: string
+      description: Include related data (comma-separated)
+      example: addresses,interactions,loyalty,segments
+    responses:
+      '200':
+        description: Customer details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/CustomerResponse'
+            examples:
+              customer_detail:
+                summary: Complete customer details
+                value:
+                  success: true
+                  message: Customer retrieved successfully
+                  data:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+                    customer_code: CUST-2025-0001
+                    name: PT Tech Solutions Indonesia
+                    email: contact@techsolutions.id
+                    customer_type: business
+                    status: active
+                    customer_stage: customer
+                    total_orders: 15
+                    total_spent: 25500000
+                    is_vip: true
+                    loyalty_tier: gold
+                    addresses:
+                    - id: address-001
+                      address_type: billing
+                      address_line_1: Jl. Sudirman Kav 52-53
+                      city: Jakarta Selatan
+                      is_default: true
+                    recent_interactions:
+                    - id: interaction-001
+                      interaction_type: phone_call
+                      subject: Quotation Follow-up
+                      interaction_date: '2025-11-12T14:30:00Z'
+      '404':
+        description: Customer not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/InternalServerError'
+  put:
+    tags:
+    - Tenant Customer Management
+    summary: Update Customer
+    description: "Update customer information with partial update support.\n\n**Features:**\n\
+      - Partial updates (only provided fields updated)\n- Status transitions (prospect\
+      \ \u2192 lead \u2192 customer \u2192 advocate)\n- VIP status management\n- Credit\
+      \ limit adjustments\n- Multi-tenant security\n"
+    operationId: updateCustomer
+    security:
+    - BearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Customer ID
+      example: 550e8400-e29b-41d4-a716-446655440000
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CustomerUpdateInput'
+          examples:
+            status_update:
+              summary: Update customer status to VIP
+              value:
+                status: active
+                customer_stage: advocate
+                is_vip: true
+                credit_limit: 500000000
+                payment_terms: Net 30
+                notes: Upgraded to VIP status - high value customer
+            contact_update:
+              summary: Update contact information
+              value:
+                email: newemail@techsolutions.id
+                mobile_phone: +62 812 9999 8888
+                primary_contact_name: Jane Smith
+                primary_contact_email: jane.smith@techsolutions.id
+    responses:
+      '200':
+        description: Customer updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/responses.yaml#/SuccessResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/Customer'
+            example:
+              success: true
+              data:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+              message: Customer updated successfully
+              meta:
+                timestamp: '2025-11-13T18:58:00Z'
+      '400':
+        description: Validation failed
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/CustomerValidationError'
+      '404':
+        description: Customer not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/InternalServerError'
+  delete:
+    tags:
+    - Tenant Customer Management
+    summary: Delete Customer
+    description: 'Soft delete a customer record. Customer data is preserved but marked
+      as deleted.
+
+
+      **Notes:**
+
+      - Soft delete only (data preserved for audit)
+
+      - Cannot delete customers with active orders
+
+      - Requires appropriate permissions
+
+      - Multi-tenant security enforced
+
+      '
+    operationId: deleteCustomer
+    security:
+    - BearerAuth: []
+    parameters:
+    - $ref: '../../components/parameters.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Customer ID
+      example: 550e8400-e29b-41d4-a716-446655440000
+    responses:
+      '200':
+        description: Customer deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/SuccessResponse'
+            examples:
+              deleted_customer:
+                summary: Customer deletion success
+                value:
+                  success: true
+                  message: Customer deleted successfully
+                  data: null
+      '400':
+        description: Cannot delete customer with active orders
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+                  example: Cannot delete customer
+                message:
+                  type: string
+                  example: Customer has active orders and cannot be deleted
+      '404':
+        description: Customer not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/CustomerNotFoundError'
+      '401':
+        $ref: '../../components/responses.yaml#/Unauthorized'
+      '403':
+        $ref: '../../components/responses.yaml#/Forbidden'
+      '500':
+        $ref: '../../components/responses.yaml#/InternalServerError'
+
+/tenant/customers/{id}/addresses:
+  get:
+    tags:
+    - Tenant Customer Addresses
+    summary: List Customer Addresses
+    description: 'Retrieve all addresses for a specific customer.
+
+
+      **Features:**
+
+      - Multi-address support per customer
+
+      - Address type filtering (billing, shipping, warehouse, office)
+
+      - Default address identification
+
+      - Geographic data included
 
 
       **Includes:**
