@@ -18,7 +18,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\InventoryAdjustment;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryCount;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryReconciliation;
 use App\Infrastructure\Persistence\Eloquent\UserEloquentModel;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 
 class TenantDataSeeder extends Seeder
 {
@@ -37,8 +37,8 @@ class TenantDataSeeder extends Seeder
             $this->seedCustomers($tenant);
             $this->seedVendors($tenant);
             $this->seedProducts($tenant);
-            $this->seedOrders($tenant);
             $this->seedInventory($tenant);
+            $this->seedOrders($tenant);
         }
 
         $this->command->info('✅ Tenant business data seeded successfully!');
@@ -83,24 +83,29 @@ class TenantDataSeeder extends Seeder
         for ($i = 1; $i <= 12; $i++) {
             $department = $departments[array_rand($departments)];
             $position = $positions[array_rand($positions)];
+            $email = "employee{$i}@" . $tenant->slug . '.local';
             
-            \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::create([
-                'tenant_id' => $tenant->id,
-                'name' => "{$position} {$i} - {$tenant->name}",
-                'email' => "employee{$i}@" . $tenant->slug . '.local',
-                'password' => Hash::make('Employee2024!'),
-                'status' => rand(0, 10) > 1 ? 'active' : 'inactive',
-                'department' => $department,
-                'phone' => '+628' . rand(1000000000, 9999999999),
-                'email_verified_at' => now()->subDays(rand(1, 30)),
-                'location' => [
-                    'address' => 'Jl. ' . ['Gatot Subroto', 'Sudirman', 'Thamrin', 'Kuningan', 'Senayan'][rand(0, 4)] . ' No. ' . rand(10, 99),
-                    'city' => ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang'][rand(0, 4)],
-                    'province' => ['DKI Jakarta', 'Jawa Timur', 'Jawa Barat', 'Sumatera Utara', 'Jawa Tengah'][rand(0, 4)],
-                    'postal_code' => (string) rand(10000, 99999)
+            \App\Infrastructure\Persistence\Eloquent\UserEloquentModel::updateOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'email' => $email
                 ],
-                'last_login_at' => rand(0, 5) > 1 ? now()->subDays(rand(0, 7)) : null,
-            ]);
+                [
+                    'name' => "{$position} {$i} - {$tenant->name}",
+                    'password' => Hash::make('Employee2024!'),
+                    'status' => rand(0, 10) > 1 ? 'active' : 'inactive',
+                    'department' => $department,
+                    'phone' => '+628' . rand(1000000000, 9999999999),
+                    'email_verified_at' => now()->subDays(rand(1, 30)),
+                    'location' => [
+                        'address' => 'Jl. ' . ['Gatot Subroto', 'Sudirman', 'Thamrin', 'Kuningan', 'Senayan'][rand(0, 4)] . ' No. ' . rand(10, 99),
+                        'city' => ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang'][rand(0, 4)],
+                        'province' => ['DKI Jakarta', 'Jawa Timur', 'Jawa Barat', 'Sumatera Utara', 'Jawa Tengah'][rand(0, 4)],
+                        'postal_code' => (string) rand(10000, 99999)
+                    ],
+                    'last_login_at' => rand(0, 5) > 1 ? now()->subDays(rand(0, 7)) : null,
+                ]
+            );
         }
     }
 
@@ -173,22 +178,27 @@ class TenantDataSeeder extends Seeder
             $metadata['notes'] = 'Customer since ' . rand(2020, 2024) . '. ' . ['Reliable client', 'VIP customer', 'Bulk purchaser', 'Regular buyer'][rand(0, 3)];
         }
 
-        CustomerEloquentModel::create([
-            'tenant_id' => $tenant->id,
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'email' => $email,
-            'phone' => $phone,
-            'address' => $addressText,
-            'status' => rand(0, 20) > 1 ? 'active' : 'suspended', // 95% active
-            'customer_type' => $type,
-            'company_name' => $type === 'business' ? $firstName : null,
-            'metadata' => !empty($metadata) ? $metadata : null,
-            'tags' => array_slice(['vip', 'regular', 'wholesale', 'retail', 'new', 'premium', 'loyal'], 0, rand(1, 4)),
-            'last_order_at' => rand(0, 10) > 2 ? Carbon::now()->subDays(rand(1, 180)) : null,
-            'created_at' => Carbon::now()->subDays(rand(1, 365)),
-            'updated_at' => Carbon::now()->subDays(rand(0, 30))
-        ]);
+        CustomerEloquentModel::updateOrCreate(
+            [
+                'tenant_id' => $tenant->id,
+                'email' => $email
+            ],
+            [
+                'name' => "$firstName $lastName",
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'phone' => $phone,
+                'address' => $addressText,
+                'status' => rand(0, 20) > 1 ? 'active' : 'suspended', // 95% active
+                'customer_type' => $type,
+                'company_name' => $type === 'business' ? $firstName : null,
+                'metadata' => !empty($metadata) ? $metadata : null,
+                'tags' => array_slice(['vip', 'regular', 'wholesale', 'retail', 'new', 'premium', 'loyal'], 0, rand(1, 4)),
+                'last_order_at' => rand(0, 10) > 2 ? Carbon::now()->subDays(rand(1, 180)) : null,
+                'created_at' => Carbon::now()->subDays(rand(1, 365)),
+                'updated_at' => Carbon::now()->subDays(rand(0, 30))
+            ]
+        );
     }
 
     private function seedVendors($tenant): void
@@ -255,25 +265,29 @@ class TenantDataSeeder extends Seeder
             $metadata['notes'] = 'Partnership since ' . rand(2018, 2024) . '. ' . ['Reliable supplier', 'Good quality products', 'Competitive pricing', 'Fast delivery'][rand(0, 3)];
         }
         
-        VendorEloquentModel::create([
-            'tenant_id' => $tenant->id,
-            'name' => $name,
-            'company_name' => $name,
-            'email' => $email,
-            'phone' => $phone,
-            'address' => $address,
-            'status' => rand(0, 15) > 1 ? 'active' : 'inactive', // 93% active
-            'tax_id' => '01.' . rand(100, 999) . '.' . rand(100, 999) . '.1-011.000',
-            'contacts' => $contacts,
-            'payment_terms' => [
-                'method' => ['cash', 'transfer', 'credit'][rand(0, 2)],
-                'terms' => ['NET 30', 'NET 60', 'COD', 'Prepaid'][rand(0, 3)],
-                'discount' => rand(0, 10) > 7 ? rand(2, 10) : 0
+        VendorEloquentModel::updateOrCreate(
+            [
+                'tenant_id' => $tenant->id,
+                'email' => $email
             ],
-            'metadata' => !empty($metadata) ? $metadata : null,
-            'created_at' => Carbon::now()->subDays(rand(30, 730)),
-            'updated_at' => Carbon::now()->subDays(rand(0, 30))
-        ]);
+            [
+                'name' => $name,
+                'company_name' => $name,
+                'phone' => $phone,
+                'address' => $address,
+                'status' => rand(0, 15) > 1 ? 'active' : 'inactive', // 93% active
+                'tax_id' => '01.' . rand(100, 999) . '.' . rand(100, 999) . '.1-011.000',
+                'contacts' => $contacts,
+                'payment_terms' => [
+                    'method' => ['cash', 'transfer', 'credit'][rand(0, 2)],
+                    'terms' => ['NET 30', 'NET 60', 'COD', 'Prepaid'][rand(0, 3)],
+                    'discount' => rand(0, 10) > 7 ? rand(2, 10) : 0
+                ],
+                'metadata' => !empty($metadata) ? $metadata : null,
+                'created_at' => Carbon::now()->subDays(rand(30, 730)),
+                'updated_at' => Carbon::now()->subDays(rand(0, 30))
+            ]
+        );
     }
 
     private function seedProducts($tenant): void
@@ -323,36 +337,41 @@ class TenantDataSeeder extends Seeder
         $price = rand(25000, 15000000); // Wider price range
         $stock = rand(0, 500); // Higher stock variety
         $isDigital = rand(0, 10) > 7; // 30% chance for digital/service
+        $sku = strtoupper(substr($category, 0, 3)) . '-' . str_pad($index, 4, '0', STR_PAD_LEFT);
         
-        Product::create([
-            'tenant_id' => $tenant->id,
-            'name' => $productName . ' ' . $qualifier,
-            'sku' => strtoupper(substr($category, 0, 3)) . '-' . str_pad($index, 4, '0', STR_PAD_LEFT),
-            'slug' => Str::slug($productName . ' ' . $qualifier) . '-' . $index,
-            'description' => $this->generateProductDescription($productName, $qualifier),
-            'price' => $price,
-            'currency' => 'IDR',
-            'status' => rand(0, 10) > 2 ? 'published' : 'draft', // 80% published
-            'type' => $isDigital ? ['digital', 'service'][rand(0, 1)] : 'physical',
-            'stock_quantity' => $isDigital ? 0 : $stock,
-            'low_stock_threshold' => $isDigital ? 0 : rand(5, 25),
-            'images' => [
-                '/images/products/' . Str::slug($productName) . '_1.jpg',
-                '/images/products/' . Str::slug($productName) . '_2.jpg',
-                '/images/products/' . Str::slug($productName) . '_3.jpg'
+        Product::updateOrCreate(
+            [
+                'tenant_id' => $tenant->id,
+                'sku' => $sku
             ],
-            'categories' => [$category, rand(0, 5) > 3 ? 'featured' : 'regular'],
-            'tags' => array_slice(['new', 'popular', 'discount', 'trending', 'bestseller', 'premium', 'sale', 'limited'], 0, rand(2, 5)),
-            'dimensions' => $isDigital ? null : [
-                'length' => rand(5, 200),
-                'width' => rand(5, 200),
-                'height' => rand(2, 100),
-                'weight' => rand(100, 10000) / 100 // 1-100kg
-            ],
-            'track_inventory' => !$isDigital,
-            'created_at' => Carbon::now()->subDays(rand(7, 365)),
-            'updated_at' => Carbon::now()->subDays(rand(0, 30))
-        ]);
+            [
+                'name' => $productName . ' ' . $qualifier,
+                'slug' => Str::slug($productName . ' ' . $qualifier) . '-' . $index,
+                'description' => $this->generateProductDescription($productName, $qualifier),
+                'price' => $price,
+                'currency' => 'IDR',
+                'status' => rand(0, 10) > 2 ? 'published' : 'draft', // 80% published
+                'type' => $isDigital ? ['digital', 'service'][rand(0, 1)] : 'physical',
+                'stock_quantity' => $isDigital ? 0 : $stock,
+                'low_stock_threshold' => $isDigital ? 0 : rand(5, 25),
+                'images' => [
+                    '/images/products/' . Str::slug($productName) . '_1.jpg',
+                    '/images/products/' . Str::slug($productName) . '_2.jpg',
+                    '/images/products/' . Str::slug($productName) . '_3.jpg'
+                ],
+                'categories' => [$category, rand(0, 5) > 3 ? 'featured' : 'regular'],
+                'tags' => array_slice(['new', 'popular', 'discount', 'trending', 'bestseller', 'premium', 'sale', 'limited'], 0, rand(2, 5)),
+                'dimensions' => $isDigital ? null : [
+                    'length' => rand(5, 200),
+                    'width' => rand(5, 200),
+                    'height' => rand(2, 100),
+                    'weight' => rand(100, 10000) / 100 // 1-100kg
+                ],
+                'track_inventory' => !$isDigital,
+                'created_at' => Carbon::now()->subDays(rand(7, 365)),
+                'updated_at' => Carbon::now()->subDays(rand(0, 30))
+            ]
+        );
     }
     
     private function generateProductDescription($productName, $qualifier): string
@@ -370,15 +389,21 @@ class TenantDataSeeder extends Seeder
 
     private function seedOrders($tenant): void
     {
+        // Skip if tenant already has orders
+        $existingOrders = OrderEloquentModel::where('tenant_id', $tenant->id)->count();
+        if ($existingOrders > 0) {
+            return; // Already has orders
+        }
+
         $customers = CustomerEloquentModel::where('tenant_id', $tenant->id)->get();
-        $products = Product::where('tenant_id', $tenant->id)->where('status', 'published')->get();
+        $products = Product::where('tenant_id', $tenant->id)->where('status', 'published')->where('track_inventory', true)->get();
 
         if ($customers->isEmpty() || $products->isEmpty()) {
             $this->command->warn("   Skipping orders for {$tenant->name} - insufficient customers or products");
             return;
         }
 
-        $orderCount = rand(50, 80); // Higher order volume for performance testing
+        $orderCount = rand(15, 25);
         $orderStatuses = [
             'pending' => 15,      // 15%
             'processing' => 20,   // 20%
@@ -389,13 +414,13 @@ class TenantDataSeeder extends Seeder
         
         for ($i = 0; $i < $orderCount; $i++) {
             $customer = $customers->random();
-            $orderProducts = $products->random(rand(1, 6)); // 1-6 items per order
+            $orderProducts = $products->random(rand(1, 3)); // 1-3 items per order
             $totalAmount = 0;
             $items = [];
             $discountAmount = 0;
 
             foreach ($orderProducts as $product) {
-                $quantity = rand(1, 8); // Higher quantities
+                $quantity = rand(1, 3); // Reduced quantities
                 $basePrice = (int) $product->price;
                 
                 // Apply random discount to some items
@@ -472,6 +497,12 @@ class TenantDataSeeder extends Seeder
 
     private function seedInventory($tenant): void
     {
+        // Skip if tenant already has inventory items
+        $existingInventoryItems = InventoryItem::where('tenant_id', $tenant->id)->count();
+        if ($existingInventoryItems > 0) {
+            return; // Already has inventory
+        }
+
         $userId = UserEloquentModel::where('tenant_id', $tenant->id)
             ->where('status', 'active')
             ->orderBy('id')
@@ -622,11 +653,11 @@ class TenantDataSeeder extends Seeder
             }
 
             if ($index % 4 === 0) {
-                $reservationQty = rand(1, 6);
+                $reservationQty = rand(1, 3);
                 $inventoryService->reserveStock(
                     $product,
                     (float) $reservationQty,
-                    $locations[array_rand($locations)],
+                    $locations[0],
                     'order',
                     Str::uuid()->toString(),
                     $userId,
@@ -637,7 +668,7 @@ class TenantDataSeeder extends Seeder
             if ($index % 6 === 0) {
                 $inventoryService->reserveStock(
                     $product,
-                    (float) rand(1, 4),
+                    (float) rand(1, 2),
                     null,
                     'project',
                     Str::uuid()->toString(),

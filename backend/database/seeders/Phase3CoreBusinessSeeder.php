@@ -99,56 +99,66 @@ class Phase3CoreBusinessSeeder extends Seeder
 
         foreach ($categoriesData as $categoryData) {
             $sortOrder++;
+            $slug = Str::slug($categoryData['name']);
             
-            $parent = ProductCategory::create([
-                'tenant_id' => $tenant->id,
-                'uuid' => Str::uuid()->toString(),
-                'name' => $categoryData['name'],
-                'slug' => Str::slug($categoryData['name']),
-                'description' => $categoryData['description'],
-                'parent_id' => null,
-                'level' => 0,
-                'sort_order' => $sortOrder,
-                'path' => Str::slug($categoryData['name']),
-                'is_active' => true,
-                'is_featured' => rand(0, 10) > 7,
-                'show_in_menu' => true,
-                'allowed_materials' => array_keys($this->materials),
-                'quality_levels' => array_keys($this->qualityLevels),
-                'base_markup_percentage' => rand(25, 50),
-                'requires_quote' => rand(0, 10) > 7,
-                'seo_title' => $categoryData['name'] . ' - Professional Services',
-                'seo_description' => $categoryData['description'],
-                'seo_keywords' => $this->generateKeywords($categoryData['name']),
-            ]);
+            $parent = ProductCategory::updateOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'slug' => $slug,
+                ],
+                [
+                    'uuid' => Str::uuid()->toString(),
+                    'name' => $categoryData['name'],
+                    'description' => $categoryData['description'],
+                    'parent_id' => null,
+                    'level' => 0,
+                    'sort_order' => $sortOrder,
+                    'path' => $slug,
+                    'is_active' => true,
+                    'is_featured' => rand(0, 10) > 7,
+                    'show_in_menu' => true,
+                    'allowed_materials' => array_keys($this->materials),
+                    'quality_levels' => array_keys($this->qualityLevels),
+                    'base_markup_percentage' => rand(25, 50),
+                    'requires_quote' => rand(0, 10) > 7,
+                    'seo_title' => $categoryData['name'] . ' - Professional Services',
+                    'seo_description' => $categoryData['description'],
+                    'seo_keywords' => $this->generateKeywords($categoryData['name']),
+                ]
+            );
 
             $createdCategories[] = $parent;
 
             if (isset($categoryData['children'])) {
                 foreach ($categoryData['children'] as $childData) {
                     $sortOrder++;
+                    $childSlug = Str::slug($childData['name']);
                     
-                    $child = ProductCategory::create([
-                        'tenant_id' => $tenant->id,
-                        'uuid' => Str::uuid()->toString(),
-                        'name' => $childData['name'],
-                        'slug' => Str::slug($childData['name']),
-                        'description' => $childData['description'],
-                        'parent_id' => $parent->id,
-                        'level' => 1,
-                        'sort_order' => $sortOrder,
-                        'path' => $parent->path . '/' . Str::slug($childData['name']),
-                        'is_active' => true,
-                        'is_featured' => rand(0, 10) > 6,
-                        'show_in_menu' => true,
-                        'allowed_materials' => $this->selectRandomMaterials(),
-                        'quality_levels' => array_keys($this->qualityLevels),
-                        'base_markup_percentage' => rand(30, 60),
-                        'requires_quote' => rand(0, 10) > 5,
-                        'seo_title' => $childData['name'] . ' - ' . $tenant->name,
-                        'seo_description' => $childData['description'],
-                        'seo_keywords' => $this->generateKeywords($childData['name']),
-                    ]);
+                    $child = ProductCategory::updateOrCreate(
+                        [
+                            'tenant_id' => $tenant->id,
+                            'slug' => $childSlug,
+                        ],
+                        [
+                            'uuid' => Str::uuid()->toString(),
+                            'name' => $childData['name'],
+                            'description' => $childData['description'],
+                            'parent_id' => $parent->id,
+                            'level' => 1,
+                            'sort_order' => $sortOrder,
+                            'path' => $parent->path . '/' . $childSlug,
+                            'is_active' => true,
+                            'is_featured' => rand(0, 10) > 6,
+                            'show_in_menu' => true,
+                            'allowed_materials' => $this->selectRandomMaterials(),
+                            'quality_levels' => array_keys($this->qualityLevels),
+                            'base_markup_percentage' => rand(30, 60),
+                            'requires_quote' => rand(0, 10) > 5,
+                            'seo_title' => $childData['name'] . ' - ' . $tenant->name,
+                            'seo_description' => $childData['description'],
+                            'seo_keywords' => $this->generateKeywords($childData['name']),
+                        ]
+                    );
 
                     $createdCategories[] = $child;
                 }
@@ -160,6 +170,14 @@ class Phase3CoreBusinessSeeder extends Seeder
 
     private function seedProducts($tenant, $categories): void
     {
+        // Skip if tenant already has phase 3 products
+        $existingProducts = Product::where('tenant_id', $tenant->id)
+            ->whereJsonContains('metadata->phase', 'phase_3')
+            ->count();
+        if ($existingProducts >= 50) {
+            return; // Already has phase 3 products
+        }
+
         $productTemplates = [
             'Custom Engraved %s %s',
             'Premium %s %s',
@@ -204,8 +222,8 @@ class Phase3CoreBusinessSeeder extends Seeder
                 'markup_percentage' => round((($basePrice - $vendorPrice) / $vendorPrice) * 100),
                 
                 'status' => ['draft', 'published', 'published', 'published'][rand(0, 3)],
-                'type' => ['standard', 'custom', 'service'][rand(0, 2)],
-                'production_type' => ['internal', 'vendor', 'hybrid'][rand(0, 2)],
+                'type' => ['physical', 'physical', 'service'][rand(0, 2)],
+                'production_type' => ['internal', 'vendor', 'both'][rand(0, 2)],
                 
                 'stock_quantity' => rand(0, 100),
                 'low_stock_threshold' => 10,
@@ -251,6 +269,14 @@ class Phase3CoreBusinessSeeder extends Seeder
 
     private function seedRealisticOrders($tenant): void
     {
+        // Skip if tenant already has phase 3 orders
+        $existingOrders = OrderEloquentModel::where('tenant_id', $tenant->id)
+            ->where('order_number', 'like', 'ORD-%')
+            ->count();
+        if ($existingOrders >= 40) {
+            return; // Already has phase 3 orders
+        }
+
         $customers = CustomerEloquentModel::where('tenant_id', $tenant->id)->get();
         $vendors = VendorEloquentModel::where('tenant_id', $tenant->id)->get();
         $products = Product::where('tenant_id', $tenant->id)->get();
@@ -275,6 +301,8 @@ class Phase3CoreBusinessSeeder extends Seeder
             'cancelled' => 2,
         ];
 
+        // Use tenant ID prefix to ensure unique order numbers across tenants
+        $tenantPrefix = 'T' . str_pad($tenant->id, 3, '0', STR_PAD_LEFT);
         $orderNumber = 1;
 
         foreach ($orderStatuses as $status => $count) {
@@ -336,10 +364,11 @@ class Phase3CoreBusinessSeeder extends Seeder
                     ],
                 ];
 
+                $createdAt = Carbon::now()->subDays(rand(1, 90));
+                
                 OrderEloquentModel::create([
                     'tenant_id' => $tenant->id,
-                    'order_number' => 'ORD-' . str_pad($orderNumber++, 6, '0', STR_PAD_LEFT),
-                    'order_code' => 'PO-' . strtoupper(Str::random(8)),
+                    'order_number' => 'ORD-' . $tenantPrefix . '-' . str_pad($orderNumber++, 6, '0', STR_PAD_LEFT),
                     'customer_id' => $customer->id,
                     'vendor_id' => $vendor?->id,
                     'items' => $items,
@@ -355,16 +384,21 @@ class Phase3CoreBusinessSeeder extends Seeder
                     'production_type' => $vendor ? 'vendor' : 'internal',
                     'payment_status' => $paymentStatus,
                     'payment_method' => $totalPaidAmount > 0 ? ['bank_transfer', 'cash', 'credit_card', 'e-wallet'][rand(0, 3)] : null,
-                    'shipping_address' => $customer->address ?? 'Default Address',
+                    'shipping_address' => [
+                        'address' => $customer->address ?? 'Default Address',
+                        'name' => $customer->name ?? 'Customer',
+                        'phone' => $customer->phone ?? '',
+                        'email' => $customer->email ?? '',
+                    ],
                     'customer_notes' => rand(0, 10) > 6 ? 'Please handle with care' : null,
                     'internal_notes' => rand(0, 10) > 6 ? 'Priority order' : null,
-                    'order_date' => Carbon::now()->subDays(rand(1, 90)),
-                    'estimated_delivery' => Carbon::now()->addDays(rand(7, 30)),
+                    'estimated_delivery' => $createdAt->copy()->addDays(rand(7, 30)),
                     'payment_date' => $paymentDate,
                     'down_payment_due_at' => $downPaymentDueAt,
                     'down_payment_paid_at' => $downPaymentPaidAt,
                     'payment_schedule' => $paymentSchedule,
-                    'created_at' => Carbon::now()->subDays(rand(1, 90)),
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
                 ]);
             }
         }
