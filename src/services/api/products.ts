@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { tenantApiClient } from '../tenant/tenantApiClient';
 import { Product, ProductFilters } from '@/types/product';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import * as mockProducts from '@/services/mock/products';
@@ -64,7 +64,7 @@ class ProductsService {
         if (filters.priceMax !== undefined) params.append('price_max', filters.priceMax.toString());
       }
 
-      const response = await apiClient.get<PaginatedResponse<Product>>(
+      const response = await tenantApiClient.get<PaginatedResponse<Product>>(
         `/products?${params.toString()}`
       );
       return response;
@@ -87,7 +87,7 @@ class ProductsService {
     }
 
     try {
-      const response = await apiClient.get<Product>(`/products/${id}`);
+      const response = await tenantApiClient.get<Product>(`/products/${id}`);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -101,7 +101,7 @@ class ProductsService {
     }
 
     try {
-      const response = await apiClient.get<Product>(`/products/slug/${slug}`);
+      const response = await tenantApiClient.get<Product>(`/products/slug/${slug}`);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -115,7 +115,7 @@ class ProductsService {
     }
 
     try {
-      const response = await apiClient.post<Product>('/products', data);
+      const response = await tenantApiClient.post<Product>('/products', data);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -131,7 +131,7 @@ class ProductsService {
     }
 
     try {
-      const response = await apiClient.put<Product>(`/products/${id}`, data);
+      const response = await tenantApiClient.put<Product>(`/products/${id}`, data);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -148,7 +148,7 @@ class ProductsService {
     }
 
     try {
-      const response = await apiClient.delete<{ message: string }>(`/products/${id}`);
+      const response = await tenantApiClient.delete<{ message: string }>(`/products/${id}`);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -164,7 +164,7 @@ class ProductsService {
 
     try {
       const params = limit ? `?limit=${limit}` : '';
-      const response = await apiClient.get<Product[]>(`/products/featured${params}`);
+      const response = await tenantApiClient.get<Product[]>(`/products/featured${params}`);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -179,7 +179,7 @@ class ProductsService {
 
     try {
       const params = limit ? `?limit=${limit}` : '';
-      const response = await apiClient.get<Product[]>(`/products/category/${category}${params}`);
+      const response = await tenantApiClient.get<Product[]>(`/products/category/${category}${params}`);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -193,7 +193,7 @@ class ProductsService {
     }
 
     try {
-      const response = await apiClient.get<Product[]>(
+      const response = await tenantApiClient.get<Product[]>(
         `/products/search?q=${encodeURIComponent(query)}`
       );
       return response;
@@ -205,7 +205,7 @@ class ProductsService {
 
   async getProductVariants(id: string): Promise<any[]> {
     try {
-      const response = await apiClient.get<any[]>(`/products/${id}/variants`);
+      const response = await tenantApiClient.get<any[]>(`/products/${id}/variants`);
       return response;
     } catch (error) {
       console.error('Failed to fetch product variants:', error);
@@ -215,7 +215,7 @@ class ProductsService {
 
   async createVariant(productId: string, data: any): Promise<any> {
     try {
-      const response = await apiClient.post<any>(`/products/${productId}/variants`, data);
+      const response = await tenantApiClient.post<any>(`/products/${productId}/variants`, data);
       return response;
     } catch (error) {
       console.error('Failed to create product variant:', error);
@@ -225,7 +225,7 @@ class ProductsService {
 
   async updateVariant(productId: string, variantId: string, data: any): Promise<any> {
     try {
-      const response = await apiClient.put<any>(`/products/${productId}/variants/${variantId}`, data);
+      const response = await tenantApiClient.put<any>(`/products/${productId}/variants/${variantId}`, data);
       return response;
     } catch (error) {
       console.error('Failed to update product variant:', error);
@@ -235,7 +235,7 @@ class ProductsService {
 
   async deleteVariant(productId: string, variantId: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.delete<{ message: string }>(`/products/${productId}/variants/${variantId}`);
+      const response = await tenantApiClient.delete<{ message: string }>(`/products/${productId}/variants/${variantId}`);
       return response;
     } catch (error) {
       console.error('Failed to delete product variant:', error);

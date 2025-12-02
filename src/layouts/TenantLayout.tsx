@@ -20,11 +20,16 @@ export const TenantLayout = memo(() => {
   renderCount.current += 1;
   console.log(`TenantLayout rendered #${renderCount.current}`);
   
-  const { isAuthenticated } = useTenantAuth();
+  const { isAuthenticated, user, tenant } = useTenantAuth();
   const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
 
-  // Redirect to tenant login if not authenticated
-  if (!isAuthenticated) {
+  // More specific authentication check for tenant context
+  if (!isAuthenticated || !user || !tenant) {
+    console.log('TenantLayout: Not authenticated, redirecting to login', {
+      isAuthenticated,
+      hasUser: !!user,
+      hasTenant: !!tenant
+    });
     return <Navigate to="/admin/login" replace />;
   }
 

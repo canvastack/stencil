@@ -470,7 +470,7 @@ class AuthService {
     localStorage.setItem('roles', JSON.stringify(roles));
   }
 
-  private clearAuth() {
+  clearAuth() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('account_type');
     localStorage.removeItem('user_id');
@@ -545,6 +545,8 @@ class AuthService {
   isAuthenticated(): boolean {
     return !!this.getAuthToken();
   }
+
+
 }
 
 export const authService = new AuthService();

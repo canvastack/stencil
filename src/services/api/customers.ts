@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { tenantApiClient } from '../tenant/tenantApiClient';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 
 export interface Customer {
@@ -65,39 +65,39 @@ class CustomersService {
       if (filters.date_to) params.append('date_to', filters.date_to);
     }
 
-    const response = await apiClient.get<PaginatedResponse<Customer>>(
+    const response = await tenantApiClient.get<PaginatedResponse<Customer>>(
       `/customers?${params.toString()}`
     );
     return response;
   }
 
   async getCustomerById(id: string): Promise<Customer> {
-    const response = await apiClient.get<Customer>(`/customers/${id}`);
+    const response = await tenantApiClient.get<Customer>(`/customers/${id}`);
     return response;
   }
 
   async createCustomer(data: CreateCustomerRequest): Promise<Customer> {
-    const response = await apiClient.post<Customer>('/customers', data);
+    const response = await tenantApiClient.post<Customer>('/customers', data);
     return response;
   }
 
   async updateCustomer(id: string, data: UpdateCustomerRequest): Promise<Customer> {
-    const response = await apiClient.put<Customer>(`/customers/${id}`, data);
+    const response = await tenantApiClient.put<Customer>(`/customers/${id}`, data);
     return response;
   }
 
   async deleteCustomer(id: string): Promise<{ message: string }> {
-    const response = await apiClient.delete<{ message: string }>(`/customers/${id}`);
+    const response = await tenantApiClient.delete<{ message: string }>(`/customers/${id}`);
     return response;
   }
 
   async getCustomerOrders(id: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/customers/${id}/orders`);
+    const response = await tenantApiClient.get<any[]>(`/customers/${id}/orders`);
     return response;
   }
 
   async getCustomerSegment(id: string): Promise<any> {
-    const response = await apiClient.get<any>(`/customers/${id}/segment`);
+    const response = await tenantApiClient.get<any>(`/customers/${id}/segment`);
     return response;
   }
 }

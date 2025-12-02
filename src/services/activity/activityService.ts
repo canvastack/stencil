@@ -1,4 +1,4 @@
-import { apiClient } from '../api/client';
+import { tenantApiClient } from '../tenant/tenantApiClient';
 
 export interface ActivityLog {
   id: string;
@@ -53,6 +53,14 @@ class ActivityService {
     this.setupPageVisibilityChange();
   }
 
+  private isDemoMode(): boolean {
+    const token = localStorage.getItem('auth_token');
+    const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+    const isDemoToken = token?.startsWith('demo_token_');
+    
+    return isDevelopment || isDemoToken;
+  }
+
   /**
    * Log user activity
    */
@@ -65,6 +73,18 @@ class ActivityService {
     status?: 'success' | 'error' | 'pending';
   }): Promise<void> {
     if (!this.isLoggingEnabled) {
+      return;
+    }
+
+    // In demo mode, skip API calls and just log to console
+    if (this.isDemoMode()) {
+      console.log('Demo mode: Activity logged locally', {
+        action: activity.action,
+        resource: activity.resource,
+        resourceId: activity.resourceId,
+        details: activity.details,
+        status: activity.status
+      });
       return;
     }
 
@@ -314,6 +334,17 @@ class ActivityService {
       return;
     }
 
+    // In demo mode, skip API calls and just clear pending logs
+    if (this.isDemoMode()) {
+      console.log('Demo mode: Clearing pending activity logs (skipping API)', this.pendingLogs.length);
+      this.pendingLogs = [];
+      if (this.batchTimeout) {
+        clearTimeout(this.batchTimeout);
+        this.batchTimeout = null;
+      }
+      return;
+    }
+
     try {
       const logsToSend = [...this.pendingLogs];
       this.pendingLogs = [];
@@ -323,7 +354,7 @@ class ActivityService {
         this.batchTimeout = null;
       }
 
-      await apiClient.post('/activity-logs/batch', {
+      await tenantApiClient.post('/activity-logs/batch', {
         activities: logsToSend,
       });
     } catch (error) {

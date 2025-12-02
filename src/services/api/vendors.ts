@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { tenantApiClient } from '../tenant/tenantApiClient';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 
 export interface Vendor {
@@ -62,44 +62,44 @@ class VendorsService {
       if (filters.date_to) params.append('date_to', filters.date_to);
     }
 
-    const response = await apiClient.get<PaginatedResponse<Vendor>>(
+    const response = await tenantApiClient.get<PaginatedResponse<Vendor>>(
       `/vendors?${params.toString()}`
     );
     return response;
   }
 
   async getVendorById(id: string): Promise<Vendor> {
-    const response = await apiClient.get<Vendor>(`/vendors/${id}`);
+    const response = await tenantApiClient.get<Vendor>(`/vendors/${id}`);
     return response;
   }
 
   async createVendor(data: CreateVendorRequest): Promise<Vendor> {
-    const response = await apiClient.post<Vendor>('/vendors', data);
+    const response = await tenantApiClient.post<Vendor>('/vendors', data);
     return response;
   }
 
   async updateVendor(id: string, data: UpdateVendorRequest): Promise<Vendor> {
-    const response = await apiClient.put<Vendor>(`/vendors/${id}`, data);
+    const response = await tenantApiClient.put<Vendor>(`/vendors/${id}`, data);
     return response;
   }
 
   async deleteVendor(id: string): Promise<{ message: string }> {
-    const response = await apiClient.delete<{ message: string }>(`/vendors/${id}`);
+    const response = await tenantApiClient.delete<{ message: string }>(`/vendors/${id}`);
     return response;
   }
 
   async getVendorEvaluations(id: string): Promise<any> {
-    const response = await apiClient.get<any>(`/vendors/${id}/evaluations`);
+    const response = await tenantApiClient.get<any>(`/vendors/${id}/evaluations`);
     return response;
   }
 
   async getVendorSpecializations(id: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/vendors/${id}/specializations`);
+    const response = await tenantApiClient.get<any[]>(`/vendors/${id}/specializations`);
     return response;
   }
 
   async getVendorOrders(id: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/vendors/${id}/orders`);
+    const response = await tenantApiClient.get<any[]>(`/vendors/${id}/orders`);
     return response;
   }
 }

@@ -27,7 +27,10 @@ import {
   Warehouse,
   ChevronDown,
   ChevronRight,
-  LogOut
+  LogOut,
+  FileText as Quote,
+  Factory,
+  Shield
 } from 'lucide-react';
 
 interface MenuItem {
@@ -78,6 +81,45 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
+    title: 'Quotes',
+    icon: Quote,
+    path: '/admin/quotes',
+  },
+  {
+    title: 'Invoices',
+    icon: FileText,
+    path: '/admin/invoices',
+  },
+  {
+    title: 'Payments',
+    icon: CreditCard,
+    children: [
+      { title: 'Payment Overview', path: '/admin/payments' },
+      { title: 'Payment Verification', path: '/admin/payments/verification' },
+      { title: 'Refunds & Disputes', path: '/admin/payments/refunds' },
+      { title: 'Payment Reports', path: '/admin/payments/reports' }
+    ]
+  },
+  {
+    title: 'Production',
+    icon: Factory,
+    children: [
+      { title: 'Production Overview', path: '/admin/production' },
+      { title: 'Production Schedule', path: '/admin/production/schedule' },
+      { title: 'Production Reports', path: '/admin/production/reports' }
+    ]
+  },
+  {
+    title: 'Quality Control',
+    icon: Shield,
+    children: [
+      { title: 'Quality Overview', path: '/admin/quality' },
+      { title: 'Inspections', path: '/admin/quality/inspections' },
+      { title: 'Defect Analysis', path: '/admin/quality/defects' },
+      { title: 'Quality Reports', path: '/admin/quality/reports' }
+    ]
+  },
+  {
     title: 'Orders',
     icon: ShoppingCart,
     children: [
@@ -105,17 +147,6 @@ const menuItems: MenuItem[] = [
       { title: 'Carrier Management', path: '/admin/shipping/carriers' },
       { title: 'Tracking Integration', path: '/admin/shipping/tracking' },
       { title: 'Delivery Reports', path: '/admin/shipping/reports' }
-    ]
-  },
-  {
-    title: 'Payments',
-    icon: CreditCard,
-    children: [
-      { title: 'Payment Methods', path: '/admin/payments/methods' },
-      { title: 'Payment Processing', path: '/admin/payments/processing' },
-      { title: 'Payment Verification', path: '/admin/payments/verification' },
-      { title: 'Refunds & Disputes', path: '/admin/payments/refunds' },
-      { title: 'Financial Reports', path: '/admin/payments/reports' }
     ]
   },
   {

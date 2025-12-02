@@ -10,6 +10,14 @@ class DashboardService {
   private readonly CACHE_DURATION = 5000; // 5 seconds
   private isLoading = false;
 
+  private isDemoMode(): boolean {
+    const token = localStorage.getItem('auth_token');
+    const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+    const isDemoToken = token?.startsWith('demo_token_');
+    
+    return isDevelopment || isDemoToken;
+  }
+
   async getDashboardStats(): Promise<DashboardStats> {
     // Return cached data if still valid
     const now = Date.now();
@@ -45,6 +53,16 @@ class DashboardService {
     const accountType = authService.getAccountType();
     
     try {
+      // In demo mode, use mock data immediately to avoid API errors
+      if (this.isDemoMode()) {
+        console.log('Demo mode: Using mock dashboard data');
+        const mockData = this.getMockTenantDashboardStats();
+        this.cache.data = mockData;
+        this.cache.timestamp = Date.now();
+        this.isLoading = false;
+        return mockData;
+      }
+
       if (accountType === 'platform') {
         // Platform accounts get aggregated data across all tenants
         return await this.getPlatformDashboardStats();
@@ -277,6 +295,99 @@ class DashboardService {
   async getContentOverview(): Promise<ContentOverviewItem[]> {
     const data = await this.getDashboardStats();
     return data.contentOverview;
+  }
+
+  private getMockTenantDashboardStats(): DashboardStats {
+    const stats: DashboardStat[] = [
+      {
+        title: 'Total Customers',
+        value: 42,
+        icon: 'Users',
+        trend: '+12% from last month',
+        color: 'text-blue-600',
+        bgColor: 'bg-blue-100',
+      },
+      {
+        title: 'Total Revenue',
+        value: 'IDR 8.5M',
+        icon: 'TrendingUp',
+        trend: '+18% from last month',
+        color: 'text-green-600',
+        bgColor: 'bg-green-100',
+      },
+      {
+        title: 'Total Orders',
+        value: 156,
+        icon: 'Package',
+        trend: '+8% from last month',
+        color: 'text-purple-600',
+        bgColor: 'bg-purple-100',
+      },
+      {
+        title: 'Active Vendors',
+        value: 12,
+        icon: 'Users',
+        trend: '+2 this month',
+        color: 'text-orange-600',
+        bgColor: 'bg-orange-100',
+      },
+    ];
+
+    const recentActivities: Activity[] = [
+      {
+        action: 'New customer registered',
+        item: 'PT. Berkah Jaya registered as new customer',
+        time: 'Just now',
+      },
+      {
+        action: 'Order completed',
+        item: 'Order #ORD-156 completed and shipped',
+        time: '2 hours ago',
+      },
+      {
+        action: 'Payment received',
+        item: 'Payment of IDR 2.5M received for Invoice #INV-089',
+        time: '4 hours ago',
+      },
+      {
+        action: 'Quote approved',
+        item: 'Quote #QUO-045 approved by customer',
+        time: '6 hours ago',
+      },
+    ];
+
+    const contentOverview: ContentOverviewItem[] = [
+      {
+        icon: 'Users',
+        title: 'Active Customers',
+        description: 'Business accounts',
+        value: 42,
+      },
+      {
+        icon: 'Package',
+        title: 'Pending Orders',
+        description: 'Awaiting processing',
+        value: 8,
+      },
+      {
+        icon: 'FileText',
+        title: 'Draft Quotes',
+        description: 'Ready to send',
+        value: 5,
+      },
+      {
+        icon: 'TrendingUp',
+        title: 'Monthly Growth',
+        description: 'Revenue increase',
+        value: '+18%',
+      },
+    ];
+
+    return {
+      stats,
+      recentActivities,
+      contentOverview,
+    };
   }
 
   private async getPlatformDashboardStats(): Promise<DashboardStats> {

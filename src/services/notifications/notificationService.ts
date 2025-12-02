@@ -290,6 +290,55 @@ class NotificationService {
     limit?: number;
     unreadOnly?: boolean;
   } = {}): Promise<{ notifications: Notification[]; total: number; hasMore: boolean }> {
+    // In demo mode, return mock notifications
+    if (this.isDemoMode()) {
+      const mockNotifications: Notification[] = [
+        {
+          id: '1',
+          type: 'success',
+          title: 'Payment Received',
+          message: 'Payment of IDR 500,000 has been received for Invoice #INV-001',
+          read: false,
+          createdAt: new Date().toISOString(),
+          userId: 'demo-user',
+          tenantId: 'demo-tenant',
+          data: { invoiceId: 'inv-001', amount: 500000 }
+        },
+        {
+          id: '2',
+          type: 'info',
+          title: 'Order Update',
+          message: 'Order #ORD-002 has been shipped and is on its way',
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          userId: 'demo-user',
+          tenantId: 'demo-tenant',
+          data: { orderId: 'ord-002' }
+        },
+        {
+          id: '3',
+          type: 'warning',
+          title: 'Invoice Overdue',
+          message: 'Invoice #INV-003 is 5 days overdue',
+          read: true,
+          createdAt: new Date(Date.now() - 7200000).toISOString(),
+          userId: 'demo-user',
+          tenantId: 'demo-tenant',
+          data: { invoiceId: 'inv-003', daysOverdue: 5 }
+        }
+      ];
+
+      const filteredNotifications = options.unreadOnly 
+        ? mockNotifications.filter(n => !n.read)
+        : mockNotifications;
+      
+      return {
+        notifications: filteredNotifications,
+        total: filteredNotifications.length,
+        hasMore: false,
+      };
+    }
+
     try {
       const response = await apiClient.get('/notifications', {
         params: {
@@ -321,7 +370,34 @@ class NotificationService {
     }
   }
 
+  private isDemoMode(): boolean {
+    const token = localStorage.getItem('auth_token');
+    const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+    const isDemoToken = token?.startsWith('demo_token_');
+    
+    return isDevelopment || isDemoToken;
+  }
+
   private async loadPreferences(): Promise<void> {
+    // In demo mode, skip API calls and use defaults
+    if (this.isDemoMode()) {
+      console.log('Demo mode: Using default notification preferences');
+      this.preferences = {
+        inApp: true,
+        email: true,
+        sms: false,
+        pushNotifications: false,
+        types: {
+          orderStatus: true,
+          paymentUpdates: true,
+          shipmentTracking: true,
+          systemAlerts: true,
+          promotions: false,
+        }
+      };
+      return;
+    }
+
     try {
       // Try to load from API first
       const response = await apiClient.get('/notifications/preferences');

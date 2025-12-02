@@ -1,4 +1,4 @@
-import apiClient from './client';
+import { tenantApiClient } from '../tenant/tenantApiClient';
 import { Order } from '@/types/order';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import { orderNotificationService } from '../notifications/orderNotificationService';
@@ -51,19 +51,19 @@ class OrdersService {
       if (filters.date_to) params.append('date_to', filters.date_to);
     }
 
-    const response = await apiClient.get<PaginatedResponse<Order>>(
+    const response = await tenantApiClient.get<PaginatedResponse<Order>>(
       `/orders?${params.toString()}`
     );
     return response;
   }
 
   async getOrderById(id: string): Promise<Order> {
-    const response = await apiClient.get<Order>(`/orders/${id}`);
+    const response = await tenantApiClient.get<Order>(`/orders/${id}`);
     return response;
   }
 
   async createOrder(data: CreateOrderRequest): Promise<Order> {
-    const response = await apiClient.post<Order>('/orders', data);
+    const response = await tenantApiClient.post<Order>('/orders', data);
     return response;
   }
 
@@ -72,7 +72,7 @@ class OrdersService {
     const currentOrder = await this.getOrderById(id);
     const previousStatus = currentOrder.status;
 
-    const response = await apiClient.put<Order>(`/orders/${id}`, data);
+    const response = await tenantApiClient.put<Order>(`/orders/${id}`, data);
     const updatedOrder = response;
 
     // If status changed, send notification
@@ -101,7 +101,7 @@ class OrdersService {
   }
 
   async deleteOrder(id: string): Promise<{ message: string }> {
-    const response = await apiClient.delete<{ message: string }>(`/orders/${id}`);
+    const response = await tenantApiClient.delete<{ message: string }>(`/orders/${id}`);
     return response;
   }
 
@@ -113,7 +113,7 @@ class OrdersService {
     const currentOrder = await this.getOrderById(id);
     const previousStatus = currentOrder.status;
 
-    const response = await apiClient.post<Order>(`/orders/${id}/transition-state`, data);
+    const response = await tenantApiClient.post<Order>(`/orders/${id}/transition-state`, data);
     const updatedOrder = response;
 
     // Send notification for state transition
@@ -142,17 +142,17 @@ class OrdersService {
   }
 
   async getOrderHistory(id: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/orders/${id}/history`);
+    const response = await tenantApiClient.get<any[]>(`/orders/${id}/history`);
     return response;
   }
 
   async getOrderPayments(id: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/orders/${id}/payments`);
+    const response = await tenantApiClient.get<any[]>(`/orders/${id}/payments`);
     return response;
   }
 
   async getOrderShipments(id: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/orders/${id}/shipments`);
+    const response = await tenantApiClient.get<any[]>(`/orders/${id}/shipments`);
     return response;
   }
 
@@ -160,7 +160,7 @@ class OrdersService {
     orderId: string,
     data: { amount: number; method: string; notes?: string }
   ): Promise<any> {
-    const response = await apiClient.post(`/orders/${orderId}/payments`, data);
+    const response = await tenantApiClient.post(`/orders/${orderId}/payments`, data);
     return response;
   }
 

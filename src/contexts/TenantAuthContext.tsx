@@ -34,18 +34,38 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
   // Initialize from localStorage
   useEffect(() => {
     const storedAccountType = authService.getAccountType();
-    if (storedAccountType === 'tenant' && authService.isAuthenticated()) {
+    const isAuthenticated = authService.isAuthenticated();
+    
+    console.log('TenantAuthContext: Initializing from storage', {
+      storedAccountType,
+      isAuthenticated
+    });
+    
+    if (storedAccountType === 'tenant' && isAuthenticated) {
       const storedUser = authService.getCurrentUserFromStorage();
       const storedTenant = authService.getCurrentTenantFromStorage();
       const storedPermissions = authService.getPermissionsFromStorage();
       const storedRoles = authService.getRolesFromStorage();
+      
+      console.log('TenantAuthContext: Found stored data', {
+        hasUser: !!storedUser,
+        hasTenant: !!storedTenant,
+        user: storedUser,
+        tenant: storedTenant
+      });
       
       if (storedUser && storedTenant) {
         setUser(storedUser);
         setTenant(storedTenant);
         setPermissions(storedPermissions);
         setRoles(storedRoles);
+      } else {
+        console.log('TenantAuthContext: Missing user or tenant data, clearing auth');
+        authService.clearAuth();
       }
+    } else if (storedAccountType && storedAccountType !== 'tenant') {
+      console.log('TenantAuthContext: Wrong account type, clearing auth');
+      authService.clearAuth();
     }
   }, []);
 

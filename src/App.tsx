@@ -52,6 +52,7 @@ import TenantLogin from "./pages/tenant/TenantLogin";
 import { TenantLayout } from "@/layouts/TenantLayout";
 import Dashboard from "./pages/admin/Dashboard";
 
+
 const PageHome = lazy(() => import("./pages/admin/PageHome"));
 const PageAbout = lazy(() => import("./pages/admin/PageAbout"));
 const PageContact = lazy(() => import("./pages/admin/PageContact"));
@@ -73,9 +74,15 @@ const CustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
 const VendorManagement = lazy(() => import("./pages/admin/VendorManagement"));
 const VendorDetail = lazy(() => import("./pages/admin/VendorDetail"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
-const QuoteManagement = lazy(() => import("./pages/admin/QuoteManagement"));
-const PaymentManagement = lazy(() => import("./pages/admin/PaymentManagement"));
-const ShippingManagement = lazy(() => import("./pages/admin/ShippingManagement"));
+const QuoteManagement = lazy(() => import("./pages/tenant/QuoteManagement"));
+const InvoiceManagement = lazy(() => import("./pages/tenant/InvoiceManagement"));
+const PaymentManagement = lazy(() => import("./pages/tenant/PaymentManagement"));
+const ProductionManagement = lazy(() => import("./pages/tenant/ProductionManagement"));
+const QualityManagement = lazy(() => import("./pages/tenant/QualityManagement"));
+const ShippingManagement = lazy(() => import("./pages/tenant/ShippingManagement"));
+const TenantManagement = lazy(() => import("./pages/platform/TenantManagement"));
+const LicenseManagement = lazy(() => import("./pages/platform/LicenseManagement"));
+const PlatformAnalytics = lazy(() => import("./pages/platform/PlatformAnalytics"));
 const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 const FinancialReport = lazy(() => import("./pages/admin/FinancialReport"));
 const LanguageSettings = lazy(() => import("./pages/admin/LanguageSettings"));
@@ -149,12 +156,12 @@ function App() {
                 }>
                   <Route index element={<Navigate to="/platform/dashboard" replace />} />
                   <Route path="dashboard" element={<PlatformDashboard />} />
-                  <Route path="tenants" element={<div className="p-6">Tenant Management - Coming Soon</div>} />
+                  <Route path="tenants" element={<Suspense fallback={<LoadingFallback />}><TenantManagement /></Suspense>} />
                   <Route path="users" element={<div className="p-6">User Management - Coming Soon</div>} />
                   <Route path="subscriptions" element={<div className="p-6">Subscriptions - Coming Soon</div>} />
-                  <Route path="licenses" element={<div className="p-6">Licensing - Coming Soon</div>} />
+                  <Route path="licenses" element={<Suspense fallback={<LoadingFallback />}><LicenseManagement /></Suspense>} />
                   <Route path="domains" element={<div className="p-6">Domains - Coming Soon</div>} />
-                  <Route path="analytics" element={<div className="p-6">Analytics - Coming Soon</div>} />
+                  <Route path="analytics" element={<Suspense fallback={<LoadingFallback />}><PlatformAnalytics /></Suspense>} />
                   <Route path="system" element={<div className="p-6">System - Coming Soon</div>} />
                   <Route path="activity" element={<div className="p-6">Activity Monitor - Coming Soon</div>} />
                   <Route path="settings" element={<div className="p-6">Settings - Coming Soon</div>} />
@@ -189,7 +196,10 @@ function App() {
                   <Route path="vendors/:id" element={<Suspense fallback={<LoadingFallback />}><VendorDetail /></Suspense>} />
                   <Route path="orders" element={<Suspense fallback={<LoadingFallback />}><OrderManagement /></Suspense>} />
                   <Route path="quotes" element={<Suspense fallback={<LoadingFallback />}><QuoteManagement /></Suspense>} />
+                  <Route path="invoices" element={<Suspense fallback={<LoadingFallback />}><InvoiceManagement /></Suspense>} />
                   <Route path="payments" element={<Suspense fallback={<LoadingFallback />}><PaymentManagement /></Suspense>} />
+                  <Route path="production" element={<Suspense fallback={<LoadingFallback />}><ProductionManagement /></Suspense>} />
+                  <Route path="quality" element={<Suspense fallback={<LoadingFallback />}><QualityManagement /></Suspense>} />
                   <Route path="shipping" element={<Suspense fallback={<LoadingFallback />}><ShippingManagement /></Suspense>} />
                   <Route path="inventory" element={<Suspense fallback={<LoadingFallback />}><InventoryManagement /></Suspense>} />
                   <Route path="financial-report" element={<Suspense fallback={<LoadingFallback />}><FinancialReport /></Suspense>} />

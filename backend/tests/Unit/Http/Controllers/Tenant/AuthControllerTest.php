@@ -190,7 +190,19 @@ class AuthControllerTest extends TestCase
         $response = $this->postJson('/api/v1/tenant/login', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['email', 'password', 'tenant_id']);
+                ->assertJsonValidationErrors(['email', 'password']);
+    }
+
+    /** @test */
+    public function it_validates_tenant_context_required()
+    {
+        $response = $this->postJson('/api/v1/tenant/login', [
+            'email' => 'test@example.com',
+            'password' => 'password123'
+        ]);
+
+        $response->assertStatus(422)
+                ->assertJsonFragment(['tenant_id' => ['Either tenant_id or tenant_slug is required']]);
     }
 
     /** @test */
