@@ -18,7 +18,17 @@ export const TypingEffect = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    // Guard against empty texts array or undefined values
+    if (!texts || texts.length === 0) {
+      return;
+    }
+
     const targetText = texts[currentTextIndex];
+    
+    // Guard against undefined targetText
+    if (!targetText) {
+      return;
+    }
     
     if (!isDeleting && currentText === targetText) {
       const timeout = setTimeout(() => setIsDeleting(true), delayBetweenTexts);
@@ -41,6 +51,11 @@ export const TypingEffect = ({
     
     return () => clearTimeout(timeout);
   }, [currentText, isDeleting, currentTextIndex, texts, typingSpeed, deletingSpeed, delayBetweenTexts]);
+
+  // Guard against empty or undefined texts
+  if (!texts || texts.length === 0) {
+    return <span className="inline-block">Loading...</span>;
+  }
 
   return (
     <span className="inline-block">

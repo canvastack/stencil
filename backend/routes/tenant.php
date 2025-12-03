@@ -210,6 +210,25 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/integrations/{integration}', [SettingsController::class, 'updateIntegration'])->name('tenant.settings.update_integration');
         });
         
+        // Content Management System (CMS)
+        Route::prefix('cms')->group(function () {
+            Route::prefix('pages')->group(function () {
+                Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'index'])->name('tenant.cms.pages.index');
+                Route::post('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'store'])->name('tenant.cms.pages.store');
+                Route::get('/search', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'search'])->name('tenant.cms.pages.search');
+                Route::get('/statistics', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'statistics'])->name('tenant.cms.pages.statistics');
+                
+                Route::get('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'show'])->name('tenant.cms.pages.show');
+                Route::patch('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'update'])->name('tenant.cms.pages.update');
+                Route::delete('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'destroy'])->name('tenant.cms.pages.destroy');
+                
+                // Page Actions
+                Route::post('/{uuid}/publish', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'publish'])->name('tenant.cms.pages.publish');
+                Route::post('/{uuid}/unpublish', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'unpublish'])->name('tenant.cms.pages.unpublish');
+                Route::post('/{uuid}/homepage', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ContentController::class, 'setHomepage'])->name('tenant.cms.pages.homepage');
+            });
+        });
+        
         // Platform Interaction (Limited)
         Route::prefix('platform')->group(function () {
             Route::get('/subscription', [SettingsController::class, 'platformSubscription'])->name('tenant.platform.subscription');

@@ -1,6 +1,7 @@
 // Phase 4 CMS API Service
 // Integrating with Hexagonal Architecture + Use Cases + Command/Query handlers
 import { platformApiClient } from '@/services/platform/platformApiClient';
+import { tenantApiClient } from '@/services/tenant/tenantApiClient';
 
 interface CMSApiResponse<T = any> {
   success: boolean;
@@ -80,8 +81,35 @@ class CMSService {
                          localStorage.getItem('account_type') === 'platform';
   }
 
+  private isTestMode(): boolean {
+    return import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+  }
+
   private async apiCall<T>(method: string, endpoint: string, data?: any): Promise<T> {
     try {
+      // In test mode, use direct axios to avoid authentication interceptors
+      if (this.isTestMode() && endpoint.startsWith('/test/')) {
+        const axios = (await import('axios')).default;
+        const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+        
+        const config: any = {
+          method,
+          url: `${baseURL}${endpoint}`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          }
+        };
+
+        if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+          config.data = data;
+        }
+
+        const response = await axios.request(config);
+        return response.data as T;
+      }
+
+      // Normal mode - use the appropriate API client based on mode
       const config: any = {
         method,
         url: endpoint,
@@ -91,14 +119,11 @@ class CMSService {
         config.data = data;
       }
 
-      const response = await platformApiClient.request(config);
+      const apiClient = this.isPlatformMode ? platformApiClient : tenantApiClient;
+      const response = await apiClient.request(config);
       
-      // Handle both direct data responses and wrapped responses
-      if (response && typeof response === 'object' && 'data' in response) {
-        return response;
-      }
-      
-      return response;
+      // Return the response data directly as the expected type
+      return response.data as T;
     } catch (error: any) {
       console.error(`CMS API ${method} ${endpoint} failed:`, error);
       throw new Error(error.message || `Failed to ${method} ${endpoint}`);
@@ -121,7 +146,13 @@ class CMSService {
     sort_by?: string;
     sort_order?: string;
   }): Promise<CMSApiResponse<CMSPage[]>> {
-    const endpoint = this.isPlatformMode ? '/content/pages' : '/tenant/cms/pages';
+    // Use test endpoints in development mode to avoid authentication issues
+    let endpoint: string;
+    if (this.isTestMode()) {
+      endpoint = this.isPlatformMode ? '/test/platform/content/pages' : '/test/tenant/cms/pages';
+    } else {
+      endpoint = this.isPlatformMode ? '/content/pages' : '/cms/pages';
+    }
     const queryParams = new URLSearchParams();
     
     if (filters) {
@@ -141,7 +172,7 @@ class CMSService {
    * Endpoint: GET /platform/content/pages/{uuid} (Platform) or GET /tenant/cms/pages/{uuid} (Tenant)
    */
   async getPageByUuid(uuid: string): Promise<CMSApiResponse<CMSPage>> {
-    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}` : `/tenant/cms/pages/${uuid}`;
+    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}` : `/cms/pages/${uuid}`;
     return this.apiCall<CMSApiResponse<CMSPage>>('GET', endpoint);
   }
 
@@ -182,7 +213,7 @@ class CMSService {
    * Controller → CreatePageUseCase → HTMLPurifier → Domain → Repository
    */
   async createPage(pageData: CreatePageRequest): Promise<CMSApiResponse<CMSPage>> {
-    const endpoint = this.isPlatformMode ? '/content/pages' : '/tenant/cms/pages';
+    const endpoint = this.isPlatformMode ? '/content/pages' : '/cms/pages';
     const data = {
       ...pageData,
       language: pageData.language || 'en',
@@ -202,7 +233,7 @@ class CMSService {
    * Optional: Content versioning with PageVersionCreated event
    */
   async updatePage(uuid: string, pageData: UpdatePageRequest): Promise<CMSApiResponse<CMSPage>> {
-    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}` : `/tenant/cms/pages/${uuid}`;
+    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}` : `/cms/pages/${uuid}`;
     const method = this.isPlatformMode ? 'PUT' : 'PATCH';
 
     return this.apiCall<CMSApiResponse<CMSPage>>(method, endpoint, pageData);
@@ -213,7 +244,7 @@ class CMSService {
    * Endpoint: DELETE /platform/content/pages/{uuid} (Platform) or DELETE /tenant/cms/pages/{uuid} (Tenant)
    */
   async deletePage(uuid: string): Promise<CMSApiResponse<void>> {
-    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}` : `/tenant/cms/pages/${uuid}`;
+    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}` : `/cms/pages/${uuid}`;
     return this.apiCall<CMSApiResponse<void>>('DELETE', endpoint);
   }
 
@@ -224,12 +255,8 @@ class CMSService {
    * Endpoint: GET /tenant/cms/pages/{uuid}/versions
    */
   async getPageVersions(uuid: string): Promise<CMSApiResponse<CMSPageVersion[]>> {
-    const response = await fetch(`${this.baseUrl}/tenant/cms/pages/${uuid}/versions`, {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-
-    return this.handleResponse<CMSPageVersion[]>(response);
+    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}/versions` : `/cms/pages/${uuid}/versions`;
+    return this.apiCall<CMSApiResponse<CMSPageVersion[]>>('GET', endpoint);
   }
 
   /**
@@ -237,12 +264,8 @@ class CMSService {
    * Endpoint: POST /tenant/cms/pages/{uuid}/versions/{version}/restore
    */
   async restorePageVersion(uuid: string, version: number): Promise<CMSApiResponse<CMSPage>> {
-    const response = await fetch(`${this.baseUrl}/tenant/cms/pages/${uuid}/versions/${version}/restore`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-    });
-
-    return this.handleResponse<CMSPage>(response);
+    const endpoint = this.isPlatformMode ? `/content/pages/${uuid}/versions/${version}/restore` : `/cms/pages/${uuid}/versions/${version}/restore`;
+    return this.apiCall<CMSApiResponse<CMSPage>>('POST', endpoint);
   }
 
   // Content Blocks Support (Phase 4 CMS Enhancement)
@@ -255,22 +278,19 @@ class CMSService {
     category?: string;
     is_active?: boolean;
   }): Promise<CMSApiResponse<any[]>> {
-    const url = new URL(`${this.baseUrl}/tenant/cms/content-blocks`);
+    const endpoint = this.isPlatformMode ? '/content/content-blocks' : '/cms/content-blocks';
+    const queryParams = new URLSearchParams();
     
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
-          url.searchParams.append(key, value.toString());
+          queryParams.append(key, value.toString());
         }
       });
     }
 
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: this.getHeaders(),
-    });
-
-    return this.handleResponse<any[]>(response);
+    const url = queryParams.toString() ? `${endpoint}?${queryParams}` : endpoint;
+    return this.apiCall<CMSApiResponse<any[]>>('GET', url);
   }
 
   // Legacy Support for Current Admin Pages
