@@ -21,7 +21,7 @@ class EmailVerificationMail extends Mailable implements ShouldQueue
     /**
      * Create a new message instance.
      */
-    public function __construct($user, string $token, ?string $tenantId = null)
+    public function __construct($user, string $token, ?int $tenantId = null)
     {
         $this->user = $user;
         $this->token = $token;
@@ -41,8 +41,17 @@ class EmailVerificationMail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
+        $tenantName = 'CanvaStack';
+        if ($this->tenantId && $this->user && method_exists($this->user, 'tenant')) {
+            try {
+                $tenantName = $this->user->tenant->name ?? 'CanvaStack';
+            } catch (\Exception $e) {
+                $tenantName = 'CanvaStack';
+            }
+        }
+        
         $subject = $this->tenantId 
-            ? 'Verify Your Email - ' . ($this->user->tenant->name ?? 'CanvaStack')
+            ? 'Verify Your Email - ' . $tenantName
             : 'Verify Your Email - CanvaStack Platform';
             
         return new Envelope(

@@ -8,6 +8,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Ramsey\Uuid\Uuid;
 
 class ProductFactory extends Factory
 {
@@ -18,6 +19,7 @@ class ProductFactory extends Factory
         $name = $this->faker->unique()->words(3, true);
 
         return [
+            'uuid' => Uuid::uuid4()->toString(),
             'tenant_id' => Tenant::factory(),
             'name' => Str::title($name),
             'sku' => Str::upper($this->faker->unique()->bothify('SKU-####')),

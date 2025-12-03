@@ -1,0 +1,301 @@
+# Phase 4 CMS - Page Management Schemas
+# Schema-per-tenant architecture - NO tenant_id fields needed
+
+# Page Entity
+Page:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Page title
+          example: "Welcome to Our Company"
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+          description: URL-friendly slug
+          example: "welcome-to-our-company"
+        description:
+          type: string
+          nullable: true
+          description: Page meta description
+          example: "Learn more about our company and mission"
+        content:
+          type: object
+          description: Structured JSON content with blocks
+          example:
+            blocks:
+              - type: "heading"
+                content: "Welcome"
+              - type: "paragraph"
+                content: "This is our story..."
+        template:
+          type: string
+          default: "default"
+          description: Template name
+          example: "landing-page"
+        meta_data:
+          type: object
+          nullable: true
+          description: SEO and custom metadata
+          example:
+            seo_title: "Welcome | Our Company"
+            seo_description: "Company welcome page"
+            custom_css: ".header { color: blue; }"
+        status:
+          type: string
+          enum: [draft, published, archived]
+          default: "draft"
+          description: Publication status
+        is_homepage:
+          type: boolean
+          default: false
+          description: Whether this is the homepage
+        sort_order:
+          type: integer
+          default: 0
+          description: Display order
+        language:
+          type: string
+          maxLength: 5
+          default: "id"
+          description: Content language code
+          example: "id"
+        parent_id:
+          type: integer
+          nullable: true
+          description: Parent page ID for hierarchy
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Publication timestamp
+
+# Detailed Page with Relationships
+PageDetailed:
+  allOf:
+    - $ref: '#/Page'
+    - type: object
+      properties:
+        parent:
+          $ref: '#/Page'
+          nullable: true
+        children:
+          type: array
+          items:
+            $ref: '#/Page'
+        current_version:
+          $ref: '#/PageVersion'
+          nullable: true
+
+# Page Version for Content History
+PageVersion:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      properties:
+        page_id:
+          type: integer
+          description: Reference to page
+        version_number:
+          type: integer
+          description: Sequential version number
+          example: 3
+        content:
+          type: object
+          description: Snapshot of page content
+        meta_data:
+          type: object
+          nullable: true
+          description: Snapshot of metadata
+        change_description:
+          type: string
+          nullable: true
+          description: Description of changes
+          example: "Updated hero section"
+        created_by:
+          type: integer
+          description: User ID who created version
+        is_current:
+          type: boolean
+          default: false
+          description: Whether this is the active version
+
+# Content Block Definition
+ContentBlock:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Block name
+          example: "Hero Section"
+        identifier:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9_]+$'
+          description: Unique block identifier
+          example: "hero_section"
+        description:
+          type: string
+          nullable: true
+          description: Block description
+        schema:
+          type: object
+          description: JSON schema for block structure
+          example:
+            type: "object"
+            properties:
+              title:
+                type: "string"
+              subtitle:
+                type: "string"
+        default_content:
+          type: object
+          nullable: true
+          description: Default block content
+        category:
+          type: string
+          default: "general"
+          description: Block category
+          example: "layout"
+        is_reusable:
+          type: boolean
+          default: true
+          description: Whether block can be reused
+        is_active:
+          type: boolean
+          default: true
+          description: Whether block is available
+
+# Create Page Request
+CreatePageRequest:
+  type: object
+  required:
+    - title
+    - content
+  properties:
+    title:
+      type: string
+      maxLength: 255
+      description: Page title
+      example: "About Our Services"
+    slug:
+      type: string
+      maxLength: 255
+      nullable: true
+      pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+      description: URL slug (auto-generated if not provided)
+      example: "about-our-services"
+    description:
+      type: string
+      nullable: true
+      description: Meta description
+    content:
+      type: object
+      description: Page content structure
+      example:
+        blocks:
+          - type: "heading"
+            content: "Our Services"
+    template:
+      type: string
+      default: "default"
+      description: Template to use
+    meta_data:
+      type: object
+      nullable: true
+      description: Additional metadata
+    status:
+      type: string
+      enum: [draft, published, archived]
+      default: "draft"
+    language:
+      type: string
+      maxLength: 5
+      default: "id"
+    parent_id:
+      type: integer
+      nullable: true
+      description: Parent page for hierarchy
+
+# Update Page Request
+UpdatePageRequest:
+  type: object
+  properties:
+    title:
+      type: string
+      maxLength: 255
+    slug:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+    description:
+      type: string
+      nullable: true
+    content:
+      type: object
+    template:
+      type: string
+    meta_data:
+      type: object
+      nullable: true
+    status:
+      type: string
+      enum: [draft, published, archived]
+    is_homepage:
+      type: boolean
+    sort_order:
+      type: integer
+    parent_id:
+      type: integer
+      nullable: true
+    create_version:
+      type: boolean
+      default: false
+      description: Whether to create new version
+    change_description:
+      type: string
+      nullable: true
+      description: Description of changes (if creating version)
+
+# Create Content Block Request
+CreateContentBlockRequest:
+  type: object
+  required:
+    - name
+    - identifier
+    - schema
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      example: "Image Gallery"
+    identifier:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9_]+$'
+      example: "image_gallery"
+    description:
+      type: string
+      nullable: true
+    schema:
+      type: object
+      description: JSON schema for validation
+    default_content:
+      type: object
+      nullable: true
+    category:
+      type: string
+      default: "general"
+    is_reusable:
+      type: boolean
+      default: true
+    is_active:
+      type: boolean
+      default: true

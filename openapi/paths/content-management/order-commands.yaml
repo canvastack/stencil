@@ -1,0 +1,424 @@
+# TENANT ORDER COMMAND PATTERN ENDPOINTS (CQRS)
+# Phase 4C: Backend Hexagonal Architecture Enhancement
+# Command endpoints for write operations with eventual consistency
+
+# Create Purchase Order Command
+/tenant/commands/orders/create-purchase-order:
+  post:
+    tags:
+      - Order Commands
+    summary: Create Purchase Order (Command)
+    description: |
+      Command to create a new purchase order with CQRS pattern.
+      
+      **CQRS Pattern:**
+      - Command validation and idempotency
+      - Event sourcing for audit trail
+      - Async processing capability
+      - Command ID for tracking and replay
+      
+      **Related Use Case:** CreatePurchaseOrderUseCase
+    operationId: createPurchaseOrderCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CreatePurchaseOrderCommand'
+    responses:
+      '202':
+        description: Command accepted for processing
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+                      description: Unique command ID for tracking
+                    status:
+                      type: string
+                      enum: [pending, processing, completed, failed]
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Assign Vendor Command
+/tenant/commands/orders/assign-vendor:
+  post:
+    tags:
+      - Order Commands
+    summary: Assign Vendor to Order (Command)
+    description: |
+      Command to assign vendor to order with idempotency.
+      
+      **CQRS Pattern:**
+      - Idempotency key for duplicate prevention
+      - Command versioning support
+      - Async vendor notification processing
+      
+      **Related Use Case:** AssignVendorUseCase
+    operationId: assignVendorCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/AssignVendorCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Negotiate Price Command
+/tenant/commands/orders/negotiate-price:
+  post:
+    tags:
+      - Order Commands
+    summary: Create Vendor Price Negotiation (Command)
+    description: |
+      Command to initiate vendor price negotiation.
+      
+      **CQRS Pattern:**
+      - Price calculation validation
+      - Markup and tax computation
+      - Multi-round negotiation support
+      
+      **Related Use Case:** NegotiateWithVendorUseCase
+    operationId: negotiatePriceCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/NegotiatePriceCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Approve Quote Command
+/tenant/commands/orders/approve-quote:
+  post:
+    tags:
+      - Order Commands
+    summary: Approve Customer Quote (Command)
+    description: |
+      Command to approve customer quote and proceed with order.
+      
+      **CQRS Pattern:**
+      - Quote approval state transition
+      - Invoice generation triggering
+      - Payment status initialization
+      
+      **Related Use Case:** HandleCustomerApprovalUseCase
+    operationId: approveQuoteCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/ApproveQuoteCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Verify Payment Command
+/tenant/commands/orders/verify-payment:
+  post:
+    tags:
+      - Order Commands
+    summary: Verify Customer Payment (Command)
+    description: |
+      Command to verify and process customer payment.
+      
+      **CQRS Pattern:**
+      - Payment method validation
+      - Account payable/receivable updates
+      - Idempotent payment processing
+      
+      **Related Use Case:** VerifyCustomerPaymentUseCase
+    operationId: verifyPaymentCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/VerifyPaymentCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Update Production Progress Command
+/tenant/commands/orders/update-production:
+  post:
+    tags:
+      - Order Commands
+    summary: Update Production Status (Command)
+    description: |
+      Command to update order production progress.
+      
+      **CQRS Pattern:**
+      - Production milestone tracking
+      - Status transition validation
+      - Notification triggering
+      
+      **Related Use Case:** UpdateProductionProgressUseCase
+    operationId: updateProductionCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UpdateProductionCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Ship Order Command
+/tenant/commands/orders/ship:
+  post:
+    tags:
+      - Order Commands
+    summary: Ship Order (Command)
+    description: |
+      Command to ship order with tracking information.
+      
+      **CQRS Pattern:**
+      - Shipping status update
+      - Tracking number generation
+      - Customer notification
+      
+      **Related Use Case:** ShipOrderUseCase
+    operationId: shipOrderCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/ShipOrderCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Complete Order Command
+/tenant/commands/orders/complete:
+  post:
+    tags:
+      - Order Commands
+    summary: Complete Order (Command)
+    description: |
+      Command to mark order as completed.
+      
+      **CQRS Pattern:**
+      - Completion state transition
+      - Final status update
+      - Archive triggering
+      
+      **Related Use Case:** CompleteOrderUseCase
+    operationId: completeOrderCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CompleteOrderCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Cancel Order Command
+/tenant/commands/orders/cancel:
+  post:
+    tags:
+      - Order Commands
+    summary: Cancel Order (Command)
+    description: |
+      Command to cancel order with optional refund.
+      
+      **CQRS Pattern:**
+      - Cancellation state validation
+      - Refund trigger setup
+      - Notification broadcasting
+      
+      **Related Use Case:** CancelOrderUseCase
+    operationId: cancelOrderCommand
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CancelOrderCommand'
+    responses:
+      '202':
+        description: Command accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    command_id:
+                      type: string
+                      format: uuid
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Get Command Status
+/tenant/commands/{command_id}/status:
+  get:
+    tags:
+      - Order Commands
+    summary: Get Command Execution Status
+    description: |
+      Retrieve the execution status of a previously submitted command.
+      
+      **CQRS Pattern:**
+      - Command execution tracking
+      - Error information retrieval
+      - Result access after completion
+    operationId: getCommandStatus
+    parameters:
+      - in: path
+        name: command_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Command ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Command status retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/CommandStatusResponse'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'

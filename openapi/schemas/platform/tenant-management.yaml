@@ -1,0 +1,476 @@
+# Phase 6 Platform Management - Tenant Management Schemas
+# LANDLORD DATABASE CONTEXT - Platform-level entities
+
+# Platform Tenant Entity (Landlord Database)
+PlatformTenant:
+  type: object
+  required:
+    - id
+    - uuid
+    - name
+    - business_name
+    - contact_email
+    - status
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Tenant UUID (primary identifier)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    uuid:
+      type: string
+      format: uuid
+      description: Public tenant identifier
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    name:
+      type: string
+      maxLength: 255
+      description: Tenant internal name
+      example: "acme-corp"
+    business_name:
+      type: string
+      maxLength: 255
+      description: Business display name
+      example: "ACME Corporation"
+    business_type:
+      type: string
+      nullable: true
+      description: Type of business
+      example: "Manufacturing"
+    contact_person:
+      type: string
+      maxLength: 255
+      description: Primary contact person
+      example: "John Doe"
+    contact_email:
+      type: string
+      format: email
+      description: Contact email
+      example: "john@acme-corp.com"
+    contact_phone:
+      type: string
+      nullable: true
+      description: Contact phone number
+      example: "+62-21-1234567"
+    business_address:
+      type: string
+      nullable: true
+      description: Business address
+      example: "Jl. Sudirman No. 123, Jakarta"
+    website_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Company website
+      example: "https://acme-corp.com"
+    status:
+      type: string
+      enum: [active, inactive, suspended, terminated]
+      default: "active"
+      description: Tenant status
+    activated_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Activation timestamp
+    suspended_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Suspension timestamp
+    suspension_reason:
+      type: string
+      nullable: true
+      description: Reason for suspension
+    onboarding_progress:
+      type: object
+      nullable: true
+      description: Onboarding step tracking
+      example:
+        completed_steps: ["account_setup", "business_info"]
+        current_step: "payment_setup"
+        total_steps: 5
+    onboarding_completed:
+      type: boolean
+      default: false
+      description: Whether onboarding is finished
+    trial_ends_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Trial expiration date
+    platform_settings:
+      type: object
+      nullable: true
+      description: Platform-specific settings
+      example:
+        features_enabled: ["cms", "ecommerce", "analytics"]
+        api_rate_limit: 1000
+        storage_quota_gb: 50
+    created_at:
+      type: string
+      format: date-time
+      description: Creation timestamp
+    updated_at:
+      type: string
+      format: date-time
+      description: Last update timestamp
+
+# Detailed Platform Tenant with Relationships
+PlatformTenantDetailed:
+  allOf:
+    - $ref: '#/PlatformTenant'
+    - type: object
+      properties:
+        subscription:
+          $ref: '#/TenantSubscription'
+          nullable: true
+        usage_metrics:
+          $ref: '#/TenantUsageMetrics'
+          nullable: true
+        recent_activity:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              activity:
+                type: string
+              details:
+                type: string
+
+# Tenant Plan (Landlord Database)
+TenantPlan:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: Plan ID
+    uuid:
+      type: string
+      format: uuid
+      description: Plan UUID
+    name:
+      type: string
+      description: Plan name
+      example: "Professional"
+    slug:
+      type: string
+      description: URL-friendly identifier
+      example: "professional"
+    description:
+      type: string
+      nullable: true
+      description: Plan description
+    monthly_price:
+      type: number
+      format: double
+      multipleOf: 0.01
+      description: Monthly price in IDR
+      example: 500000.00
+    yearly_price:
+      type: number
+      format: double
+      multipleOf: 0.01
+      description: Yearly price in IDR
+      example: 5000000.00
+    features:
+      type: array
+      items:
+        type: string
+      description: Available features
+      example: ["cms", "ecommerce", "analytics", "custom_domain"]
+    limits:
+      type: object
+      description: Usage limits
+      example:
+        users: 50
+        products: 1000
+        storage_gb: 100
+        api_requests_per_month: 100000
+    is_popular:
+      type: boolean
+      default: false
+      description: Whether featured as popular
+    is_active:
+      type: boolean
+      default: true
+      description: Whether plan is available
+    sort_order:
+      type: integer
+      default: 0
+      description: Display order
+
+# Tenant Subscription (Landlord Database)
+TenantSubscription:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: Subscription ID
+    tenant_id:
+      type: string
+      format: uuid
+      description: Reference to tenant
+    plan:
+      $ref: '#/TenantPlan'
+    billing_cycle:
+      type: string
+      enum: [monthly, yearly]
+      description: Billing frequency
+    status:
+      type: string
+      enum: [active, cancelled, suspended, expired]
+      description: Subscription status
+    amount:
+      type: number
+      format: double
+      multipleOf: 0.01
+      description: Subscription amount
+    started_at:
+      type: string
+      format: date-time
+      description: Subscription start date
+    expires_at:
+      type: string
+      format: date-time
+      description: Subscription expiry date
+    cancelled_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Cancellation date
+    cancellation_reason:
+      type: string
+      nullable: true
+      description: Reason for cancellation
+    plan_features:
+      type: array
+      items:
+        type: string
+      description: Features snapshot at subscription time
+    plan_limits:
+      type: object
+      description: Limits snapshot at subscription time
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+
+# Tenant Usage Metrics (Landlord Database)
+TenantUsageMetrics:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: Metrics record ID
+    tenant_id:
+      type: string
+      format: uuid
+      description: Reference to tenant
+    date:
+      type: string
+      format: date
+      description: Metrics date
+    users_count:
+      type: integer
+      default: 0
+      description: Number of users
+      example: 25
+    products_count:
+      type: integer
+      default: 0
+      description: Number of products
+      example: 150
+    orders_count:
+      type: integer
+      default: 0
+      description: Number of orders
+      example: 45
+    customers_count:
+      type: integer
+      default: 0
+      description: Number of customers
+      example: 120
+    storage_used_bytes:
+      type: integer
+      default: 0
+      description: Storage used in bytes
+      example: 2147483648
+    api_requests_count:
+      type: integer
+      default: 0
+      description: API requests made
+      example: 5420
+    active_sessions:
+      type: integer
+      default: 0
+      description: Active user sessions
+      example: 8
+    monthly_revenue:
+      type: number
+      format: double
+      multipleOf: 0.01
+      default: 0.00
+      description: Monthly revenue in IDR
+      example: 15750000.00
+    additional_metrics:
+      type: object
+      nullable: true
+      description: Custom metrics per tenant
+      example:
+        page_views: 15420
+        unique_visitors: 2150
+        bounce_rate: 0.35
+
+# Platform Dashboard
+PlatformDashboard:
+  type: object
+  properties:
+    summary:
+      type: object
+      properties:
+        total_tenants:
+          type: integer
+          example: 150
+        active_tenants:
+          type: integer
+          example: 142
+        suspended_tenants:
+          type: integer
+          example: 5
+        trial_tenants:
+          type: integer
+          example: 25
+        total_revenue:
+          type: number
+          format: double
+          example: 125500000.00
+        monthly_recurring_revenue:
+          type: number
+          format: double
+          example: 45750000.00
+    recent_signups:
+      type: array
+      items:
+        type: object
+        properties:
+          tenant_name:
+            type: string
+          business_name:
+            type: string
+          signed_up_at:
+            type: string
+            format: date-time
+          plan:
+            type: string
+    revenue_chart:
+      type: array
+      items:
+        type: object
+        properties:
+          month:
+            type: string
+          revenue:
+            type: number
+            format: double
+    tenant_growth:
+      type: array
+      items:
+        type: object
+        properties:
+          date:
+            type: string
+            format: date
+          new_tenants:
+            type: integer
+          churned_tenants:
+            type: integer
+
+# Request Schemas
+CreateTenantRequest:
+  type: object
+  required:
+    - name
+    - business_name
+    - contact_person
+    - contact_email
+  properties:
+    name:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9-]+$'
+      description: Tenant slug (must be unique)
+      example: "acme-corp"
+    business_name:
+      type: string
+      maxLength: 255
+      description: Business display name
+      example: "ACME Corporation"
+    business_type:
+      type: string
+      nullable: true
+      description: Type of business
+    contact_person:
+      type: string
+      maxLength: 255
+      description: Primary contact person
+    contact_email:
+      type: string
+      format: email
+      description: Contact email (must be unique)
+    contact_phone:
+      type: string
+      nullable: true
+      description: Contact phone number
+    business_address:
+      type: string
+      nullable: true
+      description: Business address
+    website_url:
+      type: string
+      format: uri
+      nullable: true
+      description: Company website
+    plan_id:
+      type: integer
+      nullable: true
+      description: Initial subscription plan
+    trial_days:
+      type: integer
+      default: 30
+      description: Trial period in days
+
+UpdateTenantRequest:
+  type: object
+  properties:
+    business_name:
+      type: string
+      maxLength: 255
+    business_type:
+      type: string
+      nullable: true
+    contact_person:
+      type: string
+      maxLength: 255
+    contact_email:
+      type: string
+      format: email
+    contact_phone:
+      type: string
+      nullable: true
+    business_address:
+      type: string
+      nullable: true
+    website_url:
+      type: string
+      format: uri
+      nullable: true
+    platform_settings:
+      type: object
+      nullable: true
+      description: Platform-specific settings

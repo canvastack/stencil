@@ -1,7 +1,9 @@
 # Phase 5: Advanced Features
 **Duration**: 4 Weeks (Weeks 17-20)  
 **Priority**: MEDIUM  
-**Prerequisites**: Phase 1-4 (Multi-Tenant Foundation, Authentication, Business Logic, Content Management)
+**Prerequisites**: ✅ Phase 4A-4C (Complete Hexagonal Architecture + DDD + CQRS) + Phase 4 CMS - **MUST BE 100% COMPLETE**
+
+**🏗️ ARCHITECTURE COMPLIANCE**: All implementations must follow established **Hexagonal Architecture + DDD + CQRS + Use Cases** patterns from Phase 4C, integrated with existing **Order Management System** and **Authentication Infrastructure**.
 
 ## 🎯 Phase Overview
 
@@ -20,11 +22,13 @@ This phase implements advanced features that enhance the platform's capabilities
 ### Week 17: Theme Management & Customization System
 
 #### Day 1-2: Theme Models & Storage
+**⚠️ CRITICAL**: Follow **schema-per-tenant isolation** - NO `tenant_id` fields needed.
+
 ```php
-// File: database/migrations/create_themes_table.php
+// File: database/migrations/tenant/create_themes_table.php  
 Schema::create('themes', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('name');
     $table->string('slug')->index();
     $table->string('version')->default('1.0.0');
@@ -66,13 +70,13 @@ Schema::create('theme_customizations', function (Blueprint $table) {
 
 #### Day 3-4: Theme Management Models & Logic
 ```php
-// File: app/Models/Theme.php
-class Theme extends Model implements BelongsToTenant
+// File: app/Domain/Theme/Entities/Theme.php
+class Theme extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, HasUuid;
 
     protected $fillable = [
-        'tenant_id', 'name', 'slug', 'version', 'description', 'author',
+        'uuid', 'name', 'slug', 'version', 'description', 'author',
         'config', 'assets', 'templates', 'customizations', 'is_active',
         'is_default', 'preview_image', 'supported_features', 'installed_at'
     ];
@@ -105,14 +109,14 @@ class Theme extends Model implements BelongsToTenant
 
     public function activate(): void
     {
-        // Deactivate current theme
-        static::where('tenant_id', $this->tenant_id)->update(['is_active' => false]);
+        // Deactivate current theme (schema-isolated)
+        static::where('is_active', true)->update(['is_active' => false]);
         
         // Activate this theme
         $this->update(['is_active' => true]);
         
         // Clear theme cache
-        cache()->tags(['themes', "tenant:{$this->tenant_id}"])->flush();
+        cache()->tags(['themes', 'tenant:' . tenant()->id])->flush();
         
         // Dispatch theme activated event
         ThemeActivatedEvent::dispatch($this);

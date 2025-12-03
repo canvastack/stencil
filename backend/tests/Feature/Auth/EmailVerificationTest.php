@@ -73,8 +73,8 @@ class EmailVerificationTest extends TestCase
             'verified' => false,
         ]);
         
-        // Check that email was queued
-        Mail::assertQueued(EmailVerificationMail::class, function ($mail) {
+        // Check that email was sent (not queued in testing)
+        Mail::assertSent(EmailVerificationMail::class, function ($mail) {
             return $mail->user->email === $this->tenantUser->email && 
                    $mail->tenantId === $this->tenant->id;
         });
@@ -94,8 +94,8 @@ class EmailVerificationTest extends TestCase
             'verified' => false,
         ]);
         
-        // Check that email was queued
-        Mail::assertQueued(EmailVerificationMail::class, function ($mail) {
+        // Check that email was sent (not queued in testing)
+        Mail::assertSent(EmailVerificationMail::class, function ($mail) {
             return $mail->user->email === $this->platformUser->email && 
                    $mail->tenantId === null;
         });
@@ -176,7 +176,7 @@ class EmailVerificationTest extends TestCase
         
         $this->assertTrue($result);
         
-        Mail::assertQueued(EmailVerificationMail::class);
+        Mail::assertSent(EmailVerificationMail::class);
     }
 
     public function test_cannot_resend_verification_if_already_verified(): void
@@ -294,7 +294,7 @@ class EmailVerificationTest extends TestCase
                     'message' => 'If the email exists in our system, a verification link has been sent.'
                 ]);
         
-        Mail::assertQueued(EmailVerificationMail::class);
+        Mail::assertSent(EmailVerificationMail::class);
     }
 
     public function test_send_platform_verification_api_endpoint(): void
@@ -309,7 +309,7 @@ class EmailVerificationTest extends TestCase
                     'message' => 'If the email exists in our system, a verification link has been sent.'
                 ]);
         
-        Mail::assertQueued(EmailVerificationMail::class);
+        Mail::assertSent(EmailVerificationMail::class);
     }
 
     public function test_verify_email_api_endpoint(): void

@@ -76,7 +76,7 @@ class AuthController extends Controller
             $user['permissions'] = $tokenData['permissions'];
             
             $response = [
-                'token' => $tokenData['access_token'],
+                'token' => $tokenData['token'],
                 'token_type' => $tokenData['token_type'],
                 'expires_in' => $tokenData['expires_in'],
                 'user' => $user,
@@ -158,7 +158,7 @@ class AuthController extends Controller
             $user['permissions'] = $tokenData['permissions'];
             
             $response = [
-                'token' => $tokenData['access_token'],
+                'token' => $tokenData['token'],
                 'token_type' => $tokenData['token_type'],
                 'expires_in' => $tokenData['expires_in'],
                 'user' => $user,

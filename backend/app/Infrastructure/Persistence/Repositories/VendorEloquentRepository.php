@@ -8,12 +8,12 @@ use App\Domain\Shared\ValueObjects\UuidValueObject;
 use App\Domain\Vendor\ValueObjects\VendorName;
 use App\Domain\Vendor\ValueObjects\VendorEmail;
 use App\Domain\Vendor\Enums\VendorStatus;
-use App\Infrastructure\Persistence\Eloquent\VendorEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Vendor as VendorModel;
 
 class VendorEloquentRepository implements VendorRepositoryInterface
 {
     public function __construct(
-        private VendorEloquentModel $model
+        private VendorModel $model
     ) {}
 
     public function findById(UuidValueObject $id): ?Vendor

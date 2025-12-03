@@ -78,7 +78,7 @@ class JwtServiceTest extends TestCase
 
         $this->assertArrayHasKey('access_token', $result);
         $this->assertArrayHasKey('account', $result);
-        $this->assertEquals('platform', $result['account_type']);
+        $this->assertEquals('platform_owner', $result['account_type']);
         $this->assertIsString($result['access_token']);
     }
 
@@ -92,11 +92,11 @@ class JwtServiceTest extends TestCase
             '127.0.0.1'
         );
 
-        $this->assertArrayHasKey('access_token', $result);
+        $this->assertArrayHasKey('token', $result);
         $this->assertArrayHasKey('user', $result);
         $this->assertArrayHasKey('tenant', $result);
         $this->assertEquals($this->tenant->id, $result['tenant']['id']);
-        $this->assertIsString($result['access_token']);
+        $this->assertIsString($result['token']);
     }
 
     /** @test */
@@ -310,8 +310,8 @@ class JwtServiceTest extends TestCase
             '127.0.0.1'
         );
 
-        $this->assertEquals('platform', $platformResult['account_type']);
-        $this->assertEquals('tenant', $tenantResult['account_type']);
+        $this->assertEquals('platform_owner', $platformResult['account_type']);
+        $this->assertEquals('tenant_user', $tenantResult['account_type']);
     }
 
     /** @test */

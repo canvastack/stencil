@@ -5,6 +5,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Ramsey\Uuid\Uuid;
 
 class CustomerFactory extends Factory
 {
@@ -16,6 +17,7 @@ class CustomerFactory extends Factory
         $lastName = $this->faker->lastName();
 
         return [
+            'uuid' => Uuid::uuid4()->toString(),
             'tenant_id' => Tenant::factory(),
             'first_name' => $firstName,
             'last_name' => $lastName,

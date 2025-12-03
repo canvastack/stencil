@@ -1,0 +1,259 @@
+# Phase 5 Advanced Features - Theme Management API Endpoints
+# Following Hexagonal Architecture + DDD + CQRS patterns
+
+# Theme Management Endpoints
+/tenant/themes:
+  get:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Get Themes (Query)
+    description: |
+      Query to retrieve themes using established GetThemesQuery handler.
+      
+      **Hexagonal Architecture Pattern:**
+      - Controller → GetThemesQuery → ThemeRepositoryInterface
+      - Schema-per-tenant isolation (no tenant_id needed)
+      - Cache invalidation with tenant context
+      
+      **Related Handler:** GetThemesQuery
+    operationId: getThemes
+    parameters:
+      - name: is_active
+        in: query
+        schema:
+          type: boolean
+      - name: category
+        in: query
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Themes retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/themes.yaml#/Theme'
+
+  post:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Install Theme (Use Case)
+    description: |
+      Use Case to install a new theme with validation and asset processing.
+      
+      **Related Use Case:** InstallThemeUseCase
+    operationId: installTheme
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/themes.yaml#/InstallThemeRequest'
+    responses:
+      '201':
+        description: Theme installed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/themes.yaml#/Theme'
+
+/tenant/themes/{uuid}/activate:
+  post:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Activate Theme (Use Case)
+    description: |
+      Use Case to activate theme with cache clearing and event dispatch.
+      
+      **Related Use Case:** ActivateThemeUseCase
+      **Domain Event:** ThemeActivatedEvent
+    operationId: activateTheme
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Theme activated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/themes.yaml#/Theme'
+
+/tenant/themes/{uuid}/customize:
+  post:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Customize Theme (Use Case)
+    description: |
+      Use Case to customize theme properties with CSS generation.
+      
+      **Related Use Case:** CustomizeThemeUseCase
+    operationId: customizeTheme
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/themes.yaml#/ThemeCustomizationRequest'
+    responses:
+      '200':
+        description: Theme customized successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/themes.yaml#/ThemeCustomization'
+
+# Translation Management (Phase 5)
+/tenant/translations:
+  get:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Get Translations (Query)
+    operationId: getTranslations
+    parameters:
+      - name: language_code
+        in: query
+        schema:
+          type: string
+      - name: category
+        in: query
+        schema:
+          type: string
+      - name: search
+        in: query
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Translations retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/themes.yaml#/Translation'
+
+  post:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Create Translation (Use Case)
+    operationId: createTranslation
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/themes.yaml#/CreateTranslationRequest'
+    responses:
+      '201':
+        description: Translation created successfully
+
+# Analytics Dashboard (Phase 5)
+/tenant/analytics/dashboard:
+  get:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Get Analytics Dashboard (Query)
+    description: |
+      Query to retrieve analytics data with business intelligence.
+      
+      **Related Handler:** GetAnalyticsDashboardQuery
+    operationId: getAnalyticsDashboard
+    parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: metrics
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [visitors, orders, revenue, conversions]
+    responses:
+      '200':
+        description: Analytics data retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/themes.yaml#/AnalyticsDashboard'
+
+# Advanced Search (Phase 5)
+/tenant/search:
+  post:
+    tags:
+      - Advanced Features (Phase 5)
+    summary: Advanced Search (Query)
+    description: |
+      Full-text search across all content types with filtering.
+      
+      **Related Handler:** AdvancedSearchQuery
+    operationId: advancedSearch
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/themes.yaml#/AdvancedSearchRequest'
+    responses:
+      '200':
+        description: Search results retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/themes.yaml#/SearchResults'

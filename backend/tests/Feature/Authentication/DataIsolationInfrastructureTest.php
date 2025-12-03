@@ -91,7 +91,7 @@ class DataIsolationInfrastructureTest extends TestCase
             'name' => 'Customer One',
             'email' => 'customer1@example.com',
             'phone' => '081234567890',
-            'type' => 'individual',
+            'customer_type' => 'individual',
             'status' => 'active',
         ]);
 
@@ -132,7 +132,7 @@ class DataIsolationInfrastructureTest extends TestCase
             'name' => 'Customer Two',
             'email' => 'customer2@example.com',
             'phone' => '081234567892',
-            'type' => 'individual',
+            'customer_type' => 'individual',
             'status' => 'active',
         ]);
 

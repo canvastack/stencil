@@ -94,7 +94,7 @@ class EmailVerificationService
     /**
      * Resend verification email
      */
-    public function resendVerification(string $email, ?string $tenantId = null): bool
+    public function resendVerification(string $email, ?int $tenantId = null): bool
     {
         $userType = $tenantId ? 'tenant' : 'platform';
         $user = $this->findUser($email, $tenantId, $userType);
@@ -130,7 +130,7 @@ class EmailVerificationService
     /**
      * Check if email is verified
      */
-    public function isEmailVerified(string $email, ?string $tenantId = null): bool
+    public function isEmailVerified(string $email, ?int $tenantId = null): bool
     {
         $userType = $tenantId ? 'tenant' : 'platform';
         $user = $this->findUser($email, $tenantId, $userType);
@@ -149,7 +149,7 @@ class EmailVerificationService
     /**
      * Find user by email and context
      */
-    private function findUser(string $email, ?string $tenantId = null, ?string $userType = null)
+    private function findUser(string $email, ?int $tenantId = null, ?string $userType = null)
     {
         if ($userType === 'platform' || (!$tenantId && !$userType)) {
             return AccountEloquentModel::where('email', $email)->first();
@@ -163,10 +163,15 @@ class EmailVerificationService
     /**
      * Send verification email
      */
-    private function sendVerificationEmail($user, string $token, ?string $tenantId = null): void
+    private function sendVerificationEmail($user, string $token, ?int $tenantId = null): void
     {
         try {
-            Mail::to($user->email)->queue(new EmailVerificationMail($user, $token, $tenantId));
+            // In testing environment, use send() instead of queue() for Mail::fake() to work
+            if (app()->environment('testing')) {
+                Mail::to($user->email)->send(new EmailVerificationMail($user, $token, $tenantId));
+            } else {
+                Mail::to($user->email)->queue(new EmailVerificationMail($user, $token, $tenantId));
+            }
         } catch (\Exception $e) {
             // Log the error but don't throw exception to prevent user feedback
             \Log::error('Failed to send email verification', [

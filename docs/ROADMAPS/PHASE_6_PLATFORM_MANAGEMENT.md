@@ -1,7 +1,9 @@
 # Phase 6: Platform Management (Account A Features)
 **Duration**: 4 Weeks (Weeks 21-24)  
 **Priority**: MEDIUM  
-**Prerequisites**: Phase 1-5 (Complete multi-tenant foundation with all business features)
+**Prerequisites**: ✅ Phase 4A-4C (Complete Hexagonal Architecture + DDD + CQRS) + Phases 4-5 - **MUST BE 100% COMPLETE**
+
+**🏗️ CRITICAL ALIGNMENT**: This phase must integrate with established **Platform Authentication System** from Phase 4B and follow **Hexagonal Architecture** patterns. Platform management operates on **landlord database** while managing tenant schemas.
 
 ## 🎯 Phase Overview
 
@@ -19,11 +21,14 @@ This phase implements Account A (Platform Owner) specific features for managing 
 
 ### Week 21: Tenant Provisioning & Management System
 
-#### Day 1-2: Platform Models & Tenant Management
+#### Day 1-2: Platform Models & Tenant Management  
+**⚠️ CRITICAL**: Platform models exist in **landlord database**, NOT tenant schemas.
+
 ```php
-// File: database/migrations/create_tenant_plans_table.php
+// File: database/migrations/landlord/create_tenant_plans_table.php
 Schema::create('tenant_plans', function (Blueprint $table) {
     $table->id();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('name');
     $table->string('slug')->unique();
     $table->text('description')->nullable();
@@ -100,10 +105,10 @@ Schema::table('tenants', function (Blueprint $table) {
 
 #### Day 3-4: Platform Management Models
 ```php
-// File: app/Models/TenantPlan.php
+// File: app/Domain/Platform/Entities/TenantPlan.php
 class TenantPlan extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuid;
 
     protected $fillable = [
         'name', 'slug', 'description', 'monthly_price', 'yearly_price',
@@ -272,35 +277,50 @@ class TenantUsageMetrics extends Model
 }
 ```
 
-#### Day 5: Platform Administration API
+#### Day 5: Platform Administration Following Hexagonal Architecture
+**⚠️ ARCHITECTURE COMPLIANCE**: Must follow established **Use Cases → Application Services** pattern.
+
 ```php
-// File: app/Http/Controllers/Platform/PlatformController.php  
-namespace App\Http\Controllers\Platform;
+// File: app/Infrastructure/Presentation/Http/Controllers/Platform/PlatformController.php
+namespace App\Infrastructure\Presentation\Http\Controllers\Platform;
 
 class PlatformController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['auth', 'platform.admin']);
+    public function __construct(
+        private GetPlatformDashboardQuery $dashboardQuery,
+        private GetTenantsQuery $getTenantsQuery,
+        private CreateTenantUseCase $createTenantUseCase,
+        private SuspendTenantUseCase $suspendTenantUseCase
+    ) {
+        $this->middleware(['auth:api', 'platform.admin']);
     }
 
     public function dashboard()
     {
-        $stats = [
-            'total_tenants' => Tenant::count(),
-            'active_tenants' => Tenant::where('status', 'active')->count(),
-            'trial_tenants' => Tenant::whereNotNull('trial_ends_at')
-                ->where('trial_ends_at', '>', now())->count(),
-            'expired_trials' => Tenant::whereNotNull('trial_ends_at')
-                ->where('trial_ends_at', '<=', now())->count(),
-            'total_revenue' => TenantSubscription::where('status', 'active')->sum('amount'),
-            'monthly_revenue' => TenantSubscription::where('status', 'active')
-                ->where('billing_cycle', 'monthly')->sum('amount'),
-            'yearly_revenue' => TenantSubscription::where('status', 'active')
-                ->where('billing_cycle', 'yearly')->sum('amount'),
-        ];
+        $dashboardData = $this->dashboardQuery->handle(new GetPlatformDashboardQueryDTO());
+        return response()->json($dashboardData);
+    }
+}
 
-        return response()->json($stats);
+// File: app/Application/Platform/Queries/GetPlatformDashboardQuery.php
+class GetPlatformDashboardQuery
+{
+    public function __construct(
+        private TenantRepositoryInterface $tenantRepository,
+        private TenantSubscriptionRepositoryInterface $subscriptionRepository
+    ) {}
+
+    public function handle(GetPlatformDashboardQueryDTO $query): array
+    {
+        return [
+            'total_tenants' => $this->tenantRepository->count(),
+            'active_tenants' => $this->tenantRepository->countByStatus('active'),
+            'trial_tenants' => $this->tenantRepository->countInTrial(),
+            'expired_trials' => $this->tenantRepository->countExpiredTrials(),
+            'total_revenue' => $this->subscriptionRepository->getTotalActiveRevenue(),
+            'monthly_revenue' => $this->subscriptionRepository->getMonthlyActiveRevenue(),
+            'yearly_revenue' => $this->subscriptionRepository->getYearlyActiveRevenue(),
+        ];
     }
 
     public function tenants(Request $request)

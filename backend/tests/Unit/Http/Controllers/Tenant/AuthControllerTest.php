@@ -86,7 +86,7 @@ class AuthControllerTest extends TestCase
                 ]);
 
         $this->assertEquals('Bearer', $response->json('token_type'));
-        $this->assertEquals('tenant', $response->json('account_type'));
+        $this->assertEquals('tenant_user', $response->json('account_type'));
         $this->assertEquals(8 * 60 * 60, $response->json('expires_in')); // 8 hours
     }
 

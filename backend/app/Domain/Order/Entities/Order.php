@@ -29,7 +29,7 @@ class Order
         UuidValueObject $customerId,
         OrderNumber $orderNumber,
         OrderTotal $total,
-        OrderStatus $status = OrderStatus::PENDING,
+        OrderStatus $status = OrderStatus::NEW,
         array $items = [],
         ?array $shippingAddress = null,
         ?array $billingAddress = null,

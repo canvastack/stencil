@@ -1,0 +1,546 @@
+# TENANT ORDER BUSINESS WORKFLOW ENDPOINTS
+# Phase 4C: Backend Hexagonal Architecture Enhancement
+# These endpoints implement the core business workflow use cases
+
+# Assign Vendor Use Case
+/tenant/orders/{id}/assign-vendor:
+  post:
+    tags:
+      - Order Workflows
+    summary: Assign Vendor to Order
+    description: |
+      Assign a vendor to an order for production. This initiates the vendor 
+      negotiation workflow.
+      
+      **Business Logic:**
+      - Validate order status (must be 'new' or 'confirmed')
+      - Check vendor availability and specializations
+      - Create vendor negotiation record
+      - Trigger VendorAssigned domain event
+      - Send notification to vendor
+      
+      **Use Case:** AssignVendorUseCase
+    operationId: assignVendor
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/AssignVendorRequest'
+    responses:
+      '200':
+        description: Vendor assigned successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Negotiate Vendor Price
+/tenant/orders/{id}/negotiate-vendor:
+  post:
+    tags:
+      - Order Workflows
+    summary: Create Vendor Quote & Price Negotiation
+    description: |
+      Create a quote negotiation record for vendor price negotiation.
+      
+      **Business Logic:**
+      - Validate order and vendor assignment
+      - Calculate customer price (vendor_price + markup + tax)
+      - Create negotiation record with pricing
+      - Email notification to vendor
+      - Trigger QuoteRequested domain event
+      
+      **Use Case:** NegotiateWithVendorUseCase
+    operationId: negotiateVendor
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/NegotiateVendorRequest'
+    responses:
+      '200':
+        description: Negotiation initiated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/VendorNegotiationResponse'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Create Customer Quote
+/tenant/orders/{id}/create-quote:
+  post:
+    tags:
+      - Order Workflows
+    summary: Create & Send Customer Quote
+    description: |
+      Create a customer quote based on vendor pricing and send for approval.
+      
+      **Business Logic:**
+      - Validate vendor quote accepted
+      - Calculate invoice with approved vendor price
+      - Generate customer quote with markup
+      - Create invoice record
+      - Email quote to customer
+      - Trigger QuoteCreated domain event
+      
+      **Use Case:** CreateCustomerQuoteUseCase
+    operationId: createCustomerQuote
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CreateQuoteRequest'
+    responses:
+      '200':
+        description: Quote created and sent to customer
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/CustomerQuoteResponse'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Customer Approval Workflow
+/tenant/orders/{id}/customer-approval:
+  put:
+    tags:
+      - Order Workflows
+    summary: Handle Customer Quote Approval/Rejection
+    description: |
+      Process customer approval or rejection of quote.
+      
+      **Business Logic:**
+      - Update order status based on approval
+      - Generate invoice for approved orders
+      - Create account payable (DP) or receivable (Full payment) records
+      - Send confirmation or re-negotiation request
+      - Trigger QuoteApproved or QuoteRejected domain event
+      
+      **Use Case:** HandleCustomerApprovalUseCase
+    operationId: handleCustomerApproval
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CustomerApprovalRequest'
+    responses:
+      '200':
+        description: Approval processed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Verify Customer Payment
+/tenant/orders/{id}/verify-payment:
+  post:
+    tags:
+      - Order Workflows
+    summary: Verify Customer Payment (DP or Full)
+    description: |
+      Verify customer payment and update payment status.
+      
+      **Business Logic:**
+      - Validate payment method and amount
+      - Update account payable/receivable status
+      - Check if DP minimum (50%) or full payment
+      - Generate vendor invoice (DP invoice if partial)
+      - Send payment confirmation to customer
+      - Trigger PaymentVerified domain event
+      
+      **Use Case:** VerifyCustomerPaymentUseCase
+    operationId: verifyCustomerPayment
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/VerifyPaymentRequest'
+    responses:
+      '200':
+        description: Payment verified successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Update Production Progress
+/tenant/orders/{id}/production-progress:
+  put:
+    tags:
+      - Order Workflows
+    summary: Update Production Progress Status
+    description: |
+      Update order production status and track progress.
+      
+      **Business Logic:**
+      - Update production status (in_production, quality_check, ready_to_ship)
+      - Record production milestones
+      - Send progress notification to customer
+      - Trigger ProductionProgressUpdated domain event
+      
+      **Use Case:** UpdateProductionProgressUseCase
+    operationId: updateProductionProgress
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UpdateProductionProgressRequest'
+    responses:
+      '200':
+        description: Production progress updated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Request Final Payment from Customer
+/tenant/orders/{id}/request-payment:
+  post:
+    tags:
+      - Order Workflows
+    summary: Request Final Payment from Customer
+    description: |
+      Request remaining payment from customer (if DP was paid).
+      
+      **Business Logic:**
+      - Validate order status (ready to ship or completed)
+      - Calculate remaining payment amount
+      - Send payment request to customer
+      - Trigger FinalPaymentRequested domain event
+      
+      **Use Case:** RequestFinalPaymentUseCase
+    operationId: requestFinalPayment
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/RequestPaymentRequest'
+    responses:
+      '200':
+        description: Payment request sent
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Ship Order
+/tenant/orders/{id}/ship-order:
+  post:
+    tags:
+      - Order Workflows
+    summary: Ship Order & Generate Tracking
+    description: |
+      Ship order and generate tracking information.
+      
+      **Business Logic:**
+      - Validate order ready for shipping
+      - Create shipping record with carrier info
+      - Generate tracking number
+      - Send shipping notification to customer
+      - Trigger OrderShipped domain event
+      
+      **Use Case:** ShipOrderUseCase
+    operationId: shipOrder
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/ShipOrderRequest'
+    responses:
+      '200':
+        description: Order shipped successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Complete Order
+/tenant/orders/{id}/complete-order:
+  put:
+    tags:
+      - Order Workflows
+    summary: Mark Order as Completed
+    description: |
+      Mark order as completed after delivery confirmation.
+      
+      **Business Logic:**
+      - Validate order shipped
+      - Update order status to completed
+      - Trigger OrderCompleted domain event
+      - Request customer review/feedback
+      - Archive order if needed
+      
+      **Use Case:** CompleteOrderUseCase
+    operationId: completeOrder
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CompleteOrderRequest'
+    responses:
+      '200':
+        description: Order marked as completed
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Cancel Order
+/tenant/orders/{id}/cancel-order:
+  put:
+    tags:
+      - Order Workflows
+    summary: Cancel Order
+    description: |
+      Cancel order with refund processing if needed.
+      
+      **Business Logic:**
+      - Validate order can be cancelled (not already completed/cancelled)
+      - Process refund if payment received
+      - Notify customer and vendor
+      - Trigger OrderCancelled domain event
+      - Archive order
+      
+      **Use Case:** CancelOrderUseCase
+    operationId: cancelOrder
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CancelOrderRequest'
+    responses:
+      '200':
+        description: Order cancelled successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Process Refund
+/tenant/orders/{id}/process-refund:
+  post:
+    tags:
+      - Order Workflows
+    summary: Process Refund for Order
+    description: |
+      Process refund for cancelled or rejected order.
+      
+      **Business Logic:**
+      - Validate refund eligibility
+      - Calculate refund amount
+      - Process through payment gateway
+      - Update payment status
+      - Generate refund receipt
+      - Trigger OrderRefunded domain event
+      
+      **Use Case:** RefundOrderUseCase
+    operationId: processRefund
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/ProcessRefundRequest'
+    responses:
+      '200':
+        description: Refund processed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PurchaseOrder'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'

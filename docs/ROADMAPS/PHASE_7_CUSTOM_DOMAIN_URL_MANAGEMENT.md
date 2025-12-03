@@ -2,7 +2,9 @@
 
 **Duration**: 4 Weeks (Weeks 25-28)  
 **Priority**: MEDIUM  
-**Prerequisites**: Phase 1-6 (Complete platform with all business and management features)
+**Prerequisites**: ✅ Phase 4A-4C (Complete Hexagonal Architecture + DDD + CQRS) + Phases 4-6 - **MUST BE 100% COMPLETE**
+
+**🏗️ CRITICAL INTEGRATION**: Must integrate with established **Multi-Tenant Authentication System** and **Platform Management** while following **Hexagonal Architecture** patterns. Domain verification operates on **both landlord and tenant contexts**.
 
 ---
 
@@ -38,12 +40,16 @@ This phase implements advanced URL routing and custom domain management, enablin
 ### **Week 25: Secure Domain Foundation & Verification System**
 
 #### **Day 1-2: Enhanced Domain Models & Security Architecture**
+**⚠️ ARCHITECTURE DECISION**: Domain management spans **both landlord and tenant contexts**:
+- **Landlord DB**: Domain verification requests, platform-level domain management
+- **Tenant Schema**: Tenant-specific domain settings and configurations
 
 ```php
-// File: database/migrations/create_domain_verification_requests_table.php
+// File: database/migrations/landlord/create_domain_verification_requests_table.php
 Schema::create('domain_verification_requests', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
+    $table->uuid('tenant_id')->index(); // Reference to tenants.uuid
     $table->string('domain'); // example.com
     $table->string('subdomain')->nullable(); // www, shop, store
     $table->string('full_domain')->index(); // www.example.com or example.com
@@ -124,11 +130,13 @@ Schema::create('domain_verification_attempts', function (Blueprint $table) {
 #### **Day 3-4: Enhanced Models with Security Features**
 
 ```php
-// File: app/Models/DomainVerificationRequest.php
+// File: app/Domain/Domain/Entities/DomainVerificationRequest.php
 class DomainVerificationRequest extends Model
 {
+    use HasUuid;
+    
     protected $fillable = [
-        'tenant_id', 'domain', 'subdomain', 'full_domain', 'type',
+        'uuid', 'tenant_id', 'domain', 'subdomain', 'full_domain', 'type',
         'status', 'verification_token', 'dns_records', 'expires_at',
         'verified_at', 'error_message', 'verification_attempts'
     ];

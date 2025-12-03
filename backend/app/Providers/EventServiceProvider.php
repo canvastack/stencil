@@ -22,6 +22,9 @@ class EventServiceProvider extends ServiceProvider
 
     protected $subscribe = [
         \App\Domain\Order\Listeners\SendOrderNotifications::class,
+        \App\Application\Order\Subscribers\OrderWorkflowSubscriber::class,
+        \App\Application\Order\Subscribers\PaymentWorkflowSubscriber::class,
+        \App\Application\Order\Subscribers\NotificationSubscriber::class,
     ];
 
     /**

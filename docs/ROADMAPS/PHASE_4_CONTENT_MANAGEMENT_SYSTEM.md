@@ -1,11 +1,13 @@
 # Phase 4: Content Management System
 **Duration**: 4 Weeks (Weeks 13-16)  
 **Priority**: HIGH  
-**Prerequisites**: Phase 1 (Multi-Tenant Foundation), Phase 2 (Authentication & Authorization), Phase 3 (Core Business Logic)
+**Prerequisites**: ✅ Phase 4A-4C (Complete Hexagonal Architecture + DDD + CQRS + Business Logic) - **MUST BE 100% COMPLETE**
 
 ## 🎯 Phase Overview
 
-This phase implements a comprehensive Content Management System (CMS) that enables dynamic content creation, media management, review systems, and SEO optimization. The CMS is designed with multi-tenant isolation and provides both programmatic APIs and user-friendly interfaces.
+This phase implements a comprehensive Content Management System (CMS) following the **established Hexagonal Architecture + DDD + CQRS patterns** from Phase 4C. The CMS integrates seamlessly with existing **Order Management**, **Authentication Infrastructure**, and **Business Workflows** while maintaining strict **schema-per-tenant isolation**.
+
+**🏗️ ARCHITECTURE ALIGNMENT**: All implementations must follow the established **Use Cases → Command/Query Handlers → Application Services** pattern from Phase 4C, with no direct controller-to-model access.
 
 ### Key Deliverables
 - **Dynamic Page Content Management** with structured content blocks
@@ -20,11 +22,13 @@ This phase implements a comprehensive Content Management System (CMS) that enabl
 ### Week 13: Dynamic Content Management Foundation
 
 #### Day 1-2: Page Content Models & Migration
+**⚠️ CRITICAL**: All models must follow **schema-per-tenant isolation** - NO `tenant_id` fields needed.
+
 ```php
-// File: database/migrations/create_pages_table.php
+// File: database/migrations/tenant/create_pages_table.php  
 Schema::create('pages', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('title');
     $table->string('slug')->index();
     $table->text('description')->nullable();
@@ -85,13 +89,13 @@ Schema::create('content_blocks', function (Blueprint $table) {
 
 #### Day 3-4: Page Content Models & Business Logic
 ```php
-// File: app/Models/Page.php
-class Page extends Model implements BelongsToTenant
+// File: app/Domain/Content/Entities/Page.php
+class Page extends Model 
 {
-    use HasFactory, BelongsToTenant, Searchable;
+    use HasFactory, HasUuid;
 
     protected $fillable = [
-        'tenant_id', 'title', 'slug', 'description', 'content', 'template',
+        'uuid', 'title', 'slug', 'description', 'content', 'template',
         'meta_data', 'status', 'is_homepage', 'sort_order', 'language',
         'parent_id', 'published_at'
     ];
@@ -210,23 +214,101 @@ class ContentBlock extends Model implements BelongsToTenant
 }
 ```
 
-#### Day 5: Content API Controllers & Resources
-```php
-// File: app/Http/Controllers/Api/PageController.php
-class PageController extends Controller
-{
-    public function index(Request $request)
-    {
-        $pages = Page::query()
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->language, fn($q) => $q->where('language', $request->language))
-            ->when($request->parent_id, fn($q) => $q->where('parent_id', $request->parent_id))
-            ->when($request->search, fn($q) => $q->where('title', 'like', "%{$request->search}%"))
-            ->with(['parent', 'children'])
-            ->orderBy('sort_order')
-            ->paginate($request->limit ?? 20);
+#### Day 5: Content API Controllers Following Hexagonal Architecture
+**⚠️ ARCHITECTURE COMPLIANCE**: Must follow established **Use Cases → Command/Query Handlers** pattern.
 
-        return PageResource::collection($pages);
+```php
+// File: app/Infrastructure/Presentation/Http/Controllers/Tenant/ContentController.php
+class ContentController extends Controller
+{
+    public function __construct(
+        private GetPagesQuery $getPagesQuery,
+        private CreatePageUseCase $createPageUseCase,
+        private UpdatePageUseCase $updatePageUseCase
+    ) {}
+
+    public function index(GetPagesRequest $request)
+    {
+        $result = $this->getPagesQuery->handle(new GetPagesQueryDTO([
+            'status' => $request->status,
+            'language' => $request->language,
+            'parent_id' => $request->parent_id,
+            'search' => $request->search,
+            'limit' => $request->limit ?? 20
+        ]));
+
+        return PageResource::collection($result);
+    }
+
+    public function store(CreatePageRequest $request)
+    {
+        $result = $this->createPageUseCase->execute(new CreatePageCommand([
+            'title' => $request->title,
+            'slug' => $request->slug,
+            'description' => $request->description,
+            'content' => $request->content,
+            'template' => $request->template,
+            'meta_data' => $request->meta_data,
+            'status' => $request->status,
+            'language' => $request->language,
+            'parent_id' => $request->parent_id
+        ]));
+
+        return new PageResource($result);
+    }
+}
+
+// File: app/Application/Content/UseCases/CreatePageUseCase.php
+class CreatePageUseCase
+{
+    public function __construct(
+        private PageRepositoryInterface $pageRepository,
+        private HtmlSanitizationService $sanitizer,
+        private EventDispatcher $eventDispatcher
+    ) {}
+
+    public function execute(CreatePageCommand $command): Page
+    {
+        // Sanitize content
+        $sanitizedContent = $this->sanitizer->sanitizeArray($command->content);
+        
+        // Create page entity
+        $page = Page::create([
+            'uuid' => Str::uuid(),
+            'title' => $command->title,
+            'slug' => $command->slug ?: Str::slug($command->title),
+            'description' => $command->description,
+            'content' => $sanitizedContent,
+            'template' => $command->template,
+            'meta_data' => $command->meta_data,
+            'status' => $command->status,
+            'language' => $command->language,
+            'parent_id' => $command->parent_id,
+        ]);
+
+        // Store via repository
+        $storedPage = $this->pageRepository->save($page);
+
+        // Dispatch domain event
+        $this->eventDispatcher->dispatch(new PageCreatedEvent($storedPage));
+
+        return $storedPage;
+    }
+}
+
+// File: app/Application/Content/Queries/GetPagesQuery.php  
+class GetPagesQuery
+{
+    public function __construct(private PageRepositoryInterface $pageRepository) {}
+
+    public function handle(GetPagesQueryDTO $query): Collection
+    {
+        return $this->pageRepository->findByFilters([
+            'status' => $query->status,
+            'language' => $query->language,
+            'parent_id' => $query->parent_id,
+            'search' => $query->search,
+        ], $query->limit);
     }
 
     public function show(Page $page)

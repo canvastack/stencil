@@ -58,8 +58,8 @@ class AuthenticationService
             'token_type' => 'Bearer',
             'expires_in' => 24 * 60 * 60, // 24 hours
             'account' => $this->formatAccountResponse($account),
-            'permissions' => $this->getPlatformPermissions($account),
-            'account_type' => 'platform'
+            'permissions' => $this->getPlatformAccountPermissions($account),
+            'account_type' => 'platform_owner'
         ];
     }
 
@@ -123,14 +123,14 @@ class AuthenticationService
         $token = $this->generateTenantToken($user, $tenant);
         
         return [
-            'access_token' => $token->plainTextToken,
+            'token' => $token->plainTextToken,
             'token_type' => 'Bearer',
             'expires_in' => 8 * 60 * 60, // 8 hours
             'user' => $this->formatUserResponse($user),
             'tenant' => $this->formatTenantResponse($tenant),
             'permissions' => $user->getAllPermissions(),
             'roles' => $user->roles->pluck('name')->toArray(),
-            'account_type' => 'tenant'
+            'account_type' => 'tenant_user'
         ];
     }
 
@@ -241,13 +241,17 @@ class AuthenticationService
     {
         return [
             'id' => $account->id,
+            'uuid' => $account->uuid,
             'name' => $account->name,
             'email' => $account->email,
+            'email_verified_at' => $account->email_verified_at?->toISOString(),
             'account_type' => $account->account_type,
             'status' => $account->status,
             'avatar' => $account->avatar,
             'last_login_at' => $account->last_login_at?->toISOString(),
-            'settings' => $account->settings
+            'settings' => $account->settings,
+            'created_at' => $account->created_at?->toISOString(),
+            'updated_at' => $account->updated_at?->toISOString()
         ];
     }
 
@@ -263,6 +267,7 @@ class AuthenticationService
         
         return [
             'id' => $user->id,
+            'uuid' => $user->uuid,
             'tenant_id' => $user->tenant_id,
             'name' => $user->name,
             'email' => $user->email,
@@ -271,11 +276,9 @@ class AuthenticationService
             'department' => $user->department,
             'location' => $user->location,
             'avatar' => $user->avatar,
-            'roles' => $user->roles->map(fn($role) => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'slug' => $role->slug
-            ]),
+            'email_verified_at' => $user->email_verified_at?->toISOString(),
+            'created_at' => $user->created_at?->toISOString(),
+            'updated_at' => $user->updated_at?->toISOString(),
             'last_login_at' => $user->last_login_at?->toISOString()
         ];
     }
@@ -287,6 +290,7 @@ class AuthenticationService
     {
         return [
             'id' => $tenant->id,
+            'uuid' => $tenant->uuid,
             'name' => $tenant->name,
             'slug' => $tenant->slug,
             'domain' => $tenant->domain,

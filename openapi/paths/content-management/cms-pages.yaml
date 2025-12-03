@@ -1,0 +1,307 @@
+# Phase 4 CMS - Content Management System API Endpoints
+# Following Hexagonal Architecture + DDD + CQRS patterns from Phase 4C
+
+# Pages Management Endpoints
+/tenant/cms/pages:
+  get:
+    tags:
+      - Content Management (Phase 4)
+    summary: Get Pages (Query)
+    description: |
+      Query to retrieve pages using established GetPagesQuery handler.
+      
+      **Hexagonal Architecture Pattern:**
+      - Controller → GetPagesQuery → PageRepositoryInterface → Domain
+      - Query handler with caching and filtering
+      - Schema-per-tenant isolation (no tenant_id needed)
+      
+      **Related Handler:** GetPagesQuery
+    operationId: getPages
+    parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [draft, published, archived]
+      - name: language
+        in: query  
+        schema:
+          type: string
+          default: "id"
+      - name: search
+        in: query
+        schema:
+          type: string
+      - name: parent_id
+        in: query
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 20
+    responses:
+      '200':
+        description: Pages retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/cms-pages.yaml#/Page'
+                    meta:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+  post:
+    tags:
+      - Content Management (Phase 4)
+    summary: Create Page (Use Case)
+    description: |
+      Use Case to create a new page with content sanitization and versioning.
+      
+      **Hexagonal Architecture Pattern:**
+      - Controller → CreatePageUseCase → PageRepositoryInterface
+      - HTMLPurifier content sanitization (Phase 4A integration)
+      - Domain Events (PageCreatedEvent)
+      - Automatic version creation
+      
+      **Related Use Case:** CreatePageUseCase
+    operationId: createPage
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/cms-pages.yaml#/CreatePageRequest'
+    responses:
+      '201':
+        description: Page created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/cms-pages.yaml#/Page'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+/tenant/cms/pages/{uuid}:
+  get:
+    tags:
+      - Content Management (Phase 4)
+    summary: Get Page by UUID
+    operationId: getPage
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Page retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/cms-pages.yaml#/PageDetailed'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+  patch:
+    tags:
+      - Content Management (Phase 4)
+    summary: Update Page (Use Case)
+    description: |
+      Use Case to update page with optional version creation.
+      
+      **Related Use Case:** UpdatePageUseCase
+    operationId: updatePage
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/cms-pages.yaml#/UpdatePageRequest'
+    responses:
+      '200':
+        description: Page updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/cms-pages.yaml#/Page'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+  delete:
+    tags:
+      - Content Management (Phase 4)
+    summary: Delete Page (Use Case)
+    description: |
+      Use Case to soft delete page with cascade handling.
+      
+      **Related Use Case:** DeletePageUseCase
+    operationId: deletePage
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Page deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/BaseResponse'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Page Versions Management
+/tenant/cms/pages/{uuid}/versions:
+  get:
+    tags:
+      - Content Management (Phase 4)
+    summary: Get Page Versions
+    operationId: getPageVersions
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Page versions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/cms-pages.yaml#/PageVersion'
+
+/tenant/cms/pages/{uuid}/versions/{version}/restore:
+  post:
+    tags:
+      - Content Management (Phase 4)
+    summary: Restore Page Version (Use Case)
+    operationId: restorePageVersion
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: Page version restored successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/cms-pages.yaml#/Page'
+
+# Content Blocks Management
+/tenant/cms/content-blocks:
+  get:
+    tags:
+      - Content Management (Phase 4)
+    summary: Get Content Blocks
+    operationId: getContentBlocks
+    parameters:
+      - name: category
+        in: query
+        schema:
+          type: string
+      - name: is_active
+        in: query
+        schema:
+          type: boolean
+    responses:
+      '200':
+        description: Content blocks retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/cms-pages.yaml#/ContentBlock'
+
+  post:
+    tags:
+      - Content Management (Phase 4)
+    summary: Create Content Block
+    operationId: createContentBlock
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/cms-pages.yaml#/CreateContentBlockRequest'
+    responses:
+      '201':
+        description: Content block created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/cms-pages.yaml#/ContentBlock'

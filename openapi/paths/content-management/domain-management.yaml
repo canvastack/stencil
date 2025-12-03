@@ -1,0 +1,388 @@
+# Phase 7 Custom Domain Management - Domain Management API Endpoints
+# DUAL CONTEXT: Landlord DB (verification) + Tenant Schema (settings)
+# Following Hexagonal Architecture + DDD + CQRS patterns
+
+# Domain Verification (Landlord Database Context)
+/platform/domain-verification/request:
+  post:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Request Domain Verification (Use Case)
+    description: |
+      Use Case to initiate domain verification with anti-squatting protection.
+      
+      **Architecture Context:**
+      - Landlord DB: Domain verification request record
+      - Two-step verification process prevents domain squatting
+      - DNS challenge generation for security
+      
+      **Related Use Case:** RequestDomainVerificationUseCase
+      **Domain Event:** DomainVerificationRequestedEvent
+    operationId: requestDomainVerification
+    security:
+      - TenantAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/domain-management.yaml#/DomainVerificationRequest'
+    responses:
+      '201':
+        description: Domain verification request created
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/domain-management.yaml#/DomainVerificationRequestResponse'
+      '400':
+        description: Domain already claimed or invalid
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+/platform/domain-verification/{request_uuid}/verify:
+  post:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Verify Domain Ownership (Use Case)
+    description: |
+      Use Case to verify domain ownership through DNS challenge validation.
+      
+      **Related Use Case:** VerifyDomainOwnershipUseCase
+      **Domain Events:** DomainVerifiedEvent, DomainVerificationFailedEvent
+    operationId: verifyDomainOwnership
+    security:
+      - TenantAuth: []
+    parameters:
+      - name: request_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Domain verification successful
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [verified, failed, pending]
+                        domain:
+                          type: string
+                        verified_at:
+                          type: string
+                          format: date-time
+                        ssl_ready:
+                          type: boolean
+      '400':
+        description: Verification failed or expired
+      '404':
+        description: Verification request not found
+
+# Tenant Domain Management (Tenant Schema Context)
+/tenant/domains:
+  get:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Get Tenant Domains (Query)
+    description: |
+      Query to retrieve domains configured for current tenant.
+      
+      **Architecture Context:**
+      - Tenant schema: Domain configuration records
+      - Includes SSL certificate status and CDN settings
+      
+      **Related Handler:** GetTenantDomainsQuery
+    operationId: getTenantDomains
+    security:
+      - TenantAuth: []
+    responses:
+      '200':
+        description: Tenant domains retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/domain-management.yaml#/TenantDomain'
+
+  post:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Add Verified Domain (Use Case)
+    description: |
+      Use Case to add a verified domain to tenant configuration.
+      
+      **Prerequisites:** Domain must be verified through platform verification first
+      **Related Use Case:** AddVerifiedDomainUseCase
+    operationId: addVerifiedDomain
+    security:
+      - TenantAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/domain-management.yaml#/AddDomainRequest'
+    responses:
+      '201':
+        description: Domain added successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/domain-management.yaml#/TenantDomain'
+
+/tenant/domains/{uuid}:
+  patch:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Update Domain Configuration (Use Case)
+    description: |
+      Use Case to update domain settings like redirect rules and SSL options.
+      
+      **Related Use Case:** UpdateDomainConfigurationUseCase
+    operationId: updateDomainConfiguration
+    security:
+      - TenantAuth: []
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/content-management/domain-management.yaml#/UpdateDomainRequest'
+    responses:
+      '200':
+        description: Domain configuration updated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/domain-management.yaml#/TenantDomain'
+
+  delete:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Remove Domain (Use Case)
+    description: |
+      Use Case to remove domain from tenant configuration.
+      
+      **Related Use Case:** RemoveDomainUseCase
+    operationId: removeDomain
+    security:
+      - TenantAuth: []
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Domain removed successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/BaseResponse'
+
+/tenant/domains/{uuid}/set-primary:
+  post:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Set Primary Domain (Use Case)
+    description: |
+      Use Case to designate domain as primary for tenant.
+      
+      **Related Use Case:** SetPrimaryDomainUseCase
+    operationId: setPrimaryDomain
+    security:
+      - TenantAuth: []
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Primary domain set successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/content-management/domain-management.yaml#/TenantDomain'
+
+# SSL Certificate Management
+/tenant/domains/{uuid}/ssl/issue:
+  post:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Issue SSL Certificate (Use Case)
+    description: |
+      Use Case to issue SSL certificate using DNS-01 challenge with Let's Encrypt.
+      
+      **Related Use Case:** IssueSSLCertificateUseCase
+      **Domain Event:** SSLCertificateIssuedEvent
+    operationId: issueSSLCertificate
+    security:
+      - TenantAuth: []
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '202':
+        description: SSL certificate issuance initiated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [pending, processing, issued, failed]
+                        challenge_records:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                example: "TXT"
+                              name:
+                                type: string
+                                example: "_acme-challenge.example.com"
+                              value:
+                                type: string
+                                example: "abc123def456"
+
+/tenant/domains/{uuid}/ssl/renew:
+  post:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Renew SSL Certificate (Use Case)
+    operationId: renewSSLCertificate
+    security:
+      - TenantAuth: []
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '202':
+        description: SSL certificate renewal initiated
+
+# CDN Management
+/tenant/domains/{uuid}/cdn/enable:
+  post:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Enable CDN (Use Case)
+    description: |
+      Use Case to enable CDN for domain with global distribution.
+      
+      **Related Use Case:** EnableDomainCDNUseCase
+    operationId: enableDomainCDN
+    security:
+      - TenantAuth: []
+    parameters:
+      - name: uuid
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              provider:
+                type: string
+                enum: [cloudflare, aws, google]
+                default: "cloudflare"
+              settings:
+                type: object
+                description: CDN-specific configuration
+    responses:
+      '200':
+        description: CDN enabled successfully
+
+# Domain Health Monitoring
+/tenant/domains/health:
+  get:
+    tags:
+      - Domain Management (Phase 7)
+    summary: Get Domains Health Status (Query)
+    description: |
+      Query to check SSL expiration, DNS status, and overall domain health.
+      
+      **Related Handler:** GetDomainsHealthQuery
+    operationId: getDomainsHealth
+    security:
+      - TenantAuth: []
+    responses:
+      '200':
+        description: Domain health status retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/content-management/domain-management.yaml#/DomainHealthStatus'

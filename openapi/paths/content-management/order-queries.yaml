@@ -1,0 +1,533 @@
+# TENANT ORDER QUERY PATTERN ENDPOINTS (CQRS)
+# Phase 4C: Backend Hexagonal Architecture Enhancement
+# Query endpoints for read operations with optimized views
+
+# Get Order by ID Query
+/tenant/queries/orders/{id}:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Order Details (Query)
+    description: |
+      Query to retrieve detailed order information.
+      
+      **CQRS Pattern:**
+      - Read from optimized view
+      - Full order context with relationships
+      - Status and payment information
+      
+      **Related Use Case:** ShowOrderUseCase
+    operationId: getOrderQuery
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Order details retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderDetailsView'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Get Orders by Status Query
+/tenant/queries/orders/status/{status}:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Orders by Status (Query)
+    description: |
+      Query to retrieve all orders with specific status.
+      
+      **CQRS Pattern:**
+      - Optimized status-based view
+      - Pagination support
+      - Filter and sort parameters
+      
+      **Supported Statuses:**
+      - new, confirmed, quoted, production, ready_to_ship, shipped, delivered, completed, cancelled, on_hold
+    operationId: getOrdersByStatusQuery
+    parameters:
+      - in: path
+        name: status
+        required: true
+        schema:
+          type: string
+          enum: [new, confirmed, quoted, production, ready_to_ship, shipped, delivered, completed, cancelled, on_hold]
+        description: Order status
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: sort_by
+        schema:
+          type: string
+          enum: [created_at, updated_at, total_amount, customer_name]
+      - in: query
+        name: sort_order
+        schema:
+          type: string
+          enum: [asc, desc]
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Orders retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/OrderListView'
+                    pagination:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+# Get Orders by Customer Query
+/tenant/queries/orders/customer/{customer_id}:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Orders by Customer (Query)
+    description: |
+      Query to retrieve all orders for a specific customer.
+      
+      **CQRS Pattern:**
+      - Customer-based aggregation view
+      - Order history and summary
+      - Pagination with sorting
+    operationId: getOrdersByCustomerQuery
+    parameters:
+      - in: path
+        name: customer_id
+        required: true
+        schema:
+          type: integer
+        description: Customer ID
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 20
+      - in: query
+        name: sort_by
+        schema:
+          type: string
+          enum: [created_at, updated_at, total_amount, status]
+      - in: query
+        name: sort_order
+        schema:
+          type: string
+          enum: [asc, desc]
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Customer orders retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/OrderListView'
+                    pagination:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Get Production Status Query
+/tenant/queries/orders/production-status:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Production Status Report (Query)
+    description: |
+      Query to retrieve production status for all active orders.
+      
+      **CQRS Pattern:**
+      - Production workflow view
+      - Status distribution
+      - Performance metrics
+      
+      **Includes:**
+      - Total orders in production
+      - Orders by production stage
+      - Average production time
+      - Delayed orders
+    operationId: getProductionStatusQuery
+    parameters:
+      - in: query
+        name: vendor_id
+        schema:
+          type: integer
+        description: Filter by vendor
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Filter from date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Filter to date
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Production status report
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/ProductionStatusView'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+# Get Payment Status Query
+/tenant/queries/orders/payment-status:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Payment Status Report (Query)
+    description: |
+      Query to retrieve payment status for all orders.
+      
+      **CQRS Pattern:**
+      - Payment workflow view
+      - Status distribution
+      - Financial metrics
+      
+      **Includes:**
+      - Total payment collected
+      - Pending payments
+      - Down payments (DP) received
+      - Outstanding amounts
+    operationId: getPaymentStatusQuery
+    parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [unpaid, partial, verified, pending_final]
+        description: Payment status filter
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Payment status report
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/PaymentStatusView'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+# Get Vendor Negotiations Query
+/tenant/queries/orders/vendor-negotiations:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Vendor Negotiations (Query)
+    description: |
+      Query to retrieve vendor negotiation status for all orders.
+      
+      **CQRS Pattern:**
+      - Vendor interaction view
+      - Negotiation round tracking
+      - Price comparison data
+      
+      **Includes:**
+      - Orders in negotiation
+      - Vendors involved
+      - Negotiation rounds
+      - Price offers
+    operationId: getVendorNegotiationsQuery
+    parameters:
+      - in: query
+        name: vendor_id
+        schema:
+          type: integer
+        description: Filter by vendor
+      - in: query
+        name: order_id
+        schema:
+          type: integer
+        description: Filter by order
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [pending, negotiating, accepted, rejected]
+        description: Negotiation status
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 20
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Vendor negotiations retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/VendorNegotiationView'
+                    pagination:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+# Get Customer Quotes Query
+/tenant/queries/orders/customer-quotes:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Customer Quotes (Query)
+    description: |
+      Query to retrieve customer quote status for all orders.
+      
+      **CQRS Pattern:**
+      - Quote management view
+      - Status tracking
+      - Quote history
+      
+      **Includes:**
+      - Quotes pending approval
+      - Approved quotes
+      - Rejected quotes
+      - Quote versions
+    operationId: getCustomerQuotesQuery
+    parameters:
+      - in: query
+        name: customer_id
+        schema:
+          type: integer
+        description: Filter by customer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [pending, approved, rejected, expired]
+        description: Quote status
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 20
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Customer quotes retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/CustomerQuoteView'
+                    pagination:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+# Get Order Analytics Query
+/tenant/queries/orders/analytics:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Order Analytics (Query)
+    description: |
+      Query to retrieve comprehensive order analytics and metrics.
+      
+      **CQRS Pattern:**
+      - Analytics aggregation view
+      - Real-time metrics
+      - Performance indicators
+      
+      **Metrics:**
+      - Total orders and revenue
+      - Average order value
+      - Order completion rate
+      - Customer acquisition
+      - Vendor performance
+    operationId: getOrderAnalyticsQuery
+    parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Analytics period start
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Analytics period end
+      - in: query
+        name: group_by
+        schema:
+          type: string
+          enum: [daily, weekly, monthly]
+          default: daily
+        description: Group results by time period
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Order analytics retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderAnalyticsView'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+# Get Order History Query
+/tenant/queries/orders/{id}/history:
+  get:
+    tags:
+      - Order Queries
+    summary: Get Order History (Query)
+    description: |
+      Query to retrieve complete order event history and state transitions.
+      
+      **CQRS Pattern:**
+      - Event sourcing view
+      - Complete audit trail
+      - State transition history
+      
+      **Includes:**
+      - All status changes
+      - Timeline of events
+      - User actions
+      - System notifications
+    operationId: getOrderHistoryQuery
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+        description: Order ID
+      - in: query
+        name: event_type
+        schema:
+          type: string
+          description: Filter by event type
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 50
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Order history retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/OrderEventView'
+                    pagination:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'

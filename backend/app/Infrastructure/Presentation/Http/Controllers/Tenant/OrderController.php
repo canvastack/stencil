@@ -16,27 +16,62 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Spatie\Multitenancy\Models\Tenant as BaseTenant;
 
+// Phase 4C: Hexagonal Architecture - CQRS Handlers
+use App\Application\Order\Handlers\Commands\CreatePurchaseOrderHandler;
+use App\Application\Order\Handlers\Commands\AssignVendorHandler;
+use App\Application\Order\Handlers\Commands\NegotiateWithVendorHandler;
+use App\Application\Order\Handlers\Commands\ShipOrderHandler;
+use App\Application\Order\Handlers\Commands\CompleteOrderHandler;
+use App\Application\Order\Handlers\Commands\CancelOrderHandler;
+use App\Application\Order\Handlers\Queries\GetOrderQueryHandler;
+use App\Application\Order\Handlers\Queries\GetOrdersByStatusQueryHandler;
+use App\Application\Order\Handlers\Queries\GetOrdersByCustomerQueryHandler;
+use App\Application\Order\Handlers\Queries\GetOrderHistoryQueryHandler;
+
+// Phase 4C: Command and Query DTOs
+use App\Application\Order\Commands\CreatePurchaseOrderCommand;
+use App\Application\Order\Commands\AssignVendorCommand;
+use App\Application\Order\Commands\NegotiateWithVendorCommand;
+use App\Application\Order\Commands\ShipOrderCommand;
+use App\Application\Order\Commands\CompleteOrderCommand;
+use App\Application\Order\Commands\CancelOrderCommand;
+use App\Application\Order\Queries\GetOrderQuery;
+use App\Application\Order\Queries\GetOrdersByStatusQuery;
+use App\Application\Order\Queries\GetOrdersByCustomerQuery;
+use App\Application\Order\Queries\GetOrderHistoryQuery;
+
 class OrderController extends Controller
 {
-    protected OrderStateMachine $stateMachine;
-
-    public function __construct(OrderStateMachine $stateMachine)
-    {
-        $this->stateMachine = $stateMachine;
-    }
+    public function __construct(
+        protected OrderStateMachine $stateMachine,
+        protected CreatePurchaseOrderHandler $createOrderHandler,
+        protected AssignVendorHandler $assignVendorHandler,
+        protected NegotiateWithVendorHandler $negotiateHandler,
+        protected ShipOrderHandler $shipOrderHandler,
+        protected CompleteOrderHandler $completeOrderHandler,
+        protected CancelOrderHandler $cancelOrderHandler,
+        protected GetOrderQueryHandler $getOrderHandler,
+        protected GetOrdersByStatusQueryHandler $getOrdersByStatusHandler,
+        protected GetOrdersByCustomerQueryHandler $getOrdersByCustomerHandler,
+        protected GetOrderHistoryQueryHandler $getOrderHistoryHandler,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = $this->tenantScopedOrders($request)->with(['customer', 'vendor']);
+            $tenant = $this->resolveTenant($request);
+            
+            // Use CQRS Query Handler for hexagonal architecture
+            $queryDto = GetOrdersByStatusQuery::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'status' => $request->get('status'),
+                'per_page' => (int) $request->get('per_page', 20),
+                'page' => (int) $request->get('page', 1),
+                'sort_by' => $request->get('sort_by', 'created_at'),
+                'sort_order' => $request->get('sort_order', 'desc'),
+            ]);
 
-            $this->applyOrderFilters($request, $query);
-
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            $perPage = $request->get('per_page', 20);
-
-            $orders = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+            $orders = $this->getOrdersByStatusHandler->handle($queryDto);
 
             return OrderResource::collection($orders)
                 ->response()
@@ -52,12 +87,21 @@ class OrderController extends Controller
     public function show(Request $request, int $id): JsonResponse
     {
         try {
-            $order = $this->tenantScopedOrders($request)
-                ->with(['customer', 'vendor'])
-                ->findOrFail($id);
+            $tenant = $this->resolveTenant($request);
+            
+            // Use CQRS Query Handler for hexagonal architecture
+            $queryDto = GetOrderQuery::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'order_id' => $id,
+            ]);
+
+            $order = $this->getOrderHandler->handle($queryDto);
+            
+            if (!$order) {
+                return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+            }
+            
             return (new OrderResource($order))->response()->setStatusCode(200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengambil detail pesanan',
@@ -71,12 +115,11 @@ class OrderController extends Controller
         try {
             $tenant = $this->resolveTenant($request);
             $payload = $request->validated();
-            $payload['tenant_id'] = $tenant->id;
+            $payload['tenant_id'] = $tenant->uuid;
 
-            $order = Order::create($payload);
-            $order->load(['customer', 'vendor']);
-            
-            event(new OrderCreated($order));
+            // Use CQRS Command Handler for hexagonal architecture
+            $commandDto = CreatePurchaseOrderCommand::fromArray($payload);
+            $order = $this->createOrderHandler->handle($commandDto);
             
             return (new OrderResource($order))->response()->setStatusCode(201);
         } catch (\RuntimeException $e) {
@@ -173,20 +216,19 @@ class OrderController extends Controller
                 'tracking_number' => 'required|string|max:255',
             ]);
 
-            $order = $this->tenantScopedOrders($request)->findOrFail($id);
-            $metadata = ['tracking_number' => $request->tracking_number];
+            $tenant = $this->resolveTenant($request);
             
-            $validationErrors = $this->stateMachine->validateTransition($order, OrderStatus::SHIPPED, $metadata);
-            if (!empty($validationErrors)) {
-                return response()->json([
-                    'message' => 'Validasi pengiriman gagal',
-                    'errors' => $validationErrors
-                ], 422);
-            }
+            // Use CQRS Command Handler for hexagonal architecture
+            $commandDto = ShipOrderCommand::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'order_id' => $id,
+                'tracking_number' => $request->tracking_number,
+                'shipping_carrier' => $request->get('shipping_carrier'),
+                'shipped_date' => $request->get('shipped_date', now()->toDateString()),
+            ]);
 
-            $this->stateMachine->transitionTo($order, OrderStatus::SHIPPED, $metadata);
+            $order = $this->shipOrderHandler->handle($commandDto);
             
-            $order->load(['customer', 'vendor']);
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -201,12 +243,18 @@ class OrderController extends Controller
     public function complete(Request $request, int $id): JsonResponse
     {
         try {
-            $order = $this->tenantScopedOrders($request)->findOrFail($id);
-            $metadata = ['delivered_at' => now()->toIso8601String()];
+            $tenant = $this->resolveTenant($request);
             
-            $this->stateMachine->transitionTo($order, OrderStatus::COMPLETED, $metadata);
+            // Use CQRS Command Handler for hexagonal architecture
+            $commandDto = CompleteOrderCommand::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'order_id' => $id,
+                'delivered_at' => $request->get('delivered_at', now()->toIso8601String()),
+                'completion_notes' => $request->get('completion_notes'),
+            ]);
+
+            $order = $this->completeOrderHandler->handle($commandDto);
             
-            $order->load(['customer', 'vendor']);
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -223,20 +271,18 @@ class OrderController extends Controller
         try {
             $request->validate(['reason' => 'required|string|max:500']);
             
-            $order = $this->tenantScopedOrders($request)->findOrFail($id);
-            $metadata = ['cancellation_reason' => $request->reason];
+            $tenant = $this->resolveTenant($request);
             
-            $validationErrors = $this->stateMachine->validateTransition($order, OrderStatus::CANCELLED, $metadata);
-            if (!empty($validationErrors)) {
-                return response()->json([
-                    'message' => 'Validasi pembatalan gagal',
-                    'errors' => $validationErrors
-                ], 422);
-            }
+            // Use CQRS Command Handler for hexagonal architecture
+            $commandDto = CancelOrderCommand::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'order_id' => $id,
+                'cancellation_reason' => $request->reason,
+                'cancelled_by' => auth()->id(),
+            ]);
 
-            $this->stateMachine->transitionTo($order, OrderStatus::CANCELLED, $metadata);
+            $order = $this->cancelOrderHandler->handle($commandDto);
             
-            $order->load(['customer', 'vendor']);
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
@@ -253,20 +299,91 @@ class OrderController extends Controller
         return $this->updateStatus($request, $id);
     }
 
+    // Phase 4C: New business workflow methods using CQRS Command Handlers
+    public function assignVendor(Request $request, int $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'vendor_id' => 'required|integer',
+                'specialization_notes' => 'sometimes|string|max:1000',
+            ]);
+
+            $tenant = $this->resolveTenant($request);
+            
+            // Use CQRS Command Handler for hexagonal architecture
+            $commandDto = AssignVendorCommand::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'order_id' => $id,
+                'vendor_id' => $request->vendor_id,
+                'specialization_notes' => $request->get('specialization_notes'),
+            ]);
+
+            $order = $this->assignVendorHandler->handle($commandDto);
+            
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal menugaskan vendor',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function negotiateVendor(Request $request, int $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'vendor_id' => 'required|integer',
+                'quoted_price' => 'required|numeric|min:0',
+                'quoted_currency' => 'sometimes|string|max:3',
+                'lead_time_days' => 'required|integer|min:1|max:365',
+                'negotiation_notes' => 'sometimes|string|max:1000',
+            ]);
+
+            $tenant = $this->resolveTenant($request);
+            
+            // Use CQRS Command Handler for hexagonal architecture
+            $commandDto = NegotiateWithVendorCommand::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'order_id' => $id,
+                'vendor_id' => $request->vendor_id,
+                'quoted_price' => $request->quoted_price,
+                'quoted_currency' => $request->get('quoted_currency', 'IDR'),
+                'lead_time_days' => $request->lead_time_days,
+                'negotiation_notes' => $request->get('negotiation_notes'),
+            ]);
+
+            $order = $this->negotiateHandler->handle($commandDto);
+            
+            return (new OrderResource($order))->response()->setStatusCode(200);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal melakukan negosiasi dengan vendor',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
     public function byStatus(Request $request, string $status): JsonResponse
     {
         try {
-            $query = $this->tenantScopedOrders($request)
-                ->with(['customer', 'vendor'])
-                ->where('status', $status);
+            $tenant = $this->resolveTenant($request);
+            
+            // Use CQRS Query Handler for hexagonal architecture
+            $queryDto = GetOrdersByStatusQuery::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'status' => $status,
+                'per_page' => (int) $request->get('per_page', 20),
+                'page' => (int) $request->get('page', 1),
+                'sort_by' => $request->get('sort_by', 'created_at'),
+                'sort_order' => $request->get('sort_order', 'desc'),
+            ]);
 
-            $this->applyOrderFilters($request, $query);
-
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            $perPage = $request->get('per_page', 20);
-
-            $orders = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+            $orders = $this->getOrdersByStatusHandler->handle($queryDto);
 
             return OrderResource::collection($orders)
                 ->response()
@@ -282,17 +399,19 @@ class OrderController extends Controller
     public function byCustomer(Request $request, int $customerId): JsonResponse
     {
         try {
-            $query = $this->tenantScopedOrders($request)
-                ->with(['customer', 'vendor'])
-                ->where('customer_id', $customerId);
+            $tenant = $this->resolveTenant($request);
+            
+            // Use CQRS Query Handler for hexagonal architecture
+            $queryDto = GetOrdersByCustomerQuery::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'customer_id' => $customerId,
+                'per_page' => (int) $request->get('per_page', 20),
+                'page' => (int) $request->get('page', 1),
+                'sort_by' => $request->get('sort_by', 'created_at'),
+                'sort_order' => $request->get('sort_order', 'desc'),
+            ]);
 
-            $this->applyOrderFilters($request, $query);
-
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-            $perPage = $request->get('per_page', 20);
-
-            $orders = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+            $orders = $this->getOrdersByCustomerHandler->handle($queryDto);
 
             return OrderResource::collection($orders)
                 ->response()
@@ -308,14 +427,17 @@ class OrderController extends Controller
     public function recent(Request $request): JsonResponse
     {
         try {
+            $tenant = $this->resolveTenant($request);
             $limit = (int) $request->get('limit', 10);
             $limit = $limit > 0 ? min($limit, 100) : 10;
 
-            $query = $this->tenantScopedOrders($request)->with(['customer', 'vendor']);
+            // Use CQRS Query Handler for hexagonal architecture
+            $queryDto = GetOrderHistoryQuery::fromArray([
+                'tenant_id' => $tenant->uuid,
+                'limit' => $limit,
+            ]);
 
-            $this->applyOrderFilters($request, $query);
-
-            $orders = $query->orderByDesc('created_at')->limit($limit)->get();
+            $orders = $this->getOrderHistoryHandler->handle($queryDto);
 
             return OrderResource::collection($orders)
                 ->response()

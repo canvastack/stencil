@@ -1,0 +1,309 @@
+PHP Warning:  Module "openssl" is already loaded in Unknown on line 0
+
+Warning: Module "openssl" is already loaded in Unknown on line 0
+
+Warning: Module "openssl" is already loaded in Unknown on line 0
+PHP Warning:  Module "openssl" is already loaded in Unknown on line 0
+
+   FAIL  Tests\Unit\Application\Order\Subscribers\EventSubscribersTest
+  ✓ order workflow subscriber registered correctly                                                               0.33s  
+  ✓ order workflow subscriber handles vendor assigned                                                            0.12s  
+  ✓ order workflow subscriber handles quote requested                                                            0.10s  
+  ✓ order workflow subscriber handles quote approved                                                             0.09s  
+  ✓ order workflow subscriber handles order shipped                                                              0.10s  
+  ✓ order workflow subscriber handles order completed                                                            0.12s  
+  ✓ payment workflow subscriber registered correctly                                                             0.09s  
+  ⨯ payment workflow subscriber handles payment received                                                         0.12s  
+  ⨯ payment workflow subscriber handles refund processed                                                         0.11s  
+  ✓ notification subscriber registered correctly                                                                 0.09s  
+  ✓ notification subscriber handles order created                                                                0.10s  
+  ✓ notification subscriber handles order status changed                                                         0.10s  
+  ✓ notification subscriber handles payment received                                                             0.12s  
+  ✓ notification subscriber handles order shipped                                                                0.11s  
+  ✓ notification subscriber handles order delivered                                                              0.10s  
+  ✓ notification subscriber handles order cancelled                                                              0.09s  
+  ✓ subscribers maintain event mapping                                                                           0.09s  
+  ✓ subscribers properly delegate to listeners                                                                   0.09s  
+  ⨯ multiple subscribers can handle same event                                                                   0.11s  
+  ✓ event subscriber isolation                                                                                   0.15s  
+
+   FAIL  Tests\Unit\Domain\Order\Listeners\EventListenersTest
+  ✓ send vendor assignment email listener                                                                        0.16s  
+  ✓ send quote request to vendor listener                                                                        0.10s  
+  ✓ send quote approval to customer listener                                                                     0.11s  
+  ✓ update inventory on order complete listener                                                                  0.10s  
+  ⨯ trigger invoice generation on payment received                                                               0.10s  
+  ⨯ trigger invoice generation on order completed                                                                0.09s  
+  ✓ send shipping notification listener                                                                          0.09s  
+  ⨯ process order completion listener                                                                            0.10s  
+  ⨯ handle refund workflow listener                                                                              0.10s  
+  ⨯ listener handles missing customer gracefully                                                                 0.10s  
+  ✓ listener handles missing vendor gracefully                                                                   0.10s  
+  ✓ listener handles exceptions gracefully                                                                       0.10s  
+  ⨯ invoice number generation format                                                                             0.10s  
+  ⨯ refund updates order status                                                                                  0.11s  
+  ⨯ process order completion updates customer metrics                                                            0.10s  
+  ⨯ listeners maintain multi tenant isolation                                                                    0.10s  
+  ⨯ invoice generation idempotent                                                                                0.09s  
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Application\Order\Subscribers\EventSubscribersTest > payment workflow subscrib…  QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1087 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Application\Order\Subscribers\EventSubscribersTest > payment workflow subscrib…  QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1088 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Application\Order\Subscribers\EventSubscribersTest > multiple subscribers can…   QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1098 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > trigger invoice generation on paym…  QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1105 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > trigger invoice generation on orde…  QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1106 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > process order completion listener    QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1108 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > handle refund workflow listener      QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1109 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > listener handles missing customer…   QueryException   
+  SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "customer_id" of relation "orders" violates not-null constraint
+DETAIL:  Baris gagal berisi (1111, c728498b-e7ef-4943-a15a-5ff673341552, 1, null, 427, ORD-7GL8HEPF, new, unpaid, standard, [{"sku":"SKU-7692","name":"Molestiae distinctio.","quantity":1,"..., 100000, 0, 0, 0, 100000, 30000, 0, 0, IDR, {"line1":"9925 Candida Hill","city":"South Maybelleside","provin..., {"line1":"393 Sporer Brooks","city":"Lake Hilarioberg","province..., null, Autem dolorem voluptatem maiores quia voluptas itaque omnis., null, null, null, null, null, null, null, null, null, null, {"sla":null,"payments":null}, null, 2025-12-03 04:12:22, 2025-12-03 04:12:22, null) (Connection: pgsql, SQL: insert into "orders" ("uuid", "tenant_id", "order_number", "customer_id", "vendor_id", "status", "payment_status", "production_type", "items", "subtotal", "tax", "shipping_cost", "discount", "total_amount", "down_payment_amount", "total_paid_amount", "total_disbursed_amount", "currency", "shipping_address", "billing_address", "customer_notes", "internal_notes", "payment_method", "payment_date", "down_payment_due_at", "down_payment_paid_at", "estimated_delivery", "shipped_at", "delivered_at", "tracking_number", "payment_schedule", "metadata", "updated_at", "created_at") values (c728498b-e7ef-4943-a15a-5ff673341552, 1, ORD-7GL8HEPF, ?, 427, new, unpaid, standard, [{"sku":"SKU-7692","name":"Molestiae distinctio.","quantity":1,"price":100000}], 100000, 0, 0, 0, 100000, 30000, 0, 0, IDR, {"line1":"9925 Candida Hill","city":"South Maybelleside","province":"Illinois","postal_code":"38291-2760"}, {"line1":"393 Sporer Brooks","city":"Lake Hilarioberg","province":"Alabama","postal_code":"81303"}, Autem dolorem voluptatem maiores quia voluptas itaque omnis., ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, {"sla":null,"payments":null}, 2025-12-03 04:12:22, 2025-12-03 04:12:22) returning "id")
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[23502]: Not null violation: 7 ERROR:  null value in column "customer_id" of relation "orders" violates not-null constraint
+DETAIL:  Baris gagal berisi (1111, c728498b-e7ef-4943-a15a-5ff673341552, 1, null, 427, ORD-7GL8HEPF, new, unpaid, standard, [{"sku":"SKU-7692","name":"Molestiae distinctio.","quantity":1,"..., 100000, 0, 0, 0, 100000, 30000, 0, 0, IDR, {"line1":"9925 Candida Hill","city":"South Maybelleside","provin..., {"line1":"393 Sporer Brooks","city":"Lake Hilarioberg","province..., null, Autem dolorem voluptatem maiores quia voluptas itaque omnis., null, null, null, null, null, null, null, null, null, null, {"sla":null,"payments":null}, null, 2025-12-03 04:12:22, 2025-12-03 04:12:22, null)")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > invoice number generation format     QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1115 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > refund updates order status          QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1116 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > process order completion updates custom…  TypeError   
+  App\Domain\Order\Listeners\ProcessOrderCompletion::handle(): Argument #1 ($event) must be of type App\Domain\Order\Events\ProductionCompleted, App\Domain\Order\Events\OrderDelivered given, called in D:\worksites\canvastack\projects\stencil\backend\tests\Unit\Domain\Order\Listeners\EventListenersTest.php on line 264
+
+  at app\Domain\Order\Listeners\ProcessOrderCompletion.php:10
+      6▕ use Illuminate\Support\Facades\Log;
+      7▕ 
+      8▕ class ProcessOrderCompletion
+      9▕ {
+  ➜  10▕     public function handle(ProductionCompleted $event): void
+     11▕     {
+     12▕         try {
+     13▕             $order = $event->order;
+     14▕
+
+  1   app\Domain\Order\Listeners\ProcessOrderCompletion.php:10
+  2   tests\Unit\Domain\Order\Listeners\EventListenersTest.php:264
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > listeners maintain multi tenant isolati…  TypeError   
+  App\Domain\Order\Listeners\ProcessOrderCompletion::handle(): Argument #1 ($event) must be of type App\Domain\Order\Events\ProductionCompleted, App\Domain\Order\Events\OrderDelivered given, called in D:\worksites\canvastack\projects\stencil\backend\tests\Unit\Domain\Order\Listeners\EventListenersTest.php on line 285
+
+  at app\Domain\Order\Listeners\ProcessOrderCompletion.php:10
+      6▕ use Illuminate\Support\Facades\Log;
+      7▕ 
+      8▕ class ProcessOrderCompletion
+      9▕ {
+  ➜  10▕     public function handle(ProductionCompleted $event): void
+     11▕     {
+     12▕         try {
+     13▕             $order = $event->order;
+     14▕
+
+  1   app\Domain\Order\Listeners\ProcessOrderCompletion.php:10
+  2   tests\Unit\Domain\Order\Listeners\EventListenersTest.php:285
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Unit\Domain\Order\Listeners\EventListenersTest > invoice generation idempotent        QueryException   
+  SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi (Connection: pgsql, SQL: select * from "orders" where "id" = 1120 limit 1)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+    825▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    826▕                 );
+    827▕             }
+    828▕ 
+  ➜ 829▕             throw new QueryException(
+    830▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    831▕             );
+    832▕         }
+    833▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:829
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:428
+      NunoMaduro\Collision\Exceptions\TestException::("SQLSTATE[25P02]: In failed sql transaction: 7 ERROR:  transaksi saat ini dibatalkan, perintah diabaikan sampai akhir blok transaksi")
+
+
+  Tests:    13 failed, 24 passed (43 assertions)
+  Duration: 4.26s
+

@@ -7,6 +7,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Ramsey\Uuid\Uuid;
 
 class OrderFactory extends Factory
 {
@@ -17,6 +18,7 @@ class OrderFactory extends Factory
         $tenantFactory = Tenant::factory();
 
         return [
+            'uuid' => Uuid::uuid4()->toString(),
             'tenant_id' => $tenantFactory,
             'order_number' => 'ORD-' . strtoupper(Str::random(8)),
             'customer_id' => Customer::factory()->for($tenantFactory, 'tenant'),

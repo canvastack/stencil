@@ -6,6 +6,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Ramsey\Uuid\Uuid;
 
 class VendorFactory extends Factory
 {
@@ -16,6 +17,7 @@ class VendorFactory extends Factory
         $tenantFactory = Tenant::factory();
 
         return [
+            'uuid' => Uuid::uuid4()->toString(),
             'tenant_id' => $tenantFactory,
             'name' => $this->faker->company(),
             'code' => Str::upper($this->faker->bothify('VND-###')),

@@ -52,7 +52,7 @@ class AuthControllerTest extends TestCase
                 ]);
 
         $this->assertEquals('Bearer', $response->json('token_type'));
-        $this->assertEquals('platform', $response->json('account_type'));
+        $this->assertEquals('platform_owner', $response->json('account_type'));
     }
 
     /** @test */

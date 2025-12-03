@@ -1,0 +1,427 @@
+# Phase 7 Custom Domain Management - Domain Management Schemas
+# DUAL CONTEXT: Landlord DB (verification) + Tenant Schema (configuration)
+
+# Domain Verification Request (Landlord Database)
+DomainVerificationRequestResponse:
+  type: object
+  properties:
+    uuid:
+      type: string
+      format: uuid
+      description: Verification request UUID
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant UUID
+    domain:
+      type: string
+      description: Domain to verify
+      example: "example.com"
+    subdomain:
+      type: string
+      nullable: true
+      description: Subdomain if applicable
+      example: "www"
+    full_domain:
+      type: string
+      description: Complete domain
+      example: "www.example.com"
+    type:
+      type: string
+      enum: [primary, redirect, alias]
+      description: Domain type
+    status:
+      type: string
+      enum: [pending, verified, failed, expired]
+      description: Verification status
+    verification_token:
+      type: string
+      description: Verification token for DNS record
+      example: "stencil-verify-abc123def456ghi789"
+    dns_records:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            example: "TXT"
+          name:
+            type: string
+            example: "_stencil-verify"
+          value:
+            type: string
+            example: "stencil-verify-abc123def456ghi789"
+          ttl:
+            type: integer
+            example: 300
+      description: Required DNS records for verification
+    expires_at:
+      type: string
+      format: date-time
+      description: Verification expiration time
+    instructions:
+      type: object
+      properties:
+        steps:
+          type: array
+          items:
+            type: string
+          example:
+            - "Add the TXT record to your DNS settings"
+            - "Wait 5-10 minutes for DNS propagation"
+            - "Click 'Verify Domain' to complete verification"
+        dns_providers:
+          type: object
+          description: Instructions for popular DNS providers
+          example:
+            cloudflare:
+              - "Log in to Cloudflare dashboard"
+              - "Navigate to DNS settings for your domain"
+              - "Add TXT record with provided name and value"
+            godaddy:
+              - "Log in to GoDaddy account"
+              - "Go to Domain Manager"
+              - "Add TXT record in DNS settings"
+    created_at:
+      type: string
+      format: date-time
+
+# Tenant Domain (Tenant Schema)
+TenantDomain:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      properties:
+        domain:
+          type: string
+          description: Base domain
+          example: "example.com"
+        subdomain:
+          type: string
+          nullable: true
+          description: Subdomain if applicable
+          example: "www"
+        full_domain:
+          type: string
+          description: Complete domain
+          example: "www.example.com"
+        type:
+          type: string
+          enum: [primary, redirect, alias]
+          description: Domain type
+          example: "primary"
+        status:
+          type: string
+          enum: [pending, active, failed, suspended]
+          description: Domain status
+        is_custom:
+          type: boolean
+          default: true
+          description: Whether this is a custom domain
+        dns_records:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              name:
+                type: string
+              value:
+                type: string
+              priority:
+                type: integer
+                nullable: true
+          description: Required DNS configuration
+        verified_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Domain verification timestamp
+        ssl_issued_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: SSL certificate issue timestamp
+        ssl_expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: SSL certificate expiration
+        ssl_provider:
+          type: string
+          nullable: true
+          enum: [letsencrypt, custom, cloudflare]
+          description: SSL certificate provider
+        ssl_details:
+          type: object
+          nullable: true
+          properties:
+            issuer:
+              type: string
+            serial_number:
+              type: string
+            fingerprint:
+              type: string
+            san_domains:
+              type: array
+              items:
+                type: string
+        redirect_settings:
+          type: object
+          nullable: true
+          description: Redirect configuration for redirect domains
+          properties:
+            target_domain:
+              type: string
+            redirect_type:
+              type: string
+              enum: [permanent, temporary]
+            include_path:
+              type: boolean
+        force_https:
+          type: boolean
+          default: true
+          description: Force HTTPS redirects
+        cdn_enabled:
+          type: boolean
+          default: false
+          description: CDN status
+        cdn_provider:
+          type: string
+          nullable: true
+          enum: [cloudflare, aws, google]
+          description: CDN provider
+        cdn_settings:
+          type: object
+          nullable: true
+          properties:
+            cache_ttl:
+              type: integer
+            minify_assets:
+              type: boolean
+            gzip_compression:
+              type: boolean
+        verification_request_id:
+          type: integer
+          nullable: true
+          description: Reference to verification request
+
+# Domain Health Status
+DomainHealthStatus:
+  type: object
+  properties:
+    domain:
+      type: string
+      example: "www.example.com"
+    overall_status:
+      type: string
+      enum: [healthy, warning, critical]
+      description: Overall health status
+    checks:
+      type: object
+      properties:
+        dns_resolution:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [pass, fail, warning]
+            message:
+              type: string
+            checked_at:
+              type: string
+              format: date-time
+        ssl_certificate:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [pass, fail, warning, expiring_soon]
+            expires_at:
+              type: string
+              format: date-time
+            days_until_expiry:
+              type: integer
+            message:
+              type: string
+        http_connectivity:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [pass, fail]
+            response_time_ms:
+              type: integer
+            status_code:
+              type: integer
+            message:
+              type: string
+        cdn_status:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [pass, fail, not_configured]
+            provider:
+              type: string
+              nullable: true
+            cache_hit_rate:
+              type: number
+              format: float
+              nullable: true
+    recommendations:
+      type: array
+      items:
+        type: string
+      example:
+        - "SSL certificate expires in 15 days - renewal recommended"
+        - "Consider enabling CDN for better performance"
+
+# Request Schemas
+DomainVerificationRequest:
+  type: object
+  required:
+    - domain
+    - type
+  properties:
+    domain:
+      type: string
+      pattern: '^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$'
+      description: Domain to verify
+      example: "example.com"
+    subdomain:
+      type: string
+      nullable: true
+      pattern: '^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]$'
+      description: Subdomain (optional)
+      example: "www"
+    type:
+      type: string
+      enum: [primary, redirect, alias]
+      description: Domain usage type
+      example: "primary"
+
+AddDomainRequest:
+  type: object
+  required:
+    - verification_request_uuid
+  properties:
+    verification_request_uuid:
+      type: string
+      format: uuid
+      description: UUID of completed verification request
+    redirect_settings:
+      type: object
+      nullable: true
+      description: Redirect configuration (for redirect domains)
+      properties:
+        target_domain:
+          type: string
+        redirect_type:
+          type: string
+          enum: [permanent, temporary]
+          default: "permanent"
+        include_path:
+          type: boolean
+          default: true
+    force_https:
+      type: boolean
+      default: true
+      description: Force HTTPS redirects
+    auto_issue_ssl:
+      type: boolean
+      default: true
+      description: Automatically issue SSL certificate
+
+UpdateDomainRequest:
+  type: object
+  properties:
+    redirect_settings:
+      type: object
+      nullable: true
+      properties:
+        target_domain:
+          type: string
+        redirect_type:
+          type: string
+          enum: [permanent, temporary]
+        include_path:
+          type: boolean
+    force_https:
+      type: boolean
+    cdn_enabled:
+      type: boolean
+    cdn_provider:
+      type: string
+      enum: [cloudflare, aws, google]
+      nullable: true
+    cdn_settings:
+      type: object
+      nullable: true
+      properties:
+        cache_ttl:
+          type: integer
+          minimum: 300
+          maximum: 86400
+        minify_assets:
+          type: boolean
+        gzip_compression:
+          type: boolean
+
+# Domain Verification Attempt (Landlord Database)
+DomainVerificationAttempt:
+  type: object
+  properties:
+    id:
+      type: integer
+      description: Attempt ID
+    verification_request_id:
+      type: integer
+      description: Reference to verification request
+    method:
+      type: string
+      enum: [dns, http, email]
+      description: Verification method used
+    challenge_type:
+      type: string
+      description: Type of challenge
+      example: "TXT record"
+    challenge_value:
+      type: string
+      description: Expected challenge value
+    expected_response:
+      type: string
+      description: Expected verification response
+    actual_response:
+      type: string
+      nullable: true
+      description: Actual response found during verification
+    status:
+      type: string
+      enum: [pending, completed, failed, expired]
+      description: Attempt status
+    expires_at:
+      type: string
+      format: date-time
+      description: Challenge expiration time
+    error_message:
+      type: string
+      nullable: true
+      description: Error message if failed
+    attempt_count:
+      type: integer
+      default: 0
+      description: Number of verification attempts
+    last_attempt_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Last attempt timestamp
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time

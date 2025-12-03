@@ -1,0 +1,368 @@
+# Phase 6 Platform Management - Tenant Management API Endpoints
+# CRITICAL: Platform endpoints operate on LANDLORD database context
+# Following Hexagonal Architecture + DDD + CQRS patterns
+
+# Platform Tenant Management (Landlord Database)
+/platform/tenants:
+  get:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Get All Tenants (Platform Admin Only)
+    description: |
+      Query to retrieve all tenants from landlord database for platform administration.
+      
+      **Architecture Context:**
+      - Operates on LANDLORD database (NOT tenant schema)
+      - Platform-level authentication required
+      - Controller → GetTenantsQuery → TenantRepositoryInterface
+      
+      **Related Handler:** GetTenantsQuery (Platform Context)
+    operationId: getPlatformTenants
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [active, inactive, suspended, terminated]
+      - name: plan_id
+        in: query
+        schema:
+          type: integer
+      - name: search
+        in: query
+        schema:
+          type: string
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+    responses:
+      '200':
+        description: Tenants retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/platform/tenant-management.yaml#/PlatformTenant'
+                    meta:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '403':
+        description: Insufficient platform permissions
+
+  post:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Create Tenant (Use Case)
+    description: |
+      Use Case to provision new tenant with schema creation and onboarding.
+      
+      **Architecture Pattern:**
+      - Landlord database: tenant record creation
+      - Schema creation: tenant_{uuid} database schema
+      - Onboarding workflow initiation
+      
+      **Related Use Case:** CreateTenantUseCase
+      **Domain Events:** TenantCreatedEvent, TenantSchemaProvisionedEvent
+    operationId: createPlatformTenant
+    security:
+      - PlatformAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/platform/tenant-management.yaml#/CreateTenantRequest'
+    responses:
+      '201':
+        description: Tenant created and provisioned successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/platform/tenant-management.yaml#/PlatformTenant'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+/platform/tenants/{tenant_id}:
+  get:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Get Tenant Details
+    operationId: getPlatformTenant
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Tenant details retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/platform/tenant-management.yaml#/PlatformTenantDetailed'
+
+  patch:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Update Tenant (Use Case)
+    description: |
+      Use Case to update tenant information with business validation.
+      
+      **Related Use Case:** UpdateTenantUseCase
+    operationId: updatePlatformTenant
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../schemas/platform/tenant-management.yaml#/UpdateTenantRequest'
+    responses:
+      '200':
+        description: Tenant updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/platform/tenant-management.yaml#/PlatformTenant'
+
+/platform/tenants/{tenant_id}/suspend:
+  post:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Suspend Tenant (Use Case)
+    description: |
+      Use Case to suspend tenant with access restriction and notification.
+      
+      **Related Use Case:** SuspendTenantUseCase
+      **Domain Event:** TenantSuspendedEvent
+    operationId: suspendTenant
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - reason
+            properties:
+              reason:
+                type: string
+                description: Suspension reason
+                example: "Violation of terms of service"
+              notify_tenant:
+                type: boolean
+                default: true
+                description: Whether to notify tenant
+    responses:
+      '200':
+        description: Tenant suspended successfully
+
+/platform/tenants/{tenant_id}/activate:
+  post:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Activate Tenant (Use Case)
+    operationId: activateTenant
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Tenant activated successfully
+
+# Platform Analytics
+/platform/analytics/dashboard:
+  get:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Get Platform Dashboard (Query)
+    description: |
+      Query to retrieve platform-wide analytics and metrics.
+      
+      **Related Handler:** GetPlatformDashboardQuery
+    operationId: getPlatformDashboard
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+    responses:
+      '200':
+        description: Platform dashboard data retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../schemas/platform/tenant-management.yaml#/PlatformDashboard'
+
+# Subscription Management
+/platform/subscriptions:
+  get:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Get Tenant Subscriptions
+    operationId: getTenantSubscriptions
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [active, cancelled, suspended, expired]
+      - name: plan_id
+        in: query
+        schema:
+          type: integer
+      - name: expires_soon
+        in: query
+        schema:
+          type: boolean
+        description: Filter subscriptions expiring within 30 days
+    responses:
+      '200':
+        description: Subscriptions retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/platform/tenant-management.yaml#/TenantSubscription'
+
+/platform/subscriptions/{subscription_id}/cancel:
+  post:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Cancel Tenant Subscription (Use Case)
+    operationId: cancelTenantSubscription
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: subscription_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                description: Cancellation reason
+    responses:
+      '200':
+        description: Subscription cancelled successfully
+
+# Usage Metrics
+/platform/tenants/{tenant_id}/usage:
+  get:
+    tags:
+      - Platform Management (Phase 6)
+    summary: Get Tenant Usage Metrics
+    operationId: getTenantUsageMetrics
+    security:
+      - PlatformAuth: []
+    parameters:
+      - name: tenant_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: date_from
+        in: query
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        schema:
+          type: string
+          format: date
+    responses:
+      '200':
+        description: Usage metrics retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../schemas/platform/tenant-management.yaml#/TenantUsageMetrics'

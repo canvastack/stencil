@@ -1,0 +1,470 @@
+# Order Workflow Service Schemas for Phase 4C
+# Request and response schemas for application service orchestration
+
+# Initiate Order Workflow Request
+InitiateOrderWorkflowRequest:
+  type: object
+  required:
+    - customer_name
+    - customer_email
+    - customer_phone
+    - items
+    - shipping_address
+  properties:
+    customer_name:
+      type: string
+    customer_email:
+      type: string
+      format: email
+    customer_phone:
+      type: string
+    customer_company:
+      type: string
+    items:
+      type: array
+      minItems: 1
+      items:
+        type: object
+    shipping_address:
+      type: object
+    auto_assign_vendor:
+      type: boolean
+      default: false
+      description: Automatically assign vendor if available
+    auto_proceed_steps:
+      type: array
+      items:
+        type: string
+        enum: [assign_vendor, negotiate, create_quote, collect_payment]
+      description: Steps to auto-proceed without manual intervention
+    priority:
+      type: string
+      enum: [normal, high, urgent]
+      default: normal
+
+# Workflow Status Response
+OrderWorkflowStatus:
+  type: object
+  properties:
+    workflow_id:
+      type: string
+      format: uuid
+      description: Unique workflow execution ID
+    order_id:
+      type: integer
+    order_code:
+      type: string
+    status:
+      type: string
+      enum: [initiated, processing, paused, completed, failed]
+      description: Current workflow execution status
+    current_step:
+      type: string
+      description: Current step identifier
+    current_step_name:
+      type: string
+      description: Human-readable step name
+    progress_percentage:
+      type: integer
+      minimum: 0
+      maximum: 100
+    steps:
+      type: array
+      items:
+        $ref: '#/WorkflowStep'
+    started_at:
+      type: string
+      format: date-time
+    estimated_completion:
+      type: string
+      format: date-time
+    paused_at:
+      type: string
+      format: date-time
+    completed_at:
+      type: string
+      format: date-time
+    error:
+      type: object
+      properties:
+        step:
+          type: string
+        code:
+          type: string
+        message:
+          type: string
+    next_actions:
+      type: array
+      items:
+        type: object
+        properties:
+          action:
+            type: string
+          description:
+            type: string
+          available:
+            type: boolean
+
+# Workflow Step Details
+WorkflowStep:
+  type: object
+  properties:
+    step_id:
+      type: string
+      description: Step identifier
+    name:
+      type: string
+      description: Step name
+    status:
+      type: string
+      enum: [pending, in_progress, completed, failed, skipped]
+    started_at:
+      type: string
+      format: date-time
+    completed_at:
+      type: string
+      format: date-time
+    duration_seconds:
+      type: integer
+    result:
+      type: object
+      additionalProperties: true
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    retry_count:
+      type: integer
+      default: 0
+
+# Workflow Transition Request
+WorkflowTransitionRequest:
+  type: object
+  required:
+    - transition_type
+  properties:
+    transition_type:
+      type: string
+      enum: [next, skip, revert, jump]
+      description: Type of transition to perform
+    target_step:
+      type: string
+      description: Target step ID (required for jump transition)
+    force:
+      type: boolean
+      default: false
+      description: Force transition even if validation fails
+    notes:
+      type: string
+
+# Workflow Step Event
+WorkflowStepEvent:
+  type: object
+  properties:
+    event_id:
+      type: string
+      format: uuid
+    event_type:
+      type: string
+      enum: [step_started, step_completed, step_failed, step_skipped, transition_made]
+    step_id:
+      type: string
+    step_name:
+      type: string
+    timestamp:
+      type: string
+      format: date-time
+    duration_ms:
+      type: integer
+    result:
+      type: object
+      additionalProperties: true
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+# Request DTOs for Workflows
+
+# Assign Vendor Request (used in workflow)
+AssignVendorRequest:
+  type: object
+  required:
+    - vendor_id
+  properties:
+    vendor_id:
+      type: integer
+    notes:
+      type: string
+
+# Negotiate Vendor Request
+NegotiateVendorRequest:
+  type: object
+  required:
+    - vendor_id
+    - vendor_price
+  properties:
+    vendor_id:
+      type: integer
+    vendor_price:
+      type: number
+      format: double
+      multipleOf: 0.01
+    markup_percentage:
+      type: number
+      format: double
+      multipleOf: 0.01
+      minimum: 0
+      maximum: 100
+    notes:
+      type: string
+    deadline_days:
+      type: integer
+      minimum: 1
+
+# Create Quote Request
+CreateQuoteRequest:
+  type: object
+  required:
+    - customer_price
+  properties:
+    customer_price:
+      type: number
+      format: double
+      multipleOf: 0.01
+    notes:
+      type: string
+    valid_until_days:
+      type: integer
+      minimum: 1
+      default: 7
+
+# Customer Approval Request
+CustomerApprovalRequest:
+  type: object
+  required:
+    - approved
+  properties:
+    approved:
+      type: boolean
+    notes:
+      type: string
+
+# Verify Payment Request
+VerifyPaymentRequest:
+  type: object
+  required:
+    - amount
+    - payment_method
+  properties:
+    amount:
+      type: number
+      format: double
+      multipleOf: 0.01
+      minimum: 0
+    payment_method:
+      type: string
+      enum: [cash, bank_transfer, payment_gateway]
+    payment_date:
+      type: string
+      format: date
+    reference_number:
+      type: string
+    notes:
+      type: string
+
+# Update Production Progress Request
+UpdateProductionProgressRequest:
+  type: object
+  required:
+    - production_status
+  properties:
+    production_status:
+      type: string
+      enum: [in_production, quality_check, ready_to_ship]
+    milestone:
+      type: string
+    progress_percentage:
+      type: integer
+      minimum: 0
+      maximum: 100
+    notes:
+      type: string
+
+# Request Final Payment Request
+RequestPaymentRequest:
+  type: object
+  properties:
+    notes:
+      type: string
+
+# Ship Order Request
+ShipOrderRequest:
+  type: object
+  required:
+    - shipping_carrier
+  properties:
+    shipping_carrier:
+      type: string
+    tracking_number:
+      type: string
+    estimated_delivery:
+      type: string
+      format: date
+    shipping_cost:
+      type: number
+      format: double
+      multipleOf: 0.01
+    notes:
+      type: string
+
+# Complete Order Request
+CompleteOrderRequest:
+  type: object
+  properties:
+    delivery_date:
+      type: string
+      format: date
+    notes:
+      type: string
+    require_customer_review:
+      type: boolean
+      default: true
+
+# Cancel Order Request
+CancelOrderRequest:
+  type: object
+  required:
+    - reason
+  properties:
+    reason:
+      type: string
+    notes:
+      type: string
+    process_refund:
+      type: boolean
+      default: true
+
+# Process Refund Request
+ProcessRefundRequest:
+  type: object
+  required:
+    - refund_amount
+  properties:
+    refund_amount:
+      type: number
+      format: double
+      multipleOf: 0.01
+    reason:
+      type: string
+    notes:
+      type: string
+
+# Vendor Negotiation Response
+VendorNegotiationResponse:
+  type: object
+  properties:
+    negotiation_id:
+      type: integer
+    order_id:
+      type: integer
+    vendor_id:
+      type: integer
+    status:
+      type: string
+    created_at:
+      type: string
+      format: date-time
+    deadline:
+      type: string
+      format: date
+
+# Customer Quote Response
+CustomerQuoteResponse:
+  type: object
+  properties:
+    quote_id:
+      type: integer
+    order_id:
+      type: integer
+    quote_amount:
+      type: number
+      format: double
+    created_at:
+      type: string
+      format: date-time
+    valid_until:
+      type: string
+      format: date
+
+# Workflow Metrics
+WorkflowMetrics:
+  type: object
+  properties:
+    period:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+    total_workflows:
+      type: integer
+    completed_workflows:
+      type: integer
+    success_rate:
+      type: number
+      format: double
+      multipleOf: 0.01
+    failed_workflows:
+      type: integer
+    average_duration_hours:
+      type: number
+      format: double
+    by_step:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          count:
+            type: integer
+          success_rate:
+            type: number
+          average_duration_hours:
+            type: number
+          failure_points:
+            type: array
+            items:
+              type: object
+    common_failures:
+      type: array
+      items:
+        type: object
+        properties:
+          step:
+            type: string
+          error_code:
+            type: string
+          count:
+            type: integer
+          percentage:
+            type: number
+    sla_compliance:
+      type: object
+      properties:
+        target_completion_hours:
+          type: number
+        compliance_rate:
+          type: number
+        delayed_workflows:
+          type: integer

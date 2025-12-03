@@ -1,0 +1,378 @@
+# Phase 5 Advanced Features - Theme Management Schemas
+# Schema-per-tenant architecture - NO tenant_id fields needed
+
+# Theme Entity
+Theme:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+          description: Theme name
+          example: "Modern Business"
+        slug:
+          type: string
+          maxLength: 255
+          pattern: '^[a-z0-9-]+$'
+          description: URL-friendly identifier
+          example: "modern-business"
+        version:
+          type: string
+          default: "1.0.0"
+          description: Theme version
+          example: "1.2.3"
+        description:
+          type: string
+          nullable: true
+          description: Theme description
+        author:
+          type: string
+          nullable: true
+          description: Theme author
+          example: "Stencil Team"
+        config:
+          type: object
+          description: Theme configuration JSON
+          example:
+            colors:
+              primary: "#007bff"
+              secondary: "#6c757d"
+            fonts:
+              heading: "Roboto"
+              body: "Open Sans"
+        assets:
+          type: object
+          description: CSS, JS, image assets
+          example:
+            css: ["styles.css", "responsive.css"]
+            js: ["theme.js"]
+            images: ["logo.png", "hero.jpg"]
+        templates:
+          type: object
+          description: Template files mapping
+          example:
+            homepage: "home.blade.php"
+            product: "product.blade.php"
+        customizations:
+          type: object
+          nullable: true
+          description: User customizations
+        is_active:
+          type: boolean
+          default: false
+          description: Whether theme is currently active
+        is_default:
+          type: boolean
+          default: false
+          description: Whether this is default theme
+        preview_image:
+          type: string
+          nullable: true
+          description: Preview image URL
+          example: "/themes/modern-business/preview.jpg"
+        supported_features:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Supported platform features
+          example: ["responsive", "dark-mode", "rtl"]
+        installed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Installation timestamp
+
+# Theme Customization
+ThemeCustomization:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      properties:
+        theme_id:
+          type: integer
+          description: Reference to theme
+        section:
+          type: string
+          description: Customization section
+          example: "header"
+        property:
+          type: string
+          description: CSS property name
+          example: "background-color"
+        value:
+          type: string
+          description: Property value
+          example: "#ffffff"
+        original_value:
+          type: string
+          nullable: true
+          description: Original theme value
+        is_active:
+          type: boolean
+          default: true
+          description: Whether customization is active
+        customized_by:
+          type: integer
+          description: User ID who made customization
+
+# Translation Entity
+Translation:
+  allOf:
+    - $ref: '../common/base.yaml#/BaseEntity'
+    - type: object
+      properties:
+        key:
+          type: string
+          maxLength: 255
+          description: Translation key
+          example: "auth.login.title"
+        language_code:
+          type: string
+          maxLength: 5
+          description: Language code
+          example: "id"
+        value:
+          type: string
+          description: Translated text
+          example: "Masuk ke Akun"
+        category:
+          type: string
+          default: "general"
+          description: Translation category
+          example: "authentication"
+        is_active:
+          type: boolean
+          default: true
+          description: Whether translation is active
+
+# Analytics Dashboard
+AnalyticsDashboard:
+  type: object
+  properties:
+    summary:
+      type: object
+      properties:
+        total_visitors:
+          type: integer
+          example: 15420
+        total_page_views:
+          type: integer
+          example: 28540
+        total_orders:
+          type: integer
+          example: 342
+        total_revenue:
+          type: number
+          format: double
+          example: 45750000.00
+        conversion_rate:
+          type: number
+          format: double
+          example: 2.22
+    charts:
+      type: object
+      properties:
+        visitors_over_time:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              visitors:
+                type: integer
+        revenue_by_category:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              revenue:
+                type: number
+                format: double
+    top_pages:
+      type: array
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+          title:
+            type: string
+          views:
+            type: integer
+
+# Search Results
+SearchResults:
+  type: object
+  properties:
+    total_hits:
+      type: integer
+      description: Total number of results
+      example: 245
+    results:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          type:
+            type: string
+            enum: [page, product, post, user]
+          title:
+            type: string
+          excerpt:
+            type: string
+          url:
+            type: string
+          score:
+            type: number
+            format: float
+            description: Relevance score
+    facets:
+      type: object
+      description: Search facets/filters
+      example:
+        content_type:
+          page: 120
+          product: 85
+          post: 40
+        language:
+          id: 200
+          en: 45
+    suggestions:
+      type: array
+      items:
+        type: string
+      description: Search suggestions
+      example: ["company profile", "contact information"]
+
+# Request Schemas
+InstallThemeRequest:
+  type: object
+  required:
+    - name
+    - config
+  properties:
+    name:
+      type: string
+      maxLength: 255
+    slug:
+      type: string
+      maxLength: 255
+      pattern: '^[a-z0-9-]+$'
+    version:
+      type: string
+      default: "1.0.0"
+    description:
+      type: string
+      nullable: true
+    author:
+      type: string
+      nullable: true
+    config:
+      type: object
+    assets:
+      type: object
+    templates:
+      type: object
+    supported_features:
+      type: array
+      items:
+        type: string
+    preview_image:
+      type: string
+      nullable: true
+
+ThemeCustomizationRequest:
+  type: object
+  required:
+    - customizations
+  properties:
+    customizations:
+      type: array
+      items:
+        type: object
+        required:
+          - section
+          - property
+          - value
+        properties:
+          section:
+            type: string
+          property:
+            type: string
+          value:
+            type: string
+
+CreateTranslationRequest:
+  type: object
+  required:
+    - key
+    - language_code
+    - value
+  properties:
+    key:
+      type: string
+      maxLength: 255
+    language_code:
+      type: string
+      maxLength: 5
+    value:
+      type: string
+    category:
+      type: string
+      default: "general"
+    is_active:
+      type: boolean
+      default: true
+
+AdvancedSearchRequest:
+  type: object
+  required:
+    - query
+  properties:
+    query:
+      type: string
+      description: Search query
+      example: "company profile"
+    filters:
+      type: object
+      properties:
+        content_type:
+          type: array
+          items:
+            type: string
+            enum: [page, product, post, user]
+        language:
+          type: string
+        date_from:
+          type: string
+          format: date
+        date_to:
+          type: string
+          format: date
+    sort:
+      type: object
+      properties:
+        field:
+          type: string
+          enum: [relevance, date, title]
+          default: "relevance"
+        direction:
+          type: string
+          enum: [asc, desc]
+          default: "desc"
+    limit:
+      type: integer
+      default: 20
+      maximum: 100
+    offset:
+      type: integer
+      default: 0

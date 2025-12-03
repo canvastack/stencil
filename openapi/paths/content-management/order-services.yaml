@@ -1,0 +1,517 @@
+# TENANT ORDER APPLICATION SERVICE ENDPOINTS
+# Phase 4C: Backend Hexagonal Architecture Enhancement
+# Application service endpoints for orchestration and workflow management
+
+# Initiate Order Workflow
+/tenant/services/order-workflow/initiate:
+  post:
+    tags:
+      - Order Services
+    summary: Initiate Order Processing Workflow
+    description: |
+      Application service to initiate complete order processing workflow.
+      
+      **Service Features:**
+      - Multi-step workflow orchestration
+      - Automatic step sequencing
+      - Error handling and rollback
+      - Event emission for each step
+      
+      **Workflow Steps:**
+      1. Order validation and creation
+      2. Vendor assignment
+      3. Price negotiation
+      4. Quote generation
+      5. Payment collection
+      6. Production tracking
+      7. Shipping
+      8. Completion
+      
+      **Use Cases Orchestrated:**
+      - CreatePurchaseOrderUseCase
+      - AssignVendorUseCase
+      - NegotiateWithVendorUseCase
+      - CreateCustomerQuoteUseCase
+    operationId: initiateOrderWorkflow
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/InitiateOrderWorkflowRequest'
+    responses:
+      '202':
+        description: Workflow initiated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    workflow_id:
+                      type: string
+                      format: uuid
+                      description: Unique workflow execution ID
+                    status:
+                      type: string
+                      enum: [initiated, processing, paused, completed, failed]
+                    current_step:
+                      type: string
+                      description: Current workflow step
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Get Workflow Status
+/tenant/services/order-workflow/{workflow_id}/status:
+  get:
+    tags:
+      - Order Services
+    summary: Get Order Workflow Status
+    description: |
+      Get current status and progress of order workflow execution.
+      
+      **Returns:**
+      - Workflow status (initiated, processing, paused, completed, failed)
+      - Current step and progress
+      - Completed steps with timing
+      - Errors if any step failed
+      - Next actions available
+    operationId: getWorkflowStatus
+    parameters:
+      - in: path
+        name: workflow_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Workflow execution ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Workflow status retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderWorkflowStatus'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Transition Workflow to Next Step
+/tenant/services/order-workflow/{workflow_id}/transition:
+  post:
+    tags:
+      - Order Services
+    summary: Transition Workflow to Next Step
+    description: |
+      Manually transition workflow to next step or specific step.
+      
+      **Service Features:**
+      - Validate transition is allowed
+      - Execute step prerequisites
+      - Handle step execution
+      - Emit events for step completion
+      - Update workflow state
+      
+      **Transition Types:**
+      - next: Move to next sequential step
+      - skip: Skip current step (if allowed)
+      - revert: Go back to previous step
+      - jump: Jump to specific step
+    operationId: transitionWorkflow
+    parameters:
+      - in: path
+        name: workflow_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Workflow execution ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/WorkflowTransitionRequest'
+    responses:
+      '200':
+        description: Workflow transitioned
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderWorkflowStatus'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Get Workflow History
+/tenant/services/order-workflow/{workflow_id}/history:
+  get:
+    tags:
+      - Order Services
+    summary: Get Order Workflow History
+    description: |
+      Retrieve complete execution history of workflow including all steps,
+      transitions, and events.
+      
+      **Returns:**
+      - Timeline of workflow execution
+      - Step durations and times
+      - Events triggered at each step
+      - User actions and decisions
+      - Error logs if any failures
+    operationId: getWorkflowHistory
+    parameters:
+      - in: path
+        name: workflow_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Workflow execution ID
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 50
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Workflow history retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/WorkflowStepEvent'
+                    pagination:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Pause Workflow
+/tenant/services/order-workflow/{workflow_id}/pause:
+  post:
+    tags:
+      - Order Services
+    summary: Pause Order Workflow
+    description: |
+      Pause workflow execution at current step.
+      
+      **Service Features:**
+      - Graceful pause (finish current operation)
+      - Save workflow state
+      - Lock order for editing
+      - Create pause event
+    operationId: pauseWorkflow
+    parameters:
+      - in: path
+        name: workflow_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Workflow execution ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                description: Reason for pausing workflow
+    responses:
+      '200':
+        description: Workflow paused
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderWorkflowStatus'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Resume Workflow
+/tenant/services/order-workflow/{workflow_id}/resume:
+  post:
+    tags:
+      - Order Services
+    summary: Resume Paused Workflow
+    description: |
+      Resume workflow execution from paused state.
+      
+      **Service Features:**
+      - Restore workflow state
+      - Validate state consistency
+      - Unlock order for processing
+      - Continue from current step
+    operationId: resumeWorkflow
+    parameters:
+      - in: path
+        name: workflow_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Workflow execution ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Workflow resumed
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderWorkflowStatus'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Cancel Workflow
+/tenant/services/order-workflow/{workflow_id}/cancel:
+  post:
+    tags:
+      - Order Services
+    summary: Cancel Order Workflow
+    description: |
+      Cancel workflow execution and rollback order state.
+      
+      **Service Features:**
+      - Validate cancellation is allowed
+      - Process refunds if needed
+      - Revert order to previous state
+      - Send cancellation notifications
+      - Archive workflow record
+    operationId: cancelWorkflow
+    parameters:
+      - in: path
+        name: workflow_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Workflow execution ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                description: Cancellation reason
+              process_refund:
+                type: boolean
+                description: Whether to process refund
+    responses:
+      '200':
+        description: Workflow cancelled
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderWorkflowStatus'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Retry Failed Workflow Step
+/tenant/services/order-workflow/{workflow_id}/retry:
+  post:
+    tags:
+      - Order Services
+    summary: Retry Failed Workflow Step
+    description: |
+      Retry execution of a failed workflow step.
+      
+      **Service Features:**
+      - Validate step can be retried
+      - Clear previous failure state
+      - Re-execute step logic
+      - Update workflow state
+      - Track retry attempts
+    operationId: retryWorkflowStep
+    parameters:
+      - in: path
+        name: workflow_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Workflow execution ID
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              step_id:
+                type: string
+                description: Step identifier to retry
+    responses:
+      '200':
+        description: Step retry initiated
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/OrderWorkflowStatus'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# List Active Workflows
+/tenant/services/order-workflows:
+  get:
+    tags:
+      - Order Services
+    summary: List Active Order Workflows
+    description: |
+      Retrieve list of active order workflows with status filtering.
+      
+      **Returns:**
+      - Active workflows
+      - Paused workflows
+      - Failed workflows with retry info
+      - Completion status
+    operationId: listActiveWorkflows
+    parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [initiated, processing, paused, completed, failed]
+        description: Filter by workflow status
+      - in: query
+        name: order_id
+        schema:
+          type: integer
+        description: Filter by order ID
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          default: 20
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Workflows retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/OrderWorkflowStatus'
+                    pagination:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+
+# Get Workflow Metrics
+/tenant/services/order-workflows/metrics:
+  get:
+    tags:
+      - Order Services
+    summary: Get Order Workflow Metrics
+    description: |
+      Get comprehensive metrics and performance data for order workflows.
+      
+      **Metrics:**
+      - Success rate
+      - Average workflow duration
+      - Common failure points
+      - Step performance data
+      - SLA compliance metrics
+    operationId: getWorkflowMetrics
+    parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date
+        description: Metrics period start
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date
+        description: Metrics period end
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    responses:
+      '200':
+        description: Workflow metrics retrieved
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/WorkflowMetrics'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'

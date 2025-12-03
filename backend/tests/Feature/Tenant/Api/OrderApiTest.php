@@ -380,8 +380,8 @@ class OrderApiTest extends TestCase
         $response->assertStatus(200);
         $data = $response->json('data');
         $this->assertCount(1, $data);
-        $this->assertEquals($order->id, $data[0]['id']);
-        $this->assertEquals($this->tenant->id, $data[0]['tenantId']);
+        $this->assertEquals($order->uuid, $data[0]['id']);
+        $this->assertEquals($this->tenant->uuid, $data[0]['tenantId']);
     }
 
     public function test_customer_endpoint_is_tenant_scoped(): void
@@ -399,13 +399,13 @@ class OrderApiTest extends TestCase
             'customer_id' => $otherCustomer->id,
         ]);
 
-        $response = $this->tenantGet('/api/orders/customer/' . $customer->id);
+        $response = $this->tenantGet('/api/orders/customer/' . $customer->uuid);
 
         $response->assertStatus(200);
         $data = $response->json('data');
         $this->assertCount(1, $data);
-        $this->assertEquals($order->id, $data[0]['id']);
-        $this->assertEquals($this->tenant->id, $data[0]['tenantId']);
+        $this->assertEquals($order->uuid, $data[0]['id']);
+        $this->assertEquals($this->tenant->uuid, $data[0]['tenantId']);
     }
 
     public function test_quotations_endpoint_is_tenant_scoped(): void

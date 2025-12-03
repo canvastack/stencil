@@ -145,6 +145,11 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{order}/complete', [OrderController::class, 'complete'])->name('tenant.orders.complete');
             Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('tenant.orders.cancel');
             Route::post('/{order}/refund', [OrderController::class, 'refund'])->name('tenant.orders.refund');
+            
+            // Phase 4C: Business Workflow Routes (Hexagonal Architecture)
+            Route::post('/{order}/assign-vendor', [OrderController::class, 'assignVendor'])->name('tenant.orders.assign_vendor');
+            Route::post('/{order}/negotiate-vendor', [OrderController::class, 'negotiateVendor'])->name('tenant.orders.negotiate_vendor');
+            
             Route::get('/{order}/available-transitions', [OrderController::class, 'availableTransitions'])->name('tenant.orders.available_transitions');
             Route::get('/{order}/quotations', [OrderController::class, 'quotations'])->name('tenant.orders.quotations');
         });

@@ -12,12 +12,14 @@ info:
     
     ## Architecture Features
     
-    - **🏢 Multi-Tenancy**: Complete tenant isolation with `tenant_id` in all entities
-    - **🔐 JWT Authentication**: Bearer token authentication with role-based access control
-    - **🛡️ Security**: Comprehensive RBAC with tenant-scoped permissions
-    - **📊 Performance**: Optimized queries with pagination and filtering
-    - **🔍 Search**: Full-text search across all content types
-    - **📈 Analytics**: Built-in analytics and reporting capabilities
+    - **🏢 Multi-Tenancy**: Complete tenant isolation via **schema-per-tenant** architecture (PostgreSQL)
+    - **🏗️ Hexagonal Architecture**: Domain-driven design with Use Cases, Command/Query handlers, and Application Services
+    - **🔐 JWT Authentication**: Bearer token authentication with role-based access control  
+    - **🛡️ Security**: Comprehensive RBAC with tenant-scoped permissions and domain verification
+    - **📊 Performance**: Optimized queries with pagination, caching, and CDN integration
+    - **🔍 Search**: Full-text search across all content types with advanced filtering
+    - **📈 Analytics**: Built-in analytics and reporting capabilities with business intelligence
+    - **🌐 Custom Domains**: Secure domain verification, SSL automation, and CDN management
     
     ## Module Groups
     
@@ -69,7 +71,7 @@ info:
       "message": "Operation completed successfully",
       "meta": {
         "timestamp": "2025-11-12T13:00:00Z",
-        "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+        "tenant_context": "tenant_550e8400-e29b-41d4-a716-446655440000",
         "request_id": "req_123456789"
       }
     }
@@ -86,7 +88,7 @@ info:
       },
       "meta": {
         "timestamp": "2025-11-12T13:00:00Z",
-        "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+        "tenant_context": "tenant_550e8400-e29b-41d4-a716-446655440000",
         "request_id": "req_123456789"
       }
     }
@@ -332,6 +334,88 @@ components:
     # Users schemas will be added here
     # Vendors schemas will be added here
     
+    # Phase 4C: Business Workflow Schemas
+    CreatePurchaseOrderCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/CreatePurchaseOrderCommand'
+    AssignVendorCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/AssignVendorCommand'
+    NegotiatePriceCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/NegotiatePriceCommand'
+    ApproveQuoteCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/ApproveQuoteCommand'
+    VerifyPaymentCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/VerifyPaymentCommand'
+    UpdateProductionCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/UpdateProductionCommand'
+    ShipOrderCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/ShipOrderCommand'
+    CompleteOrderCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/CompleteOrderCommand'
+    CancelOrderCommand:
+      $ref: './schemas/content-management/order-commands.yaml#/CancelOrderCommand'
+    CommandStatusResponse:
+      $ref: './schemas/content-management/order-commands.yaml#/CommandStatusResponse'
+    
+    # Phase 4C: Query Response Schemas
+    OrderDetailsView:
+      $ref: './schemas/content-management/order-queries.yaml#/OrderDetailsView'
+    OrderListView:
+      $ref: './schemas/content-management/order-queries.yaml#/OrderListView'
+    ProductionStatusView:
+      $ref: './schemas/content-management/order-queries.yaml#/ProductionStatusView'
+    PaymentStatusView:
+      $ref: './schemas/content-management/order-queries.yaml#/PaymentStatusView'
+    VendorNegotiationView:
+      $ref: './schemas/content-management/order-queries.yaml#/VendorNegotiationView'
+    CustomerQuoteView:
+      $ref: './schemas/content-management/order-queries.yaml#/CustomerQuoteView'
+    OrderAnalyticsView:
+      $ref: './schemas/content-management/order-queries.yaml#/OrderAnalyticsView'
+    OrderEventView:
+      $ref: './schemas/content-management/order-queries.yaml#/OrderEventView'
+    PaginationMeta:
+      $ref: './schemas/content-management/order-queries.yaml#/PaginationMeta'
+    
+    # Phase 4C: Workflow Service Schemas
+    InitiateOrderWorkflowRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/InitiateOrderWorkflowRequest'
+    OrderWorkflowStatus:
+      $ref: './schemas/content-management/order-workflows.yaml#/OrderWorkflowStatus'
+    WorkflowStep:
+      $ref: './schemas/content-management/order-workflows.yaml#/WorkflowStep'
+    WorkflowTransitionRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/WorkflowTransitionRequest'
+    WorkflowStepEvent:
+      $ref: './schemas/content-management/order-workflows.yaml#/WorkflowStepEvent'
+    AssignVendorRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/AssignVendorRequest'
+    NegotiateVendorRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/NegotiateVendorRequest'
+    CreateQuoteRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/CreateQuoteRequest'
+    CustomerApprovalRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/CustomerApprovalRequest'
+    VerifyPaymentRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/VerifyPaymentRequest'
+    UpdateProductionProgressRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/UpdateProductionProgressRequest'
+    RequestPaymentRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/RequestPaymentRequest'
+    ShipOrderRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/ShipOrderRequest'
+    CompleteOrderRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/CompleteOrderRequest'
+    CancelOrderRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/CancelOrderRequest'
+    ProcessRefundRequest:
+      $ref: './schemas/content-management/order-workflows.yaml#/ProcessRefundRequest'
+    VendorNegotiationResponse:
+      $ref: './schemas/content-management/order-workflows.yaml#/VendorNegotiationResponse'
+    CustomerQuoteResponse:
+      $ref: './schemas/content-management/order-workflows.yaml#/CustomerQuoteResponse'
+    WorkflowMetrics:
+      $ref: './schemas/content-management/order-workflows.yaml#/WorkflowMetrics'
+    
     # Inline Schema Definitions (legacy compatibility)
     # Base Entity Schema
     BaseEntity:
@@ -372,7 +456,29 @@ components:
 
 # Main API Paths (will be extended with specific modules)
 paths:
-  # ===== CONTENT MANAGEMENT ENDPOINTS =====
+  # ===== PHASE 4-8 ROADMAP ENDPOINTS =====
+  
+  # ===== PHASE 4: CONTENT MANAGEMENT SYSTEM (CMS) =====
+  # CMS Pages - Following Hexagonal Architecture with Use Cases and Query Handlers
+  # $ref: './paths/content-management/cms-pages.yaml'
+  # Endpoints: /tenant/cms/pages/*, /tenant/cms/content-blocks/*
+  
+  # ===== PHASE 5: ADVANCED FEATURES =====  
+  # Theme Management - Following Hexagonal Architecture patterns
+  # $ref: './paths/content-management/themes.yaml'
+  # Endpoints: /tenant/themes/*, /tenant/translations/*, /tenant/analytics/*
+  
+  # ===== PHASE 6: PLATFORM MANAGEMENT =====
+  # Platform Tenant Management - Landlord database context
+  # $ref: './paths/platform/tenant-management.yaml'  
+  # Endpoints: /platform/tenants/*, /platform/subscriptions/*, /platform/analytics/*
+  
+  # ===== PHASE 7: CUSTOM DOMAIN MANAGEMENT =====
+  # Domain Management - Dual context (Landlord + Tenant)
+  # $ref: './paths/content-management/domain-management.yaml'
+  # Endpoints: /platform/domain-verification/*, /tenant/domains/*
+  
+  # ===== EXISTING CONTENT MANAGEMENT ENDPOINTS =====
   
   # About Us Module - Paths defined in about.yaml
   # Endpoints accessible at /platform/about/* and /tenant/about/*
@@ -387,6 +493,26 @@ paths:
 
   # Customers, Vendors modules - Paths defined in respective YAML files
   # Endpoints accessible at /tenant/customers/*, /tenant/vendors/*, /vendors/*
+  
+  # ===== PHASE 4C: BUSINESS WORKFLOW ENDPOINTS =====
+  # Order Workflows - Paths defined in order-workflows.yaml
+  # Endpoints accessible at /tenant/orders/{id}/assign-vendor, /tenant/orders/{id}/negotiate-vendor, etc.
+  # Business Use Cases: CreatePurchaseOrder, AssignVendor, NegotiateWithVendor, CreateCustomerQuote, etc.
+  
+  # ===== PHASE 4C: COMMAND PATTERN ENDPOINTS (CQRS) =====
+  # Order Commands - Paths defined in order-commands.yaml
+  # Endpoints accessible at /tenant/commands/orders/* 
+  # Command Pattern: Write operations with idempotency and event sourcing
+  
+  # ===== PHASE 4C: QUERY PATTERN ENDPOINTS (CQRS) =====
+  # Order Queries - Paths defined in order-queries.yaml
+  # Endpoints accessible at /tenant/queries/orders/*
+  # Query Pattern: Read-optimized views with filtering and pagination
+  
+  # ===== PHASE 4C: APPLICATION SERVICE ENDPOINTS =====
+  # Order Workflow Services - Paths defined in order-services.yaml
+  # Endpoints accessible at /tenant/services/order-workflow/*
+  # Application Services: Orchestration, workflow management, and step transitions
 
   /api/v1/tenant/products/search:
     get:

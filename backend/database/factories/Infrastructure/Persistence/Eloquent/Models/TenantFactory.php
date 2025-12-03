@@ -5,6 +5,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Ramsey\Uuid\Uuid;
 
 class TenantFactory extends Factory
 {
@@ -15,6 +16,7 @@ class TenantFactory extends Factory
         $name = $this->faker->company();
 
         return [
+            'uuid' => Uuid::uuid4()->toString(),
             'name' => $name,
             'slug' => Str::slug($name) . '-' . Str::lower(Str::random(6)),
             'domain' => null,
