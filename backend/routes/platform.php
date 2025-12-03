@@ -5,6 +5,7 @@ use App\Infrastructure\Presentation\Http\Controllers\Platform\TenantController;
 use App\Infrastructure\Presentation\Http\Controllers\Platform\AnalyticsController;
 use App\Infrastructure\Presentation\Http\Controllers\Platform\SubscriptionController;
 use App\Infrastructure\Presentation\Http\Controllers\Platform\DomainController;
+use App\Infrastructure\Presentation\Http\Controllers\Platform\ContentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -82,6 +83,24 @@ Route::prefix('platform')
             Route::get('/export/tenants', [AnalyticsController::class, 'exportTenants'])->name('platform.analytics.export.tenants');
             Route::get('/export/revenue', [AnalyticsController::class, 'exportRevenue'])->name('platform.analytics.export.revenue');
             Route::get('/export/usage', [AnalyticsController::class, 'exportUsage'])->name('platform.analytics.export.usage');
+        });
+        
+        // Platform Content Management
+        Route::prefix('content')->group(function () {
+            Route::get('/pages', [ContentController::class, 'index'])->name('platform.content.pages.index');
+            Route::post('/pages', [ContentController::class, 'store'])->name('platform.content.pages.store');
+            Route::get('/pages/{uuid}', [ContentController::class, 'show'])->name('platform.content.pages.show');
+            Route::put('/pages/{uuid}', [ContentController::class, 'update'])->name('platform.content.pages.update');
+            Route::delete('/pages/{uuid}', [ContentController::class, 'destroy'])->name('platform.content.pages.destroy');
+            
+            // Page Actions
+            Route::post('/pages/{uuid}/publish', [ContentController::class, 'publish'])->name('platform.content.pages.publish');
+            Route::post('/pages/{uuid}/unpublish', [ContentController::class, 'unpublish'])->name('platform.content.pages.unpublish');
+            Route::post('/pages/{uuid}/homepage', [ContentController::class, 'setHomepage'])->name('platform.content.pages.homepage');
+            
+            // Utilities
+            Route::get('/statistics', [ContentController::class, 'statistics'])->name('platform.content.statistics');
+            Route::get('/tree', [ContentController::class, 'tree'])->name('platform.content.tree');
         });
         
         // System Management

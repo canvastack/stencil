@@ -36,6 +36,10 @@ info:
     - **✅ Orders**: Complete workflow with 164+ fields, 7 tables **(IMPLEMENTED)**
     - **❌ Inventory**: Stock management with 180+ fields, 8+ tables *(PENDING)*
     
+    ### 🏢 Platform Management (2 modules)
+    - **✅ Platform Content**: Global page management with 45+ fields, 3 tables **(IMPLEMENTED)**
+    - **✅ Platform Licensing**: License management with 95+ fields, 3 tables **(IMPLEMENTED)**
+    
     ### 👥 User Management (4 modules)
     - **Users**: RBAC system with 180+ fields, 9 tables
     - **Customers**: Customer lifecycle with 120+ fields, 6+ tables
@@ -461,6 +465,11 @@ paths:
   # ===== PHASE 4: CONTENT MANAGEMENT SYSTEM (CMS) =====
   # CMS Pages - Following Hexagonal Architecture with Use Cases and Query Handlers
   # $ref: './paths/content-management/cms-pages.yaml'
+  
+  # ===== PLATFORM CONTENT MANAGEMENT =====
+  # Platform-level content management for global pages (Home, About, Contact, FAQ)
+  # Managed by Platform Administrators, stored in main database
+  $ref: './paths/platform/platform-content.yaml'
   # Endpoints: /tenant/cms/pages/*, /tenant/cms/content-blocks/*
   
   # ===== PHASE 5: ADVANCED FEATURES =====  

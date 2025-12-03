@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { getPageBySlug } from '@/services/mock/pages';
+import { cmsService } from '@/services/cms/cmsService';
 
 interface PageContent {
   id: string;
@@ -10,6 +11,11 @@ interface PageContent {
   version: number;
   createdAt: string;
   updatedAt: string;
+  uuid?: string;
+  title?: string;
+  description?: string;
+  template?: string;
+  meta_data?: Record<string, any>;
 }
 
 interface ContentContextType {
@@ -36,25 +42,38 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(true);
       setError(null);
       
-      const page = getPageBySlug(slug);
+      let data: PageContent | null = null;
       
-      if (!page) {
+      // Try Phase 4 CMS API first
+      try {
+        const apiData = await cmsService.getLegacyPageContent(slug);
+        if (apiData) {
+          data = apiData;
+        }
+      } catch (apiError) {
+        console.warn(`CMS API failed for ${slug}, falling back to mock data:`, apiError);
+        
+        // Fallback to mock data
+        const page = getPageBySlug(slug);
+        if (page) {
+          data = {
+            id: page.id,
+            pageSlug: page.pageSlug,
+            content: page.content,
+            status: page.status || 'published',
+            publishedAt: page.publishedAt,
+            version: 1,
+            createdAt: page.createdAt || new Date().toISOString(),
+            updatedAt: page.updatedAt || new Date().toISOString(),
+          };
+        }
+      }
+      
+      if (!data) {
         throw new Error(`Failed to load page content for ${slug}`);
       }
       
-      const data: PageContent = {
-        id: page.id,
-        pageSlug: page.pageSlug,
-        content: page.content,
-        status: page.status || 'published',
-        publishedAt: page.publishedAt,
-        version: 1,
-        createdAt: page.createdAt || new Date().toISOString(),
-        updatedAt: page.updatedAt || new Date().toISOString(),
-      };
-      
       cache.set(slug, data);
-      
       return data;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load page content');
@@ -70,30 +89,40 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(true);
       setError(null);
       
-      // Update mock data
-      const page = getPageBySlug(slug);
-      if (!page) {
-        throw new Error(`Page not found: ${slug}`);
-      }
-
-      // Update the page content
-      page.content = content;
-      page.updatedAt = new Date().toISOString();
+      let success = false;
       
-      // Update cache
-      if (cache.has(slug)) {
+      // Try Phase 4 CMS API first
+      try {
+        success = await cmsService.updateLegacyPageContent(slug, content);
+      } catch (apiError) {
+        console.warn(`CMS API update failed for ${slug}, falling back to mock data:`, apiError);
+        
+        // Fallback to mock data update
+        const page = getPageBySlug(slug);
+        if (!page) {
+          throw new Error(`Page not found: ${slug}`);
+        }
+
+        // Update the page content
+        page.content = content;
+        page.updatedAt = new Date().toISOString();
+        
+        // Also update localStorage for persistence
+        localStorage.setItem(`page-content-${slug}`, JSON.stringify(page));
+        success = true;
+      }
+      
+      // Update cache on success
+      if (success && cache.has(slug)) {
         const cachedPage = cache.get(slug)!;
         cache.set(slug, {
           ...cachedPage,
-          content: page.content,
-          updatedAt: page.updatedAt
+          content: content,
+          updatedAt: new Date().toISOString()
         });
       }
       
-      // Also update localStorage for persistence
-      localStorage.setItem(`page-content-${slug}`, JSON.stringify(page));
-      
-      return true;
+      return success;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to update page content');
       setError(error);

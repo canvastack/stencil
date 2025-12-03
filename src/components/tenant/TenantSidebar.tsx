@@ -30,7 +30,8 @@ import {
   LogOut,
   FileText as Quote,
   Factory,
-  Shield
+  Shield,
+  Edit3
 } from 'lucide-react';
 
 interface MenuItem {
@@ -157,6 +158,16 @@ const menuItems: MenuItem[] = [
       { title: 'Vendor Feedback', path: '/admin/reviews/vendor' },
       { title: 'Rating Management', path: '/admin/reviews/rating' },
       { title: 'Review Analytics', path: '/admin/reviews/analytics' }
+    ]
+  },
+  {
+    title: 'Content Management',
+    icon: Edit3,
+    children: [
+      { title: 'Home Page', path: '/admin/pages/home' },
+      { title: 'About Page', path: '/admin/pages/about' },
+      { title: 'Contact Page', path: '/admin/pages/contact' },
+      { title: 'FAQ Page', path: '/admin/pages/faq' }
     ]
   },
   {

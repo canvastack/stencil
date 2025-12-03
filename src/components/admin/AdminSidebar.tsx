@@ -78,10 +78,10 @@ const menuItems: MenuItem[] = [
     icon: FileText,
     visibleFor: 'tenant',
     children: [
-      { title: 'Home Page', path: '/admin/content/home' },
-      { title: 'About Page', path: '/admin/content/about' },
-      { title: 'Contact Page', path: '/admin/content/contact' },
-      { title: 'FAQ Page', path: '/admin/content/faq' },
+      { title: 'Home Page', path: '/admin/pages/home' },
+      { title: 'About Page', path: '/admin/pages/about' },
+      { title: 'Contact Page', path: '/admin/pages/contact' },
+      { title: 'FAQ Page', path: '/admin/pages/faq' },
     ],
   },
   {

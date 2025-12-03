@@ -12,13 +12,23 @@ import { toast } from "sonner";
 import MapPicker from "@/components/admin/MapPicker";
 
 export default function PageContact() {
-  const { content, loading } = usePageContent("contact");
+  const { content, loading, updatePageContent } = usePageContent("contact");
   const [formData, setFormData] = useState(content?.content || {});
   const [hasChanges, setHasChanges] = useState(false);
 
-  const handleSave = () => {
-    toast.success("Contact page content saved successfully!");
-    setHasChanges(false);
+  const handleSave = async () => {
+    try {
+      const success = await updatePageContent("contact", formData);
+      if (success) {
+        toast.success("Contact page content saved successfully!");
+        setHasChanges(false);
+      } else {
+        toast.error("Failed to save changes");
+      }
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast.error("An error occurred while saving");
+    }
   };
 
   const handleReset = () => {

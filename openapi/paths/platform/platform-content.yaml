@@ -1,0 +1,851 @@
+openapi: 3.1.0
+info:
+  title: Platform Content Management API Paths
+  version: 1.0.0
+
+paths:
+  # ================== PLATFORM PAGES ENDPOINTS ==================
+  
+  /api/v1/platform/content/pages:
+    get:
+      tags:
+        - Platform Content Management
+      summary: List Platform Pages
+      description: |
+        Retrieve a paginated list of platform pages. Platform administrators can view and manage
+        global content that affects all tenants.
+        
+        **Authentication**: Requires Platform Admin authentication
+        **Authorization**: Platform admin role required
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: Filter by page status
+          required: false
+          schema:
+            type: string
+            enum: [draft, published, archived]
+          example: published
+        - name: language
+          in: query
+          description: Filter by language code
+          required: false
+          schema:
+            type: string
+            pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+          example: en
+        - name: search
+          in: query
+          description: Search in title and content
+          required: false
+          schema:
+            type: string
+            minLength: 2
+          example: homepage
+        - name: template
+          in: query
+          description: Filter by template type
+          required: false
+          schema:
+            type: string
+          example: homepage
+        - name: is_homepage
+          in: query
+          description: Filter homepage pages
+          required: false
+          schema:
+            type: boolean
+          example: true
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          description: Items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: sort
+          in: query
+          description: Sort field
+          required: false
+          schema:
+            type: string
+            enum: [created_at, updated_at, title, sort_order]
+            default: sort_order
+          example: sort_order
+        - name: order
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          example: asc
+      responses:
+        '200':
+          description: Platform pages retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPagesResponse'
+              example:
+                success: true
+                data:
+                  - id: 1
+                    uuid: "550e8400-e29b-41d4-a716-446655440001"
+                    title: "Platform Homepage"
+                    slug: "home"
+                    description: "Main platform homepage content"
+                    content:
+                      hero:
+                        title: "Welcome to Stencil Platform"
+                        subtitle: "Enterprise Multi-Tenant CMS"
+                      features:
+                        - title: "Multi-Tenant Architecture"
+                          description: "Complete isolation"
+                    template: "platform-homepage"
+                    status: "published"
+                    is_homepage: true
+                    sort_order: 1
+                    language: "en"
+                    created_by: 1
+                    created_at: "2025-12-03T14:00:00Z"
+                    updated_at: "2025-12-03T15:30:00Z"
+                meta:
+                  current_page: 1
+                  last_page: 1
+                  per_page: 20
+                  total: 1
+                  timestamp: "2025-12-03T15:30:00Z"
+                  request_id: "req_platform_123456"
+        '401':
+          description: Unauthorized - Invalid or missing authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+    post:
+      tags:
+        - Platform Content Management
+      summary: Create Platform Page
+      description: |
+        Create a new platform page. This content will be globally available and managed
+        by platform administrators.
+        
+        **Authentication**: Requires Platform Admin authentication
+        **Authorization**: Platform admin role with content creation permissions
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlatformPageRequest'
+            example:
+              title: "About Our Platform"
+              slug: "about"
+              description: "Learn about our platform mission and values"
+              content:
+                hero:
+                  title: "About Stencil Platform"
+                  subtitle: "Empowering businesses with multi-tenant solutions"
+                sections:
+                  - type: "text"
+                    title: "Our Mission"
+                    content: "We provide enterprise-grade multi-tenant CMS solutions..."
+              template: "about-page"
+              meta_data:
+                seo:
+                  title: "About Stencil Platform | Enterprise CMS"
+                  description: "Learn about our mission to deliver powerful multi-tenant solutions"
+              status: "draft"
+              language: "en"
+      responses:
+        '201':
+          description: Platform page created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /api/v1/platform/content/pages/{uuid}:
+    get:
+      tags:
+        - Platform Content Management
+      summary: Get Platform Page by UUID
+      description: |
+        Retrieve a specific platform page by its UUID, including version history
+        and related content blocks.
+        
+        **Authentication**: Requires Platform Admin authentication
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Platform page UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        - name: include_versions
+          in: query
+          description: Include version history
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: true
+      responses:
+        '200':
+          description: Platform page retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPageResponse'
+        '404':
+          description: Platform page not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Platform Content Management
+      summary: Update Platform Page
+      description: |
+        Update an existing platform page. Optionally creates a new version
+        for change tracking and rollback capabilities.
+        
+        **Authentication**: Requires Platform Admin authentication
+        **Authorization**: Platform admin role with content edit permissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Platform page UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePlatformPageRequest'
+            example:
+              title: "About Our Platform - Updated"
+              content:
+                hero:
+                  title: "About Stencil Platform"
+                  subtitle: "Leading the future of multi-tenant CMS"
+                sections:
+                  - type: "text"
+                    title: "Our Mission"
+                    content: "Updated mission statement..."
+                  - type: "features"
+                    title: "What We Offer"
+                    features:
+                      - title: "Enterprise Security"
+                        description: "Bank-level security for all tenants"
+              status: "published"
+              create_version: true
+              change_description: "Updated hero section and added new features section"
+      responses:
+        '200':
+          description: Platform page updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPageResponse'
+        '404':
+          description: Platform page not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+    delete:
+      tags:
+        - Platform Content Management
+      summary: Delete Platform Page
+      description: |
+        Delete a platform page. This action is irreversible and will affect
+        all platform instances globally.
+        
+        **Authentication**: Requires Platform Admin authentication
+        **Authorization**: Platform admin role with content deletion permissions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Platform page UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '204':
+          description: Platform page deleted successfully
+        '404':
+          description: Platform page not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - Cannot delete page with dependencies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/platform/content/pages/{uuid}/versions:
+    get:
+      tags:
+        - Platform Content Management
+      summary: Get Platform Page Versions
+      description: |
+        Retrieve version history for a specific platform page, including
+        change descriptions and authorship information.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Platform page UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        - name: limit
+          in: query
+          description: Maximum versions to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+          example: 10
+      responses:
+        '200':
+          description: Page versions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlatformPageVersion'
+
+    post:
+      tags:
+        - Platform Content Management
+      summary: Create Platform Page Version
+      description: |
+        Create a new version of the platform page with current content.
+        Useful for creating snapshots before major changes.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Platform page UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                change_description:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+                  description: "Description of changes"
+                  example: "Backup before major homepage redesign"
+      responses:
+        '201':
+          description: Version created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PlatformPageVersion'
+
+  /api/v1/platform/content/pages/{uuid}/versions/{version_id}/restore:
+    post:
+      tags:
+        - Platform Content Management
+      summary: Restore Platform Page Version
+      description: |
+        Restore a platform page to a previous version. This creates a new version
+        with the restored content while preserving history.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          description: Platform page UUID
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440001"
+        - name: version_id
+          in: path
+          required: true
+          description: Version ID to restore
+          schema:
+            type: integer
+            format: int64
+          example: 3
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                change_description:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+                  description: "Reason for restoration"
+                  example: "Restored to version 3 due to content issues"
+      responses:
+        '200':
+          description: Version restored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPageResponse'
+
+  # ================== PLATFORM CONTENT BLOCKS ENDPOINTS ==================
+  
+  /api/v1/platform/content/blocks:
+    get:
+      tags:
+        - Platform Content Management
+      summary: List Platform Content Blocks
+      description: |
+        Retrieve available content blocks for platform pages and tenant templates.
+        These blocks define reusable components with structured schemas.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          description: Filter by block category
+          required: false
+          schema:
+            type: string
+          example: hero
+        - name: is_template
+          in: query
+          description: Filter template blocks available to tenants
+          required: false
+          schema:
+            type: boolean
+          example: true
+        - name: is_active
+          in: query
+          description: Filter active blocks only
+          required: false
+          schema:
+            type: boolean
+            default: true
+          example: true
+      responses:
+        '200':
+          description: Content blocks retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformContentBlocksResponse'
+
+    post:
+      tags:
+        - Platform Content Management
+      summary: Create Platform Content Block
+      description: |
+        Create a new reusable content block with JSON schema definition.
+        Can be made available as templates for tenant customization.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlatformContentBlockRequest'
+      responses:
+        '201':
+          description: Content block created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PlatformContentBlock'
+
+  /api/v1/platform/content/blocks/{identifier}:
+    get:
+      tags:
+        - Platform Content Management
+      summary: Get Platform Content Block
+      description: Retrieve a specific content block by its identifier
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          description: Content block identifier
+          schema:
+            type: string
+          example: "hero-section-v1"
+      responses:
+        '200':
+          description: Content block retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PlatformContentBlock'
+
+    put:
+      tags:
+        - Platform Content Management
+      summary: Update Platform Content Block
+      description: Update an existing content block definition
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          description: Content block identifier
+          schema:
+            type: string
+          example: "hero-section-v1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Hero Section Updated"
+                description:
+                  type: string
+                  example: "Updated hero section with enhanced features"
+                schema:
+                  type: object
+                  additionalProperties: true
+                default_content:
+                  type: object
+                  additionalProperties: true
+                is_template:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Content block updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PlatformContentBlock'
+
+    delete:
+      tags:
+        - Platform Content Management
+      summary: Delete Platform Content Block
+      description: Delete a content block (soft delete to preserve references)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: identifier
+          in: path
+          required: true
+          description: Content block identifier
+          schema:
+            type: string
+          example: "hero-section-v1"
+      responses:
+        '204':
+          description: Content block deleted successfully
+
+  # ================== SPECIAL PLATFORM ENDPOINTS ==================
+  
+  /api/v1/platform/content/pages/slug/{slug}:
+    get:
+      tags:
+        - Platform Content Management
+      summary: Get Platform Page by Slug
+      description: |
+        Retrieve a platform page by its URL slug. Useful for frontend
+        rendering and public content display.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Platform page slug
+          schema:
+            type: string
+            pattern: '^[a-z0-9-]+$'
+          example: "home"
+        - name: language
+          in: query
+          description: Language code for localized content
+          required: false
+          schema:
+            type: string
+            default: "en"
+          example: "en"
+      responses:
+        '200':
+          description: Platform page retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPageResponse'
+        '404':
+          description: Platform page not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/platform/content/homepage:
+    get:
+      tags:
+        - Platform Content Management
+      summary: Get Platform Homepage
+      description: Retrieve the current platform homepage content
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: language
+          in: query
+          description: Language code
+          required: false
+          schema:
+            type: string
+            default: "en"
+          example: "en"
+      responses:
+        '200':
+          description: Platform homepage retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPageResponse'
+
+    put:
+      tags:
+        - Platform Content Management
+      summary: Set Platform Homepage
+      description: |
+        Set a specific platform page as the homepage. Only one page
+        can be the homepage at a time.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page_uuid:
+                  type: string
+                  format: uuid
+                  description: "UUID of page to set as homepage"
+                  example: "550e8400-e29b-41d4-a716-446655440001"
+              required:
+                - page_uuid
+      responses:
+        '200':
+          description: Platform homepage updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformPageResponse'
+
+components:
+  # Security schemes
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token for platform admin authentication.
+        Header format: `Authorization: Bearer <jwt_token>`
+        
+  # Error response schemas  
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "PLATFORM_PAGE_NOT_FOUND"
+            message:
+              type: string
+              example: "The requested platform page was not found"
+        meta:
+          type: object
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+              example: "2025-12-03T15:30:00Z"
+            request_id:
+              type: string
+              example: "req_platform_123456"
+    
+    ValidationErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              example: "The given data was invalid"
+            details:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+              example:
+                title: ["The title field is required"]
+                content: ["The content field must be valid JSON"]

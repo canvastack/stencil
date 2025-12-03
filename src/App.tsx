@@ -162,6 +162,10 @@ function App() {
                   <Route path="licenses" element={<Suspense fallback={<LoadingFallback />}><LicenseManagement /></Suspense>} />
                   <Route path="domains" element={<div className="p-6">Domains - Coming Soon</div>} />
                   <Route path="analytics" element={<Suspense fallback={<LoadingFallback />}><PlatformAnalytics /></Suspense>} />
+                  <Route path="content/home" element={<Suspense fallback={<LoadingFallback />}><PageHome /></Suspense>} />
+                  <Route path="content/about" element={<Suspense fallback={<LoadingFallback />}><PageAbout /></Suspense>} />
+                  <Route path="content/contact" element={<Suspense fallback={<LoadingFallback />}><PageContact /></Suspense>} />
+                  <Route path="content/faq" element={<Suspense fallback={<LoadingFallback />}><PageFAQ /></Suspense>} />
                   <Route path="system" element={<div className="p-6">System - Coming Soon</div>} />
                   <Route path="activity" element={<div className="p-6">Activity Monitor - Coming Soon</div>} />
                   <Route path="settings" element={<div className="p-6">Settings - Coming Soon</div>} />
@@ -175,10 +179,10 @@ function App() {
                   </TenantRouteGuard>
                 }>
                   <Route index element={<Dashboard />} />
-                  <Route path="content/home" element={<Suspense fallback={<LoadingFallback />}><PageHome /></Suspense>} />
-                  <Route path="content/about" element={<Suspense fallback={<LoadingFallback />}><PageAbout /></Suspense>} />
-                  <Route path="content/contact" element={<Suspense fallback={<LoadingFallback />}><PageContact /></Suspense>} />
-                  <Route path="content/faq" element={<Suspense fallback={<LoadingFallback />}><PageFAQ /></Suspense>} />
+                  <Route path="pages/home" element={<Suspense fallback={<LoadingFallback />}><PageHome /></Suspense>} />
+                  <Route path="pages/about" element={<Suspense fallback={<LoadingFallback />}><PageAbout /></Suspense>} />
+                  <Route path="pages/contact" element={<Suspense fallback={<LoadingFallback />}><PageContact /></Suspense>} />
+                  <Route path="pages/faq" element={<Suspense fallback={<LoadingFallback />}><PageFAQ /></Suspense>} />
                   <Route path="products" element={<Suspense fallback={<LoadingFallback />}><ProductList /></Suspense>} />
                   <Route path="products/new" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
                   <Route path="products/:id/edit" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />

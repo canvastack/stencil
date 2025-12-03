@@ -10,13 +10,23 @@ import { Save, Eye, RotateCcw, Plus, Trash, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PageFAQ() {
-  const { content, loading } = usePageContent("faq");
+  const { content, loading, updatePageContent } = usePageContent("faq");
   const [formData, setFormData] = useState(content?.content || {});
   const [hasChanges, setHasChanges] = useState(false);
 
-  const handleSave = () => {
-    toast.success("FAQ page content saved successfully!");
-    setHasChanges(false);
+  const handleSave = async () => {
+    try {
+      const success = await updatePageContent("faq", formData);
+      if (success) {
+        toast.success("FAQ page content saved successfully!");
+        setHasChanges(false);
+      } else {
+        toast.error("Failed to save changes");
+      }
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast.error("An error occurred while saving");
+    }
   };
 
   const handleReset = () => {

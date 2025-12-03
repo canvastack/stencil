@@ -27,7 +27,8 @@ import {
   Monitor,
   ChevronDown,
   ChevronRight,
-  LogOut
+  LogOut,
+  Edit3
 } from 'lucide-react';
 
 interface MenuItem {
@@ -115,6 +116,16 @@ const menuItems: MenuItem[] = [
       { title: 'A/B Testing', path: '/platform/features/ab-testing' },
       { title: 'Feature Usage Analytics', path: '/platform/features/analytics' },
       { title: 'Feedback Management', path: '/platform/features/feedback' }
+    ]
+  },
+  {
+    title: 'Content Management',
+    icon: Edit3,
+    children: [
+      { title: 'Home Page', path: '/platform/content/home' },
+      { title: 'About Page', path: '/platform/content/about' },
+      { title: 'Contact Page', path: '/platform/content/contact' },
+      { title: 'FAQ Page', path: '/platform/content/faq' }
     ]
   },
   {

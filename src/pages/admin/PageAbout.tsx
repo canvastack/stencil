@@ -11,13 +11,23 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export default function PageAbout() {
-  const { content, loading } = usePageContent("about");
+  const { content, loading, updatePageContent } = usePageContent("about");
   const [formData, setFormData] = useState(content?.content || {});
   const [hasChanges, setHasChanges] = useState(false);
 
-  const handleSave = () => {
-    toast.success("About page content saved successfully!");
-    setHasChanges(false);
+  const handleSave = async () => {
+    try {
+      const success = await updatePageContent("about", formData);
+      if (success) {
+        toast.success("About page content saved successfully!");
+        setHasChanges(false);
+      } else {
+        toast.error("Failed to save changes");
+      }
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast.error("An error occurred while saving");
+    }
   };
 
   const handleReset = () => {
