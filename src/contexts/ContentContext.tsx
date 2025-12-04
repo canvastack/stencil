@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { getPageBySlug } from '@/services/mock/pages';
+import { useGlobalContext } from '@/contexts/GlobalContext';
+import { anonymousApiClient } from '@/services/api/anonymousApiClient';
+import { tenantApiClient } from '@/services/api/tenantApiClient';
+import { platformApiClient } from '@/services/api/platformApiClient';
 
 interface PageContent {
   id: string;
@@ -26,82 +29,107 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [cache] = useState<Map<string, PageContent>>(new Map());
+  const globalContext = useGlobalContext();
 
   const getPageContent = useCallback(async (slug: string): Promise<PageContent | null> => {
-    if (cache.has(slug)) {
-      return cache.get(slug)!;
+    const cacheKey = `${globalContext.userType}-${slug}`;
+    
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey)!;
     }
 
     try {
       setLoading(true);
       setError(null);
       
-      const page = getPageBySlug(slug);
+      let response;
       
-      if (!page) {
+      // Use context-aware API client
+      if (globalContext.userType === 'anonymous') {
+        const anonymousResponse = await anonymousApiClient.getPlatformContent('pages', slug);
+        // Anonymous client returns {data: actualContent, success: boolean, message?: string}
+        if (!anonymousResponse.success || !anonymousResponse.data) {
+          throw new Error(`Failed to load page content for ${slug}`);
+        }
+        response = { data: anonymousResponse.data };
+      } else if (globalContext.userType === 'platform') {
+        response = await platformApiClient.get(`/platform/pages/${slug}`);
+      } else if (globalContext.userType === 'tenant') {
+        response = await tenantApiClient.get(`/tenant/pages/${slug}`);
+      } else {
+        throw new Error('Unknown user context');
+      }
+      
+      if (!response.data) {
         throw new Error(`Failed to load page content for ${slug}`);
       }
       
+      const pageData = response.data;
       const data: PageContent = {
-        id: page.id,
-        pageSlug: page.pageSlug,
-        content: page.content,
-        status: page.status || 'published',
-        publishedAt: page.publishedAt,
-        version: 1,
-        createdAt: page.createdAt || new Date().toISOString(),
-        updatedAt: page.updatedAt || new Date().toISOString(),
+        id: pageData.id || pageData.uuid,
+        pageSlug: slug,
+        content: pageData.content || pageData,
+        status: pageData.status || 'published',
+        publishedAt: pageData.published_at,
+        version: pageData.version || 1,
+        createdAt: pageData.created_at || new Date().toISOString(),
+        updatedAt: pageData.updated_at || new Date().toISOString(),
       };
       
-      cache.set(slug, data);
+      cache.set(cacheKey, data);
       
       return data;
     } catch (err) {
+      console.error(`ContentProvider: Failed to load page content for ${slug}:`, err);
       const error = err instanceof Error ? err : new Error('Failed to load page content');
       setError(error);
       return null;
     } finally {
       setLoading(false);
     }
-  }, [cache]);
+  }, [cache, globalContext.userType]);
 
   const handleUpdatePageContent = useCallback(async (slug: string, content: Record<string, any>): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
       
-      // Update mock data
-      const page = getPageBySlug(slug);
-      if (!page) {
-        throw new Error(`Page not found: ${slug}`);
+      let response;
+      
+      // Use context-aware API client for updates
+      if (globalContext.userType === 'platform') {
+        response = await platformApiClient.put(`/platform/pages/${slug}`, { content });
+      } else if (globalContext.userType === 'tenant') {
+        response = await tenantApiClient.put(`/tenant/pages/${slug}`, { content });
+      } else {
+        throw new Error('Anonymous users cannot update content');
       }
-
-      // Update the page content
-      page.content = content;
-      page.updatedAt = new Date().toISOString();
+      
+      if (!response.success) {
+        throw new Error('Failed to update page content');
+      }
       
       // Update cache
-      if (cache.has(slug)) {
-        const cachedPage = cache.get(slug)!;
-        cache.set(slug, {
+      const cacheKey = `${globalContext.userType}-${slug}`;
+      if (cache.has(cacheKey)) {
+        const cachedPage = cache.get(cacheKey)!;
+        cache.set(cacheKey, {
           ...cachedPage,
-          content: page.content,
-          updatedAt: page.updatedAt
+          content: content,
+          updatedAt: new Date().toISOString()
         });
       }
       
-      // Also update localStorage for persistence
-      localStorage.setItem(`page-content-${slug}`, JSON.stringify(page));
-      
       return true;
     } catch (err) {
+      console.error(`ContentProvider: Failed to update page content for ${slug}:`, err);
       const error = err instanceof Error ? err : new Error('Failed to update page content');
       setError(error);
       return false;
     } finally {
       setLoading(false);
     }
-  }, [cache]);
+  }, [cache, globalContext.userType]);
 
   return (
     <ContentContext.Provider value={{ getPageContent, updatePageContent: handleUpdatePageContent, loading, error, cache }}>

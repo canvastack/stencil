@@ -27,7 +27,16 @@ import {
   Monitor,
   ChevronDown,
   ChevronRight,
-  LogOut
+  LogOut,
+  Layout,
+  LayoutDashboard,
+  Palette,
+  Box,
+  UserCog,
+  Languages,
+  Image,
+  Zap,
+  Book
 } from 'lucide-react';
 
 interface MenuItem {
@@ -41,6 +50,50 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  {
+    title: 'Dashboard',
+    icon: LayoutDashboard,
+    path: '/platform/dashboard'
+  },
+  {
+    title: 'Content Management',
+    icon: Layout,
+    children: [
+      { title: 'Platform Home Page', path: '/platform/content/home' },
+      { title: 'Platform About Page', path: '/platform/content/about' },
+      { title: 'Platform Contact Page', path: '/platform/content/contact' },
+      { title: 'Platform FAQ Page', path: '/platform/content/faq' }
+    ]
+  },
+  {
+    title: 'Appearance',
+    icon: Palette,
+    children: [
+      { title: 'Platform Theme Manager', path: '/platform/appearance/themes' },
+      { title: 'Platform Branding', path: '/platform/appearance/branding' }
+    ]
+  },
+  {
+    title: 'User Management',
+    icon: UserCog,
+    children: [
+      { title: 'Platform Users', path: '/platform/users' },
+      { title: 'Platform Admins', path: '/platform/users/admins' },
+      { title: 'User Roles', path: '/platform/users/roles' }
+    ]
+  },
+  {
+    title: 'Settings',
+    icon: Settings,
+    children: [
+      { title: 'Platform Settings', path: '/platform/settings' },
+      { title: 'System Configuration', path: '/platform/settings/system' },
+      { title: 'Security Settings', path: '/platform/settings/security' },
+      { title: 'Platform Performance', path: '/platform/settings/performance' },
+      { title: 'Platform Activity Log', path: '/platform/activity' },
+      { title: 'API Management', path: '/platform/settings/api' }
+    ]
+  },
   {
     title: 'Tenant Management',
     icon: Building2,
@@ -143,7 +196,7 @@ export const PlatformSidebar = () => {
       setExpandedMenus(JSON.parse(savedExpandedMenus));
     } else {
       // Default expanded menus
-      setExpandedMenus(['Tenant Management']);
+      setExpandedMenus(['Content Management']);
     }
   }, []);
 

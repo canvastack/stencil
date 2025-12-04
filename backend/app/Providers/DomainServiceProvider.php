@@ -66,7 +66,7 @@ class DomainServiceProvider extends ServiceProvider
     {
         // Tenant Domain
         $this->app->bind(TenantRepositoryInterface::class, function ($app) {
-            return new TenantEloquentRepository(new TenantEloquentModel());
+            return new \App\Infrastructure\Persistence\Repositories\TenantEloquentRepository(new TenantEloquentModel());
         });
 
         $this->app->bind(DomainMappingRepositoryInterface::class, function ($app) {
@@ -75,20 +75,20 @@ class DomainServiceProvider extends ServiceProvider
 
         // Customer Domain
         $this->app->bind(CustomerRepositoryInterface::class, function ($app) {
-            return new CustomerEloquentRepository(new Customer());
+            return new CustomerEloquentRepository(new CustomerEloquentModel());
         });
 
         // Product Domain
         $this->app->bind(ProductRepositoryInterface::class, function ($app) {
-            return new ProductEloquentRepository(new Product());
+            return new ProductEloquentRepository(new ProductEloquentModel());
         });
 
         $this->app->bind(ProductCategoryRepositoryInterface::class, function ($app) {
-            return new ProductCategoryEloquentRepository(new ProductCategory());
+            return new ProductCategoryEloquentRepository(new \App\Infrastructure\Persistence\Eloquent\Models\ProductCategory());
         });
 
         $this->app->bind(ProductVariantRepositoryInterface::class, function ($app) {
-            return new ProductVariantEloquentRepository(new ProductVariant());
+            return new ProductVariantEloquentRepository(new \App\Infrastructure\Persistence\Eloquent\Models\ProductVariant());
         });
 
         // Order Domain

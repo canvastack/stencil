@@ -62,7 +62,7 @@ interface ProductSettings {
   };
 }
 
-import { productSettingsService } from "@/services/mock/productSettings";
+import { productSettingsService } from "@/services/api/productSettings";
 
 export default function ProductSettings() {
   const { toast } = useToast();

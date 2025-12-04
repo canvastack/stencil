@@ -67,14 +67,17 @@ import { useProducts } from '@/hooks/useProducts';
 import { useReviews } from '@/hooks/useReviews.tsx';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Product } from "@/types/product";
-import { getPageContent } from "@/services/mock/pages";
+import { usePageContent } from "@/hooks/usePageContent";
 import { RatingStars } from "@/components/ui/rating-stars";
+import { useGlobalContext } from "@/contexts/GlobalContext";
+import { PlatformProductsView } from "@/components/products/PlatformProductsView";
 
 
 
 const Products = () => {
+  const { userType } = useGlobalContext();
   const { products: cmsProducts, loading: loadingProducts } = useProducts();
-  const { reviews: allReviews, loading: loadingReviews } = useReviews();
+  const { reviews: allReviews, loading: loadingReviews } = useReviews(undefined, userType);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -87,7 +90,7 @@ const Products = () => {
   const [typingTextIndex, setTypingTextIndex] = useState(0);
   const { PRODUCTS_PER_PAGE } = APP_CONFIG;
 
-  const cmsPageContent = getPageContent('products');
+  const { pageContent: cmsPageContent, loading: pageContentLoading } = usePageContent();
 
   const defaultPageContent: PageContent = {
     hero: {
@@ -110,15 +113,55 @@ const Products = () => {
     ]
   };
 
-  const pageContent = (cmsPageContent || defaultPageContent) as PageContent;
+  // Fix: Ensure pageContent always has proper structure
+  const pageContent = {
+    ...defaultPageContent,
+    ...(cmsPageContent?.content || {}),
+    hero: {
+      ...defaultPageContent.hero,
+      ...(cmsPageContent?.content?.hero || {})
+    },
+    informationSection: {
+      ...defaultPageContent.informationSection,
+      ...(cmsPageContent?.content?.informationSection || {})
+    }
+  };
   const typingTexts = pageContent.hero?.typingTexts || TYPING_TEXTS;
 
+  // Set up typing effect for all users - MOVED BEFORE CONDITIONAL RETURNS
   useEffect(() => {
     const interval = setInterval(() => {
       setTypingTextIndex((prev) => (prev + 1) % typingTexts.length);
     }, 4000);
     return () => clearInterval(interval);
   }, [typingTexts]);
+
+  // Reset pagination when filters change - MOVED BEFORE CONDITIONAL RETURNS
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedType, selectedCategory, minRating]);
+
+  // Show loading state while content is loading
+  if (pageContentLoading && !cmsPageContent) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Platform users get a different view focused on tenant management and analytics
+  if (userType === 'platform') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="pt-20 px-4 py-8">
+          <PlatformProductsView />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const allProducts: ExtendedProduct[] = cmsProducts;
 
@@ -177,10 +220,6 @@ const Products = () => {
   const indexOfLastProduct = currentPage * PRODUCTS_PER_PAGE;
   const indexOfFirstProduct = indexOfLastProduct - PRODUCTS_PER_PAGE;
   const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedType, selectedCategory, minRating]);
 
   return (
     <div className="min-h-screen bg-[#0f172a]">
@@ -542,7 +581,7 @@ const Products = () => {
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-12 animate-fade-in">
             <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-              {pageContent.informationSection.title.prefix} <span className="text-primary">{pageContent.informationSection.title.highlight}</span> {pageContent.informationSection.title.suffix}
+              {pageContent.informationSection?.title?.prefix} <span className="text-primary">{pageContent.informationSection?.title?.highlight}</span> {pageContent.informationSection?.title?.suffix}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {(pageContent.informationSection as any)?.subtitle}
@@ -550,7 +589,7 @@ const Products = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {(pageContent.informationSection.cards || []).map((card, i) => (
+            {(pageContent.informationSection?.cards || []).map((card, i) => (
               <Card
                 key={i}
                 className="group bg-card border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden animate-scale-in"

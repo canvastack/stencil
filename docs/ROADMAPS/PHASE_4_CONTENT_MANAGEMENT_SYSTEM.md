@@ -1,58 +1,354 @@
-# Phase 4: Content Management System
-**Duration**: 4 Weeks (Weeks 13-16)  
-**Priority**: HIGH  
+# Phase 4: Content Management System & Separation of Concerns
+**Duration**: 5 Weeks (Weeks 13-17)  
+**Priority**: CRITICAL  
 **Prerequisites**: ✅ Phase 4A-4C (Complete Hexagonal Architecture + DDD + CQRS + Business Logic) - **MUST BE 100% COMPLETE**
 
 ## 🎯 Phase Overview
 
-This phase implements a comprehensive Content Management System (CMS) following the **established Hexagonal Architecture + DDD + CQRS patterns** from Phase 4C. The CMS integrates seamlessly with existing **Order Management**, **Authentication Infrastructure**, and **Business Workflows** while maintaining strict **schema-per-tenant isolation**.
+This phase implements a comprehensive Content Management System (CMS) with **strict Platform vs Tenant separation** following the **established Hexagonal Architecture + DDD + CQRS patterns** from Phase 4C. The CMS addresses critical **Separation of Concerns** issues while maintaining perfect **schema-per-tenant isolation**.
 
 **🏗️ ARCHITECTURE ALIGNMENT**: All implementations must follow the established **Use Cases → Command/Query Handlers → Application Services** pattern from Phase 4C, with no direct controller-to-model access.
 
+## 🚨 Critical Issues to Resolve
+
+### **Platform vs Tenant Content Separation**
+- **Platform Content**: Marketing pages, service promotion, platform documentation
+- **Tenant Content**: Business-specific pages, product showcases, customer information
+- **Default Behavior**: Anonymous users see platform content, authenticated users see tenant-scoped content
+- **Data Isolation**: Complete separation with zero cross-contamination
+
+### **Mock Data Elimination**
+- Replace all mock data services with real backend API integration
+- Implement proper context-aware data fetching (platform vs tenant)
+- Ensure data updates reflect correctly based on authenticated user context
+
 ### Key Deliverables
-- **Dynamic Page Content Management** with structured content blocks
+- **Dual-Context Content Management** (Platform + Tenant isolated content)
+- **Complete Mock Data Migration** to real backend APIs  
+- **Context-Aware Frontend Integration** with proper data scoping
 - **Media Library System** with tenant isolation and CDN integration
-- **Customer Review & Rating System** with moderation features
+- **User & Role Management** for both Platform and Tenant contexts
+- **Settings & Configuration Management** with proper inheritance
 - **SEO Management Tools** with meta optimization and analytics
-- **File Upload & Storage** with multiple storage providers
 - **Content Versioning** with rollback capabilities
 
-## 📋 Week-by-Week Breakdown
+## 🚨 CRITICAL DEVELOPMENT WARNINGS
 
-### Week 13: Dynamic Content Management Foundation
+### **Common Mistakes to AVOID:**
+❌ Forgetting tenant_id in queries  
+❌ Using integer IDs in APIs (use UUIDs)  
+❌ Direct database access in controllers (use repositories)  
+❌ Skipping tenant isolation tests  
+❌ Hardcoded configuration values  
+❌ Missing request validation  
+❌ Cross-tenant data leakage  
+❌ Modifying public frontpage structure/design  
+❌ Using emojis in code  
 
-#### Day 1-2: Page Content Models & Migration
-**⚠️ CRITICAL**: All models must follow **schema-per-tenant isolation** - NO `tenant_id` fields needed.
+### **Separation of Concerns Requirements:**
+✅ **Platform Admin**: Manages platform-wide marketing content, tenant management, billing, licensing  
+✅ **Tenant Admin**: Manages tenant-specific business content, products, orders, customers  
+✅ **Dual Content Management**: Both contexts need Content Management, Appearance, User Management, Settings  
+✅ **Context-Aware Data**: Anonymous users see platform content, authenticated users see tenant-scoped content  
+✅ **Zero Cross-Contamination**: Strict data isolation with proper tenant context switching  
 
+---
+
+## 📋 Week-by-Week Implementation Plan
+
+### Week 13: Platform vs Tenant Context Foundation & Mock Data Elimination
+
+#### Day 1-2: Critical Context Separation Infrastructure
+**⚠️ CRITICAL PRIORITY**: Fix fundamental context issues before content management
+
+**Tasks:**
+1. **Anonymous User Default Context**
+   - Implement context detection for anonymous users → always show Platform content
+   - Create `useContextDetection` hook for automatic platform/tenant routing
+   - Set up default content fallback system (platform content as default)
+
+2. **Complete Mock Data Audit & Migration Plan**
+   - Audit all `src/services/mock/` usage across frontend
+   - Create migration mapping: `MockService` → `Real API Endpoint`
+   - Implement context-aware API client (`platformApiClient` vs `tenantApiClient`)
+
+3. **Context-Aware Data Architecture**
+   - Create `ContextProvider` that wraps entire application
+   - Implement automatic context switching based on authentication state
+   - Add context validation middleware for all API calls
+
+#### Day 3-4: Platform & Tenant Dual Content Models
+**⚠️ CRITICAL**: Implement dual-context content system with perfect isolation
+
+**Tasks:**
+1. **Platform Content Models (Landlord Database)**
+   ```php
+   // File: database/migrations/landlord/create_platform_pages_table.php  
+   Schema::create('platform_pages', function (Blueprint $table) {
+       $table->id();
+       $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
+       $table->string('title');
+       $table->string('slug')->index();
+       $table->text('description')->nullable();
+       $table->json('content'); // Platform marketing content
+       $table->string('template')->default('default');
+       $table->json('meta_data')->nullable(); 
+       $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
+       $table->enum('page_type', ['home', 'about', 'contact', 'faq', 'services', 'pricing'])->default('home');
+       $table->boolean('is_homepage')->default(false);
+       $table->integer('sort_order')->default(0);
+       $table->string('language', 5)->default('en');
+       $table->datetime('published_at')->nullable();
+       $table->timestamps();
+       
+       $table->unique(['slug', 'language']);
+       $table->index(['status', 'page_type']);
+       $table->index(['is_homepage']);
+   });
+   ```
+
+2. **Tenant Content Models (Per-Tenant Schema)**
+   ```php
+   // File: database/migrations/tenant/create_tenant_pages_table.php  
+   Schema::create('pages', function (Blueprint $table) {
+       $table->id();
+       $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
+       $table->string('title');
+       $table->string('slug')->index();
+       $table->text('description')->nullable();
+       $table->json('content'); // Tenant business content
+       $table->string('template')->default('default');
+       $table->json('meta_data')->nullable();
+       $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
+       $table->enum('page_type', ['home', 'about', 'contact', 'faq', 'products', 'services'])->default('home');
+       $table->boolean('is_homepage')->default(false);
+       $table->integer('sort_order')->default(0);
+       $table->string('language', 5)->default('id');
+       $table->unsignedBigInteger('parent_id')->nullable();
+       $table->datetime('published_at')->nullable();
+       $table->timestamps();
+       
+       $table->foreign('parent_id')->references('id')->on('pages')->onDelete('cascade');
+       $table->unique(['slug', 'language']);
+       $table->index(['status', 'page_type']);
+       $table->index(['is_homepage']);
+   });
+   ```
+
+#### Day 5: Frontend Context-Aware Menu & Navigation System
+
+**Tasks:**
+1. **Implement Missing Menu Items in Tenant Sidebar**
+   - Add Content Management menu with dual-context support  
+   - Add Appearance menu (3D Manager, Themes)
+   - Add User Management menu (Users, Roles)
+   - Add Settings menu (General, Language, Media Library, Performance, Activity Log, Documentation)
+
+2. **Context-Aware Data Fetching**
+   - Create `useContentContext()` hook for automatic platform/tenant detection
+   - Implement smart API routing based on authentication context
+   - Add context validation for all content-related API calls
+
+### Week 14: Mock Data Elimination & Real API Integration
+
+#### Day 1-2: Complete Mock Data Services Audit & Migration
+**⚠️ CRITICAL**: Replace ALL mock data with real backend integration
+
+**Current Mock Services to Migrate:**
+1. `src/services/mock/contentService.ts` → Real Content API
+2. `src/services/mock/productService.ts` → Real Product API  
+3. `src/services/mock/orderService.ts` → Real Order API
+4. `src/services/mock/customerService.ts` → Real Customer API
+5. `src/services/mock/vendorService.ts` → Real Vendor API
+6. `src/services/mock/userService.ts` → Real User Management API
+7. `src/services/mock/settingsService.ts` → Real Settings API
+
+**Implementation Strategy:**
+- Phase out one service per day
+- Test with both Platform and Tenant contexts
+- Ensure zero data cross-contamination
+- Maintain backwards compatibility during transition
+
+#### Day 3-4: Context-Aware Frontend Pages Integration
+**Replace Mock Data in Critical Pages:**
+
+**Platform Pages:**
+- Platform Login/Dashboard
+- Platform Content Management pages
+- Platform User & Settings management
+
+**Tenant Pages:**  
+- Tenant Login/Dashboard
+- Tenant Commerce Management
+- Tenant Content/Settings management
+
+**Public Pages:**
+- Homepage (context-aware: platform content by default)
+- About/Contact/FAQ pages (context-aware routing)
+
+#### Day 5: Anonymous User Context & Default Content System
+**Tasks:**
+1. **Anonymous User Behavior Implementation**
+   - `http://localhost:5173/` → Always shows Platform content
+   - Implement automatic context detection middleware
+   - Create fallback system for missing platform content
+
+2. **Context Switching Logic**
+   - Authenticated Platform User → Platform admin content
+   - Authenticated Tenant User → Tenant-specific content  
+   - Anonymous User → Platform marketing content
+
+### Week 15: Content Management System Implementation
+
+#### Day 1-2: Platform Content Management Backend
+**Hexagonal Architecture Implementation:**
 ```php
-// File: database/migrations/tenant/create_pages_table.php  
-Schema::create('pages', function (Blueprint $table) {
-    $table->id();
-    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
-    $table->string('title');
-    $table->string('slug')->index();
-    $table->text('description')->nullable();
-    $table->json('content'); // Structured JSON content
-    $table->string('template')->default('default');
-    $table->json('meta_data')->nullable(); // SEO and custom meta
-    $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
-    $table->boolean('is_homepage')->default(false);
-    $table->integer('sort_order')->default(0);
-    $table->string('language', 5)->default('id');
-    $table->unsignedBigInteger('parent_id')->nullable();
-    $table->datetime('published_at')->nullable();
-    $table->timestamps();
-    
-    $table->foreign('parent_id')->references('id')->on('pages')->onDelete('cascade');
-    $table->unique(['tenant_id', 'slug', 'language']);
-    $table->index(['tenant_id', 'status']);
-    $table->index(['tenant_id', 'is_homepage']);
-});
+// Use Cases
+app/Application/Platform/Content/UseCases/
+├── CreatePlatformPageUseCase.php
+├── UpdatePlatformPageUseCase.php
+├── GetPlatformPagesQuery.php
+└── DeletePlatformPageUseCase.php
 
-// File: database/migrations/create_page_versions_table.php
-Schema::create('page_versions', function (Blueprint $table) {
-    $table->id();
-    $table->string('tenant_id')->index();
+// Domain Models  
+app/Domain/Platform/Content/Entities/PlatformPage.php
+app/Domain/Platform/Content/Repositories/PlatformPageRepositoryInterface.php
+
+// Infrastructure
+app/Infrastructure/Platform/Content/
+├── Repositories/EloquentPlatformPageRepository.php
+└── Controllers/PlatformContentController.php
+```
+
+#### Day 3-4: Tenant Content Management Backend
+**Tenant-Scoped Implementation:**
+```php
+// Use Cases (Tenant Context)
+app/Application/Tenant/Content/UseCases/
+├── CreateTenantPageUseCase.php  
+├── UpdateTenantPageUseCase.php
+├── GetTenantPagesQuery.php
+└── DeleteTenantPageUseCase.php
+
+// Domain Models (Tenant Schema)
+app/Domain/Tenant/Content/Entities/TenantPage.php
+app/Domain/Tenant/Content/Repositories/TenantPageRepositoryInterface.php
+
+// Infrastructure (Tenant-Scoped)
+app/Infrastructure/Tenant/Content/
+├── Repositories/EloquentTenantPageRepository.php  
+└── Controllers/TenantContentController.php
+```
+
+#### Day 5: Frontend Content Management Pages
+**Dual-Context Content Management:**
+- Platform Content Management interface (`/platform/content/`)
+- Tenant Content Management interface (`/admin/content/`)
+- Shared UI components with context-aware data binding
+
+### Week 16: User Management, Settings & Media System
+
+#### Day 1-2: Dual User Management System
+**Platform User Management:**
+- Platform Admin can manage all platform users
+- Global user directory and permissions
+
+**Tenant User Management:**  
+- Tenant Admin can manage tenant-specific users
+- Tenant-scoped roles and permissions
+- User invitation system with tenant context
+
+#### Day 3-4: Settings & Configuration Management
+**Platform Settings:**
+- Global platform configuration  
+- Marketing content settings
+- System-wide preferences
+
+**Tenant Settings:**
+- Business-specific configurations
+- Tenant branding and customization
+- Local preferences and integrations
+
+#### Day 5: Media Library & File Management
+**Context-Aware Media System:**
+- Platform media library (marketing assets)
+- Tenant media library (business assets)  
+- Perfect isolation with no cross-access
+- CDN integration with tenant-specific paths
+
+### Week 17: Testing, Optimization & Context Validation
+
+#### Day 1-2: Comprehensive Context Testing
+**Critical Test Cases:**
+1. Anonymous user always sees platform content
+2. Platform admin sees platform-scoped data only
+3. Tenant user sees tenant-scoped data only  
+4. Zero cross-tenant data leakage
+5. Proper context switching on authentication
+
+#### Day 3-4: Performance Optimization & Caching
+**Context-Aware Caching:**
+- Platform content caching strategy
+- Tenant-specific content caching
+- Context-aware cache invalidation
+- CDN configuration for dual contexts
+
+#### Day 5: Final Integration Testing & Documentation
+**Deliverables:**
+- Complete context separation validation
+- Performance benchmarks for both contexts
+- Updated API documentation
+- Integration test suite covering all scenarios
+
+---
+
+## 🎯 Success Criteria
+
+### **Technical Requirements:**
+✅ **Zero Cross-Contamination**: Perfect data isolation between platform and tenant contexts  
+✅ **Context-Aware Navigation**: Smart routing based on authentication state  
+✅ **Mock Data Elimination**: 100% real API integration across all pages  
+✅ **Dual Content Management**: Both platform and tenant can manage their respective content  
+✅ **Anonymous User Behavior**: Always defaults to platform content  
+
+### **Business Requirements:**
+✅ **Platform Marketing**: Platform can promote services independently  
+✅ **Tenant Business Pages**: Each tenant can customize their business presentation  
+✅ **Proper User Experience**: Seamless context switching without confusion  
+✅ **Data Security**: Tenant business data never accessible by other tenants or platform  
+✅ **Performance**: Sub-200ms response times for both contexts
+
+---
+
+## 🚨 PHASE COMPLETION CHECKLIST
+
+### **Context Separation:**
+- [ ] Anonymous users see platform content by default
+- [ ] Platform admin panel manages platform-specific content  
+- [ ] Tenant admin panel manages tenant-specific content
+- [ ] Zero cross-contamination in data access
+- [ ] Perfect authentication context switching
+
+### **Mock Data Migration:**
+- [ ] All `src/services/mock/*` services replaced with real APIs
+- [ ] Context-aware API client implementation  
+- [ ] Proper error handling for both contexts
+- [ ] Data consistency across platform and tenant contexts
+- [ ] Real-time updates working correctly
+
+### **Content Management:**
+- [ ] Platform content management fully functional
+- [ ] Tenant content management fully functional  
+- [ ] Content versioning and rollback capabilities
+- [ ] Media library with perfect tenant isolation
+- [ ] SEO management for both contexts
+
+### **User & Settings Management:**
+- [ ] Platform user management system
+- [ ] Tenant user management system
+- [ ] Role-based access control for both contexts
+- [ ] Settings management with proper inheritance  
+- [ ] Configuration isolation and security
     $table->unsignedBigInteger('page_id');
     $table->integer('version_number');
     $table->json('content');

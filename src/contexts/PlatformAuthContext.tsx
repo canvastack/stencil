@@ -94,6 +94,11 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
   }, [clearError, handleError]);
 
   const getCurrentAccount = useCallback(async () => {
+    // Don't make API calls if not authenticated
+    if (!authService.isAuthenticated()) {
+      return;
+    }
+
     try {
       setIsLoading(true);
       const response = await authService.getCurrentUser();

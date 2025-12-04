@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Settings } from '@/types/settings';
-import { settingsService } from '@/services/mock/settings';
+import { settingsService } from '@/services/api/settings';
 
 export const useSettings = () => {
   const [settings, setSettings] = useState<Settings | null>(null);

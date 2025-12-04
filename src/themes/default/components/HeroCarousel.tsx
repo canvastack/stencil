@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Pause, Play } from 'lucide-react';
 import type { HeroCarouselProps } from '@/core/engine/interfaces';
-import { usePageContent } from '@/contexts/ContentContext';
 import { resolveImageUrl } from '@/utils/imageUtils';
 
 // Default images sebagai fallback jika tidak ada data
@@ -12,9 +11,12 @@ const defaultHeroImages = [
   '/images/hero/default-3.jpg',
 ];
 
-const HeroCarousel: React.FC<HeroCarouselProps> = (props) => {
-  const { className } = props;
-  const { content } = usePageContent("home");
+interface ExtendedHeroCarouselProps extends HeroCarouselProps {
+  content?: any; // Content passed from parent
+}
+
+const HeroCarousel: React.FC<ExtendedHeroCarouselProps> = (props) => {
+  const { className, content } = props;
   
   const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
   const carouselImages = content?.content?.hero?.carousel?.images || defaultHeroImages;

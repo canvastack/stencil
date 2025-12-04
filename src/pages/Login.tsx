@@ -10,12 +10,14 @@ import Footer from '@/components/Footer';
 import { Building2, Store, Eye, EyeOff } from 'lucide-react';
 import { usePlatformAuth } from '@/contexts/PlatformAuthContext';
 import { useTenantAuth } from '@/contexts/TenantAuthContext';
+import { useGlobalContext } from '@/contexts/GlobalContext';
 import { authService, type AccountType } from '@/services/api/auth';
 
 const Login = () => {
   const navigate = useNavigate();
   const { isAuthenticated: isPlatformAuth, login: platformLogin } = usePlatformAuth();
   const { isAuthenticated: isTenantAuth, login: tenantLogin } = useTenantAuth();
+  const { switchContext, detectContext } = useGlobalContext();
   
   const [isPlatformMode, setIsPlatformMode] = useState(false);
   const [email, setEmail] = useState('');
@@ -25,10 +27,13 @@ const Login = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isPlatformAuth) {
-      navigate('/platform', { replace: true });
-    } else if (isTenantAuth) {
-      navigate('/admin', { replace: true });
+    // SECURITY FIX: Prevent redirect loops by checking current location
+    const currentPath = window.location.pathname;
+    
+    if (isPlatformAuth && !currentPath.startsWith('/platform')) {
+      navigate('/platform/dashboard', { replace: true });
+    } else if (isTenantAuth && !currentPath.startsWith('/admin')) {
+      navigate('/admin/dashboard', { replace: true });
     }
   }, [isPlatformAuth, isTenantAuth, navigate]);
 
@@ -52,9 +57,19 @@ const Login = () => {
 
     try {
       if (isPlatformMode) {
-        await platformLogin(email, password);
+        const result = await platformLogin(email, password);
+        // The GlobalContext will automatically detect and switch context
+        // via the useEffect in GlobalContextProvider
+        if (result) {
+          await detectContext();
+        }
       } else {
-        await tenantLogin(email, password, 'demo-etching');
+        const result = await tenantLogin(email, password, 'demo-etching');
+        // The GlobalContext will automatically detect and switch context
+        // via the useEffect in GlobalContextProvider
+        if (result) {
+          await detectContext();
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');

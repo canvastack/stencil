@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Settings as SettingsIcon, Globe, Bell, Shield, Database, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { settingsService } from '@/services/mock';
+import { settingsService } from '@/services/api/settings';
 import { Settings as SettingsType } from '@/types/settings';
 
 export default function Settings() {

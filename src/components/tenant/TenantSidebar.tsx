@@ -30,17 +30,20 @@ import {
   LogOut,
   FileText as Quote,
   Factory,
-  Shield
+  Shield,
+  Layout,
+  UserCog,
+  Languages,
+  Zap,
+  Activity,
+  Book
 } from 'lucide-react';
 
 interface MenuItem {
   title: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
   path?: string;
-  children?: {
-    title: string;
-    path: string;
-  }[];
+  children?: MenuItem[];
   requiredRoles?: string[];
 }
 
@@ -51,33 +54,99 @@ const menuItems: MenuItem[] = [
     path: '/admin',
   },
   {
-    title: 'Products',
-    icon: Package,
+    title: 'Commerce Management',
+    icon: Store,
     children: [
-      { title: 'Product Catalog', path: '/admin/products/catalog' },
-      { title: 'Product Categories', path: '/admin/products/categories' },
-      { title: 'Bulk Import/Export', path: '/admin/products/bulk' },
-      { title: 'Product Analytics', path: '/admin/products/analytics' }
-    ]
-  },
-  {
-    title: 'Vendors',
-    icon: Building,
-    children: [
-      { title: 'Vendor Directory', path: '/admin/vendors/directory' },
-      { title: 'Vendor Performance', path: '/admin/vendors/performance' },
-      { title: 'Contracts & Terms', path: '/admin/vendors/contracts' },
-      { title: 'Vendor Communications', path: '/admin/vendors/communications' }
-    ]
-  },
-  {
-    title: 'Customers',
-    icon: Users,
-    children: [
-      { title: 'Customer Database', path: '/admin/customers/database' },
-      { title: 'Customer Segments', path: '/admin/customers/segments' },
-      { title: 'Credit Management', path: '/admin/customers/credit' },
-      { title: 'Customer Portal Access', path: '/admin/customers/portal' }
+      {
+        title: 'Products',
+        icon: Package,
+        children: [
+          { title: 'Product Catalog', path: '/admin/products/catalog' },
+          { title: 'Product Categories', path: '/admin/products/categories' },
+          { title: 'Bulk Import/Export', path: '/admin/products/bulk' },
+          { title: 'Product Analytics', path: '/admin/products/analytics' }
+        ]
+      },
+      {
+        title: 'Vendors',
+        icon: Building,
+        children: [
+          { title: 'Vendor Directory', path: '/admin/vendors/directory' },
+          { title: 'Vendor Performance', path: '/admin/vendors/performance' },
+          { title: 'Contracts & Terms', path: '/admin/vendors/contracts' },
+          { title: 'Vendor Communications', path: '/admin/vendors/communications' }
+        ]
+      },
+      {
+        title: 'Customers',
+        icon: Users,
+        children: [
+          { title: 'Customer Database', path: '/admin/customers/database' },
+          { title: 'Customer Segments', path: '/admin/customers/segments' },
+          { title: 'Credit Management', path: '/admin/customers/credit' },
+          { title: 'Customer Portal Access', path: '/admin/customers/portal' }
+        ]
+      },
+      {
+        title: 'Orders',
+        icon: ShoppingCart,
+        children: [
+          { title: 'Order Management', path: '/admin/orders/management' },
+          { title: 'Order Tracking', path: '/admin/orders/tracking' },
+          { title: 'Bulk Orders', path: '/admin/orders/bulk' },
+          { title: 'Order Analytics', path: '/admin/orders/analytics' }
+        ]
+      },
+      {
+        title: 'Inventory',
+        icon: Warehouse,
+        children: [
+          { title: 'Stock Management', path: '/admin/inventory/stock' },
+          { title: 'Warehouse Locations', path: '/admin/inventory/locations' },
+          { title: 'Stock Alerts', path: '/admin/inventory/alerts' },
+          { title: 'Inventory Reports', path: '/admin/inventory/reports' }
+        ]
+      },
+      {
+        title: 'Shipping',
+        icon: Truck,
+        children: [
+          { title: 'Shipping Methods', path: '/admin/shipping/methods' },
+          { title: 'Carrier Management', path: '/admin/shipping/carriers' },
+          { title: 'Tracking Integration', path: '/admin/shipping/tracking' },
+          { title: 'Delivery Reports', path: '/admin/shipping/reports' }
+        ]
+      },
+      {
+        title: 'Payments',
+        icon: CreditCard,
+        children: [
+          { title: 'Payment Overview', path: '/admin/payments' },
+          { title: 'Payment Verification', path: '/admin/payments/verification' },
+          { title: 'Refunds & Disputes', path: '/admin/payments/refunds' },
+          { title: 'Payment Reports', path: '/admin/payments/reports' }
+        ]
+      },
+      {
+        title: 'Reviews',
+        icon: Star,
+        children: [
+          { title: 'Customer Reviews', path: '/admin/reviews/customer' },
+          { title: 'Vendor Feedback', path: '/admin/reviews/vendor' },
+          { title: 'Rating Management', path: '/admin/reviews/rating' },
+          { title: 'Review Analytics', path: '/admin/reviews/analytics' }
+        ]
+      },
+      {
+        title: 'Reports',
+        icon: BarChart3,
+        children: [
+          { title: 'Sales Reports', path: '/admin/reports/sales' },
+          { title: 'Performance Metrics', path: '/admin/reports/performance' },
+          { title: 'Financial Statements', path: '/admin/reports/financial' },
+          { title: 'Business Intelligence', path: '/admin/reports/bi' }
+        ]
+      }
     ]
   },
   {
@@ -89,16 +158,6 @@ const menuItems: MenuItem[] = [
     title: 'Invoices',
     icon: FileText,
     path: '/admin/invoices',
-  },
-  {
-    title: 'Payments',
-    icon: CreditCard,
-    children: [
-      { title: 'Payment Overview', path: '/admin/payments' },
-      { title: 'Payment Verification', path: '/admin/payments/verification' },
-      { title: 'Refunds & Disputes', path: '/admin/payments/refunds' },
-      { title: 'Payment Reports', path: '/admin/payments/reports' }
-    ]
   },
   {
     title: 'Production',
@@ -120,53 +179,41 @@ const menuItems: MenuItem[] = [
     ]
   },
   {
-    title: 'Orders',
-    icon: ShoppingCart,
+    title: 'Content Management',
+    icon: Layout,
     children: [
-      { title: 'Order Management', path: '/admin/orders/management' },
-      { title: 'Order Tracking', path: '/admin/orders/tracking' },
-      { title: 'Bulk Orders', path: '/admin/orders/bulk' },
-      { title: 'Order Analytics', path: '/admin/orders/analytics' }
+      { title: 'Home Page', path: '/admin/content/home' },
+      { title: 'About Page', path: '/admin/content/about' },
+      { title: 'Contact Page', path: '/admin/content/contact' },
+      { title: 'FAQ Page', path: '/admin/content/faq' }
     ]
   },
   {
-    title: 'Inventory',
-    icon: Warehouse,
+    title: 'Appearance',
+    icon: Palette,
     children: [
-      { title: 'Stock Management', path: '/admin/inventory/stock' },
-      { title: 'Warehouse Locations', path: '/admin/inventory/locations' },
-      { title: 'Stock Alerts', path: '/admin/inventory/alerts' },
-      { title: 'Inventory Reports', path: '/admin/inventory/reports' }
+      { title: '3D Manager', path: '/admin/3d-manager' },
+      { title: 'Themes', path: '/admin/themes' }
     ]
   },
   {
-    title: 'Shipping',
-    icon: Truck,
+    title: 'User Management',
+    icon: UserCog,
     children: [
-      { title: 'Shipping Methods', path: '/admin/shipping/methods' },
-      { title: 'Carrier Management', path: '/admin/shipping/carriers' },
-      { title: 'Tracking Integration', path: '/admin/shipping/tracking' },
-      { title: 'Delivery Reports', path: '/admin/shipping/reports' }
+      { title: 'Users', path: '/admin/users' },
+      { title: 'Roles', path: '/admin/roles' }
     ]
   },
   {
-    title: 'Reviews',
-    icon: Star,
+    title: 'Settings',
+    icon: Settings,
     children: [
-      { title: 'Customer Reviews', path: '/admin/reviews/customer' },
-      { title: 'Vendor Feedback', path: '/admin/reviews/vendor' },
-      { title: 'Rating Management', path: '/admin/reviews/rating' },
-      { title: 'Review Analytics', path: '/admin/reviews/analytics' }
-    ]
-  },
-  {
-    title: 'Reports',
-    icon: BarChart3,
-    children: [
-      { title: 'Sales Reports', path: '/admin/reports/sales' },
-      { title: 'Performance Metrics', path: '/admin/reports/performance' },
-      { title: 'Financial Statements', path: '/admin/reports/financial' },
-      { title: 'Business Intelligence', path: '/admin/reports/bi' }
+      { title: 'General', path: '/admin/settings/general' },
+      { title: 'Language', path: '/admin/language' },
+      { title: 'Media Library', path: '/admin/media' },
+      { title: 'Performance', path: '/admin/performance' },
+      { title: 'Activity Log', path: '/admin/activity-log' },
+      { title: 'Documentation', path: '/admin/documentation' }
     ]
   }
 ];
@@ -185,7 +232,7 @@ export const TenantSidebar = () => {
       setExpandedMenus(JSON.parse(savedExpandedMenus));
     } else {
       // Default expanded menus
-      setExpandedMenus(['Products']);
+      setExpandedMenus(['Commerce Management']);
     }
   }, []);
 
@@ -226,12 +273,17 @@ export const TenantSidebar = () => {
     return location.pathname === path;
   };
 
-  const isParentActive = (item: MenuItem) => {
+  const isParentActive = (item: MenuItem): boolean => {
     if (item.path) return isActive(item.path);
-    return item.children?.some(child => isActive(child.path));
+    if (!item.children) return false;
+    
+    return item.children.some(child => {
+      if (child.path && isActive(child.path)) return true;
+      return isParentActive(child);
+    });
   };
 
-  const renderMenuItem = (item: MenuItem) => {
+  const renderMenuItem = (item: MenuItem, depth: number = 0) => {
     if (!hasPermission(item)) return null;
 
     const hasChildren = item.children && item.children.length > 0;
@@ -254,11 +306,11 @@ export const TenantSidebar = () => {
             >
               {hasChildren ? (
                 <div>
-                  <item.icon className="w-5 h-5" />
+                  {item.icon && <item.icon className="w-5 h-5" />}
                 </div>
               ) : (
                 <Link to={item.path!}>
-                  <item.icon className="w-5 h-5" />
+                  {item.icon && <item.icon className="w-5 h-5" />}
                 </Link>
               )}
             </Button>
@@ -278,12 +330,15 @@ export const TenantSidebar = () => {
               variant="ghost"
               className={cn(
                 'w-full justify-between rounded-lg transition-all',
+                depth === 0 && '',
+                depth === 1 && 'ml-4',
+                depth === 2 && 'ml-8',
                 active && 'bg-primary/10 text-primary'
               )}
               onClick={() => toggleMenu(item.title)}
             >
               <div className="flex items-center gap-3">
-                <item.icon className="w-5 h-5" />
+                {item.icon && <item.icon className="w-5 h-5" />}
                 <span className="font-medium">{item.title}</span>
               </div>
               {isExpanded ? (
@@ -293,23 +348,34 @@ export const TenantSidebar = () => {
               )}
             </Button>
             {isExpanded && (
-              <div className="ml-8 space-y-1">
-                {item.children.map((child) => (
-                  <Button
-                    key={child.path}
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      'w-full justify-start rounded-lg',
-                      isActive(child.path) && 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    )}
-                    asChild
-                  >
-                    <Link to={child.path}>
-                      <span>{child.title}</span>
-                    </Link>
-                  </Button>
-                ))}
+              <div className="space-y-1">
+                {item.children.map((child) => 
+                  child.children ? (
+                    renderMenuItem(child, depth + 1)
+                  ) : (
+                    <Button
+                      key={child.path || child.title}
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        'w-full justify-start rounded-lg',
+                        depth === 0 && 'ml-8',
+                        depth === 1 && 'ml-12',
+                        depth === 2 && 'ml-16',
+                        isActive(child.path) && 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      )}
+                      asChild={!!child.path}
+                    >
+                      {child.path ? (
+                        <Link to={child.path}>
+                          <span>{child.title}</span>
+                        </Link>
+                      ) : (
+                        <span>{child.title}</span>
+                      )}
+                    </Button>
+                  )
+                )}
               </div>
             )}
           </>
@@ -318,12 +384,15 @@ export const TenantSidebar = () => {
             variant="ghost"
             className={cn(
               'w-full justify-start gap-3 rounded-lg transition-all',
+              depth === 0 && '',
+              depth === 1 && 'ml-4',
+              depth === 2 && 'ml-8',
               active && 'bg-primary text-primary-foreground hover:bg-primary/90'
             )}
             asChild
           >
             <Link to={item.path!}>
-              <item.icon className="w-5 h-5" />
+              {item.icon && <item.icon className="w-5 h-5" />}
               <span className="font-medium">{item.title}</span>
             </Link>
           </Button>
@@ -361,7 +430,7 @@ export const TenantSidebar = () => {
 
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-elegant">
-          {menuItems.map(renderMenuItem)}
+          {menuItems.map((item) => renderMenuItem(item, 0))}
         </nav>
 
         {/* User Profile */}

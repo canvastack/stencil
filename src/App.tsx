@@ -23,6 +23,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
 import { TenantAuthProvider } from "@/contexts/TenantAuthContext";
+import { GlobalContextProvider } from "@/contexts/GlobalContext";
 import { PlatformRouteGuard } from "@/guards/PlatformRouteGuard";
 import { TenantRouteGuard } from "@/guards/TenantRouteGuard";
 
@@ -120,9 +121,10 @@ function App() {
             <ApiServiceProvider>
               <PlatformAuthProvider>
                 <TenantAuthProvider>
-                  <ThemeProvider initialTheme="default">
-                    <ContentProvider>
-                      <CartProvider>
+                  <GlobalContextProvider>
+                    <ThemeProvider initialTheme="default">
+                      <ContentProvider>
+                        <CartProvider>
                         <Toaster />
                         <Sonner />
                     {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
@@ -162,9 +164,12 @@ function App() {
                   <Route path="licenses" element={<Suspense fallback={<LoadingFallback />}><LicenseManagement /></Suspense>} />
                   <Route path="domains" element={<div className="p-6">Domains - Coming Soon</div>} />
                   <Route path="analytics" element={<Suspense fallback={<LoadingFallback />}><PlatformAnalytics /></Suspense>} />
+                  <Route path="content/*" element={<div className="p-6">Platform Content Management - Coming Soon</div>} />
+                  <Route path="appearance/*" element={<div className="p-6">Platform Appearance - Coming Soon</div>} />
+                  <Route path="users/*" element={<div className="p-6">Platform User Management - Coming Soon</div>} />
                   <Route path="system" element={<div className="p-6">System - Coming Soon</div>} />
-                  <Route path="activity" element={<div className="p-6">Activity Monitor - Coming Soon</div>} />
-                  <Route path="settings" element={<div className="p-6">Settings - Coming Soon</div>} />
+                  <Route path="activity" element={<div className="p-6">Platform Activity Monitor - Coming Soon</div>} />
+                  <Route path="settings/*" element={<div className="p-6">Platform Settings - Coming Soon</div>} />
                 </Route>
                 
                 {/* Tenant Routes */}
@@ -174,7 +179,8 @@ function App() {
                     <TenantLayout />
                   </TenantRouteGuard>
                 }>
-                  <Route index element={<Dashboard />} />
+                  <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                  <Route path="dashboard" element={<Dashboard />} />
                   <Route path="content/home" element={<Suspense fallback={<LoadingFallback />}><PageHome /></Suspense>} />
                   <Route path="content/about" element={<Suspense fallback={<LoadingFallback />}><PageAbout /></Suspense>} />
                   <Route path="content/contact" element={<Suspense fallback={<LoadingFallback />}><PageContact /></Suspense>} />
@@ -226,9 +232,10 @@ function App() {
                 </Routes>
                         <ThemeScrollToTop />
                       </BrowserRouter>
-                      </CartProvider>
-                    </ContentProvider>
-                  </ThemeProvider>
+                        </CartProvider>
+                      </ContentProvider>
+                    </ThemeProvider>
+                  </GlobalContextProvider>
                 </TenantAuthProvider>
               </PlatformAuthProvider>
             </ApiServiceProvider>

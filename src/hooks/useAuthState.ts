@@ -1,317 +1,245 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/contexts/ApiServiceContext';
-import { AccountType, AuthUser, AuthTenant, PlatformAccount, LoginRequest, RegisterRequest, ForgotPasswordRequest, ResetPasswordRequest, VerifyEmailRequest, ResendVerificationRequest, ChangePasswordRequest, UpdateProfileRequest } from '@/services/api/auth';
-import { handleApiError, getDisplayMessage } from '@/services/api/errorHandler';
+import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useGlobalContext, UserType } from '@/contexts/GlobalContext';
+import { usePlatformAuth } from '@/contexts/PlatformAuthContext';
+import { useTenantAuth } from '@/contexts/TenantAuthContext';
+import { authService } from '@/services/api/auth';
 
-export interface UseAuthStateReturn {
-  accountType: AccountType | null;
-  user: AuthUser | null;
-  account: PlatformAccount | null;
-  tenant: AuthTenant | null;
-  permissions: string[];
-  roles: string[];
+export interface AuthState {
+  /** Current user type */
+  userType: UserType;
+  /** Whether user is authenticated */
   isAuthenticated: boolean;
+  /** Whether authentication check is loading */
   isLoading: boolean;
+  /** Authentication error */
   error: string | null;
-  login: (data: LoginRequest) => Promise<void>;
-  logout: () => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
-  forgotPassword: (data: ForgotPasswordRequest) => Promise<void>;
-  resetPassword: (data: ResetPasswordRequest) => Promise<void>;
-  verifyEmail: (data: VerifyEmailRequest) => Promise<void>;
-  resendVerification: (data: ResendVerificationRequest) => Promise<void>;
-  updateProfile: (data: UpdateProfileRequest) => Promise<void>;
-  changePassword: (data: ChangePasswordRequest) => Promise<void>;
-  getCurrentUser: () => Promise<void>;
-  clearError: () => void;
+  /** Platform account information */
+  platformAccount: any | null;
+  /** Tenant user information */
+  tenantUser: any | null;
+  /** Current tenant information */
+  tenant: any | null;
+  /** User permissions */
+  permissions: string[];
+  /** User roles (tenant only) */
+  roles: string[];
+  /** Whether user is anonymous */
+  isAnonymous: boolean;
+  /** Whether user is platform admin */
+  isPlatformAdmin: boolean;
+  /** Whether user is tenant user */
+  isTenantUser: boolean;
 }
 
-export const useAuthState = (): UseAuthStateReturn => {
-  const authService = useAuth();
-  
-  // Initialize authentication state from localStorage immediately
-  const initializeAuthState = () => {
-    if (authService.isAuthenticated()) {
-      const storedAccountType = authService.getAccountType();
-      const storedPermissions = authService.getPermissionsFromStorage();
-      const storedRoles = authService.getRolesFromStorage();
-      const storedTenant = authService.getCurrentTenantFromStorage();
-      
-      if (storedAccountType === 'platform') {
-        const storedAccount = authService.getPlatformAccountFromStorage();
-        return {
-          accountType: storedAccountType,
-          user: null,
-          account: storedAccount,
-          tenant: storedTenant,
-          permissions: storedPermissions,
-          roles: storedRoles
-        };
-      } else if (storedAccountType === 'tenant') {
-        const storedUser = authService.getCurrentUserFromStorage();
-        return {
-          accountType: storedAccountType,
-          user: storedUser,
-          account: null,
-          tenant: storedTenant,
-          permissions: storedPermissions,
-          roles: storedRoles
-        };
-      }
-    }
-    
-    return {
-      accountType: null,
-      user: null,
-      account: null,
-      tenant: null,
-      permissions: [],
-      roles: []
-    };
-  };
+export interface AuthActions {
+  /** Login as platform user */
+  loginAsPlatform: (email: string, password: string) => Promise<void>;
+  /** Login as tenant user */
+  loginAsTenant: (email: string, password: string, tenantSlug: string) => Promise<void>;
+  /** Logout current user */
+  logout: () => Promise<void>;
+  /** Refresh current authentication state */
+  refreshAuth: () => Promise<void>;
+  /** Clear authentication errors */
+  clearError: () => void;
+  /** Switch between contexts (admin only) */
+  switchContext: (type: Exclude<UserType, 'anonymous'>) => Promise<void>;
+}
 
-  const initialState = initializeAuthState();
+export interface UseAuthStateReturn extends AuthState, AuthActions {}
+
+export const useAuthState = (): UseAuthStateReturn => {
+  const globalContext = useGlobalContext();
+  const platformAuth = usePlatformAuth();
+  const tenantAuth = useTenantAuth();
   
-  const [accountType, setAccountType] = useState<AccountType | null>(initialState.accountType);
-  const [user, setUser] = useState<AuthUser | null>(initialState.user);
-  const [account, setAccount] = useState<PlatformAccount | null>(initialState.account);
-  const [tenant, setTenant] = useState<AuthTenant | null>(initialState.tenant);
-  const [permissions, setPermissions] = useState<string[]>(initialState.permissions);
-  const [roles, setRoles] = useState<string[]>(initialState.roles);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
+
+  // Centralized authentication state
+  const authState: AuthState = useMemo(() => {
+    return {
+      userType: globalContext.userType,
+      isAuthenticated: globalContext.userType !== 'anonymous',
+      isLoading: globalContext.isLoading || platformAuth.isLoading || tenantAuth.isLoading || isLocalLoading,
+      error: globalContext.error || platformAuth.error || tenantAuth.error || localError,
+      platformAccount: platformAuth.account,
+      tenantUser: tenantAuth.user,
+      tenant: tenantAuth.tenant || globalContext.tenant,
+      permissions: globalContext.userType === 'platform' ? platformAuth.permissions : tenantAuth.permissions,
+      roles: tenantAuth.roles,
+      isAnonymous: globalContext.isAnonymous,
+      isPlatformAdmin: globalContext.isPlatformUser,
+      isTenantUser: globalContext.isTenantUser
+    };
+  }, [
+    globalContext,
+    platformAuth,
+    tenantAuth,
+    isLocalLoading,
+    localError
+  ]);
+
+  // Authentication actions
+  const loginAsPlatform = useCallback(async (email: string, password: string): Promise<void> => {
+    try {
+      setIsLocalLoading(true);
+      setLocalError(null);
+      
+      await platformAuth.login(email, password);
+      
+      // The global context will be updated automatically via the effect in GlobalContextProvider
+      console.log('useAuthState: Platform login successful');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Platform login failed';
+      setLocalError(message);
+      console.error('useAuthState: Platform login failed:', error);
+      throw error;
+    } finally {
+      setIsLocalLoading(false);
+    }
+  }, [platformAuth]);
+
+  const loginAsTenant = useCallback(async (email: string, password: string, tenantSlug: string): Promise<void> => {
+    try {
+      setIsLocalLoading(true);
+      setLocalError(null);
+      
+      await tenantAuth.login(email, password, tenantSlug);
+      
+      // The global context will be updated automatically via the effect in GlobalContextProvider
+      console.log('useAuthState: Tenant login successful');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Tenant login failed';
+      setLocalError(message);
+      console.error('useAuthState: Tenant login failed:', error);
+      throw error;
+    } finally {
+      setIsLocalLoading(false);
+    }
+  }, [tenantAuth]);
+
+  const logout = useCallback(async (): Promise<void> => {
+    try {
+      setIsLocalLoading(true);
+      setLocalError(null);
+      
+      // Determine which auth context to logout from
+      if (globalContext.userType === 'platform') {
+        await platformAuth.logout();
+      } else if (globalContext.userType === 'tenant') {
+        await tenantAuth.logout();
+      } else {
+        // Clear any stored authentication
+        authService.clearAuth();
+      }
+      
+      // Clear global context
+      globalContext.clearContext();
+      
+      console.log('useAuthState: Logout successful');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Logout failed';
+      setLocalError(message);
+      console.error('useAuthState: Logout failed:', error);
+    } finally {
+      setIsLocalLoading(false);
+    }
+  }, [globalContext, platformAuth, tenantAuth]);
+
+  const refreshAuth = useCallback(async (): Promise<void> => {
+    try {
+      setIsLocalLoading(true);
+      setLocalError(null);
+      
+      // Refresh global context detection
+      await globalContext.detectContext();
+      
+      // Refresh appropriate auth context
+      if (globalContext.userType === 'platform') {
+        await platformAuth.getCurrentAccount();
+      } else if (globalContext.userType === 'tenant') {
+        await tenantAuth.getCurrentUser();
+      }
+      
+      console.log('useAuthState: Auth refresh successful');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Auth refresh failed';
+      setLocalError(message);
+      console.error('useAuthState: Auth refresh failed:', error);
+    } finally {
+      setIsLocalLoading(false);
+    }
+  }, [globalContext, platformAuth, tenantAuth]);
 
   const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+    setLocalError(null);
+    platformAuth.clearError();
+    tenantAuth.clearError();
+  }, [platformAuth, tenantAuth]);
 
-  const handleError = useCallback((err: unknown) => {
-    const formatted = handleApiError(err, 'Auth');
-    setError(formatted.userMessage);
-  }, []);
-
-  const login = useCallback(
-    async (data: LoginRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        const response = await authService.login(data);
-        const accountTypeValue = authService.getAccountType();
-        setAccountType(accountTypeValue);
-        
-        if (accountTypeValue === 'platform' && response.account) {
-          setAccount(response.account);
-          setUser(null);
-          setTenant(null);
-        } else if (accountTypeValue === 'tenant') {
-          if (response.user) {
-            setUser(response.user);
-          }
-          if (response.tenant) {
-            setTenant(response.tenant);
-          }
-          setAccount(null);
-        }
-        
-        if (response.permissions) {
-          setPermissions(response.permissions);
-        }
-        if (response.roles) {
-          setRoles(response.roles);
-        }
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const logout = useCallback(async () => {
+  const switchContext = useCallback(async (type: Exclude<UserType, 'anonymous'>): Promise<void> => {
     try {
-      setIsLoading(true);
-      await authService.logout();
-      setAccountType(null);
-      setUser(null);
-      setAccount(null);
-      setTenant(null);
-      setPermissions([]);
-      setRoles([]);
-      clearError();
-    } catch (err) {
-      handleError(err);
-      setAccountType(null);
-      setUser(null);
-      setAccount(null);
-      setTenant(null);
-      setPermissions([]);
-      setRoles([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authService, clearError, handleError]);
-
-  const register = useCallback(
-    async (data: RegisterRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        await authService.register(data);
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const forgotPassword = useCallback(
-    async (data: ForgotPasswordRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        await authService.forgotPassword(data);
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const resetPassword = useCallback(
-    async (data: ResetPasswordRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        await authService.resetPassword(data);
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const verifyEmail = useCallback(
-    async (data: VerifyEmailRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        await authService.verifyEmail(data);
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const resendVerification = useCallback(
-    async (data: ResendVerificationRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        await authService.resendVerification(data);
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const updateProfile = useCallback(
-    async (data: UpdateProfileRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        const response = await authService.updateProfile(data);
-        setUser(response.user);
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const changePassword = useCallback(
-    async (data: ChangePasswordRequest) => {
-      try {
-        setIsLoading(true);
-        clearError();
-        await authService.changePassword(data);
-      } catch (err) {
-        handleError(err);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [authService, clearError, handleError]
-  );
-
-  const getCurrentUser = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const response = await authService.getCurrentUser();
-      const accountTypeValue = authService.getAccountType();
+      setIsLocalLoading(true);
+      setLocalError(null);
       
-      if (accountTypeValue === 'platform' && response.account) {
-        setAccount(response.account);
-        setUser(null);
-      } else if (accountTypeValue === 'tenant' && response.user) {
-        setUser(response.user);
-        setAccount(null);
+      // Only allow context switching if user has appropriate permissions
+      // This would require additional permission checks in a real implementation
+      if (type === 'platform') {
+        // Switch to platform context
+        await globalContext.switchContext('platform');
+      } else if (type === 'tenant') {
+        // Switch to tenant context
+        await globalContext.switchContext('tenant');
       }
       
-      if (response.tenant) {
-        setTenant(response.tenant);
-      }
-    } catch (err) {
-      handleError(err);
+      console.log(`useAuthState: Context switched to ${type}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Context switch failed';
+      setLocalError(message);
+      console.error('useAuthState: Context switch failed:', error);
+      throw error;
     } finally {
-      setIsLoading(false);
+      setIsLocalLoading(false);
     }
-  }, [authService, handleError]);
+  }, [globalContext]);
 
+  // Auto-refresh auth state on mount (only once) - DISABLED to prevent infinite loops
+  useEffect(() => {
+    // CRITICAL FIX: Don't auto-refresh on mount to prevent infinite loops
+    // Only refresh if there's a valid stored token and we're not already authenticated
+    const hasValidToken = authService.isAuthenticated() && !authService.getToken()?.startsWith('demo_token_');
+    const needsRefresh = hasValidToken && !authState.isAuthenticated && !authState.isLoading;
+    
+    if (needsRefresh) {
+      console.log('useAuthState: Auto-refreshing authentication on mount');
+      refreshAuth();
+    } else {
+      console.log('useAuthState: Skipping auto-refresh to prevent loops', {
+        hasValidToken,
+        isAuthenticated: authState.isAuthenticated,
+        isLoading: authState.isLoading
+      });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps - Only run once on mount
 
+  // Monitor authentication state changes
+  useEffect(() => {
+    console.log('useAuthState: Auth state changed:', {
+      userType: authState.userType,
+      isAuthenticated: authState.isAuthenticated,
+      isLoading: authState.isLoading,
+      hasError: !!authState.error
+    });
+  }, [authState.userType, authState.isAuthenticated, authState.isLoading, authState.error]);
 
   return {
-    accountType,
-    user,
-    account,
-    tenant,
-    permissions,
-    roles,
-    isAuthenticated: !!user || !!account,
-    isLoading,
-    error,
-    login,
+    ...authState,
+    loginAsPlatform,
+    loginAsTenant,
     logout,
-    register,
-    forgotPassword,
-    resetPassword,
-    verifyEmail,
-    resendVerification,
-    updateProfile,
-    changePassword,
-    getCurrentUser,
+    refreshAuth,
     clearError,
+    switchContext
   };
 };

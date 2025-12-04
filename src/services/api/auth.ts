@@ -186,6 +186,11 @@ class AuthService {
         return this.processLoginResponse(demoResponse, accountType);
       }
       
+      // SECURITY FIX: Better error handling for invalid credentials
+      if (error.response?.status === 422 || error.response?.status === 401) {
+        throw new Error('Invalid credentials or unauthorized access to this account type');
+      }
+      
       // Handle API error response
       if (error.response?.data?.error) {
         throw new Error(error.response.data.error.message || 'Login failed');
@@ -196,18 +201,37 @@ class AuthService {
   }
 
   private isDemoCredentials(data: LoginRequest): boolean {
-    const demoCredentials = [
-      { email: 'admin@canvastencil.com', password: 'SuperAdmin2024!' },
+    const platformCredentials = [
+      { email: 'admin@canvastencil.com', password: 'SuperAdmin2024!' }
+    ];
+    
+    const tenantCredentials = [
       { email: 'admin@demo-etching.com', password: 'DemoAdmin2024!' },
       { email: 'manager@demo-etching.com', password: 'DemoManager2024!' }
     ];
     
-    return demoCredentials.some(cred => 
-      cred.email === data.email && cred.password === data.password
-    );
+    // SECURITY FIX: Validate email matches the expected account type context
+    if (data.accountType === 'platform') {
+      return platformCredentials.some(cred => 
+        cred.email === data.email && cred.password === data.password
+      );
+    } else {
+      return tenantCredentials.some(cred => 
+        cred.email === data.email && cred.password === data.password
+      );
+    }
   }
 
   private createDemoLoginResponse(data: LoginRequest): LoginResponse {
+    // SECURITY VALIDATION: Double-check credentials match account type
+    if (data.accountType === 'platform' && !data.email.includes('@canvastencil.com')) {
+      throw new Error('Platform login requires @canvastencil.com email address');
+    }
+    
+    if (data.accountType === 'tenant' && data.email.includes('@canvastencil.com')) {
+      throw new Error('Tenant login cannot use platform email address');
+    }
+
     const baseResponse = {
       access_token: 'demo_token_' + Date.now(),
       token_type: 'Bearer',
@@ -546,7 +570,9 @@ class AuthService {
     return !!this.getAuthToken();
   }
 
-
+  getToken(): string | null {
+    return this.getAuthToken();
+  }
 }
 
 export const authService = new AuthService();

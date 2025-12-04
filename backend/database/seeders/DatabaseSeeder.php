@@ -30,6 +30,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🚀 Seeding Phase 3 Core Business Logic...');
         $this->call(Phase3CoreBusinessSeeder::class);
         
+        // Seed Platform Pages Content
+        $this->command->info('📄 Seeding Platform Pages Content...');
+        $this->call(PlatformPagesSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');

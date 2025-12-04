@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Review, ReviewFilters, CreateReviewInput, UpdateReviewInput, ReviewStats } from '@/types/review';
-import { reviewService } from '@/services/mock/reviews';
+import { reviewService } from '@/services/api/reviews';
 
-export const useReviews = (filters?: ReviewFilters) => {
+export const useReviews = (filters?: ReviewFilters, userType?: 'anonymous' | 'tenant' | 'platform') => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -10,7 +10,7 @@ export const useReviews = (filters?: ReviewFilters) => {
   const loadReviews = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await reviewService.getReviews(filters);
+      const data = await reviewService.getReviews(filters, userType);
       setReviews(data);
       setError(null);
     } catch (err) {
@@ -18,7 +18,7 @@ export const useReviews = (filters?: ReviewFilters) => {
     } finally {
       setLoading(false);
     }
-  }, [filters?.productId, filters?.rating, filters?.verified, filters?.limit, filters?.offset]);
+  }, [filters?.productId, filters?.rating, filters?.verified, filters?.limit, filters?.offset, userType]);
 
   useEffect(() => {
     loadReviews();

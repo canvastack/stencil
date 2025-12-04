@@ -58,7 +58,7 @@ import {
   Copy,
   ExternalLink,
   FileText,
-  Toggle
+  ToggleLeft
 } from 'lucide-react';
 import { LicensePackage, FeatureToggle, LicenseAssignment } from '@/services/platform/licenseService';
 import { toast } from 'sonner';
@@ -696,7 +696,7 @@ export default function LicenseManagement() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Features</CardTitle>
-                <Toggle className="h-4 w-4 text-muted-foreground" />
+                <ToggleLeft className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalFeatures}</div>

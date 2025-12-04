@@ -116,7 +116,20 @@ class ApiClientManager {
   }
 
   private async handleUnauthorized(config: InternalAxiosRequestConfig, error: AxiosError) {
-    if (!config || this.isRefreshing) {
+    // CRITICAL FIX: Prevent infinite retry loops
+    const isRetryRequest = config.headers?.['X-Retry-Count'];
+    const retryCount = parseInt(isRetryRequest as string || '0', 10);
+    
+    if (!config || this.isRefreshing || retryCount >= 1) {
+      this.log('warn', 'Max retry attempts reached or already refreshing, logging out');
+      this.logout();
+      return Promise.reject(error);
+    }
+
+    // Check if this is a demo token - don't attempt refresh
+    const currentToken = this.getAuthToken();
+    if (currentToken?.startsWith('demo_token_')) {
+      this.log('error', 'Demo token authentication failed, clearing auth');
       this.logout();
       return Promise.reject(error);
     }
@@ -134,12 +147,14 @@ class ApiClientManager {
 
       if (config.headers) {
         config.headers.Authorization = `Bearer ${newToken}`;
+        config.headers['X-Retry-Count'] = '1'; // Mark as retry attempt
       }
 
       return this.instance(config);
     } catch (refreshError) {
       this.refreshPromise = null;
       this.isRefreshing = false;
+      this.log('error', 'Token refresh failed, logging out');
       this.logout();
       return Promise.reject(refreshError);
     }
@@ -147,6 +162,13 @@ class ApiClientManager {
 
   private async refreshToken(): Promise<string> {
     try {
+      // SECURITY FIX: Demo tokens cannot be refreshed - they should expire
+      const currentToken = localStorage.getItem('auth_token');
+      if (currentToken?.startsWith('demo_token_')) {
+        this.log('error', 'Demo tokens cannot be refreshed - authentication expired');
+        throw new Error('Demo token expired - please login again');
+      }
+
       const response = await this.instance.post('/auth/refresh', {});
       const newToken = response.token || response.access_token;
 

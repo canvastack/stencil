@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Infrastructure\Presentation\Http\Controllers\Platform\AuthController as PlatformAuthController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\AuthController as TenantAuthController;
@@ -23,6 +24,63 @@ use App\Http\Controllers\MediaController;
 */
 
 // Platform Authentication Routes (Account A)
+// General Auth Routes (both platform and tenant)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/auth/me', function (Request $request) {
+        $user = $request->user();
+        
+        // Determine if this is a platform account or tenant user
+        $isPlatform = $user instanceof \App\Infrastructure\Persistence\Eloquent\AccountEloquentModel;
+        
+        if ($isPlatform) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'account' => [
+                        'id' => $user->id,
+                        'uuid' => $user->uuid,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'account_type' => 'platform_owner',
+                        'status' => 'active',
+                        'permissions' => ['platform.all']
+                    ]
+                ]
+            ]);
+        } else {
+            // This is a tenant user
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'uuid' => $user->uuid,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'email_verified_at' => $user->email_verified_at,
+                        'created_at' => $user->created_at,
+                        'updated_at' => $user->updated_at,
+                        'roles' => ['admin'],
+                        'permissions' => ['tenant.all']
+                    ],
+                    'tenant' => [
+                        'id' => '1',
+                        'uuid' => '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+                        'name' => 'Demo Etching Company',
+                        'slug' => 'demo-etching',
+                        'domain' => 'demo-etching.canvastencil.com',
+                        'settings' => [
+                            'timezone' => 'Asia/Jakarta',
+                            'currency' => 'IDR',
+                            'language' => 'id'
+                        ]
+                    ]
+                ]
+            ]);
+        }
+    });
+});
+
 Route::prefix('platform')->group(function () {
     // Public authentication routes
     Route::post('/login', [PlatformAuthController::class, 'login'])->name('platform.auth.login');

@@ -1,16 +1,33 @@
 import { Review, ReviewFilters, CreateReviewInput, UpdateReviewInput, ReviewStats } from '@/types/review';
 import apiClient from './client';
+import { anonymousApiClient } from './anonymousApiClient';
 import { reviewService as mockReviews } from '@/services/mock/reviews';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
 
+// Helper function to get the appropriate API client and endpoints based on user type
+const getApiConfig = (userType?: 'anonymous' | 'tenant' | 'platform') => {
+  if (userType === 'anonymous') {
+    return {
+      client: anonymousApiClient,
+      basePath: '/public/reviews'
+    };
+  }
+  
+  return {
+    client: apiClient,
+    basePath: '/admin/reviews'
+  };
+};
+
 export const reviewService = {
-  async getReviews(filters?: ReviewFilters): Promise<Review[]> {
+  async getReviews(filters?: ReviewFilters, userType?: 'anonymous' | 'tenant' | 'platform'): Promise<Review[]> {
     if (USE_MOCK) {
       return mockReviews.getReviews(filters);
     }
     
     try {
+      const { client, basePath } = getApiConfig(userType);
       const params = new URLSearchParams();
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
@@ -20,22 +37,23 @@ export const reviewService = {
         });
       }
       
-      const response = await apiClient.get<Review[]>(`/admin/reviews?${params.toString()}`);
-      return response as unknown as Review[];
+      const response = await client.get<{success: boolean, data: Review[]}>(`${basePath}?${params.toString()}`);
+      return response.data || [];
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockReviews.getReviews(filters);
     }
   },
 
-  async getReviewById(id: string): Promise<Review | null> {
+  async getReviewById(id: string, userType?: 'anonymous' | 'tenant' | 'platform'): Promise<Review | null> {
     if (USE_MOCK) {
       return mockReviews.getReviewById(id);
     }
     
     try {
-      const response = await apiClient.get<Review>(`/admin/reviews/${id}`);
-      return response as unknown as Review;
+      const { client, basePath } = getApiConfig(userType);
+      const response = await client.get<{success: boolean, data: Review}>(`${basePath}/${id}`);
+      return response.data || null;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockReviews.getReviewById(id);

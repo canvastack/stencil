@@ -28,7 +28,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { productPageContentService } from "@/services/mock/productPageContent";
+import { productPageContentService } from "@/services/api/productPageContent";
 import { PageContent } from "@/types/page-content";
 
 // Zod schema for form validation

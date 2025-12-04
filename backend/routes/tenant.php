@@ -11,6 +11,7 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\AnalyticsController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\SettingsController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\InventoryController;
+use App\Http\Controllers\Tenant\ContentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -208,6 +209,19 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             
             Route::get('/integrations', [SettingsController::class, 'integrations'])->name('tenant.settings.integrations');
             Route::post('/integrations/{integration}', [SettingsController::class, 'updateIntegration'])->name('tenant.settings.update_integration');
+        });
+
+        // Content Management
+        Route::prefix('content')->group(function () {
+            Route::get('/pages', [ContentController::class, 'index'])->name('tenant.content.index');
+            Route::get('/pages/published', [ContentController::class, 'published'])->name('tenant.content.published');
+            Route::post('/pages', [ContentController::class, 'store'])->name('tenant.content.store');
+            Route::get('/pages/{slug}', [ContentController::class, 'show'])->name('tenant.content.show');
+            Route::put('/pages/{slug}', [ContentController::class, 'update'])->name('tenant.content.update');
+            Route::delete('/pages/{slug}', [ContentController::class, 'destroy'])->name('tenant.content.destroy');
+            Route::patch('/pages/{slug}/publish', [ContentController::class, 'publish'])->name('tenant.content.publish');
+            Route::patch('/pages/{slug}/archive', [ContentController::class, 'archive'])->name('tenant.content.archive');
+            Route::patch('/pages/{slug}/content', [ContentController::class, 'updateContent'])->name('tenant.content.update-content');
         });
         
         // Platform Interaction (Limited)

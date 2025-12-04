@@ -52,8 +52,8 @@ const menuItems: MenuItem[] = [
   {
     title: 'Dashboard',
     icon: LayoutDashboard,
-    path: '/admin',
-    visibleFor: 'both',
+    path: '/admin/dashboard',
+    visibleFor: 'tenant',
   },
   {
     title: 'Tenants',
@@ -181,7 +181,7 @@ export const AdminSidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
-  const { accountType, roles, user, account, logout } = useAuthState();
+  const { userType, roles, tenantUser, platformAccount, logout } = useAuthState();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   // Load expanded menus from localStorage on mount
@@ -205,7 +205,7 @@ export const AdminSidebar = () => {
   };
 
   // Get current user info based on account type
-  const currentUser = accountType === 'platform' ? account : user;
+  const currentUser = userType === 'platform' ? platformAccount : tenantUser;
   const userName = currentUser?.name || 'Unknown User';
   const userEmail = currentUser?.email || 'unknown@email.com';
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -226,8 +226,8 @@ export const AdminSidebar = () => {
     if (!item.visibleFor) return true;
     
     if (item.visibleFor === 'both') return true;
-    if (item.visibleFor === 'platform' && accountType === 'platform') return true;
-    if (item.visibleFor === 'tenant' && accountType === 'tenant') {
+    if (item.visibleFor === 'platform' && userType === 'platform') return true;
+    if (item.visibleFor === 'tenant' && userType === 'tenant') {
       if (!item.requiredRoles) return true;
       return item.requiredRoles.some((role) => roles.includes(role));
     }

@@ -5,6 +5,7 @@ import { Moon, Sun, Menu, X, ShoppingCart, LogOut } from "lucide-react";
 import { useThemeComponents } from "@/hooks/useThemeComponents";
 import { usePageContent } from "@/hooks/usePageContent";
 import { useAuthState } from "@/hooks/useAuthState";
+import { ContextSwitcher } from "@/components/ContextSwitcher";
 
 const Header = () => {
   const [isDark, setIsDark] = useState(true);
@@ -99,11 +100,7 @@ const Header = () => {
 
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
-                <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10">
-                  <span className="text-sm font-medium text-foreground">
-                    {user?.name || account?.name || 'User'}
-                  </span>
-                </div>
+                <ContextSwitcher className="hidden md:flex" />
                 <Button
                   className="hidden md:flex bg-destructive hover:bg-destructive/90 text-white"
                   onClick={async () => {
@@ -172,10 +169,8 @@ const Header = () => {
               </Button>
               {isAuthenticated ? (
                 <>
-                  <div className="px-4 py-3 rounded-lg bg-primary/10">
-                    <span className="text-sm font-medium text-foreground">
-                      {user?.name || account?.name || 'User'}
-                    </span>
+                  <div className="px-4">
+                    <ContextSwitcher className="w-full" />
                   </div>
                   <Button
                     className="w-full bg-destructive hover:bg-destructive/90 text-white justify-start"

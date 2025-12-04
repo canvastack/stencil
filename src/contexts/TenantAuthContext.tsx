@@ -116,20 +116,57 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
-      await authService.logout();
-    } catch (err) {
-      handleError(err);
-    } finally {
+      
+      // Clear local state immediately to prevent UI confusion
       setUser(null);
       setTenant(null);
       setPermissions([]);
       setRoles([]);
       clearError();
+      
+      // Try to call logout API, but don't fail if it doesn't work
+      try {
+        await authService.logout();
+      } catch (logoutError) {
+        console.warn('TenantAuthContext: Logout API call failed, continuing with local cleanup', logoutError);
+      }
+      
+      // Force complete cleanup regardless of API response
+      authService.clearAuth();
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('tenant_id');
+      localStorage.removeItem('account_type');
+      
+      console.log('TenantAuthContext: Logout completed successfully');
+      
+    } catch (err) {
+      console.error('TenantAuthContext: Logout failed', err);
+      // Force cleanup even on error
+      authService.clearAuth();
+      localStorage.clear();
+    } finally {
       setIsLoading(false);
+      // Navigate to login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
-  }, [clearError, handleError]);
+  }, [clearError]);
 
   const getCurrentUser = useCallback(async () => {
+    // Don't make API calls if not authenticated or already loading
+    if (!authService.isAuthenticated() || isLoading) {
+      return;
+    }
+
+    // CRITICAL FIX: Don't make API calls with demo tokens
+    const currentToken = authService.getToken();
+    if (currentToken?.startsWith('demo_token_')) {
+      console.log('TenantAuthContext: Skipping API call - demo token detected');
+      return;
+    }
+
     try {
       setIsLoading(true);
       const response = await authService.getCurrentUser();
@@ -141,11 +178,13 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
         setTenant(response.tenant);
       }
     } catch (err) {
-      handleError(err);
+      console.error('TenantAuthContext: getCurrentUser failed', err);
+      // Don't set error state for authentication failures to prevent loops
+      // handleError(err);
     } finally {
       setIsLoading(false);
     }
-  }, [handleError]);
+  }, [handleError, isLoading]);
 
   const value: TenantAuthContextType = {
     user,

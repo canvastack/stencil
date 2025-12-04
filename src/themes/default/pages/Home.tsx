@@ -115,12 +115,12 @@ const Home: React.FC<PageProps> = ({ className }) => {
       
       {/* Hero Section with Carousel */}
       <section className="relative h-screen min-h-[600px] flex items-center justify-center px-4 overflow-hidden">
-        <HeroCarousel />
+        <HeroCarousel content={content} />
         
         <div className="container mx-auto text-center max-w-4xl relative z-10">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-fade-in text-white">
             <TypingEffect 
-              texts={pageData.hero?.title?.typing || []}
+              texts={pageData.hero?.title?.typing || pageData.hero?.texts || ['Build Your Business', 'Create Beautiful Websites', 'Grow Your Success']}
               typingSpeed={80}
               deletingSpeed={40}
               delayBetweenTexts={3000}
