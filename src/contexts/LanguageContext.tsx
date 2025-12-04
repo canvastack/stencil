@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export type Language = 'id' | 'en';
 
@@ -52,21 +52,47 @@ const defaultTranslations: Translation[] = [
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('app-language');
-    return (saved as Language) || 'id';
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('app-language');
+        return (saved as Language) || 'id';
+      }
+    } catch (error) {
+      console.warn('Error accessing localStorage for language:', error);
+    }
+    return 'id';
   });
   
   const [translations, setTranslations] = useState<Translation[]>(() => {
-    const saved = localStorage.getItem('app-translations');
-    return saved ? JSON.parse(saved) : defaultTranslations;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const saved = localStorage.getItem('app-translations');
+        return saved ? JSON.parse(saved) : defaultTranslations;
+      }
+    } catch (error) {
+      console.warn('Error accessing localStorage for translations:', error);
+    }
+    return defaultTranslations;
   });
 
   useEffect(() => {
-    localStorage.setItem('app-language', language);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('app-language', language);
+      }
+    } catch (error) {
+      console.warn('Error saving language to localStorage:', error);
+    }
   }, [language]);
 
   useEffect(() => {
-    localStorage.setItem('app-translations', JSON.stringify(translations));
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('app-translations', JSON.stringify(translations));
+      }
+    } catch (error) {
+      console.warn('Error saving translations to localStorage:', error);
+    }
   }, [translations]);
 
   const setLanguage = (lang: Language) => {

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+</head>
+<body>
+    <h1>Testing API Connection</h1>
+    <div id="result">Loading...</div>
+    
+    <script>
+        async function testAPI() {
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/test/tenant/cms/pages?search=home&per_page=1');
+                const data = await response.json();
+                
+                document.getElementById('result').innerHTML = `
+                    <h2>✅ API Connection Successful!</h2>
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Success:</strong> ${data.success}</p>
+                    <p><strong>Data Count:</strong> ${data.data?.length || 0} pages</p>
+                    <p><strong>First Page:</strong> ${data.data?.[0]?.title || 'N/A'}</p>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `
+                    <h2>❌ API Connection Failed</h2>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Details:</strong> Make sure Laravel backend is running on localhost:8000</p>
+                `;
+            }
+        }
+        
+        testAPI();
+    </script>
+</body>
+</html>

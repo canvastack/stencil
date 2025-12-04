@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/core/engine/ThemeProvider";
 import { themeManager } from "@/core/engine/ThemeManager";
 // Import default theme to ensure registration
 import "@/themes/default/index";
+
 import { 
   BrowserRouter,
   Routes,
@@ -146,6 +147,9 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
+                  
+                {/* Authentication Routes */}
+                <Route path="/auth/login" element={<LoginPage />} />
                   
                 {/* Platform Routes */}
                 <Route path="/platform/login" element={<PlatformLogin />} />

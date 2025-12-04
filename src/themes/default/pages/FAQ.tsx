@@ -105,12 +105,12 @@ const FAQ = () => {
                     })()}
                   </div>
                   <h2 className="text-2xl font-bold text-foreground">
-                    {category.category}
+                    {category.name || category.category}
                   </h2>
                 </div>
 
                 <Accordion type="single" collapsible className="space-y-4">
-                  {category.questions.map((item, qIdx) => (
+                  {(category.faqs || category.questions || []).map((item, qIdx) => (
                     <AccordionItem 
                       key={qIdx} 
                       value={`item-${idx}-${qIdx}`}
@@ -118,11 +118,11 @@ const FAQ = () => {
                     >
                       <AccordionTrigger className="text-left hover:text-primary hover:no-underline py-4">
                         <span className="font-semibold text-base pr-4">
-                          {item.q}
+                          {item.question || item.q}
                         </span>
                       </AccordionTrigger>
                       <AccordionContent className="text-muted-foreground leading-relaxed pb-4 pt-2">
-                        {item.a}
+                        {item.answer || item.a}
                       </AccordionContent>
                     </AccordionItem>
                   ))}

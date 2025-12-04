@@ -46,26 +46,34 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Try Phase 4 CMS API first
       try {
+        console.log(`[ContentContext] Attempting to load CMS data for slug: ${slug}`);
         const apiData = await cmsService.getLegacyPageContent(slug);
         if (apiData) {
+          console.log(`[ContentContext] Successfully loaded CMS data for ${slug}:`, apiData);
           data = apiData;
+        } else {
+          console.warn(`[ContentContext] CMS API returned no data for ${slug}`);
         }
       } catch (apiError) {
-        console.warn(`CMS API failed for ${slug}, falling back to mock data:`, apiError);
+        console.error(`[ContentContext] CMS API failed for ${slug}:`, apiError);
         
-        // Fallback to mock data
-        const page = getPageBySlug(slug);
-        if (page) {
-          data = {
-            id: page.id,
-            pageSlug: page.pageSlug,
-            content: page.content,
-            status: page.status || 'published',
-            publishedAt: page.publishedAt,
-            version: 1,
-            createdAt: page.createdAt || new Date().toISOString(),
-            updatedAt: page.updatedAt || new Date().toISOString(),
-          };
+        // Only fallback to mock data in extreme cases (not for auth errors in demo mode)
+        const isDemoMode = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+        if (!isDemoMode && apiError.status !== 401) {
+          console.log(`[ContentContext] Falling back to mock data for ${slug}`);
+          const page = getPageBySlug(slug);
+          if (page) {
+            data = {
+              id: page.id,
+              pageSlug: page.pageSlug,
+              content: page.content,
+              status: page.status || 'published',
+              publishedAt: page.publishedAt,
+              version: 1,
+              createdAt: page.createdAt || new Date().toISOString(),
+              updatedAt: page.updatedAt || new Date().toISOString(),
+            };
+          }
         }
       }
       

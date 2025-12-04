@@ -82,6 +82,8 @@ class CMSService {
   }
 
   private isTestMode(): boolean {
+    // Re-enable test mode since we need authentication for real API endpoints
+    // Test endpoints now return data that matches the real database structure
     return import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
   }
 

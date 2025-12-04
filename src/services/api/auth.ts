@@ -137,47 +137,85 @@ export interface CurrentUserResponse {
 }
 
 class AuthService {
+  async loginTenant(email: string, password: string, tenant_slug: string): Promise<LoginResponse> {
+    const response = await apiClient.post('/auth/tenant/login', {
+      email,
+      password,
+      tenant_slug
+    });
+
+    if (response.data?.success && response.data?.data) {
+      const { token, user, tenant } = response.data.data;
+      
+      this.setAuthToken(token);
+      this.setAccountType('tenant');
+      
+      if (user) {
+        this.setCurrentUser(user);
+        this.setPermissions(user.permissions || []);
+        this.setRoles(user.roles || []);
+      }
+      
+      if (tenant) {
+        this.setCurrentTenant(tenant);
+      }
+      
+      return {
+        token,
+        token_type: 'Bearer',
+        expires_in: 3600,
+        user,
+        tenant,
+        permissions: user?.permissions || [],
+        roles: user?.roles || []
+      };
+    }
+    
+    throw new Error('Invalid response format from server');
+  }
+
+  async loginPlatform(email: string, password: string): Promise<LoginResponse> {
+    const response = await apiClient.post('/auth/platform/login', {
+      email,
+      password
+    });
+
+    if (response.data?.success && response.data?.data) {
+      const { token, account } = response.data.data;
+      
+      this.setAuthToken(token);
+      this.setAccountType('platform');
+      
+      if (account) {
+        this.setPlatformAccount(account);
+        this.setPermissions(account.permissions || []);
+      }
+      
+      return {
+        token,
+        token_type: 'Bearer',
+        expires_in: 3600,
+        account,
+        permissions: account?.permissions || []
+      };
+    }
+    
+    throw new Error('Invalid response format from server');
+  }
+
   async login(data: LoginRequest): Promise<LoginResponse> {
     console.log('AuthService.login called with:', { email: data.email, tenant_slug: data.tenant_slug, accountType: data.accountType });
     
     const accountType = data.accountType || 'tenant';
-    // Use separated endpoints for platform and tenant as per OpenAPI spec
-    const endpoint = accountType === 'platform' 
-      ? '/platform/login' 
-      : '/tenant/login';
-    
-    const payload = {
-      email: data.email,
-      password: data.password,
-      ...(accountType === 'tenant' && data.tenant_slug && { tenant_slug: data.tenant_slug }),
-      remember_me: false
-    };
-    
-    console.log('Making login request to:', endpoint, 'with payload:', { ...payload, password: '[REDACTED]' });
     
     try {
-      const response = await apiClient.post<LoginResponse>(endpoint, payload);
-      console.log('Login response received:', response);
-      
-      // Handle API response structure as per OpenAPI spec
-      const apiResponse = response.data;
-      if (apiResponse?.success && apiResponse?.data) {
-        const loginData = apiResponse.data;
-        const loginResponse: LoginResponse = {
-          access_token: loginData.access_token,
-          token_type: loginData.token_type || 'Bearer',
-          expires_in: loginData.expires_in || 3600,
-          ...(loginData.user && { user: loginData.user }),
-          ...(loginData.tenant && { tenant: loginData.tenant }),
-          ...(loginData.account && { account: loginData.account }),
-          ...(loginData.permissions && { permissions: loginData.permissions }),
-          ...(loginData.roles && { roles: loginData.roles })
-        };
-        
-        return this.processLoginResponse(loginResponse, accountType);
+      if (accountType === 'tenant' && data.tenant_slug) {
+        return this.loginTenant(data.email, data.password, data.tenant_slug);
+      } else if (accountType === 'platform') {
+        return this.loginPlatform(data.email, data.password);
+      } else {
+        throw new Error('Missing tenant_slug for tenant login');
       }
-      
-      throw new Error('Invalid response format from server');
     } catch (error: any) {
       // Development fallback for demo credentials
       if (this.isDemoCredentials(data)) {
@@ -187,11 +225,11 @@ class AuthService {
       }
       
       // Handle API error response
-      if (error.response?.data?.error) {
-        throw new Error(error.response.data.error.message || 'Login failed');
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
       }
       
-      throw new Error(error.message || 'Network error during login');
+      throw new Error(error.message || 'Login failed');
     }
   }
 
@@ -354,12 +392,7 @@ class AuthService {
 
   async logout(): Promise<void> {
     try {
-      const accountType = this.getAccountType();
-      const endpoint = accountType === 'platform' 
-        ? '/platform/logout' 
-        : '/tenant/logout';
-      
-      await apiClient.post(endpoint, {});
+      await apiClient.post('/auth/logout', {});
     } catch (error) {
       // Continue with logout even if API call fails
       console.warn('Logout API call failed, clearing local auth data anyway');

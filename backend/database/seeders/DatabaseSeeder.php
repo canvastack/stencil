@@ -30,6 +30,14 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🚀 Seeding Phase 3 Core Business Logic...');
         $this->call(Phase3CoreBusinessSeeder::class);
         
+        // Seed CMS Pages Data
+        $this->command->info('🎨 Seeding CMS Pages for Frontend...');
+        $this->call(CMSPagesSeeder::class);
+        
+        // Seed Authentication Tokens for Development
+        $this->command->info('🔑 Seeding Authentication Tokens for Development...');
+        $this->call(AuthenticationTokenSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');
