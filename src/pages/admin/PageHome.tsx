@@ -667,6 +667,24 @@ export default function PageHome() {
               <CardDescription>Certifications and awards</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="achievements-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="achievements-enabled"
+                  checked={formData.achievements?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      achievements: { ...formData.achievements, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Section Title</Label>
                 <Input
@@ -1129,6 +1147,24 @@ export default function PageHome() {
               <CardDescription>How your service works - step by step</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="process-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="process-enabled"
+                  checked={formData.process?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      process: { ...formData.process, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Section Title</Label>
                 <Input
@@ -1265,6 +1301,24 @@ export default function PageHome() {
               <CardDescription>Customer reviews and feedback</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="testimonials-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="testimonials-enabled"
+                  checked={formData.testimonials?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      testimonials: { ...formData.testimonials, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Section Title</Label>
                 <Input
@@ -1436,6 +1490,37 @@ export default function PageHome() {
         </TabsContent>
 
         <TabsContent value="cta" className="space-y-4">
+          {/* Enable/Disable CTA Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>CTA Sections</CardTitle>
+              <CardDescription>Manage call-to-action sections</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="cta-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="cta-enabled"
+                  checked={formData.cta?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      cta: {
+                        ...formData.cta,
+                        enabled: checked
+                      }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Primary CTA Section */}
           <Card>
             <CardHeader>
               <CardTitle>Primary CTA Section</CardTitle>
@@ -1445,14 +1530,14 @@ export default function PageHome() {
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
-                  value={formData.cta?.primary?.title || ""}
+                  value={formData.cta?.[0]?.title || ""}
                   onChange={(e) => {
+                    const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                    if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                    ctaArray[0] = { ...ctaArray[0], title: e.target.value };
                     setFormData({
                       ...formData,
-                      cta: {
-                        ...formData.cta,
-                        primary: { ...formData.cta?.primary, title: e.target.value }
-                      }
+                      cta: ctaArray
                     });
                     setHasChanges(true);
                   }}
@@ -1462,14 +1547,14 @@ export default function PageHome() {
                 <Label>Subtitle</Label>
                 <Textarea
                   rows={2}
-                  value={formData.cta?.primary?.subtitle || ""}
+                  value={formData.cta?.[0]?.subtitle || ""}
                   onChange={(e) => {
+                    const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                    if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                    ctaArray[0] = { ...ctaArray[0], subtitle: e.target.value };
                     setFormData({
                       ...formData,
-                      cta: {
-                        ...formData.cta,
-                        primary: { ...formData.cta?.primary, subtitle: e.target.value }
-                      }
+                      cta: ctaArray
                     });
                     setHasChanges(true);
                   }}
@@ -1479,16 +1564,16 @@ export default function PageHome() {
                 <div className="space-y-2">
                   <Label>Button 1 Text</Label>
                   <Input
-                    value={formData.cta?.primary?.buttons?.[0]?.text || ""}
+                    value={formData.cta?.[0]?.buttons?.[0]?.text || ""}
                     onChange={(e) => {
-                      const buttons = formData.cta?.primary?.buttons || [{}, {}];
+                      const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                      if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                      const buttons = ctaArray[0].buttons || [{}, {}];
                       buttons[0] = { ...buttons[0], text: e.target.value };
+                      ctaArray[0] = { ...ctaArray[0], buttons };
                       setFormData({
                         ...formData,
-                        cta: {
-                          ...formData.cta,
-                          primary: { ...formData.cta?.primary, buttons }
-                        }
+                        cta: ctaArray
                       });
                       setHasChanges(true);
                     }}
@@ -1497,16 +1582,16 @@ export default function PageHome() {
                 <div className="space-y-2">
                   <Label>Button 1 Link</Label>
                   <Input
-                    value={formData.cta?.primary?.buttons?.[0]?.link || ""}
+                    value={formData.cta?.[0]?.buttons?.[0]?.link || ""}
                     onChange={(e) => {
-                      const buttons = formData.cta?.primary?.buttons || [{}, {}];
+                      const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                      if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                      const buttons = ctaArray[0].buttons || [{}, {}];
                       buttons[0] = { ...buttons[0], link: e.target.value };
+                      ctaArray[0] = { ...ctaArray[0], buttons };
                       setFormData({
                         ...formData,
-                        cta: {
-                          ...formData.cta,
-                          primary: { ...formData.cta?.primary, buttons }
-                        }
+                        cta: ctaArray
                       });
                       setHasChanges(true);
                     }}
@@ -1515,16 +1600,16 @@ export default function PageHome() {
                 <div className="space-y-2">
                   <Label>Button 2 Text</Label>
                   <Input
-                    value={formData.cta?.primary?.buttons?.[1]?.text || ""}
+                    value={formData.cta?.[0]?.buttons?.[1]?.text || ""}
                     onChange={(e) => {
-                      const buttons = formData.cta?.primary?.buttons || [{}, {}];
+                      const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                      if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                      const buttons = ctaArray[0].buttons || [{}, {}];
                       buttons[1] = { ...buttons[1], text: e.target.value };
+                      ctaArray[0] = { ...ctaArray[0], buttons };
                       setFormData({
                         ...formData,
-                        cta: {
-                          ...formData.cta,
-                          primary: { ...formData.cta?.primary, buttons }
-                        }
+                        cta: ctaArray
                       });
                       setHasChanges(true);
                     }}
@@ -1533,16 +1618,16 @@ export default function PageHome() {
                 <div className="space-y-2">
                   <Label>Button 2 Link</Label>
                   <Input
-                    value={formData.cta?.primary?.buttons?.[1]?.link || ""}
+                    value={formData.cta?.[0]?.buttons?.[1]?.link || ""}
                     onChange={(e) => {
-                      const buttons = formData.cta?.primary?.buttons || [{}, {}];
+                      const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                      if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                      const buttons = ctaArray[0].buttons || [{}, {}];
                       buttons[1] = { ...buttons[1], link: e.target.value };
+                      ctaArray[0] = { ...ctaArray[0], buttons };
                       setFormData({
                         ...formData,
-                        cta: {
-                          ...formData.cta,
-                          primary: { ...formData.cta?.primary, buttons }
-                        }
+                        cta: ctaArray
                       });
                       setHasChanges(true);
                     }}
@@ -1552,6 +1637,7 @@ export default function PageHome() {
             </CardContent>
           </Card>
 
+          {/* Secondary CTA Section */}
           <Card>
             <CardHeader>
               <CardTitle>Secondary CTA Section</CardTitle>
@@ -1561,14 +1647,14 @@ export default function PageHome() {
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
-                  value={formData.cta?.secondary?.title || ""}
+                  value={formData.cta?.[1]?.title || ""}
                   onChange={(e) => {
+                    const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                    if (!ctaArray[1]) ctaArray[1] = { type: 'secondary' };
+                    ctaArray[1] = { ...ctaArray[1], title: e.target.value };
                     setFormData({
                       ...formData,
-                      cta: {
-                        ...formData.cta,
-                        secondary: { ...formData.cta?.secondary, title: e.target.value }
-                      }
+                      cta: ctaArray
                     });
                     setHasChanges(true);
                   }}
@@ -1578,14 +1664,14 @@ export default function PageHome() {
                 <Label>Subtitle</Label>
                 <Textarea
                   rows={2}
-                  value={formData.cta?.secondary?.subtitle || ""}
+                  value={formData.cta?.[1]?.subtitle || ""}
                   onChange={(e) => {
+                    const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                    if (!ctaArray[1]) ctaArray[1] = { type: 'secondary' };
+                    ctaArray[1] = { ...ctaArray[1], subtitle: e.target.value };
                     setFormData({
                       ...formData,
-                      cta: {
-                        ...formData.cta,
-                        secondary: { ...formData.cta?.secondary, subtitle: e.target.value }
-                      }
+                      cta: ctaArray
                     });
                     setHasChanges(true);
                   }}
@@ -1595,17 +1681,16 @@ export default function PageHome() {
                 <div className="space-y-2">
                   <Label>Button Text</Label>
                   <Input
-                    value={formData.cta?.secondary?.button?.text || ""}
+                    value={formData.cta?.[1]?.buttons?.[0]?.text || ""}
                     onChange={(e) => {
+                      const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                      if (!ctaArray[1]) ctaArray[1] = { type: 'secondary' };
+                      const buttons = ctaArray[1].buttons || [{}];
+                      buttons[0] = { ...buttons[0], text: e.target.value };
+                      ctaArray[1] = { ...ctaArray[1], buttons };
                       setFormData({
                         ...formData,
-                        cta: {
-                          ...formData.cta,
-                          secondary: {
-                            ...formData.cta?.secondary,
-                            button: { ...formData.cta?.secondary?.button, text: e.target.value }
-                          }
-                        }
+                        cta: ctaArray
                       });
                       setHasChanges(true);
                     }}
@@ -1614,17 +1699,16 @@ export default function PageHome() {
                 <div className="space-y-2">
                   <Label>Button Link</Label>
                   <Input
-                    value={formData.cta?.secondary?.button?.link || ""}
+                    value={formData.cta?.[1]?.buttons?.[0]?.link || ""}
                     onChange={(e) => {
+                      const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                      if (!ctaArray[1]) ctaArray[1] = { type: 'secondary' };
+                      const buttons = ctaArray[1].buttons || [{}];
+                      buttons[0] = { ...buttons[0], link: e.target.value };
+                      ctaArray[1] = { ...ctaArray[1], buttons };
                       setFormData({
                         ...formData,
-                        cta: {
-                          ...formData.cta,
-                          secondary: {
-                            ...formData.cta?.secondary,
-                            button: { ...formData.cta?.secondary?.button, link: e.target.value }
-                          }
-                        }
+                        cta: ctaArray
                       });
                       setHasChanges(true);
                     }}

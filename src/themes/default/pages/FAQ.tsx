@@ -1,172 +1,239 @@
 import { useState } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { Card } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { MessageCircle, HelpCircle, Lightbulb, ShoppingCart, Truck, Package, CheckCircle2 } from "lucide-react";
 import { usePageContent } from "@/contexts/ContentContext";
+import { useTheme } from '@/core/engine/ThemeContext';
 import { Helmet } from "react-helmet-async";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { 
+  HelpCircle, 
+  Lightbulb, 
+  Package, 
+  ShoppingCart, 
+  Truck,
+  ChevronDown,
+  ChevronUp
+} from "lucide-react";
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+// Icon mapping
+const iconMap: Record<string, any> = {
   HelpCircle,
   Lightbulb,
-  ShoppingCart,
-  Truck,
   Package,
-  MessageCircle
+  ShoppingCart,
+  Truck
 };
 
-const FAQ = () => {
+export default function FAQ() {
+  const { currentTheme } = useTheme();
+  const { Header, Footer } = currentTheme?.components ?? {};
   const { content, loading } = usePageContent("faq");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [openQuestions, setOpenQuestions] = useState<Record<string, boolean>>({});
+
+  if (!Header || !Footer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading theme components...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading content...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!content?.content) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-destructive">Failed to load page content</p>
-        </div>
-      </div>
-    );
-  }
+  const pageData = content?.content;
 
-  const pageData = content.content;
-  const seoData = pageData.seo || {};
-  const faqCategories = pageData.categories || [];
+  const toggleQuestion = (categoryId: string, questionIndex: number) => {
+    const questionKey = `${categoryId}-${questionIndex}`;
+    setOpenQuestions(prev => ({
+      ...prev,
+      [questionKey]: !prev[questionKey]
+    }));
+  };
+
+  const filteredCategories = selectedCategory 
+    ? pageData?.categories?.filter((cat: any) => cat.id === selectedCategory)
+    : pageData?.categories;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted">
+    <>
       <Helmet>
-        <title>{seoData.title || "FAQ"}</title>
-        <meta name="description" content={seoData.description || ""} />
-        {seoData.keywords && (
-          <meta name="keywords" content={Array.isArray(seoData.keywords) ? seoData.keywords.join(", ") : seoData.keywords} />
+        {pageData?.seo?.enabled !== false ? (
+          <>
+            <title>{pageData?.seo?.title || "FAQ - Stencil"}</title>
+            <meta name="description" content={pageData?.seo?.description || "Frequently asked questions"} />
+            <meta name="keywords" content={pageData?.seo?.keywords?.join(', ') || "faq, questions"} />
+            {pageData?.seo?.ogImage && <meta property="og:image" content={pageData.seo.ogImage} />}
+          </>
+        ) : (
+          <title>FAQ</title>
         )}
-        {seoData.ogImage && <meta property="og:image" content={seoData.ogImage} />}
-        <meta property="og:title" content={seoData.title || "FAQ"} />
-        <meta property="og:description" content={seoData.description || ""} />
-        <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={seoData.title || "FAQ"} />
-        <meta name="twitter:description" content={seoData.description || ""} />
-        {seoData.ogImage && <meta name="twitter:image" content={seoData.ogImage} />}
       </Helmet>
+      
       <Header />
       
-      {/* Hero Section */}
-      <section className="pt-32 pb-16 px-4">
-        <div className="container mx-auto max-w-4xl text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-orange-light rounded-2xl mb-6 animate-float">
-            <HelpCircle className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-orange-light to-primary bg-clip-text text-transparent animate-gradient">
-            {pageData.hero?.title || "Frequently Asked Questions"}
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            {pageData.hero?.subtitle || ""}
-          </p>
-          <Button 
-            size="lg"
-            className="bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow"
-            onClick={() => window.location.href = '/contact'}
-          >
-            <MessageCircle className="w-5 h-5 mr-2" />
-            Hubungi Kami
-          </Button>
-        </div>
-      </section>
-
-      {/* FAQ Categories */}
-      <section className="pb-20 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <div className="space-y-8">
-            {faqCategories.map((category, idx) => (
-              <Card 
-                key={idx}
-                className="p-6 md:p-8 backdrop-blur-sm bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 animate-fade-in"
-                style={{ animationDelay: `${idx * 100}ms` }}
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-orange-light flex items-center justify-center text-white">
-                    {(() => {
-                      const IconComponent = iconMap[category.icon] || HelpCircle;
-                      return <IconComponent className="w-5 h-5" />;
-                    })()}
-                  </div>
-                  <h2 className="text-2xl font-bold text-foreground">
-                    {category.category}
-                  </h2>
-                </div>
-
-                <Accordion type="single" collapsible className="space-y-4">
-                  {category.questions.map((item, qIdx) => (
-                    <AccordionItem 
-                      key={qIdx} 
-                      value={`item-${idx}-${qIdx}`}
-                      className="border border-border/50 rounded-lg px-6 hover:border-primary/30 transition-all"
-                    >
-                      <AccordionTrigger className="text-left hover:text-primary hover:no-underline py-4">
-                        <span className="font-semibold text-base pr-4">
-                          {item.q}
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground leading-relaxed pb-4 pt-2">
-                        {item.a}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </Card>
-            ))}
-          </div>
-
-          {/* Still Have Questions CTA */}
-          {pageData.cta && (
-            <Card className="mt-12 p-8 md:p-12 text-center bg-gradient-to-br from-primary/5 to-orange-light/5 border-primary/20">
-              <MessageCircle className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="text-2xl font-bold mb-4 text-foreground">
-                {pageData.cta.title}
-              </h3>
-              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                {pageData.cta.subtitle}
+      <div className="min-h-screen">
+        {/* Hero Section */}
+        {pageData?.hero && (
+          <section className="py-20 px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
+            <div className="container mx-auto max-w-4xl text-center">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6">
+                {pageData.hero.title}
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+                {pageData.hero.subtitle}
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                {(pageData.cta.buttons || []).map((button: any, i: number) => (
-                  <Button 
-                    key={i}
-                    size="lg"
-                    variant={button.variant === 'outline' ? 'outline' : 'default'}
-                    className={
-                      button.variant === 'outline'
-                        ? 'border-primary/30 hover:bg-primary/5'
-                        : 'bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow'
-                    }
-                    onClick={() => window.location.href = button.link || '#'}
+            </div>
+          </section>
+        )}
+
+        {/* FAQ Content */}
+        {pageData?.categories && pageData.categories?.enabled !== false && (
+          <section className="py-16 px-4">
+            <div className="container mx-auto max-w-6xl">
+              
+              {/* Category Filter */}
+              <div className="mb-12">
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Button
+                    variant={selectedCategory === null ? "default" : "outline"}
+                    onClick={() => setSelectedCategory(null)}
+                    className="flex items-center gap-2"
                   >
-                    {i === 0 && <MessageCircle className="w-5 h-5 mr-2" />}
-                    {button.text}
+                    <HelpCircle className="w-4 h-4" />
+                    Semua Kategori
                   </Button>
-                ))}
+                  {pageData.categories.map((category: any) => {
+                    const IconComponent = iconMap[category.icon] || HelpCircle;
+                    return (
+                      <Button
+                        key={category.id}
+                        variant={selectedCategory === category.id ? "default" : "outline"}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <IconComponent className="w-4 h-4" />
+                        {category.category}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
-            </Card>
-          )}
-        </div>
-      </section>
 
+              {/* FAQ Categories and Questions */}
+              <div className="space-y-8">
+                {filteredCategories?.map((category: any) => {
+                  const IconComponent = iconMap[category.icon] || HelpCircle;
+                  return (
+                    <div key={category.id} className="space-y-4">
+                      {/* Category Header */}
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+                          <IconComponent className="h-6 w-6 text-primary" />
+                        </div>
+                        <h2 className="text-2xl md:text-3xl font-bold text-primary">
+                          {category.category}
+                        </h2>
+                      </div>
+
+                      {/* Questions */}
+                      <div className="space-y-3">
+                        {category.questions?.map((faq: any, index: number) => {
+                          const questionKey = `${category.id}-${index}`;
+                          const isOpen = openQuestions[questionKey];
+                          
+                          return (
+                            <Card key={index} className="overflow-hidden">
+                              <button
+                                onClick={() => toggleQuestion(category.id, index)}
+                                className="w-full p-6 text-left hover:bg-muted/50 transition-colors flex items-center justify-between"
+                              >
+                                <h3 className="text-lg font-semibold pr-4">
+                                  {faq.q}
+                                </h3>
+                                {isOpen ? (
+                                  <ChevronUp className="h-5 w-5 text-primary flex-shrink-0" />
+                                ) : (
+                                  <ChevronDown className="h-5 w-5 text-primary flex-shrink-0" />
+                                )}
+                              </button>
+                              
+                              {isOpen && (
+                                <div className="px-6 pb-6 border-t">
+                                  <div className="pt-4 text-muted-foreground leading-relaxed whitespace-pre-line">
+                                    {faq.a}
+                                  </div>
+                                </div>
+                              )}
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* CTA Section */}
+        {pageData?.cta && pageData.cta?.enabled !== false && (
+          <section className="py-20 px-4 bg-gradient-to-r from-primary to-primary/80 text-white relative overflow-hidden">
+            <div className="container mx-auto max-w-4xl relative z-10">
+              <div className="text-center">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                  {pageData.cta.title}
+                </h2>
+                <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
+                  {pageData.cta.subtitle}
+                </p>
+                
+                {pageData.cta.buttons && (
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    {pageData.cta.buttons.map((button: any, index: number) => (
+                      <Button
+                        key={index}
+                        variant={button.variant === 'outline' ? 'outline' : 'default'}
+                        size="lg"
+                        className={`${button.variant === 'outline' 
+                          ? 'border-white text-white hover:bg-white hover:text-primary' 
+                          : 'bg-white text-primary hover:bg-white/90'
+                        } px-8`}
+                        asChild
+                      >
+                        <a href={button.link} target={button.link.startsWith('http') ? '_blank' : '_self'}>
+                          {button.text}
+                        </a>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Background decoration */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-10">
+              <div className="absolute top-10 right-10 w-32 h-32 border border-white rounded-full"></div>
+              <div className="absolute bottom-10 left-10 w-48 h-48 border border-white rounded-full"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-white rounded-full"></div>
+            </div>
+          </section>
+        )}
+      </div>
+      
       <Footer />
-    </div>
+    </>
   );
-};
-
-export default FAQ;
+}

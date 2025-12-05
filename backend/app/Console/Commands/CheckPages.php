@@ -63,6 +63,20 @@ class CheckPages extends Command
             $this->line("- WhyChooseUs section: " . (isset($homepage->content['whyChooseUs']['enabled']) ? ($homepage->content['whyChooseUs']['enabled'] ? 'Enabled' : 'Disabled') : 'Not set'));
             $this->line("- Achievements section: " . (isset($homepage->content['achievements']['enabled']) ? ($homepage->content['achievements']['enabled'] ? 'Enabled' : 'Disabled') : 'Not set'));
             $this->line("- Testimonials section: " . (isset($homepage->content['testimonials']['enabled']) ? ($homepage->content['testimonials']['enabled'] ? 'Enabled' : 'Disabled') : 'Not set'));
+            
+            $this->newLine();
+            $this->info("CTA Data Structure:");
+            if (isset($homepage->content['cta'])) {
+                $this->line("CTA structure: " . (is_array($homepage->content['cta']) ? 'Array (' . count($homepage->content['cta']) . ' items)' : 'Object'));
+                if (is_array($homepage->content['cta']) && count($homepage->content['cta']) > 0) {
+                    foreach ($homepage->content['cta'] as $index => $cta) {
+                        $this->line("  [{$index}] type: " . ($cta['type'] ?? 'not set'));
+                        $this->line("      title: " . ($cta['title'] ?? 'not set'));
+                    }
+                }
+            } else {
+                $this->line("No CTA data found");
+            }
         } else {
             $this->error("No homepage found for tenant 1");
         }
