@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { authService } from '../services/api/auth';
+import { debugAuth } from '@/utils/debug';
 
 /**
  * Debug component for testing authentication - only shown in development
@@ -8,6 +9,9 @@ export const DebugAuth: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [authState, setAuthState] = useState<any>(null);
 
+  // Disabled - now integrated into DevDebugger
+  return null;
+  
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
@@ -25,6 +29,10 @@ export const DebugAuth: React.FC = () => {
   const handleDebugAuth = () => {
     const state = authService.debugAuthState();
     console.log('DebugAuth: Current auth state:', state);
+    
+    // Use debug utility
+    debugAuth('Current Auth State', state);
+    
     setAuthState(state);
     setShowModal(true);
   };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from '@/core/engine/ThemeContext';
 import { usePageContent } from "@/contexts/ContentContext";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Mail, Phone, Clock, MessageCircle, CheckCircle2, Users, Award, Target, MessageSquare } from "lucide-react";
+import { debugData } from "@/utils/debug";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   MapPin,
@@ -29,6 +30,26 @@ const Contact = () => {
   const { Header, Footer } = currentTheme?.components ?? {};
   const { content, loading } = usePageContent("contact");
   const navigate = useNavigate();
+
+  // Debug CTA data - useEffect must be called before any early returns
+  useEffect(() => {
+    if (content?.content) {
+      const pageData = content.content;
+      // Use a timeout to prevent double rendering on strict mode
+      const timeoutId = setTimeout(() => {
+        debugData('Contact Page CTA Data', {
+          fullPageData: pageData,
+          cta: pageData.cta,
+          ctaType: Array.isArray(pageData.cta) ? 'array' : typeof pageData.cta,
+          ctaEnabled: pageData.cta?.enabled,
+          ctaItems: pageData.cta?.items || pageData.cta,
+          ctaItemsLength: (pageData.cta?.items || pageData.cta)?.length
+        });
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [content?.content, (window as any).debugClearCounter]); // Re-run when logs are cleared
 
   if (loading) {
     return (
@@ -53,15 +74,6 @@ const Contact = () => {
 
   const pageData = content.content;
   const seoData = pageData.seo || {};
-  
-  // Debug CTA data
-  console.log('Contact Page Debug:', {
-    fullPageData: pageData,
-    cta: pageData.cta,
-    ctaEnabled: pageData.cta?.enabled,
-    ctaItems: pageData.cta?.items,
-    ctaItemsLength: pageData.cta?.items?.length
-  });
 
   return (
     <div className="min-h-screen">
@@ -279,7 +291,12 @@ const Contact = () => {
       )}
 
       {/* CTA Sections */}
-      {pageData.cta?.enabled && pageData.cta?.items ? pageData.cta.items.map((ctaSection: any, index: number) => {
+      {(() => {
+        // Handle both array format (old) and object format (new)
+        const ctaItems = Array.isArray(pageData.cta) ? pageData.cta : 
+                        (pageData.cta?.enabled !== false && pageData.cta?.items) ? pageData.cta.items : [];
+        
+        return ctaItems.map((ctaSection: any, index: number) => {
         const isPrimary = ctaSection.type === 'primary';
         return (
           <section 
@@ -327,11 +344,8 @@ const Contact = () => {
             </div>
           </section>
         );
-      }) : (
-        <div className="py-8 text-center text-red-500">
-          CTA Debug: enabled={String(pageData.cta?.enabled)}, items={pageData.cta?.items?.length || 0}
-        </div>
-      )}
+      });
+      })()}
 
       <Footer />
     </div>

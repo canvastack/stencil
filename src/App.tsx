@@ -27,6 +27,7 @@ import { GlobalContextProvider } from "@/contexts/GlobalContext";
 import { PlatformRouteGuard } from "@/guards/PlatformRouteGuard";
 import { TenantRouteGuard } from "@/guards/TenantRouteGuard";
 import { DebugAuth } from "@/components/DebugAuth";
+import DevDebugger from "@/components/debug/DevDebugger";
 
 import Home from "@/themes/default/pages/Home";
 import About from "@/themes/default/pages/About";
@@ -243,6 +244,9 @@ function App() {
             </ApiServiceProvider>
           </QueryClientProvider>
         </HelmetProvider>
+        
+        {/* Dev Debugger */}
+        <DevDebugger />
       </ErrorBoundary>
   );
 }
