@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace App\Domain\Content\Entities;
 
 use App\Domain\Shared\ValueObjects\Uuid;
+use App\Infrastructure\Persistence\Eloquent\Contracts\TenantAwareModel;
+use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 /**
  * Tenant Page Entity for tenant database schemas  
  * Manages tenant-specific business content with proper isolation
  */
-class TenantPage extends Model
+class TenantPage extends Model implements TenantAwareModel
 {
     use HasFactory, BelongsToTenant;
 

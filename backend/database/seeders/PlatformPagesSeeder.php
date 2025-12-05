@@ -34,14 +34,15 @@ class PlatformPagesSeeder extends Seeder
                 
                 if ($data) {
                     PlatformPage::updateOrCreate(
-                        ['page_slug' => $slug],
+                        ['slug' => $slug],
                         [
+                            'title' => ucfirst($slug) . ' Page',
+                            'description' => $data['description'] ?? "The {$slug} page content",
                             'content' => $data['content'],
                             'status' => $data['status'] ?? 'published',
                             'published_at' => $data['publishedAt'] ?? now(),
-                            'version' => $data['version'] ?? 1,
-                            'previous_version' => $data['previousVersion'],
-                            'updated_by' => $data['updatedBy']
+                            'page_type' => $slug === 'home' ? 'home' : 'page',
+                            'is_homepage' => $slug === 'home'
                         ]
                     );
                     
@@ -64,14 +65,15 @@ class PlatformPagesSeeder extends Seeder
         $fallbackContent = $this->getFallbackContentBySlug($slug);
         
         PlatformPage::updateOrCreate(
-            ['page_slug' => $slug],
+            ['slug' => $slug],
             [
+                'title' => ucfirst($slug) . ' Page',
+                'description' => "The {$slug} page content",
                 'content' => $fallbackContent,
                 'status' => 'published',
                 'published_at' => now(),
-                'version' => 1,
-                'previous_version' => null,
-                'updated_by' => 'system'
+                'page_type' => $slug === 'home' ? 'home' : 'page',
+                'is_homepage' => $slug === 'home'
             ]
         );
         

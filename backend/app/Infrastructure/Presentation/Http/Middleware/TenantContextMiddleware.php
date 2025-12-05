@@ -88,6 +88,7 @@ class TenantContextMiddleware
         $host = $request->getHost();
         $path = $request->path();
 
+        // First check domain-based identification
         $tenant = $this->getTenantByDomain($host);
         if ($tenant) {
             return $tenant;
@@ -98,6 +99,12 @@ class TenantContextMiddleware
             return TenantEloquentModel::where('slug', $subdomain)->first();
         }
 
+        // Check headers for tenant identification (API clients)
+        $tenantFromHeaders = $this->getTenantFromHeaders($request);
+        if ($tenantFromHeaders) {
+            return $tenantFromHeaders;
+        }
+
         if ($this->isMainDomain($host)) {
             $tenantSlug = $this->extractTenantSlugFromPath($path);
             if ($tenantSlug) {
@@ -105,6 +112,26 @@ class TenantContextMiddleware
             }
         }
 
+        return null;
+    }
+
+    private function getTenantFromHeaders(Request $request): ?TenantEloquentModel
+    {
+        // Check for tenant identification via headers
+        $tenantId = $request->header('X-Tenant-ID');
+        $tenantSlug = $request->header('X-Tenant-Slug');
+        
+        if ($tenantId) {
+            $tenant = TenantEloquentModel::where('uuid', $tenantId)->first();
+            if ($tenant) {
+                return $tenant;
+            }
+        }
+        
+        if ($tenantSlug) {
+            return TenantEloquentModel::where('slug', $tenantSlug)->first();
+        }
+        
         return null;
     }
 

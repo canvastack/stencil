@@ -144,7 +144,7 @@ const PlatformLogin = () => {
           <div className="mt-6 text-center text-sm">
             <p className="text-muted-foreground">
               Akses Tenant?{' '}
-              <Link to="/admin/login" className="text-primary font-medium hover:underline">
+              <Link to="/login" className="text-primary font-medium hover:underline">
                 Login Tenant
               </Link>
             </p>

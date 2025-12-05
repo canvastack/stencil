@@ -51,7 +51,8 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
   const [userType, setUserType] = useState<UserType>('anonymous');
   const [tenant, setTenant] = useState<TenantInfo | undefined>(undefined);
   const [platform, setPlatform] = useState<PlatformInfo | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(false);
+  // CRITICAL FIX: Start with loading=true until auth contexts initialize
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const platformAuth = usePlatformAuth();
@@ -90,8 +91,17 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
       } else if (storedAccountType === 'tenant') {
         console.log('GlobalContext: Detected tenant user');
         const tenantData = authService.getCurrentTenantFromStorage();
+        const storedToken = authService.getAuthToken();
         
-        if (tenantData) {
+        // CRITICAL FIX: Check if we have valid token and tenant data
+        console.log('GlobalContext: Checking tenant authentication', {
+          hasTenantData: !!tenantData,
+          hasToken: !!storedToken,
+          isDemoToken: storedToken ? authService.isDemoToken(storedToken) : null,
+          tokenSnippet: storedToken?.substring(0, 20) + '...'
+        });
+        
+        if (tenantData && storedToken && !authService.isDemoToken(storedToken)) {
           setTenant({
             uuid: tenantData.uuid,
             name: tenantData.name,
@@ -101,6 +111,14 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
           });
           setUserType('tenant');
           return 'tenant';
+        } else {
+          // FIXED: Don't clear auth unless it's explicitly a demo token
+          if (storedToken && authService.isDemoToken(storedToken)) {
+            console.log('GlobalContext: Demo token detected, clearing auth');
+            authService.clearAuth();
+          } else {
+            console.log('GlobalContext: Tenant data missing but keeping token - setting anonymous');
+          }
         }
       }
 
@@ -128,7 +146,7 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
     contextData?: any
   ): Promise<void> => {
     try {
-      setIsLoading(true);
+      // Don't set loading here - it's managed by the main useEffect
       setError(null);
 
       if (type === 'platform') {
@@ -160,8 +178,6 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
     } catch (err) {
       console.error('GlobalContext: Error switching context:', err);
       setError(err instanceof Error ? err.message : 'Failed to switch context');
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -173,32 +189,49 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
     setError(null);
   }, []);
 
-  // Effect to sync with auth contexts
+  // CRITICAL FIX: Single initialization based on auth contexts
+  // Remove race conditions by waiting for auth contexts to finish loading
   useEffect(() => {
     console.log('GlobalContext: Auth state changed', {
       platformAuth: platformAuth.isAuthenticated,
-      tenantAuth: tenantAuth.isAuthenticated
+      tenantAuth: tenantAuth.isAuthenticated,
+      platformLoading: platformAuth.isLoading,
+      tenantLoading: tenantAuth.isLoading
     });
 
+    // Don't make decisions while auth contexts are still loading
+    if (platformAuth.isLoading || tenantAuth.isLoading) {
+      console.log('GlobalContext: Auth contexts still loading, waiting...');
+      return;
+    }
+
+    // Auth contexts have finished loading, set loading to false
+    setIsLoading(false);
+
     if (platformAuth.isAuthenticated && platformAuth.account) {
+      console.log('GlobalContext: Setting platform user context');
       switchContext('platform', { account: platformAuth.account });
     } else if (tenantAuth.isAuthenticated && tenantAuth.user && tenantAuth.tenant) {
+      console.log('GlobalContext: Setting tenant user context');
       switchContext('tenant', { user: tenantAuth.user, tenant: tenantAuth.tenant });
     } else if (!platformAuth.isAuthenticated && !tenantAuth.isAuthenticated) {
+      console.log('GlobalContext: No authentication found, setting anonymous');
       clearContext();
     }
   }, [
     platformAuth.isAuthenticated,
     platformAuth.account,
+    platformAuth.isLoading,
     tenantAuth.isAuthenticated,
     tenantAuth.user,
-    tenantAuth.tenant
+    tenantAuth.tenant,
+    tenantAuth.isLoading,
+    switchContext,
+    clearContext
   ]);
 
-  // Initialize context detection on mount
-  useEffect(() => {
-    detectContext();
-  }, [detectContext]);
+  // REMOVED: detectContext() call on mount to prevent race conditions
+  // Authentication state is now determined solely by auth context changes
 
   const value: GlobalContextType = useMemo(() => ({
     userType,

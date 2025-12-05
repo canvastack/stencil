@@ -84,12 +84,14 @@ class TenantApiClient {
         // Handle tenant-specific authentication errors
         if (error.response?.status === 401) {
           console.log('TenantApiClient: Unauthorized - clearing tenant auth');
-          authService.clearAuth();
           
-          // Redirect to tenant login if we're in tenant context
+          // Only clear auth and redirect if we're in admin context
           if (window.location.pathname.startsWith('/admin')) {
-            window.location.href = '/admin/login';
+            authService.clearAuth();
+            window.location.href = '/login';
           }
+          // For public pages, just log the error but don't clear auth
+          // Let ContentContext handle the fallback to anonymous content
         }
 
         // Handle tenant-specific forbidden errors

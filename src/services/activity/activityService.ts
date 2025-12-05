@@ -58,7 +58,7 @@ class ActivityService {
     const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
     const isDemoToken = token?.startsWith('demo_token_');
     
-    return isDevelopment || isDemoToken;
+    return isDemoToken;
   }
 
   /**

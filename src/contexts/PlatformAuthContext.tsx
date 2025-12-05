@@ -24,7 +24,8 @@ interface PlatformAuthProviderProps {
 export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ children }) => {
   const [account, setAccount] = useState<PlatformAccount | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // CRITICAL FIX: Start with loading=true during initialization
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize from localStorage
@@ -39,6 +40,9 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
         setPermissions(storedPermissions);
       }
     }
+    
+    // Mark initialization as complete
+    setIsLoading(false);
   }, []);
 
   const clearError = useCallback(() => {

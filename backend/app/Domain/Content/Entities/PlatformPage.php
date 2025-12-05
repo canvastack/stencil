@@ -16,7 +16,7 @@ class PlatformPage extends Model
 {
     use HasFactory;
 
-    protected $connection = 'landlord';
+    // Platform pages are stored in the main database
     protected $table = 'platform_pages';
 
     protected $fillable = [

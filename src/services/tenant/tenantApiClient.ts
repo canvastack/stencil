@@ -247,12 +247,13 @@ class TenantApiClientManager {
   }
 
   private isDemoMode(): boolean {
-    // Check if we're in development or using demo tokens
+    // CRITICAL FIX: Only consider demo mode if we actually have demo tokens
+    // Don't assume demo mode just because we're in development
     const token = this.getAuthToken();
-    const isDevelopment = import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
     const isDemoToken = token?.startsWith('demo_token_');
     
-    return isDevelopment || isDemoToken;
+    // Only use demo mode if we explicitly have demo tokens
+    return isDemoToken;
   }
 
   private logout() {
@@ -265,8 +266,8 @@ class TenantApiClientManager {
 
     this.log('info', 'Tenant user logged out due to authentication error');
 
-    if (window.location.pathname !== '/admin/login') {
-      window.location.href = '/admin/login';
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
     }
   }
 

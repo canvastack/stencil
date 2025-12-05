@@ -239,7 +239,7 @@ export const TenantSidebar = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/admin/login');
+      navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
     }

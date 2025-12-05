@@ -206,9 +206,17 @@ export const useAuthState = (): UseAuthStateReturn => {
 
   // Auto-refresh auth state on mount (only once) - DISABLED to prevent infinite loops
   useEffect(() => {
-    // CRITICAL FIX: Don't auto-refresh on mount to prevent infinite loops
+    const token = authService.getToken();
+    
+    // CRITICAL FIX: Clear demo tokens immediately on mount
+    if (token && authService.isDemoToken(token)) {
+      console.log('useAuthState: Demo token detected on mount, clearing auth');
+      authService.clearAuth();
+      return;
+    }
+    
     // Only refresh if there's a valid stored token and we're not already authenticated
-    const hasValidToken = authService.isAuthenticated() && !authService.getToken()?.startsWith('demo_token_');
+    const hasValidToken = authService.isAuthenticated() && token && !token.startsWith('demo_token_');
     const needsRefresh = hasValidToken && !authState.isAuthenticated && !authState.isLoading;
     
     if (needsRefresh) {
@@ -217,6 +225,9 @@ export const useAuthState = (): UseAuthStateReturn => {
     } else {
       console.log('useAuthState: Skipping auto-refresh to prevent loops', {
         hasValidToken,
+        tokenExists: !!token,
+        tokenType: token?.substring(0, 10) + '...',
+        isDemoToken: token?.startsWith('demo_token_'),
         isAuthenticated: authState.isAuthenticated,
         isLoading: authState.isLoading
       });

@@ -159,31 +159,82 @@ class AuthService {
       const response = await apiClient.post<LoginResponse>(endpoint, payload);
       console.log('Login response received:', response);
       
-      // Handle API response structure as per OpenAPI spec
-      const apiResponse = response.data;
-      if (apiResponse?.success && apiResponse?.data) {
-        const loginData = apiResponse.data;
-        const loginResponse: LoginResponse = {
-          access_token: loginData.access_token,
-          token_type: loginData.token_type || 'Bearer',
-          expires_in: loginData.expires_in || 3600,
-          ...(loginData.user && { user: loginData.user }),
-          ...(loginData.tenant && { tenant: loginData.tenant }),
-          ...(loginData.account && { account: loginData.account }),
-          ...(loginData.permissions && { permissions: loginData.permissions }),
-          ...(loginData.roles && { roles: loginData.roles })
-        };
-        
-        return this.processLoginResponse(loginResponse, accountType);
+      // CRITICAL FIX: The axios interceptor returns response.data directly
+      // So 'response' is actually the data, not the full response object
+      let loginData;
+      
+      if (response?.success && response?.data) {
+        // Wrapped response format
+        loginData = response.data;
+      } else {
+        // Direct response format (axios interceptor already extracted response.data)
+        loginData = response;
       }
       
-      throw new Error('Invalid response format from server');
+      // Safety check for loginData
+      if (!loginData || typeof loginData !== 'object') {
+        console.error('Invalid loginData:', { loginData, apiResponse, responseData: response.data });
+        throw new Error(`Invalid login response format: ${typeof loginData}`);
+      }
+      
+      // Debug the token extraction
+      const extractedToken = loginData.access_token || loginData.token;
+      console.log('Token extraction debug:', {
+        hasAccessToken: !!loginData.access_token,
+        hasToken: !!loginData.token,
+        extractedToken: extractedToken?.substring(0, 20) + '...',
+        loginDataKeys: Object.keys(loginData || {}),
+        loginDataValues: loginData
+      });
+      
+      if (!extractedToken) {
+        throw new Error('No access token found in login response - check backend response format');
+      }
+      
+      // Handle both backend response formats: platform returns 'access_token', tenant returns 'token'
+      const loginResponse: LoginResponse = {
+        access_token: extractedToken,
+        token_type: loginData.token_type || 'Bearer',
+        expires_in: loginData.expires_in || 3600,
+        ...(loginData.user && { user: loginData.user }),
+        ...(loginData.tenant && { tenant: loginData.tenant }),
+        ...(loginData.account && { account: loginData.account }),
+        ...(loginData.permissions && { permissions: loginData.permissions }),
+        ...(loginData.roles && { roles: loginData.roles })
+      };
+      
+      return this.processLoginResponse(loginResponse, accountType);
     } catch (error: any) {
-      // Development fallback for demo credentials
-      if (this.isDemoCredentials(data)) {
-        console.log('Backend unavailable, using demo login fallback');
+      console.error('AuthService.login error:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        url: error.config?.url,
+        hasResponse: !!error.response,
+        errorType: error.constructor.name
+      });
+      
+      // Only use demo fallback for network/connection errors, not parsing errors
+      // If we got a response from the server, don't fallback to demo
+      const hasHttpResponse = error.response?.status;
+      
+      console.log('Error analysis:', {
+        hasHttpResponse,
+        httpStatus: error.response?.status,
+        isDemoCredentials: this.isDemoCredentials(data),
+        willUseDemoFallback: !hasHttpResponse && this.isDemoCredentials(data)
+      });
+      
+      if (!hasHttpResponse && this.isDemoCredentials(data)) {
+        console.log('Backend unavailable (network error), using demo login fallback for demo credentials');
         const demoResponse = this.createDemoLoginResponse(data);
         return this.processLoginResponse(demoResponse, accountType);
+      }
+      
+      // If it's a parsing error but we got a successful HTTP response, re-throw
+      if (hasHttpResponse && hasHttpResponse >= 200 && hasHttpResponse < 300) {
+        console.error('Login parsing error with successful HTTP response - this should not happen');
+        throw error;
       }
       
       // SECURITY FIX: Better error handling for invalid credentials
@@ -288,6 +339,17 @@ class AuthService {
 
   private processLoginResponse(loginResponse: LoginResponse, accountType: AccountType): LoginResponse {
     const token = loginResponse.access_token || loginResponse.token;
+    
+    console.log('AuthService: Processing login response', {
+      hasToken: !!token,
+      tokenType: token?.substring(0, 20) + '...',
+      isDemoToken: token?.startsWith('demo_token_'),
+      accountType,
+      hasUser: !!loginResponse.user,
+      hasTenant: !!loginResponse.tenant,
+      hasAccount: !!loginResponse.account
+    });
+    
     if (token) {
       this.setAuthToken(token);
       this.setAccountType(accountType);
@@ -464,6 +526,7 @@ class AuthService {
   }
 
   private setAuthToken(token: string) {
+    console.log('AuthService: Setting auth token', { tokenSnippet: token.substring(0, 20) + '...' });
     localStorage.setItem('auth_token', token);
   }
 
@@ -495,6 +558,12 @@ class AuthService {
   }
 
   clearAuth() {
+    const currentToken = this.getAuthToken();
+    console.log('AuthService: Clearing all authentication data', { 
+      hadToken: !!currentToken,
+      tokenSnippet: currentToken?.substring(0, 20) + '...',
+      stackTrace: new Error().stack
+    });
     localStorage.removeItem('auth_token');
     localStorage.removeItem('account_type');
     localStorage.removeItem('user_id');
@@ -508,8 +577,48 @@ class AuthService {
     clientManager.clearCache();
   }
 
+  /**
+   * Force complete authentication reset - clears everything and reloads page
+   */
+  forceAuthReset() {
+    console.log('AuthService: Force resetting all authentication data');
+    this.clearAuth();
+    // Also clear any potential demo data
+    localStorage.clear();
+    window.location.reload();
+  }
+
+  /**
+   * Debug method to check current auth state
+   */
+  debugAuthState() {
+    const token = this.getToken();
+    return {
+      hasToken: !!token,
+      tokenType: token?.substring(0, 20) + '...',
+      isDemoToken: this.isDemoToken(token),
+      isAuthenticated: this.isAuthenticated(),
+      accountType: this.getAccountType(),
+      user: this.getCurrentUserFromStorage(),
+      tenant: this.getCurrentTenantFromStorage()
+    };
+  }
+
+  /**
+   * Force logout and redirect to login page
+   */
+  forceLogout() {
+    console.log('AuthService: Force logout initiated');
+    this.clearAuth();
+    window.location.href = '/login';
+  }
+
   getAuthToken(): string | null {
     return localStorage.getItem('auth_token');
+  }
+
+  isDemoToken(token: string | null): boolean {
+    return token?.startsWith('demo_token_') || false;
   }
 
   getAccountType(): AccountType | null {
@@ -576,4 +685,9 @@ class AuthService {
 }
 
 export const authService = new AuthService();
+
+// Make auth service available globally for debugging
+if (typeof window !== 'undefined') {
+  (window as any).authService = authService;
+}
 export default authService;

@@ -28,7 +28,8 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
   const [tenant, setTenant] = useState<AuthTenant | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // CRITICAL FIX: Start with loading=true during initialization
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize from localStorage
@@ -42,6 +43,30 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
     });
     
     if (storedAccountType === 'tenant' && isAuthenticated) {
+      const storedToken = authService.getAuthToken();
+      
+      // CRITICAL FIX: Check if token is a demo token and clear if so
+      if (storedToken && authService.isDemoToken(storedToken)) {
+        console.log('TenantAuthContext: Demo token detected, clearing auth to force real login');
+        authService.clearAuth();
+        // Reset all local state after clearing auth
+        setUser(null);
+        setTenant(null);
+        setPermissions([]);
+        setRoles([]);
+        return;
+      }
+      
+      // Also check if there's no token at all (auth was cleared)
+      if (!storedToken) {
+        console.log('TenantAuthContext: No token found, clearing tenant state');
+        setUser(null);
+        setTenant(null);
+        setPermissions([]);
+        setRoles([]);
+        return;
+      }
+      
       const storedUser = authService.getCurrentUserFromStorage();
       const storedTenant = authService.getCurrentTenantFromStorage();
       const storedPermissions = authService.getPermissionsFromStorage();
@@ -50,8 +75,10 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       console.log('TenantAuthContext: Found stored data', {
         hasUser: !!storedUser,
         hasTenant: !!storedTenant,
-        user: storedUser,
-        tenant: storedTenant
+        hasRealToken: !!storedToken && !authService.isDemoToken(storedToken),
+        tokenSnippet: storedToken?.substring(0, 20) + '...',
+        userSnippet: storedUser ? {id: storedUser.id, email: storedUser.email} : null,
+        tenantSnippet: storedTenant ? {id: storedTenant.id, name: storedTenant.name, slug: storedTenant.slug} : null
       });
       
       if (storedUser && storedTenant) {
@@ -60,13 +87,21 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
         setPermissions(storedPermissions);
         setRoles(storedRoles);
       } else {
-        console.log('TenantAuthContext: Missing user or tenant data, clearing auth');
-        authService.clearAuth();
+        console.log('TenantAuthContext: Missing user or tenant data, but keeping token (might be login in progress)');
+        // FIXED: Don't clear auth immediately - user might be in the middle of login process
+        // or data might be temporarily unavailable. Only clear if explicitly demo token
+        setUser(null);
+        setTenant(null);
+        setPermissions([]);
+        setRoles([]);
       }
     } else if (storedAccountType && storedAccountType !== 'tenant') {
       console.log('TenantAuthContext: Wrong account type, clearing auth');
       authService.clearAuth();
     }
+    
+    // Mark initialization as complete
+    setIsLoading(false);
   }, []);
 
   const clearError = useCallback(() => {

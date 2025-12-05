@@ -34,6 +34,14 @@ class DatabaseSeeder extends Seeder
         $this->command->info('📄 Seeding Platform Pages Content...');
         $this->call(PlatformPagesSeeder::class);
         
+        // Seed Platform Content (Home, About, Contact, FAQ, Features, Blog)
+        $this->command->info('🌐 Seeding Platform Content Pages...');
+        $this->call(PlatformContentSeeder::class);
+        
+        // Seed Tenant Content (Home, About, Contact, FAQ, Services, Blog per tenant)
+        $this->command->info('📝 Seeding Tenant Content Pages...');  
+        $this->call(TenantContentSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');
@@ -47,6 +55,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Total Vendors: 50+ vendors');
         $this->command->info('- Platform Roles: 3 roles');
         $this->command->info('- Tenant Roles: 4 roles per tenant');
+        $this->command->info('- Platform Content Pages: 25+ pages (Home, About, Features, Blog)');
+        $this->command->info('- Tenant Content Pages: 35+ pages per tenant (Home, About, Services, Blog)');
         $this->command->info('');
         $this->command->info('🔐 Default Login Credentials:');
         $this->command->info('Platform Super Admin: admin@canvastencil.com / SuperAdmin2024!');

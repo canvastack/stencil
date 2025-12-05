@@ -53,9 +53,23 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
         response = { data: anonymousResponse.data };
       } else if (globalContext.userType === 'platform') {
-        response = await platformApiClient.get(`/platform/pages/${slug}`);
+        response = await platformApiClient.get(`/platform/content/pages/${slug}`);
       } else if (globalContext.userType === 'tenant') {
-        response = await tenantApiClient.get(`/tenant/pages/${slug}`);
+        try {
+          response = await tenantApiClient.get(`/tenant/content/pages/${slug}`);
+        } catch (tenantError: any) {
+          // If tenant auth fails, fall back to anonymous content
+          if (tenantError.response?.status === 401 || tenantError.response?.status === 403) {
+            console.log('ContentContext: Tenant auth failed, falling back to anonymous content');
+            const anonymousResponse = await anonymousApiClient.getPlatformContent('pages', slug);
+            if (!anonymousResponse.success || !anonymousResponse.data) {
+              throw new Error(`Failed to load page content for ${slug}`);
+            }
+            response = { data: anonymousResponse.data };
+          } else {
+            throw tenantError;
+          }
+        }
       } else {
         throw new Error('Unknown user context');
       }
@@ -98,9 +112,9 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Use context-aware API client for updates
       if (globalContext.userType === 'platform') {
-        response = await platformApiClient.put(`/platform/pages/${slug}`, { content });
+        response = await platformApiClient.put(`/platform/content/pages/${slug}`, { content });
       } else if (globalContext.userType === 'tenant') {
-        response = await tenantApiClient.put(`/tenant/pages/${slug}`, { content });
+        response = await tenantApiClient.put(`/tenant/content/pages/${slug}`, { content });
       } else {
         throw new Error('Anonymous users cannot update content');
       }

@@ -11,29 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop existing table if it exists
-        Schema::dropIfExists('platform_pages');
-        
-        // Create new table with correct structure
-        Schema::create('platform_pages', function (Blueprint $table) {
+        Schema::create('tenant_pages', function (Blueprint $table) {
             $table->id();
-            $table->string('uuid')->unique();
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->string('title');
-            $table->string('slug')->unique();
+            $table->string('slug')->unique()->index(); // Unique within tenant schema
             $table->text('description')->nullable();
-            $table->json('content');
+            $table->json('content'); // Tenant business content
             $table->string('template')->default('default');
             $table->json('meta_data')->nullable();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
-            $table->string('page_type')->default('page');
+            $table->enum('page_type', ['home', 'about', 'contact', 'faq', 'services', 'pricing'])->default('home');
             $table->boolean('is_homepage')->default(false);
             $table->integer('sort_order')->default(0);
-            $table->string('language')->default('en');
+            $table->string('language', 5)->default('en');
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
             
-            $table->index(['slug', 'status']);
-            $table->index(['page_type', 'status']);
+            // Indexes for performance
+            $table->index(['status', 'published_at']);
+            $table->index(['page_type', 'language']);
             $table->index(['is_homepage', 'status']);
         });
     }
@@ -43,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('platform_pages');
+        Schema::dropIfExists('tenant_pages');
     }
 };

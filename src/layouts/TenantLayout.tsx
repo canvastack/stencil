@@ -30,7 +30,7 @@ export const TenantLayout = memo(() => {
       hasUser: !!user,
       hasTenant: !!tenant
     });
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return (
