@@ -1,15 +1,15 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTheme } from '@/core/engine/ThemeContext';
+import { usePageContent } from "@/contexts/ContentContext";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate } from "react-router-dom";
-import { MapPin, Mail, Phone, Clock, Users, Award, Target, CheckCircle2, MessageSquare } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { usePageContent } from "@/contexts/ContentContext";
-import { Helmet } from "react-helmet-async";
+import { MapPin, Mail, Phone, Clock, MessageCircle, CheckCircle2, Users, Award, Target, MessageSquare } from "lucide-react";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   MapPin,
@@ -20,10 +20,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Award,
   Target,
   CheckCircle2,
-  MessageSquare
+  MessageSquare,
+  MessageCircle
 };
 
 const Contact = () => {
+  const { currentTheme } = useTheme();
+  const { Header, Footer } = currentTheme?.components ?? {};
   const { content, loading } = usePageContent("contact");
   const navigate = useNavigate();
 
@@ -50,6 +53,15 @@ const Contact = () => {
 
   const pageData = content.content;
   const seoData = pageData.seo || {};
+  
+  // Debug CTA data
+  console.log('Contact Page Debug:', {
+    fullPageData: pageData,
+    cta: pageData.cta,
+    ctaEnabled: pageData.cta?.enabled,
+    ctaItems: pageData.cta?.items,
+    ctaItemsLength: pageData.cta?.items?.length
+  });
 
   return (
     <div className="min-h-screen">
@@ -205,6 +217,44 @@ const Contact = () => {
         </section>
       )}
 
+      {/* Quick Contact Section */}
+      {pageData.quickContact?.enabled && (
+        <section className="py-16 px-4">
+          <div className="container mx-auto max-w-6xl">
+            <h2 className="text-3xl font-bold text-center mb-12">
+              {pageData.quickContact?.title || "Atau Hubungi Langsung"}
+            </h2>
+            
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {(pageData.quickContact?.items || []).map((item: any, i: number) => {
+                const IconComponent = iconMap[item.icon] || MessageCircle;
+                return (
+                  <Card key={i} className="p-6 text-center hover:shadow-lg transition-all">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                      <IconComponent className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
+                    <Button 
+                      className="w-full"
+                      onClick={() => {
+                        if (item.link?.startsWith('http') || item.link?.startsWith('tel:') || item.link?.startsWith('mailto:')) {
+                          window.open(item.link, '_blank');
+                        } else {
+                          navigate(item.link || '/');
+                        }
+                      }}
+                    >
+                      {item.buttonText || 'Hubungi'}
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Why Choose Us Section */}
       {pageData.whyChooseUs?.enabled && (
         <section className="py-16 px-4">
@@ -229,7 +279,7 @@ const Contact = () => {
       )}
 
       {/* CTA Sections */}
-      {(pageData.cta || []).map((ctaSection: any, index: number) => {
+      {pageData.cta?.enabled && pageData.cta?.items ? pageData.cta.items.map((ctaSection: any, index: number) => {
         const isPrimary = ctaSection.type === 'primary';
         return (
           <section 
@@ -277,7 +327,11 @@ const Contact = () => {
             </div>
           </section>
         );
-      })}
+      }) : (
+        <div className="py-8 text-center text-red-500">
+          CTA Debug: enabled={String(pageData.cta?.enabled)}, items={pageData.cta?.items?.length || 0}
+        </div>
+      )}
 
       <Footer />
     </div>

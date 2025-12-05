@@ -12,13 +12,19 @@ class PlatformPage extends Model
     protected $table = 'platform_pages';
 
     protected $fillable = [
-        'page_slug',
+        'uuid',
+        'title',
+        'slug',
+        'description',
         'content',
+        'template',
+        'meta_data',
         'status',
+        'page_type',
+        'is_homepage',
+        'sort_order',
+        'language',
         'published_at',
-        'version',
-        'previous_version',
-        'updated_by',
     ];
 
     protected $casts = [
