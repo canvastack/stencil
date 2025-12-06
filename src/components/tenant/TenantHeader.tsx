@@ -20,9 +20,23 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 export const TenantHeader = () => {
   const toggleSidebar = useAdminStore((state) => state.toggleSidebar);
   const { user, tenant, logout } = useTenantAuth();
-  const [isDark, setIsDark] = useState(true);
-  const [isScrolled, setIsScrolled] = useState(false);
+  // const [isDark, setIsDark] = useState(true);
+  // const [isScrolled, setIsScrolled] = useState(false);
   
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+
+    const stored = window.localStorage.getItem('stencil_color_mode');
+    if (stored === 'light') return false;
+    if (stored === 'dark') return true;
+
+    return window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  const [isScrolled, setIsScrolled] = useState(false);
+
+
   // Track page visits automatically
   usePageTracking();
 
@@ -34,6 +48,7 @@ export const TenantHeader = () => {
     }
   };
 
+  /*
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -42,7 +57,17 @@ export const TenantHeader = () => {
       root.classList.remove('dark');
     }
   }, [isDark]);
-
+  */
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [isDark]);
+  
+  /* Scroll Tracking */
   useEffect(() => {
     const handleScroll = () => {
       const mainContent = document.getElementById('admin-main-content');

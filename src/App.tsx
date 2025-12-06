@@ -90,6 +90,9 @@ const ContentManagement = lazy(() => import("./pages/platform/ContentManagement"
 
 // Platform Content Management Pages
 const PlatformPageContact = lazy(() => import("./pages/platform/content/PageContact"));
+const PlatformPageHome = lazy(() => import("./pages/platform/content/PageHome"));
+const PlatformPageAbout = lazy(() => import("./pages/platform/content/PageAbout"));
+const PlatformPageFAQ = lazy(() => import("./pages/platform/content/PageFAQ"));
 const InventoryManagement = lazy(() => import("./pages/admin/InventoryManagement"));
 const FinancialReport = lazy(() => import("./pages/admin/FinancialReport"));
 const LanguageSettings = lazy(() => import("./pages/admin/LanguageSettings"));
@@ -171,7 +174,10 @@ function App() {
                   <Route path="domains" element={<div className="p-6">Domains - Coming Soon</div>} />
                   <Route path="analytics" element={<Suspense fallback={<LoadingFallback />}><PlatformAnalytics /></Suspense>} />
                   <Route path="content" element={<Suspense fallback={<LoadingFallback />}><ContentManagement /></Suspense>} />
+                  <Route path="content/home" element={<Suspense fallback={<LoadingFallback />}><PlatformPageHome /></Suspense>} />
+                  <Route path="content/about" element={<Suspense fallback={<LoadingFallback />}><PlatformPageAbout /></Suspense>} />
                   <Route path="content/contact" element={<Suspense fallback={<LoadingFallback />}><PlatformPageContact /></Suspense>} />
+                  <Route path="content/faq" element={<Suspense fallback={<LoadingFallback />}><PlatformPageFAQ /></Suspense>} />
                   <Route path="appearance/*" element={<div className="p-6">Platform Appearance - Coming Soon</div>} />
                   <Route path="users/*" element={<div className="p-6">Platform User Management - Coming Soon</div>} />
                   <Route path="system" element={<div className="p-6">System - Coming Soon</div>} />

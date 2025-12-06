@@ -7,19 +7,46 @@ import { useThemeComponents } from "@/hooks/useThemeComponents";
 import { useAuthState } from "@/hooks/useAuthState";
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
-  const [isDark, setIsDark] = useState(true);
+  // const [isDark, setIsDark] = useState(true);
+  // const [isScrolled, setIsScrolled] = useState(false);
+  // const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+
+    const stored = window.localStorage.getItem('stencil_color_mode');
+    if (stored === 'light') return false;
+    if (stored === 'dark') return true;
+
+    // Fallback ke preferensi sistem jika belum ada penyimpanan
+    return window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout, user, account } = useAuthState();
 
+  // useEffect(() => {
+    // const root = document.documentElement;
+    // if (isDark) {
+      // root.classList.add("dark");
+    // } else {
+      // root.classList.remove("dark");
+    // }
+  // }, [isDark]);
+
   useEffect(() => {
     const root = document.documentElement;
+
     if (isDark) {
-      root.classList.add("dark");
+      root.classList.add('dark');
+      window.localStorage.setItem('stencil_color_mode', 'dark');
     } else {
-      root.classList.remove("dark");
+      root.classList.remove('dark');
+      window.localStorage.setItem('stencil_color_mode', 'light');
     }
   }, [isDark]);
 
