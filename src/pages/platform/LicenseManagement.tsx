@@ -1081,16 +1081,9 @@ export default function LicenseManagement() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-2">
-                      {Object.entries(selectedPackage.advanced_features).map(([key, value]) => (
-                        <div key={key} className="flex items-center gap-2">
-                          {value ? (
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-muted-foreground" />
-                          )}
-                          <span className="text-sm capitalize">{key.replace('_', ' ')}</span>
-                        </div>
-                      ))}
+                      <div className="text-sm">
+                        <p>Advanced Features: {JSON.stringify(selectedPackage.advanced_features)}</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

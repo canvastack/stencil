@@ -453,11 +453,7 @@ export const PaymentAuditTrail: React.FC = () => {
                             {event.description}
                             {Object.keys(event.metadata).length > 0 && (
                               <div className="text-xs text-gray-500 mt-1">
-                                {Object.entries(event.metadata).map(([key, value]) => (
-                                  <span key={key} className="mr-2">
-                                    {key}: {String(value)}
-                                  </span>
-                                ))}
+                                <p>Metadata: {JSON.stringify(event.metadata)}</p>
                               </div>
                             )}
                           </div>

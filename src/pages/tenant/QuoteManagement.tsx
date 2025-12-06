@@ -75,7 +75,7 @@ const StatCard = ({
   </Card>
 );
 
-export const QuoteManagement = () => {
+const QuoteManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -386,3 +386,5 @@ export const QuoteManagement = () => {
     </div>
   );
 };
+
+export default QuoteManagement;

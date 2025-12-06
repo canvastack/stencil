@@ -422,15 +422,9 @@ export default function TenantManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(stats).filter(([key]) => ['active', 'suspended', 'pending'].includes(key)).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${statusColors[status as keyof typeof statusColors]?.replace(/text-\w+-\d+/, 'border-0')}`} />
-                        <span className="capitalize text-sm">{status}</span>
-                      </div>
-                      <span className="text-sm font-medium">{count}</span>
-                    </div>
-                  ))}
+                  <div className="text-sm">
+                    <p>Stats: {JSON.stringify(stats)}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -442,15 +436,9 @@ export default function TenantManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {Object.entries(stats).filter(([key]) => ['healthy', 'warning', 'critical'].includes(key)).map(([health, count]) => (
-                    <div key={health} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className={`w-3 h-3 rounded-full ${healthColors[health as keyof typeof healthColors]?.replace(/text-\w+-\d+/, 'border-0')}`} />
-                        <span className="capitalize text-sm">{health}</span>
-                      </div>
-                      <span className="text-sm font-medium">{count}</span>
-                    </div>
-                  ))}
+                  <div className="text-sm">
+                    <p>Health Stats: {JSON.stringify(stats)}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

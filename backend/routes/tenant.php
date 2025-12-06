@@ -11,6 +11,9 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\AnalyticsController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\SettingsController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\InventoryController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\QuoteController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\ActivityController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\NotificationController;
 use App\Http\Controllers\Tenant\ContentController;
 
 /*
@@ -211,6 +214,28 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/integrations/{integration}', [SettingsController::class, 'updateIntegration'])->name('tenant.settings.update_integration');
         });
 
+        // Quote Management (Vendor Negotiations)
+        Route::prefix('quotes')->group(function () {
+            Route::get('/', [QuoteController::class, 'index'])->name('tenant.quotes.index');
+            Route::post('/', [QuoteController::class, 'store'])->name('tenant.quotes.store');
+            
+            // Quote Statistics & Reports (must come before /{quote})
+            Route::get('/statistics', [QuoteController::class, 'statistics'])->name('tenant.quotes.statistics');
+            Route::get('/stats', [QuoteController::class, 'statistics'])->name('tenant.quotes.stats'); // Add stats alias
+            Route::get('/export', [QuoteController::class, 'export'])->name('tenant.quotes.export');
+            
+            // Quote by ID (catch-all - must come last)
+            Route::get('/{quote}', [QuoteController::class, 'show'])->name('tenant.quotes.show');
+            Route::put('/{quote}', [QuoteController::class, 'update'])->name('tenant.quotes.update');
+            Route::delete('/{quote}', [QuoteController::class, 'destroy'])->name('tenant.quotes.destroy');
+            
+            // Quote Actions
+            Route::post('/{quote}/accept', [QuoteController::class, 'accept'])->name('tenant.quotes.accept');
+            Route::post('/{quote}/reject', [QuoteController::class, 'reject'])->name('tenant.quotes.reject');
+            Route::post('/{quote}/counter', [QuoteController::class, 'counter'])->name('tenant.quotes.counter');
+            Route::get('/{quote}/pdf', [QuoteController::class, 'pdf'])->name('tenant.quotes.pdf');
+        });
+
         // Content Management
         Route::prefix('content')->group(function () {
             Route::get('/pages', [ContentController::class, 'index'])->name('tenant.content.index');
@@ -222,6 +247,24 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::patch('/pages/{slug}/publish', [ContentController::class, 'publish'])->name('tenant.content.publish');
             Route::patch('/pages/{slug}/archive', [ContentController::class, 'archive'])->name('tenant.content.archive');
             Route::patch('/pages/{slug}/content', [ContentController::class, 'updateContent'])->name('tenant.content.update-content');
+        });
+        
+        // Activity Logs
+        Route::prefix('activity-logs')->group(function () {
+            Route::post('/batch', [ActivityController::class, 'batchStore'])->name('tenant.activity_logs.batch');
+            Route::get('/', [ActivityController::class, 'index'])->name('tenant.activity_logs.index');
+            Route::get('/statistics', [ActivityController::class, 'statistics'])->name('tenant.activity_logs.statistics');
+        });
+        
+        // Notifications
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [NotificationController::class, 'index'])->name('tenant.notifications.index');
+            Route::post('/', [NotificationController::class, 'store'])->name('tenant.notifications.store');
+            Route::get('/preferences', [NotificationController::class, 'preferences'])->name('tenant.notifications.preferences');
+            Route::put('/preferences', [NotificationController::class, 'updatePreferences'])->name('tenant.notifications.update_preferences');
+            Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('tenant.notifications.unread_count');
+            Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('tenant.notifications.mark_all_read');
+            Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('tenant.notifications.mark_read');
         });
         
         // Platform Interaction (Limited)

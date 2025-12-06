@@ -270,12 +270,8 @@ export default function OrderDetail() {
                     <p className="font-semibold">{item.productName}</p>
                     <p className="text-sm text-muted-foreground">Quantity: {item.quantity}</p>
                     {item.customization && Object.keys(item.customization).length > 0 && (
-                      <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                        {Object.entries(item.customization).map(([key, value]) => (
-                          <p key={key}>
-                            <span className="font-medium capitalize">{key}:</span> {String(value)}
-                          </p>
-                        ))}
+                      <div className="text-xs text-muted-foreground mt-2">
+                        <p>Customization: {JSON.stringify(item.customization)}</p>
                       </div>
                     )}
                   </div>
