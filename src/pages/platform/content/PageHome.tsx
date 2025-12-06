@@ -631,7 +631,7 @@ export default function PlatformPageHome() {
           </Card>
         </TabsContent>
 
-        {/* All other sections would follow the same pattern with Enable/Disable toggles */}
+        {/* Process Section */}
         <TabsContent value="process" className="space-y-4">
           <Card>
             <CardHeader>
@@ -656,8 +656,7 @@ export default function PlatformPageHome() {
                   }}
                 />
               </div>
-              
-              {/* Process content would continue here following the same pattern */}
+
               <div className="space-y-2">
                 <Label>Section Title</Label>
                 <Input
@@ -672,58 +671,1014 @@ export default function PlatformPageHome() {
                   placeholder="How It Works"
                 />
               </div>
-              {/* More process fields would be added here */}
+
+              <div className="space-y-2">
+                <Label>Section Subtitle</Label>
+                <Textarea
+                  rows={2}
+                  value={formData.process?.subtitle || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      process: { ...formData.process, subtitle: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="Simple steps to get started with our platform"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Process Steps</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentSteps = formData.process?.steps || [];
+                      setFormData({
+                        ...formData,
+                        process: {
+                          ...formData.process,
+                          steps: [...currentSteps, { number: currentSteps.length + 1, icon: "User", title: "", description: "" }]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Step
+                  </Button>
+                </div>
+                {(formData.process?.steps || []).map((step: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Step #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newSteps = (formData.process?.steps || []).filter((_: any, i: number) => i !== index);
+                            // Re-number remaining steps
+                            const renumberedSteps = newSteps.map((s: any, i: number) => ({ ...s, number: i + 1 }));
+                            setFormData({
+                              ...formData,
+                              process: { ...formData.process, steps: renumberedSteps }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Step Number</Label>
+                          <Input
+                            type="number"
+                            placeholder={`${index + 1}`}
+                            value={step.number || index + 1}
+                            onChange={(e) => {
+                              const newSteps = [...(formData.process?.steps || [])];
+                              newSteps[index] = { ...step, number: parseInt(e.target.value) || index + 1 };
+                              setFormData({
+                                ...formData,
+                                process: { ...formData.process, steps: newSteps }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Icon Name</Label>
+                          <Input
+                            placeholder="User, Settings, Check, etc"
+                            value={step.icon}
+                            onChange={(e) => {
+                              const newSteps = [...(formData.process?.steps || [])];
+                              newSteps[index] = { ...step, icon: e.target.value };
+                              setFormData({
+                                ...formData,
+                                process: { ...formData.process, steps: newSteps }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Title</Label>
+                          <Input
+                            placeholder="Step title"
+                            value={step.title}
+                            onChange={(e) => {
+                              const newSteps = [...(formData.process?.steps || [])];
+                              newSteps[index] = { ...step, title: e.target.value };
+                              setFormData({
+                                ...formData,
+                                process: { ...formData.process, steps: newSteps }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Description</Label>
+                          <Textarea
+                            rows={2}
+                            placeholder="Describe this step"
+                            value={step.description}
+                            onChange={(e) => {
+                              const newSteps = [...(formData.process?.steps || [])];
+                              newSteps[index] = { ...step, description: e.target.value };
+                              setFormData({
+                                ...formData,
+                                process: { ...formData.process, steps: newSteps }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Placeholder sections for other tabs */}
-        {["whyChooseUs", "achievements", "services", "testimonials", "cta"].map((section) => (
-          <TabsContent key={section} value={section} className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{section.charAt(0).toUpperCase() + section.slice(1)} Section</CardTitle>
-                <CardDescription>Configure {section} content and settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <Label htmlFor={`${section}-enabled`}>Enable Section</Label>
-                    <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
-                  </div>
-                  <Switch
-                    id={`${section}-enabled`}
-                    checked={formData[section]?.enabled !== false}
-                    onCheckedChange={(checked) => {
+        {/* Why Choose Us Section */}
+        <TabsContent value="whyChooseUs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Why Choose Us Section</CardTitle>
+              <CardDescription>Highlight your platform's competitive advantages</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="whyChooseUs-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="whyChooseUs-enabled"
+                  checked={formData.whyChooseUs?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      whyChooseUs: { ...formData.whyChooseUs, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Title</Label>
+                <Input
+                  value={formData.whyChooseUs?.title || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      whyChooseUs: { ...formData.whyChooseUs, title: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="Why Choose Our Platform"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Subtitle</Label>
+                <Textarea
+                  rows={2}
+                  value={formData.whyChooseUs?.subtitle || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      whyChooseUs: { ...formData.whyChooseUs, subtitle: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="What makes our multi-tenant platform different"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Advantage Points</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentItems = formData.whyChooseUs?.items || [];
                       setFormData({
                         ...formData,
-                        [section]: { ...formData[section], enabled: checked }
+                        whyChooseUs: {
+                          ...formData.whyChooseUs,
+                          items: [...currentItems, { icon: "Shield", title: "", description: "" }]
+                        }
                       });
                       setHasChanges(true);
                     }}
-                  />
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Advantage
+                  </Button>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label>Section Title</Label>
-                  <Input
-                    value={formData[section]?.title || ""}
-                    onChange={(e) => {
+                {(formData.whyChooseUs?.items || []).map((item: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Advantage #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newItems = (formData.whyChooseUs?.items || []).filter((_: any, i: number) => i !== index);
+                            setFormData({
+                              ...formData,
+                              whyChooseUs: { ...formData.whyChooseUs, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Icon Name</Label>
+                          <Input
+                            placeholder="Shield, Award, Zap, Users, etc"
+                            value={item.icon}
+                            onChange={(e) => {
+                              const newItems = [...(formData.whyChooseUs?.items || [])];
+                              newItems[index] = { ...item, icon: e.target.value };
+                              setFormData({
+                                ...formData,
+                                whyChooseUs: { ...formData.whyChooseUs, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Title</Label>
+                          <Input
+                            placeholder="Advantage title"
+                            value={item.title}
+                            onChange={(e) => {
+                              const newItems = [...(formData.whyChooseUs?.items || [])];
+                              newItems[index] = { ...item, title: e.target.value };
+                              setFormData({
+                                ...formData,
+                                whyChooseUs: { ...formData.whyChooseUs, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Description</Label>
+                          <Textarea
+                            rows={2}
+                            placeholder="Describe this advantage"
+                            value={item.description}
+                            onChange={(e) => {
+                              const newItems = [...(formData.whyChooseUs?.items || [])];
+                              newItems[index] = { ...item, description: e.target.value };
+                              setFormData({
+                                ...formData,
+                                whyChooseUs: { ...formData.whyChooseUs, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Achievements Section */}
+        <TabsContent value="achievements" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Achievements Section</CardTitle>
+              <CardDescription>Showcase platform milestones and statistics</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="achievements-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="achievements-enabled"
+                  checked={formData.achievements?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      achievements: { ...formData.achievements, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Title</Label>
+                <Input
+                  value={formData.achievements?.title || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      achievements: { ...formData.achievements, title: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="Platform Achievements"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Subtitle</Label>
+                <Textarea
+                  rows={2}
+                  value={formData.achievements?.subtitle || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      achievements: { ...formData.achievements, subtitle: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="Numbers that speak for our success"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Achievement Items</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentItems = formData.achievements?.items || [];
                       setFormData({
                         ...formData,
-                        [section]: { ...formData[section], title: e.target.value }
+                        achievements: {
+                          ...formData.achievements,
+                          items: [...currentItems, { icon: "Award", value: "", label: "", color: "text-yellow-500" }]
+                        }
                       });
                       setHasChanges(true);
                     }}
-                    placeholder={`${section} section title`}
-                  />
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Achievement
+                  </Button>
                 </div>
-                
-                {/* Additional fields would be implemented based on section requirements */}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
+                {(formData.achievements?.items || []).map((item: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Achievement #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newItems = (formData.achievements?.items || []).filter((_: any, i: number) => i !== index);
+                            setFormData({
+                              ...formData,
+                              achievements: { ...formData.achievements, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <Input
+                          placeholder="Icon name (Award, Trophy, Target)"
+                          value={item.icon}
+                          onChange={(e) => {
+                            const newItems = [...(formData.achievements?.items || [])];
+                            newItems[index] = { ...item, icon: e.target.value };
+                            setFormData({
+                              ...formData,
+                              achievements: { ...formData.achievements, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                        <Input
+                          placeholder="Color class (text-yellow-500)"
+                          value={item.color}
+                          onChange={(e) => {
+                            const newItems = [...(formData.achievements?.items || [])];
+                            newItems[index] = { ...item, color: e.target.value };
+                            setFormData({
+                              ...formData,
+                              achievements: { ...formData.achievements, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                        <Input
+                          placeholder="Value (5+ Years)"
+                          value={item.value}
+                          onChange={(e) => {
+                            const newItems = [...(formData.achievements?.items || [])];
+                            newItems[index] = { ...item, value: e.target.value };
+                            setFormData({
+                              ...formData,
+                              achievements: { ...formData.achievements, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                        <Input
+                          placeholder="Label (Experience)"
+                          value={item.label}
+                          onChange={(e) => {
+                            const newItems = [...(formData.achievements?.items || [])];
+                            newItems[index] = { ...item, label: e.target.value };
+                            setFormData({
+                              ...formData,
+                              achievements: { ...formData.achievements, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Services Section */}
+        <TabsContent value="services" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Services Section</CardTitle>
+              <CardDescription>Showcase platform features and services</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="services-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="services-enabled"
+                  checked={formData.services?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      services: { ...formData.services, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Title</Label>
+                <Input
+                  value={formData.services?.title || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      services: { ...formData.services, title: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="Platform Services"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Subtitle</Label>
+                <Textarea
+                  rows={2}
+                  value={formData.services?.subtitle || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      services: { ...formData.services, subtitle: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="Comprehensive solutions for your business needs"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Service Items</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentItems = formData.services?.items || [];
+                      setFormData({
+                        ...formData,
+                        services: {
+                          ...formData.services,
+                          items: [...currentItems, { icon: "Package", title: "", description: "" }]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Service
+                  </Button>
+                </div>
+                {(formData.services?.items || []).map((item: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Service #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newItems = (formData.services?.items || []).filter((_: any, i: number) => i !== index);
+                            setFormData({
+                              ...formData,
+                              services: { ...formData.services, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Icon Name</Label>
+                          <Input
+                            placeholder="Package, Globe, Shield, Users, etc"
+                            value={item.icon}
+                            onChange={(e) => {
+                              const newItems = [...(formData.services?.items || [])];
+                              newItems[index] = { ...item, icon: e.target.value };
+                              setFormData({
+                                ...formData,
+                                services: { ...formData.services, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Title</Label>
+                          <Input
+                            placeholder="Service title"
+                            value={item.title}
+                            onChange={(e) => {
+                              const newItems = [...(formData.services?.items || [])];
+                              newItems[index] = { ...item, title: e.target.value };
+                              setFormData({
+                                ...formData,
+                                services: { ...formData.services, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Description</Label>
+                          <Textarea
+                            rows={2}
+                            placeholder="Service description"
+                            value={item.description}
+                            onChange={(e) => {
+                              const newItems = [...(formData.services?.items || [])];
+                              newItems[index] = { ...item, description: e.target.value };
+                              setFormData({
+                                ...formData,
+                                services: { ...formData.services, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Testimonials Section */}
+        <TabsContent value="testimonials" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Testimonials Section</CardTitle>
+              <CardDescription>Customer testimonials and reviews</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="testimonials-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="testimonials-enabled"
+                  checked={formData.testimonials?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      testimonials: { ...formData.testimonials, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Title</Label>
+                <Input
+                  value={formData.testimonials?.title || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      testimonials: { ...formData.testimonials, title: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="What Our Customers Say"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Section Subtitle</Label>
+                <Textarea
+                  rows={2}
+                  value={formData.testimonials?.subtitle || ""}
+                  onChange={(e) => {
+                    setFormData({
+                      ...formData,
+                      testimonials: { ...formData.testimonials, subtitle: e.target.value }
+                    });
+                    setHasChanges(true);
+                  }}
+                  placeholder="Real feedback from real customers"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Testimonial Items</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentItems = formData.testimonials?.items || [];
+                      setFormData({
+                        ...formData,
+                        testimonials: {
+                          ...formData.testimonials,
+                          items: [...currentItems, { name: "", position: "", company: "", content: "", rating: 5, avatar: "" }]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Testimonial
+                  </Button>
+                </div>
+                {(formData.testimonials?.items || []).map((item: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Testimonial #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newItems = (formData.testimonials?.items || []).filter((_: any, i: number) => i !== index);
+                            setFormData({
+                              ...formData,
+                              testimonials: { ...formData.testimonials, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Name</Label>
+                          <Input
+                            placeholder="Customer name"
+                            value={item.name}
+                            onChange={(e) => {
+                              const newItems = [...(formData.testimonials?.items || [])];
+                              newItems[index] = { ...item, name: e.target.value };
+                              setFormData({
+                                ...formData,
+                                testimonials: { ...formData.testimonials, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Position</Label>
+                          <Input
+                            placeholder="Job title"
+                            value={item.position}
+                            onChange={(e) => {
+                              const newItems = [...(formData.testimonials?.items || [])];
+                              newItems[index] = { ...item, position: e.target.value };
+                              setFormData({
+                                ...formData,
+                                testimonials: { ...formData.testimonials, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Company</Label>
+                          <Input
+                            placeholder="Company name"
+                            value={item.company}
+                            onChange={(e) => {
+                              const newItems = [...(formData.testimonials?.items || [])];
+                              newItems[index] = { ...item, company: e.target.value };
+                              setFormData({
+                                ...formData,
+                                testimonials: { ...formData.testimonials, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Rating</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="5"
+                            placeholder="5"
+                            value={item.rating}
+                            onChange={(e) => {
+                              const newItems = [...(formData.testimonials?.items || [])];
+                              newItems[index] = { ...item, rating: parseInt(e.target.value) || 5 };
+                              setFormData({
+                                ...formData,
+                                testimonials: { ...formData.testimonials, items: newItems }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">Avatar URL</Label>
+                        <Input
+                          placeholder="https://example.com/avatar.jpg"
+                          value={item.avatar}
+                          onChange={(e) => {
+                            const newItems = [...(formData.testimonials?.items || [])];
+                            newItems[index] = { ...item, avatar: e.target.value };
+                            setFormData({
+                              ...formData,
+                              testimonials: { ...formData.testimonials, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">Testimonial Content</Label>
+                        <Textarea
+                          rows={3}
+                          placeholder="Customer feedback..."
+                          value={item.content}
+                          onChange={(e) => {
+                            const newItems = [...(formData.testimonials?.items || [])];
+                            newItems[index] = { ...item, content: e.target.value };
+                            setFormData({
+                              ...formData,
+                              testimonials: { ...formData.testimonials, items: newItems }
+                            });
+                            setHasChanges(true);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* CTA Section */}
+        <TabsContent value="cta" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>CTA Sections</CardTitle>
+              <CardDescription>Call-to-action sections throughout the page</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <Label htmlFor="cta-enabled">Enable Section</Label>
+                  <p className="text-sm text-muted-foreground">Show/hide this section on public page</p>
+                </div>
+                <Switch
+                  id="cta-enabled"
+                  checked={formData.cta?.enabled !== false}
+                  onCheckedChange={(checked) => {
+                    setFormData({
+                      ...formData,
+                      cta: { ...formData.cta, enabled: checked }
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>CTA Blocks</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const currentBlocks = formData.cta?.blocks || [];
+                      setFormData({
+                        ...formData,
+                        cta: {
+                          ...formData.cta,
+                          blocks: [...currentBlocks, { 
+                            title: "", 
+                            subtitle: "", 
+                            buttonText: "", 
+                            buttonLink: "", 
+                            backgroundColor: "bg-blue-600",
+                            position: "middle" 
+                          }]
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add CTA Block
+                  </Button>
+                </div>
+                {(formData.cta?.blocks || []).map((block: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">CTA Block #{index + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const newBlocks = (formData.cta?.blocks || []).filter((_: any, i: number) => i !== index);
+                            setFormData({
+                              ...formData,
+                              cta: { ...formData.cta, blocks: newBlocks }
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Title</Label>
+                          <Input
+                            placeholder="CTA title"
+                            value={block.title}
+                            onChange={(e) => {
+                              const newBlocks = [...(formData.cta?.blocks || [])];
+                              newBlocks[index] = { ...block, title: e.target.value };
+                              setFormData({
+                                ...formData,
+                                cta: { ...formData.cta, blocks: newBlocks }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Subtitle</Label>
+                          <Textarea
+                            rows={2}
+                            placeholder="CTA description"
+                            value={block.subtitle}
+                            onChange={(e) => {
+                              const newBlocks = [...(formData.cta?.blocks || [])];
+                              newBlocks[index] = { ...block, subtitle: e.target.value };
+                              setFormData({
+                                ...formData,
+                                cta: { ...formData.cta, blocks: newBlocks }
+                              });
+                              setHasChanges(true);
+                            }}
+                          />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="text-sm">Button Text</Label>
+                            <Input
+                              placeholder="Get Started"
+                              value={block.buttonText}
+                              onChange={(e) => {
+                                const newBlocks = [...(formData.cta?.blocks || [])];
+                                newBlocks[index] = { ...block, buttonText: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  cta: { ...formData.cta, blocks: newBlocks }
+                                });
+                                setHasChanges(true);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm">Button Link</Label>
+                            <Input
+                              placeholder="/contact"
+                              value={block.buttonLink}
+                              onChange={(e) => {
+                                const newBlocks = [...(formData.cta?.blocks || [])];
+                                newBlocks[index] = { ...block, buttonLink: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  cta: { ...formData.cta, blocks: newBlocks }
+                                });
+                                setHasChanges(true);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="text-sm">Background Color</Label>
+                            <Input
+                              placeholder="bg-blue-600"
+                              value={block.backgroundColor}
+                              onChange={(e) => {
+                                const newBlocks = [...(formData.cta?.blocks || [])];
+                                newBlocks[index] = { ...block, backgroundColor: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  cta: { ...formData.cta, blocks: newBlocks }
+                                });
+                                setHasChanges(true);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm">Position</Label>
+                            <Input
+                              placeholder="middle, end"
+                              value={block.position}
+                              onChange={(e) => {
+                                const newBlocks = [...(formData.cta?.blocks || [])];
+                                newBlocks[index] = { ...block, position: e.target.value };
+                                setFormData({
+                                  ...formData,
+                                  cta: { ...formData.cta, blocks: newBlocks }
+                                });
+                                setHasChanges(true);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* SEO Section */}
         <TabsContent value="seo" className="space-y-4">
