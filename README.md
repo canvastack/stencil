@@ -111,6 +111,37 @@ Backend menggunakan clean separation antara domain logic dan infrastructure:
 └─────────────────────────────────────────────┘
 ```
 
+### Frontend Context Model (Platform vs Tenant vs Anonymous)
+
+Untuk mempermudah development dan menghindari kebingungan konteks:
+
+- **Anonymous User**
+  - Tidak punya token.
+  - Melihat **platform public content** (homepage, about, produk, dsb.) via `anonymousApiClient`.
+  - `userType = 'anonymous'` di `GlobalContext`.
+
+- **Platform Admin**
+  - Login dengan `account_type = 'platform'` (contoh: `admin@canvastencil.com`).
+  - Mengakses panel `/platform/*` (tenant management, license, platform CMS) via `platformApiClient`.
+  - Di frontend direpresentasikan oleh `PlatformAuthContext`.
+  - `userType = 'platform'` di `GlobalContext`.
+
+- **Tenant User**
+  - Login dengan `account_type = 'tenant'` (contoh: admin/manager/sales tenant etching).
+  - Mengakses panel `/admin/*` (orders, products, customer, tenant CMS) via `tenantApiClient`.
+  - Di frontend direpresentasikan oleh `TenantAuthContext`.
+  - `userType = 'tenant'` di `GlobalContext`.
+
+**Aturan penting:**
+
+- Kedua AuthContext (platform & tenant) boleh aktif di tree React yang sama, namun:
+  - Context yang **bukan** pemilik `account_type` saat ini **TIDAK BOLEH** menghapus token atau state auth.
+  - Penghapusan token hanya boleh dilakukan oleh context yang sesuai (platform untuk platform, tenant untuk tenant).
+- Ini mencegah kasus di mana login platform berhasil, tapi kemudian konteks tenant “mengira salah akun” lalu menghapus session.
+
+> Jika saat development kamu melihat log seperti `Wrong account type, clearing auth` lalu session hilang, itu pelanggaran rule ini dan harus diperbaiki di sisi context, bukan di sisi aturan multi-tenant.
+
+
 ---
 
 ## 🌟 Core Platform Features

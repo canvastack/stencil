@@ -233,6 +233,38 @@ Platform mengimplementasikan **Schema per Tenant** approach menggunakan PostgreS
 └─────────────────────────────────────────────┘
 ```
 
+### Frontend Authentication Contexts
+
+Frontend memodelkan tiga jenis sesi yang berbeda:
+
+1. **Platform Admin Session**
+   - `account_type = 'platform'`
+   - Menggunakan `PlatformAuthContext` + `platformApiClient`
+   - Hanya boleh mengakses endpoint landlord/platform (misalnya `/api/v1/platform/*`).
+   - Tidak pernah menggunakan `tenantApiClient` atau `tenant_id` untuk operasi bisnis tenant.
+
+2. **Tenant User Session**
+   - `account_type = 'tenant'`
+   - Menggunakan `TenantAuthContext` + `tenantApiClient`
+   - Selalu memiliki `tenant_id` dan berjalan di schema-per-tenant.
+   - Mengakses endpoint namespace tenant (misalnya `/api/v1/tenant/*`).
+
+3. **Anonymous**
+   - Tidak memiliki token yang valid.
+   - Menggunakan `anonymousApiClient` untuk membaca **platform marketing content** publik.
+
+**GlobalContext Orchestration**
+
+- `GlobalContext` mengamati `PlatformAuthContext` dan `TenantAuthContext`, lalu menentukan:
+  - `userType = 'platform' | 'tenant' | 'anonymous'`.
+- `GlobalContext` **tidak** menghapus auth; ia hanya memilih context aktif.
+- Setiap AuthContext hanya boleh menghapus auth jika `account_type` sesuai dengan dirinya:
+  - `PlatformAuthContext` → hanya saat `account_type = 'platform'`.
+  - `TenantAuthContext` → hanya saat `account_type = 'tenant'`.
+
+> Lesson learned: bug historis “Platform login drop ketika membuka halaman lain” terjadi karena TenantAuthContext menghapus session saat melihat `account_type = 'platform'`. Aturan ini sekarang dikunci di dokumentasi dan `.zencoder/rules` agar tidak terulang.
+
+
 ### Domain-Driven Design Principles
 
 **Ubiquitous Language:**

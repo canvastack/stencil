@@ -96,8 +96,15 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
         setRoles([]);
       }
     } else if (storedAccountType && storedAccountType !== 'tenant') {
-      console.log('TenantAuthContext: Wrong account type, clearing auth');
-      authService.clearAuth();
+      // IMPORTANT: This context only manages tenant sessions.
+      // If the stored account type is not 'tenant' (e.g. 'platform'),
+      // we MUST NOT clear global auth here. Simply treat this context
+      // as unauthenticated and let the appropriate auth context handle it.
+      console.log('TenantAuthContext: Non-tenant account detected, skipping tenant auth initialization');
+      setUser(null);
+      setTenant(null);
+      setPermissions([]);
+      setRoles([]);
     }
     
     // Mark initialization as complete
