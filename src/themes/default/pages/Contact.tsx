@@ -134,12 +134,27 @@ const Contact = () => {
                       <SelectValue placeholder="Pilih Layanan" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="etching-logam">Etching Logam</SelectItem>
-                      <SelectItem value="etching-kaca">Etching Kaca</SelectItem>
-                      <SelectItem value="plakat">Plakat Penghargaan</SelectItem>
-                      <SelectItem value="signage">Signage Custom</SelectItem>
-                      <SelectItem value="industri">Komponen Industri</SelectItem>
-                      <SelectItem value="lainnya">Lainnya</SelectItem>
+                      {/* Dynamic options from platform content management */}
+                      {(pageData.form?.serviceOptions || []).map((option: any, index: number) => (
+                        <SelectItem key={index} value={option.value || `option-${index}`}>
+                          {option.label || `Option ${index + 1}`}
+                        </SelectItem>
+                      ))}
+                      
+                      {/* Fallback default options if no options configured */}
+                      {(!pageData.form?.serviceOptions || pageData.form.serviceOptions.length === 0) && (
+                        <>
+                          <SelectItem value="website-builder">Website Builder</SelectItem>
+                          <SelectItem value="e-commerce">E-Commerce Solutions</SelectItem>
+                          <SelectItem value="template-marketplace">Template Marketplace</SelectItem>
+                          <SelectItem value="plugin-marketplace">Plugin Marketplace</SelectItem>
+                          <SelectItem value="custom-development">Custom Development</SelectItem>
+                          <SelectItem value="consultation">Platform Consultation</SelectItem>
+                          <SelectItem value="training">Training & Support</SelectItem>
+                          <SelectItem value="enterprise">Enterprise Solutions</SelectItem>
+                          <SelectItem value="lainnya">Lainnya</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

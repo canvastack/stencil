@@ -70,6 +70,14 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
+            {!isAuthenticated && (
+              <Link
+                to="/platform/login"
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeStyle.text} ${activeStyle.hover}`}
+              >
+                Platform Admin
+              </Link>
+            )}
           </nav>
 
           {/* Right Side Actions */}
@@ -185,14 +193,25 @@ const Header = () => {
                   </Button>
                 </>
               ) : (
-                <Button
-                  className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
-                  asChild
-                >
-                  <Link to={headerContent.loginPath} onClick={() => setIsMobileMenuOpen(false)}>
-                    {headerContent.loginText}
-                  </Link>
-                </Button>
+                <>
+                  <Button
+                    className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
+                    asChild
+                  >
+                    <Link to={headerContent.loginPath} onClick={() => setIsMobileMenuOpen(false)}>
+                      {headerContent.loginText}
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    asChild
+                  >
+                    <Link to="/platform/login" onClick={() => setIsMobileMenuOpen(false)}>
+                      Platform Admin
+                    </Link>
+                  </Button>
+                </>
               )}
             </nav>
           </div>

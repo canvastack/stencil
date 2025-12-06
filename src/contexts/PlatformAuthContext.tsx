@@ -30,19 +30,46 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
 
   // Initialize from localStorage
   useEffect(() => {
-    const storedAccountType = authService.getAccountType();
-    if (storedAccountType === 'platform' && authService.isAuthenticated()) {
-      const storedAccount = authService.getPlatformAccountFromStorage();
-      const storedPermissions = authService.getPermissionsFromStorage();
-      
-      if (storedAccount) {
-        setAccount(storedAccount);
-        setPermissions(storedPermissions);
+    const initializeAuth = async () => {
+      try {
+        const storedAccountType = authService.getAccountType();
+        const hasValidToken = authService.isAuthenticated();
+        
+        console.log('PlatformAuthContext: Initializing...', {
+          storedAccountType,
+          hasValidToken,
+          tokenExists: !!authService.getToken()
+        });
+        
+        if (storedAccountType === 'platform' && hasValidToken) {
+          const storedAccount = authService.getPlatformAccountFromStorage();
+          const storedPermissions = authService.getPermissionsFromStorage();
+          
+          if (storedAccount) {
+            console.log('PlatformAuthContext: Restoring account from localStorage', {
+              accountId: storedAccount.id,
+              accountName: storedAccount.name
+            });
+            setAccount(storedAccount);
+            setPermissions(storedPermissions);
+          } else {
+            console.log('PlatformAuthContext: No stored account found, clearing auth');
+            authService.clearAuth();
+          }
+        } else if (storedAccountType === 'platform' && !hasValidToken) {
+          console.log('PlatformAuthContext: Invalid token, clearing auth');
+          authService.clearAuth();
+        }
+      } catch (error) {
+        console.error('PlatformAuthContext: Initialization error', error);
+        authService.clearAuth();
+      } finally {
+        // Mark initialization as complete
+        setIsLoading(false);
       }
-    }
+    };
     
-    // Mark initialization as complete
-    setIsLoading(false);
+    initializeAuth();
   }, []);
 
   const clearError = useCallback(() => {
@@ -120,7 +147,7 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
   const value: PlatformAuthContextType = {
     account,
     permissions,
-    isAuthenticated: !!account,
+    isAuthenticated: !!account && authService.isAuthenticated(),
     isLoading,
     error,
     login,
