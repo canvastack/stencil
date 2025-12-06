@@ -122,7 +122,17 @@ class TenantContextMiddleware
         $tenantSlug = $request->header('X-Tenant-Slug');
         
         if ($tenantId) {
-            $tenant = TenantEloquentModel::where('uuid', $tenantId)->first();
+            $tenant = null;
+            
+            // Check if the value looks like an integer first (safer for PostgreSQL)
+            if (is_numeric($tenantId) && ctype_digit((string)$tenantId)) {
+                // Try by ID (integer)
+                $tenant = TenantEloquentModel::where('id', $tenantId)->first();
+            } else {
+                // Try by UUID (string)
+                $tenant = TenantEloquentModel::where('uuid', $tenantId)->first();
+            }
+            
             if ($tenant) {
                 return $tenant;
             }

@@ -4,17 +4,18 @@ namespace App\Domain\Order\Enums;
 
 enum OrderStatus: string
 {
-    case NEW = 'new';
-    case SOURCING_VENDOR = 'sourcing_vendor';
+    // PT CEX Business Workflow - 12 Status System
+    case DRAFT = 'draft';
+    case PENDING = 'pending';
+    case VENDOR_SOURCING = 'vendor_sourcing';
     case VENDOR_NEGOTIATION = 'vendor_negotiation';
-    case CUSTOMER_QUOTATION = 'customer_quotation';
-    case WAITING_PAYMENT = 'waiting_payment';
-    case PAYMENT_RECEIVED = 'payment_received';
+    case CUSTOMER_QUOTE = 'customer_quote';
+    case AWAITING_PAYMENT = 'awaiting_payment';
+    case PARTIAL_PAYMENT = 'partial_payment';
+    case FULL_PAYMENT = 'full_payment';
     case IN_PRODUCTION = 'in_production';
-    case QUALITY_CHECK = 'quality_check';
-    case READY_TO_SHIP = 'ready_to_ship';
-    case SHIPPED = 'shipped';
-    case DELIVERED = 'delivered';
+    case QUALITY_CONTROL = 'quality_control';
+    case SHIPPING = 'shipping';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
     case REFUNDED = 'refunded';
@@ -22,17 +23,17 @@ enum OrderStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::NEW => 'Pesanan Baru',
-            self::SOURCING_VENDOR => 'Mencari Vendor',
+            self::DRAFT => 'Draft Order',
+            self::PENDING => 'Pending Review',
+            self::VENDOR_SOURCING => 'Mencari Vendor',
             self::VENDOR_NEGOTIATION => 'Negosiasi Vendor',
-            self::CUSTOMER_QUOTATION => 'Penawaran Harga',
-            self::WAITING_PAYMENT => 'Menunggu Pembayaran',
-            self::PAYMENT_RECEIVED => 'Pembayaran Diterima',
+            self::CUSTOMER_QUOTE => 'Penawaran Harga',
+            self::AWAITING_PAYMENT => 'Menunggu Pembayaran',
+            self::PARTIAL_PAYMENT => 'DP Diterima (50%)',
+            self::FULL_PAYMENT => 'Full Payment (100%)',
             self::IN_PRODUCTION => 'Dalam Produksi',
-            self::QUALITY_CHECK => 'Pengecekan Kualitas',
-            self::READY_TO_SHIP => 'Siap Dikirim',
-            self::SHIPPED => 'Dikirim',
-            self::DELIVERED => 'Terkirim',
+            self::QUALITY_CONTROL => 'Quality Control',
+            self::SHIPPING => 'Sedang Dikirim',
             self::COMPLETED => 'Selesai',
             self::CANCELLED => 'Dibatalkan',
             self::REFUNDED => 'Dikembalikan',
@@ -118,54 +119,53 @@ enum OrderStatus: string
     public function getAllowedTransitions(): array
     {
         return match ($this) {
-            self::NEW => [
-                self::SOURCING_VENDOR,
-                self::VENDOR_NEGOTIATION,
-                self::CUSTOMER_QUOTATION,
+            self::DRAFT => [
+                self::PENDING,
+            ],
+            self::PENDING => [
+                self::VENDOR_SOURCING,
+                self::CUSTOMER_QUOTE,
                 self::CANCELLED,
             ],
-            self::SOURCING_VENDOR => [
+            self::VENDOR_SOURCING => [
                 self::VENDOR_NEGOTIATION,
                 self::CANCELLED,
             ],
             self::VENDOR_NEGOTIATION => [
-                self::CUSTOMER_QUOTATION,
-                self::SOURCING_VENDOR,
+                self::CUSTOMER_QUOTE,
+                self::VENDOR_SOURCING,
                 self::CANCELLED,
             ],
-            self::CUSTOMER_QUOTATION => [
-                self::WAITING_PAYMENT,
+            self::CUSTOMER_QUOTE => [
+                self::AWAITING_PAYMENT,
                 self::VENDOR_NEGOTIATION,
                 self::CANCELLED,
             ],
-            self::WAITING_PAYMENT => [
-                self::PAYMENT_RECEIVED,
+            self::AWAITING_PAYMENT => [
+                self::PARTIAL_PAYMENT,
+                self::FULL_PAYMENT,
                 self::CANCELLED,
             ],
-            self::PAYMENT_RECEIVED => [
+            self::PARTIAL_PAYMENT => [
                 self::IN_PRODUCTION,
-                self::REFUNDED,
+                self::CANCELLED,
+            ],
+            self::FULL_PAYMENT => [
+                self::IN_PRODUCTION,
             ],
             self::IN_PRODUCTION => [
-                self::QUALITY_CHECK,
-                self::CANCELLED,
-                self::REFUNDED,
+                self::QUALITY_CONTROL,
             ],
-            self::QUALITY_CHECK => [
-                self::READY_TO_SHIP,
+            self::QUALITY_CONTROL => [
+                self::SHIPPING,
                 self::IN_PRODUCTION,
-                self::REFUNDED,
             ],
-            self::READY_TO_SHIP => [
-                self::SHIPPED,
-            ],
-            self::SHIPPED => [
-                self::DELIVERED,
-            ],
-            self::DELIVERED => [
+            self::SHIPPING => [
                 self::COMPLETED,
             ],
-            self::COMPLETED => [],
+            self::COMPLETED => [
+                self::REFUNDED,
+            ],
             self::CANCELLED => [
                 self::REFUNDED,
             ],
@@ -181,17 +181,17 @@ enum OrderStatus: string
     public static function fromString(string $status): self
     {
         return match (strtolower($status)) {
-            'new' => self::NEW,
-            'sourcing_vendor' => self::SOURCING_VENDOR,
+            'draft' => self::DRAFT,
+            'pending' => self::PENDING,
+            'vendor_sourcing' => self::VENDOR_SOURCING,
             'vendor_negotiation' => self::VENDOR_NEGOTIATION,
-            'customer_quotation' => self::CUSTOMER_QUOTATION,
-            'waiting_payment' => self::WAITING_PAYMENT,
-            'payment_received' => self::PAYMENT_RECEIVED,
+            'customer_quote' => self::CUSTOMER_QUOTE,
+            'awaiting_payment' => self::AWAITING_PAYMENT,
+            'partial_payment' => self::PARTIAL_PAYMENT,
+            'full_payment' => self::FULL_PAYMENT,
             'in_production' => self::IN_PRODUCTION,
-            'quality_check' => self::QUALITY_CHECK,
-            'ready_to_ship' => self::READY_TO_SHIP,
-            'shipped' => self::SHIPPED,
-            'delivered' => self::DELIVERED,
+            'quality_control' => self::QUALITY_CONTROL,
+            'shipping' => self::SHIPPING,
             'completed' => self::COMPLETED,
             'cancelled' => self::CANCELLED,
             'refunded' => self::REFUNDED,

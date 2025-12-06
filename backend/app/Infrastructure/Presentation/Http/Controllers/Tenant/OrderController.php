@@ -61,22 +61,51 @@ class OrderController extends Controller
         try {
             $tenant = $this->resolveTenant($request);
             
-            // Use CQRS Query Handler for hexagonal architecture
-            $queryDto = GetOrdersByStatusQuery::fromArray([
-                'tenant_id' => $tenant->uuid,
-                'status' => $request->get('status'),
-                'per_page' => (int) $request->get('per_page', 20),
-                'page' => (int) $request->get('page', 1),
-                'sort_by' => $request->get('sort_by', 'created_at'),
-                'sort_order' => $request->get('sort_order', 'desc'),
+            // Simplified approach - direct Eloquent query for now
+            $query = Order::where('tenant_id', $tenant->id);
+            
+            // Apply filters
+            if ($request->has('status') && !empty($request->get('status'))) {
+                $query->where('status', $request->get('status'));
+            }
+            
+            if ($request->has('search') && !empty($request->get('search'))) {
+                $search = $request->get('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('customer_name', 'like', "%{$search}%")
+                      ->orWhere('customer_email', 'like', "%{$search}%")
+                      ->orWhere('id', 'like', "%{$search}%");
+                });
+            }
+            
+            // Sorting
+            $sortBy = $request->get('sort', 'created_at');
+            $sortOrder = $request->get('order', 'desc');
+            $query->orderBy($sortBy, $sortOrder);
+            
+            // Pagination
+            $perPage = min((int) $request->get('per_page', 15), 100);
+            $orders = $query->paginate($perPage);
+
+            return response()->json([
+                'data' => OrderResource::collection($orders->items()),
+                'meta' => [
+                    'page' => $orders->currentPage(),
+                    'current_page' => $orders->currentPage(),
+                    'last_page' => $orders->lastPage(),
+                    'per_page' => $orders->perPage(),
+                    'total' => $orders->total(),
+                    'from' => $orders->firstItem(),
+                    'to' => $orders->lastItem(),
+                ]
             ]);
-
-            $orders = $this->getOrdersByStatusHandler->handle($queryDto);
-
-            return OrderResource::collection($orders)
-                ->response()
-                ->setStatusCode(200);
         } catch (\Exception $e) {
+            \Log::error('Error fetching orders: ' . $e->getMessage(), [
+                'tenant' => $tenant->uuid ?? 'unknown',
+                'request_params' => $request->all(),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'message' => 'Gagal mengambil daftar pesanan',
                 'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
@@ -91,7 +120,7 @@ class OrderController extends Controller
             
             // Use CQRS Query Handler for hexagonal architecture
             $queryDto = GetOrderQuery::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'order_id' => $id,
             ]);
 
@@ -115,7 +144,7 @@ class OrderController extends Controller
         try {
             $tenant = $this->resolveTenant($request);
             $payload = $request->validated();
-            $payload['tenant_id'] = $tenant->uuid;
+            $payload['tenant_id'] = $tenant->id;
 
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = CreatePurchaseOrderCommand::fromArray($payload);
@@ -220,7 +249,7 @@ class OrderController extends Controller
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = ShipOrderCommand::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'order_id' => $id,
                 'tracking_number' => $request->tracking_number,
                 'shipping_carrier' => $request->get('shipping_carrier'),
@@ -247,7 +276,7 @@ class OrderController extends Controller
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = CompleteOrderCommand::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'order_id' => $id,
                 'delivered_at' => $request->get('delivered_at', now()->toIso8601String()),
                 'completion_notes' => $request->get('completion_notes'),
@@ -275,7 +304,7 @@ class OrderController extends Controller
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = CancelOrderCommand::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'order_id' => $id,
                 'cancellation_reason' => $request->reason,
                 'cancelled_by' => auth()->id(),
@@ -312,7 +341,7 @@ class OrderController extends Controller
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = AssignVendorCommand::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'order_id' => $id,
                 'vendor_id' => $request->vendor_id,
                 'specialization_notes' => $request->get('specialization_notes'),
@@ -346,7 +375,7 @@ class OrderController extends Controller
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = NegotiateWithVendorCommand::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'order_id' => $id,
                 'vendor_id' => $request->vendor_id,
                 'quoted_price' => $request->quoted_price,
@@ -375,7 +404,7 @@ class OrderController extends Controller
             
             // Use CQRS Query Handler for hexagonal architecture
             $queryDto = GetOrdersByStatusQuery::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'status' => $status,
                 'per_page' => (int) $request->get('per_page', 20),
                 'page' => (int) $request->get('page', 1),
@@ -403,7 +432,7 @@ class OrderController extends Controller
             
             // Use CQRS Query Handler for hexagonal architecture
             $queryDto = GetOrdersByCustomerQuery::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'customer_id' => $customerId,
                 'per_page' => (int) $request->get('per_page', 20),
                 'page' => (int) $request->get('page', 1),
@@ -433,7 +462,7 @@ class OrderController extends Controller
 
             // Use CQRS Query Handler for hexagonal architecture
             $queryDto = GetOrderHistoryQuery::fromArray([
-                'tenant_id' => $tenant->uuid,
+                'tenant_id' => $tenant->id,
                 'limit' => $limit,
             ]);
 

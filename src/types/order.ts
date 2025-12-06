@@ -1,16 +1,30 @@
+// PT CEX Business Cycle - 12 Status Workflow
 export enum OrderStatus {
-  New = 'new',
-  SourcingVendor = 'sourcing_vendor',
+  // Initial stage - Admin input order from customer
+  Draft = 'draft',
+  Pending = 'pending',
+  
+  // Vendor sourcing and negotiation phase  
+  VendorSourcing = 'vendor_sourcing',
   VendorNegotiation = 'vendor_negotiation',
-  CustomerQuotation = 'customer_quotation',
-  WaitingPayment = 'waiting_payment',
-  PaymentReceived = 'payment_received',
+  
+  // Customer quotation and approval phase
+  CustomerQuote = 'customer_quote', 
+  AwaitingPayment = 'awaiting_payment',
+  
+  // Payment processing phase (DP 50% vs Full 100%)
+  PartialPayment = 'partial_payment',  // DP 50% - Account Payable
+  FullPayment = 'full_payment',        // 100% - Account Receivable
+  
+  // Production and quality phase
   InProduction = 'in_production',
-  QualityCheck = 'quality_check',
-  ReadyToShip = 'ready_to_ship',
-  Shipped = 'shipped',
-  Delivered = 'delivered',
+  QualityControl = 'quality_control',
+  
+  // Final delivery phase
+  Shipping = 'shipping',
   Completed = 'completed',
+  
+  // Exception handling
   Cancelled = 'cancelled',
   Refunded = 'refunded',
 }
@@ -18,6 +32,11 @@ export enum OrderStatus {
 export enum ProductionType {
   Internal = 'internal',
   Vendor = 'vendor',
+}
+
+export enum PaymentType {
+  DP50 = 'dp_50',     // DP Minimum 50% - Account Payable
+  Full100 = 'full_100' // Full 100% Payment - Account Receivable
 }
 
 export enum PaymentStatus {
@@ -57,8 +76,8 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  uuid: string;
   orderNumber: string;
-  orderCode: string;
   customerId: string;
   customerName: string;
   customerEmail: string;
@@ -66,22 +85,39 @@ export interface Order {
   vendorId?: string;
   vendorName?: string;
   items: OrderItem[];
-  subtotal: number;
-  tax: number;
-  shippingCost: number;
-  discount: number;
+  
+  // PT CEX Business Cycle - Financial Fields
+  vendorCost?: number;          // Cost from vendor
+  customerPrice?: number;       // Price to customer  
+  markupAmount?: number;        // Profit margin
   totalAmount: number;
+  paymentType?: PaymentType;    // DP 50% vs Full 100%
+  paidAmount: number;
+  remainingAmount: number;
+  
+  // Status and workflow
   status: OrderStatus;
   productionType: ProductionType;
   paymentStatus: PaymentStatus;
   paymentMethod?: PaymentMethod;
+  
+  // Delivery information
   shippingAddress: string;
   billingAddress?: string;
-  customerNotes?: string;
-  internalNotes?: string;
-  orderDate: string;
   estimatedDelivery?: string;
   actualDelivery?: string;
+  
+  // Production timeline
+  productionStart?: string;
+  productionEnd?: string;
+  
+  // Notes and communication
+  customerNotes?: string;
+  vendorNotes?: string;
+  internalNotes?: string;
+  
+  // Audit fields
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }

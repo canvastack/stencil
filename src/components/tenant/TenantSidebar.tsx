@@ -71,7 +71,7 @@ const menuItems: MenuItem[] = [
         title: 'Vendors',
         icon: Building,
         children: [
-          { title: 'Vendor Directory', path: '/admin/vendors/directory' },
+          { title: 'Vendor Directory', path: '/admin/vendors' },
           { title: 'Vendor Performance', path: '/admin/vendors/performance' },
           { title: 'Contracts & Terms', path: '/admin/vendors/contracts' },
           { title: 'Vendor Communications', path: '/admin/vendors/communications' }
@@ -91,7 +91,7 @@ const menuItems: MenuItem[] = [
         title: 'Orders',
         icon: ShoppingCart,
         children: [
-          { title: 'Order Management', path: '/admin/orders/management' },
+          { title: 'Order Management', path: '/admin/orders' },
           { title: 'Order Tracking', path: '/admin/orders/tracking' },
           { title: 'Bulk Orders', path: '/admin/orders/bulk' },
           { title: 'Order Analytics', path: '/admin/orders/analytics' }
@@ -121,7 +121,7 @@ const menuItems: MenuItem[] = [
         title: 'Payments',
         icon: CreditCard,
         children: [
-          { title: 'Payment Overview', path: '/admin/payments' },
+          { title: 'Payment Processing', path: '/admin/payments' },
           { title: 'Payment Verification', path: '/admin/payments/verification' },
           { title: 'Refunds & Disputes', path: '/admin/payments/refunds' },
           { title: 'Payment Reports', path: '/admin/payments/reports' }

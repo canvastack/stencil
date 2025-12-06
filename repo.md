@@ -14,7 +14,7 @@
 **Test Results**: 220+ Unit tests passing (100% pass rate) · **Phase 4D Backend Architecture** verified with proper MVC implementation · **Perfect separation of concerns** with context-aware APIs · Production-ready enterprise-grade system
 **Code Coverage**: >95% for business logic · **BACKEND ROUTING VERIFIED** · **Complete MVC Architecture (ContentController + PlatformPage)** · Database-driven content delivery · All documentation aligned with implementation
 **Current Achievement**: ✅ **Perfect Backend Architecture with Separation of Concerns** - Proper MVC routing via ContentController, database-driven content from platform_pages table, context-aware API clients, complete documentation verification
-**Next Phase**: Phase 5: Advanced Features - Enhanced marketplace, mobile app development, API marketplace, third-party integrations  
+**Next Phase**: **TENANT BUSINESS CYCLE IMPLEMENTATION** 🔄 - Phase 5 on hold, redirected to tenant business focus (see `docs/ROADMAPS/TENANT_FOCUS_BEFORE_PHASE_5/`)  
 
 ---
 
@@ -624,6 +624,19 @@ White-Label: $15,000 one-time
 - Permission-based menu visibility
 - Role-based feature access
 - Granular permission control
+
+#### Platform vs Tenant Roles
+
+- **Tenant Roles & Permissions**:
+  - Semua role/permission yang digunakan di tenant schema **wajib** terikat ke `tenant_id`.
+  - Tidak diperbolehkan role “global tenant” dengan `tenant_id IS NULL`.
+  - Ini memastikan tidak ada user tenant yang bisa mengakses data lintas tenant.
+
+- **Platform Admin**:
+  - Didefinisikan di landlord database sebagai account dengan `account_type = 'platform'`.
+  - Mengelola tenant, lisensi, billing, konfigurasi platform, dsb.
+  - Ia **bukan** role di tenant schema; ia berada di level arsitektur yang berbeda.
+  - Dengan demikian, aturan `NO global roles (NULL tenant_id)` tetap terjaga di ranah tenant, sambil tetap mengizinkan Platform Admin bekerja di landlord DB tanpa `tenant_id`.
 
 ---
 
