@@ -48,6 +48,110 @@ Route::prefix('tenant')->group(function () {
     require __DIR__.'/tenant.php';
 });
 
+// Refund Management API Routes  
+Route::prefix('refunds')->middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])->group(function () {
+    Route::get('/', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'index']);
+    Route::post('/', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'store']);
+    Route::get('/statistics', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'statistics']);
+    Route::get('/{requestNumber}', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'show']);
+    Route::put('/{requestNumber}', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'update']);
+    Route::post('/{requestNumber}/approve', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'approve']);
+    Route::get('/{requestNumber}/approvals', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'approvals']);
+    
+    // Gateway Integration Routes
+    Route::post('/{requestNumber}/process', [App\Http\Controllers\RefundController::class, 'processRefund']);
+    Route::post('/{requestNumber}/retry', [App\Http\Controllers\RefundController::class, 'retryRefund']);
+    Route::get('/{requestNumber}/gateway-status', [App\Http\Controllers\RefundController::class, 'checkGatewayStatus']);
+    Route::post('/{requestNumber}/manual-process', [App\Http\Controllers\RefundController::class, 'processManualRefund']);
+    
+    // Bulk Operations
+    Route::post('/bulk-process', [App\Http\Controllers\RefundController::class, 'bulkProcess']);
+    
+    // Workflow Management
+    Route::get('/pending-workflows', [App\Http\Controllers\RefundController::class, 'pendingWorkflows']);
+    Route::get('/{requestNumber}/workflow-history', [App\Http\Controllers\RefundController::class, 'workflowHistory']);
+    
+    // Dispute Management Routes
+    Route::prefix('disputes')->group(function () {
+        Route::get('/', [App\Http\Controllers\RefundDisputeController::class, 'index']);
+        Route::post('/', [App\Http\Controllers\RefundDisputeController::class, 'store']);
+        Route::get('/requires-attention', [App\Http\Controllers\RefundDisputeController::class, 'requiresAttention']);
+        Route::get('/statistics', [App\Http\Controllers\RefundDisputeController::class, 'statistics']);
+        Route::get('/{dispute}', [App\Http\Controllers\RefundDisputeController::class, 'show']);
+        Route::post('/{dispute}/response', [App\Http\Controllers\RefundDisputeController::class, 'addResponse']);
+        Route::post('/{dispute}/resolve', [App\Http\Controllers\RefundDisputeController::class, 'resolve']);
+        Route::post('/{dispute}/escalate', [App\Http\Controllers\RefundDisputeController::class, 'escalate']);
+        Route::get('/{dispute}/recommendation', [App\Http\Controllers\RefundDisputeController::class, 'recommendation']);
+    });
+    
+    // Vendor Liability Management Routes
+    Route::prefix('vendor-liabilities')->group(function () {
+        Route::get('/', [App\Http\Controllers\VendorLiabilityController::class, 'index']);
+        Route::post('/from-refund', [App\Http\Controllers\VendorLiabilityController::class, 'createFromRefund'])->name('vendor-liabilities.create-from-refund');
+        Route::post('/standalone', [App\Http\Controllers\VendorLiabilityController::class, 'createStandalone']);
+        Route::get('/requires-attention', [App\Http\Controllers\VendorLiabilityController::class, 'requiresAttention']);
+        Route::get('/statistics', [App\Http\Controllers\VendorLiabilityController::class, 'statistics']);
+        Route::get('/vendor-performance', [App\Http\Controllers\VendorLiabilityController::class, 'vendorPerformance']);
+        Route::get('/vendor-recommendations', [App\Http\Controllers\VendorLiabilityController::class, 'vendorRecommendations']);
+        Route::get('/{liability}', [App\Http\Controllers\VendorLiabilityController::class, 'show']);
+        Route::post('/{liability}/file-claim', [App\Http\Controllers\VendorLiabilityController::class, 'fileClaim']);
+        Route::post('/{liability}/record-recovery', [App\Http\Controllers\VendorLiabilityController::class, 'recordRecovery']);
+        Route::post('/{liability}/mark-disputed', [App\Http\Controllers\VendorLiabilityController::class, 'markAsDisputed']);
+        Route::post('/{liability}/write-off', [App\Http\Controllers\VendorLiabilityController::class, 'writeOff']);
+    });
+    
+    // Refund Analytics & Reporting Routes
+    Route::prefix('analytics')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\RefundAnalyticsController::class, 'dashboard']);
+        Route::get('/overview', [App\Http\Controllers\RefundAnalyticsController::class, 'overview']);
+        Route::get('/trends', [App\Http\Controllers\RefundAnalyticsController::class, 'trends']);
+        Route::get('/financial-impact', [App\Http\Controllers\RefundAnalyticsController::class, 'financialImpact']);
+        Route::get('/vendor-analysis', [App\Http\Controllers\RefundAnalyticsController::class, 'vendorAnalysis']);
+        Route::get('/dispute-summary', [App\Http\Controllers\RefundAnalyticsController::class, 'disputeSummary']);
+        Route::get('/insurance-fund', [App\Http\Controllers\RefundAnalyticsController::class, 'insuranceFund']);
+        Route::get('/performance-metrics', [App\Http\Controllers\RefundAnalyticsController::class, 'performanceMetrics']);
+        Route::get('/insights', [App\Http\Controllers\RefundAnalyticsController::class, 'insights']);
+        Route::get('/real-time-metrics', [App\Http\Controllers\RefundAnalyticsController::class, 'realTimeMetrics']);
+        Route::post('/export', [App\Http\Controllers\RefundAnalyticsController::class, 'export']);
+        Route::post('/generate-report', [App\Http\Controllers\RefundAnalyticsController::class, 'generateReport']);
+    });
+    
+    // Evidence Management Routes
+    Route::prefix('evidence')->group(function () {
+        // Upload routes
+        Route::post('/refund/{refund}/upload', [App\Http\Controllers\RefundEvidenceController::class, 'uploadRefundEvidence']);
+        Route::post('/dispute/{dispute}/upload', [App\Http\Controllers\RefundEvidenceController::class, 'uploadDisputeEvidence']);
+        Route::post('/liability/{liability}/upload', [App\Http\Controllers\RefundEvidenceController::class, 'uploadLiabilityEvidence']);
+        
+        // View routes
+        Route::get('/refund/{refund}', [App\Http\Controllers\RefundEvidenceController::class, 'getRefundEvidence']);
+        Route::get('/dispute/{dispute}', [App\Http\Controllers\RefundEvidenceController::class, 'getDisputeEvidence']);
+        
+        // File operations
+        Route::get('/download/{fileId}', [App\Http\Controllers\RefundEvidenceController::class, 'downloadEvidence']);
+        Route::get('/thumbnail/{fileId}', [App\Http\Controllers\RefundEvidenceController::class, 'getThumbnail']);
+        Route::delete('/{fileId}', [App\Http\Controllers\RefundEvidenceController::class, 'deleteEvidence']);
+        
+        // Summary and configuration
+        Route::get('/summary', [App\Http\Controllers\RefundEvidenceController::class, 'evidenceSummary']);
+        Route::get('/upload-config', [App\Http\Controllers\RefundEvidenceController::class, 'getUploadConfiguration']);
+    });
+    
+    // Enhanced Payment Gateway Routes
+    Route::prefix('enhanced-gateway')->group(function () {
+        // Method information and validation
+        Route::get('/supported-methods', [App\Http\Controllers\EnhancedRefundGatewayController::class, 'getSupportedMethods']);
+        Route::post('/validate-method/{refund}', [App\Http\Controllers\EnhancedRefundGatewayController::class, 'validateRefundMethod']);
+        Route::post('/check-fees', [App\Http\Controllers\EnhancedRefundGatewayController::class, 'checkRefundFees']);
+        Route::post('/method-recommendations', [App\Http\Controllers\EnhancedRefundGatewayController::class, 'getMethodRecommendations']);
+        
+        // Enhanced processing
+        Route::post('/process-refund/{refund}', [App\Http\Controllers\EnhancedRefundGatewayController::class, 'processEnhancedRefund']);
+        Route::post('/generate-qris/{refund}', [App\Http\Controllers\EnhancedRefundGatewayController::class, 'generateQRISRefund']);
+        Route::post('/create-virtual-account/{refund}', [App\Http\Controllers\EnhancedRefundGatewayController::class, 'createVirtualAccount']);
+    });
+});
+
 // Public API (No authentication required)
 Route::prefix('public')->group(function () {
     // Tenant discovery by domain

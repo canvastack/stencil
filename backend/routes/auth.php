@@ -197,52 +197,47 @@ Route::prefix('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Refund Management Routes
+| Refund Management Routes (Legacy - Deprecated)
 |--------------------------------------------------------------------------
 |
-| API routes for payment refund management:
-| - Refund CRUD operations
-| - Approval workflow management
-| - Payment gateway integration
+| Legacy payment refund routes - replaced by new refund management system
+| These routes are commented out to avoid conflicts with new refund system
 |
 */
 
+// Legacy refund routes moved to new refund management system
+// See: /api/v1/refunds (in api.php) and RefundManagementController
+
+/* Legacy routes commented out - replaced by RefundManagementController
 Route::prefix('api/v1/refunds')->middleware(['auth:sanctum'])->group(function () {
-    // Main refund CRUD operations
     Route::get('/', [RefundController::class, 'index'])->name('refunds.index');
     Route::post('/', [RefundController::class, 'store'])->name('refunds.store');
     Route::get('/{refund}', [RefundController::class, 'show'])->name('refunds.show');
     Route::patch('/{refund}', [RefundController::class, 'update'])->name('refunds.update');
     Route::delete('/{refund}', [RefundController::class, 'destroy'])->name('refunds.destroy');
     
-    // Refund statistics and reporting
     Route::get('/statistics/summary', [RefundController::class, 'statistics'])->name('refunds.statistics');
     Route::get('/export/data', [RefundController::class, 'export'])->name('refunds.export');
     
-    // Order-related refund operations
     Route::get('/orders/{orderId}/summary', [RefundController::class, 'orderSummary'])->name('refunds.order.summary');
     
-    // Workflow management
     Route::get('/{refund}/workflow-history', [RefundController::class, 'workflowHistory'])->name('refunds.workflow.history');
     Route::get('/workflows/pending', [RefundController::class, 'pendingWorkflows'])->name('refunds.workflows.pending');
     
-    // Refund processing operations
     Route::post('/{refund}/approve', [PaymentRefundController::class, 'approve'])->name('refunds.approve');
     Route::post('/{refund}/reject', [PaymentRefundController::class, 'reject'])->name('refunds.reject');
     Route::post('/{refund}/process', [PaymentRefundController::class, 'process'])->name('refunds.process');
     Route::post('/{refund}/retry', [PaymentRefundController::class, 'retry'])->name('refunds.retry');
     Route::get('/{refund}/check-status', [PaymentRefundController::class, 'checkStatus'])->name('refunds.check.status');
     
-    // Workflow step operations
     Route::post('/workflows/{workflow}/approve', [PaymentRefundController::class, 'approveWorkflowStep'])->name('refunds.workflows.approve');
     Route::post('/workflows/{workflow}/escalate', [PaymentRefundController::class, 'escalateWorkflow'])->name('refunds.workflows.escalate');
     
-    // Bulk operations
     Route::post('/bulk/approve', [PaymentRefundController::class, 'bulkApprove'])->name('refunds.bulk.approve');
     
-    // System information
     Route::get('/processing-options', [PaymentRefundController::class, 'processingOptions'])->name('refunds.processing.options');
 });
+*/
 
 // Shipping & Logistics Routes
 Route::middleware('auth:sanctum')->prefix('shipping')->group(function () {

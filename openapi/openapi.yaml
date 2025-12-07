@@ -30,10 +30,11 @@ info:
     - **❌ FAQ**: Knowledge base with 150+ fields, 5 tables *(PENDING)*
     - **❌ SEO**: Universal SEO system with 20+ fields, 3 tables *(PENDING)*
     
-    ### 🛒 E-Commerce (4 modules)  
+    ### 🛒 E-Commerce (5 modules)  
     - **❌ Products**: Product catalog with 68+ fields, 4 tables *(PENDING)*
     - **❌ Reviews**: Rating system with 65+ fields, 5 tables *(PENDING)*
     - **✅ Orders**: Complete workflow with 164+ fields, 7 tables **(IMPLEMENTED)**
+    - **✅ Refunds**: Financial protection with 120+ fields, 5 tables **(IMPLEMENTED)**
     - **❌ Inventory**: Stock management with 180+ fields, 8+ tables *(PENDING)*
     
     ### 👥 User Management (4 modules)
@@ -356,6 +357,46 @@ components:
     CommandStatusResponse:
       $ref: './schemas/content-management/order-commands.yaml#/CommandStatusResponse'
     
+    # Phase 4D: Refund Management Schemas
+    RefundRequest:
+      $ref: './schemas/content-management/refunds.yaml#/RefundRequest'
+    RefundRequestDetailed:
+      $ref: './schemas/content-management/refunds.yaml#/RefundRequestDetailed'
+    CreateRefundRequest:
+      $ref: './schemas/content-management/refunds.yaml#/CreateRefundRequest'
+    UpdateRefundRequest:
+      $ref: './schemas/content-management/refunds.yaml#/UpdateRefundRequest'
+    ApproveRefundRequest:
+      $ref: './schemas/content-management/refunds.yaml#/ApproveRefundRequest'
+    RejectRefundRequest:
+      $ref: './schemas/content-management/refunds.yaml#/RejectRefundRequest'
+    ProcessRefundRequest:
+      $ref: './schemas/content-management/refunds.yaml#/ProcessRefundRequest'
+    CreateRefundDispute:
+      $ref: './schemas/content-management/refunds.yaml#/CreateRefundDispute'
+    RefundCalculationResult:
+      $ref: './schemas/content-management/refunds.yaml#/RefundCalculationResult'
+    RefundApproval:
+      $ref: './schemas/content-management/refunds.yaml#/RefundApproval'
+    RefundDispute:
+      $ref: './schemas/content-management/refunds.yaml#/RefundDispute'
+    InsuranceFundTransaction:
+      $ref: './schemas/content-management/refunds.yaml#/InsuranceFundTransaction'
+    InsuranceFundStatus:
+      $ref: './schemas/content-management/refunds.yaml#/InsuranceFundStatus'
+    VendorLiability:
+      $ref: './schemas/content-management/refunds.yaml#/VendorLiability'
+    RefundAnalytics:
+      $ref: './schemas/content-management/refunds.yaml#/RefundAnalytics'
+    OrderSummary:
+      $ref: './schemas/content-management/refunds.yaml#/OrderSummary'
+    RefundReason:
+      $ref: './schemas/content-management/refunds.yaml#/RefundReason'
+    RefundType:
+      $ref: './schemas/content-management/refunds.yaml#/RefundType'
+    RefundStatus:
+      $ref: './schemas/content-management/refunds.yaml#/RefundStatus'
+    
     # Phase 4C: Query Response Schemas
     OrderDetailsView:
       $ref: './schemas/content-management/order-queries.yaml#/OrderDetailsView'
@@ -486,7 +527,10 @@ paths:
   # ===== E-COMMERCE ENDPOINTS =====
   
   # Orders Module - Paths defined in orders.yaml
-  # Endpoints accessible at /tenant/orders/* and /admin/orders/*
+  # Endpoints accessible at /tenant/orders/*
+  
+  # Refunds Module - Paths defined in refunds.yaml  
+  # Endpoints accessible at /tenant/refunds/*
   
   # Products Module - Paths defined in products.yaml
   # Endpoints accessible at /tenant/products/* and /admin/products/*

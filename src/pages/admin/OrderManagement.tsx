@@ -1,16 +1,28 @@
-import { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useEffect } from 'react';
+import { LazyWrapper } from '@/components/ui/lazy-wrapper';
 import {
+  Card,
+  Button,
+  Badge,
+  DataTable,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+} from '@/components/ui/lazy-components';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,16 +31,6 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Eye,
   Package,
@@ -50,22 +52,41 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-import { useOrders } from '@/hooks/useOrders';
+import { useOrders, useUpdateOrder } from '@/hooks/useOrders';
 import { OrderStatus, PaymentStatus, PaymentType, type Order, type OrderItem } from '@/types/order';
 import { OrderWorkflow } from '@/utils/orderWorkflow';
 import { OrderStatusTransition } from '@/components/orders/OrderStatusTransition';
 import { VendorSourcing } from '@/components/orders/VendorSourcing';
+import { PaymentProcessing } from '@/components/orders/PaymentProcessing';
 import { useNavigate } from 'react-router-dom';
 
 export default function OrderManagement() {
   const navigate = useNavigate();
-  const ordersQuery = useOrders();
+  const [filters, setFilters] = useState({
+    search: '',
+    status: 'all',
+    paymentStatus: 'all',
+    dateFrom: '',
+    dateTo: '',
+  });
+
+  // Create API compatible filters
+  const apiFilters = {
+    search: filters.search || undefined,
+    status: filters.status !== 'all' ? filters.status : undefined,
+    paymentStatus: filters.paymentStatus !== 'all' ? filters.paymentStatus : undefined,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+  };
+
+  const ordersQuery = useOrders(apiFilters);
   const orders = ordersQuery.data?.data || [];
   const pagination = ordersQuery.data?.meta || { page: 1, per_page: 15, total: 0, last_page: 1 };
   const isLoading = ordersQuery.isLoading;
   const error = ordersQuery.error?.message;
   
-  // Add isSaving state for loading states
+  // Add mutation hooks
+  const updateOrderMutation = useUpdateOrder();
   const [isSaving, setIsSaving] = useState(false);
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -73,35 +94,22 @@ export default function OrderManagement() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isStatusTransitionOpen, setIsStatusTransitionOpen] = useState(false);
   const [isVendorSourcingOpen, setIsVendorSourcingOpen] = useState(false);
+  const [isPaymentProcessingOpen, setIsPaymentProcessingOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-
-  const [filters, setFilters] = useState({
-    search: '',
-    status: '',
-    paymentStatus: '',
-    dateFrom: '',
-    dateTo: '',
-  });
 
   const handleSearch = (value: string) => {
     setFilters((prev) => ({ ...prev, search: value }));
   };
 
-  const handleApplyFilters = () => {
-    // Refetch orders with new filters
-    ordersQuery.refetch();
-  };
-
   const handleClearFilters = () => {
     setFilters({
       search: '',
-      status: '',
-      paymentStatus: '',
+      status: 'all',
+      paymentStatus: 'all',
       dateFrom: '',
       dateTo: '',
     });
-    ordersQuery.refetch();
   };
 
   const handleViewOrder = async (order: Order) => {
@@ -116,7 +124,7 @@ export default function OrderManagement() {
 
   const handleViewQuotes = (order: Order) => {
     // Navigate to quotes page with order filter
-    navigate(`/admin/quotes?order_id=${order.id}`);
+    navigate(`/admin/quotes?order_id=${order.uuid || order.id}`);
   };
 
   const handleUpdateStatus = (order: Order) => {
@@ -129,19 +137,21 @@ export default function OrderManagement() {
     setIsVendorSourcingOpen(true);
   };
 
+  const handlePaymentProcessing = (order: Order) => {
+    setSelectedOrder(order);
+    setIsPaymentProcessingOpen(true);
+  };
+
   const handleVendorAssigned = async (orderId: string, vendorId: string) => {
     try {
       // Update order with vendor assignment
-      const updateResponse = await updateOrder({
+      const updateResponse = await updateOrderMutation.mutateAsync({
         id: orderId,
         data: {
           vendorId: vendorId,
           status: OrderStatus.VendorNegotiation
         }
       });
-
-      // Refresh orders list
-      ordersQuery.refetch();
 
       return updateResponse;
     } catch (error) {
@@ -151,13 +161,35 @@ export default function OrderManagement() {
 
   const handleStatusTransition = async (orderId: string, newStatus: OrderStatus, notes: string) => {
     try {
-      // Note: This would need to be implemented with proper mutation hooks
-      // For now, just refresh data
+      // Update order status using proper mutation hooks
+      await updateOrderMutation.mutateAsync({
+        id: orderId,
+        data: {
+          status: newStatus,
+          internalNotes: notes
+        }
+      });
+      
       setIsStatusTransitionOpen(false);
-      ordersQuery.refetch();
       toast.success('Order status updated successfully');
     } catch (error) {
       toast.error('Failed to update order status');
+      throw error; // Re-throw for component handling
+    }
+  };
+
+  const handlePaymentProcessed = async (orderId: string, paymentData: any) => {
+    try {
+      // Update order with payment information
+      await updateOrderMutation.mutateAsync({
+        id: orderId,
+        data: paymentData
+      });
+      
+      setIsPaymentProcessingOpen(false);
+      toast.success('Payment processed successfully');
+    } catch (error) {
+      throw error; // Re-throw for component handling
     }
   };
 
@@ -180,24 +212,7 @@ export default function OrderManagement() {
     }
   };
 
-  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
-    if (!selectedOrder) return;
-    
-    try {
-      setIsSaving(true);
-      // Note: This would need to be implemented with proper mutation hooks
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setSelectedOrder((prev) =>
-        prev ? { ...prev, status: newStatus as OrderStatus } : null
-      );
-      toast.success('Status order berhasil diupdate');
-      ordersQuery.refetch();
-    } catch (err) {
-      toast.error('Gagal mengupdate status order');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+
 
   const handlePageChange = (newPage: number) => {
     // Note: Would need to implement pagination with filters
@@ -311,12 +326,9 @@ export default function OrderManagement() {
         }
         const statusInfo = OrderWorkflow.getStatusInfo(status);
         return (
-          <div>
-            <Badge variant={getStatusVariant(status)} className={statusInfo?.color || 'bg-gray-100 text-gray-800'}>
-              {statusInfo?.label || 'Unknown'}
-            </Badge>
-            <p className="text-xs text-muted-foreground mt-1">{statusInfo?.phase || 'N/A'}</p>
-          </div>
+          <Badge variant={getStatusVariant(status)} className={statusInfo?.color || 'bg-gray-100 text-gray-800'}>
+            {statusInfo?.label || 'Unknown'}
+          </Badge>
         );
       },
     },
@@ -349,6 +361,8 @@ export default function OrderManagement() {
     {
       accessorKey: 'paymentType',
       header: 'Payment Type',
+      size: 200,
+      minSize: 180,
       cell: ({ row }) => {
         const paymentType = row.getValue('paymentType') as PaymentType;
         const order = row.original;
@@ -358,23 +372,25 @@ export default function OrderManagement() {
         }
         
         return (
-          <div>
+          <div className="min-w-0 w-full">
             <Badge className={
               paymentType === PaymentType.DP50 ? 
-              'bg-amber-100 text-amber-800' : 
-              'bg-green-100 text-green-800'
+              'bg-amber-100 text-amber-800 whitespace-nowrap' : 
+              'bg-green-100 text-green-800 whitespace-nowrap'
             }>
               {paymentType === PaymentType.DP50 ? 'DP 50%' : 'Full 100%'}
             </Badge>
             {(order.paidAmount || 0) > 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Paid: Rp {(order.paidAmount || 0).toLocaleString('id-ID')}
+              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                <div className="truncate" title={`Paid: Rp ${(order.paidAmount || 0).toLocaleString('id-ID')}`}>
+                  Paid: Rp {(order.paidAmount || 0).toLocaleString('id-ID')}
+                </div>
                 {(order.remainingAmount || 0) > 0 && (
-                  <span className="text-orange-600">
-                    <br />Remaining: Rp {(order.remainingAmount || 0).toLocaleString('id-ID')}
-                  </span>
+                  <div className="text-orange-600 truncate" title={`Remaining: Rp ${(order.remainingAmount || 0).toLocaleString('id-ID')}`}>
+                    Remaining: Rp {(order.remainingAmount || 0).toLocaleString('id-ID')}
+                  </div>
                 )}
-              </p>
+              </div>
             )}
           </div>
         );
@@ -383,6 +399,8 @@ export default function OrderManagement() {
     {
       accessorKey: 'markupAmount',
       header: 'Profit Margin',
+      size: 160,
+      minSize: 140,
       cell: ({ row }) => {
         const order = row.original;
         if (!order.markupAmount || !order.vendorCost || !order.customerPrice) {
@@ -392,11 +410,11 @@ export default function OrderManagement() {
         const profitPercentage = ((order.markupAmount / order.vendorCost) * 100);
         
         return (
-          <div>
-            <span className="font-semibold text-green-600">
+          <div className="min-w-0 w-full">
+            <div className="font-semibold text-green-600 truncate" title={`+Rp ${(order.markupAmount || 0).toLocaleString('id-ID')}`}>
               +Rp {(order.markupAmount || 0).toLocaleString('id-ID')}
-            </span>
-            <p className="text-xs text-muted-foreground">
+            </div>
+            <p className="text-xs text-muted-foreground whitespace-nowrap">
               {profitPercentage.toFixed(1)}% margin
             </p>
           </div>
@@ -472,7 +490,7 @@ export default function OrderManagement() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handleDeleteOrder(order.id)}
+              onClick={() => handleDeleteOrder(order.uuid || order.id)}
               disabled={isSaving}
               title="Delete Order"
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -487,6 +505,84 @@ export default function OrderManagement() {
 
   // Ensure orders is always an array
   const ordersData = orders || [];
+
+  // Stats Cards Skeleton Component
+  const StatsCardsSkeleton = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Left Column - Stacked Cards */}
+      <div className="space-y-3">
+        <div className="p-4 bg-card rounded-lg border animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-muted rounded-lg"></div>
+            <div className="space-y-2">
+              <div className="h-3 bg-muted rounded w-24"></div>
+              <div className="h-6 bg-muted rounded w-16"></div>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 bg-card rounded-lg border animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-muted rounded-lg"></div>
+            <div className="space-y-2">
+              <div className="h-3 bg-muted rounded w-28"></div>
+              <div className="h-6 bg-muted rounded w-16"></div>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 bg-card rounded-lg border animate-pulse">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-muted rounded-lg"></div>
+            <div className="space-y-2">
+              <div className="h-3 bg-muted rounded w-24"></div>
+              <div className="h-6 bg-muted rounded w-16"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Middle Column - Total Revenue */}
+      <div className="p-6 bg-card rounded-lg border animate-pulse flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-muted rounded-lg mx-auto"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded w-32 mx-auto"></div>
+            <div className="h-8 bg-muted rounded w-40 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column - Total Profit */}
+      <div className="p-6 bg-card rounded-lg border animate-pulse flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-muted rounded-lg mx-auto"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded w-32 mx-auto"></div>
+            <div className="h-8 bg-muted rounded w-40 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Enhanced Card with hover effects
+  const EnhancedCard = ({ 
+    children, 
+    className = "",
+    ...props 
+  }: { 
+    children: React.ReactNode; 
+    className?: string;
+    [key: string]: any;
+  }) => (
+    <Card 
+      className={`relative overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${className}`}
+      {...props}
+    >
+      {/* Shine effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+      {children}
+    </Card>
+  );
 
   const totalRevenue = ordersData
     .filter((o) => o.paymentStatus === PaymentStatus.Paid)
@@ -523,71 +619,83 @@ export default function OrderManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <LazyWrapper>
+      <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Order Management</h1>
         <p className="text-muted-foreground">Manage customer orders and track status</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <ShoppingCart className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Orders</p>
-              <p className="text-2xl font-bold">{pagination.total || 0}</p>
-            </div>
+      {isLoading ? (
+        <StatsCardsSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column - Stacked Cards */}
+          <div className="space-y-3">
+            <EnhancedCard className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <ShoppingCart className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Orders</p>
+                  <p className="text-2xl font-bold">{(pagination as any)?.total || (pagination as any)?.pagination?.total || 0}</p>
+                </div>
+              </div>
+            </EnhancedCard>
+            
+            <EnhancedCard className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-yellow-500/10 rounded-lg">
+                  <Clock className="w-6 h-6 text-yellow-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Awaiting Payment</p>
+                  <p className="text-2xl font-bold">{statsByStatus[OrderStatus.AwaitingPayment] || 0}</p>
+                </div>
+              </div>
+            </EnhancedCard>
+            
+            <EnhancedCard className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <Package className="w-6 h-6 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">In Production</p>
+                  <p className="text-2xl font-bold">{statsByStatus[OrderStatus.InProduction] || 0}</p>
+                </div>
+              </div>
+            </EnhancedCard>
           </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-yellow-500/10 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-500" />
+
+          {/* Middle Column - Total Revenue */}
+          <EnhancedCard className="p-6 flex items-center justify-center min-h-[200px]">
+            <div className="text-center">
+              <div className="p-4 bg-green-500/10 rounded-lg inline-block mb-4">
+                <DollarSign className="w-8 h-8 text-green-500" />
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Total Revenue</p>
+              <p className="text-3xl font-bold text-green-600">
+                Rp {totalRevenue.toLocaleString('id-ID')}
+              </p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Awaiting Payment</p>
-              <p className="text-2xl font-bold">{statsByStatus[OrderStatus.AwaitingPayment]}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-500/10 rounded-lg">
-              <Package className="w-6 h-6 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">In Production</p>
-              <p className="text-2xl font-bold">{statsByStatus[OrderStatus.InProduction]}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Revenue</p>
-              <p className="text-2xl font-bold">Rp {totalRevenue.toLocaleString('id-ID')}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/10 rounded-lg">
-              <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Profit</p>
-              <p className="text-2xl font-bold text-emerald-600">
+          </EnhancedCard>
+
+          {/* Right Column - Total Profit */}
+          <EnhancedCard className="p-6 flex items-center justify-center min-h-[200px]">
+            <div className="text-center">
+              <div className="p-4 bg-emerald-500/10 rounded-lg inline-block mb-4">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+              <p className="text-sm text-muted-foreground mb-2">Total Profit</p>
+              <p className="text-3xl font-bold text-emerald-600">
                 Rp {totalProfit.toLocaleString('id-ID')}
               </p>
             </div>
-          </div>
-        </Card>
-      </div>
+          </EnhancedCard>
+        </div>
+      )}
 
       <Card className="p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -621,7 +729,7 @@ export default function OrderManagement() {
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value={OrderStatus.Draft}>Draft</SelectItem>
                     <SelectItem value={OrderStatus.Pending}>Pending</SelectItem>
                     <SelectItem value={OrderStatus.VendorSourcing}>Vendor Sourcing</SelectItem>
@@ -645,7 +753,7 @@ export default function OrderManagement() {
                     <SelectValue placeholder="All payments" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Payment Status</SelectItem>
+                    <SelectItem value="all">All Payment Status</SelectItem>
                     <SelectItem value={PaymentStatus.Unpaid}>Unpaid</SelectItem>
                     <SelectItem value={PaymentStatus.PartiallyPaid}>Partially Paid</SelectItem>
                     <SelectItem value={PaymentStatus.Paid}>Paid</SelectItem>
@@ -654,20 +762,9 @@ export default function OrderManagement() {
                 </Select>
               </div>
               <div className="flex items-end gap-2">
-                <Button
-                  onClick={handleApplyFilters}
-                  disabled={isLoading}
-                  className="flex-1"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Filtering...
-                    </>
-                  ) : (
-                    'Apply'
-                  )}
-                </Button>
+                <div className="flex-1 text-sm text-muted-foreground">
+                  Filters auto-applied
+                </div>
                 <Button
                   variant="outline"
                   onClick={handleClearFilters}
@@ -683,21 +780,13 @@ export default function OrderManagement() {
       </Card>
 
       <Card className="p-6">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin" />
-            <span className="ml-2">Loading orders...</span>
-          </div>
-        ) : (
-          <>
-            <DataTable
-              columns={columns}
-              data={ordersData}
-              searchKey="orderNumber"
-              searchPlaceholder="Search by order number..."
-            />
-          </>
-        )}
+        <DataTable
+          columns={columns}
+          data={ordersData}
+          searchKey="orderNumber"
+          searchPlaceholder="Search by order number..."
+          loading={isLoading}
+        />
       </Card>
 
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
@@ -708,11 +797,20 @@ export default function OrderManagement() {
 
           {selectedOrder && (
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="details">Order Details</TabsTrigger>
-                <TabsTrigger value="customer">Customer Info</TabsTrigger>
-                <TabsTrigger value="status">Update Status</TabsTrigger>
-              </TabsList>
+              {(() => {
+                const validNextStatuses = OrderWorkflow.getValidNextStatuses(selectedOrder.status);
+                const canTransition = validNextStatuses.length > 0;
+                
+                return (
+                  <TabsList className={`grid w-full ${canTransition ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                    <TabsTrigger value="details">Order Details</TabsTrigger>
+                    <TabsTrigger value="customer">Customer Info</TabsTrigger>
+                    {canTransition && (
+                      <TabsTrigger value="status">Update Status</TabsTrigger>
+                    )}
+                  </TabsList>
+                );
+              })()}
 
               <TabsContent value="details" className="space-y-4">
                 <Card className="p-4">
@@ -729,11 +827,11 @@ export default function OrderManagement() {
                       return (
                         <div key={index} className="flex justify-between items-start border-b pb-3">
                           <div className="flex-1">
-                            <p className="font-medium">{item?.name || item?.productName || 'Unknown Product'}</p>
+                            <p className="font-medium">{item?.productName || 'Unknown Product'}</p>
                             <p className="text-sm text-muted-foreground">Quantity: {itemQuantity}</p>
-                            {item?.specifications && (
+                            {item?.customization && Object.keys(item.customization).length > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                Specifications: {item.specifications}
+                                Customization: {JSON.stringify(item.customization)}
                               </p>
                             )}
                             {item?.customization && typeof item.customization === 'object' && !Array.isArray(item.customization) && Object.keys(item.customization).length > 0 && (
@@ -768,28 +866,26 @@ export default function OrderManagement() {
                     Shipping Address
                   </h3>
                   <p className="text-muted-foreground">{
-                    typeof selectedOrder.addresses?.shipping === 'string' 
-                      ? selectedOrder.addresses.shipping 
-                      : 'Tidak ada alamat pengiriman'
+                    selectedOrder.shippingAddress || 'Tidak ada alamat pengiriman'
                   }</p>
                 </Card>
 
-                {(selectedOrder.notes?.customerNotes || selectedOrder.notes?.internalNotes) && (
+                {(selectedOrder.customerNotes || selectedOrder.internalNotes) && (
                   <Card className="p-4">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                       <FileText className="w-5 h-5" />
                       Notes
                     </h3>
-                    {selectedOrder.notes?.customerNotes && typeof selectedOrder.notes.customerNotes === 'string' && (
+                    {selectedOrder.customerNotes && (
                       <div className="mb-3">
                         <p className="text-xs font-medium text-muted-foreground">Customer Notes:</p>
-                        <p className="text-muted-foreground">{selectedOrder.notes.customerNotes}</p>
+                        <p className="text-muted-foreground">{selectedOrder.customerNotes}</p>
                       </div>
                     )}
-                    {selectedOrder.notes?.internalNotes && typeof selectedOrder.notes.internalNotes === 'string' && (
+                    {selectedOrder.internalNotes && (
                       <div>
                         <p className="text-xs font-medium text-muted-foreground">Internal Notes:</p>
-                        <p className="text-muted-foreground">{selectedOrder.notes.internalNotes}</p>
+                        <p className="text-muted-foreground">{selectedOrder.internalNotes}</p>
                       </div>
                     )}
                   </Card>
@@ -851,35 +947,53 @@ export default function OrderManagement() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="status" className="space-y-4">
+              {(() => {
+                const validNextStatuses = OrderWorkflow.getValidNextStatuses(selectedOrder.status);
+                const canTransition = validNextStatuses.length > 0;
+                
+                return canTransition ? (
+                  <TabsContent value="status" className="space-y-4">
                 <Card className="p-4 space-y-4">
-                  <div className="space-y-2">
-                    <Label>Order Status</Label>
-                    <Select
-                      value={selectedOrder.status}
-                      onValueChange={(v) => handleUpdateOrderStatus(selectedOrder.id, v)}
-                      disabled={isSaving}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={OrderStatus.Draft}>Draft</SelectItem>
-                        <SelectItem value={OrderStatus.Pending}>Pending</SelectItem>
-                        <SelectItem value={OrderStatus.VendorSourcing}>Vendor Sourcing</SelectItem>
-                        <SelectItem value={OrderStatus.VendorNegotiation}>Vendor Negotiation</SelectItem>
-                        <SelectItem value={OrderStatus.CustomerQuote}>Customer Quote</SelectItem>
-                        <SelectItem value={OrderStatus.AwaitingPayment}>Awaiting Payment</SelectItem>
-                        <SelectItem value={OrderStatus.PartialPayment}>Partial Payment (DP 50%)</SelectItem>
-                        <SelectItem value={OrderStatus.FullPayment}>Full Payment (100%)</SelectItem>
-                        <SelectItem value={OrderStatus.InProduction}>In Production</SelectItem>
-                        <SelectItem value={OrderStatus.QualityControl}>Quality Control</SelectItem>
-                        <SelectItem value={OrderStatus.Shipping}>Shipping</SelectItem>
-                        <SelectItem value={OrderStatus.Completed}>Completed</SelectItem>
-                        <SelectItem value={OrderStatus.Cancelled}>Cancelled</SelectItem>
-                        <SelectItem value={OrderStatus.Refunded}>Refunded</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Current Status</Label>
+                      <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                        <Badge variant={getStatusVariant(selectedOrder.status)}>
+                          {OrderWorkflow.getStatusInfo(selectedOrder.status).label}
+                        </Badge>
+                        <div className="text-sm text-muted-foreground ml-auto">
+                          {OrderWorkflow.getStatusInfo(selectedOrder.status).phase} Phase
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {OrderWorkflow.getStatusInfo(selectedOrder.status).description}
+                      </p>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          setIsDetailDialogOpen(false); // Close detail dialog first
+                          setTimeout(() => {
+                            setIsStatusTransitionOpen(true); // Then open status transition
+                          }, 100);
+                        }}
+                        className="flex-1"
+                        variant="default"
+                      >
+                        <ArrowUpDown className="w-4 h-4 mr-2" />
+                        Update Order Status
+                      </Button>
+                    </div>
+                    
+                    <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                      <p className="text-xs text-blue-800 dark:text-blue-300 font-medium mb-1">
+                        💡 Status Update Info
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-400">
+                        Status transitions include business rule validation, required actions, and transition notes for proper workflow management.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
@@ -895,10 +1009,23 @@ export default function OrderManagement() {
                         <SelectItem value={PaymentStatus.Refunded}>Refunded</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">Payment status is managed separately</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-muted-foreground">Payment status is managed separately</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handlePaymentProcessing(selectedOrder)}
+                        className="text-xs"
+                      >
+                        <DollarSign className="w-3 h-3 mr-1" />
+                        Manage Payment
+                      </Button>
+                    </div>
                   </div>
                 </Card>
-              </TabsContent>
+                  </TabsContent>
+                ) : null;
+              })()}
             </Tabs>
           )}
 
@@ -963,6 +1090,21 @@ export default function OrderManagement() {
           isLoading={isSaving}
         />
       )}
-    </div>
+
+      {/* Payment Processing Dialog */}
+      {selectedOrder && (
+        <PaymentProcessing
+          order={selectedOrder}
+          isOpen={isPaymentProcessingOpen}
+          onClose={() => {
+            setIsPaymentProcessingOpen(false);
+            setSelectedOrder(null);
+          }}
+          onPaymentProcessed={handlePaymentProcessed}
+          isLoading={isSaving}
+        />
+      )}
+      </div>
+    </LazyWrapper>
   );
 }

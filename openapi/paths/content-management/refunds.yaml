@@ -1,0 +1,691 @@
+# Refund System - Complete CRUD Operations for PT Custom Etching Xenial
+# Comprehensive refund management with multi-level approval workflow
+
+/api/v1/refunds:
+  get:
+    tags:
+      - "Refund Management"
+    summary: "List refund requests"
+    description: "Retrieve paginated list of refund requests with filtering and search capabilities"
+    operationId: listRefundRequests
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: status
+        in: query
+        description: "Filter by refund status"
+        schema:
+          $ref: '#/components/schemas/RefundStatus'
+      - name: refund_reason
+        in: query
+        description: "Filter by refund reason"
+        schema:
+          $ref: '#/components/schemas/RefundReason'
+      - name: order_id
+        in: query
+        description: "Filter by order UUID"
+        schema:
+          type: string
+          format: uuid
+      - name: date_from
+        in: query
+        description: "Filter from date (YYYY-MM-DD)"
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        description: "Filter to date (YYYY-MM-DD)"
+        schema:
+          type: string
+          format: date
+      - name: search
+        in: query
+        description: "Search in request number, customer notes, or order details"
+        schema:
+          type: string
+    responses:
+      200:
+        description: "Refund requests retrieved successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/RefundRequest'
+                meta:
+                  $ref: '#/components/schemas/PaginationMeta'
+                links:
+                  $ref: '#/components/schemas/PaginationLinks'
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+  post:
+    tags:
+      - "Refund Management"
+    summary: "Create refund request"
+    description: "Create a new refund request with automatic calculation and risk assessment"
+    operationId: createRefundRequest
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateRefundRequest'
+    responses:
+      201:
+        description: "Refund request created successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundRequest'
+                message:
+                  type: string
+                  example: "Refund request created successfully and pending review"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      422:
+        $ref: '#/components/responses/ValidationError'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/{request_number}:
+  get:
+    tags:
+      - "Refund Management"
+    summary: "Get refund request details"
+    description: "Retrieve detailed information about a specific refund request including calculation breakdown"
+    operationId: getRefundRequest
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number (RFD-YYYYMMDD-XXXXX)"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+          example: "RFD-20241207-00001"
+    responses:
+      200:
+        description: "Refund request retrieved successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundRequestDetailed'
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+  put:
+    tags:
+      - "Refund Management"
+    summary: "Update refund request"
+    description: "Update refund request details (only allowed in pending states)"
+    operationId: updateRefundRequest
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateRefundRequest'
+    responses:
+      200:
+        description: "Refund request updated successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundRequest'
+                message:
+                  type: string
+                  example: "Refund request updated successfully"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      422:
+        $ref: '#/components/responses/ValidationError'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+  delete:
+    tags:
+      - "Refund Management"  
+    summary: "Cancel refund request"
+    description: "Cancel a refund request (soft delete, only allowed in pending states)"
+    operationId: cancelRefundRequest
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+    responses:
+      200:
+        description: "Refund request cancelled successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "Refund request cancelled successfully"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/{request_number}/approve:
+  post:
+    tags:
+      - "Refund Approval"
+    summary: "Approve refund request"
+    description: "Approve a refund request at current approval level with optional notes and amount adjustment"
+    operationId: approveRefundRequest
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApproveRefundRequest'
+    responses:
+      200:
+        description: "Refund request approved successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundApproval'
+                message:
+                  type: string
+                  example: "Refund approved and moved to next level"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      422:
+        $ref: '#/components/responses/ValidationError'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/{request_number}/reject:
+  post:
+    tags:
+      - "Refund Approval"
+    summary: "Reject refund request"
+    description: "Reject a refund request with mandatory reason and notes"
+    operationId: rejectRefundRequest
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RejectRefundRequest'
+    responses:
+      200:
+        description: "Refund request rejected successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundApproval'
+                message:
+                  type: string
+                  example: "Refund request rejected"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      422:
+        $ref: '#/components/responses/ValidationError'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/{request_number}/calculate:
+  post:
+    tags:
+      - "Refund Calculation"
+    summary: "Recalculate refund amount"
+    description: "Trigger recalculation of refund amount based on updated business rules or order status"
+    operationId: recalculateRefund
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              quality_issue_percentage:
+                type: integer
+                minimum: 1
+                maximum: 100
+                description: "Percentage of quality issue for partial refunds"
+                example: 75
+              override_reason:
+                type: string
+                description: "Reason for manual recalculation"
+                example: "Updated production cost information"
+    responses:
+      200:
+        description: "Refund recalculated successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundCalculationResult'
+                message:
+                  type: string
+                  example: "Refund amount recalculated based on updated information"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/{request_number}/process:
+  post:
+    tags:
+      - "Refund Processing"
+    summary: "Process approved refund"
+    description: "Execute the refund payment and update financial records (Finance team only)"
+    operationId: processRefund
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProcessRefundRequest'
+    responses:
+      200:
+        description: "Refund processed successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    transaction_reference:
+                      type: string
+                      example: "TXN-RF-20241207-001"
+                    processed_amount:
+                      type: number
+                      format: decimal
+                      example: 2500000.00
+                    processing_fee:
+                      type: number
+                      format: decimal
+                      example: 25000.00
+                    insurance_withdrawal:
+                      type: number
+                      format: decimal
+                      example: 500000.00
+                message:
+                  type: string
+                  example: "Refund processed successfully"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      422:
+        $ref: '#/components/responses/ValidationError'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/{request_number}/dispute:
+  post:
+    tags:
+      - "Refund Disputes"
+    summary: "Create refund dispute"
+    description: "Create a dispute for a refund request with evidence and reasoning"
+    operationId: createRefundDispute
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: request_number
+        in: path
+        required: true
+        description: "Refund request number"
+        schema:
+          type: string
+          pattern: '^RFD-\d{8}-\d{5}$'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateRefundDispute'
+    responses:
+      201:
+        description: "Refund dispute created successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundDispute'
+                message:
+                  type: string
+                  example: "Dispute created and under review"
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      404:
+        $ref: '#/components/responses/NotFound'
+      422:
+        $ref: '#/components/responses/ValidationError'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/analytics:
+  get:
+    tags:
+      - "Refund Analytics"
+    summary: "Get refund analytics dashboard"
+    description: "Comprehensive analytics for refund trends, financial impact, and business intelligence"
+    operationId: getRefundAnalytics
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - name: period
+        in: query
+        description: "Analytics period"
+        schema:
+          type: string
+          enum: [7d, 30d, 90d, 1y, custom]
+          default: 30d
+      - name: date_from
+        in: query
+        description: "Start date for custom period (YYYY-MM-DD)"
+        schema:
+          type: string
+          format: date
+      - name: date_to
+        in: query
+        description: "End date for custom period (YYYY-MM-DD)"
+        schema:
+          type: string
+          format: date
+      - name: group_by
+        in: query
+        description: "Group analytics by dimension"
+        schema:
+          type: string
+          enum: [reason, status, month, vendor, risk_level]
+          default: reason
+    responses:
+      200:
+        description: "Refund analytics retrieved successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/RefundAnalytics'
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/insurance-fund:
+  get:
+    tags:
+      - "Insurance Fund"
+    summary: "Get insurance fund status"
+    description: "Get current insurance fund balance, contributions, and withdrawal history"
+    operationId: getInsuranceFundStatus
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+    responses:
+      200:
+        description: "Insurance fund status retrieved successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '#/components/schemas/InsuranceFundStatus'
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      500:
+        $ref: '#/components/responses/InternalServerError'
+
+/api/v1/refunds/vendor-liabilities:
+  get:
+    tags:
+      - "Vendor Management"
+    summary: "Get vendor liability tracking"
+    description: "Track vendor liabilities and recovery status for refunds caused by vendor failures"
+    operationId: getVendorLiabilities
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '#/components/parameters/TenantId'
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PerPage'
+      - name: vendor_id
+        in: query
+        description: "Filter by specific vendor UUID"
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        description: "Filter by recovery status"
+        schema:
+          type: string
+          enum: [pending, in_progress, recovered, written_off]
+    responses:
+      200:
+        description: "Vendor liabilities retrieved successfully"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/VendorLiability'
+                meta:
+                  $ref: '#/components/schemas/PaginationMeta'
+      400:
+        $ref: '#/components/responses/BadRequest'
+      401:
+        $ref: '#/components/responses/Unauthorized'
+      403:
+        $ref: '#/components/responses/Forbidden'
+      500:
+        $ref: '#/components/responses/InternalServerError'

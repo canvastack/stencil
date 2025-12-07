@@ -6,6 +6,7 @@ use App\Models\PaymentRefund;
 use App\Models\RefundApprovalWorkflow;
 use App\Domain\Payment\Services\RefundService;
 use App\Domain\Payment\Services\RefundApprovalService;
+use App\Domain\Payment\Services\RefundGatewayIntegrationService;
 use App\Domain\Payment\Enums\RefundStatus;
 use App\Domain\Payment\Enums\RefundReasonCategory;
 use App\Domain\Payment\Enums\RefundMethod;
@@ -18,7 +19,8 @@ class RefundController extends Controller
 {
     public function __construct(
         protected RefundService $refundService,
-        protected RefundApprovalService $approvalService
+        protected RefundApprovalService $approvalService,
+        protected RefundGatewayIntegrationService $gatewayIntegrationService
     ) {}
 
     /**
@@ -383,6 +385,209 @@ class RefundController extends Controller
             'count' => $pendingItems->count(),
             'overdue_count' => $pendingItems->where('is_overdue', true)->count()
         ]);
+    }
+
+    /**
+     * Process approved refund through gateway
+     */
+    public function processRefund(PaymentRefund $refund): JsonResponse
+    {
+        if ($refund->status !== 'approved') {
+            return response()->json([
+                'message' => 'Refund must be approved before processing'
+            ], 422);
+        }
+
+        try {
+            $result = $this->gatewayIntegrationService->processRefundWithGateway($refund, auth()->id());
+
+            return response()->json([
+                'message' => $result['success'] ? 'Refund processed successfully' : 'Refund processing failed',
+                'data' => $result
+            ], $result['success'] ? 200 : 422);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to process refund via API', [
+                'refund_id' => $refund->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to process refund',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Retry failed refund processing
+     */
+    public function retryRefund(PaymentRefund $refund): JsonResponse
+    {
+        if (!$this->gatewayIntegrationService->canRetryRefund($refund)) {
+            return response()->json([
+                'message' => 'This refund cannot be retried',
+                'reasons' => $this->getRetryBlockedReasons($refund)
+            ], 422);
+        }
+
+        try {
+            $result = $this->gatewayIntegrationService->retryRefundProcessing($refund, auth()->id());
+
+            return response()->json([
+                'message' => $result['success'] ? 'Refund retry successful' : 'Refund retry failed',
+                'data' => $result
+            ], $result['success'] ? 200 : 422);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to retry refund via API', [
+                'refund_id' => $refund->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to retry refund',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Check refund status from gateway
+     */
+    public function checkGatewayStatus(PaymentRefund $refund): JsonResponse
+    {
+        try {
+            $result = $this->gatewayIntegrationService->checkRefundStatus($refund);
+
+            return response()->json([
+                'message' => 'Status check completed',
+                'data' => $result
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to check gateway status',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Process manual refund (outside gateway)
+     */
+    public function processManualRefund(Request $request, PaymentRefund $refund): JsonResponse
+    {
+        if ($refund->status !== 'approved') {
+            return response()->json([
+                'message' => 'Refund must be approved before manual processing'
+            ], 422);
+        }
+
+        $validatedData = $request->validate([
+            'reference' => 'sometimes|string|max:100',
+            'notes' => 'required|string|max:500',
+            'confirmation' => 'required|boolean|accepted'
+        ]);
+
+        try {
+            $result = $this->gatewayIntegrationService->processManualRefund(
+                $refund, 
+                auth()->id(), 
+                $validatedData
+            );
+
+            Log::info('Manual refund processed via API', [
+                'refund_id' => $refund->id,
+                'processed_by' => auth()->id(),
+                'manual_data' => $validatedData
+            ]);
+
+            return response()->json([
+                'message' => 'Manual refund processed successfully',
+                'data' => $result
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to process manual refund via API', [
+                'refund_id' => $refund->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to process manual refund',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk process approved refunds
+     */
+    public function bulkProcess(Request $request): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'refund_ids' => 'required|array|min:1|max:50',
+            'refund_ids.*' => 'integer|exists:payment_refunds,id'
+        ]);
+
+        try {
+            $result = $this->gatewayIntegrationService->processBulkRefunds(
+                $validatedData['refund_ids'], 
+                auth()->id()
+            );
+
+            return response()->json([
+                'message' => 'Bulk processing completed',
+                'data' => $result
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to bulk process refunds via API', [
+                'refund_ids' => $validatedData['refund_ids'],
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to bulk process refunds',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get retry blocked reasons
+     */
+    private function getRetryBlockedReasons(PaymentRefund $refund): array
+    {
+        $reasons = [];
+
+        if ($refund->status !== 'failed') {
+            $reasons[] = 'Refund is not in failed status';
+        }
+
+        // Check retry count (simulate for demo)
+        $retryCount = 2; // This would come from actual retry tracking
+        if ($retryCount >= 3) {
+            $reasons[] = 'Maximum retry attempts exceeded (3)';
+        }
+
+        $nonRetryableErrors = [
+            'INSUFFICIENT_FUNDS',
+            'INVALID_ACCOUNT', 
+            'ACCOUNT_CLOSED',
+            'INVALID_REFUND_AMOUNT'
+        ];
+
+        if (in_array($refund->gateway_error_code, $nonRetryableErrors)) {
+            $reasons[] = 'Gateway error is not retryable: ' . $refund->gateway_error_code;
+        }
+
+        return $reasons;
     }
 
     /**

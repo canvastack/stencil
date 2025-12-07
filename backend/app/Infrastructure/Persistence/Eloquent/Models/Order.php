@@ -149,6 +149,16 @@ class Order extends Model implements TenantAwareModel
         return $query->where('payment_status', $status);
     }
 
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
     protected static function boot()
     {
         parent::boot();

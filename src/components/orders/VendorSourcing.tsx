@@ -130,7 +130,7 @@ export function VendorSourcing({
     }
 
     try {
-      await onVendorAssigned(order.id, selectedVendor.id);
+      await onVendorAssigned(order.uuid || order.id, selectedVendor.id);
       
       // Reset form
       setSelectedVendor(null);

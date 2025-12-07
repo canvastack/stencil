@@ -141,8 +141,11 @@ export const useUpdateOrder = () => {
       // Update the order in cache
       queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
       
-      // Invalidate related queries
+      // Invalidate all order list queries (including filtered ones)
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
+      
+      // Also invalidate the broader orders.all to catch any filtered queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
       
       // Show success toast
       toast.success('Order updated successfully', {

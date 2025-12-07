@@ -113,22 +113,11 @@ class OrderController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, Order $order): JsonResponse
     {
         try {
-            $tenant = $this->resolveTenant($request);
-            
-            // Use CQRS Query Handler for hexagonal architecture
-            $queryDto = GetOrderQuery::fromArray([
-                'tenant_id' => $tenant->id,
-                'order_id' => $id,
-            ]);
-
-            $order = $this->getOrderHandler->handle($queryDto);
-            
-            if (!$order) {
-                return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
-            }
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
             
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\Exception $e) {
@@ -163,10 +152,12 @@ class OrderController extends Controller
         }
     }
 
-    public function update(UpdateOrderRequest $request, int $id): JsonResponse
+    public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
         try {
-            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
+            
             $order->update($request->validated());
             $order->load(['customer', 'vendor']);
             return (new OrderResource($order))->response()->setStatusCode(200);
@@ -180,10 +171,12 @@ class OrderController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, Order $order): JsonResponse
     {
         try {
-            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
+            
             $order->delete();
             return response()->json(['message' => 'Pesanan berhasil dihapus'], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -196,10 +189,12 @@ class OrderController extends Controller
         }
     }
 
-    public function updateStatus(UpdateOrderStatusRequest $request, int $id): JsonResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
         try {
-            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
+            
             $newStatus = OrderStatus::fromString($request->status);
             
             $validationErrors = $this->stateMachine->validateTransition($order, $newStatus, $request->metadata ?? []);
@@ -233,9 +228,9 @@ class OrderController extends Controller
         }
     }
 
-    public function process(UpdateOrderStatusRequest $request, int $id): JsonResponse
+    public function process(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
-        return $this->updateStatus($request, $id);
+        return $this->updateStatus($request, $order);
     }
 
     public function ship(Request $request, int $id): JsonResponse
@@ -329,7 +324,7 @@ class OrderController extends Controller
     }
 
     // Phase 4C: New business workflow methods using CQRS Command Handlers
-    public function assignVendor(Request $request, int $id): JsonResponse
+    public function assignVendor(Request $request, Order $order): JsonResponse
     {
         try {
             $request->validate([
@@ -337,12 +332,13 @@ class OrderController extends Controller
                 'specialization_notes' => 'sometimes|string|max:1000',
             ]);
 
-            $tenant = $this->resolveTenant($request);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = AssignVendorCommand::fromArray([
-                'tenant_id' => $tenant->id,
-                'order_id' => $id,
+                'tenant_id' => $order->tenant_id,
+                'order_id' => $order->id,
                 'vendor_id' => $request->vendor_id,
                 'specialization_notes' => $request->get('specialization_notes'),
             ]);
@@ -605,6 +601,14 @@ class OrderController extends Controller
         $tenant = $this->resolveTenant($request);
 
         return Order::forTenant($tenant);
+    }
+
+    private function ensureOrderBelongsToTenant(Request $request, Order $order): void
+    {
+        $tenant = $this->resolveTenant($request);
+        if ($order->tenant_id !== $tenant->id) {
+            abort(404, 'Pesanan tidak ditemukan');
+        }
     }
 
     private function resolveTenant(Request $request): BaseTenant

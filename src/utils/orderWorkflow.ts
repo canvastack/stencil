@@ -62,9 +62,7 @@ export class OrderWorkflow {
       OrderStatus.Completed         // Delivered to customer
     ],
     
-    [OrderStatus.Completed]: [
-      OrderStatus.Refunded          // Only if issues found later
-    ],
+    [OrderStatus.Completed]: [], // Terminal state - refunds handled separately
     
     [OrderStatus.Cancelled]: [],    // Terminal state
     [OrderStatus.Refunded]: []      // Terminal state
@@ -94,96 +92,132 @@ export class OrderWorkflow {
     color: string;
     phase: string;
   } {
-    const statusMap = {
-      [OrderStatus.Draft]: {
+    const statusMap: Record<string, {label: string; description: string; color: string; phase: string}> = {
+      // Enum values
+      'draft': {
         label: 'Draft',
         description: 'Order being prepared by admin',
         color: 'bg-gray-100 text-gray-800',
         phase: 'Initial'
       },
-      [OrderStatus.Pending]: {
+      'pending': {
         label: 'Pending Review',
         description: 'Order submitted, waiting for admin review',
         color: 'bg-yellow-100 text-yellow-800',
         phase: 'Initial'
       },
-      [OrderStatus.VendorSourcing]: {
+      'vendor_sourcing': {
         label: 'Sourcing Vendor',
         description: 'Finding suitable vendor for production',
         color: 'bg-blue-100 text-blue-800',
         phase: 'Vendor'
       },
-      [OrderStatus.VendorNegotiation]: {
+      'vendor_negotiation': {
         label: 'Vendor Negotiation',
         description: 'Negotiating price and terms with vendor',
         color: 'bg-purple-100 text-purple-800',
         phase: 'Vendor'
       },
-      [OrderStatus.CustomerQuote]: {
+      'customer_quote': {
         label: 'Customer Quotation',
         description: 'Quote sent to customer for approval',
         color: 'bg-indigo-100 text-indigo-800',
         phase: 'Customer'
       },
-      [OrderStatus.AwaitingPayment]: {
+      'awaiting_payment': {
         label: 'Awaiting Payment',
         description: 'Waiting for customer payment (DP 50% or Full 100%)',
         color: 'bg-orange-100 text-orange-800',
         phase: 'Payment'
       },
-      [OrderStatus.PartialPayment]: {
+      'partial_payment': {
         label: 'DP Received (50%)',
         description: 'Down payment received - Account Payable',
         color: 'bg-amber-100 text-amber-800',
         phase: 'Payment'
       },
-      [OrderStatus.FullPayment]: {
+      'full_payment': {
         label: 'Full Payment',
         description: 'Full payment received - Account Receivable',
         color: 'bg-green-100 text-green-800',
         phase: 'Payment'
       },
-      [OrderStatus.InProduction]: {
+      'in_production': {
         label: 'In Production',
         description: 'Order being manufactured by vendor/internal',
         color: 'bg-blue-100 text-blue-800',
         phase: 'Production'
       },
-      [OrderStatus.QualityControl]: {
+      'quality_control': {
         label: 'Quality Control',
         description: 'Production completed, quality checking',
         color: 'bg-purple-100 text-purple-800',
         phase: 'Production'
       },
-      [OrderStatus.Shipping]: {
+      'shipping': {
         label: 'Shipping',
         description: 'Order shipped to customer',
         color: 'bg-indigo-100 text-indigo-800',
         phase: 'Delivery'
       },
-      [OrderStatus.Completed]: {
+      'completed': {
         label: 'Completed',
         description: 'Order delivered successfully',
         color: 'bg-green-100 text-green-800',
         phase: 'Complete'
       },
-      [OrderStatus.Cancelled]: {
+      'cancelled': {
         label: 'Cancelled',
         description: 'Order cancelled by customer or admin',
         color: 'bg-red-100 text-red-800',
         phase: 'Cancelled'
       },
-      [OrderStatus.Refunded]: {
+      'refunded': {
         label: 'Refunded',
         description: 'Order refunded to customer',
         color: 'bg-gray-100 text-gray-800',
         phase: 'Refunded'
-      }
+      },
+      
+      // Legacy/alternative mappings
+      'waiting_payment': {
+        label: 'Awaiting Payment',
+        description: 'Waiting for customer payment',
+        color: 'bg-orange-100 text-orange-800',
+        phase: 'Payment'
+      },
+      'ready_to_ship': {
+        label: 'Shipping',
+        description: 'Ready to ship to customer',
+        color: 'bg-indigo-100 text-indigo-800',
+        phase: 'Delivery'
+      },
+      'shipped': {
+        label: 'Shipping',
+        description: 'Order shipped to customer',
+        color: 'bg-indigo-100 text-indigo-800',
+        phase: 'Delivery'
+      },
+
     };
 
-    return statusMap[status] || {
-      label: status,
-      description: 'Unknown status',
+    const result = statusMap[status];
+    
+    if (result) {
+      return result;
+    }
+    
+    // Handle raw string values with proper formatting
+    const formatLabel = (rawStatus: string) => {
+      return rawStatus
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
+    
+    return {
+      label: formatLabel(status),
+      description: 'Status',
       color: 'bg-gray-100 text-gray-800',
       phase: 'Unknown'
     };

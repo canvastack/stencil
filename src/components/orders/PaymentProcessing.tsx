@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -135,7 +136,7 @@ export function PaymentProcessing({
     };
 
     try {
-      await onPaymentProcessed(order.id, paymentData);
+      await onPaymentProcessed(order.uuid || order.id, paymentData);
       
       // Reset form
       setPaidAmount('');

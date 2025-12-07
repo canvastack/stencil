@@ -483,6 +483,7 @@ export default function ProductList() {
               searchPlaceholder="Search products..."
               bulkActions={bulkActions}
               enableBulkSelect={true}
+              loading={isLoading}
             />
 
             <div className="flex items-center justify-between pt-4 border-t">

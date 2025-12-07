@@ -1,0 +1,898 @@
+# Refund System Schema Definitions for PT Custom Etching Xenial
+# Comprehensive data models for refund management with financial protection
+
+RefundRequest:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: "Unique identifier for the refund request"
+      example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+    
+    tenant_id:
+      type: string
+      format: uuid
+      description: "Tenant identifier for multi-tenancy"
+      example: "b2c3d479-f47a-4372-a567-0e02c10b58cc"
+    
+    order_id:
+      type: string
+      format: uuid
+      description: "Associated order UUID"
+      example: "c3d479f4-7ac1-4372-a567-0e02b2c358cc"
+    
+    request_number:
+      type: string
+      pattern: '^RFD-\d{8}-\d{5}$'
+      description: "Unique refund request number"
+      example: "RFD-20241207-00001"
+    
+    refund_reason:
+      $ref: '#/components/schemas/RefundReason'
+    
+    refund_type:
+      $ref: '#/components/schemas/RefundType'
+    
+    customer_request_amount:
+      type: number
+      format: decimal
+      description: "Amount requested by customer (nullable for system-initiated)"
+      example: 2500000.00
+      nullable: true
+    
+    evidence_documents:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [photo, document, video, receipt]
+          url:
+            type: string
+            format: uri
+          filename:
+            type: string
+          uploaded_at:
+            type: string
+            format: date-time
+      description: "Supporting evidence for the refund request"
+    
+    customer_notes:
+      type: string
+      description: "Customer's explanation for the refund request"
+      example: "Product quality does not match specifications"
+      nullable: true
+    
+    status:
+      $ref: '#/components/schemas/RefundStatus'
+    
+    current_approver_id:
+      type: string
+      format: uuid
+      description: "Current approver in the workflow chain"
+      nullable: true
+    
+    calculation:
+      $ref: '#/components/schemas/RefundCalculationResult'
+    
+    requested_by:
+      type: string
+      format: uuid
+      description: "User who created the refund request"
+    
+    requested_at:
+      type: string
+      format: date-time
+      description: "When the request was created"
+      example: "2024-12-07T13:45:00Z"
+    
+    approved_at:
+      type: string
+      format: date-time
+      description: "When the request was fully approved"
+      nullable: true
+    
+    processed_at:
+      type: string
+      format: date-time
+      description: "When the refund was processed"
+      nullable: true
+    
+    created_at:
+      type: string
+      format: date-time
+    
+    updated_at:
+      type: string
+      format: date-time
+
+RefundRequestDetailed:
+  allOf:
+    - $ref: '#/components/schemas/RefundRequest'
+    - type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/OrderSummary'
+        approvals:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefundApproval'
+        disputes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RefundDispute'
+        insurance_transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsuranceFundTransaction'
+        vendor_liability:
+          $ref: '#/components/schemas/VendorLiability'
+          nullable: true
+
+CreateRefundRequest:
+  type: object
+  required:
+    - order_id
+    - refund_reason
+    - refund_type
+  properties:
+    order_id:
+      type: string
+      format: uuid
+      description: "UUID of the order to refund"
+    
+    refund_reason:
+      $ref: '#/components/schemas/RefundReason'
+    
+    refund_type:
+      $ref: '#/components/schemas/RefundType'
+    
+    customer_request_amount:
+      type: number
+      format: decimal
+      minimum: 0
+      description: "Requested refund amount (optional, will be calculated if not provided)"
+      nullable: true
+    
+    quality_issue_percentage:
+      type: integer
+      minimum: 1
+      maximum: 100
+      description: "Percentage of quality issue for partial refunds"
+      example: 75
+      nullable: true
+    
+    evidence_documents:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [photo, document, video, receipt]
+          url:
+            type: string
+            format: uri
+          filename:
+            type: string
+      description: "Supporting evidence files"
+    
+    customer_notes:
+      type: string
+      maxLength: 2000
+      description: "Customer explanation for refund request"
+      nullable: true
+
+UpdateRefundRequest:
+  type: object
+  properties:
+    customer_request_amount:
+      type: number
+      format: decimal
+      minimum: 0
+      nullable: true
+    
+    quality_issue_percentage:
+      type: integer
+      minimum: 1
+      maximum: 100
+      nullable: true
+    
+    evidence_documents:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [photo, document, video, receipt]
+          url:
+            type: string
+            format: uri
+          filename:
+            type: string
+    
+    customer_notes:
+      type: string
+      maxLength: 2000
+      nullable: true
+
+ApproveRefundRequest:
+  type: object
+  required:
+    - decision
+  properties:
+    decision:
+      type: string
+      enum: [approved]
+      description: "Approval decision"
+    
+    approved_amount:
+      type: number
+      format: decimal
+      minimum: 0
+      description: "Final approved amount (can be different from calculated)"
+      nullable: true
+    
+    approver_notes:
+      type: string
+      maxLength: 1000
+      description: "Approver's notes and reasoning"
+      nullable: true
+    
+    require_additional_approval:
+      type: boolean
+      default: false
+      description: "Flag if additional approval level is required"
+
+RejectRefundRequest:
+  type: object
+  required:
+    - decision
+    - rejection_reason
+    - approver_notes
+  properties:
+    decision:
+      type: string
+      enum: [rejected]
+      description: "Rejection decision"
+    
+    rejection_reason:
+      type: string
+      enum: 
+        - insufficient_evidence
+        - outside_policy
+        - customer_fault
+        - order_completed_normally
+        - duplicate_request
+        - fraudulent_claim
+        - other
+      description: "Standardized rejection reason"
+    
+    approver_notes:
+      type: string
+      maxLength: 1000
+      description: "Detailed explanation for rejection"
+
+ProcessRefundRequest:
+  type: object
+  required:
+    - payment_method
+    - transaction_reference
+  properties:
+    payment_method:
+      type: string
+      enum: [bank_transfer, digital_wallet, credit_card_reversal, cash]
+      description: "Method used to process the refund"
+    
+    transaction_reference:
+      type: string
+      maxLength: 100
+      description: "External transaction reference from payment system"
+    
+    processing_fee:
+      type: number
+      format: decimal
+      minimum: 0
+      description: "Fee charged for processing the refund"
+      default: 0
+    
+    notes:
+      type: string
+      maxLength: 500
+      description: "Processing notes"
+      nullable: true
+
+CreateRefundDispute:
+  type: object
+  required:
+    - dispute_reason
+    - evidence
+    - description
+  properties:
+    dispute_reason:
+      type: string
+      enum:
+        - refund_amount
+        - liability_party
+        - calculation_error
+        - evidence_dispute
+        - timeline_dispute
+      description: "Reason for the dispute"
+    
+    evidence:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [document, photo, video, communication]
+          url:
+            type: string
+            format: uri
+          description:
+            type: string
+      description: "Evidence supporting the dispute"
+    
+    description:
+      type: string
+      maxLength: 2000
+      description: "Detailed description of the dispute"
+    
+    requested_resolution:
+      type: string
+      maxLength: 1000
+      description: "What resolution is being requested"
+      nullable: true
+
+RefundCalculationResult:
+  type: object
+  properties:
+    order_total:
+      type: number
+      format: decimal
+      description: "Original order total amount"
+      example: 3000000.00
+    
+    customer_paid_amount:
+      type: number
+      format: decimal
+      description: "Amount paid by customer"
+      example: 3000000.00
+    
+    vendor_cost_paid:
+      type: number
+      format: decimal
+      description: "Amount already paid to vendor"
+      example: 1500000.00
+    
+    production_progress:
+      type: integer
+      minimum: 0
+      maximum: 100
+      description: "Production completion percentage"
+      example: 75
+    
+    refund_reason:
+      $ref: '#/components/schemas/RefundReason'
+    
+    quality_issue_percentage:
+      type: integer
+      minimum: 0
+      maximum: 100
+      description: "Severity of quality issue"
+      example: 100
+    
+    fault_party:
+      type: string
+      enum: [customer, company, vendor, external]
+      description: "Who is at fault for the refund"
+      example: "vendor"
+    
+    refundable_to_customer:
+      type: number
+      format: decimal
+      description: "Amount to be refunded to customer"
+      example: 2500000.00
+    
+    company_loss:
+      type: number
+      format: decimal
+      description: "Direct company financial loss"
+      example: 200000.00
+    
+    vendor_recoverable:
+      type: number
+      format: decimal
+      description: "Amount recoverable from vendor"
+      example: 1500000.00
+    
+    insurance_cover:
+      type: number
+      format: decimal
+      description: "Amount covered by insurance fund"
+      example: 300000.00
+    
+    applied_rules:
+      type: array
+      items:
+        type: string
+      description: "Business rules applied in calculation"
+      example: ["vendor_failure_full_recovery", "insurance_cover_quality_issue"]
+    
+    risk_assessment:
+      type: object
+      properties:
+        level:
+          type: string
+          enum: [low, medium, high, critical]
+        factors:
+          type: array
+          items:
+            type: string
+        approval_required:
+          type: array
+          items:
+            type: string
+            enum: [cs_manager, finance_manager, general_manager]
+    
+    calculated_at:
+      type: string
+      format: date-time
+      description: "When calculation was performed"
+    
+    calculated_by:
+      type: string
+      description: "Who performed the calculation"
+
+RefundApproval:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: "Approval record identifier"
+    
+    refund_request_id:
+      type: string
+      format: uuid
+      description: "Associated refund request"
+    
+    approval_level:
+      type: string
+      enum: [cs_manager, finance_manager, general_manager]
+      description: "Level of approval in hierarchy"
+    
+    approver_id:
+      type: string
+      format: uuid
+      description: "User who made the approval/rejection"
+    
+    approver_name:
+      type: string
+      description: "Name of the approver"
+    
+    decision:
+      type: string
+      enum: [approved, rejected, needs_info]
+      description: "Approval decision"
+    
+    approved_amount:
+      type: number
+      format: decimal
+      description: "Amount approved (may differ from requested)"
+      nullable: true
+    
+    rejection_reason:
+      type: string
+      nullable: true
+      description: "Reason for rejection"
+    
+    approver_notes:
+      type: string
+      description: "Notes from approver"
+      nullable: true
+    
+    approved_at:
+      type: string
+      format: date-time
+      description: "When decision was made"
+    
+    next_approver_id:
+      type: string
+      format: uuid
+      description: "Next approver in chain"
+      nullable: true
+
+RefundDispute:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: "Dispute identifier"
+    
+    refund_request_id:
+      type: string
+      format: uuid
+      description: "Associated refund request"
+    
+    dispute_number:
+      type: string
+      pattern: '^DSP-\d{8}-\d{3}$'
+      description: "Unique dispute number"
+      example: "DSP-20241207-001"
+    
+    dispute_reason:
+      type: string
+      enum:
+        - refund_amount
+        - liability_party
+        - calculation_error
+        - evidence_dispute
+        - timeline_dispute
+    
+    status:
+      type: string
+      enum: [open, under_review, mediation, resolved, escalated]
+      description: "Current dispute status"
+    
+    evidence:
+      type: array
+      items:
+        type: object
+        properties:
+          type:
+            type: string
+            enum: [document, photo, video, communication]
+          url:
+            type: string
+            format: uri
+          description:
+            type: string
+    
+    description:
+      type: string
+      description: "Detailed dispute description"
+    
+    requested_resolution:
+      type: string
+      description: "Requested resolution"
+      nullable: true
+    
+    resolution:
+      type: string
+      description: "Final resolution"
+      nullable: true
+    
+    created_by:
+      type: string
+      format: uuid
+      description: "User who created the dispute"
+    
+    assigned_to:
+      type: string
+      format: uuid
+      description: "User assigned to resolve dispute"
+      nullable: true
+    
+    created_at:
+      type: string
+      format: date-time
+    
+    resolved_at:
+      type: string
+      format: date-time
+      nullable: true
+
+InsuranceFundTransaction:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: "Transaction identifier"
+    
+    refund_request_id:
+      type: string
+      format: uuid
+      description: "Associated refund request (for withdrawals)"
+      nullable: true
+    
+    order_id:
+      type: string
+      format: uuid
+      description: "Associated order (for contributions)"
+      nullable: true
+    
+    transaction_type:
+      type: string
+      enum: [contribution, withdrawal]
+      description: "Type of fund transaction"
+    
+    amount:
+      type: number
+      format: decimal
+      description: "Transaction amount"
+    
+    balance_after:
+      type: number
+      format: decimal
+      description: "Fund balance after this transaction"
+    
+    description:
+      type: string
+      description: "Transaction description"
+    
+    created_at:
+      type: string
+      format: date-time
+
+InsuranceFundStatus:
+  type: object
+  properties:
+    current_balance:
+      type: number
+      format: decimal
+      description: "Current fund balance"
+      example: 15000000.00
+    
+    total_contributions:
+      type: number
+      format: decimal
+      description: "Total contributions to date"
+      example: 50000000.00
+    
+    total_withdrawals:
+      type: number
+      format: decimal
+      description: "Total withdrawals to date"
+      example: 35000000.00
+    
+    contribution_rate:
+      type: number
+      format: decimal
+      description: "Current contribution percentage"
+      example: 2.5
+    
+    recent_transactions:
+      type: array
+      items:
+        $ref: '#/components/schemas/InsuranceFundTransaction'
+      description: "Recent fund transactions"
+    
+    monthly_stats:
+      type: object
+      properties:
+        contributions_this_month:
+          type: number
+          format: decimal
+        withdrawals_this_month:
+          type: number
+          format: decimal
+        net_change:
+          type: number
+          format: decimal
+
+VendorLiability:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: "Liability record identifier"
+    
+    refund_request_id:
+      type: string
+      format: uuid
+      description: "Associated refund request"
+    
+    vendor_id:
+      type: string
+      format: uuid
+      description: "Vendor who is liable"
+    
+    vendor_name:
+      type: string
+      description: "Vendor company name"
+    
+    liable_amount:
+      type: number
+      format: decimal
+      description: "Amount vendor is liable for"
+    
+    recovery_status:
+      type: string
+      enum: [pending, in_progress, recovered, written_off]
+      description: "Status of recovery effort"
+    
+    recovery_method:
+      type: string
+      enum: [contract_deduction, direct_payment, legal_action, negotiated_settlement]
+      description: "Method being used for recovery"
+      nullable: true
+    
+    recovered_amount:
+      type: number
+      format: decimal
+      description: "Amount successfully recovered"
+      default: 0
+    
+    recovery_notes:
+      type: string
+      description: "Notes on recovery efforts"
+      nullable: true
+    
+    created_at:
+      type: string
+      format: date-time
+    
+    recovered_at:
+      type: string
+      format: date-time
+      nullable: true
+
+RefundAnalytics:
+  type: object
+  properties:
+    summary:
+      type: object
+      properties:
+        total_refunds:
+          type: integer
+          description: "Total number of refunds in period"
+        total_amount:
+          type: number
+          format: decimal
+          description: "Total refund amount"
+        average_processing_time:
+          type: number
+          description: "Average processing time in hours"
+        approval_rate:
+          type: number
+          format: decimal
+          description: "Percentage of refunds approved"
+    
+    by_reason:
+      type: array
+      items:
+        type: object
+        properties:
+          reason:
+            $ref: '#/components/schemas/RefundReason'
+          count:
+            type: integer
+          total_amount:
+            type: number
+            format: decimal
+          percentage:
+            type: number
+            format: decimal
+    
+    by_status:
+      type: array
+      items:
+        type: object
+        properties:
+          status:
+            $ref: '#/components/schemas/RefundStatus'
+          count:
+            type: integer
+          percentage:
+            type: number
+            format: decimal
+    
+    financial_impact:
+      type: object
+      properties:
+        company_loss:
+          type: number
+          format: decimal
+        vendor_recovery:
+          type: number
+          format: decimal
+        insurance_coverage:
+          type: number
+          format: decimal
+        net_impact:
+          type: number
+          format: decimal
+    
+    trends:
+      type: array
+      items:
+        type: object
+        properties:
+          period:
+            type: string
+            format: date
+          refund_count:
+            type: integer
+          total_amount:
+            type: number
+            format: decimal
+    
+    top_vendors_by_liability:
+      type: array
+      items:
+        type: object
+        properties:
+          vendor_id:
+            type: string
+            format: uuid
+          vendor_name:
+            type: string
+          liable_amount:
+            type: number
+            format: decimal
+          recovery_rate:
+            type: number
+            format: decimal
+
+OrderSummary:
+  type: object
+  properties:
+    id:
+      type: string
+      format: uuid
+    uuid:
+      type: string
+      format: uuid
+    order_number:
+      type: string
+    status:
+      type: string
+    total_amount:
+      type: number
+      format: decimal
+    total_paid_amount:
+      type: number
+      format: decimal
+    total_disbursed_amount:
+      type: number
+      format: decimal
+    customer_name:
+      type: string
+    created_at:
+      type: string
+      format: date-time
+
+# Enums
+RefundReason:
+  type: string
+  enum:
+    - customer_request
+    - quality_issue
+    - timeline_delay
+    - vendor_failure
+    - production_error
+    - shipping_damage
+    - other
+  description: "Reason for the refund request"
+
+RefundType:
+  type: string
+  enum:
+    - full_refund
+    - partial_refund
+    - replacement_order
+    - credit_note
+  description: "Type of refund being requested"
+
+RefundStatus:
+  type: string
+  enum:
+    - pending_review
+    - under_investigation
+    - pending_finance
+    - pending_manager
+    - approved
+    - processing
+    - completed
+    - rejected
+    - disputed
+    - cancelled
+  description: "Current status of refund request"

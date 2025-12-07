@@ -75,5 +75,24 @@ export const DataTable = withLazyLoading(
   React.lazy(() => import('./data-table').then(mod => ({ default: mod.DataTable })))
 );
 
+// Tabs
+export const Tabs = withLazyLoading(
+  React.lazy(() => import('./tabs').then(mod => ({ default: mod.Tabs })))
+);
+export const TabsList = withLazyLoading(
+  React.lazy(() => import('./tabs').then(mod => ({ default: mod.TabsList })))
+);
+export const TabsTrigger = withLazyLoading(
+  React.lazy(() => import('./tabs').then(mod => ({ default: mod.TabsTrigger })))
+);
+export const TabsContent = withLazyLoading(
+  React.lazy(() => import('./tabs').then(mod => ({ default: mod.TabsContent })))
+);
+
+// Textarea
+export const Textarea = withLazyLoading(
+  React.lazy(() => import('./textarea').then(mod => ({ default: mod.Textarea })))
+);
+
 // Skeleton - exported as static to avoid duplicate import (needed synchronously in fallbacks)
 export { Skeleton } from './skeleton';

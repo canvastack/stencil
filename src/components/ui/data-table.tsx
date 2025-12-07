@@ -12,6 +12,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ChevronDown, Maximize2, Minimize2, CheckCircle, AlertTriangle, XCircle, Download, Printer, Info } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -56,6 +57,8 @@ interface DataTableProps<TData> {
   // Show export/print controls (default true). Can be disabled per-page.
   showExport?: boolean;
   showPrint?: boolean;
+  // Loading state for skeleton animation
+  loading?: boolean;
 }
 
 export function DataTable<TData>({
@@ -65,6 +68,7 @@ export function DataTable<TData>({
   searchPlaceholder = "Search...",
   showExport = true,
   showPrint = true,
+  loading = false,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -226,10 +230,62 @@ export function DataTable<TData>({
     setTimeout(() => w.print(), 300);
   };
 
+  // Skeleton Loading Components
+  const TableSkeleton = () => {
+    const skeletonRows = Array.from({ length: table.getState().pagination.pageSize || 5 }, (_, i) => i);
+    
+    return (
+      <>
+        {skeletonRows.map((_, index) => (
+          <TableRow key={`skeleton-${index}`}>
+            {columns.map((_, colIndex) => (
+              <TableCell key={`skeleton-cell-${index}-${colIndex}`} className="py-4">
+                <Skeleton className="h-4 w-full max-w-[200px]" />
+              </TableCell>
+            ))}
+          </TableRow>
+        ))}
+      </>
+    );
+  };
+
+  const ControlsSkeleton = () => (
+    <div className={`flex items-center py-4 space-x-2 ${isFullscreen ? "" : "px-2"} flex-wrap`}>
+      <div className="flex items-center space-x-2">
+        <Skeleton className="h-4 w-20" /> {/* "Rows per page" text */}
+        <Skeleton className="h-8 w-[70px]" /> {/* Select dropdown */}
+      </div>
+      <Skeleton className="h-8 flex-1 min-w-[150px] max-w-sm" /> {/* Search input */}
+      <Skeleton className="h-8 w-20" /> {/* Columns button */}
+      <Skeleton className="h-8 w-16" /> {/* Export button */}
+      <Skeleton className="h-8 w-16" /> {/* Print button */}
+      <Skeleton className="h-8 w-8" /> {/* Fullscreen button */}
+    </div>
+  );
+
+  const PaginationSkeleton = () => (
+    <div className={`flex items-center justify-between py-4 ${isFullscreen ? "px-2" : "px-4"}`}>
+      <Skeleton className="h-4 w-40" /> {/* Selection text */}
+      <div className="flex items-center space-x-6 lg:space-x-8">
+        <Skeleton className="h-4 w-20" /> {/* Page info */}
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-8 w-8" /> {/* Previous button */}
+          <Skeleton className="h-8 w-8" /> {/* Page numbers */}
+          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-8 w-8" /> {/* Next button */}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <TooltipProvider>
       <div className={`w-full ${isFullscreen ? "fixed inset-0 z-50 bg-background p-6 overflow-auto" : ""}`}>
-  <div className={`flex items-center py-4 space-x-2 ${isFullscreen ? "" : "px-2"} flex-wrap`}> 
+        {loading ? (
+          <ControlsSkeleton />
+        ) : (
+          <div className={`flex items-center py-4 space-x-2 ${isFullscreen ? "" : "px-2"} flex-wrap`}> 
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Rows per page</p>
             <select
@@ -340,7 +396,9 @@ export function DataTable<TData>({
             </Tooltip>
           </div>
         </div>
-          {/* Export / Print Dialogs */}
+        )}
+        
+        {/* Export / Print Dialogs */}
           <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
             <DialogContent>
               <DialogHeader>
@@ -446,112 +504,119 @@ export function DataTable<TData>({
             ))}
           </TableHeader>
           <TableBody>
-              {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="max-w-[280px] break-words">
-                      {/* If this is a status column render an icon with tooltip */}
-                      {cell.column.id === 'status' ? (
-                        flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )
-                      ) : (
-                        flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )
-                      )}
-                    </TableCell>
-                  ))}
+              {loading ? (
+                <TableSkeleton />
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="max-w-[280px] break-words">
+                        {/* If this is a status column render an icon with tooltip */}
+                        {cell.column.id === 'status' ? (
+                          flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )
+                        ) : (
+                          flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
           </Table>
         </div>
-        <div className={`flex items-center justify-between py-4 ${isFullscreen ? "px-2" : "px-4"}`}>
-          <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
-          </div>
-          <div className="flex items-center space-x-6 lg:space-x-8">
-            <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
+        
+        {loading ? (
+          <PaginationSkeleton />
+        ) : (
+          <div className={`flex items-center justify-between py-4 ${isFullscreen ? "px-2" : "px-4"}`}>
+            <div className="flex-1 text-sm text-muted-foreground">
+              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredRowModel().rows.length} row(s) selected.
             </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => table.previousPage()}
-                    className={
-                      !table.getCanPreviousPage()
-                        ? "pointer-events-none opacity-50"
-                        : "cursor-pointer"
-                    }
-                  />
-                </PaginationItem>
-                {Array.from({ length: table.getPageCount() }, (_, i) => {
-                  const pageNumber = i + 1;
-                  const isCurrentPage = table.getState().pagination.pageIndex === i;
+            <div className="flex items-center space-x-6 lg:space-x-8">
+              <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                Page {table.getState().pagination.pageIndex + 1} of{" "}
+                {table.getPageCount()}
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => table.previousPage()}
+                      className={
+                        !table.getCanPreviousPage()
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: table.getPageCount() }, (_, i) => {
+                    const pageNumber = i + 1;
+                    const isCurrentPage = table.getState().pagination.pageIndex === i;
 
-                  if (
-                    pageNumber === 1 ||
-                    pageNumber === table.getPageCount() ||
-                    (pageNumber >= table.getState().pagination.pageIndex - 1 &&
-                      pageNumber <= table.getState().pagination.pageIndex + 1)
-                  ) {
-                    return (
-                      <PaginationItem key={i}>
-                        <PaginationLink
-                          onClick={() => table.setPageIndex(i)}
-                          isActive={isCurrentPage}
-                          className="cursor-pointer"
-                        >
-                          {pageNumber}
-                        </PaginationLink>
-                      </PaginationItem>
-                    );
-                  } else if (
-                    pageNumber === table.getState().pagination.pageIndex - 2 ||
-                    pageNumber === table.getState().pagination.pageIndex + 2
-                  ) {
-                    return (
-                      <PaginationItem key={i}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    );
-                  }
-                  return null;
-                })}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => table.nextPage()}
-                    className={
-                      !table.getCanNextPage()
-                        ? "pointer-events-none opacity-50"
-                        : "cursor-pointer"
+                    if (
+                      pageNumber === 1 ||
+                      pageNumber === table.getPageCount() ||
+                      (pageNumber >= table.getState().pagination.pageIndex - 1 &&
+                        pageNumber <= table.getState().pagination.pageIndex + 1)
+                    ) {
+                      return (
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            onClick={() => table.setPageIndex(i)}
+                            isActive={isCurrentPage}
+                            className="cursor-pointer"
+                          >
+                            {pageNumber}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    } else if (
+                      pageNumber === table.getState().pagination.pageIndex - 2 ||
+                      pageNumber === table.getState().pagination.pageIndex + 2
+                    ) {
+                      return (
+                        <PaginationItem key={i}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      );
                     }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        </div>
+                    return null;
+                  })}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => table.nextPage()}
+                      className={
+                        !table.getCanNextPage()
+                          ? "pointer-events-none opacity-50"
+                          : "cursor-pointer"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+                </Pagination>
+              </div>
+            </div>
+        )}
       </div>
     </TooltipProvider>
   );

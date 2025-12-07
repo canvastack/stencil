@@ -562,6 +562,7 @@ export default function CustomerManagement() {
               searchKey="name"
               bulkActions={bulkActions}
               enableBulkSelect={true}
+              loading={loading}
             />
           </div>
         </CardContent>

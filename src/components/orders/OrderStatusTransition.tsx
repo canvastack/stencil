@@ -64,7 +64,7 @@ export function OrderStatusTransition({
     }
 
     try {
-      await onTransition(order.id, selectedStatus as OrderStatus, notes);
+      await onTransition(order.uuid || order.id, selectedStatus as OrderStatus, notes);
       setSelectedStatus('');
       setNotes('');
       onClose();
@@ -97,12 +97,12 @@ export function OrderStatusTransition({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Update Order Status</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 pr-2">
           {/* Current Status */}
           <div className="space-y-2">
             <Label>Current Status</Label>
@@ -231,7 +231,7 @@ export function OrderStatusTransition({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
