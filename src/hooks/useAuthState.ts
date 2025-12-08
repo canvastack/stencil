@@ -214,9 +214,7 @@ export const useAuthState = (): UseAuthStateReturn => {
     // Only refresh if there's a valid stored token and we're not already authenticated
     // Allow both real tokens and demo tokens as valid authentication
     const hasValidToken = authService.isAuthenticated() && token;
-    const isDemoToken = token?.startsWith('demo_token_');
-    // CRITICAL FIX: Never refresh demo tokens - they indicate completed authentication
-    const needsRefresh = hasValidToken && !authState.isAuthenticated && !authState.isLoading && !isDemoToken;
+    const needsRefresh = hasValidToken && !authState.isAuthenticated && !authState.isLoading;
     
     if (needsRefresh) {
       console.log('useAuthState: Auto-refreshing authentication on mount');
@@ -226,7 +224,6 @@ export const useAuthState = (): UseAuthStateReturn => {
         hasValidToken,
         tokenExists: !!token,
         tokenType: token?.substring(0, 10) + '...',
-        isDemoToken,
         isAuthenticated: authState.isAuthenticated,
         isLoading: authState.isLoading
       });

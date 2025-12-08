@@ -97,11 +97,10 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
         console.log('GlobalContext: Checking tenant authentication', {
           hasTenantData: !!tenantData,
           hasToken: !!storedToken,
-          isDemoToken: storedToken ? authService.isDemoToken(storedToken) : null,
           tokenSnippet: storedToken?.substring(0, 20) + '...'
         });
         
-        if (tenantData && storedToken && !authService.isDemoToken(storedToken)) {
+        if (tenantData && storedToken) {
           setTenant({
             uuid: tenantData.uuid,
             name: tenantData.name,
@@ -112,14 +111,7 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
           setUserType('tenant');
           return 'tenant';
         } else {
-          // FIXED: Demo tokens should be preserved, not cleared
-          if (storedToken && authService.isDemoToken(storedToken)) {
-            console.log('GlobalContext: Demo token detected but tenant data missing - keeping token for demo mode');
-            // Don't clear demo tokens - they represent valid authentication state
-            // The missing tenant data might be due to demo mode limitations
-          } else {
-            console.log('GlobalContext: Tenant data missing but keeping token - setting anonymous');
-          }
+          console.log('GlobalContext: Tenant data missing but keeping token - setting anonymous');
         }
       }
 

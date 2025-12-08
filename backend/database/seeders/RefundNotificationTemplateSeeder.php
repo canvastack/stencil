@@ -14,11 +14,11 @@ class RefundNotificationTemplateSeeder extends Seeder
         $tenants = Tenant::all();
 
         foreach ($tenants as $tenant) {
-            $this->createRefundTemplates($tenant->uuid);
+            $this->createRefundTemplates($tenant->id);
         }
     }
 
-    private function createRefundTemplates(string $tenantId): void
+    private function createRefundTemplates(int $tenantId): void
     {
         $templates = [
             [

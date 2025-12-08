@@ -126,13 +126,7 @@ class ApiClientManager {
       return Promise.reject(error);
     }
 
-    // Check if this is a demo token - don't attempt refresh
-    const currentToken = this.getAuthToken();
-    if (currentToken?.startsWith('demo_token_')) {
-      this.log('error', 'Demo token authentication failed, clearing auth');
-      this.logout();
-      return Promise.reject(error);
-    }
+
 
     this.isRefreshing = true;
 
@@ -162,12 +156,7 @@ class ApiClientManager {
 
   private async refreshToken(): Promise<string> {
     try {
-      // SECURITY FIX: Demo tokens cannot be refreshed - they should expire
-      const currentToken = localStorage.getItem('auth_token');
-      if (currentToken?.startsWith('demo_token_')) {
-        this.log('error', 'Demo tokens cannot be refreshed - authentication expired');
-        throw new Error('Demo token expired - please login again');
-      }
+
 
       const response = await this.instance.post('/auth/refresh', {});
       const newToken = response.token || response.access_token;
@@ -222,13 +211,6 @@ class ApiClientManager {
   }
 
   private logout() {
-    // PROTECTION: Don't logout demo tokens unless explicitly intended
-    const token = localStorage.getItem('auth_token');
-    if (token?.startsWith('demo_token_')) {
-      this.log('info', 'Skipping logout for demo token to prevent unexpected logout');
-      return;
-    }
-
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('tenant_id');

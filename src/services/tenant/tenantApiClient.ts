@@ -57,20 +57,12 @@ class TenantApiClientManager {
 
         // Validate that this is a tenant account
         if (accountType !== 'tenant') {
-          // In demo mode, allow missing account type
-          if (!this.isDemoMode()) {
-            throw new Error('Tenant API client can only be used with tenant accounts');
-          }
+          throw new Error('Tenant API client can only be used with tenant accounts');
         }
 
         // Validate tenant context
         if (!tenantId) {
-          // In demo mode, allow missing tenant context
-          if (!this.isDemoMode()) {
-            throw new Error('Tenant context is required for tenant API calls');
-          } else {
-            this.log('warn', 'Demo mode: Missing tenant context, continuing anyway');
-          }
+          throw new Error('Tenant context is required for tenant API calls');
         }
 
         if (token && config.headers) {
@@ -133,16 +125,7 @@ class TenantApiClientManager {
 
   private async handleUnauthorized(config: InternalAxiosRequestConfig, error: AxiosError) {
     // In development mode or with demo credentials, don't auto-logout for API failures
-    // This prevents logout loops when backend endpoints don't exist yet
-    const isDemoMode = this.isDemoMode();
-    
-    if (isDemoMode) {
-      this.log('warn', 'Demo mode: Ignoring 401 error to prevent auto-logout', {
-        url: config?.url,
-        error: error.message
-      });
-      return Promise.reject(this.formatError(error));
-    }
+
 
     if (!config || this.isRefreshing) {
       this.logout();
@@ -169,31 +152,13 @@ class TenantApiClientManager {
       this.refreshPromise = null;
       this.isRefreshing = false;
       
-      // Only logout if not in demo mode
-      if (!isDemoMode) {
-        this.logout();
-      }
+      this.logout();
       return Promise.reject(refreshError);
     }
   }
 
   private async refreshToken(): Promise<string> {
     try {
-      // In demo mode, just return the existing token or generate a new demo token
-      if (this.isDemoMode()) {
-        const existingToken = this.getAuthToken();
-        if (existingToken) {
-          this.log('info', 'Demo mode: Using existing token instead of refreshing');
-          return existingToken;
-        }
-        
-        // Generate a new demo token
-        const newDemoToken = 'demo_token_' + Date.now();
-        localStorage.setItem('auth_token', newDemoToken);
-        this.log('info', 'Demo mode: Generated new demo token');
-        return newDemoToken;
-      }
-
       const response = await this.instance.post('/tenant/auth/refresh', {});
       const newToken = response.token || response.access_token;
 
@@ -269,6 +234,8 @@ class TenantApiClientManager {
     this.refreshPromise = null;
     this.isRefreshing = false;
   }
+
+
 }
 
 export interface TenantApiError {

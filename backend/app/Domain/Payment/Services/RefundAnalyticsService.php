@@ -496,4 +496,66 @@ class RefundAnalyticsService
 
         return $recommendations;
     }
+
+    /**
+     * Get insurance fund analytics with historical data
+     */
+    public function getInsuranceFundAnalytics(int $tenantId, int $days = 30): array
+    {
+        $fromDate = now()->subDays($days);
+
+        // Get daily balance changes
+        $dailyBalances = InsuranceFundTransaction::where('tenant_id', $tenantId)
+            ->where('created_at', '>=', $fromDate)
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(fn($t) => $t->created_at->format('Y-m-d'))
+            ->map(function ($dayTransactions) {
+                $lastTransaction = $dayTransactions->last();
+                return [
+                    'date' => $lastTransaction->created_at->format('Y-m-d'),
+                    'balance' => $lastTransaction->balance_after,
+                    'contributions' => $dayTransactions->where('transaction_type', 'contribution')->sum('amount'),
+                    'withdrawals' => $dayTransactions->where('transaction_type', 'withdrawal')->sum('amount'),
+                ];
+            })->values();
+
+        // Get transaction type breakdown
+        $transactionsByType = InsuranceFundTransaction::where('tenant_id', $tenantId)
+            ->where('created_at', '>=', $fromDate)
+            ->selectRaw('transaction_type, COUNT(*) as count, SUM(amount) as total_amount')
+            ->groupBy('transaction_type')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->transaction_type => [
+                    'count' => $item->count,
+                    'total_amount' => $item->total_amount,
+                ]];
+            });
+
+        // Calculate trends
+        $currentPeriodBalance = $dailyBalances->last()['balance'] ?? 0;
+        $previousPeriodBalance = InsuranceFundTransaction::where('tenant_id', $tenantId)
+            ->where('created_at', '<', $fromDate)
+            ->orderBy('created_at', 'desc')
+            ->value('balance_after') ?: 0;
+
+        $balanceChange = $currentPeriodBalance - $previousPeriodBalance;
+        $balanceChangePercent = $previousPeriodBalance > 0 ? 
+            ($balanceChange / $previousPeriodBalance) * 100 : 0;
+
+        return [
+            'period_days' => $days,
+            'current_balance' => $currentPeriodBalance,
+            'balance_change' => $balanceChange,
+            'balance_change_percent' => round($balanceChangePercent, 2),
+            'daily_balances' => $dailyBalances,
+            'transactions_by_type' => $transactionsByType,
+            'period_summary' => [
+                'total_contributions' => $transactionsByType['contribution']['total_amount'] ?? 0,
+                'total_withdrawals' => $transactionsByType['withdrawal']['total_amount'] ?? 0,
+                'transaction_count' => array_sum(array_column($transactionsByType->toArray(), 'count')),
+            ],
+        ];
+    }
 }

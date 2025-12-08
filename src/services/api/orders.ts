@@ -35,10 +35,7 @@ export interface OrderStateTransitionRequest {
 }
 
 class OrdersService {
-  private isDemoMode(): boolean {
-    const token = localStorage.getItem('auth_token');
-    return token?.startsWith('demo_token_') || false;
-  }
+
 
   private getMockOrders(filters?: OrderFilters): PaginatedResponse<Order> {
     const mockOrders: Order[] = [
@@ -133,12 +130,6 @@ class OrdersService {
   }
 
   async getOrders(filters?: OrderFilters): Promise<PaginatedResponse<Order>> {
-    // Demo mode fallback
-    if (this.isDemoMode()) {
-      console.log('Demo mode: Using mock orders data');
-      return this.getMockOrders(filters);
-    }
-
     try {
       const params = new URLSearchParams();
 
@@ -166,16 +157,7 @@ class OrdersService {
   }
 
   async getOrderById(id: string): Promise<Order> {
-    // Demo mode fallback
-    if (this.isDemoMode()) {
-      console.log('Demo mode: Using mock order by ID');
-      const mockData = this.getMockOrders();
-      const order = mockData.data.find(o => o.id === id || o.uuid === id);
-      if (order) {
-        return order;
-      }
-      throw new Error('Demo order not found');
-    }
+
 
     try {
       const response = await tenantApiClient.get<Order>(`/orders/${id}`);

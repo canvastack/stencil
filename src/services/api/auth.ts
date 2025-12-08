@@ -543,6 +543,8 @@ class AuthService {
   getToken(): string | null {
     return this.getAuthToken();
   }
+
+
 }
 
 export const authService = new AuthService();

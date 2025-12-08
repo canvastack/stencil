@@ -68,7 +68,7 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       console.log('TenantAuthContext: Found stored data', {
         hasUser: !!storedUser,
         hasTenant: !!storedTenant,
-        hasRealToken: !!storedToken && !authService.isDemoToken(storedToken),
+        hasToken: !!storedToken,
         tokenSnippet: storedToken?.substring(0, 20) + '...',
         userSnippet: storedUser ? {id: storedUser.id, email: storedUser.email} : null,
         tenantSnippet: storedTenant ? {id: storedTenant.id, name: storedTenant.name, slug: storedTenant.slug} : null
