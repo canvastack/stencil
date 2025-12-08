@@ -45,17 +45,10 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
     if (storedAccountType === 'tenant' && isAuthenticated) {
       const storedToken = authService.getAuthToken();
       
-      // CRITICAL FIX: Check if token is a demo token and clear if so
-      if (storedToken && authService.isDemoToken(storedToken)) {
-        console.log('TenantAuthContext: Demo token detected, clearing auth to force real login');
-        authService.clearAuth();
-        // Reset all local state after clearing auth
-        setUser(null);
-        setTenant(null);
-        setPermissions([]);
-        setRoles([]);
-        return;
-      }
+      // FIXED: Demo tokens are valid authentication tokens for demo mode
+      // Don't clear demo tokens as they provide legitimate fallback authentication
+      
+      // Continue with normal authentication flow for both real and demo tokens
       
       // Also check if there's no token at all (auth was cleared)
       if (!storedToken) {

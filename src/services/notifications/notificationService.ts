@@ -44,8 +44,8 @@ class NotificationService {
   private subscribers: ((notification: Notification) => void)[] = [];
   private lastNotificationId: string | null = null;
 
-  constructor() {
-    this.preferences = {
+  private getDefaultPreferences(): NotificationPreferences {
+    return {
       inApp: true,
       email: true,
       sms: false,
@@ -57,6 +57,10 @@ class NotificationService {
         marketing: false,
       }
     };
+  }
+
+  constructor() {
+    this.preferences = this.getDefaultPreferences();
   }
 
   async initialize(): Promise<void> {
@@ -86,22 +90,16 @@ class NotificationService {
       
       // Fallback to local storage
       const stored = localStorage.getItem('notification_preferences');
-      if (stored) {
-        this.preferences = JSON.parse(stored);
+      if (stored && stored !== 'undefined' && stored !== 'null') {
+        try {
+          this.preferences = JSON.parse(stored);
+        } catch (e) {
+          console.warn('Invalid JSON in notification preferences, using defaults', e);
+          this.preferences = this.getDefaultPreferences();
+        }
       } else {
         // Use default preferences
-        this.preferences = {
-          inApp: true,
-          email: true,
-          sms: false,
-          pushNotifications: false,
-          types: {
-            order_updates: true,
-            payment_updates: true,
-            system_updates: true,
-            marketing: false,
-          }
-        };
+        this.preferences = this.getDefaultPreferences();
       }
     }
   }

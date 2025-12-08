@@ -42,6 +42,11 @@ class DatabaseSeeder extends Seeder
         $this->command->info('📝 Seeding Tenant Content Pages...');  
         $this->call(TenantContentSeeder::class);
         
+        // Seed Refund System Data
+        $this->command->info('💰 Seeding Refund System Data...');
+        $this->call(RefundNotificationTemplateSeeder::class);
+        $this->call(RefundDataSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');
@@ -57,6 +62,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Tenant Roles: 4 roles per tenant');
         $this->command->info('- Platform Content Pages: 25+ pages (Home, About, Features, Blog)');
         $this->command->info('- Tenant Content Pages: 35+ pages per tenant (Home, About, Services, Blog)');
+        $this->command->info('- Refund Requests: 25+ per tenant (various statuses & scenarios)');
+        $this->command->info('- Insurance Fund: Initial fund + monthly contributions per tenant');
         $this->command->info('');
         $this->command->info('🔐 Default Login Credentials:');
         $this->command->info('Platform Super Admin: admin@canvastencil.com / SuperAdmin2024!');

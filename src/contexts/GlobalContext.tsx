@@ -112,10 +112,11 @@ export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ ch
           setUserType('tenant');
           return 'tenant';
         } else {
-          // FIXED: Don't clear auth unless it's explicitly a demo token
+          // FIXED: Demo tokens should be preserved, not cleared
           if (storedToken && authService.isDemoToken(storedToken)) {
-            console.log('GlobalContext: Demo token detected, clearing auth');
-            authService.clearAuth();
+            console.log('GlobalContext: Demo token detected but tenant data missing - keeping token for demo mode');
+            // Don't clear demo tokens - they represent valid authentication state
+            // The missing tenant data might be due to demo mode limitations
           } else {
             console.log('GlobalContext: Tenant data missing but keeping token - setting anonymous');
           }

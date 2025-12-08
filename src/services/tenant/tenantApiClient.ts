@@ -257,6 +257,13 @@ class TenantApiClientManager {
   }
 
   private logout() {
+    // Additional protection: Check if current token is a demo token
+    const token = this.getAuthToken();
+    if (this.isDemoMode() || token?.startsWith('demo_token_')) {
+      this.log('info', 'Skipping logout for demo token to prevent unexpected logout');
+      return;
+    }
+
     localStorage.removeItem('auth_token');
     localStorage.removeItem('account_type');
     localStorage.removeItem('user_id');

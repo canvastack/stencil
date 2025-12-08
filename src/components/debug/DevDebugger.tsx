@@ -175,7 +175,8 @@ const DevDebugger: React.FC<DevDebuggerProps> = ({
         category: 'auth' as const,
         timestamp: Date.now()
       }]);
-      setTimeout(() => refreshAuthState(), 100);
+      // FIXED: Don't auto-refresh recursively to prevent infinite loops
+      // setTimeout(() => refreshAuthState(), 100);
     } catch (error) {
       setDebugLogs(prev => [...prev.slice(-49), {
         label: 'Auth Reset Error',

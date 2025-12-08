@@ -167,23 +167,25 @@ class PlatformContentSeeder extends Seeder
             ]
         ];
 
-        DB::table('platform_pages')->insert([
-            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
-            'title' => 'Platform Homepage',
-            'slug' => 'home',
-            'description' => 'CanvaStack Stencil Platform Homepage',
-            'content' => json_encode($content),
-            'template' => 'platform-home',
-            'meta_data' => json_encode(['featured' => true, 'priority' => 1]),
-            'status' => 'published',
-            'page_type' => 'home',
-            'is_homepage' => true,
-            'sort_order' => 1,
-            'language' => 'en',
-            'published_at' => Carbon::now(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
-        ]);
+        DB::table('platform_pages')->updateOrInsert(
+            ['slug' => 'home'],
+            [
+                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'title' => 'Platform Homepage',
+                'description' => 'CanvaStack Stencil Platform Homepage',
+                'content' => json_encode($content),
+                'template' => 'platform-home',
+                'meta_data' => json_encode(['featured' => true, 'priority' => 1]),
+                'status' => 'published',
+                'page_type' => 'home',
+                'is_homepage' => true,
+                'sort_order' => 1,
+                'language' => 'en',
+                'published_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]
+        );
     }
 
     private function createPlatformAbout(): void
@@ -219,23 +221,25 @@ class PlatformContentSeeder extends Seeder
             ]
         ];
 
-        DB::table('platform_pages')->insert([
-            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
-            'title' => 'About CanvaStack',
-            'slug' => 'about',
-            'description' => 'About CanvaStack Platform',
-            'content' => json_encode($content),
-            'template' => 'platform-about',
-            'meta_data' => json_encode(['featured' => true, 'priority' => 2]),
-            'status' => 'published', 
-            'page_type' => 'about',
-            'is_homepage' => false,
-            'sort_order' => 2,
-            'language' => 'en',
-            'published_at' => Carbon::now(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
-        ]);
+        DB::table('platform_pages')->updateOrInsert(
+            ['slug' => 'about'],
+            [
+                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'title' => 'About CanvaStack',
+                'description' => 'About CanvaStack Platform',
+                'content' => json_encode($content),
+                'template' => 'platform-about',
+                'meta_data' => json_encode(['featured' => true, 'priority' => 2]),
+                'status' => 'published', 
+                'page_type' => 'about',
+                'is_homepage' => false,
+                'sort_order' => 2,
+                'language' => 'en',
+                'published_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]
+        );
     }
 
     private function createPlatformContact(): void
@@ -272,23 +276,25 @@ class PlatformContentSeeder extends Seeder
             ]
         ];
 
-        DB::table('platform_pages')->insert([
-            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
-            'title' => 'Contact Us',
-            'slug' => 'contact',
-            'description' => 'Contact CanvaStack Platform',
-            'content' => json_encode($content),
-            'template' => 'platform-contact',
-            'meta_data' => json_encode(['featured' => true, 'priority' => 3]),
-            'status' => 'published',
-            'page_type' => 'contact',
-            'is_homepage' => false,
-            'sort_order' => 3,
-            'language' => 'en',
-            'published_at' => Carbon::now(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
-        ]);
+        DB::table('platform_pages')->updateOrInsert(
+            ['slug' => 'contact'],
+            [
+                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'title' => 'Contact Us',
+                'description' => 'Contact CanvaStack Platform',
+                'content' => json_encode($content),
+                'template' => 'platform-contact',
+                'meta_data' => json_encode(['featured' => true, 'priority' => 3]),
+                'status' => 'published',
+                'page_type' => 'contact',
+                'is_homepage' => false,
+                'sort_order' => 3,
+                'language' => 'en',
+                'published_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]
+        );
     }
 
     private function createPlatformFAQ(): void
@@ -317,23 +323,25 @@ class PlatformContentSeeder extends Seeder
             ]
         ];
 
-        DB::table('platform_pages')->insert([
-            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
-            'title' => 'Platform FAQ',
-            'slug' => 'faq',
-            'description' => 'CanvaStack Platform FAQ',
-            'content' => json_encode($content),
-            'template' => 'platform-faq',
-            'meta_data' => json_encode(['featured' => true, 'priority' => 4]),
-            'status' => 'published',
-            'page_type' => 'faq',
-            'is_homepage' => false,
-            'sort_order' => 4,
-            'language' => 'en',
-            'published_at' => Carbon::now(),
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
-        ]);
+        DB::table('platform_pages')->updateOrInsert(
+            ['slug' => 'faq'],
+            [
+                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'title' => 'Platform FAQ',
+                'description' => 'CanvaStack Platform FAQ',
+                'content' => json_encode($content),
+                'template' => 'platform-faq',
+                'meta_data' => json_encode(['featured' => true, 'priority' => 4]),
+                'status' => 'published',
+                'page_type' => 'faq',
+                'is_homepage' => false,
+                'sort_order' => 4,
+                'language' => 'en',
+                'published_at' => Carbon::now(),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ]
+        );
     }
 
     private function createPlatformFeaturePages(): void
@@ -371,23 +379,25 @@ class PlatformContentSeeder extends Seeder
                 ]
             ];
 
-            DB::table('platform_pages')->insert([
-                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
-                'title' => $page['title'],
-                'slug' => $page['slug'],
-                'description' => 'Platform feature: ' . $page['title'],
-                'content' => json_encode($content),
-                'template' => 'platform-feature',
-                'meta_data' => json_encode(['category' => 'features', 'featured' => $index < 5]),
-                'status' => 'published',
-                'page_type' => 'services',
-                'is_homepage' => false,
-                'sort_order' => 10 + $index,
-                'language' => 'en',
-                'published_at' => Carbon::now(),
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now()
-            ]);
+            DB::table('platform_pages')->updateOrInsert(
+                ['slug' => $page['slug']],
+                [
+                    'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                    'title' => $page['title'],
+                    'description' => 'Platform feature: ' . $page['title'],
+                    'content' => json_encode($content),
+                    'template' => 'platform-feature',
+                    'meta_data' => json_encode(['category' => 'features', 'featured' => $index < 5]),
+                    'status' => 'published',
+                    'page_type' => 'services',
+                    'is_homepage' => false,
+                    'sort_order' => 10 + $index,
+                    'language' => 'en',
+                    'published_at' => Carbon::now(),
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now()
+                ]
+            );
         }
     }
 
@@ -436,28 +446,30 @@ class PlatformContentSeeder extends Seeder
                 ]
             ];
 
-            DB::table('platform_pages')->insert([
-                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
-                'title' => $title,
-                'slug' => $slug,
-                'description' => 'Platform blog post: ' . $title,
-                'content' => json_encode($content),
-                'template' => 'platform-blog',
-                'meta_data' => json_encode([
-                    'category' => 'blog',
-                    'featured' => $index < 4,
-                    'author' => 'CanvaStack Team',
-                    'reading_time' => rand(5, 12)
-                ]),
-                'status' => rand(0, 10) > 1 ? 'published' : 'draft', // 90% published
-                'page_type' => 'services',
-                'is_homepage' => false,
-                'sort_order' => 100 + $index,
-                'language' => 'en',
-                'published_at' => rand(0, 10) > 1 ? Carbon::now()->subDays(rand(1, 180)) : null,
-                'created_at' => Carbon::now()->subDays(rand(1, 200)),
-                'updated_at' => Carbon::now()->subDays(rand(1, 30))
-            ]);
+            DB::table('platform_pages')->updateOrInsert(
+                ['slug' => $slug],
+                [
+                    'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                    'title' => $title,
+                    'description' => 'Platform blog post: ' . $title,
+                    'content' => json_encode($content),
+                    'template' => 'platform-blog',
+                    'meta_data' => json_encode([
+                        'category' => 'blog',
+                        'featured' => $index < 4,
+                        'author' => 'CanvaStack Team',
+                        'reading_time' => rand(5, 12)
+                    ]),
+                    'status' => rand(0, 10) > 1 ? 'published' : 'draft', // 90% published
+                    'page_type' => 'services',
+                    'is_homepage' => false,
+                    'sort_order' => 100 + $index,
+                    'language' => 'en',
+                    'published_at' => rand(0, 10) > 1 ? Carbon::now()->subDays(rand(1, 180)) : null,
+                    'created_at' => Carbon::now()->subDays(rand(1, 200)),
+                    'updated_at' => Carbon::now()->subDays(rand(1, 30))
+                ]
+            );
         }
     }
 }

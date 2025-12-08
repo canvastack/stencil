@@ -222,6 +222,13 @@ class ApiClientManager {
   }
 
   private logout() {
+    // PROTECTION: Don't logout demo tokens unless explicitly intended
+    const token = localStorage.getItem('auth_token');
+    if (token?.startsWith('demo_token_')) {
+      this.log('info', 'Skipping logout for demo token to prevent unexpected logout');
+      return;
+    }
+
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('tenant_id');

@@ -36,7 +36,9 @@ import {
   Languages,
   Zap,
   Activity,
-  Book
+  Book,
+  RotateCcw,
+  DollarSign
 } from 'lucide-react';
 
 interface MenuItem {
@@ -146,6 +148,22 @@ const menuItems: MenuItem[] = [
           { title: 'Financial Statements', path: '/admin/reports/financial' },
           { title: 'Business Intelligence', path: '/admin/reports/bi' }
         ]
+      }
+    ]
+  },
+  {
+    title: 'Financial Management',
+    icon: DollarSign,
+    children: [
+      {
+        title: 'Refund Management',
+        icon: RotateCcw,
+        path: '/admin/refunds'
+      },
+      {
+        title: 'Insurance Fund',
+        icon: DollarSign,
+        path: '/admin/insurance-fund'
       }
     ]
   },

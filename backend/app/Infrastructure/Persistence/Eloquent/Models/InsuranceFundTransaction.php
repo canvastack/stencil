@@ -15,6 +15,7 @@ class InsuranceFundTransaction extends Model implements TenantAwareModel
     protected $table = 'insurance_fund_transactions';
 
     protected $fillable = [
+        'id',
         'tenant_id',
         'order_id',
         'refund_request_id',
@@ -26,6 +27,7 @@ class InsuranceFundTransaction extends Model implements TenantAwareModel
     ];
 
     protected $casts = [
+        'id' => 'string',
         'amount' => 'decimal:2',
         'balance_before' => 'decimal:2',
         'balance_after' => 'decimal:2',

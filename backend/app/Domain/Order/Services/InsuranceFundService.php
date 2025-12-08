@@ -38,11 +38,23 @@ class InsuranceFundService
      */
     public static function getBalance(string $tenantId): float
     {
-        $latestTransaction = InsuranceFundTransaction::where('tenant_id', $tenantId)
-            ->orderBy('created_at', 'desc')
-            ->first();
+        try {
+            \Log::info('InsuranceFundService::getBalance called for tenant: ' . $tenantId);
+            
+            $latestTransaction = InsuranceFundTransaction::where('tenant_id', $tenantId)
+                ->orderBy('created_at', 'desc')
+                ->first();
 
-        return $latestTransaction ? $latestTransaction->balance_after : 0;
+            \Log::info('Latest transaction found: ' . ($latestTransaction ? $latestTransaction->id : 'none'));
+            
+            $balance = $latestTransaction ? floatval($latestTransaction->balance_after) : 0.0;
+            \Log::info('Returning balance: ' . $balance);
+            
+            return $balance;
+        } catch (\Exception $e) {
+            \Log::error('InsuranceFundService::getBalance error: ' . $e->getMessage());
+            return 0.0;
+        }
     }
 
     /**
@@ -150,30 +162,55 @@ class InsuranceFundService
      */
     public static function getStatistics(string $tenantId, Carbon $startDate = null, Carbon $endDate = null): array
     {
-        $startDate = $startDate ?? Carbon::now()->subYear();
-        $endDate = $endDate ?? Carbon::now();
+        try {
+            \Log::info('InsuranceFundService::getStatistics called for tenant: ' . $tenantId);
+            
+            $startDate = $startDate ?? Carbon::now()->subYear();
+            $endDate = $endDate ?? Carbon::now();
 
-        $transactions = InsuranceFundTransaction::where('tenant_id', $tenantId)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->get();
+            $transactions = InsuranceFundTransaction::where('tenant_id', $tenantId)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->get();
 
-        $contributions = $transactions->where('transaction_type', 'contribution');
-        $withdrawals = $transactions->where('transaction_type', 'withdrawal');
+            \Log::info('Found ' . $transactions->count() . ' transactions for statistics');
 
-        return [
-            'current_balance' => self::getBalance($tenantId),
-            'total_contributions' => $contributions->sum('amount'),
-            'total_withdrawals' => $withdrawals->sum('amount'),
-            'net_change' => $contributions->sum('amount') - $withdrawals->sum('amount'),
-            'transaction_count' => $transactions->count(),
-            'contribution_count' => $contributions->count(),
-            'withdrawal_count' => $withdrawals->count(),
-            'average_contribution' => $contributions->avg('amount') ?? 0,
-            'largest_withdrawal' => $withdrawals->max('amount') ?? 0,
-            'contribution_rate' => self::getContributionRate($tenantId),
-            'period_start' => $startDate,
-            'period_end' => $endDate
-        ];
+            $contributions = $transactions->where('transaction_type', 'contribution');
+            $withdrawals = $transactions->where('transaction_type', 'withdrawal');
+
+            $result = [
+                'current_balance' => self::getBalance($tenantId),
+                'total_contributions' => $contributions->sum('amount'),
+                'total_withdrawals' => $withdrawals->sum('amount'),
+                'net_change' => $contributions->sum('amount') - $withdrawals->sum('amount'),
+                'transaction_count' => $transactions->count(),
+                'contribution_count' => $contributions->count(),
+                'withdrawal_count' => $withdrawals->count(),
+                'average_contribution' => $contributions->avg('amount') ?? 0,
+                'largest_withdrawal' => $withdrawals->max('amount') ?? 0,
+                'contribution_rate' => self::getContributionRate($tenantId),
+                'period_start' => $startDate,
+                'period_end' => $endDate
+            ];
+            
+            \Log::info('Statistics result: ' . json_encode($result));
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('InsuranceFundService::getStatistics error: ' . $e->getMessage());
+            return [
+                'current_balance' => 0,
+                'total_contributions' => 0,
+                'total_withdrawals' => 0,
+                'net_change' => 0,
+                'transaction_count' => 0,
+                'contribution_count' => 0,
+                'withdrawal_count' => 0,
+                'average_contribution' => 0,
+                'largest_withdrawal' => 0,
+                'contribution_rate' => 0,
+                'period_start' => Carbon::now()->subYear(),
+                'period_end' => Carbon::now()
+            ];
+        }
     }
 
     /**

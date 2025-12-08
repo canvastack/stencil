@@ -111,6 +111,8 @@ const ThemeMarketplace = lazy(() => import("./pages/admin/ThemeMarketplace"));
 const ThemePackaging = lazy(() => import("./pages/admin/ThemePackaging"));
 const ActivityLog = lazy(() => import("./pages/admin/ActivityLog"));
 const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonitoring"));
+const RefundManagement = lazy(() => import("./pages/admin/RefundManagement"));
+const InsuranceFundDashboard = lazy(() => import("./pages/admin/InsuranceFundDashboard"));
 
 function LoadingFallback() {
   return (
@@ -243,6 +245,8 @@ function App() {
                   <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
                   <Route path="activity-log" element={<Suspense fallback={<LoadingFallback />}><ActivityLog /></Suspense>} />
                   <Route path="performance" element={<Suspense fallback={<LoadingFallback />}><PerformanceMonitoring /></Suspense>} />
+                  <Route path="refunds" element={<Suspense fallback={<LoadingFallback />}><RefundManagement /></Suspense>} />
+                  <Route path="insurance-fund" element={<Suspense fallback={<LoadingFallback />}><InsuranceFundDashboard /></Suspense>} />
                   <Route path="profile" element={<UserProfile />} />
                 </Route>
                   
@@ -262,7 +266,7 @@ function App() {
           </QueryClientProvider>
         </HelmetProvider>
         
-        {/* Dev Debugger */}
+        {/* Dev Debugger - FIXED: Removed recursive refresh loop */}
         <DevDebugger />
       </ErrorBoundary>
   );

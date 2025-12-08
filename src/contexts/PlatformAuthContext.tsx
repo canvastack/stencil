@@ -54,15 +54,15 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
             setPermissions(storedPermissions);
           } else {
             console.log('PlatformAuthContext: No stored account found, clearing auth');
-            authService.clearAuth();
+            authService.clearAuth(true); // Force clear non-platform auth
           }
         } else if (storedAccountType === 'platform' && !hasValidToken) {
           console.log('PlatformAuthContext: Invalid token, clearing auth');
-          authService.clearAuth();
+          authService.clearAuth(true); // Force clear invalid platform tokens
         }
       } catch (error) {
         console.error('PlatformAuthContext: Initialization error', error);
-        authService.clearAuth();
+        authService.clearAuth(true); // Force clear on errors
       } finally {
         // Mark initialization as complete
         setIsLoading(false);

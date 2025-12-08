@@ -208,16 +208,15 @@ export const useAuthState = (): UseAuthStateReturn => {
   useEffect(() => {
     const token = authService.getToken();
     
-    // CRITICAL FIX: Clear demo tokens immediately on mount
-    if (token && authService.isDemoToken(token)) {
-      console.log('useAuthState: Demo token detected on mount, clearing auth');
-      authService.clearAuth();
-      return;
-    }
+    // FIXED: Don't clear demo tokens - they are valid authentication tokens for demo mode
+    // Demo tokens are legitimate fallback authentication when backend is unavailable
     
     // Only refresh if there's a valid stored token and we're not already authenticated
-    const hasValidToken = authService.isAuthenticated() && token && !token.startsWith('demo_token_');
-    const needsRefresh = hasValidToken && !authState.isAuthenticated && !authState.isLoading;
+    // Allow both real tokens and demo tokens as valid authentication
+    const hasValidToken = authService.isAuthenticated() && token;
+    const isDemoToken = token?.startsWith('demo_token_');
+    // CRITICAL FIX: Never refresh demo tokens - they indicate completed authentication
+    const needsRefresh = hasValidToken && !authState.isAuthenticated && !authState.isLoading && !isDemoToken;
     
     if (needsRefresh) {
       console.log('useAuthState: Auto-refreshing authentication on mount');
@@ -227,7 +226,7 @@ export const useAuthState = (): UseAuthStateReturn => {
         hasValidToken,
         tokenExists: !!token,
         tokenType: token?.substring(0, 10) + '...',
-        isDemoToken: token?.startsWith('demo_token_'),
+        isDemoToken,
         isAuthenticated: authState.isAuthenticated,
         isLoading: authState.isLoading
       });

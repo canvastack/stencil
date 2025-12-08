@@ -557,13 +557,21 @@ class AuthService {
     localStorage.setItem('roles', JSON.stringify(roles));
   }
 
-  clearAuth() {
+  clearAuth(forceClear: boolean = false) {
     const currentToken = this.getAuthToken();
     console.log('AuthService: Clearing all authentication data', { 
       hadToken: !!currentToken,
       tokenSnippet: currentToken?.substring(0, 20) + '...',
+      forceClear,
       stackTrace: new Error().stack
     });
+
+    // PROTECTION: Don't clear demo tokens unless explicitly forced
+    if (!forceClear && this.shouldPreserveToken()) {
+      console.log('AuthService: Skipping clearAuth for preserved token (demo mode)');
+      return;
+    }
+
     localStorage.removeItem('auth_token');
     localStorage.removeItem('account_type');
     localStorage.removeItem('user_id');
@@ -582,7 +590,7 @@ class AuthService {
    */
   forceAuthReset() {
     console.log('AuthService: Force resetting all authentication data');
-    this.clearAuth();
+    this.clearAuth(true); // Force clear even demo tokens
     // Also clear any potential demo data
     localStorage.clear();
     window.location.reload();
@@ -609,8 +617,23 @@ class AuthService {
    */
   forceLogout() {
     console.log('AuthService: Force logout initiated');
-    this.clearAuth();
+    this.clearAuth(true); // Force clear even demo tokens
     window.location.href = '/login';
+  }
+
+  /**
+   * Check if the current token should be preserved (e.g., demo tokens during development)
+   */
+  shouldPreserveToken(): boolean {
+    const token = this.getAuthToken();
+    
+    // Preserve demo tokens during development/demo mode
+    if (token && this.isDemoToken(token)) {
+      console.log('AuthService: Preserving demo token from auto-clear');
+      return true;
+    }
+    
+    return false;
   }
 
   getAuthToken(): string | null {

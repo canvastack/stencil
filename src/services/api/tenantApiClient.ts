@@ -83,15 +83,23 @@ class TenantApiClient {
 
         // Handle tenant-specific authentication errors
         if (error.response?.status === 401) {
-          console.log('TenantApiClient: Unauthorized - clearing tenant auth');
+          console.log('TenantApiClient: Unauthorized - checking token type before clearing auth');
           
-          // Only clear auth and redirect if we're in admin context
-          if (window.location.pathname.startsWith('/admin')) {
-            authService.clearAuth();
-            window.location.href = '/login';
+          // PROTECTION: Don't clear demo tokens on 401 errors as they're expected to fail API calls
+          const token = authService.getAuthToken();
+          if (token && authService.isDemoToken(token)) {
+            console.log('TenantApiClient: Demo token detected, skipping auth clear on 401');
+            // Demo tokens are expected to get 401 from real API endpoints
+            // Don't clear auth or redirect - let the app continue with demo data
+          } else {
+            // Only clear auth and redirect for real tokens in admin context
+            if (window.location.pathname.startsWith('/admin')) {
+              authService.clearAuth(true); // Force clear for real 401 errors
+              window.location.href = '/login';
+            }
+            // For public pages, just log the error but don't clear auth
+            // Let ContentContext handle the fallback to anonymous content
           }
-          // For public pages, just log the error but don't clear auth
-          // Let ContentContext handle the fallback to anonymous content
         }
 
         // Handle tenant-specific forbidden errors

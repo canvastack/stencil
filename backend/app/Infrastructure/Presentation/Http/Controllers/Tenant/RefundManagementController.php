@@ -3,12 +3,14 @@
 namespace App\Infrastructure\Presentation\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
-use App\Infrastructure\Persistence\Eloquent\Models\{RefundRequest, RefundApproval, Order};
+use App\Infrastructure\Persistence\Eloquent\Models\{RefundRequest, RefundApproval, Order, InsuranceFundTransaction};
 use App\Domain\Order\Services\RefundCalculationEngine;
 use App\Domain\Order\Services\RefundApprovalWorkflowService;
+use App\Domain\Order\Services\InsuranceFundService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class RefundManagementController extends Controller
 {
@@ -21,6 +23,7 @@ class RefundManagementController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+
         $query = RefundRequest::with(['order', 'approvals.approver'])
             ->where('tenant_id', auth()->user()->tenant_id)
             ->orderBy('created_at', 'desc');
@@ -380,5 +383,168 @@ class RefundManagementController extends Controller
         return response()->json([
             'data' => $stats
         ]);
+    }
+
+    /**
+     * Get insurance fund balance
+     */
+    public function getInsuranceFundBalance(): JsonResponse
+    {
+        try {
+            \Log::info('=== BALANCE ENDPOINT CALLED ===');
+            
+            $user = auth()->user();
+            if (!$user) {
+                \Log::error('No authenticated user found');
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            
+            $tenantId = $user->tenant_id;
+            \Log::info('Getting insurance fund balance for tenant: ' . $tenantId);
+            
+            // Test database connection first
+            $transactionCount = InsuranceFundTransaction::where('tenant_id', $tenantId)->count();
+            \Log::info('Found ' . $transactionCount . ' transactions in database');
+            
+            if ($transactionCount === 0) {
+                \Log::warning('No insurance fund transactions found for tenant');
+                return response()->json(0.0);
+            }
+            
+            $currentBalance = InsuranceFundService::getBalance($tenantId);
+            \Log::info('Raw balance from service: ' . $currentBalance);
+            
+            // Ensure we return a valid number, never null
+            $balance = $currentBalance ?? 0.0;
+            \Log::info('Final balance to return: ' . $balance);
+            
+            return response()->json($balance);
+        } catch (\Exception $e) {
+            \Log::error('Insurance fund balance error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return response()->json(['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()], 500);
+        }
+    }
+
+    /**
+     * Get insurance fund transactions
+     */
+    public function getInsuranceFundTransactions(Request $request): JsonResponse
+    {
+        $tenantId = auth()->user()->tenant_id;
+        $page = $request->get('page', 1);
+        $perPage = $request->get('per_page', 15);
+
+        // Get real transactions from database
+        $query = InsuranceFundTransaction::where('tenant_id', $tenantId)
+            ->with(['order', 'refundRequest'])
+            ->orderBy('created_at', 'desc');
+
+        $total = $query->count();
+        $transactions = $query->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get();
+
+        // Transform to frontend format with camelCase naming
+        $formattedTransactions = $transactions->map(function ($transaction) {
+            return [
+                'id' => $transaction->id,
+                'tenantId' => $transaction->tenant_id,
+                'orderId' => $transaction->order_id,
+                'refundRequestId' => $transaction->refund_request_id,
+                'transactionType' => $transaction->transaction_type, // camelCase for frontend
+                'amount' => abs(floatval($transaction->amount)), // Always positive, sign shown by type
+                'description' => $transaction->description,
+                'balanceBefore' => floatval($transaction->balance_before), // camelCase
+                'balanceAfter' => floatval($transaction->balance_after), // camelCase
+                'createdAt' => $transaction->created_at->toISOString(), // camelCase, ISO format
+                'status' => 'completed',
+                // Include related data if available
+                'order' => $transaction->order ? [
+                    'id' => $transaction->order->id,
+                    'orderNumber' => $transaction->order->order_number,
+                    'customerName' => $transaction->order->shipping_address['name'] ?? 'N/A',
+                    'totalAmount' => floatval($transaction->order->total_amount)
+                ] : null,
+                'refundRequest' => $transaction->refundRequest ? [
+                    'requestNumber' => $transaction->refundRequest->request_number,
+                    'status' => $transaction->refundRequest->status
+                ] : null
+            ];
+        });
+
+        return response()->json([
+            'data' => $formattedTransactions->toArray(),
+            'meta' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage),
+            ]
+        ]);
+    }
+
+    /**
+     * Get insurance fund analytics
+     */
+    public function getInsuranceFundAnalytics(): JsonResponse
+    {
+        try {
+            $tenantId = auth()->user()->tenant_id;
+            \Log::info('Getting insurance fund analytics for tenant: ' . $tenantId);
+            
+            // Get real statistics from service
+            $statistics = InsuranceFundService::getStatistics($tenantId);
+            \Log::info('Raw statistics from service: ' . json_encode($statistics));
+            
+            $monthlyTrend = InsuranceFundService::getMonthlyTrend($tenantId, 12);
+            \Log::info('Monthly trend count: ' . count($monthlyTrend));
+            
+            // Calculate monthly trend with running balance
+            $runningBalance = $statistics['current_balance'];
+            $formattedTrend = [];
+            
+            // Process monthly trend in reverse to calculate running balance correctly
+            $reversedTrend = array_reverse($monthlyTrend);
+            foreach ($reversedTrend as $month) {
+                // Calculate balance at the end of this month
+                $monthEndBalance = $runningBalance - $month['net_change'];
+                
+                $formattedTrend[] = [
+                    'month' => $month['month'],
+                    'contributions' => floatval($month['contributions']),
+                    'withdrawals' => floatval($month['withdrawals']),
+                    'balance' => floatval($monthEndBalance)
+                ];
+                
+                $runningBalance = $monthEndBalance;
+            }
+            
+            // Reverse back to chronological order
+            $formattedTrend = array_reverse($formattedTrend);
+            
+            // Calculate utilization rate (withdrawals / contributions over the period)
+            $utilizationRate = $statistics['total_contributions'] > 0 ? 
+                $statistics['total_withdrawals'] / $statistics['total_contributions'] : 0;
+            
+            $analytics = [
+                'currentBalance' => floatval($statistics['current_balance']),
+                'totalContributions' => floatval($statistics['total_contributions']),
+                'totalWithdrawals' => floatval($statistics['total_withdrawals']),
+                'monthlyTrend' => $formattedTrend,
+                'utilizationRate' => round($utilizationRate, 4),
+                'averageWithdrawalAmount' => $statistics['withdrawal_count'] > 0 ? 
+                    floatval($statistics['total_withdrawals'] / $statistics['withdrawal_count']) : 0.0,
+            ];
+
+            \Log::info('Final analytics to return: ' . json_encode($analytics));
+            return response()->json($analytics);
+        } catch (\Exception $e) {
+            \Log::error('Insurance fund analytics error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            // Return error for debugging
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

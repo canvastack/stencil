@@ -646,10 +646,10 @@ class TenantDataSeeder extends Seeder
             }
 
             if ($index % 3 === 0) {
-                $difference = rand(-4, 6);
-                if ($difference !== 0) {
-                    $inventoryService->adjustLocationStock($product, $locations[array_rand($locations)], (float) $difference, $userId, 'cycle_adjustment_seed');
-                }
+                // Apply only positive adjustments to avoid complexity with stock validation
+                $difference = rand(1, 6); // Only positive adjustments to keep seeding simple
+                $randomLocation = $locations[array_rand($locations)];
+                $inventoryService->adjustLocationStock($product, $randomLocation, (float) $difference, $userId, 'cycle_adjustment_seed');
             }
 
             if ($index % 4 === 0) {
