@@ -68,8 +68,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🔐 Default Login Credentials:');
         $this->command->info('Platform Super Admin: admin@canvastencil.com / SuperAdmin2024!');
         $this->command->info('Platform Manager: manager@canvastencil.com / Manager2024!');
-        $this->command->info('Demo Tenant Admin: admin@demo-etching.com / DemoAdmin2024!');
-        $this->command->info('Demo Tenant Manager: manager@demo-etching.com / DemoManager2024!');
-        $this->command->info('Demo Tenant Sales: sales@demo-etching.com / DemoSales2024!');
+        $this->command->info('Demo Tenant Admin: admin@etchinx.com / DemoAdmin2024!');
+        $this->command->info('Demo Tenant Manager: manager@etchinx.com / DemoManager2024!');
+        $this->command->info('Demo Tenant Sales: sales@etchinx.com / DemoSales2024!');
     }
 }

@@ -77,8 +77,8 @@ Role: Super Administrator
 
 **Tenant Details**:
 ```
-Tenant Name: Demo Custom Etching Business
-Tenant Slug: demo-etching
+Tenant Name: PT. Custom Etching Xenial
+Tenant Slug: etchinx
 Tenant ID: (Generated UUID)
 ```
 
@@ -87,7 +87,7 @@ Tenant ID: (Generated UUID)
 #### 1. Tenant Admin
 ```
 Name: John Admin
-Email: admin@demo-etching.com
+Email: admin@etchinx.com
 Password: DemoAdmin2024!
 Role: Admin (Full tenant access)
 Department: Management
@@ -97,7 +97,7 @@ Abilities: tenant:manage, users:manage, customers:manage, products:manage, order
 #### 2. Tenant Manager
 ```
 Name: Jane Manager
-Email: manager@demo-etching.com
+Email: manager@etchinx.com
 Password: DemoManager2024!
 Role: Manager (Operations management)
 Department: Operations
@@ -107,7 +107,7 @@ Abilities: customers:manage, products:manage, orders:manage, vendors:manage, ana
 #### 3. Tenant Sales User
 ```
 Name: Bob Sales
-Email: sales@demo-etching.com
+Email: sales@etchinx.com
 Password: DemoSales2024!
 Role: Sales (Customer and order management)
 Department: Sales
@@ -186,9 +186,9 @@ Abilities: customers:manage, orders:manage, analytics:view
 ┌──────────────────────────────────────────┐
 │ 1. POST /api/v1/tenant/login             │
 │    {                                      │
-│      email: "admin@demo-etching.com",   │
+│      email: "admin@etchinx.com",   │
 │      password: "DemoAdmin2024!",         │
-│      tenant_id: "uuid-of-demo-etching"  │
+│      tenant_id: "uuid-of-etchinx"  │
 │    }                                    │
 └───────────────┬──────────────────────────┘
                 │
@@ -597,7 +597,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
 
 3. **Test Both Login Paths**
    - Test platform login with admin@canvastencil.com
-   - Test tenant login with admin@demo-etching.com
+   - Test tenant login with admin@etchinx.com
    - Verify token storage and redirect
 
 ### Phase 2: Implement Frontend Access Control (2-3 days)
@@ -677,7 +677,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
 - [ ] Logout and verify redirect to `/login`
 
 #### Tenant Account Tests (Admin)
-- [ ] Login with admin@demo-etching.com / DemoAdmin2024!
+- [ ] Login with admin@etchinx.com / DemoAdmin2024!
 - [ ] Verify redirect to `/admin` dashboard
 - [ ] Check tenant name displayed in header
 - [ ] Verify tenant-specific menu items visible
@@ -686,19 +686,19 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
 - [ ] Logout and verify redirect to `/login`
 
 #### Tenant Account Tests (Manager)
-- [ ] Login with manager@demo-etching.com / DemoManager2024!
+- [ ] Login with manager@etchinx.com / DemoManager2024!
 - [ ] Verify limited menu items (no users, settings, themes)
 - [ ] Verify read-only access to analytics
 - [ ] Attempt to access admin-only pages (should be blocked)
 
 #### Tenant Account Tests (Sales)
-- [ ] Login with sales@demo-etching.com / DemoSales2024!
+- [ ] Login with sales@etchinx.com / DemoSales2024!
 - [ ] Verify minimal menu items (customers, orders, analytics)
 - [ ] Verify no access to products, vendors, inventory
 - [ ] Verify read-only access to analytics
 
 #### Data Isolation Tests
-- [ ] Create product in demo-etching as tenant admin
+- [ ] Create product in etchinx as tenant admin
 - [ ] Verify product appears in tenant dashboard
 - [ ] Login as platform admin, attempt to see product (should not appear)
 - [ ] Create order in tenant and verify isolation

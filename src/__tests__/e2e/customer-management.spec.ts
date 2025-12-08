@@ -4,7 +4,7 @@ test.describe('Customer Management', () => {
   test.beforeEach(async ({ page }) => {
     // Login before each test
     await page.goto('/login');
-    await page.getByPlaceholder('Email').fill('admin@demo-etching.com');
+    await page.getByPlaceholder('Email').fill('admin@etchinx.com');
     await page.getByPlaceholder('Password').fill('DemoAdmin2024!');
     await page.getByRole('button', { name: /sign in/i }).click();
     

@@ -155,7 +155,7 @@ Enforcement: tenant.scoped (query filtering)
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| Backend Seeding | ✅ | admin@demo-etching.com / DemoAdmin2024! |
+| Backend Seeding | ✅ | admin@etchinx.com / DemoAdmin2024! |
 | API Endpoint | ✅ | /api/v1/tenant/login functional |
 | Frontend Login | ❌ | No way to select tenant account |
 | Frontend Routes | ⚠️ | Routes exist but mock data used |

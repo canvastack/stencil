@@ -136,15 +136,15 @@ npx vitest --coverage
 
 ### Tenant User Accounts (tenant_demo-etching)
 - **Admin**:
-  - Email: admin@demo-etching.com
+  - Email: admin@etchinx.com
   - Password: DemoAdmin2024!
 
 - **Manager**:
-  - Email: manager@demo-etching.com
+  - Email: manager@etchinx.com
   - Password: DemoManager2024!
 
 - **Sales**:
-  - Email: sales@demo-etching.com
+  - Email: sales@etchinx.com
   - Password: DemoSales2024!
 
 ## Expected Test Results
@@ -170,7 +170,7 @@ Tests will be automatically skipped if:
 
 ```typescript
 const token = await authService.login({
-  email: 'admin@demo-etching.com',
+  email: 'admin@etchinx.com',
   password: 'DemoAdmin2024!'
 });
 localStorage.setItem('access_token', token.access_token);

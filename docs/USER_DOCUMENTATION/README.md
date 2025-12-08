@@ -123,11 +123,11 @@ This comprehensive user documentation covers all aspects of the CanvaStack Stenc
 
 ### **🏪 Demo Tenant Business**
 
-#### **Demo Custom Etching Business**
-- **URL**: `canvastencil.com/demo-etching/`
-- **Admin**: `admin@demo-etching.com` / `DemoAdmin2024!`
-- **Manager**: `manager@demo-etching.com` / `DemoManager2024!`
-- **Sales**: `sales@demo-etching.com` / `DemoSales2024!`
+#### **PT. Custom Etching Xenial**
+- **URL**: `canvastencil.com/etchinx/`
+- **Admin**: `admin@etchinx.com` / `DemoAdmin2024!`
+- **Manager**: `manager@etchinx.com` / `DemoManager2024!`
+- **Sales**: `sales@etchinx.com` / `DemoSales2024!`
 - **Industry**: Custom manufacturing and etching services
 
 ---

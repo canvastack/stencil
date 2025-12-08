@@ -323,19 +323,19 @@ Based on comprehensive audit of multi-tenant architecture (`.zencoder/rules`, RB
 **Seeded Users** (tenant_demo-etching):
 ```yaml
 Admin:
-  Email: admin@demo-etching.com
+  Email: admin@etchinx.com
   Password: DemoAdmin2024!
   Role: admin
   Permissions: All tenant operations
 
 Manager:
-  Email: manager@demo-etching.com
+  Email: manager@etchinx.com
   Password: DemoManager2024!
   Role: manager
   Permissions: Orders, customers, reports, inventory
 
 Sales:
-  Email: sales@demo-etching.com
+  Email: sales@etchinx.com
   Password: DemoSales2024!
   Role: sales
   Permissions: View orders, customers, products

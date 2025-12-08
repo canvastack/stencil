@@ -1,0 +1,13 @@
+DemoAuthServiceProvider booted at 2025-12-08 17:03:59
+DemoAuthServiceProvider booted at 2025-12-08 17:04:00
+Token callback called with bearer: 35|IEUqhLNmBqj63oDDCQOwlczMFOCSlUwqyhPIDoRcDqmqqHFUYzf99PGENKFdyl7P3GZPq8VT1lw9elVd
+DemoAuthServiceProvider booted at 2025-12-08 17:04:00
+DemoAuthServiceProvider booted at 2025-12-08 17:04:01
+DemoAuthServiceProvider booted at 2025-12-08 17:04:04
+Token callback called with bearer: demo_token_1765125444
+DemoAuthServiceProvider booted at 2025-12-08 17:04:39
+Token callback called with bearer: demo_token_1765125444
+Creating demo token...
+Creating demo token for: demo_token_1765125444
+Demo token created successfully for user: 68
+Demo token created: success

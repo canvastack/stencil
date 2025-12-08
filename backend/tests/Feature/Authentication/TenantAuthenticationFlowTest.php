@@ -29,7 +29,7 @@ class TenantAuthenticationFlowTest extends TestCase
         // Create tenant
         $this->tenant = TenantEloquentModel::create([
             'name' => 'Demo Etching Business',
-            'slug' => 'demo-etching',
+            'slug' => 'etchinx',
             'status' => 'active',
             'subscription_status' => 'active',
             'trial_ends_at' => now()->addDays(30),
@@ -98,7 +98,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->adminUser = UserEloquentModel::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Tenant Admin',
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => Hash::make('DemoAdmin2024!'),
             'status' => 'active'
         ]);
@@ -106,7 +106,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->managerUser = UserEloquentModel::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Tenant Manager',
-            'email' => 'manager@demo-etching.com',
+            'email' => 'manager@etchinx.com',
             'password' => Hash::make('DemoManager2024!'),
             'status' => 'active'
         ]);
@@ -114,7 +114,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->salesUser = UserEloquentModel::create([
             'tenant_id' => $this->tenant->id,
             'name' => 'Sales User',
-            'email' => 'sales@demo-etching.com',
+            'email' => 'sales@etchinx.com',
             'password' => Hash::make('DemoSales2024!'),
             'status' => 'active'
         ]);
@@ -130,7 +130,7 @@ class TenantAuthenticationFlowTest extends TestCase
     {
         // 1. Login
         $loginResponse = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -160,7 +160,7 @@ class TenantAuthenticationFlowTest extends TestCase
         // 2. Verify tenant context
         $tenant = $loginResponse->json('tenant');
         $this->assertEquals($this->tenant->id, $tenant['id']);
-        $this->assertEquals('demo-etching', $tenant['slug']);
+        $this->assertEquals('etchinx', $tenant['slug']);
 
         // 3. Access protected resource
         $meResponse = $this->getJson('/api/v1/tenant/me', [
@@ -192,7 +192,7 @@ class TenantAuthenticationFlowTest extends TestCase
     public function manager_has_limited_permissions()
     {
         $loginResponse = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'manager@demo-etching.com',
+            'email' => 'manager@etchinx.com',
             'password' => 'DemoManager2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -217,7 +217,7 @@ class TenantAuthenticationFlowTest extends TestCase
     public function sales_user_has_minimal_permissions()
     {
         $loginResponse = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'sales@demo-etching.com',
+            'email' => 'sales@etchinx.com',
             'password' => 'DemoSales2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -251,7 +251,7 @@ class TenantAuthenticationFlowTest extends TestCase
 
         // Try to login to wrong tenant
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $otherTenant->id
         ]);
@@ -266,7 +266,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->tenant->update(['status' => 'inactive']);
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -284,7 +284,7 @@ class TenantAuthenticationFlowTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -302,7 +302,7 @@ class TenantAuthenticationFlowTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -319,7 +319,7 @@ class TenantAuthenticationFlowTest extends TestCase
         ]);
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -335,7 +335,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->app->instance('tenant.context', $this->tenant);
 
         $response = $this->postJson('/api/v1/tenant/context-login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!'
         ]);
 
@@ -371,7 +371,7 @@ class TenantAuthenticationFlowTest extends TestCase
         // Make 5 failed attempts for our tenant
         for ($i = 0; $i < 5; $i++) {
             $this->postJson('/api/v1/tenant/login', [
-                'email' => 'admin@demo-etching.com',
+                'email' => 'admin@etchinx.com',
                 'password' => 'wrong-password',
                 'tenant_id' => $this->tenant->id
             ]);
@@ -379,7 +379,7 @@ class TenantAuthenticationFlowTest extends TestCase
 
         // 6th attempt for our tenant should be blocked
         $blockedResponse = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'wrong-password',
             'tenant_id' => $this->tenant->id
         ]);
@@ -405,7 +405,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->adminUser->update(['status' => 'inactive']);
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -420,7 +420,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->adminUser->update(['status' => 'suspended']);
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -435,7 +435,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $originalTime = $this->adminUser->last_login_at;
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);
@@ -455,7 +455,7 @@ class TenantAuthenticationFlowTest extends TestCase
         $this->adminUser->roles()->attach($this->salesRole->id);
 
         $response = $this->postJson('/api/v1/tenant/login', [
-            'email' => 'admin@demo-etching.com',
+            'email' => 'admin@etchinx.com',
             'password' => 'DemoAdmin2024!',
             'tenant_id' => $this->tenant->id
         ]);

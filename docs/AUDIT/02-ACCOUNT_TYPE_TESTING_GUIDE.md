@@ -39,24 +39,24 @@ Restricted Routes:
 ```yaml
 Purpose: Tenant business operations
 Type: Tenant User
-Tenant: Demo Custom Etching Business (demo-etching)
+Tenant: PT. Custom Etching Xenial (etchinx)
 
 Users:
   1. Admin (Full Permissions)
-     Email: admin@demo-etching.com
+     Email: admin@etchinx.com
      Password: DemoAdmin2024!
      
   2. Manager (Operations)
-     Email: manager@demo-etching.com
+     Email: manager@etchinx.com
      Password: DemoManager2024!
      
   3. Sales (Limited Permissions)
-     Email: sales@demo-etching.com
+     Email: sales@etchinx.com
      Password: DemoSales2024!
 
 Authentication Endpoint: POST /api/v1/tenant/login
 Token Contains: user object + tenant object
-Tenant Context: demo-etching
+Tenant Context: etchinx
 
 Accessible Routes (All Users):
   - /admin/orders (with role-based filtering)
@@ -220,7 +220,7 @@ async login(data: LoginRequest): Promise<LoginResponse> {
 
 **Prerequisites**:
 - Backend running on `http://localhost:8000`
-- PostgreSQL with seeded data including demo-etching tenant
+- PostgreSQL with seeded data including etchinx tenant
 
 **Steps**:
 
@@ -231,19 +231,19 @@ async login(data: LoginRequest): Promise<LoginResponse> {
 
 2. **Would Need To Use** (BLOCKED - no UI for this):
    ```
-   Email: admin@demo-etching.com
+   Email: admin@etchinx.com
    Password: DemoAdmin2024!
    Account Type: Tenant User
-   Tenant: Demo Custom Etching Business (demo-etching)
+   Tenant: PT. Custom Etching Xenial (etchinx)
    ```
 
 3. **Expected API Call** (CURRENTLY NOT WORKING):
    ```
    POST /api/v1/tenant/login
    {
-     "email": "admin@demo-etching.com",
+     "email": "admin@etchinx.com",
      "password": "DemoAdmin2024!",
-     "tenant_id": "uuid-of-demo-etching-tenant"
+     "tenant_id": "uuid-of-etchinx-tenant"
    }
    ```
 
@@ -256,7 +256,7 @@ async login(data: LoginRequest): Promise<LoginResponse> {
      "user": {
        "id": 2,
        "uuid": "...",
-       "email": "admin@demo-etching.com",
+       "email": "admin@etchinx.com",
        "name": "John Admin",
        "email_verified_at": "2025-11-20T...",
        "created_at": "2025-11-20T...",
@@ -275,8 +275,8 @@ async login(data: LoginRequest): Promise<LoginResponse> {
      "tenant": {
        "id": 1,
        "uuid": "...",
-       "name": "Demo Custom Etching Business",
-       "slug": "demo-etching",
+       "name": "PT. Custom Etching Xenial",
+       "slug": "etchinx",
        "domain": null
      },
      "account_type": "tenant_user",
@@ -290,7 +290,7 @@ async login(data: LoginRequest): Promise<LoginResponse> {
    auth_token: "eyJ0eXAi..."
    user_id: "2"
    user: JSON.stringify(user_object)
-   tenant_id: "uuid-of-demo-etching"
+   tenant_id: "uuid-of-etchinx"
    tenant: JSON.stringify(tenant_object)
    ```
 
@@ -298,7 +298,7 @@ async login(data: LoginRequest): Promise<LoginResponse> {
    ```
    URL: /admin
    Page: Dashboard (Tenant view - shows business metrics)
-   Tenant Context: Demo Custom Etching Business
+   Tenant Context: PT. Custom Etching Xenial
    ```
 
 7. **Expected Sidebar Menu** (Tenant Admin View):
@@ -323,7 +323,7 @@ async login(data: LoginRequest): Promise<LoginResponse> {
 
 1. **Login Credentials**:
    ```
-   Email: manager@demo-etching.com
+   Email: manager@etchinx.com
    Password: DemoManager2024!
    ```
 
@@ -355,7 +355,7 @@ async login(data: LoginRequest): Promise<LoginResponse> {
 
 1. **Login Credentials**:
    ```
-   Email: sales@demo-etching.com
+   Email: sales@etchinx.com
    Password: DemoSales2024!
    ```
 
@@ -403,12 +403,12 @@ async login(data: LoginRequest): Promise<LoginResponse> {
 
 **Goal**: Verify that one tenant's data is isolated from another tenant
 
-**Note**: Only demo-etching tenant in current seeding, but this would apply if another tenant existed.
+**Note**: Only etchinx tenant in current seeding, but this would apply if another tenant existed.
 
-1. **As Tenant Admin** (admin@demo-etching.com):
+1. **As Tenant Admin** (admin@etchinx.com):
    ```
    GET /api/v1/products
-   Expected: 200 OK - Returns demo-etching products only
+   Expected: 200 OK - Returns etchinx products only
    
    // All requests automatically scoped to tenant schema
    // No way to access products from other tenants
@@ -551,7 +551,7 @@ GET /api/v1/inventory (scoped to tenant)
 1. Update to show actual credentials:
    ```
    Platform: admin@canvastencil.com / SuperAdmin2024!
-   Tenant: admin@demo-etching.com / DemoAdmin2024!
+   Tenant: admin@etchinx.com / DemoAdmin2024!
    ```
 2. Or add account type selector UI
 

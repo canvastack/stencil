@@ -67,8 +67,8 @@ Route::middleware('auth:sanctum')->group(function () {
                         'id' => '1',
                         'uuid' => '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
                         'name' => 'Demo Etching Company',
-                        'slug' => 'demo-etching',
-                        'domain' => 'demo-etching.canvastencil.com',
+                        'slug' => 'etchinx',
+                        'domain' => 'etchinx.canvastencil.com',
                         'settings' => [
                             'timezone' => 'Asia/Jakarta',
                             'currency' => 'IDR',

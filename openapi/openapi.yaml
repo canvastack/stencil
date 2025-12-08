@@ -934,7 +934,7 @@ paths:
                   type: string
                   format: email
                   description: Tenant user email address
-                  example: "admin@demo-etching.com"
+                  example: "admin@etchinx.com"
                 password:
                   type: string
                   format: password
@@ -943,7 +943,7 @@ paths:
                 tenant_slug:
                   type: string
                   description: Tenant identifier slug
-                  example: "demo-etching"
+                  example: "etchinx"
                 remember_me:
                   type: boolean
                   default: false
@@ -1194,7 +1194,7 @@ paths:
                   type: string
                   format: email
                   description: Email address for tenant account
-                  example: "user@demo-etching.com"
+                  example: "user@etchinx.com"
                 password:
                   type: string
                   format: password

@@ -68,10 +68,10 @@ PUT /api/platform/tenants/{id}/activate
 
 Based on current database seeding, the platform includes:
 
-#### **1. Demo Custom Etching Business** 
-- **Slug**: `demo-etching`
-- **URL**: `canvastencil.com/demo-etching/`
-- **Admin**: `admin@demo-etching.com`
+#### **1. PT. Custom Etching Xenial** 
+- **Slug**: `etchinx`
+- **URL**: `canvastencil.com/etchinx/`
+- **Admin**: `admin@etchinx.com`
 - **Industry**: Manufacturing/Custom Products
 - **Status**: Active (Demo Account)
 

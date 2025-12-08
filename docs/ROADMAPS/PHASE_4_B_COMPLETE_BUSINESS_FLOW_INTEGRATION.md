@@ -471,7 +471,7 @@ src/
 **Testing & Validation**:
 - ✅ Development server running on localhost:5174
 - ✅ Debug logging for authentication flow troubleshooting
-- ✅ Demo credentials validation (admin@demo-etching.com / DemoAdmin2024!)
+- ✅ Demo credentials validation (admin@etchinx.com / DemoAdmin2024!)
 - ✅ Browser console debugging guides established
 
 ---

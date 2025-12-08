@@ -159,10 +159,10 @@ class PlatformSeeder extends Seeder
     {
         // Create Demo Tenant
         $demoTenant = TenantEloquentModel::firstOrCreate(
-            ['slug' => 'demo-etching'],
+            ['slug' => 'etchinx'],
             [
-                'name' => 'Demo Custom Etching Business',
-                'slug' => 'demo-etching',
+                'name' => 'PT. Custom Etching Xenial',
+                'slug' => 'etchinx',
                 'domain' => null,
                 'settings' => [
                     'business_type' => 'etching',
@@ -244,7 +244,7 @@ class PlatformSeeder extends Seeder
         $tenantUsers = [
             [
                 'name' => 'John Admin',
-                'email' => 'admin@demo-etching.com',
+                'email' => 'admin@etchinx.com',
                 'password' => Hash::make('DemoAdmin2024!'),
                 'role' => 'admin',
                 'department' => 'Management',
@@ -252,7 +252,7 @@ class PlatformSeeder extends Seeder
             ],
             [
                 'name' => 'Jane Manager',
-                'email' => 'manager@demo-etching.com', 
+                'email' => 'manager@etchinx.com', 
                 'password' => Hash::make('DemoManager2024!'),
                 'role' => 'manager',
                 'department' => 'Operations',
@@ -260,7 +260,7 @@ class PlatformSeeder extends Seeder
             ],
             [
                 'name' => 'Bob Sales',
-                'email' => 'sales@demo-etching.com',
+                'email' => 'sales@etchinx.com',
                 'password' => Hash::make('DemoSales2024!'),
                 'role' => 'sales',
                 'department' => 'Sales',
@@ -299,9 +299,9 @@ class PlatformSeeder extends Seeder
         }
 
         $this->command->info('✅ Demo tenant created successfully');
-        $this->command->info('   Tenant: Demo Custom Etching Business (demo-etching)');
-        $this->command->info('   Admin User: admin@demo-etching.com / DemoAdmin2024!');
-        $this->command->info('   Manager User: manager@demo-etching.com / DemoManager2024!');
-        $this->command->info('   Sales User: sales@demo-etching.com / DemoSales2024!');
+        $this->command->info('   Tenant: PT. Custom Etching Xenial (etchinx)');
+        $this->command->info('   Admin User: admin@etchinx.com / DemoAdmin2024!');
+        $this->command->info('   Manager User: manager@etchinx.com / DemoManager2024!');
+        $this->command->info('   Sales User: sales@etchinx.com / DemoSales2024!');
     }
 }

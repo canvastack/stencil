@@ -28,7 +28,7 @@
 | **Authentication Endpoint** | `/api/v1/platform/login` | `/api/v1/tenant/login` |
 | **Database Access** | Landlord DB only | Tenant schema only |
 | **Response Format** | `{ account, permissions }` | `{ user, tenant, permissions }` |
-| **Email (Test)** | admin@canvastencil.com | admin@demo-etching.com |
+| **Email (Test)** | admin@canvastencil.com | admin@etchinx.com |
 | **Password (Test)** | SuperAdmin2024! | DemoAdmin2024! |
 | **Frontend Prefix** | `/admin` (platform) | `/admin` (tenant) |
 | **Data Isolation** | Yes - no tenant access | Yes - single tenant only |
@@ -644,8 +644,8 @@ export const ProductList: React.FC = () => {
 ```
 1. Navigate to /login
 2. Select "Tenant User"
-3. Select "demo-etching" from dropdown
-4. Enter: admin@demo-etching.com / DemoAdmin2024!
+3. Select "etchinx" from dropdown
+4. Enter: admin@etchinx.com / DemoAdmin2024!
 5. Login succeeds
 6. Redirect to /admin/dashboard (tenant version)
 7. Sidebar shows: Dashboard, Orders, Customers, Products, Vendors, Users, Settings
@@ -658,8 +658,8 @@ export const ProductList: React.FC = () => {
 ```
 1. Navigate to /login
 2. Select "Tenant User"
-3. Select "demo-etching" from dropdown
-4. Enter: manager@demo-etching.com / DemoManager2024!
+3. Select "etchinx" from dropdown
+4. Enter: manager@etchinx.com / DemoManager2024!
 5. Login succeeds
 6. Sidebar shows: Dashboard, Orders, Customers, Reviews, Financial Report
 7. Cannot access "Products" (admin only)
@@ -670,7 +670,7 @@ export const ProductList: React.FC = () => {
 ### Test 4: Cross-Tenant Access Prevention
 
 ```
-1. Login as admin@demo-etching.com
+1. Login as admin@etchinx.com
 2. URL-hack to /admin/customers?tenant=other-tenant
 3. Page should redirect to /unauthorized
 4. Backend should return 403

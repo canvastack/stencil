@@ -38,7 +38,7 @@ export const PlatformProductsView: React.FC = () => {
     {
       tenantId: '1',
       tenantName: 'Demo Etching Company',
-      tenantSlug: 'demo-etching',
+      tenantSlug: 'etchinx',
       totalProducts: 45,
       activeProducts: 42,
       totalRevenue: 125000000,

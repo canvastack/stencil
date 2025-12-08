@@ -62,11 +62,11 @@ Based on the platform's current tenant portfolio, here are successful businesses
 - **Seasonal Growth**: +45% in Q4
 - **Specialization**: Furniture, decor, home improvement products
 
-### **⚙️ Demo Custom Etching Business** (Reference Example)
-- **URL**: `canvastencil.com/demo-etching/`
+### **⚙️ PT. Custom Etching Xenial** (Reference Example)
+- **URL**: `canvastencil.com/etchinx/`
 - **Industry**: Manufacturing/Custom Products  
 - **Specialization**: Custom etching, personalized products, manufacturing services
-- **Login**: `admin@demo-etching.com` / `DemoAdmin2024!`
+- **Login**: `admin@etchinx.com` / `DemoAdmin2024!`
 
 ---
 

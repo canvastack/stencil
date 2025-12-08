@@ -1363,9 +1363,9 @@ class TenantPerformanceTest extends TestCase
 **Credentials Created:**
 - **Platform Super Admin:** admin@canvastencil.com / SuperAdmin2024!
 - **Platform Manager:** manager@canvastencil.com / Manager2024!  
-- **Demo Tenant Admin:** admin@demo-etching.com / DemoAdmin2024!
-- **Demo Tenant Manager:** manager@demo-etching.com / DemoManager2024!
-- **Demo Tenant Sales:** sales@demo-etching.com / DemoSales2024!
+- **Demo Tenant Admin:** admin@etchinx.com / DemoAdmin2024!
+- **Demo Tenant Manager:** manager@etchinx.com / DemoManager2024!
+- **Demo Tenant Sales:** sales@etchinx.com / DemoSales2024!
 
 **API Endpoints Available:**
 - `/api/platform/login` - Platform authentication

@@ -45,7 +45,7 @@ const Login = () => {
       setEmail('admin@canvastencil.com');
       setPassword('SuperAdmin2024!');
     } else {
-      setEmail('admin@demo-etching.com');
+      setEmail('admin@etchinx.com');
       setPassword('DemoAdmin2024!');
     }
   };
@@ -64,7 +64,7 @@ const Login = () => {
           await detectContext();
         }
       } else {
-        const result = await tenantLogin(email, password, 'demo-etching');
+        const result = await tenantLogin(email, password, 'etchinx');
         // The GlobalContext will automatically detect and switch context
         // via the useEffect in GlobalContextProvider
         if (result) {
@@ -195,7 +195,7 @@ const Login = () => {
                   </div>
                 ) : (
                   <div>
-                    <p><strong>Business:</strong> admin@demo-etching.com</p>
+                    <p><strong>Business:</strong> admin@etchinx.com</p>
                     <p>Password: DemoAdmin2024!</p>
                   </div>
                 )}

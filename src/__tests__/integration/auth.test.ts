@@ -21,7 +21,7 @@ describe('Authentication Integration Tests', () => {
     test('Tenant User Login - should return access_token, user, and tenant', async () => {
       try {
         const response = await authService.login({
-          email: 'admin@demo-etching.com',
+          email: 'admin@etchinx.com',
           password: 'DemoAdmin2024!',
           tenant_id: 'tenant_demo-etching',
         });
@@ -84,7 +84,7 @@ describe('Authentication Integration Tests', () => {
     test('Forgot password - should send reset email', async () => {
       try {
         const response = await authService.forgotPassword({
-          email: 'admin@demo-etching.com',
+          email: 'admin@etchinx.com',
         });
 
         expect(response).toBeDefined();

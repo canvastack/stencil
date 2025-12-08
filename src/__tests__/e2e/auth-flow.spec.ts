@@ -16,7 +16,7 @@ test.describe('Authentication Flow', () => {
     await expect(page.getByPlaceholder('Password')).toBeVisible();
     
     // Fill login form
-    await page.getByPlaceholder('Email').fill('admin@demo-etching.com');
+    await page.getByPlaceholder('Email').fill('admin@etchinx.com');
     await page.getByPlaceholder('Password').fill('DemoAdmin2024!');
     
     // Submit form
@@ -81,7 +81,7 @@ test.describe('Authentication Flow', () => {
     await expect(page.locator('h1')).toContainText('Reset Password');
     
     // Enter email
-    await page.getByPlaceholder('Email').fill('admin@demo-etching.com');
+    await page.getByPlaceholder('Email').fill('admin@etchinx.com');
     
     // Submit form
     await page.getByRole('button', { name: /send reset link/i }).click();
@@ -93,7 +93,7 @@ test.describe('Authentication Flow', () => {
   test('should logout successfully', async ({ page }) => {
     // Login first
     await page.goto('/login');
-    await page.getByPlaceholder('Email').fill('admin@demo-etching.com');
+    await page.getByPlaceholder('Email').fill('admin@etchinx.com');
     await page.getByPlaceholder('Password').fill('DemoAdmin2024!');
     await page.getByRole('button', { name: /sign in/i }).click();
     
@@ -119,7 +119,7 @@ test.describe('Authentication Flow', () => {
   test('should maintain session on page refresh', async ({ page }) => {
     // Login first
     await page.goto('/login');
-    await page.getByPlaceholder('Email').fill('admin@demo-etching.com');
+    await page.getByPlaceholder('Email').fill('admin@etchinx.com');
     await page.getByPlaceholder('Password').fill('DemoAdmin2024!');
     await page.getByRole('button', { name: /sign in/i }).click();
     
@@ -137,7 +137,7 @@ test.describe('Authentication Flow', () => {
   test('should handle session expiry gracefully', async ({ page }) => {
     // Login first
     await page.goto('/login');
-    await page.getByPlaceholder('Email').fill('admin@demo-etching.com');
+    await page.getByPlaceholder('Email').fill('admin@etchinx.com');
     await page.getByPlaceholder('Password').fill('DemoAdmin2024!');
     await page.getByRole('button', { name: /sign in/i }).click();
     

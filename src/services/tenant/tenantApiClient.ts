@@ -246,24 +246,7 @@ class TenantApiClientManager {
     return localStorage.getItem('account_type');
   }
 
-  private isDemoMode(): boolean {
-    // CRITICAL FIX: Only consider demo mode if we actually have demo tokens
-    // Don't assume demo mode just because we're in development
-    const token = this.getAuthToken();
-    const isDemoToken = token?.startsWith('demo_token_');
-    
-    // Only use demo mode if we explicitly have demo tokens
-    return isDemoToken;
-  }
-
   private logout() {
-    // Additional protection: Check if current token is a demo token
-    const token = this.getAuthToken();
-    if (this.isDemoMode() || token?.startsWith('demo_token_')) {
-      this.log('info', 'Skipping logout for demo token to prevent unexpected logout');
-      return;
-    }
-
     localStorage.removeItem('auth_token');
     localStorage.removeItem('account_type');
     localStorage.removeItem('user_id');

@@ -15,7 +15,7 @@ class OrderVendorNegotiationSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get first available tenant (demo-etching)
+        // Get first available tenant (etchinx)
         $tenant = Tenant::first();
         
         if (!$tenant) {

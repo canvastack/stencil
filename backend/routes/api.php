@@ -15,7 +15,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Authentication & User Info
+// Authentication Routes (without tenant middleware)
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [App\Http\Controllers\Auth\TenantAuthController::class, 'register']);
+    Route::post('/login', [App\Http\Controllers\Auth\TenantAuthController::class, 'login']);
+    
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [App\Http\Controllers\Auth\TenantAuthController::class, 'logout']);
+        Route::get('/me', [App\Http\Controllers\Auth\TenantAuthController::class, 'me']);
+    });
+});
+
+// Legacy user info endpoint
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     $user = $request->user();
     return response()->json([

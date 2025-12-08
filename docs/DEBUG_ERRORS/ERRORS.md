@@ -2,7 +2,7 @@
 
 ## CEK File: `backend\database\seeders\PlatformSeeder.php`
     - Platform Account : admin@canvastencil.com : SuperAdmin2024!
-    - Tenant Account   : admin@demo-etching.com : DemoAdmin2024!
+    - Tenant Account   : admin@etchinx.com : DemoAdmin2024!
 
 
 # ERROR LOGS: Login Account: Platform Account

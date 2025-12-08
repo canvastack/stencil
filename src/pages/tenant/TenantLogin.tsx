@@ -28,7 +28,7 @@ const TenantLogin = () => {
   }, [isAuthenticated, navigate]);
 
   const demoTenants = [
-    { slug: 'demo-etching', name: 'Demo Etching Business' },
+    { slug: 'etchinx', name: 'Demo Etching Business' },
   ];
 
   const validateEmail = (email: string) => {
@@ -175,10 +175,10 @@ const TenantLogin = () => {
 
             <div className="text-center text-sm text-muted-foreground">
               <p className="mb-2">Demo Account Tenant:</p>
-              <p>Email: <span className="font-mono text-foreground">admin@demo-etching.com</span></p>
+              <p>Email: <span className="font-mono text-foreground">admin@etchinx.com</span></p>
               <p>Password: <span className="font-mono text-foreground">DemoAdmin2024!</span></p>
               <p className="mt-2 text-xs">Atau:</p>
-              <p>Email: <span className="font-mono text-foreground">manager@demo-etching.com</span></p>
+              <p>Email: <span className="font-mono text-foreground">manager@etchinx.com</span></p>
               <p>Password: <span className="font-mono text-foreground">DemoManager2024!</span></p>
             </div>
           </form>

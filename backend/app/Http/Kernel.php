@@ -69,5 +69,8 @@ class Kernel extends HttpKernel
         'platform.access' => \App\Http\Middleware\PlatformAccessMiddleware::class,
         'tenant.context' => \App\Infrastructure\Presentation\Http\Middleware\TenantContextMiddleware::class,
         'tenant.scoped' => \App\Infrastructure\Presentation\Http\Middleware\EnsureTenantScopedQueries::class,
+        
+        // Demo/Development Middleware
+        'demo.auth' => \App\Http\Middleware\HandleDemoTokens::class,
     ];
 }

@@ -141,201 +141,48 @@ class AuthService {
     console.log('AuthService.login called with:', { email: data.email, tenant_slug: data.tenant_slug, accountType: data.accountType });
     
     const accountType = data.accountType || 'tenant';
-    // Use separated endpoints for platform and tenant as per OpenAPI spec
-    const endpoint = accountType === 'platform' 
-      ? '/platform/login' 
-      : '/tenant/login';
-    
-    const payload = {
-      email: data.email,
-      password: data.password,
-      ...(accountType === 'tenant' && data.tenant_slug && { tenant_slug: data.tenant_slug }),
-      remember_me: false
-    };
-    
-    console.log('Making login request to:', endpoint, 'with payload:', { ...payload, password: '[REDACTED]' });
     
     try {
-      const response = await apiClient.post<LoginResponse>(endpoint, payload);
-      console.log('Login response received:', response);
-      
-      // CRITICAL FIX: The axios interceptor returns response.data directly
-      // So 'response' is actually the data, not the full response object
-      let loginData;
-      
-      if (response?.success && response?.data) {
-        // Wrapped response format
-        loginData = response.data;
-      } else {
-        // Direct response format (axios interceptor already extracted response.data)
-        loginData = response;
-      }
-      
-      // Safety check for loginData
-      if (!loginData || typeof loginData !== 'object') {
-        console.error('Invalid loginData:', { loginData, apiResponse, responseData: response.data });
-        throw new Error(`Invalid login response format: ${typeof loginData}`);
-      }
-      
-      // Debug the token extraction
-      const extractedToken = loginData.access_token || loginData.token;
-      console.log('Token extraction debug:', {
-        hasAccessToken: !!loginData.access_token,
-        hasToken: !!loginData.token,
-        extractedToken: extractedToken?.substring(0, 20) + '...',
-        loginDataKeys: Object.keys(loginData || {}),
-        loginDataValues: loginData
-      });
-      
-      if (!extractedToken) {
-        throw new Error('No access token found in login response - check backend response format');
-      }
-      
-      // Handle both backend response formats: platform returns 'access_token', tenant returns 'token'
-      const loginResponse: LoginResponse = {
-        access_token: extractedToken,
-        token_type: loginData.token_type || 'Bearer',
-        expires_in: loginData.expires_in || 3600,
-        ...(loginData.user && { user: loginData.user }),
-        ...(loginData.tenant && { tenant: loginData.tenant }),
-        ...(loginData.account && { account: loginData.account }),
-        ...(loginData.permissions && { permissions: loginData.permissions }),
-        ...(loginData.roles && { roles: loginData.roles })
-      };
-      
+      // Use the unified auth API endpoint
+      const loginResponse = await this.callRealAuthAPI(data);
       return this.processLoginResponse(loginResponse, accountType);
     } catch (error: any) {
-      console.error('AuthService.login error:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        url: error.config?.url,
-        hasResponse: !!error.response,
-        errorType: error.constructor.name
+      console.error('AuthService.login error:', error.message);
+      throw error;
+    }
+  }
+
+  private async callRealAuthAPI(data: LoginRequest): Promise<LoginResponse> {
+    try {
+      const response = await apiClient.post('/auth/login', {
+        email: data.email,
+        password: data.password,
+        tenant_slug: data.tenant_slug,
+        account_type: data.accountType || 'tenant'
       });
-      
-      // Only use demo fallback for network/connection errors, not parsing errors
-      // If we got a response from the server, don't fallback to demo
-      const hasHttpResponse = error.response?.status;
-      
-      console.log('Error analysis:', {
-        hasHttpResponse,
-        httpStatus: error.response?.status,
-        isDemoCredentials: this.isDemoCredentials(data),
-        willUseDemoFallback: !hasHttpResponse && this.isDemoCredentials(data)
-      });
-      
-      if (!hasHttpResponse && this.isDemoCredentials(data)) {
-        console.log('Backend unavailable (network error), using demo login fallback for demo credentials');
-        const demoResponse = this.createDemoLoginResponse(data);
-        return this.processLoginResponse(demoResponse, accountType);
+
+      if (response.success) {
+        const authData = response.data;
+        return {
+          access_token: authData.access_token,
+          token_type: authData.token_type,
+          expires_in: 3600,
+          user: authData.user,
+          account: authData.account,
+          tenant: authData.tenant
+        };
+      } else {
+        throw new Error(response.message || 'Login failed');
       }
-      
-      // If it's a parsing error but we got a successful HTTP response, re-throw
-      if (hasHttpResponse && hasHttpResponse >= 200 && hasHttpResponse < 300) {
-        console.error('Login parsing error with successful HTTP response - this should not happen');
-        throw error;
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
       }
-      
-      // SECURITY FIX: Better error handling for invalid credentials
-      if (error.response?.status === 422 || error.response?.status === 401) {
-        throw new Error('Invalid credentials or unauthorized access to this account type');
-      }
-      
-      // Handle API error response
-      if (error.response?.data?.error) {
-        throw new Error(error.response.data.error.message || 'Login failed');
-      }
-      
-      throw new Error(error.message || 'Network error during login');
+      throw new Error('Login failed. Please check your credentials.');
     }
   }
 
-  private isDemoCredentials(data: LoginRequest): boolean {
-    const platformCredentials = [
-      { email: 'admin@canvastencil.com', password: 'SuperAdmin2024!' }
-    ];
-    
-    const tenantCredentials = [
-      { email: 'admin@demo-etching.com', password: 'DemoAdmin2024!' },
-      { email: 'manager@demo-etching.com', password: 'DemoManager2024!' }
-    ];
-    
-    // SECURITY FIX: Validate email matches the expected account type context
-    if (data.accountType === 'platform') {
-      return platformCredentials.some(cred => 
-        cred.email === data.email && cred.password === data.password
-      );
-    } else {
-      return tenantCredentials.some(cred => 
-        cred.email === data.email && cred.password === data.password
-      );
-    }
-  }
 
-  private createDemoLoginResponse(data: LoginRequest): LoginResponse {
-    // SECURITY VALIDATION: Double-check credentials match account type
-    if (data.accountType === 'platform' && !data.email.includes('@canvastencil.com')) {
-      throw new Error('Platform login requires @canvastencil.com email address');
-    }
-    
-    if (data.accountType === 'tenant' && data.email.includes('@canvastencil.com')) {
-      throw new Error('Tenant login cannot use platform email address');
-    }
-
-    const baseResponse = {
-      access_token: 'demo_token_' + Date.now(),
-      token_type: 'Bearer',
-      expires_in: 3600,
-    };
-
-    if (data.accountType === 'platform') {
-      return {
-        ...baseResponse,
-        account: {
-          id: '1',
-          uuid: '00000000-0000-0000-0000-000000000001',
-          name: 'Platform Admin',
-          email: data.email,
-          account_type: 'platform_owner',
-          status: 'active',
-          permissions: ['platform.all']
-        },
-        permissions: ['platform.all'],
-        roles: ['super_admin']
-      };
-    } else {
-      return {
-        ...baseResponse,
-        user: {
-          id: '1',
-          uuid: '6ba7b810-9dad-11d1-80b4-00c04fd430c9',
-          name: data.email === 'admin@demo-etching.com' ? 'Demo Admin' : 'Demo Manager',
-          email: data.email,
-          email_verified_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          roles: [data.email === 'admin@demo-etching.com' ? 'admin' : 'manager'],
-          permissions: data.email === 'admin@demo-etching.com' ? 
-            ['tenant.all'] : 
-            ['orders.read', 'customers.read', 'products.read']
-        },
-        tenant: {
-          id: '1',
-          uuid: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
-          name: 'Demo Etching Company',
-          slug: 'demo-etching',
-          domain: 'demo-etching.com',
-          status: 'active',
-          subscription_status: 'active'
-        },
-        permissions: data.email === 'admin@demo-etching.com' ? 
-          ['tenant.all'] : 
-          ['orders.read', 'customers.read', 'products.read'],
-        roles: [data.email === 'admin@demo-etching.com' ? 'admin' : 'manager']
-      };
-    }
-  }
 
   private processLoginResponse(loginResponse: LoginResponse, accountType: AccountType): LoginResponse {
     const token = loginResponse.access_token || loginResponse.token;
@@ -343,7 +190,7 @@ class AuthService {
     console.log('AuthService: Processing login response', {
       hasToken: !!token,
       tokenType: token?.substring(0, 20) + '...',
-      isDemoToken: token?.startsWith('demo_token_'),
+
       accountType,
       hasUser: !!loginResponse.user,
       hasTenant: !!loginResponse.tenant,
@@ -604,7 +451,7 @@ class AuthService {
     return {
       hasToken: !!token,
       tokenType: token?.substring(0, 20) + '...',
-      isDemoToken: this.isDemoToken(token),
+
       isAuthenticated: this.isAuthenticated(),
       accountType: this.getAccountType(),
       user: this.getCurrentUserFromStorage(),
@@ -622,16 +469,9 @@ class AuthService {
   }
 
   /**
-   * Check if the current token should be preserved (e.g., demo tokens during development)
+   * Check if the current token should be preserved
    */
   shouldPreserveToken(): boolean {
-    const token = this.getAuthToken();
-    
-    // Preserve demo tokens during development/demo mode
-    if (token && this.isDemoToken(token)) {
-      console.log('AuthService: Preserving demo token from auto-clear');
-      return true;
-    }
     
     return false;
   }
@@ -640,9 +480,7 @@ class AuthService {
     return localStorage.getItem('auth_token');
   }
 
-  isDemoToken(token: string | null): boolean {
-    return token?.startsWith('demo_token_') || false;
-  }
+
 
   getAccountType(): AccountType | null {
     return localStorage.getItem('account_type') as AccountType | null;
