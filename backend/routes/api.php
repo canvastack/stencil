@@ -121,7 +121,7 @@ Route::prefix('tenant')->group(function () {
     });
     
     // Insurance Fund Management Routes
-    Route::prefix('insurance-fund')->group(function () {
+    Route::prefix('insurance-fund')->middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])->group(function () {
         Route::get('/balance', [App\Http\Controllers\InsuranceFundController::class, 'balance']);
         Route::get('/transactions', [App\Http\Controllers\InsuranceFundController::class, 'transactions']);
         Route::get('/analytics', [App\Http\Controllers\InsuranceFundController::class, 'analytics']);
