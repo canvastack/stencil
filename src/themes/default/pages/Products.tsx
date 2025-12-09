@@ -63,7 +63,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart } from "lucide-react";
 import { APP_CONFIG, TYPING_TEXTS } from "@/lib/constants";
-import { useProducts } from '@/hooks/useProducts';
+import { usePublicProducts } from '@/hooks/usePublicProducts';
 import { useReviews } from '@/hooks/useReviews.tsx';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Product } from "@/types/product";
@@ -76,8 +76,16 @@ import { PlatformProductsView } from "@/components/products/PlatformProductsView
 
 const Products = () => {
   const { userType } = useGlobalContext();
-  const { products: cmsProducts, loading: loadingProducts } = useProducts();
+  
+  // Always use public products service for better real data access
+  const { products: cmsProducts, isLoading: loadingProducts, fetchProducts } = usePublicProducts();
+  
   const { reviews: allReviews, loading: loadingReviews } = useReviews(undefined, userType);
+  
+  // Fetch products on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -163,15 +171,25 @@ const Products = () => {
     );
   }
 
-  const allProducts: ExtendedProduct[] = cmsProducts;
+  const allProducts: ExtendedProduct[] = cmsProducts || [];
 
   const formatPrice = (price: number, currency: string): string => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
+    // Handle case where currency is empty or invalid
+    if (!currency || currency.trim() === '') {
+      currency = 'IDR'; // Default to IDR
+    }
+    
+    try {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(price);
+    } catch (error) {
+      // Fallback to simple number formatting if currency is invalid
+      return `Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
+    }
   };
 
   const getProductRating = (productId: string): number => {
@@ -439,7 +457,7 @@ const Products = () => {
 
             {/* Products Grid */}
             <div className="flex-1">
-              {loadingProducts || loadingReviews ? (
+              {loadingProducts ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
                   <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-full p-8 mb-6 animate-pulse">
                     <ShoppingCart className="w-16 h-16 text-primary" />
@@ -472,11 +490,17 @@ const Products = () => {
                         >
                           {/* Product Image */}
                           <div className="relative aspect-video overflow-hidden bg-muted">
-                            <img
-                              src={resolveImageUrl(product.images[0])}
-                              alt={product.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
+                            {product.images && product.images.length > 0 ? (
+                              <img
+                                src={resolveImageUrl(product.images[0])}
+                                alt={product.name}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                <Fish className="w-16 h-16 text-gray-400" />
+                              </div>
+                            )}
                           </div>
 
                           <div className="p-6">

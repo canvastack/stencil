@@ -5,6 +5,7 @@ import { Moon, Sun, Menu, X, ShoppingCart, LogOut } from "lucide-react";
 import type { HeaderProps } from "@/core/engine/interfaces";
 import { useThemeComponents } from "@/hooks/useThemeComponents";
 import { useAuthState } from "@/hooks/useAuthState";
+import { useTenantAwareNavigation } from "@/hooks/useTenantAwareNavigation";
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
   // const [isDark, setIsDark] = useState(true);
@@ -28,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout, user, account } = useAuthState();
+  const { getUrl } = useTenantAwareNavigation();
 
   // useEffect(() => {
     // const root = document.documentElement;
@@ -71,7 +73,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
+          <Link to={getUrl("")} className="flex items-center space-x-3 group">
             <div className="w-12 h-12 bg-gradient-to-br from-primary to-orange-light rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform">
               <span className="text-white font-bold text-xl">CEX</span>
             </div>
@@ -85,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
             {headerContent.navigation.map((item) => (
               <Link
                 key={item.path}
-                to={item.path}
+                to={getUrl(item.path)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   location.pathname === item.path
                     ? "bg-primary text-white"
@@ -107,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
               asChild
               className="rounded-lg"
             >
-              <Link to="/cart">
+              <Link to={getUrl("cart")}>
                 <ShoppingCart className="h-5 w-5" />
               </Link>
             </Button>
@@ -136,7 +138,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                   className="hidden md:flex bg-destructive hover:bg-destructive/90 text-white"
                   onClick={async () => {
                     await logout();
-                    navigate('/');
+                    navigate(getUrl(''));
                   }}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -148,7 +150,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                 className="hidden md:flex bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow"
                 asChild
               >
-                <Link to="/login">
+                <Link to={getUrl("login")}>
                   Login
                 </Link>
               </Button>
@@ -177,7 +179,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
               {headerContent.navigation.map((item) => (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  to={getUrl(item.path)}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
                     location.pathname === item.path
@@ -193,7 +195,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                 className="w-full justify-start"
                 asChild
               >
-                <Link to="/cart" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to={getUrl("cart")} onClick={() => setIsMobileMenuOpen(false)}>
                   <ShoppingCart className="h-5 w-5 mr-2" />
                   Keranjang
                 </Link>
@@ -210,7 +212,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                     onClick={async () => {
                       await logout();
                       setIsMobileMenuOpen(false);
-                      navigate('/');
+                      navigate(getUrl(''));
                     }}
                   >
                     <LogOut className="h-5 w-5 mr-2" />
@@ -222,7 +224,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                   className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
                   asChild
                 >
-                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to={getUrl("login")} onClick={() => setIsMobileMenuOpen(false)}>
                     Login
                   </Link>
                 </Button>

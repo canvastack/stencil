@@ -24,9 +24,11 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
 import { TenantAuthProvider } from "@/contexts/TenantAuthContext";
 import { GlobalContextProvider } from "@/contexts/GlobalContext";
+import { PublicTenantProvider } from "@/contexts/PublicTenantContext";
 import { PlatformRouteGuard } from "@/guards/PlatformRouteGuard";
 import { TenantRouteGuard } from "@/guards/TenantRouteGuard";
 import { DebugAuth } from "@/components/DebugAuth";
+import { TenantRedirectWrapper } from "@/components/TenantRedirectWrapper";
 import DevDebugger from "@/components/debug/DevDebugger";
 
 import Home from "@/themes/default/pages/Home";
@@ -114,6 +116,29 @@ const PerformanceMonitoring = lazy(() => import("./pages/admin/PerformanceMonito
 const RefundManagement = lazy(() => import("./pages/admin/RefundManagement"));
 const InsuranceFundDashboard = lazy(() => import("./pages/admin/InsuranceFundDashboard"));
 
+// Track B Commerce Management Pages - Product Management
+const ProductCatalog = lazy(() => import("./pages/admin/products/ProductCatalog"));
+const ProductBulk = lazy(() => import("./pages/admin/products/ProductBulk"));
+const ProductAnalytics = lazy(() => import("./pages/admin/products/ProductAnalytics"));
+
+// Track B Commerce Management Pages - Customer Management
+const CustomerDatabase = lazy(() => import("./pages/admin/customers/CustomerDatabase"));
+const CustomerSegments = lazy(() => import("./pages/admin/customers/CustomerSegments"));
+const CustomerCredit = lazy(() => import("./pages/admin/customers/CustomerCredit"));
+const CustomerPortal = lazy(() => import("./pages/admin/customers/CustomerPortal"));
+
+// Track B Commerce Management Pages - Inventory Management
+const InventoryStock = lazy(() => import("./pages/admin/inventory/InventoryStock"));
+const InventoryLocations = lazy(() => import("./pages/admin/inventory/InventoryLocations"));
+const InventoryAlerts = lazy(() => import("./pages/admin/inventory/InventoryAlerts"));
+const InventoryReports = lazy(() => import("./pages/admin/inventory/InventoryReports"));
+
+// Track B Commerce Management Pages - Shipping Management
+const ShippingMethods = lazy(() => import("./pages/admin/shipping/ShippingMethods"));
+const ShippingCarriers = lazy(() => import("./pages/admin/shipping/ShippingCarriers"));
+const ShippingTracking = lazy(() => import("./pages/admin/shipping/ShippingTracking"));
+const ShippingReports = lazy(() => import("./pages/admin/shipping/ShippingReports"));
+
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -148,8 +173,10 @@ function App() {
                       basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
                       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
                     >
-                    <Routes>
-                  {/* Public Routes */}
+                      <PublicTenantProvider>
+                        <TenantRedirectWrapper>
+                          <Routes>
+                  {/* Global Public Routes (no tenant) */}
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
@@ -157,6 +184,22 @@ function App() {
                   <Route path="/products/:slug" element={<ProductDetail />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/faq" element={<FAQ />} />
+                  
+                  {/* Tenant-Scoped Public Routes */}
+                  <Route path="/:tenantSlug" element={<Home />} />
+                  <Route path="/:tenantSlug/about" element={<About />} />
+                  <Route path="/:tenantSlug/contact" element={<Contact />} />
+                  <Route path="/:tenantSlug/products" element={<Products />} />
+                  <Route path="/:tenantSlug/products/:slug" element={<ProductDetail />} />
+                  <Route path="/:tenantSlug/cart" element={<Cart />} />
+                  <Route path="/:tenantSlug/faq" element={<FAQ />} />
+                  
+                  {/* Tenant-scoped Auth Routes */}
+                  <Route path="/:tenantSlug/login" element={<Login />} />
+                  <Route path="/:tenantSlug/register" element={<Register />} />
+                  <Route path="/:tenantSlug/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/:tenantSlug/reset-password" element={<ResetPassword />} />
+                  <Route path="/:tenantSlug/verify-email" element={<VerifyEmail />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -247,16 +290,42 @@ function App() {
                   <Route path="performance" element={<Suspense fallback={<LoadingFallback />}><PerformanceMonitoring /></Suspense>} />
                   <Route path="refunds" element={<Suspense fallback={<LoadingFallback />}><RefundManagement /></Suspense>} />
                   <Route path="insurance-fund" element={<Suspense fallback={<LoadingFallback />}><InsuranceFundDashboard /></Suspense>} />
+                  
+                  {/* Track B Commerce Management Pages - Product Management */}
+                  <Route path="products/catalog" element={<Suspense fallback={<LoadingFallback />}><ProductCatalog /></Suspense>} />
+                  <Route path="products/bulk" element={<Suspense fallback={<LoadingFallback />}><ProductBulk /></Suspense>} />
+                  <Route path="products/analytics" element={<Suspense fallback={<LoadingFallback />}><ProductAnalytics /></Suspense>} />
+                  
+                  {/* Track B Commerce Management Pages - Customer Management */}
+                  <Route path="customers/database" element={<Suspense fallback={<LoadingFallback />}><CustomerDatabase /></Suspense>} />
+                  <Route path="customers/segments" element={<Suspense fallback={<LoadingFallback />}><CustomerSegments /></Suspense>} />
+                  <Route path="customers/credit" element={<Suspense fallback={<LoadingFallback />}><CustomerCredit /></Suspense>} />
+                  <Route path="customers/portal" element={<Suspense fallback={<LoadingFallback />}><CustomerPortal /></Suspense>} />
+                  
+                  {/* Track B Commerce Management Pages - Inventory Management */}
+                  <Route path="inventory/stock" element={<Suspense fallback={<LoadingFallback />}><InventoryStock /></Suspense>} />
+                  <Route path="inventory/locations" element={<Suspense fallback={<LoadingFallback />}><InventoryLocations /></Suspense>} />
+                  <Route path="inventory/alerts" element={<Suspense fallback={<LoadingFallback />}><InventoryAlerts /></Suspense>} />
+                  <Route path="inventory/reports" element={<Suspense fallback={<LoadingFallback />}><InventoryReports /></Suspense>} />
+                  
+                  {/* Track B Commerce Management Pages - Shipping Management */}
+                  <Route path="shipping/methods" element={<Suspense fallback={<LoadingFallback />}><ShippingMethods /></Suspense>} />
+                  <Route path="shipping/carriers" element={<Suspense fallback={<LoadingFallback />}><ShippingCarriers /></Suspense>} />
+                  <Route path="shipping/tracking" element={<Suspense fallback={<LoadingFallback />}><ShippingTracking /></Suspense>} />
+                  <Route path="shipping/reports" element={<Suspense fallback={<LoadingFallback />}><ShippingReports /></Suspense>} />
+                  
                   <Route path="profile" element={<UserProfile />} />
                 </Route>
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
-                </Routes>
+                          </Routes>
+                        </TenantRedirectWrapper>
                         <ThemeScrollToTop />
                         <DebugAuth />
+                      </PublicTenantProvider>
                       </BrowserRouter>
-                        </CartProvider>
+                          </CartProvider>
                       </ContentProvider>
                     </ThemeProvider>
                   </GlobalContextProvider>

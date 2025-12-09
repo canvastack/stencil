@@ -1,9 +1,10 @@
 import { tenantApiClient } from '../tenant/tenantApiClient';
+import { anonymousApiClient } from './anonymousApiClient';
 import { Product, ProductFilters } from '@/types/product';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import * as mockProducts from '@/services/mock/products';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 export interface CreateProductRequest {
   name: string;
@@ -64,10 +65,19 @@ class ProductsService {
         if (filters.priceMax !== undefined) params.append('price_max', filters.priceMax.toString());
       }
 
-      const response = await tenantApiClient.get<PaginatedResponse<Product>>(
-        `/products?${params.toString()}`
-      );
-      return response;
+      // Try public API first for public pages
+      try {
+        const publicResponse = await anonymousApiClient.get<PaginatedResponse<Product>>(
+          `/public/products?${params.toString()}`
+        );
+        return publicResponse;
+      } catch (publicError) {
+        // Fall back to tenant API if public API fails
+        const response = await tenantApiClient.get<PaginatedResponse<Product>>(
+          `/products?${params.toString()}`
+        );
+        return response;
+      }
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       const mockData = mockProducts.getProducts(filters);
@@ -87,8 +97,15 @@ class ProductsService {
     }
 
     try {
-      const response = await tenantApiClient.get<Product>(`/products/${id}`);
-      return response;
+      // Try public API first
+      try {
+        const publicResponse = await anonymousApiClient.get<Product>(`/public/products/${id}`);
+        return publicResponse;
+      } catch (publicError) {
+        // Fall back to tenant API
+        const response = await tenantApiClient.get<Product>(`/products/${id}`);
+        return response;
+      }
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockProducts.getProductById(id);
@@ -101,8 +118,15 @@ class ProductsService {
     }
 
     try {
-      const response = await tenantApiClient.get<Product>(`/products/slug/${slug}`);
-      return response;
+      // Try public API first
+      try {
+        const publicResponse = await anonymousApiClient.get<Product>(`/public/products/slug/${slug}`);
+        return publicResponse;
+      } catch (publicError) {
+        // Fall back to tenant API
+        const response = await tenantApiClient.get<Product>(`/products/slug/${slug}`);
+        return response;
+      }
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockProducts.getProductBySlug(slug);

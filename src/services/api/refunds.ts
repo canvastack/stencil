@@ -150,45 +150,53 @@ class RefundService {
       }
       
       // Transform snake_case backend response to camelCase frontend format
-      const transformedTransactions = (data.data || []).map((transaction: any): InsuranceFundTransaction => ({
-        id: transaction.id,
-        tenantId: transaction.tenant_id,
-        orderId: transaction.order_id,
-        refundRequestId: transaction.refund_request_id,
-        transactionType: transaction.transaction_type,
-        amount: parseFloat(transaction.amount || '0'),
-        description: transaction.description,
-        balanceBefore: parseFloat(transaction.balance_before || '0'),
-        balanceAfter: parseFloat(transaction.balance_after || '0'),
-        createdAt: transaction.created_at,
-        updatedAt: transaction.updated_at,
-        refundRequest: transaction.refund_request ? {
-          id: transaction.refund_request.id,
-          tenantId: transaction.refund_request.tenant_id,
-          orderId: transaction.refund_request.order_id,
-          requestNumber: transaction.refund_request.request_number,
-          refundReason: transaction.refund_request.refund_reason,
-          refundType: transaction.refund_request.refund_type,
-          customerRequestAmount: parseFloat(transaction.refund_request.customer_request_amount || '0'),
-          qualityIssuePercentage: transaction.refund_request.quality_issue_percentage || 0,
-          delayDays: transaction.refund_request.delay_days,
-          evidenceDocuments: transaction.refund_request.evidence_documents,
-          customerNotes: transaction.refund_request.customer_notes,
-          status: transaction.refund_request.status,
-          currentApproverId: transaction.refund_request.current_approver_id,
-          calculation: transaction.refund_request.calculation,
-          requestedBy: transaction.refund_request.requested_by,
-          requestedAt: transaction.refund_request.requested_at,
-          approvedAt: transaction.refund_request.approved_at,
-          processedAt: transaction.refund_request.processed_at,
-          createdAt: transaction.refund_request.created_at,
-          updatedAt: transaction.refund_request.updated_at
-        } : undefined
-      }));
+      const transformedTransactions = (Array.isArray(data) ? data : data.data || []).map((transaction: any): InsuranceFundTransaction => {
+        return {
+          id: transaction.id,
+          tenantId: transaction.tenant_id,
+          orderId: transaction.order_id,
+          refundRequestId: transaction.refund_request_id,
+          transactionType: transaction.transaction_type,
+          amount: parseFloat(transaction.amount || '0'),
+          description: transaction.description,
+          balanceBefore: parseFloat(transaction.balance_before || '0'),
+          balanceAfter: parseFloat(transaction.balance_after || '0'),
+          createdAt: transaction.created_at,
+          updatedAt: transaction.updated_at,
+          refundRequest: transaction.refund_request ? {
+            id: transaction.refund_request.id,
+            tenantId: transaction.refund_request.tenant_id,
+            orderId: transaction.refund_request.order_id,
+            requestNumber: transaction.refund_request.request_number,
+            refundReason: transaction.refund_request.refund_reason,
+            refundType: transaction.refund_request.refund_type,
+            customerRequestAmount: parseFloat(transaction.refund_request.customer_request_amount || '0'),
+            qualityIssuePercentage: transaction.refund_request.quality_issue_percentage || 0,
+            delayDays: transaction.refund_request.delay_days,
+            evidenceDocuments: transaction.refund_request.evidence_documents,
+            customerNotes: transaction.refund_request.customer_notes,
+            status: transaction.refund_request.status,
+            currentApproverId: transaction.refund_request.current_approver_id,
+            calculation: transaction.refund_request.calculation,
+            requestedBy: transaction.refund_request.requested_by,
+            requestedAt: transaction.refund_request.requested_at,
+            approvedAt: transaction.refund_request.approved_at,
+            processedAt: transaction.refund_request.processed_at,
+            createdAt: transaction.refund_request.created_at,
+            updatedAt: transaction.refund_request.updated_at
+          } : undefined
+        };
+      });
       
+      // Return in the expected format
       return {
-        ...data,
-        data: transformedTransactions
+        data: transformedTransactions,
+        meta: data.meta || {
+          current_page: 1,
+          per_page: transformedTransactions.length,
+          total: transformedTransactions.length,
+          last_page: 1
+        }
       };
     } catch (error) {
       console.error('Failed to fetch insurance fund transactions:', error);

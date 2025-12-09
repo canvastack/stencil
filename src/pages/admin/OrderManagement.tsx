@@ -786,6 +786,7 @@ export default function OrderManagement() {
           searchKey="orderNumber"
           searchPlaceholder="Search by order number..."
           loading={isLoading}
+          datasetId="order-management"
         />
       </Card>
 

@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { tenantApiClient } from '@/services/api/tenantApiClient';
 import * as mockInventory from '@/services/mock/inventory';
 import {
   InventoryItem,
@@ -8,7 +9,7 @@ import {
   PaginatedResponse,
 } from '@/types/inventory';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 type QueryValue = string | number | boolean | undefined | null;
 
@@ -406,3 +407,37 @@ export async function runInventoryReconciliation(payload?: RunInventoryReconcili
     return mockInventory.runInventoryReconciliation(payload);
   }
 }
+
+// Export service instance
+export const inventoryService = {
+  getItems: getInventoryItems,
+  getItemById: getInventoryItem,
+  getLocations: getInventoryLocations,
+  createLocation: createInventoryLocation,
+  updateLocation: updateInventoryLocation,
+  deleteLocation: async (id: number) => {
+    try {
+      await tenantApiClient.delete(`/inventory/locations/${id}`);
+      return { message: 'Location deleted successfully' };
+    } catch (error) {
+      console.error('Failed to delete location:', error);
+      throw error;
+    }
+  },
+  getLocationStock: async (productId: number, locationId: number) => {
+    try {
+      return await tenantApiClient.get(`/inventory/items/product/${productId}/location/${locationId}`);
+    } catch (error) {
+      console.error('Failed to get location stock:', error);
+      throw error;
+    }
+  },
+  setLocationStock: setLocationStock,
+  adjustLocationStock: adjustLocationStock,
+  transferStock: transferInventoryStock,
+  getReservations: getInventoryReservations,
+  reserveStock: reserveInventoryStock,
+  releaseReservation: releaseInventoryReservation,
+  getReconciliations: getInventoryReconciliations,
+  runReconciliation: runInventoryReconciliation
+};

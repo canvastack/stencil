@@ -19,6 +19,15 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/lazy-components';
 import {
   Shield,
@@ -38,6 +47,9 @@ import {
   Filter,
   ChevronDown,
   ChevronRight,
+  ArrowUpDown,
+  Eye,
+  MoreHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -68,12 +80,6 @@ import {
 
 export default function InsuranceFundDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [transactionFilters, setTransactionFilters] = useState({
-    search: '',
-    type: 'all',
-    dateFrom: '',
-    dateTo: '',
-  });
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Queries
@@ -85,6 +91,58 @@ export default function InsuranceFundDashboard() {
   const transactions = transactionsQuery.data?.data || [];
   const analytics = analyticsQuery.data;
   const isLoading = balanceQuery.isLoading || transactionsQuery.isLoading || analyticsQuery.isLoading;
+
+  // Export functionality
+  const handleExportReport = () => {
+    try {
+      // Prepare data for export
+      const exportData = {
+        report_date: new Date().toISOString(),
+        fund_balance: balance,
+        analytics: analytics || {},
+        transactions: transactions.map(t => ({
+          id: t.id,
+          date: t.createdAt,
+          type: transactionTypeLabels[t.transactionType],
+          amount: t.amount,
+          balance_after: t.balanceAfter,
+          description: t.description,
+          order_id: t.orderId,
+          refund_request_id: t.refundRequestId,
+        })),
+        summary: {
+          total_transactions: transactions.length,
+          total_contributions: transactions.filter(t => t.transactionType === FundTransactionType.Contribution).length,
+          total_withdrawals: transactions.filter(t => t.transactionType === FundTransactionType.Withdrawal).length,
+          contribution_amount: transactions
+            .filter(t => t.transactionType === FundTransactionType.Contribution)
+            .reduce((sum, t) => sum + t.amount, 0),
+          withdrawal_amount: transactions
+            .filter(t => t.transactionType === FundTransactionType.Withdrawal)
+            .reduce((sum, t) => sum + t.amount, 0),
+        }
+      };
+
+      // Create and download JSON file
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `insurance-fund-report-${format(new Date(), 'yyyy-MM-dd')}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Report exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export report');
+    }
+  };
+
+
 
   // Transaction type colors
   const transactionTypeColors = {
@@ -113,27 +171,16 @@ export default function InsuranceFundDashboard() {
 
   const transactionColumns: ColumnDef<InsuranceFundTransaction>[] = [
     {
-      id: 'expand',
-      header: '',
-      cell: ({ row }) => (
+      accessorKey: 'createdAt',
+      header: ({ column }) => (
         <Button
           variant="ghost"
-          size="sm"
-          onClick={() => toggleRowExpansion(row.original.id)}
-          className="h-8 w-8 p-0"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          {expandedRows.has(row.original.id) ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+          Tanggal
+          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
-      size: 40,
-    },
-    {
-      accessorKey: 'createdAt',
-      header: 'Tanggal',
       cell: ({ row }) => (
         <div className="text-sm">
           {format(new Date(row.original.createdAt), 'dd/MM/yyyy HH:mm', { locale: id })}
@@ -142,7 +189,15 @@ export default function InsuranceFundDashboard() {
     },
     {
       accessorKey: 'transactionType',
-      header: 'Tipe',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Tipe
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => (
         <Badge variant="outline" className={transactionTypeColors[row.original.transactionType]}>
           {transactionTypeLabels[row.original.transactionType]}
@@ -160,7 +215,15 @@ export default function InsuranceFundDashboard() {
     },
     {
       accessorKey: 'amount',
-      header: 'Jumlah',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Jumlah
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => (
         <div className={`text-right font-medium ${
           row.original.transactionType === FundTransactionType.Contribution 
@@ -174,7 +237,15 @@ export default function InsuranceFundDashboard() {
     },
     {
       accessorKey: 'balanceAfter',
-      header: 'Saldo Setelah',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Saldo Setelah
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => (
         <div className="text-right font-medium">
           Rp {row.original.balanceAfter.toLocaleString('id-ID')}
@@ -190,16 +261,127 @@ export default function InsuranceFundDashboard() {
         </div>
       ),
     },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const transaction = row.original;
+        
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                  </DropdownMenuItem>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Transaction Details</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Transaction ID</Label>
+                        <p className="text-sm text-muted-foreground">{transaction.id}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Date</Label>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(transaction.createdAt), 'dd/MM/yyyy HH:mm:ss', { locale: id })}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Type</Label>
+                        <Badge variant="outline" className={transactionTypeColors[transaction.transactionType]}>
+                          {transactionTypeLabels[transaction.transactionType]}
+                        </Badge>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Amount</Label>
+                        <p className={`text-sm font-medium ${
+                          transaction.transactionType === FundTransactionType.Contribution 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {transaction.transactionType === FundTransactionType.Contribution ? '+' : '-'}
+                          Rp {transaction.amount.toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Balance Before</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Rp {transaction.balanceBefore.toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Balance After</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Rp {transaction.balanceAfter.toLocaleString('id-ID')}
+                        </p>
+                      </div>
+                      {transaction.orderId && (
+                        <div>
+                          <Label className="text-sm font-medium">Order ID</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Order-{String(transaction.orderId).slice(-6)}
+                          </p>
+                        </div>
+                      )}
+                      {transaction.refundRequestId && (
+                        <div>
+                          <Label className="text-sm font-medium">Refund Request ID</Label>
+                          <p className="text-sm text-muted-foreground">{transaction.refundRequestId}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Description</Label>
+                      <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                    </div>
+                    
+                    {transaction.refundRequest && (
+                      <div className="pt-4 border-t">
+                        <Label className="text-sm font-medium">Related Refund Request</Label>
+                        <div className="mt-2 space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Request Number:</span>
+                            <span>{transaction.refundRequest.requestNumber}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status:</span>
+                            <Badge variant="outline">{transaction.refundRequest.status}</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Reason:</span>
+                            <span>{transaction.refundRequest.refundReason}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Amount:</span>
+                            <span>Rp {transaction.refundRequest.customerRequestAmount.toLocaleString('id-ID')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
   ];
 
-  // Filter transactions based on current filters
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = !transactionFilters.search || 
-      transaction.description.toLowerCase().includes(transactionFilters.search.toLowerCase());
-    const matchesType = transactionFilters.type === 'all' || transaction.transactionType === transactionFilters.type;
-    // Add date filtering if needed
-    return matchesSearch && matchesType;
-  });
+  // Remove old filtering logic - DataTable handles this now
 
   // Calculate fund health status
   const getFundHealthStatus = () => {
@@ -235,13 +417,18 @@ export default function InsuranceFundDashboard() {
                 balanceQuery.refetch();
                 transactionsQuery.refetch();
                 analyticsQuery.refetch();
+                toast.success('Data refreshed successfully');
               }}
               disabled={isLoading}
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button variant="outline">
+            <Button 
+              variant="outline" 
+              onClick={handleExportReport}
+              disabled={isLoading || transactions.length === 0}
+            >
               <Download className="w-4 h-4 mr-2" />
               Export Report
             </Button>
@@ -470,59 +657,6 @@ export default function InsuranceFundDashboard() {
           </TabsContent>
 
           <TabsContent value="transactions" className="space-y-6">
-            {/* Transaction Filters */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="search">Search</Label>
-                    <Input
-                      id="search"
-                      placeholder="Search transactions..."
-                      value={transactionFilters.search}
-                      onChange={(e) => setTransactionFilters({ ...transactionFilters, search: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Transaction Type</Label>
-                    <Select
-                      value={transactionFilters.type}
-                      onValueChange={(value) => setTransactionFilters({ ...transactionFilters, type: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="All Types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value={FundTransactionType.Contribution}>Contribution</SelectItem>
-                        <SelectItem value={FundTransactionType.Withdrawal}>Withdrawal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="dateFrom">Date From</Label>
-                    <Input
-                      id="dateFrom"
-                      type="date"
-                      value={transactionFilters.dateFrom}
-                      onChange={(e) => setTransactionFilters({ ...transactionFilters, dateFrom: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="dateTo">Date To</Label>
-                    <Input
-                      id="dateTo"
-                      type="date"
-                      value={transactionFilters.dateTo}
-                      onChange={(e) => setTransactionFilters({ ...transactionFilters, dateTo: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Transaction Summary */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -533,10 +667,10 @@ export default function InsuranceFundDashboard() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Total Contributions</p>
                       <p className="text-xl font-bold text-green-600">
-                        {filteredTransactions.filter(t => t.transactionType === FundTransactionType.Contribution).length}
+                        {transactions.filter(t => t.transactionType === FundTransactionType.Contribution).length}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Rp {filteredTransactions
+                        Rp {transactions
                           .filter(t => t.transactionType === FundTransactionType.Contribution)
                           .reduce((sum, t) => sum + t.amount, 0)
                           .toLocaleString('id-ID')
@@ -554,10 +688,10 @@ export default function InsuranceFundDashboard() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Total Withdrawals</p>
                       <p className="text-xl font-bold text-red-600">
-                        {filteredTransactions.filter(t => t.transactionType === FundTransactionType.Withdrawal).length}
+                        {transactions.filter(t => t.transactionType === FundTransactionType.Withdrawal).length}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Rp {filteredTransactions
+                        Rp {transactions
                           .filter(t => t.transactionType === FundTransactionType.Withdrawal)
                           .reduce((sum, t) => sum + t.amount, 0)
                           .toLocaleString('id-ID')
@@ -575,19 +709,19 @@ export default function InsuranceFundDashboard() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Net Change</p>
                       <p className={`text-xl font-bold ${
-                        (filteredTransactions
+                        (transactions
                           .filter(t => t.transactionType === FundTransactionType.Contribution)
                           .reduce((sum, t) => sum + t.amount, 0) - 
-                        filteredTransactions
+                        transactions
                           .filter(t => t.transactionType === FundTransactionType.Withdrawal)
                           .reduce((sum, t) => sum + t.amount, 0)) >= 0 
                         ? 'text-green-600' : 'text-red-600'
                       }`}>
                         Rp {(
-                          filteredTransactions
+                          transactions
                             .filter(t => t.transactionType === FundTransactionType.Contribution)
                             .reduce((sum, t) => sum + t.amount, 0) - 
-                          filteredTransactions
+                          transactions
                             .filter(t => t.transactionType === FundTransactionType.Withdrawal)
                             .reduce((sum, t) => sum + t.amount, 0)
                         ).toLocaleString('id-ID')}
@@ -600,135 +734,14 @@ export default function InsuranceFundDashboard() {
 
             {/* Transactions Table */}
             <Card>
-              <CardContent className="p-0">
-                <div className="space-y-0">
-                  {filteredTransactions.map((transaction, index) => (
-                    <div key={transaction.id} className={`border-b ${index === filteredTransactions.length - 1 ? 'border-b-0' : ''}`}>
-                      {/* Main row */}
-                      <div className="flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        <div className="flex items-center gap-4 flex-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleRowExpansion(transaction.id)}
-                            className="h-8 w-8 p-0"
-                          >
-                            {expandedRows.has(transaction.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                          
-                          <div className="min-w-[120px]">
-                            <div className="text-sm">
-                              {format(new Date(transaction.createdAt), 'dd/MM/yyyy HH:mm', { locale: id })}
-                            </div>
-                          </div>
-                          
-                          <div className="min-w-[100px]">
-                            <Badge variant="outline" className={transactionTypeColors[transaction.transactionType]}>
-                              {transactionTypeLabels[transaction.transactionType]}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="max-w-xs truncate" title={transaction.description}>
-                              {transaction.description}
-                            </div>
-                          </div>
-                          
-                          <div className="min-w-[140px] text-right">
-                            <div className={`font-medium ${
-                              transaction.transactionType === FundTransactionType.Contribution 
-                                ? 'text-green-600' 
-                                : 'text-red-600'
-                            }`}>
-                              {transaction.transactionType === FundTransactionType.Contribution ? '+' : '-'}
-                              Rp {transaction.amount.toLocaleString('id-ID')}
-                            </div>
-                          </div>
-                          
-                          <div className="min-w-[140px] text-right">
-                            <div className="font-medium">
-                              Rp {transaction.balanceAfter.toLocaleString('id-ID')}
-                            </div>
-                          </div>
-                          
-                          <div className="min-w-[100px] text-right">
-                            <div className="text-sm text-muted-foreground">
-                              {transaction.orderId ? `Order-${String(transaction.orderId).slice(-6)}` : '-'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Expanded details */}
-                      {expandedRows.has(transaction.id) && (
-                        <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-800/50 border-t">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
-                            <div>
-                              <h4 className="font-medium text-sm mb-2">Transaction Details</h4>
-                              <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Transaction ID:</span>
-                                  <span className="font-mono">{transaction.id}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Tenant ID:</span>
-                                  <span className="font-mono">{transaction.tenantId}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Balance Before:</span>
-                                  <span>Rp {transaction.balanceBefore.toLocaleString('id-ID')}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Balance After:</span>
-                                  <span>Rp {transaction.balanceAfter.toLocaleString('id-ID')}</span>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            {transaction.orderId && (
-                              <div>
-                                <h4 className="font-medium text-sm mb-2">Related Order</h4>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Order ID:</span>
-                                    <span className="font-mono">{transaction.orderId}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {transaction.refundRequestId && (
-                              <div>
-                                <h4 className="font-medium text-sm mb-2">Related Refund</h4>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Refund Request ID:</span>
-                                    <span className="font-mono">{transaction.refundRequestId}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            <div className="md:col-span-2 lg:col-span-3">
-                              <h4 className="font-medium text-sm mb-2">Full Description</h4>
-                              <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {filteredTransactions.length === 0 && (
-                    <div className="p-8 text-center text-muted-foreground">
-                      No transactions found matching your criteria.
-                    </div>
-                  )}
-                </div>
+              <CardContent className="p-6">
+                <DataTable
+                  columns={transactionColumns}
+                  data={transactions}
+                  searchKey="description"
+                  searchPlaceholder="Search transactions..."
+                  loading={transactionsQuery.isLoading}
+                />
               </CardContent>
             </Card>
           </TabsContent>

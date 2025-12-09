@@ -63,7 +63,7 @@ class AnonymousApiClient {
         return response;
       },
       async (error: AxiosError<AnonymousApiError>) => {
-        console.error('AnonymousApiClient: Response error:', {
+        console.warn('AnonymousApiClient: Response error:', {
           status: error.response?.status,
           data: error.response?.data,
           message: error.message

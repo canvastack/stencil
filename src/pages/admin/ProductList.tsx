@@ -41,6 +41,13 @@ const columns: ColumnDef<Product>[] = [
     header: "Image",
     cell: ({ row }) => {
       const images = row.getValue("images") as string[];
+      if (!images || images.length === 0) {
+        return (
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center">
+            <Package className="w-6 h-6 text-gray-400" />
+          </div>
+        );
+      }
       return (
         <img
           src={resolveImageUrl(images[0])}

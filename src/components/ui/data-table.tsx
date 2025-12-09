@@ -12,6 +12,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ChevronDown, Maximize2, Minimize2, CheckCircle, AlertTriangle, XCircle, Download, Printer, Info } from "lucide-react";
+import { useDatasetPerformanceMonitor } from '@/services/performance/datasetPerformanceMonitor';
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -59,6 +60,8 @@ interface DataTableProps<TData> {
   showPrint?: boolean;
   // Loading state for skeleton animation
   loading?: boolean;
+  // Performance monitoring identifier
+  datasetId?: string;
 }
 
 export function DataTable<TData>({
@@ -69,18 +72,42 @@ export function DataTable<TData>({
   showExport = true,
   showPrint = true,
   loading = false,
+  datasetId = 'datatable',
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  
+  // Performance monitoring
+  const performanceMonitor = useDatasetPerformanceMonitor(datasetId);
 
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: (updater) => {
+      // Monitor sorting performance
+      const startTime = performance.now();
+      setSorting(updater);
+      const endTime = performance.now();
+      
+      // Track sort performance
+      if (endTime - startTime > 50) { // threshold 50ms
+        console.warn(`🐌 Sorting took ${(endTime - startTime).toFixed(2)}ms for ${data.length} items`);
+      }
+    },
+    onColumnFiltersChange: (updater) => {
+      // Monitor filtering performance
+      const startTime = performance.now();
+      setColumnFilters(updater);
+      const endTime = performance.now();
+      
+      // Track filter performance
+      if (endTime - startTime > 50) { // threshold 50ms
+        console.warn(`🐌 Filtering took ${(endTime - startTime).toFixed(2)}ms for ${data.length} items`);
+      }
+    },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -94,6 +121,27 @@ export function DataTable<TData>({
       rowSelection,
     },
   });
+
+  // Performance monitoring untuk initial render dan data changes
+  React.useEffect(() => {
+    if (!loading && data.length > 0) {
+      performanceMonitor.startRender(data.length);
+      
+      // Simulasi end render pada next tick
+      const timer = setTimeout(() => {
+        const metrics = performanceMonitor.endRender(data.length);
+        if (metrics && data.length > 1000) {
+          console.log(`📊 DataTable Performance (${datasetId}):`, {
+            dataSize: metrics.dataSize,
+            renderTime: `${metrics.renderTime.toFixed(2)}ms`,
+            memoryUsage: `${(metrics.memoryUsage / 1024 / 1024).toFixed(2)}MB`
+          });
+        }
+      }, 0);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [data, loading, performanceMonitor, datasetId]);
 
   // Keyboard shortcut for fullscreen toggle
   React.useEffect(() => {

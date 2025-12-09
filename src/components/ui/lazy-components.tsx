@@ -94,5 +94,52 @@ export const Textarea = withLazyLoading(
   React.lazy(() => import('./textarea').then(mod => ({ default: mod.Textarea })))
 );
 
+// DropdownMenu
+export const DropdownMenu = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenu })))
+);
+export const DropdownMenuTrigger = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuTrigger })))
+);
+export const DropdownMenuContent = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuContent })))
+);
+export const DropdownMenuItem = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuItem })))
+);
+export const DropdownMenuCheckboxItem = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuCheckboxItem })))
+);
+export const DropdownMenuRadioItem = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuRadioItem })))
+);
+export const DropdownMenuLabel = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuLabel })))
+);
+export const DropdownMenuSeparator = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuSeparator })))
+);
+export const DropdownMenuShortcut = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuShortcut })))
+);
+export const DropdownMenuGroup = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuGroup })))
+);
+export const DropdownMenuPortal = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuPortal })))
+);
+export const DropdownMenuSub = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuSub })))
+);
+export const DropdownMenuSubContent = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuSubContent })))
+);
+export const DropdownMenuSubTrigger = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuSubTrigger })))
+);
+export const DropdownMenuRadioGroup = withLazyLoading(
+  React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuRadioGroup })))
+);
+
 // Skeleton - exported as static to avoid duplicate import (needed synchronously in fallbacks)
 export { Skeleton } from './skeleton';

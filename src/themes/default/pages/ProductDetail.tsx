@@ -40,7 +40,7 @@ import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
 import { useProductReviews, useReviews } from "@/hooks/useReviews.tsx";
-import { useProductBySlug, useProducts as useProductsConsumer } from "@/hooks/useProducts.tsx";
+import { usePublicProductBySlug, usePublicProducts } from "@/hooks/usePublicProducts";
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { reviewService } from "@/services/api/reviews";
 import { ordersService } from "@/services/api/orders";
@@ -90,17 +90,17 @@ const ProductDetail = () => {
   const isPreview = searchParams.get('preview') === 'true';
   
   const draftProduct = isPreview ? JSON.parse(sessionStorage.getItem('productDraft') || 'null') : null;
-  const { product: cmsProduct, loading: loadingProduct } = useProductBySlug(slug || '');
+  
+  // Always use public product service for better real data access
+  const { product: cmsProduct, isLoading: loadingProduct } = usePublicProductBySlug(slug || '');
   
   const product = draftProduct || cmsProduct;
   
   const { reviews: allReviews = [] } = useReviews();
   const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(product?.id || '');
   
-  const { products: allProductsForRelated = [] } = useProductsConsumer({ 
-    category: product?.category,
-    limit: 4
-  });
+  // Use public products for related products to get real data  
+  const { products: allProductsForRelated = [] } = usePublicProducts();
   const [reviewSort, setReviewSort] = useState<'rating-high' | 'rating-low' | 'newest' | 'oldest'>('newest');
 
   const sortedReviews = [...productReviews].sort((a, b) => {
@@ -372,7 +372,7 @@ const ProductDetail = () => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: typeof product.images[0] === 'string' ? resolveImageUrl(product.images[0], { preview: isPreview }) : product.images[0],
+      image: product.images && product.images.length > 0 ? (typeof product.images[0] === 'string' ? resolveImageUrl(product.images[0], { preview: isPreview }) : product.images[0]) : '/images/placeholder.jpg',
       type: formData.productType,
       size: formData.size,
       material: formData.bahan,
@@ -441,7 +441,7 @@ const ProductDetail = () => {
               <Card className="overflow-hidden border-border bg-card shadow-xl group">
                 <Carousel className="w-full">
                   <CarouselContent>
-                    {product.images.map((image, index) => {
+                    {(product.images || []).map((image, index) => {
                       const srcUrl = typeof image === 'string' ? resolveImageUrl(image, { preview: isPreview }) : image;
                       return (
                         <CarouselItem key={index}>
@@ -469,7 +469,7 @@ const ProductDetail = () => {
 
               {/* View Button */}
               <Button
-                onClick={() => open360View(resolveImageUrl(product.images[0], { preview: isPreview }))}
+                onClick={() => product.images && product.images.length > 0 && open360View(resolveImageUrl(product.images[0], { preview: isPreview }))}
                 className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold shadow-lg"
               >
                 <Rotate3D className="w-5 h-5 mr-2" />

@@ -207,9 +207,34 @@ Route::prefix('public')->group(function () {
         ]);
     });
     
+    // Global Products API (all tenants)
+    Route::prefix('products')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'index']);
+        Route::get('/featured', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'featured']);
+        Route::get('/search', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'search']);
+        Route::get('/category/{category}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'byCategory']);
+        Route::get('/{id}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'show'])->where('id', '[0-9]+');
+        Route::get('/slug/{slug}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'showBySlug']);
+    });
+    
+    // Tenant-specific Products API
+    Route::get('/{tenantSlug}/products', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'index']);
+    Route::get('/{tenantSlug}/products/featured', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'featured']);
+    Route::get('/{tenantSlug}/products/search', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'search']);
+    Route::get('/{tenantSlug}/products/slug/{slug}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'showBySlug']);
+    Route::get('/{tenantSlug}/products/category/{category}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'byCategory']);
+    Route::get('/{tenantSlug}/products/{id}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'show'])->where('id', '[0-9]+');
+    
+    // Global Reviews API
+    Route::prefix('reviews')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'index']);
+        Route::get('/product/{productId}', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'byProduct'])->where('productId', '[0-9]+');
+    });
+    
     // Platform content for anonymous users (using database content)
     Route::prefix('content')->group(function () {
         Route::get('/pages/{slug}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getPage']);
+        Route::get('/pages/{tenantSlug}/{page}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getTenantPage']);
     });
 
     // Platform statistics for anonymous users

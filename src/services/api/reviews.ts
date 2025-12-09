@@ -3,7 +3,7 @@ import apiClient from './client';
 import { anonymousApiClient } from './anonymousApiClient';
 import { reviewService as mockReviews } from '@/services/mock/reviews';
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
+const USE_MOCK = false; // Disable mock data to use real API
 
 // Helper function to get the appropriate API client and endpoints based on user type
 const getApiConfig = (userType?: 'anonymous' | 'tenant' | 'platform') => {
@@ -40,7 +40,7 @@ export const reviewService = {
       const response = await client.get<{success: boolean, data: Review[]}>(`${basePath}?${params.toString()}`);
       return response.data || [];
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Reviews API not available, falling back to mock data:', error);
       return mockReviews.getReviews(filters);
     }
   },
@@ -55,7 +55,7 @@ export const reviewService = {
       const response = await client.get<{success: boolean, data: Review}>(`${basePath}/${id}`);
       return response.data || null;
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.getReviewById(id);
     }
   },
@@ -69,7 +69,7 @@ export const reviewService = {
       const response = await apiClient.get<Review[]>(`/admin/reviews/product/${productId}`);
       return response as unknown as Review[];
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.getReviewsByProductId(productId);
     }
   },
@@ -83,7 +83,7 @@ export const reviewService = {
       const response = await apiClient.post<Review>('/admin/reviews', input);
       return response as unknown as Review;
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.createReview(input);
     }
   },
@@ -97,7 +97,7 @@ export const reviewService = {
       const response = await apiClient.put<Review>(`/admin/reviews/${id}`, input);
       return response as unknown as Review;
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.updateReview(id, input);
     }
   },
@@ -111,7 +111,7 @@ export const reviewService = {
       await apiClient.delete(`/admin/reviews/${id}`);
       return true;
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.deleteReview(id);
     }
   },
@@ -125,7 +125,7 @@ export const reviewService = {
       const response = await apiClient.get<{ averageRating: number }>(`/admin/reviews/product/${productId}/average`);
       return (response as unknown as { averageRating: number }).averageRating;
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.getAverageRating(productId);
     }
   },
@@ -139,7 +139,7 @@ export const reviewService = {
       const response = await apiClient.get<ReviewStats>(`/admin/reviews/product/${productId}/stats`);
       return response as unknown as ReviewStats;
     } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
+      console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.getReviewStats(productId);
     }
   },

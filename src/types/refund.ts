@@ -85,6 +85,8 @@ export interface RefundRequest {
   refundReason: RefundReason;
   refundType: RefundType;
   customerRequestAmount?: number;
+  qualityIssuePercentage?: number;
+  delayDays?: number;
   evidenceDocuments?: Record<string, any>;
   customerNotes?: string;
   status: RefundStatus;
@@ -96,6 +98,13 @@ export interface RefundRequest {
   processedAt?: string;
   createdAt: string;
   updatedAt: string;
+  timeline?: Array<{
+    id: string;
+    event: string;
+    description: string;
+    createdAt: string;
+    createdBy: string;
+  }>;
   
   // Relations
   order?: {
@@ -150,6 +159,8 @@ export interface InsuranceFundTransaction {
   balanceBefore: number;
   balanceAfter: number;
   createdAt: string;
+  updatedAt: string;
+  refundRequest?: RefundRequest;
 }
 
 // Dispute resolution interface
@@ -233,6 +244,11 @@ export interface InsuranceFundAnalytics {
   }>;
   utilizationRate: number;
   averageWithdrawalAmount: number;
+  coverage: {
+    targetAmount: number;
+    currentPercentage: number;
+    coverageRatio: number;
+  };
 }
 
 // Refund analytics interface

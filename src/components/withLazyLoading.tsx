@@ -10,13 +10,17 @@ export function withLazyLoading<P extends object>(
     </div>
   )
 ) {
-  return function WithLazyLoadingComponent(props: P) {
+  const WithLazyLoadingComponent = React.forwardRef<any, P>((props, ref) => {
     return (
       <ErrorBoundary>
         <Suspense fallback={<LoadingComponent />}>
-          <WrappedComponent {...props} />
+          <WrappedComponent {...props} ref={ref} />
         </Suspense>
       </ErrorBoundary>
     );
-  };
+  });
+
+  WithLazyLoadingComponent.displayName = `WithLazyLoading(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+
+  return WithLazyLoadingComponent;
 }

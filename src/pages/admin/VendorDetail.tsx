@@ -164,31 +164,31 @@ export default function VendorDetail() {
         const vendorData = await vendorsService.getVendorById(id);
         setVendor(vendorData);
         
-        // Fetch vendor orders
+        // Fetch vendor orders (optional - backend might not have this endpoint yet)
         setOrdersLoading(true);
         try {
           const ordersData = await vendorsService.getVendorOrders(id);
           setOrders(Array.isArray(ordersData) ? ordersData : []);
         } catch (ordersError) {
-          console.error('Failed to fetch vendor orders:', ordersError);
+          console.warn('Vendor orders endpoint not available yet:', ordersError);
           setOrders([]);
         }
         
-        // Fetch vendor evaluations
+        // Fetch vendor evaluations (optional - backend might not have this endpoint yet)
         try {
           const evaluationsData = await vendorsService.getVendorEvaluations(id);
           setEvaluations(Array.isArray(evaluationsData) ? evaluationsData : []);
         } catch (evalError) {
-          console.error('Failed to fetch vendor evaluations:', evalError);
+          console.warn('Vendor evaluations endpoint not available yet:', evalError);
           setEvaluations([]);
         }
         
-        // Fetch vendor specializations
+        // Fetch vendor specializations (optional - backend might not have this endpoint yet)
         try {
           const specializationsData = await vendorsService.getVendorSpecializations(id);
           setSpecializations(Array.isArray(specializationsData) ? specializationsData : []);
         } catch (specError) {
-          console.error('Failed to fetch vendor specializations:', specError);
+          console.warn('Vendor specializations endpoint not available yet:', specError);
           setSpecializations([]);
         }
         

@@ -75,7 +75,7 @@ class TenantApiClient {
         return response;
       },
       async (error: AxiosError<ApiError>) => {
-        console.error('TenantApiClient: Response error:', {
+        console.warn('TenantApiClient: Response error:', {
           status: error.response?.status,
           data: error.response?.data,
           message: error.message
