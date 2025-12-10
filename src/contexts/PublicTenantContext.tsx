@@ -27,11 +27,17 @@ export const PublicTenantProvider: React.FC<PublicTenantProviderProps> = ({ chil
 
   const extractTenantFromUrl = (pathname: string): string | null => {
     const pathSegments = pathname.split('/').filter(segment => segment);
-    const reservedRoutes = ['admin', 'platform', 'login', 'register', 'forgot-password', 'reset-password', 'verify-email'];
+    
+    // Reserved routes that should NEVER be treated as tenant slugs
+    const reservedRoutes = [
+      'admin', 'platform', 'login', 'register', 'forgot-password', 'reset-password', 'verify-email',
+      'about', 'faq', 'contact', 'home', 'products', 'privacy', 'terms', 'sitemap'
+    ];
     
     if (pathSegments.length > 0 && !reservedRoutes.includes(pathSegments[0])) {
       const potentialTenantSlug = pathSegments[0];
-      if (/^[a-zA-Z0-9\-_]+$/.test(potentialTenantSlug)) {
+      // Only consider valid tenant slug patterns (not single common words)
+      if (/^[a-zA-Z0-9\-_]+$/.test(potentialTenantSlug) && potentialTenantSlug.length > 2) {
         return potentialTenantSlug;
       }
     }

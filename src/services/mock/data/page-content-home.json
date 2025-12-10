@@ -186,7 +186,8 @@
       ]
     },
     "cta": [
-      {
+      {        
+        "enabled": true,
         "type": "primary",
         "title": "Siap Mewujudkan Proyek Anda?",
         "subtitle": "Diskusikan kebutuhan Anda dengan tim kami dan dapatkan penawaran gratis hari ini",
@@ -223,6 +224,7 @@
         "background": "bg-gradient-to-r from-[#f59e0b] to-[#f97316]"
       },
       {
+        "enabled": true,
         "type": "secondary",
         "title": "Punya Pertanyaan atau Siap Memulai?",
         "subtitle": "Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda",

@@ -66,10 +66,11 @@ export const reviewService = {
     }
     
     try {
-      const response = await apiClient.get<Review[]>(`/admin/reviews/product/${productId}`);
-      return response as unknown as Review[];
+      // Use public endpoint for better compatibility
+      const response = await anonymousApiClient.get<{data: Review[]}>(`/public/reviews/product/${productId}`);
+      return response.data || [];
     } catch (error) {
-      console.warn('Review API not available, falling back to mock data:', error);
+      console.warn('Public Review API not available, falling back to mock data:', error);
       return mockReviews.getReviewsByProductId(productId);
     }
   },

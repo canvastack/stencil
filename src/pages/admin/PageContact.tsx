@@ -13,12 +13,12 @@ import MapPicker from "@/components/admin/MapPicker";
 
 export default function PageContact() {
   const { content, loading, updatePageContent } = usePageContent("contact");
-  const [formData, setFormData] = useState<any>(content?.content || {});
+  const [formData, setFormData] = useState<any>(content || {});
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    if (content?.content) {
-      setFormData(content.content);
+    if (content) {
+      setFormData(content);
     }
   }, [content]);
 
@@ -38,8 +38,8 @@ export default function PageContact() {
   };
 
   const handleReset = () => {
-    if (content?.content) {
-      setFormData(content.content);
+    if (content) {
+      setFormData(content);
       setHasChanges(false);
       toast.success("Changes reset successfully");
     }

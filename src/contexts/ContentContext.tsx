@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useGlobalContext } from '@/contexts/GlobalContext';
+import { usePublicTenant } from '@/contexts/PublicTenantContext';
 import { anonymousApiClient } from '@/services/api/anonymousApiClient';
 import { tenantApiClient } from '@/services/api/tenantApiClient';
 import { platformApiClient } from '@/services/api/platformApiClient';
@@ -16,7 +18,7 @@ interface PageContent {
 }
 
 interface ContentContextType {
-  getPageContent: (slug: string) => Promise<PageContent | null>;
+  getPageContent: (slug: string, tenantSlug?: string) => Promise<PageContent | null>;
   updatePageContent: (slug: string, content: Record<string, any>) => Promise<boolean>;
   loading: boolean;
   error: Error | null;
@@ -31,8 +33,9 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [cache] = useState<Map<string, PageContent>>(new Map());
   const globalContext = useGlobalContext();
 
-  const getPageContent = useCallback(async (slug: string): Promise<PageContent | null> => {
-    const cacheKey = `${globalContext.userType}-${slug}`;
+  const getPageContent = useCallback(async (slug: string, providedTenantSlug?: string): Promise<PageContent | null> => {
+    // Create initial cache key, we'll update it after processing
+    let cacheKey = `${globalContext.userType}-${slug}`;
     
     if (cache.has(cacheKey)) {
       return cache.get(cacheKey)!;
@@ -43,45 +46,112 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(null);
       
       let response;
+      let pageData;
       
-      // Use context-aware API client
-      if (globalContext.userType === 'anonymous') {
-        const anonymousResponse = await anonymousApiClient.getPlatformContent('pages', slug);
-        // Anonymous client returns {data: actualContent, success: boolean, message?: string}
-        if (!anonymousResponse.success || !anonymousResponse.data) {
-          throw new Error(`Failed to load page content for ${slug}`);
-        }
-        response = { data: anonymousResponse.data };
-      } else if (globalContext.userType === 'platform') {
-        response = await platformApiClient.get(`/platform/content/pages/${slug}`);
-      } else if (globalContext.userType === 'tenant') {
+      console.log('ContentContext: Processing slug:', { slug, providedTenantSlug });
+      
+      // CLEAR LOGIC: Determine if this is a tenant-specific route
+      let finalSlug = slug;
+      
+      // If we have a providedTenantSlug but the slug doesn't include it, combine them
+      if (providedTenantSlug && !slug.includes('/')) {
+        finalSlug = `${providedTenantSlug}/${slug}`;
+        console.log('ContentContext: Combined tenant slug with page slug:', finalSlug);
+      }
+      
+      const slugParts = finalSlug.split('/').filter(part => part.length > 0); // Remove empty parts
+      const isTenantRoute = slugParts.length > 1; // e.g., "etchinx/products"
+      
+      console.log('ContentContext: Analyzed slug:', { originalSlug: slug, finalSlug, slugParts, isTenantRoute });
+      
+      // Update cache key to use the final processed slug
+      cacheKey = `${globalContext.userType}-${finalSlug}`;
+      
+      // Check cache again with the corrected key
+      if (cache.has(cacheKey)) {
+        return cache.get(cacheKey)!;
+      }
+      
+      // Use authenticated API for admin users, anonymous API for public users
+      if (globalContext.userType === 'platform') {
+        // Platform admin - use platform API
         try {
-          response = await tenantApiClient.get(`/tenant/content/pages/${slug}`);
-        } catch (tenantError: any) {
-          // If tenant auth fails, fall back to anonymous content
-          if (tenantError.response?.status === 401 || tenantError.response?.status === 403) {
-            console.log('ContentContext: Tenant auth failed, falling back to anonymous content');
-            const anonymousResponse = await anonymousApiClient.getPlatformContent('pages', slug);
-            if (!anonymousResponse.success || !anonymousResponse.data) {
-              throw new Error(`Failed to load page content for ${slug}`);
-            }
-            response = { data: anonymousResponse.data };
+          const response = await platformApiClient.get(`/platform/content/pages/${slugParts[0]}`);
+          if (response.data) {
+            pageData = response.data;
           } else {
-            throw tenantError;
+            throw new Error('Platform content not found');
           }
+        } catch (error) {
+          console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback`);
+          pageData = getPlatformFallbackContent(slugParts[0]);
+        }
+      } else if (globalContext.userType === 'tenant') {
+        // Tenant admin - use tenant API
+        try {
+          if (isTenantRoute && slugParts.length >= 2) {
+            // For tenant routes like etchinx/home -> /tenant/content/pages/etchinx/home
+            const [tenantSlug, pageSlug] = slugParts;
+            const response = await tenantApiClient.get(`/tenant/content/pages/${tenantSlug}/${pageSlug}`);
+            console.log('ContentContext: Tenant API response:', response);
+            if (response && response.id) {
+              // Response is the content object itself
+              pageData = response;
+            } else {
+              throw new Error('Tenant content not found');
+            }
+          } else {
+            // For single page routes like home -> /tenant/content/pages/home
+            const response = await tenantApiClient.get(`/tenant/content/pages/${slugParts[0]}`);
+            console.log('ContentContext: Tenant API single response:', response);
+            if (response && (response.id || (response.success && response.data))) {
+              // Response could be direct content object or wrapped in success/data structure
+              pageData = response.data || response;
+            } else {
+              throw new Error('Tenant content not found');
+            }
+          }
+        } catch (error) {
+          const pageName = isTenantRoute && slugParts.length >= 2 ? `${slugParts[0]}/${slugParts[1]}` : slugParts[0];
+          console.warn(`ContentContext: Failed to load tenant content for ${pageName}, using fallback`);
+          pageData = getTenantFallbackContent(isTenantRoute ? slugParts[0] : 'unknown', isTenantRoute ? slugParts[1] : slugParts[0]);
         }
       } else {
-        throw new Error('Unknown user context');
+        // Anonymous users - use public API
+        if (isTenantRoute) {
+          // Tenant-specific content: etchinx/products
+          const [tenantSlug, pageSlug] = slugParts;
+          
+          try {
+            const anonymousResponse = await anonymousApiClient.getTenantContent(tenantSlug, pageSlug);
+            if (anonymousResponse.success && anonymousResponse.data) {
+              pageData = anonymousResponse.data;
+            } else {
+              throw new Error('Tenant content not found');
+            }
+          } catch (error) {
+            console.warn(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}, using fallback`);
+            pageData = getTenantFallbackContent(tenantSlug, pageSlug);
+          }
+        } else {
+          // General platform content: about, faq, contact
+          try {
+            const anonymousResponse = await anonymousApiClient.getPlatformContent('pages', slugParts[0]);
+            if (anonymousResponse.success && anonymousResponse.data) {
+              pageData = anonymousResponse.data;
+            } else {
+              throw new Error('Platform content not found');
+            }
+          } catch (error) {
+            console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback`);
+            pageData = getPlatformFallbackContent(slugParts[0]);
+          }
+        }
       }
       
-      if (!response.data) {
-        throw new Error(`Failed to load page content for ${slug}`);
-      }
-      
-      const pageData = response.data;
       const data: PageContent = {
-        id: pageData.id || pageData.uuid,
-        pageSlug: slug,
+        id: pageData.id || `page-${finalSlug.replace('/', '-')}-1`,
+        pageSlug: isTenantRoute ? slugParts[1] : slugParts[0],
         content: pageData.content || pageData,
         status: pageData.status || 'published',
         publishedAt: pageData.published_at,
@@ -91,12 +161,11 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
       
       cache.set(cacheKey, data);
-      
       return data;
+      
     } catch (err) {
       console.error(`ContentProvider: Failed to load page content for ${slug}:`, err);
-      const error = err instanceof Error ? err : new Error('Failed to load page content');
-      setError(error);
+      setError(err instanceof Error ? err : new Error('Failed to load page content'));
       return null;
     } finally {
       setLoading(false);
@@ -109,32 +178,31 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(null);
       
       let response;
-      
-      // Use context-aware API client for updates
       if (globalContext.userType === 'platform') {
         response = await platformApiClient.put(`/platform/content/pages/${slug}`, { content });
       } else if (globalContext.userType === 'tenant') {
         response = await tenantApiClient.put(`/tenant/content/pages/${slug}`, { content });
       } else {
-        throw new Error('Anonymous users cannot update content');
+        throw new Error('Content updates not supported for anonymous users');
       }
       
-      if (!response.success) {
-        throw new Error('Failed to update page content');
+      if (response.data) {
+        // Update cache
+        const cacheKey = `${globalContext.userType}-${slug}`;
+        const existingData = cache.get(cacheKey);
+        if (existingData) {
+          const updatedData = {
+            ...existingData,
+            content,
+            updatedAt: new Date().toISOString(),
+          };
+          cache.set(cacheKey, updatedData);
+        }
+        
+        return true;
       }
       
-      // Update cache
-      const cacheKey = `${globalContext.userType}-${slug}`;
-      if (cache.has(cacheKey)) {
-        const cachedPage = cache.get(cacheKey)!;
-        cache.set(cacheKey, {
-          ...cachedPage,
-          content: content,
-          updatedAt: new Date().toISOString()
-        });
-      }
-      
-      return true;
+      return false;
     } catch (err) {
       console.error(`ContentProvider: Failed to update page content for ${slug}:`, err);
       const error = err instanceof Error ? err : new Error('Failed to update page content');
@@ -145,14 +213,22 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [cache, globalContext.userType]);
 
+  const contextValue: ContentContextType = {
+    getPageContent,
+    updatePageContent: handleUpdatePageContent,
+    loading,
+    error,
+    cache,
+  };
+
   return (
-    <ContentContext.Provider value={{ getPageContent, updatePageContent: handleUpdatePageContent, loading, error, cache }}>
+    <ContentContext.Provider value={contextValue}>
       {children}
     </ContentContext.Provider>
   );
 };
 
-export const useContent = () => {
+export const useContent = (): ContentContextType => {
   const context = useContext(ContentContext);
   if (context === undefined) {
     throw new Error('useContent must be used within a ContentProvider');
@@ -160,14 +236,160 @@ export const useContent = () => {
   return context;
 };
 
-// Hook for specific page
-export const usePageContent = (slug: string) => {
-  const { getPageContent, updatePageContent, loading, error } = useContent();
-  const [content, setContent] = React.useState<PageContent | null>(null);
+// Add the usePageContent hook
+export const usePageContent = (slugOverride?: string) => {
+  const location = useLocation();
+  const [pageContent, setPageContent] = useState<PageContent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const { getPageContent } = useContent();
+  
+  // Get tenant context safely
+  let tenantSlug: string | null = null;
+  try {
+    const publicTenantContext = usePublicTenant();
+    tenantSlug = publicTenantContext.tenantSlug;
+  } catch (error) {
+    console.log('usePageContent: No tenant context available');
+  }
 
-  React.useEffect(() => {
-    getPageContent(slug).then(setContent);
-  }, [slug, getPageContent]);
+  useEffect(() => {
+    const loadPageContent = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        let path: string;
+        if (slugOverride) {
+          path = slugOverride;
+          console.log('usePageContent: Using slug override:', path);
+        } else {
+          // Extract path from location, preserving internal slashes but removing leading/trailing ones
+          path = location.pathname.replace(/^\/+|\/+$/g, '') || 'home';
+          console.log('usePageContent: Extracted path from location:', { 
+            originalPathname: location.pathname, 
+            extractedPath: path 
+          });
+        }
+        
+        console.log('usePageContent: Calling getPageContent with:', { path, tenantSlug });
+        const content = await getPageContent(path, tenantSlug || undefined);
+        setPageContent(content);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Failed to load page content');
+        setError(error);
+        console.error('Failed to load page content:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  return { content, loading, error, updatePageContent };
+    loadPageContent();
+  }, [location.pathname, getPageContent, tenantSlug, slugOverride]);
+
+  return { 
+    pageContent, 
+    content: pageContent?.content, 
+    loading, 
+    error 
+  };
 };
+
+// Helper functions for fallback content
+function getTenantFallbackContent(tenantSlug: string, pageSlug: string): any {
+  const fallbackData: Record<string, any> = {
+    products: {
+      hero: {
+        title: { prefix: 'Semua', highlight: 'Produk' },
+        subtitle: 'Temukan produk etching berkualitas tinggi dengan presisi sempurna.',
+        typingTexts: ['Etching Berkualitas', 'Produk Terbaik', 'Layanan Professional']
+      }
+    },
+    about: {
+      hero: {
+        title: { prefix: 'Tentang', highlight: tenantSlug.toUpperCase() },
+        subtitle: `Pelajari lebih lanjut tentang ${tenantSlug} dan layanan kami.`,
+        content: 'Informasi tentang perusahaan dan layanan yang kami tawarkan.'
+      }
+    },
+    faq: {
+      hero: {
+        title: { prefix: 'Pertanyaan', highlight: 'Umum' },
+        subtitle: 'Temukan jawaban untuk pertanyaan yang sering diajukan',
+      },
+      faqs: [
+        { question: 'Apa itu etching?', answer: 'Etching adalah proses mengukir permukaan material...' },
+        { question: 'Berapa lama waktu pengerjaan?', answer: 'Waktu pengerjaan bervariasi tergantung kompleksitas...' }
+      ]
+    },
+    contact: {
+      hero: {
+        title: { prefix: 'Hubungi', highlight: 'Kami' },
+        subtitle: 'Dapatkan konsultasi gratis untuk kebutuhan etching Anda',
+      },
+      contactInfo: {
+        email: 'info@' + tenantSlug.toLowerCase() + '.com',
+        phone: '+62 812-3456-7890',
+        address: 'Jalan Industri No. 123, Jakarta'
+      }
+    }
+  };
+  
+  return {
+    id: `page-${tenantSlug}-${pageSlug}-1`,
+    content: fallbackData[pageSlug] || { 
+      title: 'Page Not Found', 
+      subtitle: 'Content coming soon...',
+      message: `Page "${pageSlug}" untuk tenant "${tenantSlug}" sedang dalam pengembangan.`
+    }
+  };
+}
+
+function getPlatformFallbackContent(slug: string): any {
+  const fallbackData: Record<string, any> = {
+    about: {
+      title: 'About CanvaStencil',
+      subtitle: 'Professional Multi-Tenant CMS Platform',
+      content: 'CanvaStencil provides enterprise-grade CMS solutions for modern businesses.',
+      hero: {
+        title: { prefix: 'Tentang', highlight: 'CanvaStencil' },
+        subtitle: 'Platform CMS Multi-Tenant Profesional untuk Bisnis Modern',
+        description: 'Solusi enterprise terdepan untuk manajemen konten yang scalable.'
+      }
+    },
+    faq: {
+      title: 'Frequently Asked Questions',
+      subtitle: 'Find answers to common questions',
+      hero: {
+        title: { prefix: 'Pertanyaan', highlight: 'Umum' },
+        subtitle: 'Temukan jawaban untuk pertanyaan yang sering diajukan',
+      },
+      faqs: [
+        { question: 'What is CanvaStencil?', answer: 'A multi-tenant CMS platform for modern businesses.' },
+        { question: 'How to get started?', answer: 'Contact our team for consultation and setup.' }
+      ]
+    },
+    contact: {
+      title: 'Contact Us',
+      subtitle: 'Get in Touch',
+      hero: {
+        title: { prefix: 'Hubungi', highlight: 'Kami' },
+        subtitle: 'Dapatkan konsultasi gratis tentang solusi CMS yang tepat',
+      },
+      contactInfo: {
+        email: 'info@canvastencil.com',
+        phone: '+62 21-1234-5678', 
+        address: 'Jakarta, Indonesia'
+      }
+    }
+  };
+  
+  return {
+    id: `page-${slug}-1`,
+    content: fallbackData[slug] || { 
+      title: 'Page Not Found', 
+      subtitle: 'Content coming soon...',
+      message: `Platform page "${slug}" sedang dalam pengembangan.`
+    }
+  };
+}

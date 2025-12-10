@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from '@/core/engine/ThemeContext';
-import { usePageContent } from "@/contexts/ContentContext";
+import { usePageContent } from "@/hooks/usePageContent";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,8 +28,26 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 const Contact = () => {
   const { currentTheme } = useTheme();
   const { Header, Footer } = currentTheme?.components ?? {};
-  const { content, loading } = usePageContent("contact");
+  const { pageContent, loading } = usePageContent();
   const navigate = useNavigate();
+
+  // Default fallback content
+  const defaultContactContent = {
+    hero: {
+      title: { prefix: "Hubungi", highlight: "Kami" },
+      subtitle: "Dapatkan konsultasi gratis untuk kebutuhan etching Anda"
+    },
+    contactInfo: {
+      email: "info@etchinx.com",
+      phone: "+62 812-3456-7890",
+      whatsapp: "+62 812-3456-7890",
+      address: "Jalan Industri No. 123, Jakarta",
+      operatingHours: "Senin - Jumat: 08:00 - 17:00 WIB"
+    }
+  };
+
+  // Merge content dengan fallback yang robust
+  const content = pageContent?.content ? pageContent : { content: defaultContactContent };
 
   // Debug CTA data - useEffect must be called before any early returns
   useEffect(() => {
@@ -100,7 +118,12 @@ const Contact = () => {
         
         <div className="container mx-auto text-center max-w-4xl">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in text-white">
-            {pageData.hero?.title || "Hubungi Kami"}
+            {typeof pageData.hero?.title === 'string' 
+              ? pageData.hero.title 
+              : pageData.hero?.title?.prefix || pageData.hero?.title?.highlight 
+                ? `${pageData.hero.title.prefix || ''} ${pageData.hero.title.highlight || ''}`.trim()
+                : "Hubungi Kami"
+            }
           </h1>
           <p className="text-lg md:text-xl text-slate-300 animate-fade-in-up">
             {pageData.hero?.subtitle || ""}

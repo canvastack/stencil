@@ -71,19 +71,24 @@ export const usePublicProducts = () => {
   }, []);
 
   const fetchProductBySlug = useCallback(async (slug: string) => {
+    console.log('fetchProductBySlug called with:', { slug, tenantSlug });
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const product = await publicProductsService.getProductBySlug(slug, tenantSlug || undefined);
+      console.log('fetchProductBySlug response:', product);
       if (product) {
         setState((prev) => ({ ...prev, currentProduct: product, isLoading: false }));
         return product;
+      } else {
+        setState((prev) => ({ ...prev, error: 'Product not found', isLoading: false }));
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch product';
+      console.error('fetchProductBySlug error:', error);
       setState((prev) => ({ ...prev, error: message, isLoading: false }));
       toast.error(message);
     }
-  }, []);
+  }, [tenantSlug]);
 
   const fetchProductById = useCallback(async (id: string) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -163,6 +168,7 @@ export const usePublicProductBySlug = (slug: string) => {
 
   useEffect(() => {
     if (slug) {
+      console.log('usePublicProductBySlug: Calling fetchProductBySlug for slug:', slug);
       fetchProductBySlug(slug);
     }
   }, [slug, fetchProductBySlug]);

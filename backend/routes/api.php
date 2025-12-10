@@ -180,6 +180,24 @@ Route::prefix('tenant')->group(function () {
 
 });
 
+// Admin API (authenticated users)
+Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    // Admin Reviews API
+    Route::prefix('reviews')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'index']);
+        Route::get('/product/{productId}', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'byProduct'])->where('productId', '[0-9]+');
+    });
+});
+
+// Tenant API (authenticated tenant users)
+Route::prefix('tenant')->middleware('auth:sanctum')->group(function () {
+    // Tenant Content API
+    Route::prefix('content')->group(function () {
+        Route::get('/pages/{tenantSlug}/{page}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getTenantPage']);
+        Route::get('/pages/{page}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getPage']);
+    });
+});
+
 // Public API (No authentication required)
 Route::prefix('public')->group(function () {
     // Tenant discovery by domain
@@ -214,7 +232,7 @@ Route::prefix('public')->group(function () {
         Route::get('/search', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'search']);
         Route::get('/category/{category}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'byCategory']);
         Route::get('/{id}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'show'])->where('id', '[0-9]+');
-        Route::get('/slug/{slug}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'showBySlug']);
+        Route::get('/slug/{slug}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'showBySlugGlobal']);
     });
     
     // Tenant-specific Products API

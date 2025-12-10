@@ -23,12 +23,12 @@ import { toast } from "sonner";
 
 export default function PageFAQ() {
   const { content, loading, updatePageContent } = usePageContent("faq");
-  const [formData, setFormData] = useState<any>(content?.content || {});
+  const [formData, setFormData] = useState<any>(content || {});
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    if (content?.content) {
-      setFormData(content.content);
+    if (content) {
+      setFormData(content);
     }
   }, [content]);
 

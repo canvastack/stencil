@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { usePageContent } from "@/contexts/ContentContext";
+import { usePageContent } from "@/hooks/usePageContent";
 import { useTheme } from '@/core/engine/ThemeContext';
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
@@ -26,9 +26,31 @@ const iconMap: Record<string, any> = {
 export default function FAQ() {
   const { currentTheme } = useTheme();
   const { Header, Footer } = currentTheme?.components ?? {};
-  const { content, loading } = usePageContent("faq");
+  const { pageContent, loading } = usePageContent();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [openQuestions, setOpenQuestions] = useState<Record<string, boolean>>({});
+
+  // Default fallback content
+  const defaultFaqContent = {
+    hero: {
+      title: "FAQ - Pertanyaan Umum",
+      subtitle: "Temukan jawaban untuk pertanyaan yang sering diajukan"
+    },
+    categories: [
+      {
+        id: "general",
+        category: "Umum",
+        icon: "HelpCircle",
+        questions: [
+          { q: "Apa itu etching?", a: "Etching adalah proses mengukir permukaan material menggunakan teknik kimia atau laser." },
+          { q: "Berapa lama waktu pengerjaan?", a: "Waktu pengerjaan bervariasi tergantung kompleksitas, umumnya 3-7 hari kerja." }
+        ]
+      }
+    ]
+  };
+
+  // Merge content dengan fallback yang robust
+  const content = pageContent?.content ? pageContent : { content: defaultFaqContent };
 
   if (!Header || !Footer) {
     return (
@@ -89,7 +111,10 @@ export default function FAQ() {
           <section className="py-20 px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
             <div className="container mx-auto max-w-4xl text-center">
               <h1 className="text-4xl md:text-6xl font-bold mb-6">
-                {pageData.hero.title}
+                {typeof pageData.hero.title === 'string' 
+                  ? pageData.hero.title 
+                  : `${pageData.hero.title?.prefix || ''} ${pageData.hero.title?.highlight || ''}`
+                }
               </h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
                 {pageData.hero.subtitle}

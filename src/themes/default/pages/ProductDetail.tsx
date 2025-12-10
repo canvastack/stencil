@@ -39,8 +39,10 @@ import { Modal } from "@/components/ui/modal";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
-import { useProductReviews, useReviews } from "@/hooks/useReviews.tsx";
-import { usePublicProductBySlug, usePublicProducts } from "@/hooks/usePublicProducts";
+import { useProductReviews } from "@/hooks/useReviews.tsx";
+import { usePublicProductBySlug } from "@/hooks/usePublicProducts";
+import { usePublicTenant } from "@/contexts/PublicTenantContext";
+import { useRelatedProducts } from "@/hooks/useRelatedProducts";
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { reviewService } from "@/services/api/reviews";
 import { ordersService } from "@/services/api/orders";
@@ -55,6 +57,18 @@ const ProductDetail = () => {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
+  
+  // Debug: Check if slug is extracted correctly
+  console.log('ProductDetail: Extracted slug from URL:', slug);
+
+  // Get tenant context safely
+  let tenantSlug: string | null = null;
+  try {
+    const publicTenantContext = usePublicTenant();
+    tenantSlug = publicTenantContext.tenantSlug;
+  } catch (error) {
+    console.log('ProductDetail: No tenant context available');
+  }
 
   const handleSubmitReview = async (review: { rating: number; comment: string }) => {
     if (!product) return;
@@ -92,15 +106,20 @@ const ProductDetail = () => {
   const draftProduct = isPreview ? JSON.parse(sessionStorage.getItem('productDraft') || 'null') : null;
   
   // Always use public product service for better real data access
+  console.log('ProductDetail: About to call usePublicProductBySlug with slug:', slug);
   const { product: cmsProduct, isLoading: loadingProduct } = usePublicProductBySlug(slug || '');
   
   const product = draftProduct || cmsProduct;
   
-  const { reviews: allReviews = [] } = useReviews();
+  // Only use product-specific reviews to eliminate duplicate calls
   const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(product?.id || '');
   
-  // Use public products for related products to get real data  
-  const { products: allProductsForRelated = [] } = usePublicProducts();
+  // Optimize related products fetch with targeted category
+  const { relatedProducts } = useRelatedProducts({ 
+    productId: product?.id, 
+    category: product?.category,
+    limit: 3 
+  });
   const [reviewSort, setReviewSort] = useState<'rating-high' | 'rating-low' | 'newest' | 'oldest'>('newest');
 
   const sortedReviews = [...productReviews].sort((a, b) => {
@@ -168,7 +187,7 @@ const ProductDetail = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground mb-4">Produk Tidak Ditemukan</h1>
-          <Button onClick={() => navigate("/products")}>
+          <Button onClick={() => navigate(tenantSlug ? `/${tenantSlug}/products` : "/products")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Kembali ke Produk
           </Button>
@@ -379,9 +398,7 @@ const ProductDetail = () => {
     });
   };
 
-  const relatedProducts = allProductsForRelated
-    .filter(p => p.id !== product?.id)
-    .slice(0, 3);
+  // Related products now optimized with useRelatedProducts hook
 
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('id-ID', {
@@ -1014,7 +1031,7 @@ const ProductDetail = () => {
                 <h3 className="text-2xl font-bold text-foreground mb-6">Produk Terkait</h3>
                 <div className="space-y-4">
                   {relatedProducts.map((relatedProduct) => {
-                    const relatedReviews = allReviews.filter(r => r.productId === relatedProduct.id);
+                    const relatedReviews = productReviews.filter(r => r.productId === relatedProduct.id);
                     const relatedRating = relatedReviews.length 
                       ? relatedReviews.reduce((sum, r) => sum + r.rating, 0) / relatedReviews.length 
                       : 0;

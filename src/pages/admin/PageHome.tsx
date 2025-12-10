@@ -26,12 +26,12 @@ import { toast } from "sonner";
 
 export default function PageHome() {
   const { content, loading, updatePageContent } = usePageContent("home");
-  const [formData, setFormData] = useState<any>(content?.content || {});
+  const [formData, setFormData] = useState<any>(content || {});
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    if (content?.content) {
-      setFormData(content.content);
+    if (content) {
+      setFormData(content);
     }
   }, [content]);
 
@@ -51,7 +51,7 @@ export default function PageHome() {
   };
 
   const handleReset = () => {
-    setFormData(content?.content || {});
+    setFormData(content || {});
     setHasChanges(false);
     toast.info("Changes reset");
   };

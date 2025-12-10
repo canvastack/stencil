@@ -162,6 +162,42 @@ class AnonymousApiClient {
     }
   }
 
+  // GET tenant-specific content
+  async getTenantContent<T = any>(tenantSlug: string, pageSlug: string): Promise<AnonymousApiResponse<T>> {
+    const url = `/public/content/pages/${tenantSlug}/${pageSlug}`;
+    
+    console.log(`AnonymousApiClient: Calling tenant content URL: ${this.baseURL}${url}`);
+    
+    try {
+      const response = await this.client.get<T>(url, {
+        headers: {
+          'X-Content-Type': 'pages',
+          'X-Tenant-Slug': tenantSlug
+        }
+      });
+      
+      console.log(`AnonymousApiClient: Tenant content response:`, response.data);
+      
+      // Backend returns content directly, wrap it in our response format
+      return {
+        data: response.data,
+        success: true,
+        message: 'Tenant content loaded successfully'
+      };
+    } catch (error: any) {
+      console.error(`AnonymousApiClient: Failed to get tenant content for ${tenantSlug}/${pageSlug}:`, error);
+      console.error('Response status:', error.response?.status);
+      console.error('Response data:', error.response?.data);
+      
+      // Return fallback content structure
+      return {
+        data: this.getFallbackContent('pages', `${tenantSlug}/${pageSlug}`) as T,
+        message: 'Using fallback content',
+        success: true
+      };
+    }
+  }
+
   // GET platform products
   async getPlatformProducts(params?: Record<string, any>): Promise<AnonymousApiResponse<any[]>> {
     try {

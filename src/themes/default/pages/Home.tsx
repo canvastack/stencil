@@ -30,7 +30,7 @@ import {
 import { useTheme } from '@/core/engine/ThemeContext';
 import type { PageProps } from '@/core/engine/types';
 import { TypingEffect } from "@/components/TypingEffect";
-import { usePageContent } from "@/contexts/ContentContext";
+import { usePageContent } from "@/hooks/usePageContent";
 import { Helmet } from "react-helmet-async";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -56,8 +56,24 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 const Home: React.FC<PageProps> = ({ className }) => {
   const { currentTheme } = useTheme();
   const { Header, Footer, HeroCarousel } = currentTheme?.components ?? {};
-  const { content, loading } = usePageContent("home");
+  const { pageContent, loading } = usePageContent();
   const navigate = useNavigate();
+
+  // Default fallback content  
+  const defaultHomeContent = {
+    hero: {
+      title: "Selamat Datang di Platform Etching Profesional",
+      subtitle: "Layanan etching berkualitas tinggi untuk semua kebutuhan Anda"
+    },
+    features: [
+      { title: "Kualitas Tinggi", description: "Presisi sempurna dalam setiap detail", icon: "CheckCircle2" },
+      { title: "Pengalaman 15+ Tahun", description: "Trusted oleh ribuan pelanggan", icon: "Award" },
+      { title: "Layanan Lengkap", description: "Metal, glass, dan plakat custom", icon: "Package" }
+    ]
+  };
+
+  // Merge content dengan fallback yang robust
+  const content = pageContent?.content ? pageContent : { content: defaultHomeContent };
 
   if (!Header || !Footer || !HeroCarousel) {
     return (

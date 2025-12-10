@@ -308,4 +308,38 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get product by slug (global route - no tenant filter)
+     */
+    public function showBySlugGlobal(Request $request, string $slug): JsonResponse
+    {
+        try {
+            \Log::info("ProductController::showBySlugGlobal called", [
+                'slug' => $slug
+            ]);
+            
+            $product = Product::with('category', 'variants')
+                ->published()
+                ->where('slug', $slug)
+                ->first();
+            
+            if (!$product) {
+                return response()->json(['error' => 'Product not found'], 404);
+            }
+
+            return response()->json(new ProductResource($product), 200);
+
+        } catch (\Exception $e) {
+            \Log::error("ProductController::showBySlugGlobal error", [
+                'slug' => $slug,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to fetch product details',
+                'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred'
+            ], 500);
+        }
+    }
 }

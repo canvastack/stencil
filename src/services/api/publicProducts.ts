@@ -3,7 +3,7 @@ import { Product, ProductFilters } from '@/types/product';
 import { PaginatedResponse } from '@/types/api';
 import * as mockProducts from '@/services/mock/products';
 
-const USE_MOCK = false; // Disable mock data to use real API
+const USE_MOCK = false; // Use real API data from database
 
 /**
  * Transform backend API response to frontend Product format

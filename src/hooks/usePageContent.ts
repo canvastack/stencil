@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { useContent } from '@/contexts/ContentContext';
+import { usePublicTenant } from '@/contexts/PublicTenantContext';
 
 // Use the ContentContext's own PageContent interface by creating the proper return type
 interface PageContentData {
@@ -20,14 +21,35 @@ export const usePageContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { getPageContent } = useContent();
+  
+  // Get tenant context safely
+  let tenantSlug: string | null = null;
+  try {
+    const publicTenantContext = usePublicTenant();
+    tenantSlug = publicTenantContext.tenantSlug;
+  } catch (error) {
+    console.log('usePageContent: No tenant context available');
+  }
 
   useEffect(() => {
     const loadPageContent = async () => {
       try {
         setLoading(true);
         setError(null);
-        const path = location.pathname.replace('/', '') || 'home';
-        const content = await getPageContent(path);
+        let path = location.pathname.replace(/^\/+|\/+$/g, '') || 'home';
+        
+        // Special handling: if path is just tenant slug (e.g., "etchinx"), 
+        // treat it as tenant home page
+        if (tenantSlug && path === tenantSlug) {
+          path = `${tenantSlug}/home`;
+        }
+        
+        console.log('usePageContent (hooks): Extracted path from location:', { 
+          originalPathname: location.pathname, 
+          extractedPath: path,
+          tenantSlug 
+        });
+        const content = await getPageContent(path, tenantSlug || undefined);
         setPageContent(content);
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to load page content');
@@ -39,7 +61,7 @@ export const usePageContent = () => {
     };
 
     loadPageContent();
-  }, [location.pathname, getPageContent]);
+  }, [location.pathname, getPageContent, tenantSlug]);
 
   return { pageContent, loading, error };
 };

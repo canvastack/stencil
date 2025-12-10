@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { usePageContent } from "@/contexts/ContentContext";
+import { usePageContent } from "@/hooks/usePageContent";
 import { useTheme } from '@/core/engine/ThemeContext';
 import type { PageProps } from '@/core/engine/types';
 import { Helmet } from "react-helmet-async";
@@ -30,7 +30,23 @@ const iconMap: Record<string, any> = {
 const About: React.FC<PageProps> = ({ className }) => {
   const { currentTheme } = useTheme();
   const { Header, Footer } = currentTheme?.components ?? {};
-  const { content, loading } = usePageContent("about");
+  const { pageContent, loading } = usePageContent();
+
+  // Default fallback content
+  const defaultAboutContent = {
+    hero: {
+      title: { prefix: "Tentang", highlight: "Kami" },
+      subtitle: "Pelajari lebih lanjut tentang layanan etching profesional kami"
+    },
+    company: {
+      history: "Berpengalaman lebih dari 15 tahun dalam industri etching",
+      vision: "Menjadi penyedia layanan etching terdepan",
+      mission: "Memberikan solusi etching terbaik dengan teknologi modern"
+    }
+  };
+
+  // Merge content dengan fallback yang robust
+  const content = pageContent?.content ? pageContent : { content: defaultAboutContent };
 
   if (!Header || !Footer) {
     return (
@@ -73,7 +89,10 @@ const About: React.FC<PageProps> = ({ className }) => {
         <section className="py-20 px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
           <div className="container mx-auto max-w-6xl text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              {pageData.hero.title}
+              {typeof pageData.hero.title === 'string' 
+                ? pageData.hero.title 
+                : `${pageData.hero.title?.prefix || ''} ${pageData.hero.title?.highlight || ''}`
+              }
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               {pageData.hero.subtitle}
