@@ -69,7 +69,8 @@ const Home: React.FC<PageProps> = ({ className }) => {
       { title: "Kualitas Tinggi", description: "Presisi sempurna dalam setiap detail", icon: "CheckCircle2" },
       { title: "Pengalaman 15+ Tahun", description: "Trusted oleh ribuan pelanggan", icon: "Award" },
       { title: "Layanan Lengkap", description: "Metal, glass, dan plakat custom", icon: "Package" }
-    ]
+    ],
+    cta: []
   };
 
   // Merge content dengan fallback yang robust
@@ -387,10 +388,21 @@ const Home: React.FC<PageProps> = ({ className }) => {
       )}
       
       {/* CTA Sections */}
-      {pageData.cta?.map((ctaSection: any, index: number) => (
+      {(() => {
+        console.log('CTA Debug - pageData.cta:', pageData.cta);
+        console.log('CTA Debug - is array:', Array.isArray(pageData.cta));
+        const ctaArray = Array.isArray(pageData.cta) ? pageData.cta : [];
+        console.log('CTA Debug - ctaArray:', ctaArray);
+        const filteredCta = ctaArray.filter((ctaSection: any) => ctaSection.enabled !== false);
+        console.log('CTA Debug - filteredCta:', filteredCta);
+        console.log('CTA Debug - Rendering sections:', filteredCta.length);
+        return filteredCta;
+      })().map((ctaSection: any, index: number) => {
+        console.log('CTA Debug - Rendering section:', index, ctaSection);
+        return (
         <section 
           key={index}
-          className={`py-${ctaSection.type === 'primary' ? '20' : '16'} px-4 ${ctaSection.background} text-white relative overflow-hidden`}
+          className={`py-${ctaSection.type === 'primary' ? '20' : '16'} px-4 ${ctaSection.background || 'bg-gradient-to-r from-primary to-primary/80'} text-white relative overflow-hidden`}
         >
           <div className={`container mx-auto relative z-10 ${ctaSection.type === 'primary' ? 'max-w-6xl' : 'max-w-6xl'}`}>
             {ctaSection.type === 'primary' ? (
@@ -460,7 +472,8 @@ const Home: React.FC<PageProps> = ({ className }) => {
             )}
           </div>
         </section>
-      ))}
+        );
+      })}
 
       <Footer />
     </div>

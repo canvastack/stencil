@@ -242,7 +242,7 @@ export const usePageContent = (slugOverride?: string) => {
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { getPageContent } = useContent();
+  const { getPageContent, updatePageContent } = useContent();
   
   // Get tenant context safely
   let tenantSlug: string | null = null;
@@ -291,7 +291,8 @@ export const usePageContent = (slugOverride?: string) => {
     pageContent, 
     content: pageContent?.content, 
     loading, 
-    error 
+    error,
+    updatePageContent
   };
 };
 

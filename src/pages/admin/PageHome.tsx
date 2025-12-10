@@ -37,6 +37,8 @@ export default function PageHome() {
 
   const handleSave = async () => {
     try {
+      console.log('Saving formData:', JSON.stringify(formData, null, 2));
+      console.log('CTA data being saved:', formData.cta);
       const success = await updatePageContent("home", formData);
       if (success) {
         toast.success("Home page content saved successfully!");
@@ -1527,6 +1529,28 @@ export default function PageHome() {
               <CardDescription>Main call-to-action banner</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Enable/Disable Toggle */}
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <Label className="text-sm font-medium">Enable Primary CTA Section</Label>
+                  <p className="text-xs text-muted-foreground">Toggle to show or hide this section</p>
+                </div>
+                <Switch
+                  checked={formData.cta?.[0]?.enabled !== false} // Default to true if undefined
+                  onCheckedChange={(checked) => {
+                    const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                    if (!ctaArray[0]) {
+                      ctaArray[0] = { type: 'primary' };
+                    }
+                    ctaArray[0] = { ...ctaArray[0], enabled: checked };
+                    setFormData({
+                      ...formData,
+                      cta: ctaArray
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
@@ -1644,6 +1668,28 @@ export default function PageHome() {
               <CardDescription>Additional call-to-action section</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Enable/Disable Toggle */}
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <Label className="text-sm font-medium">Enable Secondary CTA Section</Label>
+                  <p className="text-xs text-muted-foreground">Toggle to show or hide this section</p>
+                </div>
+                <Switch
+                  checked={formData.cta?.[1]?.enabled !== false} // Default to true if undefined
+                  onCheckedChange={(checked) => {
+                    const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                    if (!ctaArray[1]) {
+                      ctaArray[1] = { type: 'secondary' };
+                    }
+                    ctaArray[1] = { ...ctaArray[1], enabled: checked };
+                    setFormData({
+                      ...formData,
+                      cta: ctaArray
+                    });
+                    setHasChanges(true);
+                  }}
+                />
+              </div>
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
