@@ -1292,6 +1292,169 @@ export default function PageHome() {
                   </Card>
                 ))}
               </div>
+
+              {/* Process Preview Section */}
+              <div className="space-y-4 border-t pt-6">
+                <h4 className="font-semibold text-lg">Process Preview</h4>
+                
+                {/* Enable/Disable Preview */}
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div>
+                    <Label className="text-sm font-medium">Enable Process Preview</Label>
+                    <p className="text-xs text-muted-foreground">Show dashboard tracking preview in process section</p>
+                  </div>
+                  <Switch
+                    checked={formData.process?.preview?.enabled !== false}
+                    onCheckedChange={(checked) => {
+                      setFormData({
+                        ...formData,
+                        process: {
+                          ...formData.process,
+                          preview: { ...formData.process?.preview, enabled: checked }
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  />
+                </div>
+
+                {/* Preview Title */}
+                <div className="space-y-2">
+                  <Label>Preview Title</Label>
+                  <Input
+                    value={formData.process?.preview?.title || ""}
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        process: {
+                          ...formData.process,
+                          preview: { ...formData.process?.preview, title: e.target.value }
+                        }
+                      });
+                      setHasChanges(true);
+                    }}
+                  />
+                </div>
+
+                {/* Preview Features */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Preview Features</Label>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const currentFeatures = formData.process?.preview?.features || [];
+                        setFormData({
+                          ...formData,
+                          process: {
+                            ...formData.process,
+                            preview: {
+                              ...formData.process?.preview,
+                              features: [...currentFeatures, ""]
+                            }
+                          }
+                        });
+                        setHasChanges(true);
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Feature
+                    </Button>
+                  </div>
+                  {(formData.process?.preview?.features || []).map((feature: string, index: number) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={feature}
+                        onChange={(e) => {
+                          const newFeatures = [...(formData.process?.preview?.features || [])];
+                          newFeatures[index] = e.target.value;
+                          setFormData({
+                            ...formData,
+                            process: {
+                              ...formData.process,
+                              preview: {
+                                ...formData.process?.preview,
+                                features: newFeatures
+                              }
+                            }
+                          });
+                          setHasChanges(true);
+                        }}
+                        placeholder="Feature description"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const newFeatures = (formData.process?.preview?.features || []).filter((_: string, i: number) => i !== index);
+                          setFormData({
+                            ...formData,
+                            process: {
+                              ...formData.process,
+                              preview: {
+                                ...formData.process?.preview,
+                                features: newFeatures
+                              }
+                            }
+                          });
+                          setHasChanges(true);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Preview Button */}
+                <div className="space-y-4">
+                  <Label className="font-medium">Preview Button</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm">Button Text</Label>
+                      <Input
+                        value={formData.process?.preview?.button?.text || ""}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            process: {
+                              ...formData.process,
+                              preview: {
+                                ...formData.process?.preview,
+                                button: { ...formData.process?.preview?.button, text: e.target.value }
+                              }
+                            }
+                          });
+                          setHasChanges(true);
+                        }}
+                        placeholder="Button text"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm">Button Link</Label>
+                      <Input
+                        value={formData.process?.preview?.button?.link || ""}
+                        onChange={(e) => {
+                          setFormData({
+                            ...formData,
+                            process: {
+                              ...formData.process,
+                              preview: {
+                                ...formData.process?.preview,
+                                button: { ...formData.process?.preview?.button, link: e.target.value }
+                              }
+                            }
+                          });
+                          setHasChanges(true);
+                        }}
+                        placeholder="/dashboard or external link"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </CardContent>
           </Card>
         </TabsContent>

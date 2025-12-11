@@ -98,7 +98,7 @@ const Products = () => {
   const [typingTextIndex, setTypingTextIndex] = useState(0);
   const { PRODUCTS_PER_PAGE } = APP_CONFIG;
 
-  const { pageContent: cmsPageContent, loading: pageContentLoading } = usePageContent();
+  const { pageContent: cmsPageContent, loading: pageContentLoading } = usePageContent("products");
 
   const defaultPageContent: PageContent = {
     hero: {
@@ -652,7 +652,7 @@ const Products = () => {
       </section>
 
       {/* CTA Section 1 */}
-      {((pageContent.ctaSections as any)?.[0]) && (
+      {((pageContent.ctaSections as any)?.[0]) && (pageContent.ctaSections as any)[0]?.enabled !== false && (
         <section className="py-20 px-4 bg-gradient-to-r from-[#f59e0b] to-[#f97316] relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0iZ3JpZCIgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48cGF0aCBkPSJNIDQwIDAgTCAwIDAgMCA0MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLW9wYWNpdHk9IjAuMDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-30"></div>
           
@@ -699,7 +699,7 @@ const Products = () => {
       )}
 
       {/* CTA Section 2 */}
-      {((pageContent.ctaSections as any)?.[1]) && (
+      {((pageContent.ctaSections as any)?.[1]) && (pageContent.ctaSections as any)[1]?.enabled !== false && (
         <section className="py-16 px-4 bg-gradient-to-r from-[#d97706] to-[#ea580c] relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuMDMiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50"></div>
           

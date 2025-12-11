@@ -203,7 +203,8 @@ const menuItems: MenuItem[] = [
       { title: 'Home Page', path: '/admin/content/home' },
       { title: 'About Page', path: '/admin/content/about' },
       { title: 'Contact Page', path: '/admin/content/contact' },
-      { title: 'FAQ Page', path: '/admin/content/faq' }
+      { title: 'FAQ Page', path: '/admin/content/faq' },
+      { title: 'Products Page', path: '/admin/content/products' }
     ]
   },
   {

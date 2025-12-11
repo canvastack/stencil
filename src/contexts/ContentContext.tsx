@@ -101,8 +101,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               throw new Error('Tenant content not found');
             }
           } else {
-            // For single page routes like home -> /tenant/content/pages/home
-            const response = await tenantApiClient.get(`/tenant/content/pages/${slugParts[0]}`);
+            // For single page routes like home -> /content/pages/home
+            const response = await tenantApiClient.get(`/content/pages/${slugParts[0]}`);
             console.log('ContentContext: Tenant API single response:', response);
             if (response && (response.id || (response.success && response.data))) {
               // Response could be direct content object or wrapped in success/data structure

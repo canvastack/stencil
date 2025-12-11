@@ -15,7 +15,7 @@ interface PageContentData {
   updatedAt: string;
 }
 
-export const usePageContent = () => {
+export const usePageContent = (pageSlug?: string) => {
   const location = useLocation();
   const [pageContent, setPageContent] = useState<PageContentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,18 +36,27 @@ export const usePageContent = () => {
       try {
         setLoading(true);
         setError(null);
-        let path = location.pathname.replace(/^\/+|\/+$/g, '') || 'home';
-        
-        // Special handling: if path is just tenant slug (e.g., "etchinx"), 
-        // treat it as tenant home page
-        if (tenantSlug && path === tenantSlug) {
-          path = `${tenantSlug}/home`;
+        // Use provided pageSlug or extract from location
+        let path: string;
+        if (pageSlug) {
+          // If pageSlug is provided, use it directly
+          path = pageSlug;
+        } else {
+          // Extract from location pathname
+          path = location.pathname.replace(/^\/+|\/+$/g, '') || 'home';
+          
+          // Special handling: if path is just tenant slug (e.g., "etchinx"), 
+          // treat it as tenant home page
+          if (tenantSlug && path === tenantSlug) {
+            path = `${tenantSlug}/home`;
+          }
         }
         
         console.log('usePageContent (hooks): Extracted path from location:', { 
           originalPathname: location.pathname, 
           extractedPath: path,
-          tenantSlug 
+          tenantSlug,
+          providedPageSlug: pageSlug
         });
         const content = await getPageContent(path, tenantSlug || undefined);
         setPageContent(content);
@@ -61,7 +70,7 @@ export const usePageContent = () => {
     };
 
     loadPageContent();
-  }, [location.pathname, getPageContent, tenantSlug]);
+  }, [location.pathname, getPageContent, tenantSlug, pageSlug]);
 
   return { pageContent, loading, error };
 };

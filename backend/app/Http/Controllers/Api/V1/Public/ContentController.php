@@ -141,39 +141,33 @@ class ContentController extends Controller
                 ], 404);
             }
 
-            // Switch to tenant schema to access their content (replace hyphens with underscores)
-            $tenantSchemaName = str_replace('-', '_', $tenant->uuid);
-            $tenantSchema = "tenant_{$tenantSchemaName}";
-            
+            // Query tenant pages directly from public schema with tenant_id filter
             try {
-                // Set the search path to tenant schema
-                DB::statement("SET search_path TO {$tenantSchema}, public");
+                $tenantPage = DB::table('tenant_pages')
+                    ->where('tenant_id', $tenant->id)
+                    ->where('slug', $page)
+                    ->where('status', 'published')
+                    ->first();
                 
-                // Try to get content from tenant database
-                $tenantPage = $this->tenantContentService->getPageBySlug($page);
-                
-                if ($tenantPage && $tenantPage->status === 'published') {
+                if ($tenantPage) {
                     // Return real tenant data from database
                     return response()->json([
                         'id' => $tenantPage->uuid,
                         'tenantSlug' => $tenantSlug,
                         'pageSlug' => $page,
-                        'content' => $tenantPage->content,
+                        'content' => json_decode($tenantPage->content, true),
                         'status' => $tenantPage->status,
-                        'publishedAt' => $tenantPage->published_at?->toISOString(),
+                        'publishedAt' => $tenantPage->published_at,
                         'version' => 1,
                         'previousVersion' => null,
-                        'createdAt' => $tenantPage->created_at->toISOString(),
-                        'updatedAt' => $tenantPage->updated_at->toISOString(),
+                        'createdAt' => $tenantPage->created_at,
+                        'updatedAt' => $tenantPage->updated_at,
                         'updatedBy' => null
                     ]);
                 }
             } catch (\Exception $e) {
                 // Log the error but continue to fallback
-                \Log::warning("Failed to access tenant schema for {$tenantSlug}: " . $e->getMessage());
-            } finally {
-                // Reset search path to default
-                DB::statement("SET search_path TO public");
+                \Log::warning("Failed to access tenant pages for {$tenantSlug}: " . $e->getMessage());
             }
 
             // Fallback to mock data if no real content found
