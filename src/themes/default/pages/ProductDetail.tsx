@@ -993,11 +993,11 @@ const ProductDetail = () => {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                            {review.userName.charAt(0)}
+                            {(review.userName || 'U').charAt(0)}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-foreground">{review.userName}</h4>
+                              <h4 className="font-semibold text-foreground">{review.userName || 'User'}</h4>
                               {review.verified && (
                                 <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                                   <Check className="w-3 h-3" />

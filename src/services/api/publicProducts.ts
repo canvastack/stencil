@@ -9,35 +9,43 @@ const USE_MOCK = false; // Use real API data from database
  * Transform backend API response to frontend Product format
  */
 function transformApiProduct(apiProduct: any): Product {
+  // Handle wrapped responses: { data: {...} } or direct object
+  const product = apiProduct?.data || apiProduct;
+  
+  if (!product || !product.id) {
+    console.warn('transformApiProduct: Invalid product data:', apiProduct);
+    throw new Error('Invalid product data received from API');
+  }
+  
   return {
-    id: String(apiProduct.id),
-    name: apiProduct.name || '',
-    slug: apiProduct.slug || '',
-    description: apiProduct.description || '',
-    longDescription: apiProduct.longDescription || '',
-    images: apiProduct.media?.images || [],
-    features: apiProduct.specifications?.features || [],
-    category: apiProduct.category?.name || '',
-    subcategory: apiProduct.subcategory || '',
-    tags: apiProduct.taxonomy?.tags || [],
-    material: apiProduct.materials?.material || apiProduct.material || '',
-    price: (apiProduct.pricing?.price || 0) / 100, // Convert from cents to rupiah
-    currency: apiProduct.pricing?.currency || 'IDR',
-    priceUnit: apiProduct.pricing?.priceUnit || 'piece',
-    minOrder: apiProduct.ordering?.minOrderQuantity || 1,
-    specifications: apiProduct.specifications?.specifications || [],
-    customizable: apiProduct.customization?.customizable || false,
-    customOptions: apiProduct.customization?.customOptions || [],
-    inStock: apiProduct.inventory?.inStock || false,
-    stockQuantity: apiProduct.inventory?.stockQuantity || 0,
-    leadTime: apiProduct.ordering?.leadTime || '',
-    seoTitle: apiProduct.seo?.seoTitle || '',
-    seoDescription: apiProduct.seo?.seoDescription || '',
-    seoKeywords: apiProduct.seo?.seoKeywords || [],
-    status: apiProduct.status || 'published',
-    featured: apiProduct.marketing?.featured || false,
-    createdAt: apiProduct.timestamps?.createdAt || '',
-    updatedAt: apiProduct.timestamps?.updatedAt || '',
+    id: String(product.id),
+    name: product.name || '',
+    slug: product.slug || '',
+    description: product.description || '',
+    longDescription: product.longDescription || '',
+    images: product.media?.images || [],
+    features: product.specifications?.features || [],
+    category: product.category?.name || '',
+    subcategory: product.subcategory || '',
+    tags: product.taxonomy?.tags || [],
+    material: product.materials?.material || product.material || '',
+    price: (product.pricing?.price || 0) / 100, // Convert from cents to rupiah
+    currency: product.pricing?.currency || 'IDR',
+    priceUnit: product.pricing?.priceUnit || 'piece',
+    minOrder: product.ordering?.minOrderQuantity || 1,
+    specifications: product.specifications?.specifications || [],
+    customizable: product.customization?.customizable || false,
+    customOptions: product.customization?.customOptions || [],
+    inStock: product.inventory?.inStock || false,
+    stockQuantity: product.inventory?.stockQuantity || 0,
+    leadTime: product.ordering?.leadTime || '',
+    seoTitle: product.seo?.seoTitle || '',
+    seoDescription: product.seo?.seoDescription || '',
+    seoKeywords: product.seo?.seoKeywords || [],
+    status: product.status || 'published',
+    featured: product.marketing?.featured || false,
+    createdAt: product.timestamps?.createdAt || '',
+    updatedAt: product.timestamps?.updatedAt || '',
   };
 }
 
@@ -93,15 +101,20 @@ class PublicProductsService {
         last_page: response.meta?.last_page || response.last_page || 1,
       };
     } catch (error) {
-      console.warn('Public API not available, falling back to mock data:', error);
-      const mockData = mockProducts.getProducts(filters);
-      return {
-        data: Array.isArray(mockData) ? mockData : [],
-        current_page: filters?.page || 1,
-        per_page: filters?.per_page || 10,
-        total: Array.isArray(mockData) ? mockData.length : 0,
-        last_page: 1,
-      };
+      if (import.meta.env.MODE === 'development') {
+        console.warn('Public API not available, using mock data for development:', error);
+        const mockData = mockProducts.getProducts(filters);
+        return {
+          data: Array.isArray(mockData) ? mockData : [],
+          current_page: filters?.page || 1,
+          per_page: filters?.per_page || 10,
+          total: Array.isArray(mockData) ? mockData.length : 0,
+          last_page: 1,
+        };
+      } else {
+        console.error('Failed to load products from API:', error);
+        throw new Error(`Failed to load products: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -119,8 +132,13 @@ class PublicProductsService {
       const response = await anonymousApiClient.get<any>(endpoint);
       return response ? transformApiProduct(response) : null;
     } catch (error) {
-      console.warn('Public API not available, falling back to mock data:', error);
-      return mockProducts.getProductBySlug(slug);
+      if (import.meta.env.MODE === 'development') {
+        console.warn('Public API not available, using mock data for development:', error);
+        return mockProducts.getProductBySlug(slug);
+      } else {
+        console.error('Failed to load product by slug from API:', error);
+        throw new Error(`Failed to load product ${slug}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -134,8 +152,13 @@ class PublicProductsService {
       const response = await anonymousApiClient.get<any>(`/public/products/${id}`);
       return response ? transformApiProduct(response) : null;
     } catch (error) {
-      console.warn('Public API not available, falling back to mock data:', error);
-      return mockProducts.getProductById(id);
+      if (import.meta.env.MODE === 'development') {
+        console.warn('Public API not available, using mock data for development:', error);
+        return mockProducts.getProductById(id);
+      } else {
+        console.error('Failed to load product by ID from API:', error);
+        throw new Error(`Failed to load product ${id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -154,8 +177,13 @@ class PublicProductsService {
       );
       return response.data?.map(transformApiProduct) || [];
     } catch (error) {
-      console.warn('Public API not available, falling back to mock data:', error);
-      return mockProducts.getFeaturedProducts(limit);
+      if (import.meta.env.MODE === 'development') {
+        console.warn('Public API not available, using mock data for development:', error);
+        return mockProducts.getFeaturedProducts(limit);
+      } else {
+        console.error('Failed to load featured products from API:', error);
+        throw new Error(`Failed to load featured products: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -174,8 +202,13 @@ class PublicProductsService {
       );
       return response.data?.map(transformApiProduct) || [];
     } catch (error) {
-      console.warn('Public API not available, falling back to mock data:', error);
-      return mockProducts.getProductsByCategory(category, limit);
+      if (import.meta.env.MODE === 'development') {
+        console.warn('Public API not available, using mock data for development:', error);
+        return mockProducts.getProductsByCategory(category, limit);
+      } else {
+        console.error('Failed to load products by category from API:', error);
+        throw new Error(`Failed to load products for category ${category}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -193,8 +226,13 @@ class PublicProductsService {
       );
       return response.data?.map(transformApiProduct) || [];
     } catch (error) {
-      console.warn('Public API not available, falling back to mock data:', error);
-      return mockProducts.searchProducts(query);
+      if (import.meta.env.MODE === 'development') {
+        console.warn('Public API not available, using mock data for development:', error);
+        return mockProducts.searchProducts(query);
+      } else {
+        console.error('Failed to search products from API:', error);
+        throw new Error(`Failed to search products for "${query}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 }

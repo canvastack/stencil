@@ -72,8 +72,12 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return cache.get(cacheKey)!;
       }
       
-      // Use authenticated API for admin users, anonymous API for public users
-      if (globalContext.userType === 'platform') {
+      // Determine route context - admin routes should use authenticated APIs, public routes should use anonymous API
+      const currentPath = window.location.pathname;
+      const isAdminRoute = currentPath.includes('/admin/');
+      
+      // Use authenticated API for admin routes only, anonymous API for public routes
+      if (isAdminRoute && globalContext.userType === 'platform') {
         // Platform admin - use platform API
         try {
           const response = await platformApiClient.get(`/platform/content/pages/${slugParts[0]}`);
@@ -83,26 +87,31 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             throw new Error('Platform content not found');
           }
         } catch (error) {
-          console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback`);
-          pageData = getPlatformFallbackContent(slugParts[0]);
+          if (import.meta.env.MODE === 'development') {
+            console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback for development`);
+            pageData = getPlatformFallbackContent(slugParts[0]);
+          } else {
+            console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);
+            throw new Error(`Failed to load platform content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         }
-      } else if (globalContext.userType === 'tenant') {
-        // Tenant admin - use tenant API
+      } else if (isAdminRoute && globalContext.userType === 'tenant') {
+        // Tenant admin accessing admin routes - use tenant API
         try {
           if (isTenantRoute && slugParts.length >= 2) {
-            // For tenant routes like etchinx/home -> /tenant/content/pages/etchinx/home
+            // For tenant routes like etchinx/home -> tenant admin accesses their own content as just "home"
             const [tenantSlug, pageSlug] = slugParts;
-            const response = await tenantApiClient.get(`/tenant/content/pages/${tenantSlug}/${pageSlug}`);
+            const response = await tenantApiClient.get(`/tenant/content/pages/${pageSlug}`);
             console.log('ContentContext: Tenant API response:', response);
-            if (response && response.id) {
-              // Response is the content object itself
-              pageData = response;
+            if (response && (response.id || (response.success && response.data))) {
+              // Response could be direct content object or wrapped in success/data structure
+              pageData = response.data || response;
             } else {
               throw new Error('Tenant content not found');
             }
           } else {
-            // For single page routes like home -> /content/pages/home
-            const response = await tenantApiClient.get(`/content/pages/${slugParts[0]}`);
+            // For single page routes like home -> /tenant/content/pages/home
+            const response = await tenantApiClient.get(`/tenant/content/pages/${slugParts[0]}`);
             console.log('ContentContext: Tenant API single response:', response);
             if (response && (response.id || (response.success && response.data))) {
               // Response could be direct content object or wrapped in success/data structure
@@ -113,8 +122,13 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         } catch (error) {
           const pageName = isTenantRoute && slugParts.length >= 2 ? `${slugParts[0]}/${slugParts[1]}` : slugParts[0];
-          console.warn(`ContentContext: Failed to load tenant content for ${pageName}, using fallback`);
-          pageData = getTenantFallbackContent(isTenantRoute ? slugParts[0] : 'unknown', isTenantRoute ? slugParts[1] : slugParts[0]);
+          if (import.meta.env.MODE === 'development') {
+            console.warn(`ContentContext: Failed to load tenant content for ${pageName}, using fallback for development`);
+            pageData = getTenantFallbackContent(isTenantRoute ? slugParts[0] : 'unknown', isTenantRoute ? slugParts[1] : slugParts[0]);
+          } else {
+            console.error(`ContentContext: Failed to load tenant content for ${pageName}:`, error);
+            throw new Error(`Failed to load tenant content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         }
       } else {
         // Anonymous users - use public API
@@ -130,8 +144,13 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               throw new Error('Tenant content not found');
             }
           } catch (error) {
-            console.warn(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}, using fallback`);
-            pageData = getTenantFallbackContent(tenantSlug, pageSlug);
+            if (import.meta.env.MODE === 'development') {
+              console.warn(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}, using fallback for development`);
+              pageData = getTenantFallbackContent(tenantSlug, pageSlug);
+            } else {
+              console.error(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}:`, error);
+              throw new Error(`Failed to load tenant content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
           }
         } else {
           // General platform content: about, faq, contact
@@ -143,8 +162,13 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               throw new Error('Platform content not found');
             }
           } catch (error) {
-            console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback`);
-            pageData = getPlatformFallbackContent(slugParts[0]);
+            if (import.meta.env.MODE === 'development') {
+              console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback for development`);
+              pageData = getPlatformFallbackContent(slugParts[0]);
+            } else {
+              console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);
+              throw new Error(`Failed to load platform content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
           }
         }
       }
@@ -181,7 +205,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (globalContext.userType === 'platform') {
         response = await platformApiClient.put(`/platform/content/pages/${slug}`, { content });
       } else if (globalContext.userType === 'tenant') {
-        response = await tenantApiClient.put(`/tenant/content/pages/${slug}`, { content });
+        response = await tenantApiClient.put(`/content/pages/${slug}`, { content });
       } else {
         throw new Error('Content updates not supported for anonymous users');
       }

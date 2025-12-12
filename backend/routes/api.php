@@ -190,13 +190,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 });
 
 // Tenant API (authenticated tenant users)
-Route::prefix('tenant')->middleware('auth:sanctum')->group(function () {
-    // Tenant Content API
-    Route::prefix('content')->group(function () {
-        Route::get('/pages/{tenantSlug}/{page}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getTenantPage']);
-        Route::get('/pages/{page}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getPage']);
-    });
-});
+// Note: Tenant content management routes are in tenant.php using Tenant\ContentController
 
 // Public API (No authentication required)
 Route::prefix('public')->group(function () {

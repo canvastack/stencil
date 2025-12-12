@@ -59,7 +59,7 @@ export const envConfig: EnvironmentConfig = {
     retryDelay: getEnvNumber('VITE_REQUEST_RETRY_DELAY', 1000),
   },
   features: {
-    useMockData: getEnvBoolean('VITE_USE_MOCK_DATA', true),
+    useMockData: getEnvBoolean('VITE_USE_MOCK_DATA', false),
     enableAnalytics: getEnvBoolean('VITE_ENABLE_ANALYTICS', false),
     enableErrorTracking: getEnvBoolean('VITE_ENABLE_ERROR_TRACKING', false),
   },
