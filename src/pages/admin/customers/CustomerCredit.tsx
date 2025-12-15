@@ -59,6 +59,7 @@ import {
   Calculator,
   Banknote
 } from 'lucide-react';
+import { customerCreditService, CustomerCreditData } from '@/services/api/customerCredit';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 
@@ -103,7 +104,6 @@ const defaultAdjustmentForm: CreditAdjustmentForm = {
 };
 
 export default function CustomerCredit() {
-  const { customers: apiCustomers, isLoading: customersLoading, fetchCustomers } = useCustomers();
   const [customers, setCustomers] = useState<CustomerCreditData[]>([]);
   const [transactions, setTransactions] = useState<CreditTransaction[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerCreditData | null>(null);
@@ -112,182 +112,45 @@ export default function CustomerCredit() {
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const [adjustmentForm, setAdjustmentForm] = useState<CreditAdjustmentForm>(defaultAdjustmentForm);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'good' | 'warning' | 'critical'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'pending'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'individual' | 'company'>('all');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Load customers from API
+  // Fetch customer credit data from API
   useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+    const fetchCustomerCredit = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await customerCreditService.getCustomersCredit({
+          search: searchTerm || undefined,
+          status: statusFilter !== 'all' ? statusFilter : undefined
+        });
+        
+        setCustomers(response.data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load customer credit data';
+        setError(errorMessage);
+        console.error('Customer credit fetch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Transform API customers to CustomerCreditData format
-  useEffect(() => {
-    if (apiCustomers && apiCustomers.length > 0) {
-      const creditCustomers: CustomerCreditData[] = apiCustomers.map(customer => ({
-        ...customer,
-        customerType: customer.type,
-        creditLimit: 100000000, // Default values - would come from API
-        outstandingBalance: 0,
-        creditUtilization: 0,
-        creditScore: 80,
-        paymentHistory: 'good',
-        lastPaymentDate: new Date().toISOString().split('T')[0],
-        overdueAmount: 0,
-        daysPastDue: 0,
-        totalOrders: customer.total_orders || 0,
-        lifetimeValue: customer.lifetime_value || 0,
-        createdAt: customer.created_at
-      }));
-      setCustomers(creditCustomers);
-    }
-  }, [apiCustomers]);
+    fetchCustomerCredit();
+  }, [searchTerm, statusFilter]);
 
-  // Mock data untuk demonstrasi
-  const mockCustomers: CustomerCreditData[] = [
-    {
-      id: '1',
-      uuid: 'cust-001',
-      name: 'PT. Teknologi Maju',
-      email: 'procurement@teknologimaju.co.id',
-      customerType: 'company',
-      creditLimit: 500000000,
-      outstandingBalance: 125000000,
-      creditUtilization: 25,
-      creditScore: 95,
-      paymentHistory: 'excellent',
-      status: 'active',
-      lastPaymentDate: '2024-12-01',
-      overdueAmount: 0,
-      daysPastDue: 0,
-      totalOrders: 45,
-      lifetimeValue: 2500000000,
-      createdAt: '2023-05-15'
-    },
-    {
-      id: '2',
-      uuid: 'cust-002',
-      name: 'CV. Berkah Jaya',
-      email: 'owner@berkahjaya.com',
-      customerType: 'company',
-      creditLimit: 100000000,
-      outstandingBalance: 85000000,
-      creditUtilization: 85,
-      creditScore: 70,
-      paymentHistory: 'good',
-      status: 'active',
-      lastPaymentDate: '2024-11-15',
-      overdueAmount: 15000000,
-      daysPastDue: 7,
-      totalOrders: 23,
-      lifetimeValue: 450000000,
-      createdAt: '2023-08-20'
-    },
-    {
-      id: '3',
-      uuid: 'cust-003',
-      name: 'Ahmad Budiman',
-      email: 'ahmad.budiman@gmail.com',
-      customerType: 'individual',
-      creditLimit: 25000000,
-      outstandingBalance: 5000000,
-      creditUtilization: 20,
-      creditScore: 88,
-      paymentHistory: 'excellent',
-      status: 'active',
-      lastPaymentDate: '2024-11-28',
-      overdueAmount: 0,
-      daysPastDue: 0,
-      totalOrders: 12,
-      lifetimeValue: 85000000,
-      createdAt: '2024-01-10'
-    },
-    {
-      id: '4',
-      uuid: 'cust-004',
-      name: 'PT. Industri Kreatif',
-      email: 'finance@industrikreatif.co.id',
-      customerType: 'company',
-      creditLimit: 200000000,
-      outstandingBalance: 195000000,
-      creditUtilization: 97.5,
-      creditScore: 45,
-      paymentHistory: 'poor',
-      status: 'active',
-      lastPaymentDate: '2024-09-15',
-      overdueAmount: 75000000,
-      daysPastDue: 45,
-      totalOrders: 18,
-      lifetimeValue: 320000000,
-      createdAt: '2023-11-05'
-    },
-    {
-      id: '5',
-      uuid: 'cust-005',
-      name: 'Sari Dewi',
-      email: 'sari.dewi@hotmail.com',
-      customerType: 'individual',
-      creditLimit: 15000000,
-      outstandingBalance: 8500000,
-      creditUtilization: 56.7,
-      creditScore: 75,
-      paymentHistory: 'good',
-      status: 'active',
-      lastPaymentDate: '2024-11-20',
-      overdueAmount: 2500000,
-      daysPastDue: 12,
-      totalOrders: 8,
-      lifetimeValue: 45000000,
-      createdAt: '2024-03-22'
-    }
-  ];
-
-  const mockTransactions: CreditTransaction[] = [
-    {
-      id: '1',
-      customerId: '1',
-      customerName: 'PT. Teknologi Maju',
-      type: 'payment',
-      amount: -50000000,
-      previousBalance: 175000000,
-      newBalance: 125000000,
-      description: 'Payment received for Invoice #INV-2024-001',
-      createdAt: '2024-12-01',
-      createdBy: 'Finance Team'
-    },
-    {
-      id: '2',
-      customerId: '2',
-      customerName: 'CV. Berkah Jaya',
-      type: 'invoice',
-      amount: 25000000,
-      previousBalance: 60000000,
-      newBalance: 85000000,
-      description: 'New invoice #INV-2024-045 created',
-      createdAt: '2024-11-25',
-      createdBy: 'System'
-    },
-    {
-      id: '3',
-      customerId: '1',
-      customerName: 'PT. Teknologi Maju',
-      type: 'credit_limit_increase',
-      amount: 100000000,
-      previousBalance: 175000000,
-      newBalance: 175000000,
-      description: 'Credit limit increased due to excellent payment history',
-      createdAt: '2024-11-20',
-      createdBy: 'Credit Manager'
-    }
-  ];
+  // Mock data removed - now using real API data via customerCreditService
 
   // Filter customers
   const filteredCustomers = useMemo(() => {
-    return mockCustomers.filter(customer => {
+    return customers.filter(customer => {
       const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           customer.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType = typeFilter === 'all' || customer.customerType === typeFilter;
+      const matchesType = typeFilter === 'all' || customer.company === typeFilter;
       
       let matchesStatus = true;
       if (statusFilter === 'good') {
@@ -305,11 +168,11 @@ export default function CustomerCredit() {
 
   // Statistics
   const stats = useMemo(() => {
-    const totalCreditLimit = mockCustomers.reduce((sum, c) => sum + c.creditLimit, 0);
-    const totalOutstanding = mockCustomers.reduce((sum, c) => sum + c.outstandingBalance, 0);
-    const totalOverdue = mockCustomers.reduce((sum, c) => sum + c.overdueAmount, 0);
-    const avgCreditScore = mockCustomers.reduce((sum, c) => sum + c.creditScore, 0) / mockCustomers.length;
-    const customersAtRisk = mockCustomers.filter(c => c.creditScore < 60 || c.daysPastDue > 30).length;
+    const totalCreditLimit = customers.reduce((sum, c) => sum + c.creditLimit, 0);
+    const totalOutstanding = customers.reduce((sum, c) => sum + c.creditUsed, 0);
+    const totalOverdue = customers.reduce((sum, c) => sum + (c.creditScore < 600 ? c.creditUsed : 0), 0);
+    const avgCreditScore = customers.length > 0 ? customers.reduce((sum, c) => sum + c.creditScore, 0) / customers.length : 0;
+    const customersAtRisk = customers.filter(c => c.creditScore < 600 || c.status === 'suspended').length;
     const utilizationRate = totalCreditLimit > 0 ? (totalOutstanding / totalCreditLimit) * 100 : 0;
 
     return {
@@ -349,7 +212,7 @@ export default function CustomerCredit() {
       ),
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          {row.original.customerType === 'company' ? (
+          {row.original.company ? (
             <Building className="h-4 w-4 text-blue-600" />
           ) : (
             <User className="h-4 w-4 text-green-600" />

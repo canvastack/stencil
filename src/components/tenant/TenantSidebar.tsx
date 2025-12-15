@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -267,7 +267,7 @@ export const TenantSidebar = () => {
   // Get current user info
   const userName = user?.name || 'Tenant User';
   const userEmail = user?.email || 'user@tenant.com';
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const userInitials = userName?.split(' ')?.map(n => n?.[0] || '').filter(Boolean).join('').toUpperCase().slice(0, 2) || 'TU';
 
   const toggleMenu = (title: string) => {
     setExpandedMenus((prev) => {
@@ -325,11 +325,11 @@ export const TenantSidebar = () => {
             >
               {hasChildren ? (
                 <div>
-                  {item.icon && <item.icon className="w-5 h-5" />}
+                  {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
                 </div>
               ) : (
                 <Link to={item.path!}>
-                  {item.icon && <item.icon className="w-5 h-5" />}
+                  {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
                 </Link>
               )}
             </Button>
@@ -357,7 +357,7 @@ export const TenantSidebar = () => {
               onClick={() => toggleMenu(item.title)}
             >
               <div className="flex items-center gap-3">
-                {item.icon && <item.icon className="w-5 h-5" />}
+                {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
                 <span className="font-medium">{item.title}</span>
               </div>
               {isExpanded ? (
@@ -370,7 +370,9 @@ export const TenantSidebar = () => {
               <div className="space-y-1">
                 {item.children.map((child) => 
                   child.children ? (
-                    renderMenuItem(child, depth + 1)
+                    <div key={child.path || child.title}>
+                      {renderMenuItem(child, depth + 1)}
+                    </div>
                   ) : (
                     <Button
                       key={child.path || child.title}
@@ -411,7 +413,7 @@ export const TenantSidebar = () => {
             asChild
           >
             <Link to={item.path!}>
-              {item.icon && <item.icon className="w-5 h-5" />}
+              {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
               <span className="font-medium">{item.title}</span>
             </Link>
           </Button>

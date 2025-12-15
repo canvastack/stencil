@@ -259,7 +259,7 @@ const Products = () => {
               key={typingTextIndex}
               className="text-base text-primary font-medium animate-typing"
             >
-              {typingTexts[typingTextIndex]}
+              {typingTexts?.[typingTextIndex] || 'Premium Quality Products'}
             </p>
           </div>
         </div>

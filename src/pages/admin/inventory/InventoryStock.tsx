@@ -117,7 +117,6 @@ export default function InventoryStock() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'overstocked'>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(false);
 
   // Load inventory items from API
   useEffect(() => {
@@ -131,147 +130,30 @@ export default function InventoryStock() {
     }
   }, [items]);
 
-  // Mock data untuk demonstrasi
-  const mockInventory: InventoryItem[] = [
-    {
-      id: '1',
-      productId: 'prod-001',
-      productName: 'Aluminum Sheet 3mm',
-      sku: 'ALU-SHEET-3MM',
-      locationId: 'loc-001',
-      locationName: 'Warehouse A - Zone 1',
-      currentStock: 150,
-      reservedStock: 25,
-      availableStock: 125,
-      minimumStock: 50,
-      maximumStock: 300,
-      reorderPoint: 75,
-      reorderQuantity: 100,
-      unitCost: 45000,
-      totalValue: 6750000,
-      lastStockUpdate: '2024-12-08T10:30:00Z',
-      lastMovement: '2024-12-08T10:30:00Z',
-      movementType: 'out',
-      status: 'in_stock',
-      category: 'Raw Materials',
-      supplier: 'PT. Alumindo Jaya'
-    },
-    {
-      id: '2',
-      productId: 'prod-002',
-      productName: 'Stainless Steel Plate 5mm',
-      sku: 'SS-PLATE-5MM',
-      locationId: 'loc-001',
-      locationName: 'Warehouse A - Zone 2',
-      currentStock: 35,
-      reservedStock: 10,
-      availableStock: 25,
-      minimumStock: 40,
-      maximumStock: 200,
-      reorderPoint: 50,
-      reorderQuantity: 80,
-      unitCost: 125000,
-      totalValue: 4375000,
-      lastStockUpdate: '2024-12-07T14:15:00Z',
-      lastMovement: '2024-12-07T14:15:00Z',
-      movementType: 'in',
-      status: 'low_stock',
-      category: 'Raw Materials',
-      supplier: 'CV. Stainless Prima'
-    },
-    {
-      id: '3',
-      productId: 'prod-003',
-      productName: 'Brass Engraving Plate',
-      sku: 'BRASS-ENG-PLATE',
-      locationId: 'loc-002',
-      locationName: 'Warehouse B - Zone 1',
-      currentStock: 0,
-      reservedStock: 5,
-      availableStock: -5,
-      minimumStock: 20,
-      maximumStock: 100,
-      reorderPoint: 25,
-      reorderQuantity: 50,
-      unitCost: 85000,
-      totalValue: 0,
-      lastStockUpdate: '2024-12-06T16:45:00Z',
-      lastMovement: '2024-12-06T16:45:00Z',
-      movementType: 'out',
-      status: 'out_of_stock',
-      category: 'Finished Goods',
-      supplier: 'PT. Logam Mulia'
-    },
-    {
-      id: '4',
-      productId: 'prod-004',
-      productName: 'Acrylic Sheet Clear 2mm',
-      sku: 'ACR-CLEAR-2MM',
-      locationId: 'loc-003',
-      locationName: 'Warehouse C - Zone 1',
-      currentStock: 450,
-      reservedStock: 50,
-      availableStock: 400,
-      minimumStock: 100,
-      maximumStock: 300,
-      reorderPoint: 150,
-      reorderQuantity: 200,
-      unitCost: 35000,
-      totalValue: 15750000,
-      lastStockUpdate: '2024-12-08T11:20:00Z',
-      lastMovement: '2024-12-08T11:20:00Z',
-      movementType: 'in',
-      status: 'overstocked',
-      category: 'Raw Materials',
-      supplier: 'PT. Plastik Cemerlang'
-    },
-    {
-      id: '5',
-      productId: 'prod-005',
-      productName: 'Wooden Sign Base Oak',
-      sku: 'WOOD-OAK-BASE',
-      locationId: 'loc-002',
-      locationName: 'Warehouse B - Zone 2',
-      currentStock: 85,
-      reservedStock: 15,
-      availableStock: 70,
-      minimumStock: 30,
-      maximumStock: 150,
-      reorderPoint: 45,
-      reorderQuantity: 75,
-      unitCost: 95000,
-      totalValue: 8075000,
-      lastStockUpdate: '2024-12-08T09:00:00Z',
-      lastMovement: '2024-12-08T09:00:00Z',
-      movementType: 'adjustment',
-      status: 'in_stock',
-      category: 'Finished Goods',
-      supplier: 'CV. Kayu Berkualitas'
-    }
-  ];
+  // Use API data from useInventory hook
 
-  // Filter inventory
+  // Filter inventory using API data
   const filteredInventory = useMemo(() => {
-    return mockInventory.filter(item => {
-      const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.locationName.toLowerCase().includes(searchTerm.toLowerCase());
+    return items.filter(item => {
+      const matchesSearch = item.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          item.locationName?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
       const matchesLocation = locationFilter === 'all' || item.locationId === locationFilter;
       const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
       
       return matchesSearch && matchesStatus && matchesLocation && matchesCategory;
     });
-  }, [searchTerm, statusFilter, locationFilter, categoryFilter]);
+  }, [items, searchTerm, statusFilter, locationFilter, categoryFilter]);
 
-  // Statistics
+  // Statistics using API data
   const stats = useMemo(() => {
-    const totalItems = mockInventory.length;
-    const totalValue = mockInventory.reduce((sum, item) => sum + item.totalValue, 0);
-    const lowStockItems = mockInventory.filter(item => item.status === 'low_stock').length;
-    const outOfStockItems = mockInventory.filter(item => item.status === 'out_of_stock').length;
-    const overstockedItems = mockInventory.filter(item => item.status === 'overstocked').length;
-    const reorderNeeded = mockInventory.filter(item => item.currentStock <= item.reorderPoint).length;
+    const totalItems = items.length;
+    const totalValue = items.reduce((sum, item) => sum + (item.totalValue || 0), 0);
+    const lowStockItems = items.filter(item => item.status === 'low_stock').length;
+    const outOfStockItems = items.filter(item => item.status === 'out_of_stock').length;
+    const overstockedItems = items.filter(item => item.status === 'overstocked').length;
+    const reorderNeeded = items.filter(item => (item.currentStock || 0) <= (item.reorderPoint || 0)).length;
 
     return {
       totalItems,
@@ -281,7 +163,7 @@ export default function InventoryStock() {
       overstockedItems,
       reorderNeeded
     };
-  }, []);
+  }, [items]);
 
   // Get stock status info
   const getStatusInfo = (status: string) => {
@@ -718,7 +600,7 @@ export default function InventoryStock() {
             data={filteredInventory}
             searchKey="productName"
             searchPlaceholder="Search products..."
-            loading={isLoading}
+            loading={inventoryLoading}
           />
         </CardContent>
       </Card>
@@ -834,9 +716,9 @@ export default function InventoryStock() {
             </Button>
             <Button
               onClick={handleSaveAdjustment}
-              disabled={isLoading || !adjustmentForm.reason || adjustmentForm.adjustmentQuantity === 0}
+              disabled={inventoryLoading || !adjustmentForm.reason || adjustmentForm.adjustmentQuantity === 0}
             >
-              {isLoading ? 'Saving...' : 'Apply Adjustment'}
+              {inventoryLoading ? 'Saving...' : 'Apply Adjustment'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -102,7 +102,7 @@ class PublicProductsService {
       };
     } catch (error) {
       if (import.meta.env.MODE === 'development') {
-        console.warn('Public API not available, using mock data for development:', error);
+        console.warn('API failed, using mock data for development:', error);
         const mockData = mockProducts.getProducts(filters);
         return {
           data: Array.isArray(mockData) ? mockData : [],
@@ -133,7 +133,7 @@ class PublicProductsService {
       return response ? transformApiProduct(response) : null;
     } catch (error) {
       if (import.meta.env.MODE === 'development') {
-        console.warn('Public API not available, using mock data for development:', error);
+        console.warn('API failed, using mock data for development:', error);
         return mockProducts.getProductBySlug(slug);
       } else {
         console.error('Failed to load product by slug from API:', error);
@@ -153,7 +153,7 @@ class PublicProductsService {
       return response ? transformApiProduct(response) : null;
     } catch (error) {
       if (import.meta.env.MODE === 'development') {
-        console.warn('Public API not available, using mock data for development:', error);
+        console.warn('API failed, using mock data for development:', error);
         return mockProducts.getProductById(id);
       } else {
         console.error('Failed to load product by ID from API:', error);
@@ -178,7 +178,7 @@ class PublicProductsService {
       return response.data?.map(transformApiProduct) || [];
     } catch (error) {
       if (import.meta.env.MODE === 'development') {
-        console.warn('Public API not available, using mock data for development:', error);
+        console.warn('API failed, using mock data for development:', error);
         return mockProducts.getFeaturedProducts(limit);
       } else {
         console.error('Failed to load featured products from API:', error);
@@ -203,7 +203,7 @@ class PublicProductsService {
       return response.data?.map(transformApiProduct) || [];
     } catch (error) {
       if (import.meta.env.MODE === 'development') {
-        console.warn('Public API not available, using mock data for development:', error);
+        console.warn('API failed, using mock data for development:', error);
         return mockProducts.getProductsByCategory(category, limit);
       } else {
         console.error('Failed to load products by category from API:', error);

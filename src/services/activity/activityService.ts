@@ -394,10 +394,19 @@ class ActivityService {
    */
   private setupBeforeUnload(): void {
     window.addEventListener('beforeunload', () => {
+      // Skip in demo mode or if no logs to send
+      if (this.isDemoMode() || this.pendingLogs.length === 0) {
+        return;
+      }
+
       // Use sendBeacon for better reliability on page unload
-      if (this.pendingLogs.length > 0) {
+      // In development, this may fail due to CORS but that's expected
+      try {
         const data = JSON.stringify({ activities: this.pendingLogs });
         navigator.sendBeacon('/api/v1/activity-logs/batch', data);
+      } catch (error) {
+        // Silently fail in development mode
+        console.debug('Activity logs beacon failed (expected in dev):', error);
       }
     });
   }

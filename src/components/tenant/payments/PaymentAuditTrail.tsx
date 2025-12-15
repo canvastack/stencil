@@ -451,7 +451,7 @@ export const PaymentAuditTrail: React.FC = () => {
                         <TableCell>
                           <div className="max-w-md">
                             {event.description}
-                            {Object.keys(event.metadata).length > 0 && (
+                            {event.metadata && typeof event.metadata === 'object' && Object.keys(event.metadata).length > 0 && (
                               <div className="text-xs text-gray-500 mt-1">
                                 <p>Metadata: {JSON.stringify(event.metadata)}</p>
                               </div>

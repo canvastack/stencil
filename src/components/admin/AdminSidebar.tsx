@@ -209,7 +209,7 @@ export const AdminSidebar = () => {
   const currentUser = userType === 'platform' ? platformAccount : tenantUser;
   const userName = currentUser?.name || 'Unknown User';
   const userEmail = currentUser?.email || 'unknown@email.com';
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const userInitials = userName?.split(' ')?.map(n => n?.[0] || '').filter(Boolean).join('').toUpperCase().slice(0, 2) || 'AU';
 
   const toggleMenu = (title: string) => {
     setExpandedMenus((prev) => {

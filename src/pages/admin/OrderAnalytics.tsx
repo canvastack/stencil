@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,47 +10,77 @@ import {
 } from 'recharts';
 import { 
   TrendingUp, TrendingDown, DollarSign, Package, Users, 
-  Clock, Target, Award, AlertTriangle 
+  Clock, Target, Award, AlertTriangle, Loader2 
 } from 'lucide-react';
+import { analyticsService, AnalyticsData } from '@/services/api/analytics';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
-const mockData = {
-  revenue: [
-    { month: 'Jan', revenue: 45000, orders: 120, profit: 12000 },
-    { month: 'Feb', revenue: 52000, orders: 135, profit: 14000 },
-    { month: 'Mar', revenue: 48000, orders: 125, profit: 13200 },
-    { month: 'Apr', revenue: 61000, orders: 155, profit: 16800 },
-    { month: 'May', revenue: 58000, orders: 145, profit: 15600 },
-    { month: 'Jun', revenue: 67000, orders: 170, profit: 18900 }
-  ],
-  orderStatus: [
-    { name: 'Completed', value: 45, count: 145 },
-    { name: 'In Production', value: 25, count: 80 },
-    { name: 'Pending Payment', value: 15, count: 48 },
-    { name: 'Vendor Sourcing', value: 10, count: 32 },
-    { name: 'Cancelled', value: 5, count: 16 }
-  ],
-  topCustomers: [
-    { name: 'PT Manufaktur Jaya', orders: 23, revenue: 125000, trend: 'up' },
-    { name: 'CV Teknik Presisi', orders: 18, revenue: 95000, trend: 'up' },
-    { name: 'PT Indo Etching', orders: 15, revenue: 78000, trend: 'down' },
-    { name: 'Berkah Metal Works', orders: 12, revenue: 65000, trend: 'up' },
-    { name: 'Precision Tools Co', orders: 10, revenue: 55000, trend: 'stable' }
-  ],
-  performance: [
-    { metric: 'Average Order Value', value: 'Rp 3,250,000', change: '+12%', trend: 'up' },
-    { metric: 'Order Completion Rate', value: '94.2%', change: '+3%', trend: 'up' },
-    { metric: 'Average Production Time', value: '7.5 days', change: '-8%', trend: 'down' },
-    { metric: 'Customer Satisfaction', value: '4.8/5', change: '+0.2', trend: 'up' },
-    { metric: 'Vendor Response Time', value: '2.3 hours', change: '-15%', trend: 'down' },
-    { metric: 'Profit Margin', value: '28.5%', change: '+4%', trend: 'up' }
-  ]
-};
+// Mock data removed - now using real API data via analyticsService
 
 export default function OrderAnalytics() {
   const [timeRange, setTimeRange] = useState('6months');
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const data = await analyticsService.getOrderAnalytics({
+          timeRange: timeRange
+        });
+        
+        setAnalyticsData(data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load analytics data';
+        setError(errorMessage);
+        console.error('Analytics fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [timeRange]);
+
+  // Use API data if available, fallback to empty data if loading/error
+  const data = analyticsData || {
+    revenue: [],
+    orderStatus: [],
+    topCustomers: [],
+    performance: []
+  };
   
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading analytics data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-8">
+          <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Failed to Load Analytics</h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -119,7 +149,7 @@ export default function OrderAnalytics() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={mockData.revenue}>
+                  <AreaChart data={data.revenue}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -144,7 +174,7 @@ export default function OrderAnalytics() {
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={mockData.orderStatus}
+                      data={data.orderStatus}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -153,7 +183,7 @@ export default function OrderAnalytics() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {mockData.orderStatus.map((entry, index) => (
+                      {data.orderStatus.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -176,7 +206,7 @@ export default function OrderAnalytics() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={mockData.revenue}>
+                  <LineChart data={data.revenue}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -196,7 +226,7 @@ export default function OrderAnalytics() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={mockData.revenue}>
+                  <BarChart data={data.revenue}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -219,20 +249,20 @@ export default function OrderAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockData.revenue.map((month, index) => (
+                  {data.revenue.map((month, index) => (
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{month.month} 2024</span>
-                          <Badge variant="outline">{month.orders} orders</Badge>
+                          <Badge variant="outline">{month.orders || 0} orders</Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Revenue: Rp {month.revenue.toLocaleString()} • Profit: Rp {month.profit.toLocaleString()}
+                          Revenue: Rp {(month.revenue || 0).toLocaleString()} • Profit: Rp {(month.profit || 0).toLocaleString()}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600">
-                          {((month.profit / month.revenue) * 100).toFixed(1)}%
+                          {month.revenue > 0 ? ((month.profit / month.revenue) * 100).toFixed(1) : 0}%
                         </p>
                         <p className="text-xs text-muted-foreground">Margin</p>
                       </div>
@@ -252,25 +282,25 @@ export default function OrderAnalytics() {
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Total Revenue</p>
                   <p className="text-2xl font-bold text-green-600">
-                    Rp {mockData.revenue.reduce((sum, month) => sum + month.revenue, 0).toLocaleString()}
+                    Rp {data.revenue.reduce((sum, month) => sum + month.revenue, 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Total Profit</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    Rp {mockData.revenue.reduce((sum, month) => sum + month.profit, 0).toLocaleString()}
+                    Rp {data.revenue.reduce((sum, month) => sum + month.profit, 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Average Margin</p>
                   <p className="text-2xl font-bold text-purple-600">
-                    {(mockData.revenue.reduce((sum, month) => sum + (month.profit / month.revenue), 0) / mockData.revenue.length * 100).toFixed(1)}%
+                    {data.revenue.length > 0 ? (data.revenue.reduce((sum, month) => sum + (month.profit / month.revenue || 0), 0) / data.revenue.length * 100).toFixed(1) : 0}%
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Total Orders</p>
                   <p className="text-2xl font-bold text-orange-600">
-                    {mockData.revenue.reduce((sum, month) => sum + month.orders, 0)}
+                    {data.revenue.reduce((sum, month) => sum + month.orders, 0)}
                   </p>
                 </div>
               </CardContent>
@@ -280,7 +310,7 @@ export default function OrderAnalytics() {
 
         <TabsContent value="performance" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockData.performance.map((metric, index) => (
+            {data.performance.map((metric, index) => (
               <Card key={index}>
                 <CardContent className="p-6">
                   <div className="space-y-2">
@@ -320,15 +350,15 @@ export default function OrderAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockData.topCustomers.map((customer, index) => (
+                {data.topCustomers.map((customer, index) => (
                   <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{customer.name}</span>
+                        <span className="font-medium">{customer.name || 'Unknown Customer'}</span>
                         <Badge variant="outline">#{index + 1}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {customer.orders} orders • Rp {customer.revenue.toLocaleString()}
+                        {customer.orders || 0} orders • Rp {(customer.revenue || 0).toLocaleString()}
                       </p>
                     </div>
                     <div className="text-right">

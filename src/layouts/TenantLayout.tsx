@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useTenantAuth } from '@/hooks/useTenantAuth';
 import { Navigate } from 'react-router-dom';
+import { DebugErrorBoundary } from '@/components/DebugErrorBoundary';
 
 // Development-only overflow debug helper
 if (process.env.NODE_ENV === 'development') {
@@ -36,7 +37,9 @@ export const TenantLayout = memo(() => {
   return (
     <TooltipProvider>
       <div className="min-h-screen flex bg-green-50/30 dark:bg-green-950/20">
-        <TenantSidebar />
+        <DebugErrorBoundary componentName="TenantSidebar">
+          <TenantSidebar />
+        </DebugErrorBoundary>
         
         <div
           className={cn(
@@ -45,7 +48,9 @@ export const TenantLayout = memo(() => {
             sidebarCollapsed ? 'pl-20' : 'pl-64'
           )}
         >
-          <TenantHeader />
+          <DebugErrorBoundary componentName="TenantHeader">
+            <TenantHeader />
+          </DebugErrorBoundary>
           
           <div className="flex-1 overflow-x-hidden relative">
             <main 
@@ -53,9 +58,13 @@ export const TenantLayout = memo(() => {
               className="absolute inset-0 overflow-y-auto bg-background"
             >
               <div className="min-h-[calc(100vh-8rem)]">
-                <Outlet />
+                <DebugErrorBoundary componentName="LazyRoute-Outlet">
+                  <Outlet />
+                </DebugErrorBoundary>
               </div>
-              <TenantFooter />
+              <DebugErrorBoundary componentName="TenantFooter">
+                <TenantFooter />
+              </DebugErrorBoundary>
             </main>
           </div>
           

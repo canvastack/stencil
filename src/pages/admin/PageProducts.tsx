@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Save, RotateCcw, Eye, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { usePageContent } from "@/hooks/usePageContent";
+import { usePageContent } from "@/contexts/ContentContext";
 
 const PageProducts: React.FC = () => {
   const { content, loading, updatePageContent } = usePageContent("products");

@@ -112,7 +112,11 @@ export default function PageAbout() {
               <div className="space-y-2">
                 <Label>Title</Label>
                 <Input
-                  value={formData.hero?.title || ""}
+                  value={typeof formData.hero?.title === 'string' 
+                    ? formData.hero.title 
+                    : (formData.hero?.title?.prefix && formData.hero?.title?.highlight 
+                      ? `${formData.hero.title.prefix} ${formData.hero.title.highlight}`
+                      : "")}
                   onChange={(e) => {
                     setFormData({
                       ...formData,

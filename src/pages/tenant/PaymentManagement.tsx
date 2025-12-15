@@ -573,7 +573,7 @@ export const PaymentManagement = () => {
                     <div key={methodStat.method} className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium capitalize">
-                          {methodStat.method.replace('_', ' ')}
+                          {(methodStat.method || '').replace('_', ' ')}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {methodStat.count} transactions
@@ -582,7 +582,7 @@ export const PaymentManagement = () => {
                       <div className="text-right">
                         <p className="text-sm font-medium">{formatCurrency(methodStat.amount)}</p>
                         <p className="text-xs text-muted-foreground">
-                          {methodStat.percentage.toFixed(1)}%
+                          {(methodStat.percentage || 0).toFixed(1)}%
                         </p>
                       </div>
                     </div>
@@ -758,7 +758,7 @@ export const PaymentManagement = () => {
                           </TableCell>
                           <TableCell>
                             <span className="capitalize">
-                              {payment.payment_method.replace('_', ' ')}
+                              {(payment.payment_method || '').replace('_', ' ')}
                             </span>
                           </TableCell>
                           <TableCell>

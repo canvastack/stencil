@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useShipping } from '@/hooks/useShipping';
+import { shippingTrackingService, type ShipmentTracking, type ShippingTrackingFilters } from '@/services/api/shippingTracking';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,68 +57,6 @@ import {
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 
-interface TrackingEvent {
-  id: string;
-  timestamp: string;
-  status: string;
-  description: string;
-  location: string;
-  facilityName?: string;
-  carrierCode?: string;
-  isDelivered: boolean;
-  isException: boolean;
-}
-
-interface ShipmentTracking {
-  id: string;
-  trackingNumber: string;
-  orderNumber: string;
-  customerId: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
-  carrierId: string;
-  carrierName: string;
-  carrierCode: string;
-  shippingMethodId: string;
-  shippingMethodName: string;
-  status: 'pending' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'exception' | 'returned';
-  currentLocation: string;
-  estimatedDelivery: string;
-  actualDelivery?: string;
-  shipmentDate: string;
-  origin: {
-    address: string;
-    city: string;
-    province: string;
-    postalCode: string;
-  };
-  destination: {
-    address: string;
-    city: string;
-    province: string;
-    postalCode: string;
-  };
-  package: {
-    weight: number;
-    dimensions: { length: number; width: number; height: number };
-    value: number;
-    description: string;
-  };
-  trackingEvents: TrackingEvent[];
-  isInsured: boolean;
-  insuranceValue: number;
-  codAmount?: number;
-  specialInstructions?: string;
-  lastUpdated: string;
-  deliveryAttempts: number;
-  signatureRequired: boolean;
-  deliveredTo?: string;
-  proofOfDelivery?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface TrackingFilters {
   search: string;
   status: string;
@@ -139,252 +78,42 @@ export default function ShippingTracking() {
   const [selectedTracking, setSelectedTracking] = useState<ShipmentTracking | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [filters, setFilters] = useState<TrackingFilters>(defaultFilters);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data for tracking
+  // Fetch tracking data from API
   useEffect(() => {
-    const mockTrackings: ShipmentTracking[] = [
-      {
-        id: '1',
-        trackingNumber: 'JNE0012345678901',
-        orderNumber: 'ORD-001',
-        customerId: 'cust-001',
-        customerName: 'John Doe',
-        customerEmail: 'john.doe@email.com',
-        customerPhone: '+62-812-3456-7890',
-        carrierId: 'carrier-001',
-        carrierName: 'JNE Express',
-        carrierCode: 'JNE',
-        shippingMethodId: 'method-001',
-        shippingMethodName: 'JNE REG',
-        status: 'in_transit',
-        currentLocation: 'Jakarta Distribution Center',
-        estimatedDelivery: '2024-12-12T17:00:00Z',
-        shipmentDate: '2024-12-09T10:30:00Z',
-        origin: {
-          address: 'Jl. Sudirman No. 123',
-          city: 'Jakarta',
-          province: 'DKI Jakarta',
-          postalCode: '12190',
-        },
-        destination: {
-          address: 'Jl. Thamrin No. 456',
-          city: 'Bandung',
-          province: 'Jawa Barat',
-          postalCode: '40111',
-        },
-        package: {
-          weight: 2.5,
-          dimensions: { length: 30, width: 20, height: 15 },
-          value: 500000,
-          description: 'Custom Engraving Products',
-        },
-        trackingEvents: [
-          {
-            id: '1',
-            timestamp: '2024-12-09T10:30:00Z',
-            status: 'PICKED_UP',
-            description: 'Package picked up from sender',
-            location: 'Jakarta Origin Facility',
-            facilityName: 'JNE Jakarta Pusat',
-            carrierCode: 'JNE',
-            isDelivered: false,
-            isException: false,
-          },
-          {
-            id: '2',
-            timestamp: '2024-12-09T15:45:00Z',
-            status: 'IN_TRANSIT',
-            description: 'Package in transit to destination city',
-            location: 'Jakarta Distribution Center',
-            facilityName: 'JNE DC Jakarta',
-            carrierCode: 'JNE',
-            isDelivered: false,
-            isException: false,
-          },
-          {
-            id: '3',
-            timestamp: '2024-12-10T08:20:00Z',
-            status: 'ARRIVED_AT_DESTINATION',
-            description: 'Package arrived at destination facility',
-            location: 'Bandung Distribution Center',
-            facilityName: 'JNE DC Bandung',
-            carrierCode: 'JNE',
-            isDelivered: false,
-            isException: false,
-          },
-        ],
-        isInsured: true,
-        insuranceValue: 500000,
-        lastUpdated: '2024-12-10T08:20:00Z',
-        deliveryAttempts: 0,
-        signatureRequired: true,
-        createdAt: '2024-12-09T10:30:00Z',
-        updatedAt: '2024-12-10T08:20:00Z',
-      },
-      {
-        id: '2',
-        trackingNumber: 'SCP2024120900234',
-        orderNumber: 'ORD-002',
-        customerId: 'cust-002',
-        customerName: 'Jane Smith',
-        customerEmail: 'jane.smith@email.com',
-        customerPhone: '+62-813-7654-3210',
-        carrierId: 'carrier-002',
-        carrierName: 'SiCepat Express',
-        carrierCode: 'SICEPAT',
-        shippingMethodId: 'method-002',
-        shippingMethodName: 'SICEPAT REG',
-        status: 'delivered',
-        currentLocation: 'Delivered',
-        estimatedDelivery: '2024-12-10T16:00:00Z',
-        actualDelivery: '2024-12-10T14:30:00Z',
-        shipmentDate: '2024-12-08T09:15:00Z',
-        origin: {
-          address: 'Jl. Sudirman No. 123',
-          city: 'Jakarta',
-          province: 'DKI Jakarta',
-          postalCode: '12190',
-        },
-        destination: {
-          address: 'Jl. Gatot Subroto No. 789',
-          city: 'Tangerang',
-          province: 'Banten',
-          postalCode: '15143',
-        },
-        package: {
-          weight: 1.2,
-          dimensions: { length: 25, width: 15, height: 10 },
-          value: 250000,
-          description: 'Personalized Gift Items',
-        },
-        trackingEvents: [
-          {
-            id: '1',
-            timestamp: '2024-12-08T09:15:00Z',
-            status: 'PICKED_UP',
-            description: 'Package picked up from sender',
-            location: 'Jakarta Origin Facility',
-            facilityName: 'SiCepat Jakarta Pusat',
-            carrierCode: 'SICEPAT',
-            isDelivered: false,
-            isException: false,
-          },
-          {
-            id: '2',
-            timestamp: '2024-12-09T13:20:00Z',
-            status: 'OUT_FOR_DELIVERY',
-            description: 'Package out for delivery',
-            location: 'Tangerang Delivery Hub',
-            facilityName: 'SiCepat Tangerang',
-            carrierCode: 'SICEPAT',
-            isDelivered: false,
-            isException: false,
-          },
-          {
-            id: '3',
-            timestamp: '2024-12-10T14:30:00Z',
-            status: 'DELIVERED',
-            description: 'Package delivered successfully',
-            location: 'Customer Address',
-            facilityName: 'Customer Location',
-            carrierCode: 'SICEPAT',
-            isDelivered: true,
-            isException: false,
-          },
-        ],
-        isInsured: false,
-        insuranceValue: 0,
-        lastUpdated: '2024-12-10T14:30:00Z',
-        deliveryAttempts: 1,
-        signatureRequired: false,
-        deliveredTo: 'Jane Smith',
-        proofOfDelivery: 'Signature captured',
-        createdAt: '2024-12-08T09:15:00Z',
-        updatedAt: '2024-12-10T14:30:00Z',
-      },
-      {
-        id: '3',
-        trackingNumber: 'JNE0012345678902',
-        orderNumber: 'ORD-003',
-        customerId: 'cust-003',
-        customerName: 'Ahmad Rahman',
-        customerEmail: 'ahmad.rahman@email.com',
-        customerPhone: '+62-821-5555-1234',
-        carrierId: 'carrier-001',
-        carrierName: 'JNE Express',
-        carrierCode: 'JNE',
-        shippingMethodId: 'method-003',
-        shippingMethodName: 'JNE YES',
-        status: 'exception',
-        currentLocation: 'Surabaya Distribution Center',
-        estimatedDelivery: '2024-12-11T17:00:00Z',
-        shipmentDate: '2024-12-08T14:00:00Z',
-        origin: {
-          address: 'Jl. Sudirman No. 123',
-          city: 'Jakarta',
-          province: 'DKI Jakarta',
-          postalCode: '12190',
-        },
-        destination: {
-          address: 'Jl. Pemuda No. 321',
-          city: 'Surabaya',
-          province: 'Jawa Timur',
-          postalCode: '60271',
-        },
-        package: {
-          weight: 3.8,
-          dimensions: { length: 40, width: 30, height: 20 },
-          value: 750000,
-          description: 'Large Custom Engraving',
-        },
-        trackingEvents: [
-          {
-            id: '1',
-            timestamp: '2024-12-08T14:00:00Z',
-            status: 'PICKED_UP',
-            description: 'Package picked up from sender',
-            location: 'Jakarta Origin Facility',
-            facilityName: 'JNE Jakarta Pusat',
-            carrierCode: 'JNE',
-            isDelivered: false,
-            isException: false,
-          },
-          {
-            id: '2',
-            timestamp: '2024-12-09T16:30:00Z',
-            status: 'EXCEPTION',
-            description: 'Delivery attempt failed - customer not available',
-            location: 'Surabaya Distribution Center',
-            facilityName: 'JNE DC Surabaya',
-            carrierCode: 'JNE',
-            isDelivered: false,
-            isException: true,
-          },
-        ],
-        isInsured: true,
-        insuranceValue: 750000,
-        codAmount: 750000,
-        specialInstructions: 'Call customer before delivery',
-        lastUpdated: '2024-12-09T16:30:00Z',
-        deliveryAttempts: 1,
-        signatureRequired: true,
-        createdAt: '2024-12-08T14:00:00Z',
-        updatedAt: '2024-12-09T16:30:00Z',
-      },
-    ];
-    setTrackings(mockTrackings);
-  }, []);
+    const fetchTrackingData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await shippingTrackingService.getShipmentTrackings({
+          search: filters.search || undefined,
+          status: filters.status !== 'all' ? filters.status : undefined,
+          carrier: filters.carrier !== 'all' ? filters.carrier : undefined,
+          startDate: filters.dateFrom || undefined,
+          endDate: filters.dateTo || undefined
+        });
+        
+        setTrackings(response.data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load shipping tracking data';
+        setError(errorMessage);
+        console.error('Shipping tracking fetch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const filteredTrackings = trackings.filter(tracking => {
-    const matchesSearch = tracking.trackingNumber.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         tracking.orderNumber.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         tracking.customerName.toLowerCase().includes(filters.search.toLowerCase());
-    const matchesStatus = filters.status === 'all' || tracking.status === filters.status;
-    const matchesCarrier = filters.carrier === 'all' || tracking.carrierCode === filters.carrier;
-    return matchesSearch && matchesStatus && matchesCarrier;
-  });
+    fetchTrackingData();
+  }, [filters]);
+
+  // Mock data removed - now using real API data via shippingTrackingService
+
+  // No need for additional filtering since API handles it via filters parameter
+  const filteredTrackings = trackings;
 
   const handleViewTracking = (tracking: ShipmentTracking) => {
     setSelectedTracking(tracking);
@@ -394,9 +123,34 @@ export default function ShippingTracking() {
   const handleRefreshTracking = async (trackingId?: string) => {
     setIsRefreshing(true);
     try {
-      // API call to refresh tracking data
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Mock delay
-      toast.success(trackingId ? 'Tracking updated' : 'All tracking data refreshed');
+      if (trackingId) {
+        // Find tracking number for the specific ID
+        const tracking = trackings.find(t => t.id === trackingId);
+        if (tracking) {
+          await shippingTrackingService.refreshTracking(tracking.trackingNumber);
+          // Refresh data after updating
+          const response = await shippingTrackingService.getShipmentTrackings({
+            search: filters.search || undefined,
+            status: filters.status !== 'all' ? filters.status : undefined,
+            carrier: filters.carrier !== 'all' ? filters.carrier : undefined,
+            startDate: filters.dateFrom || undefined,
+            endDate: filters.dateTo || undefined
+          });
+          setTrackings(response.data);
+          toast.success('Tracking updated');
+        }
+      } else {
+        // Refresh all tracking data
+        const response = await shippingTrackingService.getShipmentTrackings({
+          search: filters.search || undefined,
+          status: filters.status !== 'all' ? filters.status : undefined,
+          carrier: filters.carrier !== 'all' ? filters.carrier : undefined,
+          startDate: filters.dateFrom || undefined,
+          endDate: filters.dateTo || undefined
+        });
+        setTrackings(response.data);
+        toast.success('All tracking data refreshed');
+      }
     } catch (error) {
       toast.error('Failed to refresh tracking data');
     } finally {

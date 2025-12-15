@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Shield,
   Plus,
@@ -7,8 +7,10 @@ import {
   Edit,
   Trash2,
   Check,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
+import { roleManagementService, type Role, type Permission, type RoleFilters } from '@/services/api/roleManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,75 +42,11 @@ import { toast } from 'sonner';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 
-interface Permission {
-  id: string;
-  name: string;
-  description: string;
-}
-
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-  userCount: number;
-  createdAt: string;
-}
-
-const availablePermissions: Permission[] = [
-  { id: 'users_view', name: 'View Users', description: 'View user list and details' },
-  { id: 'users_create', name: 'Create Users', description: 'Add new users' },
-  { id: 'users_edit', name: 'Edit Users', description: 'Modify user information' },
-  { id: 'users_delete', name: 'Delete Users', description: 'Remove users' },
-  { id: 'products_view', name: 'View Products', description: 'View product catalog' },
-  { id: 'products_create', name: 'Create Products', description: 'Add new products' },
-  { id: 'products_edit', name: 'Edit Products', description: 'Modify product information' },
-  { id: 'products_delete', name: 'Delete Products', description: 'Remove products' },
-  { id: 'orders_view', name: 'View Orders', description: 'View order list and details' },
-  { id: 'orders_manage', name: 'Manage Orders', description: 'Update order status' },
-  { id: 'content_edit', name: 'Edit Content', description: 'Modify website content' },
-  { id: 'theme_manage', name: 'Manage Themes', description: 'Change website themes' },
-  { id: 'settings_view', name: 'View Settings', description: 'View system settings' },
-  { id: 'settings_edit', name: 'Edit Settings', description: 'Modify system settings' },
-];
-
-const mockRoles: Role[] = [
-  {
-    id: '1',
-    name: 'Admin',
-    description: 'Full system access with all permissions',
-    permissions: availablePermissions.map(p => p.id),
-    userCount: 2,
-    createdAt: '2024-01-01',
-  },
-  {
-    id: '2',
-    name: 'Manager',
-    description: 'Manage products, orders, and view reports',
-    permissions: ['products_view', 'products_create', 'products_edit', 'orders_view', 'orders_manage', 'content_edit'],
-    userCount: 5,
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '3',
-    name: 'Staff',
-    description: 'Basic access to view and process orders',
-    permissions: ['products_view', 'orders_view', 'orders_manage'],
-    userCount: 12,
-    createdAt: '2024-02-01',
-  },
-  {
-    id: '4',
-    name: 'Viewer',
-    description: 'Read-only access to system data',
-    permissions: ['products_view', 'orders_view', 'settings_view'],
-    userCount: 3,
-    createdAt: '2024-02-15',
-  },
-];
+// Mock data removed - using imported Role and Permission types from roleManagementService
 
 export default function RoleManagement() {
-  const [roles, setRoles] = useState<Role[]>(mockRoles);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [permissions, setPermissions] = useState<Permission[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -117,6 +55,38 @@ export default function RoleManagement() {
     description: '',
     permissions: [] as string[],
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch roles and permissions data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const [rolesResponse, permissionsResponse] = await Promise.all([
+          roleManagementService.getRoles({
+            search: searchQuery || undefined
+          }),
+          roleManagementService.getPermissions()
+        ]);
+        
+        setRoles(rolesResponse.data);
+        setPermissions(permissionsResponse.data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load roles data';
+        setError(errorMessage);
+        console.error('Roles fetch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [searchQuery]);
+
+  // Mock data removed - now using real API data via roleManagementService
 
   const handleOpenDialog = (role?: Role) => {
     if (role) {
@@ -137,35 +107,54 @@ export default function RoleManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (editingRole) {
-      setRoles(roles.map(r => 
-        r.id === editingRole.id 
-          ? { ...r, ...formData }
-          : r
-      ));
-      toast.success('Role updated successfully!');
-    } else {
-      const newRole: Role = {
-        id: Date.now().toString(),
-        ...formData,
-        userCount: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setRoles([...roles, newRole]);
-      toast.success('Role created successfully!');
+  const handleSave = async () => {
+    try {
+      if (editingRole) {
+        await roleManagementService.updateRole(editingRole.id, {
+          ...formData
+        });
+        toast.success('Role updated successfully!');
+      } else {
+        await roleManagementService.createRole({
+          ...formData
+        });
+        toast.success('Role created successfully!');
+      }
+      
+      // Refresh roles list
+      const response = await roleManagementService.getRoles({
+        search: searchQuery || undefined
+      });
+      setRoles(response.data);
+      
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast.error('Failed to save role');
+      console.error('Role save error:', error);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    const role = roles.find(r => r.id === id);
-    if (role && role.userCount > 0) {
-      toast.error(`Cannot delete role with ${role.userCount} assigned users`);
-      return;
+  const handleDelete = async (id: string) => {
+    try {
+      const role = roles.find(r => r.id === id);
+      if (role && role.userCount > 0) {
+        toast.error(`Cannot delete role with ${role.userCount} assigned users`);
+        return;
+      }
+
+      await roleManagementService.deleteRole(id);
+      
+      // Refresh roles list
+      const response = await roleManagementService.getRoles({
+        search: searchQuery || undefined
+      });
+      setRoles(response.data);
+      
+      toast.success('Role deleted successfully!');
+    } catch (error) {
+      toast.error('Failed to delete role');
+      console.error('Role delete error:', error);
     }
-    setRoles(roles.filter(r => r.id !== id));
-    toast.success('Role deleted successfully!');
   };
 
   const togglePermission = (permissionId: string) => {
@@ -275,12 +264,32 @@ export default function RoleManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={roles}
-            searchPlaceholder="Search roles..."
-            searchKey="name"
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading roles...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Failed to Load Roles</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={roles}
+              searchPlaceholder="Search roles..."
+              searchKey="name"
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -320,7 +329,7 @@ export default function RoleManagement() {
             <div className="space-y-4">
               <Label className="text-base font-semibold">Permissions</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {availablePermissions.map((permission) => (
+                {permissions.map((permission) => (
                   <div 
                     key={permission.id}
                     className="flex items-start space-x-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
@@ -354,7 +363,7 @@ export default function RoleManagement() {
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <span className="text-sm font-medium">Selected Permissions:</span>
                 <Badge variant="default">
-                  {formData.permissions.length} / {availablePermissions.length}
+                  {formData.permissions.length} / {permissions.length}
                 </Badge>
               </div>
             </div>

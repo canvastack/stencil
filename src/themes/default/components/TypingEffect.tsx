@@ -18,7 +18,7 @@ export const TypingEffect = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const targetText = texts[currentTextIndex];
+    const targetText = texts?.[currentTextIndex] || '';
     
     if (!isDeleting && currentText === targetText) {
       const timeout = setTimeout(() => setIsDeleting(true), delayBetweenTexts);

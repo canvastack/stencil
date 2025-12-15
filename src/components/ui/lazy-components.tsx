@@ -34,6 +34,21 @@ export const Input = withLazyLoading(
 // Dialog - keep synchronous to avoid accessibility flash (Title/Description must be present)
 export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from './dialog';
 
+// AlertDialog - keep synchronous to avoid accessibility flash and module loading issues
+export { 
+  AlertDialog, 
+  AlertDialogContent, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogTrigger, 
+  AlertDialogAction, 
+  AlertDialogCancel,
+  AlertDialogOverlay,
+  AlertDialogPortal
+} from './alert-dialog';
+
 // Select
 export const Select = withLazyLoading(
   React.lazy(() => import('./select').then(mod => ({ default: mod.Select })))

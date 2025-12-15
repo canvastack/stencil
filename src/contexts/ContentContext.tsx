@@ -88,7 +88,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         } catch (error) {
           if (import.meta.env.MODE === 'development') {
-            console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback for development`);
+            console.warn(`ContentContext: API failed, using fallback for development: ${slugParts[0]}`);
             pageData = getPlatformFallbackContent(slugParts[0]);
           } else {
             console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);
@@ -123,7 +123,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         } catch (error) {
           const pageName = isTenantRoute && slugParts.length >= 2 ? `${slugParts[0]}/${slugParts[1]}` : slugParts[0];
           if (import.meta.env.MODE === 'development') {
-            console.warn(`ContentContext: Failed to load tenant content for ${pageName}, using fallback for development`);
+            console.warn(`ContentContext: API failed, using fallback for development: ${pageName}`);
             pageData = getTenantFallbackContent(isTenantRoute ? slugParts[0] : 'unknown', isTenantRoute ? slugParts[1] : slugParts[0]);
           } else {
             console.error(`ContentContext: Failed to load tenant content for ${pageName}:`, error);
@@ -145,7 +145,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             }
           } catch (error) {
             if (import.meta.env.MODE === 'development') {
-              console.warn(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}, using fallback for development`);
+              console.warn(`ContentContext: API failed, using fallback for development: ${tenantSlug}/${pageSlug}`);
               pageData = getTenantFallbackContent(tenantSlug, pageSlug);
             } else {
               console.error(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}:`, error);
@@ -163,7 +163,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             }
           } catch (error) {
             if (import.meta.env.MODE === 'development') {
-              console.warn(`ContentContext: Failed to load platform content for ${slugParts[0]}, using fallback for development`);
+              console.warn(`ContentContext: API failed, using fallback for development: ${slugParts[0]}`);
               pageData = getPlatformFallbackContent(slugParts[0]);
             } else {
               console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);

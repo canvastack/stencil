@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Users,
   Plus,
@@ -11,9 +11,11 @@ import {
   Phone,
   MapPin,
   CheckCircle,
-  XCircle
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 import type { UserStatus } from '@/types/user';
+import { userManagementService, type UserWithLocation, type UserFilters, type LocationData as ApiLocationData } from '@/services/api/userManagement';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,46 +55,10 @@ import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
 import type { User } from '@/types/user';
 
-interface UserWithLocation extends User {
-  location?: LocationData;
-  department: string;
-}
-
-const mockUsers: UserWithLocation[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john.doe@company.com',
-    phone: '+62 812 3456 7890',
-    role: 'Admin',
-    status: 'active',
-    department: 'IT',
-    createdAt: '2024-01-15',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane.smith@company.com',
-    phone: '+62 813 4567 8901',
-    role: 'Manager',
-    status: 'active',
-    department: 'Sales',
-    createdAt: '2024-02-20',
-  },
-  {
-    id: '3',
-    name: 'Bob Wilson',
-    email: 'bob.wilson@company.com',
-    phone: '+62 814 5678 9012',
-    role: 'Staff',
-    status: 'inactive',
-    department: 'Operations',
-    createdAt: '2024-03-10',
-  },
-];
+// Mock data removed - using imported UserWithLocation type from userManagementService
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<UserWithLocation[]>(mockUsers);
+  const [users, setUsers] = useState<UserWithLocation[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithLocation | null>(null);
   const [formData, setFormData] = useState({
@@ -104,6 +70,40 @@ export default function UserManagement() {
     status: 'active' as UserStatus,
   });
   const [locationData, setLocationData] = useState<LocationData | undefined>();
+  const [apiLocationData, setApiLocationData] = useState<ApiLocationData | undefined>();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | UserStatus>('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch users data from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const response = await userManagementService.getUsers({
+          search: searchTerm || undefined,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          role: roleFilter !== 'all' ? roleFilter : undefined
+        });
+        
+        setUsers(response.data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load users data';
+        setError(errorMessage);
+        console.error('Users fetch error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [searchTerm, statusFilter, roleFilter]);
+
+  // Mock data removed - now using real API data via userManagementService
 
   const handleOpenDialog = (user?: UserWithLocation) => {
     if (user) {
@@ -116,7 +116,20 @@ export default function UserManagement() {
         department: user.department || '',
         status: user.status,
       });
-      setLocationData(user.location);
+      setApiLocationData(user.location);
+      // Convert API location to MapPicker location format
+      setLocationData(user.location ? {
+        latitude: 0, // Default value for MapPicker
+        longitude: 0, // Default value for MapPicker
+        address: user.location.address || '',
+        city: user.location.city || '',
+        district: '', // Default value for MapPicker
+        subdistrict: '', // Default value for MapPicker
+        village: '', // Default value for MapPicker
+        municipality: '', // Default value for MapPicker
+        province: user.location.province || '',
+        country: user.location.country || 'Indonesia'
+      } : undefined);
     } else {
       setEditingUser(null);
       setFormData({
@@ -128,35 +141,77 @@ export default function UserManagement() {
         status: 'active',
       });
       setLocationData(undefined);
+      setApiLocationData(undefined);
     }
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (editingUser) {
-      setUsers(users.map(u => 
-        u.id === editingUser.id 
-          ? { ...u, ...formData, location: locationData }
-          : u
-      ));
-      toast.success('User updated successfully!');
-    } else {
-      const newUser: UserWithLocation = {
-        id: Date.now().toString(),
-        ...formData,
-        department: formData.department || '',
-        location: locationData,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setUsers([...users, newUser]);
-      toast.success('User created successfully!');
+  const handleSave = async () => {
+    try {
+      if (editingUser) {
+        // Convert MapPicker location to API location format
+        const apiLocation: ApiLocationData | undefined = locationData ? {
+          address: locationData.address,
+          city: locationData.city,
+          province: locationData.province,
+          postalCode: undefined, // MapPicker doesn't have postal code
+          country: locationData.country || 'Indonesia'
+        } : undefined;
+
+        await userManagementService.updateUser(editingUser.id, {
+          ...formData,
+          location: apiLocation
+        });
+        toast.success('User updated successfully!');
+      } else {
+        // Convert MapPicker location to API location format
+        const apiLocation: ApiLocationData | undefined = locationData ? {
+          address: locationData.address,
+          city: locationData.city,
+          province: locationData.province,
+          postalCode: undefined, // MapPicker doesn't have postal code
+          country: locationData.country || 'Indonesia'
+        } : undefined;
+
+        await userManagementService.createUser({
+          ...formData,
+          location: apiLocation
+        });
+        toast.success('User created successfully!');
+      }
+      
+      // Refresh users list
+      const response = await userManagementService.getUsers({
+        search: searchTerm || undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        role: roleFilter !== 'all' ? roleFilter : undefined
+      });
+      setUsers(response.data);
+      
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast.error('Failed to save user');
+      console.error('User save error:', error);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleDelete = (id: string) => {
-    setUsers(users.filter(u => u.id !== id));
-    toast.success('User deleted successfully!');
+  const handleDelete = async (id: string) => {
+    try {
+      await userManagementService.deleteUser(id);
+      
+      // Refresh users list
+      const response = await userManagementService.getUsers({
+        search: searchTerm || undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        role: roleFilter !== 'all' ? roleFilter : undefined
+      });
+      setUsers(response.data);
+      
+      toast.success('User deleted successfully!');
+    } catch (error) {
+      toast.error('Failed to delete user');
+      console.error('User delete error:', error);
+    }
   };
 
   const columns: ColumnDef<UserWithLocation>[] = [
@@ -283,12 +338,32 @@ export default function UserManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable
-            columns={columns}
-            data={users}
-            searchPlaceholder="Search users..."
-            searchKey="name"
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading users...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <AlertTriangle className="h-8 w-8 text-destructive mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Failed to Load Users</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DataTable
+              columns={columns}
+              data={users}
+              searchPlaceholder="Search users..."
+              searchKey="name"
+            />
+          )}
         </CardContent>
       </Card>
 

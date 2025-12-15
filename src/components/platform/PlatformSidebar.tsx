@@ -212,7 +212,7 @@ export const PlatformSidebar = () => {
   // Get current user info
   const userName = account?.name || 'Platform Admin';
   const userEmail = account?.email || 'admin@platform.com';
-  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const userInitials = userName?.split(' ')?.map(n => n?.[0] || '').filter(Boolean).join('').toUpperCase().slice(0, 2) || 'PU';
 
   const toggleMenu = (title: string) => {
     setExpandedMenus((prev) => {
