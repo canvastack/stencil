@@ -10,9 +10,7 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
             'uuid' => $this->uuid,
-            'tenantId' => $this->tenant_id,
             
             'name' => $this->name,
             'sku' => $this->sku,
@@ -21,7 +19,7 @@ class ProductResource extends JsonResource
             'longDescription' => $this->long_description,
             
             'category' => [
-                'id' => $this->category_id,
+                'uuid' => $this->category->uuid ?? null,
                 'name' => $this->category->name ?? null,
                 'slug' => $this->category->slug ?? null,
             ],

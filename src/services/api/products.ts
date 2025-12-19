@@ -3,6 +3,7 @@ import { anonymousApiClient } from './anonymousApiClient';
 import { Product, ProductFilters } from '@/types/product';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import * as mockProducts from '@/services/mock/products';
+import { transformProduct, transformProducts } from '@/utils/productTransform';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
@@ -67,16 +68,44 @@ class ProductsService {
 
       // Try public API first for public pages
       try {
-        const publicResponse = await anonymousApiClient.get<PaginatedResponse<Product>>(
+        const publicResponse = await anonymousApiClient.get<PaginatedResponse<any>>(
           `/public/products?${params.toString()}`
         );
-        return publicResponse;
+        
+        if (import.meta.env.DEV && publicResponse.data?.[0]) {
+          console.log('📦 Sample backend product (PUBLIC API):', publicResponse.data[0]);
+        }
+        
+        return {
+          ...publicResponse,
+          data: transformProducts(publicResponse.data),
+        };
       } catch (publicError) {
         // Fall back to tenant API if public API fails
-        const response = await tenantApiClient.get<PaginatedResponse<Product>>(
+        const response = await tenantApiClient.get<PaginatedResponse<any>>(
           `/products?${params.toString()}`
         );
-        return response;
+        
+        // DEBUG: Log backend response structure
+        console.group('🔍 BACKEND RESPONSE DEBUG');
+        console.log('Total products received:', response.data?.length);
+        if (response.data?.[0]) {
+          console.log('First product raw data:', response.data[0]);
+          console.log('Featured field check:', {
+            featured: response.data[0].featured,
+            is_featured: response.data[0].is_featured,
+            isFeatured: response.data[0].isFeatured,
+            has_featured_key: 'featured' in response.data[0],
+            has_is_featured_key: 'is_featured' in response.data[0],
+            all_keys: Object.keys(response.data[0])
+          });
+        }
+        console.groupEnd();
+        
+        return {
+          ...response,
+          data: transformProducts(response.data),
+        };
       }
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -99,12 +128,12 @@ class ProductsService {
     try {
       // Try public API first
       try {
-        const publicResponse = await anonymousApiClient.get<Product>(`/public/products/${id}`);
-        return publicResponse;
+        const publicResponse = await anonymousApiClient.get<any>(`/public/products/${id}`);
+        return transformProduct(publicResponse);
       } catch (publicError) {
         // Fall back to tenant API
-        const response = await tenantApiClient.get<Product>(`/products/${id}`);
-        return response;
+        const response = await tenantApiClient.get<any>(`/products/${id}`);
+        return transformProduct(response);
       }
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -120,12 +149,12 @@ class ProductsService {
     try {
       // Try public API first
       try {
-        const publicResponse = await anonymousApiClient.get<Product>(`/public/products/slug/${slug}`);
-        return publicResponse;
+        const publicResponse = await anonymousApiClient.get<any>(`/public/products/slug/${slug}`);
+        return transformProduct(publicResponse);
       } catch (publicError) {
         // Fall back to tenant API
-        const response = await tenantApiClient.get<Product>(`/products/slug/${slug}`);
-        return response;
+        const response = await tenantApiClient.get<any>(`/products/slug/${slug}`);
+        return transformProduct(response);
       }
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -139,8 +168,8 @@ class ProductsService {
     }
 
     try {
-      const response = await tenantApiClient.post<Product>('/products', data);
-      return response;
+      const response = await tenantApiClient.post<any>('/products', data);
+      return transformProduct(response);
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockProducts.createProduct(data);
@@ -155,8 +184,8 @@ class ProductsService {
     }
 
     try {
-      const response = await tenantApiClient.put<Product>(`/products/${id}`, data);
-      return response;
+      const response = await tenantApiClient.put<any>(`/products/${id}`, data);
+      return transformProduct(response);
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       const updated = mockProducts.updateProduct(id, data);
@@ -188,8 +217,8 @@ class ProductsService {
 
     try {
       const params = limit ? `?limit=${limit}` : '';
-      const response = await tenantApiClient.get<Product[]>(`/products/featured${params}`);
-      return response;
+      const response = await tenantApiClient.get<any[]>(`/products/featured${params}`);
+      return transformProducts(response);
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockProducts.getFeaturedProducts(limit);
@@ -203,8 +232,8 @@ class ProductsService {
 
     try {
       const params = limit ? `?limit=${limit}` : '';
-      const response = await tenantApiClient.get<Product[]>(`/products/category/${category}${params}`);
-      return response;
+      const response = await tenantApiClient.get<any[]>(`/products/category/${category}${params}`);
+      return transformProducts(response);
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockProducts.getProductsByCategory(category, limit);
@@ -217,10 +246,10 @@ class ProductsService {
     }
 
     try {
-      const response = await tenantApiClient.get<Product[]>(
+      const response = await tenantApiClient.get<any[]>(
         `/products/search?q=${encodeURIComponent(query)}`
       );
-      return response;
+      return transformProducts(response);
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       return mockProducts.searchProducts(query);

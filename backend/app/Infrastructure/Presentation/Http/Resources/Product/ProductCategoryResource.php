@@ -10,16 +10,14 @@ class ProductCategoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
             'uuid' => $this->uuid,
-            'tenantId' => $this->tenant_id,
             
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
             
             'hierarchy' => [
-                'parentId' => $this->parent_id,
+                'parentUuid' => $this->parent?->uuid,
                 'level' => $this->level,
                 'path' => $this->path,
                 'fullPath' => $this->getFullPath(),
@@ -67,7 +65,7 @@ class ProductCategoryResource extends JsonResource
             
             'relationships' => [
                 'parent' => $this->when($this->parent, fn() => [
-                    'id' => $this->parent->id,
+                    'uuid' => $this->parent->uuid,
                     'name' => $this->parent->name,
                     'slug' => $this->parent->slug,
                 ]),

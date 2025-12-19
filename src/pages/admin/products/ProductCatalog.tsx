@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
 import { useProductsQuery, useDeleteProductMutation, useBulkDeleteProductsMutation, type BulkDeleteProgress } from '@/hooks/useProductsQuery';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import type { Product, ProductFilters } from '@/types/product';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -16,6 +17,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DataTable } from '@/components/ui/data-table';
+import { EmptyState } from '@/components/ui/empty-state';
+import { KeyboardShortcutsDialog } from '@/components/admin/KeyboardShortcutsDialog';
+import { Kbd } from '@/components/ui/kbd';
 import {
   Select,
   SelectContent,
@@ -56,12 +60,20 @@ import {
   DollarSign,
   TrendingUp,
   X,
-  GitCompare
+  GitCompare,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  CheckSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ProductComparisonProvider, useProductComparison } from '@/contexts/ProductComparisonContext';
 import { ComparisonBar } from '@/components/products/ComparisonBar';
+import { ProductExportService, type ExportFormat } from '@/services/export/productExportService';
+import { ProductImportService, type ImportResult } from '@/services/import/productImportService';
+import { FileSpreadsheet, FileText, FileJson } from 'lucide-react';
+import { APP_CONFIG } from '@/lib/constants';
 
 export default function ProductCatalog() {
   const { userType, tenant } = useGlobalContext();
@@ -154,10 +166,12 @@ function ProductCatalogContent() {
   const navigate = useNavigate();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [filters, setFilters] = useState<ProductFilters>({
     page: 1,
-    per_page: 12,
+    per_page: APP_CONFIG.PRODUCT_CATALOG_PAGE_SIZE,
     search: '',
     category: '',
     status: '',
@@ -169,8 +183,26 @@ function ProductCatalogContent() {
   
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [bulkProgress, setBulkProgress] = useState<BulkDeleteProgress | null>(null);
+  
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const debouncedSearch = useDebounce(searchQuery, APP_CONFIG.SEARCH_DEBOUNCE_MS);
+
+  useEffect(() => {
+    if (searchQuery !== debouncedSearch) {
+      setIsSearching(true);
+    } else {
+      setIsSearching(false);
+    }
+  }, [searchQuery, debouncedSearch]);
 
   const debouncedFilters = useMemo(() => ({
     ...filters,
@@ -187,7 +219,7 @@ function ProductCatalogContent() {
   const products = data?.data || [];
   const pagination = {
     page: data?.current_page || 1,
-    per_page: data?.per_page || 12,
+    per_page: data?.per_page || APP_CONFIG.PRODUCT_CATALOG_PAGE_SIZE,
     total: data?.total || 0,
     last_page: data?.last_page || 1,
   };
@@ -239,7 +271,7 @@ function ProductCatalogContent() {
   const handleClearFilters = useCallback(() => {
     setFilters({
       page: 1,
-      per_page: 12,
+      per_page: APP_CONFIG.PRODUCT_CATALOG_PAGE_SIZE,
       search: '',
       category: '',
       status: '',
@@ -248,6 +280,197 @@ function ProductCatalogContent() {
     });
     setSearchQuery('');
   }, []);
+
+  const handleExport = useCallback(async (format: ExportFormat) => {
+    try {
+      setIsExporting(true);
+      
+      if (products.length === 0) {
+        toast.warning('No products to export');
+        return;
+      }
+      
+      ProductExportService.export(products, { format });
+      
+      toast.success(`Successfully exported ${products.length} products as ${format.toUpperCase()}`);
+      setShowExportDialog(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to export products';
+      toast.error(message);
+      console.error('Product export failed', error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [products]);
+
+  const handleImportClick = useCallback(() => {
+    if (!canAccess('products.create')) {
+      toast.error('You do not have permission to import products');
+      return;
+    }
+    setShowImportDialog(true);
+  }, [canAccess]);
+
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const validExtensions = ['.csv', '.xlsx', '.xls', '.json'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    
+    if (!validExtensions.includes(fileExtension)) {
+      toast.error('Invalid file format. Please upload CSV, Excel, or JSON file.');
+      return;
+    }
+    
+    setImportFile(file);
+    
+    try {
+      setIsImporting(true);
+      
+      const result = await ProductImportService.parseFile(file);
+      setImportResult(result);
+      
+      if (result.failed > 0) {
+        toast.warning(`Parsed ${result.success} valid rows, ${result.failed} rows have errors`);
+      } else {
+        toast.success(`Successfully validated ${result.success} products`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to parse file';
+      toast.error(message);
+      console.error('Import parse failed', error);
+      
+      setImportFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } finally {
+      setIsImporting(false);
+    }
+  }, []);
+
+  const handleImportConfirm = useCallback(async () => {
+    if (!importResult || importResult.data.length === 0) {
+      toast.error('No valid data to import');
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      
+      toast.info(`This will import ${importResult.data.length} products. Backend integration coming soon.`);
+      
+      setShowImportDialog(false);
+      setImportFile(null);
+      setImportResult(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to import products';
+      toast.error(message);
+      console.error('Product import failed', error);
+    } finally {
+      setIsImporting(false);
+    }
+  }, [importResult]);
+
+  const handleDownloadTemplate = useCallback(() => {
+    ProductImportService.generateTemplate();
+    toast.success('Import template downloaded');
+  }, []);
+
+  const handleCancelImport = useCallback(() => {
+    setShowImportDialog(false);
+    setImportFile(null);
+    setImportResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, []);
+
+  const hasActiveFilters = useMemo(() => {
+    return Boolean(
+      filters.search || 
+      filters.category || 
+      filters.status || 
+      filters.featured !== undefined ||
+      filters.inStock !== undefined
+    );
+  }, [filters]);
+
+  useKeyboardShortcuts([
+    {
+      key: 'k',
+      ctrlKey: true,
+      description: 'Focus search',
+      callback: () => {
+        searchInputRef.current?.focus();
+      },
+    },
+    {
+      key: 'n',
+      ctrlKey: true,
+      description: 'New product',
+      callback: () => {
+        if (canAccess('products.create')) {
+          navigate('/admin/products/new');
+        } else {
+          toast.error('You do not have permission to create products');
+        }
+      },
+    },
+    {
+      key: 'f',
+      ctrlKey: true,
+      description: 'Toggle filters',
+      callback: () => {
+        setShowFilters(prev => !prev);
+      },
+    },
+    {
+      key: 'r',
+      ctrlKey: true,
+      description: 'Refresh products',
+      callback: () => {
+        window.location.reload();
+      },
+    },
+    {
+      key: 'c',
+      ctrlKey: true,
+      shiftKey: true,
+      description: 'Clear filters',
+      callback: () => {
+        handleClearFilters();
+        toast.success('Filters cleared');
+      },
+    },
+    {
+      key: 's',
+      ctrlKey: true,
+      shiftKey: true,
+      description: 'Toggle selection mode',
+      callback: () => {
+        if (selectedProducts.size > 0) {
+          setSelectedProducts(new Set());
+          toast.info('Selection cleared');
+        } else {
+          handleSelectAll();
+          toast.info('All products selected');
+        }
+      },
+    },
+    {
+      key: '?',
+      description: 'Show keyboard shortcuts',
+      callback: () => {
+        setShowKeyboardHelp(true);
+      },
+      preventDefault: true,
+    },
+  ], true);
 
   const handleToggleSelection = useCallback((productId: string) => {
     setSelectedProducts(prev => {
@@ -265,7 +488,7 @@ function ProductCatalogContent() {
     if (selectedProducts.size === products.length) {
       setSelectedProducts(new Set());
     } else {
-      setSelectedProducts(new Set(products.map(p => p.id)));
+      setSelectedProducts(new Set(products.map(p => p.uuid)));
     }
   }, [selectedProducts.size, products]);
 
@@ -319,7 +542,7 @@ function ProductCatalogContent() {
 
     clearComparison();
 
-    const selectedProductObjects = products.filter(p => selectedProducts.has(p.id));
+    const selectedProductObjects = products.filter(p => selectedProducts.has(p.uuid));
     selectedProductObjects.forEach(product => addToCompare(product));
 
     setSelectedProducts(new Set());
@@ -352,8 +575,8 @@ function ProductCatalogContent() {
       ),
       cell: ({ row }) => (
         <Checkbox
-          checked={selectedProducts.has(row.original.id)}
-          onCheckedChange={() => handleToggleSelection(row.original.id)}
+          checked={selectedProducts.has(row.original.uuid)}
+          onCheckedChange={() => handleToggleSelection(row.original.uuid)}
           aria-label="Select row"
         />
       ),
@@ -500,7 +723,7 @@ function ProductCatalogContent() {
               <DropdownMenuSeparator />
               {canAccess('products.delete') && (
                 <DropdownMenuItem 
-                  onClick={() => handleDeleteProduct(product.id)}
+                  onClick={() => handleDeleteProduct(product.uuid)}
                   className="text-red-600"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
@@ -513,6 +736,81 @@ function ProductCatalogContent() {
       },
     },
   ], [canAccess, formatPrice, handleQuickView, handleDeleteProduct, selectedProducts, products.length, handleSelectAll, handleToggleSelection]);
+
+  const renderContent = useCallback(() => {
+    if (!isLoading && error) {
+      return (
+        <EmptyState
+          icon={AlertCircle}
+          title="Failed to load products"
+          description={typeof error === 'string' ? error : error?.message || 'An error occurred while loading products'}
+          action={{
+            label: 'Try Again',
+            onClick: () => window.location.reload(),
+            icon: RefreshCw,
+          }}
+        />
+      );
+    }
+
+    if (!isLoading && !hasActiveFilters && products.length === 0) {
+      return (
+        <EmptyState
+          icon={Package}
+          title="No products yet"
+          description="Get started by adding your first product to the catalog"
+          action={canAccess('products.create') ? {
+            label: 'Add First Product',
+            onClick: () => navigate('/admin/products/new'),
+            icon: Plus,
+          } : undefined}
+        />
+      );
+    }
+
+    if (!isLoading && filters.search && products.length === 0) {
+      return (
+        <EmptyState
+          icon={Search}
+          title="No products found"
+          description={`No products match your search "${filters.search}". Try different keywords or clear filters.`}
+          action={{
+            label: 'Clear Search',
+            onClick: handleClearFilters,
+            icon: X,
+          }}
+        />
+      );
+    }
+
+    if (!isLoading && hasActiveFilters && products.length === 0) {
+      return (
+        <EmptyState
+          icon={Filter}
+          title="No products match filters"
+          description="Try adjusting your filters or search criteria to see more results."
+          action={{
+            label: 'Clear All Filters',
+            onClick: handleClearFilters,
+            icon: X,
+          }}
+        />
+      );
+    }
+
+    return (
+      <Card className="p-6" role="region" aria-label="Product catalog table">
+        <DataTable
+          columns={columns}
+          data={stats.productsData}
+          searchKey="name"
+          searchPlaceholder="Search products..."
+          loading={isLoading}
+          datasetId="product-catalog"
+        />
+      </Card>
+    );
+  }, [isLoading, error, hasActiveFilters, products.length, filters.search, canAccess, navigate, handleClearFilters, columns, stats.productsData]);
 
   // Product Grid Card Component
   const ProductCard = ({ product }: { product: Product }) => (
@@ -570,7 +868,7 @@ function ProductCatalogContent() {
                 <DropdownMenuSeparator />
                 {canAccess('products.delete') && (
                   <DropdownMenuItem
-                    onClick={() => handleDeleteProduct(product.id)}
+                    onClick={() => handleDeleteProduct(product.uuid)}
                     className="text-red-600"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -702,7 +1000,7 @@ function ProductCatalogContent() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleDeleteProduct(product.id)}
+                    onClick={() => handleDeleteProduct(product.uuid)}
                     className="text-red-600 hover:text-red-700"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -718,6 +1016,11 @@ function ProductCatalogContent() {
 
   return (
     <LazyWrapper>
+      <KeyboardShortcutsDialog 
+        open={showKeyboardHelp} 
+        onOpenChange={setShowKeyboardHelp}
+      />
+      
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
@@ -734,9 +1037,13 @@ function ProductCatalogContent() {
                 <div className="p-3 bg-primary/10 rounded-lg">
                   <Package className="w-6 h-6 text-primary" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Total Products</p>
-                  <p className="text-2xl font-bold">{stats.totalProducts}</p>
+                  {isLoading ? (
+                    <div className="h-8 w-16 bg-muted animate-pulse rounded mt-1"></div>
+                  ) : (
+                    <p className="text-2xl font-bold">{stats.totalProducts}</p>
+                  )}
                 </div>
               </div>
             </EnhancedCard>
@@ -746,9 +1053,13 @@ function ProductCatalogContent() {
                 <div className="p-3 bg-yellow-500/10 rounded-lg">
                   <Star className="w-6 h-6 text-yellow-500" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Featured</p>
-                  <p className="text-2xl font-bold">{stats.featuredProducts}</p>
+                  {isLoading ? (
+                    <div className="h-8 w-12 bg-muted animate-pulse rounded mt-1"></div>
+                  ) : (
+                    <p className="text-2xl font-bold">{stats.featuredProducts}</p>
+                  )}
                 </div>
               </div>
             </EnhancedCard>
@@ -758,9 +1069,13 @@ function ProductCatalogContent() {
                 <div className="p-3 bg-green-500/10 rounded-lg">
                   <ShoppingCart className="w-6 h-6 text-green-500" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-muted-foreground">Active</p>
-                  <p className="text-2xl font-bold">{stats.activeProducts}</p>
+                  {isLoading ? (
+                    <div className="h-8 w-12 bg-muted animate-pulse rounded mt-1"></div>
+                  ) : (
+                    <p className="text-2xl font-bold">{stats.activeProducts}</p>
+                  )}
                 </div>
               </div>
             </EnhancedCard>
@@ -773,9 +1088,13 @@ function ProductCatalogContent() {
                 <DollarSign className="w-8 h-8 text-blue-500" />
               </div>
               <p className="text-sm text-muted-foreground mb-2">Total Value</p>
-              <p className="text-3xl font-bold text-blue-600">
-                {formatPrice(stats.totalValue, 'IDR')}
-              </p>
+              {isLoading ? (
+                <div className="h-9 w-40 bg-muted animate-pulse rounded mx-auto"></div>
+              ) : (
+                <p className="text-3xl font-bold text-blue-600">
+                  {formatPrice(stats.totalValue, 'IDR')}
+                </p>
+              )}
             </div>
           </EnhancedCard>
 
@@ -788,20 +1107,39 @@ function ProductCatalogContent() {
               <div className="space-y-2">
                 {canAccess('products.create') && (
                   <Button asChild className="w-full">
-                    <Link to="/admin/products/new">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Product
+                    <Link to="/admin/products/new" className="flex items-center justify-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      <span>Add Product</span>
+                      <span className="ml-auto text-xs opacity-60">
+                        <Kbd>Ctrl</Kbd>+<Kbd>N</Kbd>
+                      </span>
                     </Link>
                   </Button>
                 )}
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Download className="w-4 h-4 mr-1" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setShowExportDialog(true)}
+                    disabled={isLoading || products.length === 0}
+                    aria-label="Export products to file"
+                    aria-disabled={isLoading || products.length === 0}
+                  >
+                    <Download className="w-4 h-4 mr-1" aria-hidden="true" />
                     Export
                   </Button>
                   {canAccess('products.create') && (
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Upload className="w-4 h-4 mr-1" />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={handleImportClick}
+                      disabled={isLoading}
+                      aria-label="Import products from file"
+                      aria-disabled={isLoading}
+                    >
+                      <Upload className="w-4 h-4 mr-1" aria-hidden="true" />
                       Import
                     </Button>
                   )}
@@ -820,27 +1158,59 @@ function ProductCatalogContent() {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
+                aria-expanded={showFilters}
+                aria-controls="product-filters-panel"
+                aria-label={showFilters ? 'Hide product filters' : 'Show product filters'}
               >
                 {showFilters ? 'Hide Filters' : 'Show Filters'}
+                <span className="ml-2 text-xs opacity-60" aria-hidden="true">
+                  <Kbd>Ctrl</Kbd>+<Kbd>F</Kbd>
+                </span>
               </Button>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowKeyboardHelp(true)}
+              className="text-muted-foreground"
+            >
+              <Kbd>?</Kbd>
+              <span className="ml-2">Shortcuts</span>
+            </Button>
           </div>
 
           {showFilters && (
-            <div className="space-y-4 border-t pt-4">
+            <div id="product-filters-panel" className="space-y-4 border-t pt-4" role="region" aria-label="Product filters">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <Label className="mb-2 block">Search</Label>
-                  <Input
-                    placeholder="Product name, description, SKU..."
-                    value={searchQuery}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                  />
+                  <Label className="mb-2 flex items-center justify-between">
+                    <span>Search</span>
+                    <span className="text-xs opacity-60 font-normal">
+                      <Kbd>Ctrl</Kbd>+<Kbd>K</Kbd>
+                    </span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      ref={searchInputRef}
+                      placeholder="Product name, description, SKU..."
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pr-10"
+                      aria-label="Search products by name, description, or SKU"
+                      aria-describedby={isSearching ? "search-status" : undefined}
+                    />
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden="true" />
+                        <span id="search-status" className="sr-only" aria-live="polite">Searching for products...</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
-                  <Label className="mb-2 block">Category</Label>
+                  <Label htmlFor="category-filter" className="mb-2 block">Category</Label>
                   <Select value={filters.category || 'all'} onValueChange={(value) => handleFilterChange('category', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger id="category-filter" aria-label="Filter products by category">
                       <SelectValue placeholder="All categories" />
                     </SelectTrigger>
                     <SelectContent>
@@ -853,9 +1223,9 @@ function ProductCatalogContent() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="mb-2 block">Status</Label>
+                  <Label htmlFor="status-filter" className="mb-2 block">Status</Label>
                   <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger id="status-filter" aria-label="Filter products by status">
                       <SelectValue placeholder="All status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -875,8 +1245,10 @@ function ProductCatalogContent() {
                     onClick={handleClearFilters}
                     disabled={isLoading}
                     size="icon"
+                    aria-label="Clear all filters"
+                    title="Clear all filters"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
@@ -886,39 +1258,18 @@ function ProductCatalogContent() {
 
 
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <Card className="bg-red-50 border-red-200">
-          <CardContent className="p-6 text-center">
-            <p className="text-red-600">Error loading products: {typeof error === 'string' ? error : error?.message || 'Unknown error'}</p>
-            <Button
-              variant="outline"
-              onClick={() => fetchProducts(filters)}
-              className="mt-4"
-            >
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
         {/* Bulk Actions Bar */}
-        {selectedProducts.size > 0 && (
+        {selectedProducts.size > 0 && !isLoading && !error && products.length > 0 && (
           <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Checkbox
                   checked={selectedProducts.size === products.length}
                   onCheckedChange={handleSelectAll}
+                  aria-label={`Select all ${products.length} products`}
+                  aria-describedby="bulk-selection-status"
                 />
-                <span className="font-medium">
+                <span id="bulk-selection-status" className="font-medium" aria-live="polite">
                   {selectedProducts.size} product{selectedProducts.size > 1 ? 's' : ''} selected
                 </span>
               </div>
@@ -955,24 +1306,15 @@ function ProductCatalogContent() {
           </Card>
         )}
 
-        {/* Products Data Table */}
-        <Card className="p-6">
-          <DataTable
-            columns={columns}
-            data={stats.productsData}
-            searchKey="name"
-            searchPlaceholder="Search products..."
-            loading={isLoading}
-            datasetId="product-catalog"
-          />
-        </Card>
+        {/* Products Data Table with Empty States */}
+        {renderContent()}
 
       {/* Quick View Dialog */}
       <Dialog open={isQuickViewOpen} onOpenChange={setIsQuickViewOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl" aria-describedby="quick-view-description">
           <DialogHeader>
             <DialogTitle>Product Quick View</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="quick-view-description">
               Preview product details and specifications
             </DialogDescription>
           </DialogHeader>
@@ -1052,6 +1394,253 @@ function ProductCatalogContent() {
                   </Link>
                 </Button>
               </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Products</DialogTitle>
+            <DialogDescription>
+              Choose a format to export {pagination?.total || products.length} products
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleExport('xlsx')}
+              disabled={isExporting}
+            >
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              <div className="flex-1 text-left">
+                <div className="font-medium">Excel (.xlsx)</div>
+                <div className="text-xs text-muted-foreground">Excel spreadsheet with formatting</div>
+              </div>
+              <Badge variant="secondary" className="ml-2">Recommended</Badge>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleExport('csv')}
+              disabled={isExporting}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              <div className="flex-1 text-left">
+                <div className="font-medium">CSV (.csv)</div>
+                <div className="text-xs text-muted-foreground">Universal format for spreadsheet apps</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleExport('pdf')}
+              disabled={isExporting}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              <div className="flex-1 text-left">
+                <div className="font-medium">PDF (.pdf)</div>
+                <div className="text-xs text-muted-foreground">Printable document format</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleExport('json')}
+              disabled={isExporting}
+            >
+              <FileJson className="w-4 h-4 mr-2" />
+              <div className="flex-1 text-left">
+                <div className="font-medium">JSON (.json)</div>
+                <div className="text-xs text-muted-foreground">Developer-friendly format for APIs</div>
+              </div>
+            </Button>
+          </div>
+          
+          {isExporting && (
+            <div className="text-center py-4">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Exporting products...</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={handleCancelImport}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Products</DialogTitle>
+            <DialogDescription>
+              Upload a CSV, Excel, or JSON file to bulk import products
+            </DialogDescription>
+          </DialogHeader>
+          
+          {!importResult ? (
+            <div className="space-y-4 py-4">
+              <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx,.xls,.json"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="import-file-input"
+                  disabled={isImporting}
+                />
+                <label
+                  htmlFor="import-file-input"
+                  className={`cursor-pointer block ${isImporting ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  <Upload className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      {isImporting ? 'Processing file...' : 'Click to upload file'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Supported formats: CSV, Excel (.xlsx, .xls), JSON
+                    </p>
+                  </div>
+                  {isImporting && (
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mt-3" />
+                  )}
+                </label>
+              </div>
+
+              <div className="flex justify-center">
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={handleDownloadTemplate}
+                  disabled={isImporting}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  Download Import Template
+                </Button>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-blue-800 dark:text-blue-200">
+                    <p className="font-medium mb-2">Import Requirements:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>Required columns: Name, Slug, Description, Category, Price</li>
+                      <li>Product slugs must be unique and URL-friendly (lowercase, numbers, hyphens)</li>
+                      <li>Prices must be positive numbers</li>
+                      <li>Status: draft, published, or archived (optional, default: draft)</li>
+                      <li>Featured: Yes/No (optional, default: No)</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              {importFile && (
+                <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-8 h-8 text-blue-600" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{importFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(importFile.size / 1024).toFixed(2)} KB
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-green-600">{importResult.success}</p>
+                    <p className="text-sm text-muted-foreground">Valid Products</p>
+                  </div>
+                </Card>
+                <Card className="p-4 bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-red-600">{importResult.failed}</p>
+                    <p className="text-sm text-muted-foreground">Invalid Rows</p>
+                  </div>
+                </Card>
+              </div>
+
+              {importResult.errors.length > 0 && (
+                <Card className="p-4 bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertCircle className="w-5 h-5 text-yellow-600" />
+                      <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                        Validation Errors
+                      </p>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-2">
+                      {importResult.errors.slice(0, 10).map((error, idx) => (
+                        <div key={idx} className="text-xs bg-white dark:bg-gray-900 p-2 rounded">
+                          <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                            Row {error.row}:
+                          </p>
+                          <ul className="list-disc list-inside text-yellow-700 dark:text-yellow-300 mt-1">
+                            {error.errors.map((err, i) => (
+                              <li key={i}>{err}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                      {importResult.errors.length > 10 && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          And {importResult.errors.length - 10} more errors...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {importResult.success > 0 && (
+                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    ✓ {importResult.success} products are ready to be imported
+                    {importResult.failed > 0 && `. ${importResult.failed} rows will be skipped due to errors.`}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCancelImport}
+              disabled={isImporting}
+            >
+              Cancel
+            </Button>
+            {importResult && importResult.success > 0 && (
+              <Button
+                onClick={handleImportConfirm}
+                disabled={isImporting}
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import {importResult.success} Products
+                  </>
+                )}
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>

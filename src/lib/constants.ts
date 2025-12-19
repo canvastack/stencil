@@ -2,8 +2,12 @@
 export const APP_CONFIG = {
   // Pagination
   PRODUCTS_PER_PAGE: 9,
+  PRODUCT_CATALOG_PAGE_SIZE: 12,
   USERS_PER_PAGE: 10,
   ITEMS_PER_PAGE: 20,
+
+  // Search & Filters
+  SEARCH_DEBOUNCE_MS: 300,
 
   // File Upload
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB

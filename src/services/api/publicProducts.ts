@@ -43,9 +43,9 @@ function transformApiProduct(apiProduct: any): Product {
     seoDescription: product.seo?.seoDescription || '',
     seoKeywords: product.seo?.seoKeywords || [],
     status: product.status || 'published',
-    featured: product.marketing?.featured || false,
-    createdAt: product.timestamps?.createdAt || '',
-    updatedAt: product.timestamps?.updatedAt || '',
+    featured: product.marketing?.featured ?? product.is_featured ?? product.featured ?? false,
+    createdAt: product.timestamps?.createdAt || product.created_at || '',
+    updatedAt: product.timestamps?.updatedAt || product.updated_at || '',
   };
 }
 
