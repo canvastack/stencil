@@ -82,7 +82,7 @@ class NotificationService {
   async loadPreferences(): Promise<void> {
     try {
       // Try to load from API first
-      const response = await tenantApiClient.get('/tenant/notifications/preferences');
+      const response = await tenantApiClient.get('/notifications/preferences');
       this.preferences = response.data;
       localStorage.setItem('notification_preferences', JSON.stringify(this.preferences));
     } catch (error) {
@@ -110,7 +110,7 @@ class NotificationService {
     }
 
     try {
-      const response = await tenantApiClient.get('/tenant/notifications', {
+      const response = await tenantApiClient.get('/notifications', {
         params: {
           page: options.page || 1,
           limit: options.limit || 20,
@@ -144,7 +144,7 @@ class NotificationService {
   private async pollNotifications(): Promise<void> {
     try {
       // Get recent notifications
-      const response = await tenantApiClient.get('/tenant/notifications', {
+      const response = await tenantApiClient.get('/notifications', {
         params: { limit: 10, unread_only: true }
       });
       
@@ -164,7 +164,7 @@ class NotificationService {
       }
       
       // Also check unread count for logging
-      const countResponse = await tenantApiClient.get('/tenant/notifications/unread-count');
+      const countResponse = await tenantApiClient.get('/notifications/unread-count');
       const count = countResponse.data?.count || 0;
       
       if (count > 0) {
@@ -189,7 +189,7 @@ class NotificationService {
     }
 
     try {
-      await tenantApiClient.post(`/tenant/notifications/${notificationId}/read`);
+      await tenantApiClient.post(`/notifications/${notificationId}/read`);
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
       throw error;
@@ -202,7 +202,7 @@ class NotificationService {
     }
 
     try {
-      await tenantApiClient.post('/tenant/notifications/mark-all-read');
+      await tenantApiClient.post('/notifications/mark-all-read');
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
       throw error;
@@ -263,7 +263,7 @@ class NotificationService {
     }
 
     try {
-      const response = await tenantApiClient.put('/tenant/notifications/preferences', preferences);
+      const response = await tenantApiClient.put('/notifications/preferences', preferences);
       this.preferences = response.data;
       localStorage.setItem('notification_preferences', JSON.stringify(this.preferences));
     } catch (error) {

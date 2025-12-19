@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Order } from '@/types/order';
-import { Vendor } from '@/types/vendor';
+import { Vendor } from '@/types/vendor/index';
 import { vendorsService } from '@/services/api/vendors';
 
 interface VendorSourcingProps {
@@ -79,8 +79,8 @@ export function VendorSourcing({
     if (searchTerm) {
       filtered = filtered.filter(vendor =>
         vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.category.toLowerCase().includes(searchTerm.toLowerCase())
+        vendor.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vendor.category?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -90,7 +90,7 @@ export function VendorSourcing({
 
     if (ratingFilter !== 'all') {
       const minRating = parseInt(ratingFilter);
-      filtered = filtered.filter(vendor => vendor.rating >= minRating);
+      filtered = filtered.filter(vendor => (vendor.rating || 0) >= minRating);
     }
 
     setFilteredVendors(filtered);
@@ -114,8 +114,7 @@ export function VendorSourcing({
 
   const handleVendorSelect = (vendor: Vendor) => {
     setSelectedVendor(vendor);
-    // Set default estimates based on vendor history
-    setEstimatedDays(vendor.averageDeliveryDays?.toString() || '7');
+    setEstimatedDays(vendor.average_lead_time_days?.toString() || '7');
   };
 
   const handleAssignVendor = async () => {
@@ -309,7 +308,7 @@ export function VendorSourcing({
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                               <Users className="w-4 h-4 text-muted-foreground" />
-                              <span>{vendor.contactPerson}</span>
+                              <span>{vendor.contact_person}</span>
                             </div>
                             {vendor.phone && (
                               <div className="flex items-center gap-2">
@@ -328,12 +327,12 @@ export function VendorSourcing({
                           {/* Performance Stats */}
                           <div className="grid grid-cols-2 gap-3 text-sm">
                             <div className="text-center p-2 bg-muted rounded">
-                              <div className="font-semibold">{vendor.totalOrders}</div>
+                              <div className="font-semibold">{vendor.total_orders || 0}</div>
                               <div className="text-xs text-muted-foreground">Orders</div>
                             </div>
                             <div className="text-center p-2 bg-muted rounded">
                               <div className="font-semibold">
-                                {vendor.averageDeliveryDays || 'N/A'}
+                                {vendor.average_lead_time_days || 'N/A'}
                               </div>
                               <div className="text-xs text-muted-foreground">Avg Days</div>
                             </div>
@@ -375,7 +374,7 @@ export function VendorSourcing({
                         <div className="space-y-3">
                           <h4 className="font-medium">Contact Information</h4>
                           <div className="space-y-2 text-sm">
-                            <p><span className="font-medium">Contact Person:</span> {selectedVendor.contactPerson}</p>
+                            <p><span className="font-medium">Contact Person:</span> {selectedVendor.contact_person}</p>
                             <p><span className="font-medium">Email:</span> {selectedVendor.email}</p>
                             <p><span className="font-medium">Phone:</span> {selectedVendor.phone}</p>
                             <p><span className="font-medium">Category:</span> {selectedVendor.category}</p>
@@ -385,9 +384,9 @@ export function VendorSourcing({
                           <h4 className="font-medium">Performance History</h4>
                           <div className="space-y-2 text-sm">
                             <p><span className="font-medium">Rating:</span> {selectedVendor.rating}/5</p>
-                            <p><span className="font-medium">Total Orders:</span> {selectedVendor.totalOrders}</p>
-                            <p><span className="font-medium">Avg Delivery:</span> {selectedVendor.averageDeliveryDays || 'N/A'} days</p>
-                            <p><span className="font-medium">Payment Terms:</span> {selectedVendor.paymentTerms}</p>
+                            <p><span className="font-medium">Total Orders:</span> {selectedVendor.total_orders || 0}</p>
+                            <p><span className="font-medium">Avg Delivery:</span> {selectedVendor.average_lead_time_days || 'N/A'} days</p>
+                            <p><span className="font-medium">Payment Terms:</span> {selectedVendor.payment_terms}</p>
                           </div>
                         </div>
                       </div>

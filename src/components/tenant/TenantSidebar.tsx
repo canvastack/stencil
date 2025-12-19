@@ -228,6 +228,7 @@ const menuItems: MenuItem[] = [
     icon: Settings,
     children: [
       { title: 'General', path: '/admin/settings/general' },
+      { title: 'Vendor Configuration', path: '/admin/settings/vendor' },
       { title: 'Language', path: '/admin/language' },
       { title: 'Media Library', path: '/admin/media' },
       { title: 'Performance', path: '/admin/performance' },

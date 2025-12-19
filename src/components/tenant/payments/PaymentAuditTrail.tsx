@@ -149,7 +149,7 @@ export const PaymentAuditTrail: React.FC = () => {
       // const events = await paymentService.getAuditTrail(selectedPayment.id, filters);
       
       // For now, use mock data with filtering
-      let filteredEvents = mockAuditEvents.filter(event => {
+      const filteredEvents = mockAuditEvents.filter(event => {
         const matchesSearch = !searchTerm || 
           event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
           event.user_name.toLowerCase().includes(searchTerm.toLowerCase());

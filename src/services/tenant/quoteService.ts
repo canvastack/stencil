@@ -266,7 +266,7 @@ class QuoteService {
    * Get available customers for quote creation
    */
   async getAvailableCustomers(search?: string): Promise<Quote['customer'][]> {
-    const response = await tenantApiClient.get('/tenant/customers/for-quotes', {
+    const response = await tenantApiClient.get('/customers/for-quotes', {
       params: { search, limit: 50 }
     });
     return response.data;
@@ -276,7 +276,7 @@ class QuoteService {
    * Get available vendors for quote creation
    */
   async getAvailableVendors(search?: string): Promise<Quote['vendor'][]> {
-    const response = await tenantApiClient.get('/tenant/vendors/for-quotes', {
+    const response = await tenantApiClient.get('/vendors/for-quotes', {
       params: { search, limit: 50 }
     });
     return response.data;
@@ -286,7 +286,7 @@ class QuoteService {
    * Get available products for quote items
    */
   async getAvailableProducts(search?: string): Promise<QuoteItem['product'][]> {
-    const response = await tenantApiClient.get('/tenant/products/for-quotes', {
+    const response = await tenantApiClient.get('/products/for-quotes', {
       params: { search, limit: 100 }
     });
     return response.data;

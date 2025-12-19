@@ -458,7 +458,11 @@ export default function ProductAnalytics() {
                       <div className="text-sm font-bold text-gray-500">#{index + 1}</div>
                       <div>
                         <div className="font-medium">{product.name}</div>
-                        <div className="text-sm text-gray-500">{product.category}</div>
+                        <div className="text-sm text-gray-500">
+                          {typeof product.category === 'object' && product.category !== null
+                            ? product.category.name
+                            : product.category || 'N/A'}
+                        </div>
                       </div>
                     </div>
 
@@ -632,7 +636,11 @@ export default function ProductAnalytics() {
                         <td className="py-3">
                           <div>
                             <div className="font-medium">{product.name}</div>
-                            <div className="text-gray-500">{product.category}</div>
+                            <div className="text-gray-500">
+                              {typeof product.category === 'object' && product.category !== null
+                                ? product.category.name
+                                : product.category || 'N/A'}
+                            </div>
                           </div>
                         </td>
                         <td className="text-right py-3">{formatNumber(product.views)}</td>

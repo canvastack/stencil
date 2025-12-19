@@ -3,7 +3,12 @@
 **Priority**: HIGH  
 **Prerequisites**: ✅ Phase 4A-4C (Complete Hexagonal Architecture + DDD + CQRS) + Phases 4-7 - **MUST BE 100% COMPLETE**
 
-**🏗️ CRITICAL INTEGRATION**: Must enhance existing **Hexagonal Architecture**, optimize **schema-per-tenant** performance, and strengthen **multi-tenant security** while maintaining established patterns from Phase 4C.
+**🏗️ CRITICAL INTEGRATION**: 
+- **Hexagonal Architecture**: Must enhance existing patterns from Phase 4C
+- **Schema-per-tenant**: Optimize performance while maintaining data isolation
+- **Multi-tenant security**: Strengthen without violating CORE IMMUTABLE RULES
+- **Authentication context**: Maintain proper platform vs tenant separation
+- **RBAC compliance**: Ensure tenant-scoped permissions remain intact
 
 ## 🎯 Phase Overview
 

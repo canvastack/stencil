@@ -40,9 +40,12 @@ This phase implements advanced URL routing and custom domain management, enablin
 ### **Week 25: Secure Domain Foundation & Verification System**
 
 #### **Day 1-2: Enhanced Domain Models & Security Architecture**
-**⚠️ ARCHITECTURE DECISION**: Domain management spans **both landlord and tenant contexts**:
-- **Landlord DB**: Domain verification requests, platform-level domain management
-- **Tenant Schema**: Tenant-specific domain settings and configurations
+**⚠️ CRITICAL ARCHITECTURE COMPLIANCE**:
+- **Authentication context**: Domain management requires proper context separation
+- **Landlord DB**: Domain verification requests, platform-level domain management (Platform Admin context)
+- **Tenant Schema**: Tenant-specific domain settings (Tenant Auth context)
+- **UUID morph keys**: Use `model_uuid` for all polymorphic relationships
+- **RBAC compliance**: Domain permissions properly scoped per context
 
 ```php
 // File: database/migrations/landlord/create_domain_verification_requests_table.php
@@ -69,13 +72,13 @@ Schema::create('domain_verification_requests', function (Blueprint $table) {
     $table->index(['expires_at']);
 });
 
-// File: database/migrations/create_tenant_domains_table.php
+// File: database/migrations/tenant/create_tenant_domains_table.php
 Schema::create('tenant_domains', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('domain'); // example.com
     $table->string('subdomain')->nullable(); // www, shop, store
-    $table->string('full_domain')->index(); // www.example.com or example.com
+    $table->string('full_domain')->unique(); // www.example.com or example.com - NO tenant_id needed
     $table->enum('type', ['primary', 'redirect', 'alias'])->default('primary');
     $table->enum('status', ['pending', 'active', 'failed', 'suspended'])->default('pending');
     $table->boolean('is_custom')->default(true); // false for platform subdomains
@@ -94,17 +97,16 @@ Schema::create('tenant_domains', function (Blueprint $table) {
     $table->unsignedBigInteger('verification_request_id')->nullable();
     $table->timestamps();
     
-    $table->foreign('tenant_id')->references('id')->on('tenants');
+    // NO tenant_id foreign key - schema isolation
     $table->foreign('verification_request_id')->references('id')->on('domain_verification_requests');
-    $table->unique(['full_domain']);
-    $table->index(['tenant_id', 'status']);
-    $table->index(['tenant_id', 'type']);
+    $table->index(['status']);
+    $table->index(['type']);
 });
 
-// File: database/migrations/create_domain_verification_attempts_table.php
+// File: database/migrations/tenant/create_domain_verification_attempts_table.php
 Schema::create('domain_verification_attempts', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->unsignedBigInteger('domain_id')->nullable();
     $table->unsignedBigInteger('verification_request_id')->nullable();
     $table->enum('method', ['dns', 'http', 'email']); // Verification method
@@ -119,7 +121,7 @@ Schema::create('domain_verification_attempts', function (Blueprint $table) {
     $table->datetime('last_attempt_at')->nullable();
     $table->timestamps();
     
-    $table->foreign('tenant_id')->references('id')->on('tenants');
+    // NO tenant_id references - schema isolation
     $table->foreign('domain_id')->references('id')->on('tenant_domains');
     $table->foreign('verification_request_id')->references('id')->on('domain_verification_requests');
     $table->index(['domain_id', 'status']);

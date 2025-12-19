@@ -187,10 +187,15 @@ class PlatformSeeder extends Seeder
                 'abilities' => [
                     'tenant:manage',
                     'users:manage',
+                    'users.view', 'users.create', 'users.edit', 'users.delete',
                     'customers:manage',
+                    'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
                     'products:manage',
+                    'products.view', 'products.create', 'products.edit', 'products.delete',
                     'orders:manage',
+                    'orders.view', 'orders.create', 'orders.edit', 'orders.delete',
                     'vendors:manage',
+                    'vendors.view', 'vendors.create', 'vendors.edit', 'vendors.delete',
                     'analytics:view',
                     'settings:manage'
                 ]
@@ -202,9 +207,13 @@ class PlatformSeeder extends Seeder
                 'is_system' => true,
                 'abilities' => [
                     'customers:manage',
+                    'customers.view', 'customers.create', 'customers.edit', 'customers.delete',
                     'products:manage',
+                    'products.view', 'products.create', 'products.edit', 'products.delete',
                     'orders:manage',
+                    'orders.view', 'orders.create', 'orders.edit', 'orders.delete',
                     'vendors:manage',
+                    'vendors.view', 'vendors.create', 'vendors.edit', 'vendors.delete',
                     'analytics:view'
                 ]
             ],
@@ -215,7 +224,10 @@ class PlatformSeeder extends Seeder
                 'is_system' => true,
                 'abilities' => [
                     'customers:manage',
+                    'customers.view', 'customers.create', 'customers.edit',
                     'orders:manage',
+                    'orders.view', 'orders.create', 'orders.edit',
+                    'products.view',
                     'analytics:view'
                 ]
             ],
@@ -226,8 +238,12 @@ class PlatformSeeder extends Seeder
                 'is_system' => true,
                 'abilities' => [
                     'customers:view',
+                    'customers.view',
                     'products:view',
+                    'products.view',
                     'orders:view',
+                    'orders.view',
+                    'vendors.view',
                     'analytics:view'
                 ]
             ]

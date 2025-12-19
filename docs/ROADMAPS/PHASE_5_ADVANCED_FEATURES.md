@@ -50,7 +50,10 @@ This phase implements advanced features that enhance the platform's capabilities
 ### Week 17: Theme Management & Customization System
 
 #### Day 1-2: Theme Models & Storage
-**⚠️ CRITICAL**: Follow **schema-per-tenant isolation** - NO `tenant_id` fields needed.
+**⚠️ CRITICAL ARCHITECTURE COMPLIANCE**: 
+- **Schema-per-tenant isolation**: NO `tenant_id` fields in tenant schemas 
+- **UUID morph keys**: Use `model_uuid` for polymorphic relationships
+- **Authentication context**: Tenant context only for tenant operations
 
 ```php
 // File: database/migrations/tenant/create_themes_table.php  
@@ -58,7 +61,7 @@ Schema::create('themes', function (Blueprint $table) {
     $table->id();
     $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('name');
-    $table->string('slug')->index();
+    $table->string('slug')->unique(); // NO tenant_id needed - schema isolation
     $table->string('version')->default('1.0.0');
     $table->text('description')->nullable();
     $table->string('author')->nullable();
@@ -73,14 +76,14 @@ Schema::create('themes', function (Blueprint $table) {
     $table->timestamp('installed_at')->nullable();
     $table->timestamps();
     
-    $table->unique(['tenant_id', 'slug']);
-    $table->index(['tenant_id', 'is_active']);
+    // Schema-per-tenant: NO tenant_id indexes needed
+    $table->index(['is_active']);
 });
 
-// File: database/migrations/create_theme_customizations_table.php
+// File: database/migrations/tenant/create_theme_customizations_table.php
 Schema::create('theme_customizations', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->unsignedBigInteger('theme_id');
     $table->string('section'); // header, footer, colors, fonts, etc.
     $table->string('property'); // background-color, font-family, etc.
@@ -92,7 +95,7 @@ Schema::create('theme_customizations', function (Blueprint $table) {
     
     $table->foreign('theme_id')->references('id')->on('themes');
     $table->foreign('customized_by')->references('id')->on('users');
-    $table->unique(['tenant_id', 'theme_id', 'section', 'property']);
+    $table->unique(['theme_id', 'section', 'property']); // NO tenant_id - schema isolation
 });
 ```
 
@@ -309,10 +312,10 @@ class ThemeController extends Controller
 
 #### Day 1-2: Translation Models & Management
 ```php
-// File: database/migrations/create_languages_table.php
+// File: database/migrations/tenant/create_languages_table.php
 Schema::create('languages', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('name'); // English, Indonesian
     $table->string('code', 5); // en, id
     $table->string('locale', 10); // en_US, id_ID
@@ -323,14 +326,14 @@ Schema::create('languages', function (Blueprint $table) {
     $table->integer('sort_order')->default(0);
     $table->timestamps();
     
-    $table->unique(['tenant_id', 'code']);
-    $table->index(['tenant_id', 'is_active']);
+    $table->unique(['code']); // NO tenant_id - schema isolation
+    $table->index(['is_active']);
 });
 
-// File: database/migrations/create_translations_table.php
+// File: database/migrations/tenant/create_translations_table.php
 Schema::create('translations', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('key')->index(); // nav.home, product.details
     $table->text('value'); // Translated text
     $table->string('language_code', 5);
@@ -342,24 +345,24 @@ Schema::create('translations', function (Blueprint $table) {
     
     $table->foreign('language_code')->references('code')->on('languages');
     $table->foreign('created_by')->references('id')->on('users');
-    $table->unique(['tenant_id', 'key', 'language_code']);
-    $table->index(['tenant_id', 'category']);
+    $table->unique(['key', 'language_code']); // NO tenant_id - schema isolation
+    $table->index(['category']);
 });
 
-// File: database/migrations/create_translatable_contents_table.php
+// File: database/migrations/tenant/create_translatable_contents_table.php
 Schema::create('translatable_contents', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
     $table->string('translatable_type'); // Page, Product, etc.
-    $table->unsignedBigInteger('translatable_id');
+    $table->string('translatable_uuid'); // UUID morph key - CORE RULE COMPLIANCE
     $table->string('field'); // title, description, content
     $table->text('value');
     $table->string('language_code', 5);
     $table->timestamps();
     
     $table->foreign('language_code')->references('code')->on('languages');
-    $table->index(['translatable_type', 'translatable_id']);
-    $table->unique(['tenant_id', 'translatable_type', 'translatable_id', 'field', 'language_code'], 'translatable_unique');
+    $table->index(['translatable_type', 'translatable_uuid']);
+    $table->unique(['translatable_type', 'translatable_uuid', 'field', 'language_code'], 'translatable_unique');
 });
 ```
 

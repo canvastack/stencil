@@ -102,6 +102,29 @@ class TenantApiClientManager {
           url: response.config.url,
           data: response.data,
         });
+        
+        // Unwrap nested data structure from Laravel pagination/responses
+        if (response.data && typeof response.data === 'object') {
+          // Handle paginated responses (Laravel standard)
+          if ('data' in response.data && 'current_page' in response.data) {
+            return {
+              data: response.data.data,
+              current_page: response.data.current_page,
+              last_page: response.data.last_page,
+              per_page: response.data.per_page,
+              total: response.data.total,
+              from: response.data.from,
+              to: response.data.to,
+              links: response.data.links,
+            };
+          }
+          
+          // Handle single resource responses wrapped in { data: {...} }
+          if ('data' in response.data && !Array.isArray(response.data) && Object.keys(response.data).length === 1) {
+            return response.data.data;
+          }
+        }
+        
         return response.data;
       },
       async (error: AxiosError) => {
@@ -115,6 +138,13 @@ class TenantApiClientManager {
           this.log('warn', 'Tenant access forbidden (403)', {
             url: error.config?.url,
             data: error.response?.data,
+          });
+        }
+
+        if (error.response?.status === 422) {
+          this.log('warn', 'Validation error (422)', {
+            url: error.config?.url,
+            errors: (error.response?.data as any)?.errors,
           });
         }
 
@@ -181,6 +211,7 @@ class TenantApiClientManager {
 
     let message = error.message;
     let details = null;
+    let errors: Record<string, string[]> | undefined;
 
     if (data?.message) {
       message = data.message;
@@ -190,10 +221,16 @@ class TenantApiClientManager {
       details = data.details;
     }
 
+    // Handle validation errors (422)
+    if (status === 422 && data?.errors) {
+      errors = data.errors;
+    }
+
     return {
       message,
       status,
       details,
+      errors,
       originalError: error,
       clientType: 'tenant',
     };
@@ -242,6 +279,7 @@ export interface TenantApiError {
   message: string;
   status: number;
   details?: Record<string, any>;
+  errors?: Record<string, string[]>;
   originalError?: AxiosError;
   clientType: 'tenant';
 }

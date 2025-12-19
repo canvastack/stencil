@@ -20,7 +20,8 @@ class TenantApiClient {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = import.meta.env.VITE_TENANT_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    const apiBaseURL = import.meta.env.VITE_TENANT_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    this.baseURL = `${apiBaseURL}/tenant`;
     
     this.client = axios.create({
       baseURL: this.baseURL,

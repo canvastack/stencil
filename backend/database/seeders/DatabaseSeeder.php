@@ -22,9 +22,17 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🏢 Seeding Multi-Tenant Business Data...');
         $this->call(MultiTenantBusinessSeeder::class);
         
+        // Seed Product Categories (before other tenant data)
+        $this->command->info('🏷️ Seeding Product Categories...');
+        $this->call(ProductCategorySeeder::class);
+        
         // Seed Tenant Business Data (Customers, Products, Orders, etc.)
         $this->command->info('📈 Seeding Tenant Business Operations...');
         $this->call(TenantDataSeeder::class);
+        
+        // Seed Product Variants (20-50+ per tenant for performance testing)
+        $this->command->info('🎨 Seeding Product Variants...');
+        $this->call(ProductVariantSeeder::class);
         
         // Seed Phase 3 Core Business Logic Data
         $this->command->info('🚀 Seeding Phase 3 Core Business Logic...');
@@ -47,6 +55,13 @@ class DatabaseSeeder extends Seeder
         $this->call(RefundNotificationTemplateSeeder::class);
         $this->call(RefundDataSeeder::class);
         
+        // Seed Enhanced Vendor Data for PT Custom Etching Xenial
+        $this->command->info('🏭 Seeding Enhanced Vendor Data...');
+        $this->call(VendorSeeder::class);
+        $this->call(VendorPerformanceSeeder::class);
+        $this->call(VendorSourcingSeeder::class);
+        $this->call(VendorPaymentSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');
@@ -56,8 +71,12 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Total Customers: 200+ customers');
         $this->command->info('- Total Products: 300+ products (Phase 3 enhanced)');
         $this->command->info('- Product Categories: 20+ categories with hierarchy');
+        $this->command->info('- Product Variants: 600+ variants (2-5 per product, multi-tenant)');
         $this->command->info('- Total Orders: 400+ orders (with realistic workflows)');
-        $this->command->info('- Total Vendors: 50+ vendors');
+        $this->command->info('- Total Vendors: 50+ vendors (5 enhanced for PT CEX)');
+        $this->command->info('- Vendor Performance: 720+ vendor orders with metrics');
+        $this->command->info('- Vendor Sourcing: 10+ sourcing requests with quotes');
+        $this->command->info('- Vendor Payments: 268+ payment records');
         $this->command->info('- Platform Roles: 3 roles');
         $this->command->info('- Tenant Roles: 4 roles per tenant');
         $this->command->info('- Platform Content Pages: 25+ pages (Home, About, Features, Blog)');

@@ -58,7 +58,7 @@ export const ContentManagement: React.FC = () => {
   const loadPages = async () => {
     try {
       setLoading(true);
-      const response = await tenantApiClient.get('/tenant/content/pages');
+      const response = await tenantApiClient.get('/content/pages');
       
       if (response.data?.success) {
         setPages(response.data.data || []);

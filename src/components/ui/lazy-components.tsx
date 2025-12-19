@@ -156,5 +156,10 @@ export const DropdownMenuRadioGroup = withLazyLoading(
   React.lazy(() => import('./dropdown-menu').then(mod => ({ default: mod.DropdownMenuRadioGroup })))
 );
 
+// Separator
+export const Separator = withLazyLoading(
+  React.lazy(() => import('./separator').then(mod => ({ default: mod.Separator })))
+);
+
 // Skeleton - exported as static to avoid duplicate import (needed synchronously in fallbacks)
 export { Skeleton } from './skeleton';

@@ -10,48 +10,43 @@ class VendorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'id' => (string) $this->id,
             'uuid' => $this->uuid,
-            'tenantId' => $this->tenant_id,
+            'tenant_id' => (string) $this->tenant_id,
             
             'name' => $this->name,
             'code' => $this->code,
+            'company' => $this->company_name,
+            'company_name' => $this->company_name,
+            'industry' => $this->industry,
+            'company_size' => $this->company_size,
             'email' => $this->email,
             'phone' => $this->phone,
-            'contactPerson' => $this->contact_person,
+            'contact_person' => $this->contact_person,
+            
+            'address' => $this->address,
+            'location' => $this->location,
             
             'category' => $this->category,
             'status' => $this->status,
             
-            'location' => [
-                'location' => $this->location,
-                'address' => $this->address,
-            ],
+            'payment_terms' => $this->payment_terms,
+            'tax_id' => $this->tax_id,
+            'bank_account' => $this->bank_account,
+            'bank_name' => $this->bank_name,
             
-            'financial' => [
-                'paymentTerms' => $this->payment_terms,
-                'taxId' => $this->tax_id,
-                'bankAccount' => $this->bank_account,
-                'bankName' => $this->bank_name,
-            ],
+            'specializations' => $this->specializations ?? [],
+            'lead_time' => $this->lead_time,
+            'minimum_order' => $this->minimum_order,
             
-            'capabilities' => [
-                'specializations' => $this->specializations ?? [],
-                'leadTime' => $this->lead_time,
-                'minimumOrder' => $this->minimum_order,
-            ],
-            
-            'performance' => [
-                'rating' => $this->rating,
-                'totalOrders' => $this->total_orders ?? 0,
-            ],
+            'rating' => (float) ($this->rating ?? 0),
+            'total_orders' => (int) ($this->total_orders ?? 0),
+            'total_value' => (int) ($this->total_value ?? 0),
             
             'notes' => $this->notes,
             
-            'timestamps' => [
-                'createdAt' => $this->created_at?->toIso8601String(),
-                'updatedAt' => $this->updated_at?->toIso8601String(),
-            ],
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

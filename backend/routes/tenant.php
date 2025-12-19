@@ -86,6 +86,13 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/inventory/out-of-stock', [ProductController::class, 'outOfStock'])->name('tenant.products.out_of_stock');
             Route::get('/search', [ProductController::class, 'search'])->name('tenant.products.search');
             
+            // Product Variants (must come before /{product})
+            Route::get('/{product}/variants', [ProductController::class, 'getVariants'])->name('tenant.products.variants.index');
+            Route::post('/{product}/variants', [ProductController::class, 'createVariant'])->name('tenant.products.variants.store');
+            Route::get('/{product}/variants/{variant}', [ProductController::class, 'getVariant'])->name('tenant.products.variants.show');
+            Route::put('/{product}/variants/{variant}', [ProductController::class, 'updateVariant'])->name('tenant.products.variants.update');
+            Route::delete('/{product}/variants/{variant}', [ProductController::class, 'deleteVariant'])->name('tenant.products.variants.destroy');
+            
             // Product by ID (catch-all - must come last)
             Route::get('/{product}', [ProductController::class, 'show'])->name('tenant.products.show');
             Route::put('/{product}', [ProductController::class, 'update'])->name('tenant.products.update');
@@ -173,6 +180,87 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::delete('/{vendor}', [VendorController::class, 'destroy'])->name('tenant.vendors.destroy');
             Route::post('/{vendor}/activate', [VendorController::class, 'activate'])->name('tenant.vendors.activate');
             Route::post('/{vendor}/deactivate', [VendorController::class, 'deactivate'])->name('tenant.vendors.deactivate');
+            
+            // Vendor Evaluations
+            Route::get('/{vendor}/evaluations', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorEvaluationController::class, 'index'])->name('tenant.vendors.evaluations.index');
+            Route::post('/{vendor}/evaluations', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorEvaluationController::class, 'store'])->name('tenant.vendors.evaluations.store');
+            
+            // Vendor Specializations
+            Route::get('/{vendor}/specializations', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSpecializationController::class, 'index'])->name('tenant.vendors.specializations.index');
+            Route::post('/{vendor}/specializations', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSpecializationController::class, 'store'])->name('tenant.vendors.specializations.store');
+            Route::put('/{vendor}/specializations/{specialization}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSpecializationController::class, 'update'])->name('tenant.vendors.specializations.update');
+            Route::delete('/{vendor}/specializations/{specialization}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSpecializationController::class, 'destroy'])->name('tenant.vendors.specializations.destroy');
+            
+            // Vendor Orders
+            Route::get('/{vendor}/orders', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorOrderController::class, 'index'])->name('tenant.vendors.orders.index');
+            Route::get('/{vendor}/orders/{order}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorOrderController::class, 'show'])->name('tenant.vendors.orders.show');
+        });
+        
+        // Vendor Performance Routes
+        Route::prefix('vendor-performance')->group(function () {
+            Route::get('/metrics', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPerformanceController::class, 'getMetrics'])->name('tenant.vendor_performance.metrics');
+            Route::get('/rankings', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPerformanceController::class, 'getRankings'])->name('tenant.vendor_performance.rankings');
+            Route::get('/delivery-metrics', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPerformanceController::class, 'getDeliveryMetrics'])->name('tenant.vendor_performance.delivery_metrics');
+            Route::get('/quality-metrics', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPerformanceController::class, 'getQualityMetrics'])->name('tenant.vendor_performance.quality_metrics');
+            Route::get('/{vendor}/advanced', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPerformanceController::class, 'getAdvancedMetrics'])->name('tenant.vendor_performance.advanced');
+            Route::get('/{vendor}/trends', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPerformanceController::class, 'getTrendAnalysis'])->name('tenant.vendor_performance.trends');
+        });
+        
+        // Vendor Sourcing Routes
+        Route::prefix('vendor-sourcing')->group(function () {
+            Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSourcingController::class, 'index'])->name('tenant.vendor_sourcing.index');
+            Route::post('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSourcingController::class, 'store'])->name('tenant.vendor_sourcing.store');
+            Route::get('/quotes', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSourcingController::class, 'getQuotes'])->name('tenant.vendor_sourcing.quotes');
+            Route::post('/{sourcing}/quotes', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSourcingController::class, 'submitQuote'])->name('tenant.vendor_sourcing.submit_quote');
+            Route::post('/{sourcing}/quotes/{quote}/accept', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorSourcingController::class, 'acceptQuote'])->name('tenant.vendor_sourcing.accept_quote');
+        });
+        
+        // Vendor Payments Routes
+        Route::prefix('vendor-payments')->group(function () {
+            Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPaymentController::class, 'index'])->name('tenant.vendor_payments.index');
+            Route::post('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPaymentController::class, 'store'])->name('tenant.vendor_payments.store');
+            Route::get('/stats', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPaymentController::class, 'getStats'])->name('tenant.vendor_payments.stats');
+            Route::post('/{payment}/process', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPaymentController::class, 'process'])->name('tenant.vendor_payments.process');
+            Route::post('/{payment}/disburse', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPaymentController::class, 'disburse'])->name('tenant.vendor_payments.disburse');
+            Route::post('/{payment}/mark-overdue', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPaymentController::class, 'markOverdue'])->name('tenant.vendor_payments.mark_overdue');
+        });
+        
+        // Vendor Matching and Business Integration Routes
+        Route::prefix('orders/{order}')->group(function () {
+            Route::get('/vendor-matches', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorMatchingController::class, 'getMatches'])->name('tenant.orders.vendor_matches');
+            Route::post('/assign-vendor', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorMatchingController::class, 'assignVendor'])->name('tenant.orders.assign_vendor');
+            Route::post('/negotiations', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorNegotiationController::class, 'start'])->name('tenant.orders.start_negotiation');
+        });
+        
+        // Vendor Negotiations Routes
+        Route::prefix('vendor-negotiations')->group(function () {
+            Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorNegotiationController::class, 'index'])->name('tenant.vendor_negotiations.index');
+            Route::post('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorNegotiationController::class, 'store'])->name('tenant.vendor_negotiations.store');
+            Route::get('/{negotiation}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorNegotiationController::class, 'show'])->name('tenant.vendor_negotiations.show');
+            Route::post('/{negotiation}/counter', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorNegotiationController::class, 'addCounterOffer'])->name('tenant.vendor_negotiations.counter');
+            Route::post('/{negotiation}/approve', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorNegotiationController::class, 'approve'])->name('tenant.vendor_negotiations.approve');
+            Route::post('/{negotiation}/reject', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorNegotiationController::class, 'reject'])->name('tenant.vendor_negotiations.reject');
+        });
+        
+        // Vendor Financial Management Routes
+        Route::prefix('vendor-financial')->group(function () {
+            Route::get('/overview', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorFinancialController::class, 'getFinancialOverview'])->name('tenant.vendor_financial.overview');
+            Route::get('/cash-flow', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorFinancialController::class, 'getCashFlowAnalysis'])->name('tenant.vendor_financial.cash_flow');
+            Route::get('/profitability', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorFinancialController::class, 'getVendorProfitability'])->name('tenant.vendor_financial.profitability');
+            Route::get('/payment-schedule', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorFinancialController::class, 'getPaymentSchedule'])->name('tenant.vendor_financial.payment_schedule');
+            Route::post('/orders/{order}/payment-plan', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorFinancialController::class, 'createPaymentPlan'])->name('tenant.vendor_financial.create_payment_plan');
+            Route::post('/payments/{payment}/disburse', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorFinancialController::class, 'processDisbursement'])->name('tenant.vendor_financial.process_disbursement');
+        });
+        
+        // Vendor Analytics and Intelligence Routes
+        Route::prefix('vendor-analytics')->group(function () {
+            Route::get('/dashboard', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorAnalyticsController::class, 'getDashboard'])->name('tenant.vendor_analytics.dashboard');
+            Route::get('/performance-heatmap', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorAnalyticsController::class, 'getPerformanceHeatmap'])->name('tenant.vendor_analytics.heatmap');
+            Route::get('/risk-analysis', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorAnalyticsController::class, 'getRiskAnalysis'])->name('tenant.vendor_analytics.risk');
+            Route::post('/recommendations', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorAnalyticsController::class, 'getRecommendations'])->name('tenant.vendor_analytics.recommendations');
+            Route::get('/performance-trends', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorAnalyticsController::class, 'getPerformanceTrends'])->name('tenant.vendor_analytics.trends');
+            Route::post('/compare', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorAnalyticsController::class, 'getVendorComparison'])->name('tenant.vendor_analytics.compare');
+            Route::get('/real-time-kpis', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorAnalyticsController::class, 'getRealTimeKPIs'])->name('tenant.vendor_analytics.real_time_kpis');
         });
         
         // Analytics & Reports
@@ -212,6 +300,9 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             
             Route::get('/integrations', [SettingsController::class, 'integrations'])->name('tenant.settings.integrations');
             Route::post('/integrations/{integration}', [SettingsController::class, 'updateIntegration'])->name('tenant.settings.update_integration');
+            
+            Route::get('/vendor', [SettingsController::class, 'getVendorSettings'])->name('tenant.settings.vendor');
+            Route::put('/vendor', [SettingsController::class, 'updateVendorSettings'])->name('tenant.settings.update_vendor');
         });
 
         // Quote Management (Vendor Negotiations)

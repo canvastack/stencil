@@ -2,9 +2,30 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)} {...props} />
-));
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  hover?: boolean; // Prop untuk mengontrol hover effect
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(({ className, hover = true, ...props }, ref) => {
+  const baseClasses = "rounded-lg border bg-card text-card-foreground shadow-sm";
+  const hoverClasses = hover 
+    ? "relative overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1" 
+    : "";
+
+  return (
+    <div 
+      ref={ref} 
+      className={cn(baseClasses, hoverClasses, className)} 
+      {...props} 
+    >
+      {/* Shine effect - hanya muncul jika hover=true */}
+      {hover && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none"></div>
+      )}
+      {props.children}
+    </div>
+  );
+});
 Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(

@@ -193,14 +193,18 @@ class TenantAuthController extends Controller
                 ], 401);
             }
 
-            // Load tenant relationship
-            $user->load('tenant');
+            // Load tenant and roles relationships
+            $user->load('tenant', 'roles');
 
             // Revoke existing tokens for security
             $user->tokens()->delete();
 
             // Create new access token
             $token = $user->createToken('tenant-access-token', ['*'])->plainTextToken;
+
+            // Get all permissions from user roles
+            $permissions = $user->getAllPermissions();
+            $roles = $user->roles->pluck('slug')->toArray();
 
             return response()->json([
                 'success' => true,
@@ -224,6 +228,8 @@ class TenantAuthController extends Controller
                         'subscription_status' => $user->tenant->subscription_status,
                         'subscription_plan' => $user->tenant->subscription_plan
                     ],
+                    'permissions' => $permissions,
+                    'roles' => $roles,
                     'access_token' => $token,
                     'token_type' => 'Bearer'
                 ]

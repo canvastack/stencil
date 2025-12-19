@@ -403,7 +403,7 @@ class InvoiceService {
    * Get available customers for invoice creation
    */
   async getAvailableCustomers(search?: string): Promise<Invoice['customer'][]> {
-    const response = await tenantApiClient.get('/tenant/customers/for-invoices', {
+    const response = await tenantApiClient.get('/customers/for-invoices', {
       params: { search, limit: 50 }
     });
     return response.data;
@@ -413,7 +413,7 @@ class InvoiceService {
    * Get available products for invoice items
    */
   async getAvailableProducts(search?: string): Promise<InvoiceItem['product'][]> {
-    const response = await tenantApiClient.get('/tenant/products/for-invoices', {
+    const response = await tenantApiClient.get('/products/for-invoices', {
       params: { search, limit: 100 }
     });
     return response.data;

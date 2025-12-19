@@ -1,51 +1,12 @@
 import { tenantApiClient } from '../tenant/tenantApiClient';
-import { PaginatedResponse, ListRequestParams } from '@/types/api';
-
-export interface Vendor {
-  id: string;
-  uuid: string;
-  tenant_id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  city?: string;
-  country?: string;
-  company?: string;
-  bank_account?: string;
-  status: 'active' | 'inactive' | 'suspended';
-  rating?: number;
-  total_orders?: number;
-  completion_rate?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface VendorFilters extends ListRequestParams {
-  status?: string;
-  date_from?: string;
-  date_to?: string;
-}
-
-export interface CreateVendorRequest {
-  name: string;
-  email: string;
-  phone?: string;
-  city?: string;
-  country?: string;
-  company?: string;
-  bank_account?: string;
-}
-
-export interface UpdateVendorRequest {
-  name?: string;
-  email?: string;
-  phone?: string;
-  city?: string;
-  country?: string;
-  company?: string;
-  bank_account?: string;
-  status?: string;
-}
+import { PaginatedResponse } from '@/types/api';
+import type { 
+  Vendor, 
+  VendorFilters, 
+  CreateVendorRequest, 
+  UpdateVendorRequest 
+} from '@/types/vendor';
+import { VendorSchema } from '@/schemas/vendor.schema';
 
 class VendorsService {
   async getVendors(filters?: VendorFilters): Promise<PaginatedResponse<Vendor>> {
@@ -70,7 +31,8 @@ class VendorsService {
 
   async getVendorById(id: string): Promise<Vendor> {
     const response = await tenantApiClient.get<Vendor>(`/vendors/${id}`);
-    return response;
+    const validated = VendorSchema.parse(response);
+    return validated;
   }
 
   async createVendor(data: CreateVendorRequest): Promise<Vendor> {
@@ -88,18 +50,33 @@ class VendorsService {
     return response;
   }
 
-  async getVendorEvaluations(id: string): Promise<any> {
-    const response = await tenantApiClient.get<any>(`/vendors/${id}/evaluations`);
+  async bulkUpdateStatus(vendorIds: string[], status: string): Promise<{ message: string }> {
+    const response = await tenantApiClient.post<{ message: string }>('/vendors/bulk/status', {
+      vendor_ids: vendorIds,
+      status,
+    });
     return response;
   }
 
-  async getVendorSpecializations(id: string): Promise<any[]> {
-    const response = await tenantApiClient.get<any[]>(`/vendors/${id}/specializations`);
+  async bulkDelete(vendorIds: string[]): Promise<{ message: string }> {
+    const response = await tenantApiClient.post<{ message: string }>('/vendors/bulk/delete', {
+      vendor_ids: vendorIds,
+    });
     return response;
   }
 
-  async getVendorOrders(id: string): Promise<any[]> {
-    const response = await tenantApiClient.get<any[]>(`/vendors/${id}/orders`);
+  async getVendorEvaluations(id: string): Promise<unknown> {
+    const response = await tenantApiClient.get(`/vendors/${id}/evaluations`);
+    return response;
+  }
+
+  async getVendorSpecializations(id: string): Promise<unknown[]> {
+    const response = await tenantApiClient.get(`/vendors/${id}/specializations`);
+    return response;
+  }
+
+  async getVendorOrders(id: string): Promise<unknown[]> {
+    const response = await tenantApiClient.get(`/vendors/${id}/orders`);
     return response;
   }
 }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -327,7 +328,7 @@ export function DataTable<TData>({
     </div>
   );
 
-  return (
+  const tableContent = (
     <TooltipProvider>
       <div className={`w-full ${isFullscreen ? "fixed inset-0 z-50 bg-background p-6 overflow-auto" : ""}`}>
         {loading ? (
@@ -668,4 +669,8 @@ export function DataTable<TData>({
       </div>
     </TooltipProvider>
   );
+
+  return isFullscreen && typeof document !== 'undefined' 
+    ? createPortal(tableContent, document.body)
+    : tableContent;
 }

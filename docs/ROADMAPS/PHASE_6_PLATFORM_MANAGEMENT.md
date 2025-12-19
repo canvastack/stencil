@@ -22,7 +22,11 @@ This phase implements Account A (Platform Owner) specific features for managing 
 ### Week 21: Tenant Provisioning & Management System
 
 #### Day 1-2: Platform Models & Tenant Management  
-**⚠️ CRITICAL**: Platform models exist in **landlord database**, NOT tenant schemas.
+**⚠️ CRITICAL ARCHITECTURE COMPLIANCE**: 
+- **Platform models**: ONLY in **landlord database**, never in tenant schemas
+- **Authentication context**: Platform Admin with `account_type = 'platform'`
+- **RBAC compliance**: Platform permissions scoped to landlord level, NOT tenant_id
+- **UUID morph keys**: Use `model_uuid` for all polymorphic relationships
 
 ```php
 // File: database/migrations/landlord/create_tenant_plans_table.php
@@ -42,10 +46,11 @@ Schema::create('tenant_plans', function (Blueprint $table) {
     $table->timestamps();
 });
 
-// File: database/migrations/create_tenant_subscriptions_table.php
+// File: database/migrations/landlord/create_tenant_subscriptions_table.php
 Schema::create('tenant_subscriptions', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
+    $table->uuid('tenant_id')->index(); // References tenants.uuid
     $table->unsignedBigInteger('plan_id');
     $table->enum('billing_cycle', ['monthly', 'yearly']);
     $table->enum('status', ['active', 'cancelled', 'suspended', 'expired'])->default('active');
@@ -58,15 +63,16 @@ Schema::create('tenant_subscriptions', function (Blueprint $table) {
     $table->json('plan_limits'); // Snapshot of limits at subscription time
     $table->timestamps();
     
-    $table->foreign('tenant_id')->references('id')->on('tenants');
+    $table->foreign('tenant_id')->references('uuid')->on('tenants'); // UUID reference
     $table->foreign('plan_id')->references('id')->on('tenant_plans');
     $table->index(['tenant_id', 'status']);
 });
 
-// File: database/migrations/create_tenant_usage_metrics_table.php
+// File: database/migrations/landlord/create_tenant_usage_metrics_table.php
 Schema::create('tenant_usage_metrics', function (Blueprint $table) {
     $table->id();
-    $table->string('tenant_id')->index();
+    $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
+    $table->uuid('tenant_id')->index(); // References tenants.uuid
     $table->date('date');
     $table->integer('users_count')->default(0);
     $table->integer('products_count')->default(0);
@@ -79,7 +85,7 @@ Schema::create('tenant_usage_metrics', function (Blueprint $table) {
     $table->json('additional_metrics')->nullable(); // Custom metrics per tenant
     $table->timestamps();
     
-    $table->foreign('tenant_id')->references('id')->on('tenants');
+    $table->foreign('tenant_id')->references('uuid')->on('tenants'); // UUID reference
     $table->unique(['tenant_id', 'date']);
 });
 

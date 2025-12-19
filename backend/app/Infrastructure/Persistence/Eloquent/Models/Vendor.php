@@ -25,6 +25,7 @@ class Vendor extends Model implements TenantAwareModel
         'phone',
         'contact_person',
         'category',
+        'industry',
         'status',
         'location',
         'address',
@@ -38,15 +39,41 @@ class Vendor extends Model implements TenantAwareModel
         'rating',
         'total_orders',
         'notes',
+        // Enhanced fields for business cycle compliance
+        'quality_tier',
+        'average_lead_time_days',
+        'certifications',
+        'performance_score',
+        'latitude',
+        'longitude',
+        'province',
+        'city',
+        'country',
+        'total_value',
+        'completion_rate',
+        'company',
+        'company_name',
+        'website',
+        'business_license',
+        'bank_account_details',
+        'company_size',
     ];
 
     protected $casts = [
         'location' => 'array',
         'specializations' => 'array',
         'payment_terms' => 'array',
+        'certifications' => 'array',
+        'bank_account_details' => 'array',
         'minimum_order' => 'integer',
         'total_orders' => 'integer',
+        'total_value' => 'integer',
+        'average_lead_time_days' => 'integer',
         'rating' => 'decimal:2',
+        'performance_score' => 'decimal:2',
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
+        'completion_rate' => 'decimal:2',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -101,6 +128,11 @@ class Vendor extends Model implements TenantAwareModel
             if (empty($model->uuid)) {
                 $model->uuid = \Ramsey\Uuid\Uuid::uuid4()->toString();
             }
+        });
+
+        static::saving(function ($model) {
+            $classificationService = app(\App\Domain\Vendor\Services\VendorClassificationService::class);
+            $model->company_size = $classificationService->calculateCompanySize($model);
         });
     }
 }

@@ -1,8 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
-import { productsService, CreateProductRequest, UpdateProductRequest } from '@/services/api/products';
+import { CreateProductRequest, UpdateProductRequest } from '@/services/api/contextAwareProductsService';
 import { Product, ProductFilters } from '@/types/product';
-import { PaginatedResponse } from '@/types/api';
-import { toast } from 'sonner';
+import {
+  useProductsQuery,
+  useProductQuery,
+  useProductBySlugQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+} from './useProductsQuery';
 
 interface UseProductsState {
   products: Product[];
@@ -18,202 +24,106 @@ interface UseProductsState {
   error: string | null;
 }
 
-export const useProducts = () => {
-  const [state, setState] = useState<UseProductsState>({
-    products: [],
-    currentProduct: null,
-    pagination: {
-      page: 1,
-      per_page: 10,
-      total: 0,
-      last_page: 1,
-    },
-    isLoading: false,
-    isSaving: false,
-    error: null,
-  });
+export const useProducts = (initialFilters?: ProductFilters) => {
+  const [filters, setFilters] = useState<ProductFilters | undefined>(initialFilters);
+  const [currentProductId, setCurrentProductId] = useState<string | undefined>();
+  const [currentProductSlug, setCurrentProductSlug] = useState<string | undefined>();
+  
+  const productsQuery = useProductsQuery(filters);
+  const currentProductQuery = useProductQuery(currentProductId);
+  const currentProductBySlugQuery = useProductBySlugQuery(currentProductSlug);
+  
+  const createProductMutation = useCreateProductMutation();
+  const updateProductMutation = useUpdateProductMutation();
+  const deleteProductMutation = useDeleteProductMutation();
 
-  const fetchProducts = useCallback(async (filters?: ProductFilters) => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const response: PaginatedResponse<Product> = await productsService.getProducts(filters);
-      setState((prev) => ({
-        ...prev,
-        products: response.data,
-        pagination: {
-          page: response.current_page || 1,
-          per_page: response.per_page || 10,
-          total: response.total || 0,
-          last_page: response.last_page || 1,
-        },
-        isLoading: false,
-      }));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch products';
-      setState((prev) => ({ ...prev, error: message, isLoading: false }));
-      toast.error(message);
-    }
-  }, []);
+  const products = productsQuery.data?.data || [];
+  const pagination = {
+    page: productsQuery.data?.current_page || 1,
+    per_page: productsQuery.data?.per_page || 10,
+    total: productsQuery.data?.total || 0,
+    last_page: productsQuery.data?.last_page || 1,
+  };
+
+  const currentProduct = currentProductQuery.data || currentProductBySlugQuery.data || null;
+  
+  const isLoading = productsQuery.isLoading || 
+    currentProductQuery.isLoading || 
+    currentProductBySlugQuery.isLoading;
+    
+  const isSaving = createProductMutation.isPending || 
+    updateProductMutation.isPending || 
+    deleteProductMutation.isPending;
+
+  const error = (productsQuery.error as Error)?.message || 
+    (currentProductQuery.error as Error)?.message || 
+    (currentProductBySlugQuery.error as Error)?.message || 
+    null;
+
+  const fetchProducts = useCallback(async (newFilters?: ProductFilters) => {
+    setFilters(newFilters);
+    await productsQuery.refetch();
+  }, [productsQuery]);
 
   const fetchProductById = useCallback(async (id: string) => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const product = await productsService.getProductById(id);
-      if (product) {
-        setState((prev) => ({ ...prev, currentProduct: product, isLoading: false }));
-        return product;
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch product';
-      setState((prev) => ({ ...prev, error: message, isLoading: false }));
-      toast.error(message);
-    }
-  }, []);
+    setCurrentProductId(id);
+    const result = await currentProductQuery.refetch();
+    return result.data;
+  }, [currentProductQuery]);
 
   const fetchProductBySlug = useCallback(async (slug: string) => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const product = await productsService.getProductBySlug(slug);
-      if (product) {
-        setState((prev) => ({ ...prev, currentProduct: product, isLoading: false }));
-        return product;
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch product';
-      setState((prev) => ({ ...prev, error: message, isLoading: false }));
-      toast.error(message);
-    }
-  }, []);
+    setCurrentProductSlug(slug);
+    const result = await currentProductBySlugQuery.refetch();
+    return result.data;
+  }, [currentProductBySlugQuery]);
 
   const createProduct = useCallback(async (data: CreateProductRequest) => {
-    setState((prev) => ({ ...prev, isSaving: true, error: null }));
-    try {
-      const product = await productsService.createProduct(data);
-      setState((prev) => ({
-        ...prev,
-        products: [product, ...prev.products],
-        isSaving: false,
-      }));
-      toast.success('Product created successfully');
-      return product;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create product';
-      setState((prev) => ({ ...prev, error: message, isSaving: false }));
-      toast.error(message);
-    }
-  }, []);
+    const result = await createProductMutation.mutateAsync(data);
+    return result;
+  }, [createProductMutation]);
 
   const updateProduct = useCallback(async (id: string, data: UpdateProductRequest) => {
-    setState((prev) => ({ ...prev, isSaving: true, error: null }));
-    try {
-      const product = await productsService.updateProduct(id, data);
-      setState((prev) => ({
-        ...prev,
-        products: prev.products.map((p) => (p.id === id ? product : p)),
-        currentProduct: prev.currentProduct?.id === id ? product : prev.currentProduct,
-        isSaving: false,
-      }));
-      toast.success('Product updated successfully');
-      return product;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update product';
-      setState((prev) => ({ ...prev, error: message, isSaving: false }));
-      toast.error(message);
-    }
-  }, []);
+    const result = await updateProductMutation.mutateAsync({ id, data });
+    return result;
+  }, [updateProductMutation]);
 
   const deleteProduct = useCallback(async (id: string) => {
-    setState((prev) => ({ ...prev, isSaving: true, error: null }));
-    try {
-      await productsService.deleteProduct(id);
-      setState((prev) => ({
-        ...prev,
-        products: prev.products.filter((p) => p.id !== id),
-        currentProduct: prev.currentProduct?.id === id ? null : prev.currentProduct,
-        isSaving: false,
-      }));
-      toast.success('Product deleted successfully');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete product';
-      setState((prev) => ({ ...prev, error: message, isSaving: false }));
-      toast.error(message);
-    }
-  }, []);
-
-  const getFeaturedProducts = useCallback(async (limit?: number) => {
-    try {
-      return await productsService.getFeaturedProducts(limit);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch featured products';
-      toast.error(message);
-    }
-  }, []);
-
-  const getProductsByCategory = useCallback(async (category: string, limit?: number) => {
-    try {
-      return await productsService.getProductsByCategory(category, limit);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to fetch products by category';
-      toast.error(message);
-    }
-  }, []);
-
-  const searchProducts = useCallback(async (query: string) => {
-    try {
-      return await productsService.searchProducts(query);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to search products';
-      toast.error(message);
-    }
-  }, []);
+    await deleteProductMutation.mutateAsync(id);
+  }, [deleteProductMutation]);
 
   return {
-    products: state.products,
-    currentProduct: state.currentProduct,
-    pagination: state.pagination,
-    isLoading: state.isLoading,
-    isSaving: state.isSaving,
-    error: state.error,
+    products,
+    currentProduct,
+    pagination,
+    isLoading,
+    isSaving,
+    error,
     fetchProducts,
     fetchProductById,
     fetchProductBySlug,
     createProduct,
     updateProduct,
     deleteProduct,
-    getFeaturedProducts,
-    getProductsByCategory,
-    searchProducts,
   };
 };
 
 export const useProduct = (productId?: string) => {
-  const { fetchProductById, currentProduct, isLoading, error } = useProducts();
-
-  useEffect(() => {
-    if (productId) {
-      fetchProductById(productId);
-    }
-  }, [productId, fetchProductById]);
-
+  const query = useProductQuery(productId);
+  
   return {
-    product: currentProduct,
-    isLoading,
-    error,
+    product: query.data || null,
+    loading: query.isLoading,
+    isLoading: query.isLoading,
+    error: (query.error as Error)?.message || null,
   };
 };
 
-export const useProductBySlug = (slug: string) => {
-  const { fetchProductBySlug, currentProduct, isLoading, error } = useProducts();
-
-  useEffect(() => {
-    if (slug) {
-      fetchProductBySlug(slug);
-    }
-  }, [slug, fetchProductBySlug]);
-
+export const useProductBySlug = (slug?: string) => {
+  const query = useProductBySlugQuery(slug);
+  
   return {
-    product: currentProduct,
-    isLoading,
-    error,
+    product: query.data || null,
+    isLoading: query.isLoading,
+    error: (query.error as Error)?.message || null,
   };
 };

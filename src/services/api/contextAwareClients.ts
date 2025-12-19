@@ -1,19 +1,34 @@
 import { anonymousApiClient } from './anonymousApiClient';
 import { tenantApiClient } from './tenantApiClient';
 import { platformApiClient } from './platformApiClient';
+import { TenantContextError } from '@/lib/errors';
 
 export { anonymousApiClient, tenantApiClient, platformApiClient };
 
-// Helper function to get the appropriate client based on context
-export const getContextAwareClient = (userType: 'anonymous' | 'platform' | 'tenant') => {
+export type UserType = 'anonymous' | 'platform' | 'tenant';
+
+export function getContextAwareClient(userType: UserType) {
   switch (userType) {
-    case 'anonymous':
-      return anonymousApiClient;
     case 'platform':
       return platformApiClient;
     case 'tenant':
       return tenantApiClient;
-    default:
+    case 'anonymous':
       return anonymousApiClient;
+    default:
+      throw new TenantContextError(`Invalid user type: ${userType}`);
   }
-};
+}
+
+export function getContextAwareEndpoint(userType: UserType, resource: string): string {
+  switch (userType) {
+    case 'platform':
+      return `/platform/${resource}`;
+    case 'tenant':
+      return `/${resource}`;
+    case 'anonymous':
+      return `/public/${resource}`;
+    default:
+      throw new TenantContextError(`Invalid user type for endpoint: ${userType}`);
+  }
+}

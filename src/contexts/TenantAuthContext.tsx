@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
 import { authService } from '@/services/api/auth';
 import type { AuthUser, AuthTenant, LoginRequest, AccountType } from '@/services/api/auth';
 import { handleApiError } from '@/services/api/errorHandler';
@@ -24,13 +24,21 @@ interface TenantAuthProviderProps {
 }
 
 export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [tenant, setTenant] = useState<AuthTenant | null>(null);
-  const [permissions, setPermissions] = useState<string[]>([]);
-  const [roles, setRoles] = useState<string[]>([]);
+  const [userState, setUserState] = useState<AuthUser | null>(null);
+  const [tenantState, setTenantState] = useState<AuthTenant | null>(null);
+  const [permissionsState, setPermissions] = useState<string[]>([]);
+  const [rolesState, setRoles] = useState<string[]>([]);
   // CRITICAL FIX: Start with loading=true during initialization
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Memoize user and tenant to prevent unnecessary re-renders
+  const user = useMemo(() => userState, [userState?.id, userState?.uuid, userState?.email]);
+  const tenant = useMemo(() => tenantState, [tenantState?.id, tenantState?.uuid, tenantState?.slug]);
+  
+  // Memoize permissions and roles arrays to prevent recreation
+  const permissions = useMemo(() => permissionsState, [JSON.stringify(permissionsState)]);
+  const roles = useMemo(() => rolesState, [JSON.stringify(rolesState)]);
 
   // Initialize from localStorage
   useEffect(() => {
@@ -53,8 +61,8 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       // Also check if there's no token at all (auth was cleared)
       if (!storedToken) {
         console.log('TenantAuthContext: No token found, clearing tenant state');
-        setUser(null);
-        setTenant(null);
+        setUserState(null);
+        setTenantState(null);
         setPermissions([]);
         setRoles([]);
         return;
@@ -75,16 +83,16 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       });
       
       if (storedUser && storedTenant) {
-        setUser(storedUser);
-        setTenant(storedTenant);
+        setUserState(storedUser);
+        setTenantState(storedTenant);
         setPermissions(storedPermissions);
         setRoles(storedRoles);
       } else {
         console.log('TenantAuthContext: Missing user or tenant data, but keeping token (might be login in progress)');
         // FIXED: Don't clear auth immediately - user might be in the middle of login process
         // or data might be temporarily unavailable. Only clear if explicitly demo token
-        setUser(null);
-        setTenant(null);
+        setUserState(null);
+        setTenantState(null);
         setPermissions([]);
         setRoles([]);
       }
@@ -94,8 +102,8 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       // we MUST NOT clear global auth here. Simply treat this context
       // as unauthenticated and let the appropriate auth context handle it.
       console.log('TenantAuthContext: Non-tenant account detected, skipping tenant auth initialization');
-      setUser(null);
-      setTenant(null);
+      setUserState(null);
+      setTenantState(null);
       setPermissions([]);
       setRoles([]);
     }
@@ -128,8 +136,8 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       const response = await authService.login(loginRequest);
       
       if (response.user && response.tenant) {
-        setUser(response.user);
-        setTenant(response.tenant);
+        setUserState(response.user);
+        setTenantState(response.tenant);
         
         if (response.permissions) {
           setPermissions(response.permissions);
@@ -153,8 +161,8 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       setIsLoading(true);
       
       // Clear local state immediately to prevent UI confusion
-      setUser(null);
-      setTenant(null);
+      setUserState(null);
+      setTenantState(null);
       setPermissions([]);
       setRoles([]);
       clearError();
@@ -207,10 +215,10 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       const response = await authService.getCurrentUser();
       
       if (response.user) {
-        setUser(response.user);
+        setUserState(response.user);
       }
       if (response.tenant) {
-        setTenant(response.tenant);
+        setTenantState(response.tenant);
       }
     } catch (err) {
       console.error('TenantAuthContext: getCurrentUser failed', err);
@@ -219,9 +227,9 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
     } finally {
       setIsLoading(false);
     }
-  }, [handleError, isLoading]);
+  }, [isLoading]);
 
-  const value: TenantAuthContextType = {
+  const value: TenantAuthContextType = useMemo(() => ({
     user,
     tenant,
     permissions,
@@ -233,7 +241,8 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
     logout,
     getCurrentUser,
     clearError,
-  };
+  }), [user, tenant, permissions, roles, isLoading, error, login, logout, getCurrentUser, clearError]);
+
 
   return (
     <TenantAuthContext.Provider value={value}>

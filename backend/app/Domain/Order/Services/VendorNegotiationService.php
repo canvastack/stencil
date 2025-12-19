@@ -163,5 +163,96 @@ class VendorNegotiationService
         ];
 
         $order->metadata = $metadata;
+        $order->save();
+    }
+
+    public function approveNegotiation(OrderVendorNegotiation $negotiation, array $payload = []): OrderVendorNegotiation
+    {
+        if ($negotiation->status !== 'open' && $negotiation->status !== 'countered') {
+            throw new \DomainException('Only open or countered negotiations can be approved');
+        }
+
+        $finalTerms = Arr::get($payload, 'final_terms', []);
+        $notes = Arr::get($payload, 'notes');
+        $approvedBy = Arr::get($payload, 'approved_by', auth()->id());
+
+        // Add approval entry to history
+        $history = $negotiation->history ?? [];
+        $history[] = $this->buildHistoryEntry(
+            'customer',
+            'approved',
+            $negotiation->latest_offer,
+            $notes,
+            ['final_terms' => $finalTerms, 'approved_by' => $approvedBy]
+        );
+
+        $negotiation->update([
+            'status' => 'approved',
+            'terms' => array_merge($negotiation->terms ?? [], $finalTerms),
+            'history' => $history,
+            'closed_at' => now(),
+        ]);
+
+        // Update order status and final price
+        $order = $negotiation->order;
+        $order->update([
+            'status' => 'vendor_confirmed',
+            'total_amount' => $negotiation->latest_offer,
+        ]);
+
+        $this->syncOrderNegotiationMetadata($order, $negotiation);
+
+        Log::info('Vendor negotiation approved', [
+            'negotiation_id' => $negotiation->id,
+            'order_id' => $order->id,
+            'final_amount' => $negotiation->latest_offer,
+            'approved_by' => $approvedBy,
+        ]);
+
+        return $negotiation;
+    }
+
+    public function rejectNegotiation(OrderVendorNegotiation $negotiation, array $payload = []): OrderVendorNegotiation
+    {
+        if ($negotiation->status !== 'open' && $negotiation->status !== 'countered') {
+            throw new \DomainException('Only open or countered negotiations can be rejected');
+        }
+
+        $reason = Arr::get($payload, 'reason');
+        $rejectedBy = Arr::get($payload, 'rejected_by', auth()->id());
+
+        // Add rejection entry to history
+        $history = $negotiation->history ?? [];
+        $history[] = $this->buildHistoryEntry(
+            'customer',
+            'rejected',
+            $negotiation->latest_offer,
+            $reason,
+            ['rejected_by' => $rejectedBy]
+        );
+
+        $negotiation->update([
+            'status' => 'rejected',
+            'history' => $history,
+            'closed_at' => now(),
+        ]);
+
+        // Update order status to find new vendor
+        $order = $negotiation->order;
+        $order->update([
+            'status' => 'vendor_search',
+            'vendor_id' => null, // Remove current vendor assignment
+        ]);
+
+        $this->syncOrderNegotiationMetadata($order, $negotiation);
+
+        Log::info('Vendor negotiation rejected', [
+            'negotiation_id' => $negotiation->id,
+            'order_id' => $order->id,
+            'reason' => $reason,
+            'rejected_by' => $rejectedBy,
+        ]);
+
+        return $negotiation;
     }
 }

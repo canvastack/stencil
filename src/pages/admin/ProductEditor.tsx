@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProduct } from '@/hooks/useProducts';
-import { productsService } from '@/services/api/products';
+import { useProducts, useProduct } from '@/hooks/useProducts';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +28,8 @@ export default function ProductEditor() {
   const navigate = useNavigate();
   const isNew = id === 'new';
   // Only fetch product data when editing an existing product
-  const { product, loading } = useProduct(isNew ? '' : (id || ''));
+  const { product, isLoading } = useProduct(isNew ? '' : (id || ''));
+  const { createProduct, updateProduct } = useProducts();
 
   const defaultFormData = {
     name: '',
@@ -82,22 +82,64 @@ export default function ProductEditor() {
       setFormData(defaultFormData);
     } else if (product) {
       // For existing products, merge product data with defaults
+      // Handle category field - backend returns object, form needs string
+      const categoryValue = typeof product.category === 'object' && product.category !== null
+        ? product.category.name || ''
+        : product.category || '';
+      
+      // Handle specifications - backend returns object, form needs array
+      let specificationsArray: Array<{ key: string; value: string }> = [];
+      if (product.specifications) {
+        if (Array.isArray(product.specifications)) {
+          specificationsArray = product.specifications;
+        } else if (typeof product.specifications === 'object') {
+          // Convert object to array format
+          specificationsArray = Object.entries(product.specifications).map(([key, value]) => ({
+            key,
+            value: typeof value === 'string' ? value : JSON.stringify(value)
+          }));
+        }
+      }
+      
       setFormData({
-        ...defaultFormData, // Ensure all fields have default values
-        ...product, // Override with existing product data
-        // Keep form order fields with defaults if not set
-        productType: product.productType || defaultFormData.productType,
-        bahan: product.bahan || defaultFormData.bahan,
-        kualitas: product.kualitas || defaultFormData.kualitas,
-        ketebalan: product.ketebalan || defaultFormData.ketebalan,
-        ukuran: product.ukuran || defaultFormData.ukuran,
-        warnaBackground: product.warnaBackground || defaultFormData.warnaBackground,
-        customTexts: product.customTexts || [],
-        bahanOptions: product.bahanOptions || [],
-        kualitasOptions: product.kualitasOptions || [],
-        ketebalanOptions: product.ketebalanOptions || [],
-        ukuranOptions: product.ukuranOptions || [],
-        notesWysiwyg: product.notesWysiwyg || '',
+        name: product.name ?? '',
+        slug: product.slug ?? '',
+        description: product.description ?? '',
+        longDescription: product.longDescription ?? '',
+        category: categoryValue,
+        subcategory: product.subcategory ?? '',
+        tags: product.tags ?? [],
+        material: product.material ?? '',
+        price: product.price ?? 0,
+        currency: product.currency ?? 'IDR',
+        priceUnit: product.priceUnit ?? 'per pcs',
+        minOrder: product.minOrder ?? 1,
+        specifications: specificationsArray,
+        customizable: product.customizable ?? false,
+        customOptions: product.customOptions ?? [],
+        inStock: product.inStock ?? true,
+        stockQuantity: product.stockQuantity ?? 0,
+        leadTime: product.leadTime ?? '',
+        seoTitle: product.seoTitle ?? '',
+        seoDescription: product.seoDescription ?? '',
+        seoKeywords: product.seoKeywords ?? [],
+        status: product.status ?? 'draft',
+        featured: product.featured ?? false,
+        images: product.images ?? [],
+        productType: product.productType ?? '',
+        size: product.size ?? '',
+        bahan: product.bahan ?? '',
+        bahanOptions: product.bahanOptions ?? [],
+        kualitas: product.kualitas ?? 'standard',
+        kualitasOptions: product.kualitasOptions ?? [],
+        ketebalan: product.ketebalan ?? '1mm',
+        ketebalanOptions: product.ketebalanOptions ?? [],
+        ukuran: product.ukuran ?? '15x20',
+        ukuranOptions: product.ukuranOptions ?? [],
+        warnaBackground: product.warnaBackground ?? '#FFFFFF',
+        designFileUrl: product.designFileUrl ?? '',
+        customTexts: product.customTexts ?? [],
+        notesWysiwyg: product.notesWysiwyg ?? '',
       });
     }
   }, [product, isNew]);
@@ -111,7 +153,7 @@ export default function ProductEditor() {
     setIsSaving(true);
     try {
       if (isNew) {
-        await productsService.createProduct({
+        await createProduct({
           name: formData.name,
           slug: formData.slug,
           description: formData.description,
@@ -137,9 +179,8 @@ export default function ProductEditor() {
           customizable: formData.customizable,
           customOptions: formData.customOptions,
         });
-        toast.success('Product created successfully');
       } else {
-        await productsService.updateProduct(id || '', {
+        await updateProduct(id || '', {
           name: formData.name,
           slug: formData.slug,
           description: formData.description,
@@ -165,12 +206,12 @@ export default function ProductEditor() {
           customizable: formData.customizable,
           customOptions: formData.customOptions,
         });
-        toast.success('Product updated successfully');
       }
-      navigate('/admin/products');
+      toast.success(isNew ? 'Product created successfully' : 'Product updated successfully');
+      navigate('/admin/products/catalog');
     } catch (error) {
       console.error('Save error:', error);
-      toast.error(isNew ? 'Failed to create product' : 'Failed to update product');
+      toast.error('Failed to save product');
     } finally {
       setIsSaving(false);
     }
@@ -191,7 +232,7 @@ export default function ProductEditor() {
   };
 
   // Only show loading when fetching existing product
-  if (loading && !isNew) {
+  if (isLoading && !isNew) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="p-6 text-center">
@@ -206,7 +247,7 @@ export default function ProductEditor() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/products')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/products/catalog')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -217,7 +258,7 @@ export default function ProductEditor() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate('/admin/products')}>
+          <Button variant="outline" onClick={() => navigate('/admin/products/catalog')}>
             <X className="mr-2 h-4 w-4" />
             Cancel
           </Button>
@@ -249,7 +290,7 @@ export default function ProductEditor() {
           {!isNew && id && (
             <Button 
               variant="outline"
-              onClick={() => navigate(`/admin/products/${id}`)}
+              onClick={() => navigate(`/admin/products/${id}?tab=variants`)}
             >
               <Package className="mr-2 h-4 w-4" />
               Manage Variants

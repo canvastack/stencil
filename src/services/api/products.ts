@@ -231,7 +231,10 @@ class ProductsService {
     try {
       const response = await tenantApiClient.get<any[]>(`/products/${id}/variants`);
       return response;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.status === 404) {
+        return [];
+      }
       console.error('Failed to fetch product variants:', error);
       return [];
     }

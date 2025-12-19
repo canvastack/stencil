@@ -3,14 +3,17 @@
 namespace App\Infrastructure\Presentation\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Domain\Settings\Repositories\SettingsRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class SettingsController extends Controller
 {
-    public function __construct()
+    protected SettingsRepositoryInterface $settingsRepository;
+
+    public function __construct(SettingsRepositoryInterface $settingsRepository)
     {
-        // TODO: Inject settings use cases and services when implemented
+        $this->settingsRepository = $settingsRepository;
     }
 
     public function profile(Request $request): JsonResponse
@@ -118,6 +121,87 @@ class SettingsController extends Controller
             return response()->json(['message' => 'Support ticket creation not yet implemented', 'data' => null], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Failed to create support ticket', 'error' => 'An unexpected error occurred'], 500);
+        }
+    }
+
+    public function getVendorSettings(Request $request): JsonResponse
+    {
+        try {
+            $settings = [
+                'company_size_large_threshold' => $this->settingsRepository->get('vendor.company_size.large_threshold', 100),
+                'company_size_medium_threshold' => $this->settingsRepository->get('vendor.company_size.medium_threshold', 20),
+                'min_rating_for_auto_approval' => $this->settingsRepository->get('vendor.approval.min_rating', 4.5),
+                'default_payment_terms' => $this->settingsRepository->get('vendor.payment.default_terms', 30),
+                'max_lead_time_days' => $this->settingsRepository->get('vendor.lead_time.max_days', 60),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $settings,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve vendor settings',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateVendorSettings(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'company_size_large_threshold' => 'required|integer|min:1',
+                'company_size_medium_threshold' => 'required|integer|min:1',
+                'min_rating_for_auto_approval' => 'required|numeric|min:0|max:5',
+                'default_payment_terms' => 'required|integer|min:0',
+                'max_lead_time_days' => 'required|integer|min:1',
+            ]);
+
+            // Save each setting to database
+            $this->settingsRepository->set('vendor.company_size.large_threshold', $validated['company_size_large_threshold'], [
+                'type' => 'integer',
+                'category' => 'vendor',
+            ]);
+            
+            $this->settingsRepository->set('vendor.company_size.medium_threshold', $validated['company_size_medium_threshold'], [
+                'type' => 'integer',
+                'category' => 'vendor',
+            ]);
+            
+            $this->settingsRepository->set('vendor.approval.min_rating', $validated['min_rating_for_auto_approval'], [
+                'type' => 'float',
+                'category' => 'vendor',
+            ]);
+            
+            $this->settingsRepository->set('vendor.payment.default_terms', $validated['default_payment_terms'], [
+                'type' => 'integer',
+                'category' => 'vendor',
+            ]);
+            
+            $this->settingsRepository->set('vendor.lead_time.max_days', $validated['max_lead_time_days'], [
+                'type' => 'integer',
+                'category' => 'vendor',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Vendor settings updated successfully',
+                'data' => $validated,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update vendor settings',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

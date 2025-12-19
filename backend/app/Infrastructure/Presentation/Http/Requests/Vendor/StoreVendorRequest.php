@@ -16,7 +16,11 @@ class StoreVendorRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:vendors,code',
+            'code' => 'nullable|string|max:50|unique:vendors,code',
+            'company' => 'nullable|string|max:255',
+            'company_name' => 'nullable|string|max:255',
+            'industry' => 'nullable|string|max:100',
+            'company_size' => ['nullable', Rule::in(['small', 'medium', 'large'])],
             'email' => 'required|email|max:255|unique:vendors,email',
             'phone' => 'required|string|max:50',
             'contact_person' => 'required|string|max:255',
@@ -24,8 +28,12 @@ class StoreVendorRequest extends FormRequest
             'category' => 'required|string|max:100',
             'status' => ['nullable', Rule::in(['active', 'inactive', 'suspended'])],
             
-            'location' => 'required|array',
+            'location' => 'nullable|array',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
             'address' => 'nullable|string',
+            'city' => 'nullable|string|max:100',
+            'province' => 'nullable|string|max:100',
             
             'payment_terms' => 'required|string|max:100',
             'tax_id' => 'required|string|max:100',
@@ -37,6 +45,8 @@ class StoreVendorRequest extends FormRequest
             'minimum_order' => 'nullable|integer|min:1',
             
             'rating' => 'nullable|numeric|min:0|max:5',
+            'total_orders' => 'nullable|integer|min:0',
+            'total_value' => 'nullable|integer|min:0',
             'notes' => 'nullable|string',
         ];
     }

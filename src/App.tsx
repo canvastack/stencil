@@ -25,6 +25,7 @@ import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
 import { TenantAuthProvider } from "@/contexts/TenantAuthContext";
 import { GlobalContextProvider } from "@/contexts/GlobalContext";
 import { PublicTenantProvider } from "@/contexts/PublicTenantContext";
+import { ProductComparisonProvider } from "@/contexts/ProductComparisonContext";
 import { PlatformRouteGuard } from "@/guards/PlatformRouteGuard";
 import { TenantRouteGuard } from "@/guards/TenantRouteGuard";
 import { DebugAuth } from "@/components/DebugAuth";
@@ -72,6 +73,7 @@ const ReviewList = lazy(() => import("./pages/admin/ReviewList"));
 const MediaLibrary = lazy(() => import("./pages/admin/MediaLibrary"));
 const Documentation = lazy(() => import("./pages/admin/Documentation"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
+const VendorSettings = lazy(() => import("./pages/admin/settings/VendorSettings"));
 const ProductCategories = lazy(() => import("./pages/admin/ProductCategories"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
@@ -79,6 +81,9 @@ const CustomerManagement = lazy(() => import("./pages/admin/CustomerManagement")
 const CustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
 const VendorManagement = lazy(() => import("./pages/admin/VendorManagement"));
 const VendorDetail = lazy(() => import("./pages/admin/VendorDetail"));
+const VendorPerformance = lazy(() => import("./pages/admin/VendorPerformance"));
+const VendorContracts = lazy(() => import("./pages/admin/VendorContracts"));
+const VendorCommunications = lazy(() => import("./pages/admin/VendorCommunications"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
 const OrderTracking = lazy(() => import("./pages/admin/OrderTracking"));
 const BulkOrders = lazy(() => import("./pages/admin/BulkOrders"));
@@ -86,6 +91,7 @@ const OrderAnalytics = lazy(() => import("./pages/admin/OrderAnalytics"));
 const QuoteManagement = lazy(() => import("./pages/tenant/QuoteManagement"));
 const InvoiceManagement = lazy(() => import("./pages/tenant/InvoiceManagement"));
 const PaymentManagement = lazy(() => import("./pages/tenant/PaymentManagement"));
+const ProductComparison = lazy(() => import("./pages/tenant/ProductComparison"));
 const ProductionManagement = lazy(() => import("./pages/tenant/ProductionManagement"));
 const QualityManagement = lazy(() => import("./pages/tenant/QualityManagement"));
 const ShippingManagement = lazy(() => import("./pages/tenant/ShippingManagement"));
@@ -263,6 +269,9 @@ function App() {
                   <Route path="customers/:id" element={<Suspense fallback={<LoadingFallback />}><CustomerDetail /></Suspense>} />
                   <Route path="vendors" element={<Suspense fallback={<LoadingFallback />}><VendorManagement /></Suspense>} />
                   <Route path="vendors/:id" element={<Suspense fallback={<LoadingFallback />}><VendorDetail /></Suspense>} />
+                  <Route path="vendors/performance" element={<Suspense fallback={<LoadingFallback />}><VendorPerformance /></Suspense>} />
+                  <Route path="vendors/contracts" element={<Suspense fallback={<LoadingFallback />}><VendorContracts /></Suspense>} />
+                  <Route path="vendors/communications" element={<Suspense fallback={<LoadingFallback />}><VendorCommunications /></Suspense>} />
                   <Route path="orders" element={<Suspense fallback={<LoadingFallback />}><OrderManagement /></Suspense>} />
                   <Route path="orders/tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
                   <Route path="orders/bulk" element={<Suspense fallback={<LoadingFallback />}><BulkOrders /></Suspense>} />
@@ -288,6 +297,8 @@ function App() {
                   <Route path="themes/packaging" element={<Suspense fallback={<LoadingFallback />}><ThemePackaging /></Suspense>} />
                   <Route path="documentation" element={<Suspense fallback={<LoadingFallback />}><Documentation /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
+                  <Route path="settings/general" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
+                  <Route path="settings/vendor" element={<Suspense fallback={<LoadingFallback />}><VendorSettings /></Suspense>} />
                   <Route path="activity-log" element={<Suspense fallback={<LoadingFallback />}><ActivityLog /></Suspense>} />
                   <Route path="performance" element={<Suspense fallback={<LoadingFallback />}><PerformanceMonitoring /></Suspense>} />
                   <Route path="refunds" element={<Suspense fallback={<LoadingFallback />}><RefundManagement /></Suspense>} />
@@ -297,6 +308,7 @@ function App() {
                   <Route path="products/catalog" element={<Suspense fallback={<LoadingFallback />}><ProductCatalog /></Suspense>} />
                   <Route path="products/bulk" element={<Suspense fallback={<LoadingFallback />}><ProductBulk /></Suspense>} />
                   <Route path="products/analytics" element={<Suspense fallback={<LoadingFallback />}><ProductAnalytics /></Suspense>} />
+                  <Route path="products/compare" element={<Suspense fallback={<LoadingFallback />}><ProductComparisonProvider><ProductComparison /></ProductComparisonProvider></Suspense>} />
                   
                   {/* Track B Commerce Management Pages - Customer Management */}
                   <Route path="customers/database" element={<Suspense fallback={<LoadingFallback />}><CustomerDatabase /></Suspense>} />

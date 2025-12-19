@@ -5,10 +5,12 @@ namespace App\Infrastructure\Presentation\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
+use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant;
 use App\Infrastructure\Presentation\Http\Requests\Product\StoreProductRequest;
 use App\Infrastructure\Presentation\Http\Requests\Product\UpdateProductRequest;
 use App\Infrastructure\Presentation\Http\Resources\Product\ProductResource;
 use App\Infrastructure\Presentation\Http\Resources\Product\ProductCategoryResource;
+use App\Http\Resources\Product\ProductVariantResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -17,6 +19,20 @@ class ProductController extends Controller
 {
     public function __construct()
     {
+    }
+
+    /**
+     * Validate UUID format
+     */
+    private function validateUuid(string $id): ?JsonResponse
+    {
+        if (!Str::isUuid($id)) {
+            return response()->json([
+                'message' => 'Format ID tidak valid. Gunakan UUID produk.',
+                'received' => $id
+            ], 400);
+        }
+        return null;
     }
 
     /**
@@ -76,9 +92,15 @@ class ProductController extends Controller
 
             $products = $query->paginate($perPage);
 
-            return ProductResource::collection($products)
-                ->response()
-                ->setStatusCode(200);
+            return response()->json([
+                'data' => ProductResource::collection($products->items()),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -174,10 +196,16 @@ class ProductController extends Controller
     /**
      * Show a specific product
      */
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
+        if ($error = $this->validateUuid($id)) {
+            return $error;
+        }
+
         try {
-            $product = Product::with('category', 'variants')->findOrFail($id);
+            $product = Product::with('category', 'variants')
+                ->where('uuid', $id)
+                ->firstOrFail();
             
             $product->increment('view_count');
             $product->last_viewed_at = now();
@@ -241,17 +269,21 @@ class ProductController extends Controller
     /**
      * Update an existing product
      */
-    public function update(UpdateProductRequest $request, int $id): JsonResponse
+    public function update(UpdateProductRequest $request, string $id): JsonResponse
     {
+        if ($error = $this->validateUuid($id)) {
+            return $error;
+        }
+
         try {
-            $product = Product::findOrFail($id);
+            $product = Product::where('uuid', $id)->firstOrFail();
             $productData = $request->validated();
             
             if ($request->has('name') && $productData['name'] !== $product->name) {
                 $slug = Str::slug($productData['name']);
                 $originalSlug = $slug;
                 $counter = 1;
-                while (Product::where('slug', $slug)->where('id', '!=', $id)->exists()) {
+                while (Product::where('slug', $slug)->where('uuid', '!=', $id)->exists()) {
                     $slug = $originalSlug . '-' . $counter;
                     $counter++;
                 }
@@ -284,10 +316,14 @@ class ProductController extends Controller
     /**
      * Delete a product
      */
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
+        if ($error = $this->validateUuid($id)) {
+            return $error;
+        }
+
         try {
-            $product = Product::findOrFail($id);
+            $product = Product::where('uuid', $id)->firstOrFail();
             $product->delete();
 
             return response()->json([
@@ -309,10 +345,14 @@ class ProductController extends Controller
     /**
      * Publish a product
      */
-    public function publish(Request $request, int $id): JsonResponse
+    public function publish(Request $request, string $id): JsonResponse
     {
+        if ($error = $this->validateUuid($id)) {
+            return $error;
+        }
+
         try {
-            $product = Product::findOrFail($id);
+            $product = Product::where('uuid', $id)->firstOrFail();
             $product->update([
                 'status' => 'published',
                 'published_at' => now()
@@ -338,10 +378,14 @@ class ProductController extends Controller
     /**
      * Unpublish a product
      */
-    public function unpublish(Request $request, int $id): JsonResponse
+    public function unpublish(Request $request, string $id): JsonResponse
     {
+        if ($error = $this->validateUuid($id)) {
+            return $error;
+        }
+
         try {
-            $product = Product::findOrFail($id);
+            $product = Product::where('uuid', $id)->firstOrFail();
             $product->update(['status' => 'draft']);
             $product->load('category');
 
@@ -364,15 +408,19 @@ class ProductController extends Controller
     /**
      * Update product stock
      */
-    public function updateStock(Request $request, int $id): JsonResponse
+    public function updateStock(Request $request, string $id): JsonResponse
     {
+        if ($error = $this->validateUuid($id)) {
+            return $error;
+        }
+
         try {
             $request->validate([
                 'stock_quantity' => 'required|integer|min:0',
                 'low_stock_threshold' => 'nullable|integer|min:0'
             ]);
 
-            $product = Product::findOrFail($id);
+            $product = Product::where('uuid', $id)->firstOrFail();
             
             $product->update([
                 'stock_quantity' => $request->stock_quantity,
@@ -566,6 +614,215 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengambil daftar produk habis stok',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all variants for a product
+     */
+    public function getVariants(string $productId): JsonResponse
+    {
+        if ($error = $this->validateUuid($productId)) {
+            return $error;
+        }
+
+        try {
+            $product = Product::where('uuid', $productId)->firstOrFail();
+            
+            $variants = ProductVariant::where('product_id', $product->id)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json(
+                ProductVariantResource::collection($variants)
+            );
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil varian produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get a specific variant
+     */
+    public function getVariant(string $productId, string $variantId): JsonResponse
+    {
+        if ($error = $this->validateUuid($productId)) {
+            return $error;
+        }
+
+        try {
+            $product = Product::where('uuid', $productId)->firstOrFail();
+            
+            $variant = ProductVariant::where('product_id', $product->id)
+                ->where(function($query) use ($variantId) {
+                    $query->where('id', $variantId)
+                          ->orWhere('uuid', $variantId);
+                })
+                ->firstOrFail();
+
+            return (new ProductVariantResource($variant))
+                ->response()
+                ->setStatusCode(200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Varian produk tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil detail varian',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Create a new variant
+     */
+    public function createVariant(Request $request, string $productId): JsonResponse
+    {
+        if ($error = $this->validateUuid($productId)) {
+            return $error;
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:255',
+            'material' => 'nullable|in:Akrilik,Kuningan,Tembaga,Stainless Steel,Aluminum',
+            'quality' => 'nullable|in:Standard,Tinggi,Premium',
+            'thickness' => 'nullable|numeric',
+            'color' => 'nullable|string|max:255',
+            'color_hex' => 'nullable|string|max:7',
+            'base_price' => 'nullable|numeric',
+            'selling_price' => 'nullable|numeric',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
+            'is_default' => 'nullable|boolean'
+        ]);
+
+        try {
+            $product = Product::where('uuid', $productId)->firstOrFail();
+            
+            $variant = ProductVariant::create(array_merge(
+                $request->all(),
+                [
+                    'tenant_id' => $product->tenant_id,
+                    'product_id' => $product->id,
+                    'category_id' => $product->category_id
+                ]
+            ));
+
+            return (new ProductVariantResource($variant))
+                ->response()
+                ->setStatusCode(201);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal membuat varian produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update a variant
+     */
+    public function updateVariant(Request $request, string $productId, string $variantId): JsonResponse
+    {
+        if ($error = $this->validateUuid($productId)) {
+            return $error;
+        }
+
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'sku' => 'nullable|string|max:255',
+            'material' => 'nullable|in:Akrilik,Kuningan,Tembaga,Stainless Steel,Aluminum',
+            'quality' => 'nullable|in:Standard,Tinggi,Premium',
+            'thickness' => 'nullable|numeric',
+            'color' => 'nullable|string|max:255',
+            'color_hex' => 'nullable|string|max:7',
+            'base_price' => 'nullable|numeric',
+            'selling_price' => 'nullable|numeric',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'is_active' => 'nullable|boolean',
+            'is_default' => 'nullable|boolean'
+        ]);
+
+        try {
+            $product = Product::where('uuid', $productId)->firstOrFail();
+            
+            $variant = ProductVariant::where('product_id', $product->id)
+                ->where(function($query) use ($variantId) {
+                    $query->where('id', $variantId)
+                          ->orWhere('uuid', $variantId);
+                })
+                ->firstOrFail();
+
+            $variant->update($request->all());
+
+            return (new ProductVariantResource($variant))
+                ->response()
+                ->setStatusCode(200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Varian produk tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengupdate varian produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a variant
+     */
+    public function deleteVariant(string $productId, string $variantId): JsonResponse
+    {
+        if ($error = $this->validateUuid($productId)) {
+            return $error;
+        }
+
+        try {
+            $product = Product::where('uuid', $productId)->firstOrFail();
+            
+            $variant = ProductVariant::where('product_id', $product->id)
+                ->where(function($query) use ($variantId) {
+                    $query->where('id', $variantId)
+                          ->orWhere('uuid', $variantId);
+                })
+                ->firstOrFail();
+
+            $variant->delete();
+
+            return response()->json([
+                'message' => 'Varian produk berhasil dihapus'
+            ], 200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Varian produk tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal menghapus varian produk',
                 'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }

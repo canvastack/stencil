@@ -70,7 +70,6 @@ export default function MapPicker({ onLocationSelect, initialLocation, value }: 
         };
         setLocationData(newLocationData);
         onLocationSelect(newLocationData);
-        toast.success('Location updated successfully!');
       }
     } catch (error) {
       console.error('Error fetching location:', error);
@@ -100,6 +99,12 @@ export default function MapPicker({ onLocationSelect, initialLocation, value }: 
     }
   };
 
+  const handleFieldChange = (field: keyof LocationData, newValue: string) => {
+    const updatedData = { ...locationData, [field]: newValue };
+    setLocationData(updatedData);
+    onLocationSelect(updatedData);
+  };
+
   useEffect(() => {
     if (!value) {
       fetchLocationDetails(position.lat, position.lng);
@@ -122,10 +127,35 @@ export default function MapPicker({ onLocationSelect, initialLocation, value }: 
       const L = (window as any).L;
       if (!L) return;
 
+      // Fix Leaflet marker icon paths
+      delete L.Icon.Default.prototype._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      });
+
       const mapElement = document.getElementById('map-container');
       if (!mapElement) return;
 
-      const map = L.map('map-container').setView([position.lat, position.lng], 15);
+      const map = L.map('map-container', {
+        scrollWheelZoom: false
+      }).setView([position.lat, position.lng], 15);
+
+      map.on('focus', () => { map.scrollWheelZoom.enable(); });
+      map.on('blur', () => { map.scrollWheelZoom.disable(); });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey) {
+          map.scrollWheelZoom.enable();
+        }
+      });
+
+      document.addEventListener('keyup', (e) => {
+        if (!e.ctrlKey) {
+          map.scrollWheelZoom.disable();
+        }
+      });
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
@@ -192,50 +222,72 @@ export default function MapPicker({ onLocationSelect, initialLocation, value }: 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Latitude</Label>
-              <Input value={locationData.latitude.toFixed(6)} readOnly />
+              <Input value={locationData.latitude?.toFixed(6) || ''} readOnly className="bg-muted" />
             </div>
             <div className="space-y-2">
               <Label>Longitude</Label>
-              <Input value={locationData.longitude.toFixed(6)} readOnly />
+              <Input value={locationData.longitude?.toFixed(6) || ''} readOnly className="bg-muted" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Village/Kelurahan</Label>
-              <Input value={locationData.village} readOnly />
+              <Input 
+                value={locationData.village || ''} 
+                onChange={(e) => handleFieldChange('village', e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Subdistrict/Kecamatan</Label>
-              <Input value={locationData.subdistrict} readOnly />
+              <Input 
+                value={locationData.subdistrict || ''} 
+                onChange={(e) => handleFieldChange('subdistrict', e.target.value)}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>District</Label>
-              <Input value={locationData.district} readOnly />
+              <Input 
+                value={locationData.district || ''} 
+                onChange={(e) => handleFieldChange('district', e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>City/Municipality</Label>
-              <Input value={locationData.city || locationData.municipality} readOnly />
+              <Input 
+                value={locationData.city || locationData.municipality || ''} 
+                onChange={(e) => handleFieldChange('city', e.target.value)}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Province</Label>
-              <Input value={locationData.province} readOnly />
+              <Input 
+                value={locationData.province || ''} 
+                onChange={(e) => handleFieldChange('province', e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Country</Label>
-              <Input value={locationData.country} readOnly />
+              <Input 
+                value={locationData.country || ''} 
+                onChange={(e) => handleFieldChange('country', e.target.value)}
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Full Address</Label>
-            <Input value={locationData.address} readOnly className="text-sm" />
+            <Input 
+              value={locationData.address || ''} 
+              onChange={(e) => handleFieldChange('address', e.target.value)}
+              className="text-sm" 
+            />
           </div>
         </CardContent>
       </Card>

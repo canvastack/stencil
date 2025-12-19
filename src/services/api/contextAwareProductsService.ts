@@ -1,9 +1,7 @@
 import { Product, ProductFilters } from '@/types/product';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
-import * as mockProducts from '@/services/mock/products';
-import { getContextAwareClient } from './contextAwareClients';
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA !== 'false';
+import { getContextAwareClient, getContextAwareEndpoint, UserType } from './contextAwareClients';
+import { ApiError, AuthError, PermissionError, NotFoundError } from '@/lib/errors';
 
 export interface CreateProductRequest {
   name: string;
@@ -38,27 +36,31 @@ export interface CreateProductRequest {
 
 export interface UpdateProductRequest extends Partial<CreateProductRequest> {}
 
-export const createContextAwareProductsService = (userType: 'anonymous' | 'platform' | 'tenant') => {
+export const createContextAwareProductsService = (userType: UserType) => {
   const apiClient = getContextAwareClient(userType);
   
+  const handleError = (error: any, operation: string): never => {
+    if (error.response?.status === 401) {
+      throw new AuthError('Session expired, please login again', error);
+    }
+    
+    if (error.response?.status === 403) {
+      throw new PermissionError('You do not have permission to perform this action', error);
+    }
+    
+    if (error.response?.status === 404) {
+      throw new NotFoundError('Resource not found', error);
+    }
+    
+    throw new ApiError(`Failed to ${operation}`, error);
+  };
+  
   return {
-    async getProducts(params?: ListRequestParams & ProductFilters): Promise<PaginatedResponse<Product>> {
-      if (USE_MOCK) {
-        return Promise.resolve(mockProducts.getProducts(params));
-      }
-      
+    async getProducts(params?: ListRequestParams & ProductFilters, signal?: AbortSignal): Promise<PaginatedResponse<Product>> {
       try {
-        // Different endpoints based on user context
-        let endpoint = '/products';
-        if (userType === 'platform') {
-          endpoint = '/platform/products';
-        } else if (userType === 'tenant') {
-          endpoint = '/admin/products';
-        } else {
-          endpoint = '/public/products';
-        }
-
+        const endpoint = getContextAwareEndpoint(userType, 'products');
         const queryParams = new URLSearchParams();
+        
         if (params) {
           Object.entries(params).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
@@ -67,91 +69,103 @@ export const createContextAwareProductsService = (userType: 'anonymous' | 'platf
           });
         }
         
-        const response = await apiClient.get<PaginatedResponse<Product>>(`${endpoint}?${queryParams.toString()}`);
-        return response.data || response as any;
+        const response = await apiClient.get<PaginatedResponse<Product>>(
+          `${endpoint}?${queryParams.toString()}`,
+          { signal }
+        );
+        return response as any;
       } catch (error) {
-        console.error('Products API call failed, falling back to mock data:', error);
-        return Promise.resolve(mockProducts.getProducts(params));
+        handleError(error, 'fetch products');
       }
     },
 
-    async getProductById(id: string): Promise<Product> {
-      if (USE_MOCK) {
-        return Promise.resolve(mockProducts.getProductById(id));
-      }
-      
+    async getProductById(id: string, signal?: AbortSignal): Promise<Product> {
       try {
-        let endpoint = `/products/${id}`;
-        if (userType === 'platform') {
-          endpoint = `/platform/products/${id}`;
-        } else if (userType === 'tenant') {
-          endpoint = `/admin/products/${id}`;
-        } else {
-          endpoint = `/public/products/${id}`;
-        }
-
-        const response = await apiClient.get<Product>(endpoint);
-        return response.data || response as any;
+        const endpoint = getContextAwareEndpoint(userType, `products/${id}`);
+        const response = await apiClient.get<Product>(endpoint, { signal });
+        return response.data as Product;
       } catch (error) {
-        console.error('Product API call failed, falling back to mock data:', error);
-        return Promise.resolve(mockProducts.getProductById(id));
+        handleError(error, 'fetch product');
+      }
+    },
+
+    async getProductBySlug(slug: string, signal?: AbortSignal): Promise<Product> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, `products/slug/${slug}`);
+        const response = await apiClient.get<Product>(endpoint, { signal });
+        return response.data as Product;
+      } catch (error) {
+        handleError(error, 'fetch product');
       }
     },
 
     async createProduct(data: CreateProductRequest): Promise<Product> {
-      if (USE_MOCK) {
-        return Promise.resolve(mockProducts.createProduct(data as any));
-      }
-      
       try {
-        let endpoint = '/admin/products';
-        if (userType === 'platform') {
-          endpoint = '/platform/products';
-        }
-
+        const endpoint = getContextAwareEndpoint(userType, 'products');
         const response = await apiClient.post<Product>(endpoint, data);
-        return response.data || response as any;
+        return response.data as Product;
       } catch (error) {
-        console.error('Create product API call failed, falling back to mock data:', error);
-        return Promise.resolve(mockProducts.createProduct(data as any));
+        handleError(error, 'create product');
       }
     },
 
     async updateProduct(id: string, data: UpdateProductRequest): Promise<Product> {
-      if (USE_MOCK) {
-        return Promise.resolve(mockProducts.updateProduct(id, data as any));
-      }
-      
       try {
-        let endpoint = `/admin/products/${id}`;
-        if (userType === 'platform') {
-          endpoint = `/platform/products/${id}`;
-        }
-
+        const endpoint = getContextAwareEndpoint(userType, `products/${id}`);
         const response = await apiClient.put<Product>(endpoint, data);
-        return response.data || response as any;
+        return response.data as Product;
       } catch (error) {
-        console.error('Update product API call failed, falling back to mock data:', error);
-        return Promise.resolve(mockProducts.updateProduct(id, data as any));
+        handleError(error, 'update product');
       }
     },
 
     async deleteProduct(id: string): Promise<boolean> {
-      if (USE_MOCK) {
-        return Promise.resolve(mockProducts.deleteProduct(id));
-      }
-      
       try {
-        let endpoint = `/admin/products/${id}`;
-        if (userType === 'platform') {
-          endpoint = `/platform/products/${id}`;
-        }
-
+        const endpoint = getContextAwareEndpoint(userType, `products/${id}`);
         await apiClient.delete(endpoint);
         return true;
       } catch (error) {
-        console.error('Delete product API call failed, falling back to mock data:', error);
-        return Promise.resolve(mockProducts.deleteProduct(id));
+        handleError(error, 'delete product');
+      }
+    },
+
+    async toggleFeatured(id: string): Promise<Product> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, `products/${id}/toggle-featured`);
+        const response = await apiClient.patch<Product>(endpoint);
+        return response.data as Product;
+      } catch (error) {
+        handleError(error, 'toggle featured status');
+      }
+    },
+
+    async updateStock(id: string, stockQuantity: number): Promise<Product> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, `products/${id}/stock`);
+        const response = await apiClient.patch<Product>(endpoint, { stock_quantity: stockQuantity });
+        return response.data as Product;
+      } catch (error) {
+        handleError(error, 'update stock');
+      }
+    },
+
+    async bulkDelete(ids: string[]): Promise<{ success: boolean; deleted: number }> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, 'products/bulk-delete');
+        const response = await apiClient.post<{ success: boolean; deleted: number }>(endpoint, { ids });
+        return response.data;
+      } catch (error) {
+        handleError(error, 'bulk delete products');
+      }
+    },
+
+    async bulkStatusUpdate(ids: string[], status: string): Promise<{ success: boolean; updated: number }> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, 'products/bulk-status');
+        const response = await apiClient.post<{ success: boolean; updated: number }>(endpoint, { ids, status });
+        return response.data;
+      } catch (error) {
+        handleError(error, 'bulk update status');
       }
     }
   };

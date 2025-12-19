@@ -17,6 +17,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\InventoryReservation;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryAdjustment;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryCount;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryReconciliation;
+use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
 use App\Infrastructure\Persistence\Eloquent\UserEloquentModel;
 use Illuminate\Support\Carbon;
 
@@ -292,6 +293,14 @@ class TenantDataSeeder extends Seeder
 
     private function seedProducts($tenant): void
     {
+        // Get categories for this tenant
+        $categories = ProductCategory::where('tenant_id', $tenant->id)->get();
+        
+        if ($categories->isEmpty()) {
+            $this->command->warn("   No categories found for {$tenant->name} - skipping products");
+            return;
+        }
+
         $productCategories = [
             'electronics' => ['Laptop', 'Smartphone', 'Tablet', 'Headphone', 'Speaker', 'Camera', 'Monitor', 'Keyboard', 'Mouse', 'Webcam'],
             'fashion' => ['T-Shirt', 'Jeans', 'Dress', 'Shoes', 'Bag', 'Jacket', 'Sweater', 'Hat', 'Belt', 'Watch'],
@@ -302,22 +311,24 @@ class TenantDataSeeder extends Seeder
         ];
 
         $businessType = $tenant->settings['business_type'] ?? 'general';
-        $category = match($businessType) {
+        $categoryKey = match($businessType) {
             'electronics_retail' => 'electronics',
             'fashion_retail' => 'fashion',
             'food_beverage' => 'food',
             'automotive_service' => 'automotive',
             'home_decor' => 'home',
             'etching' => 'etching',
-            default => array_keys($productCategories)[rand(0, count($productCategories) - 1)]
+            default => 'etching'
         };
 
-        $baseProducts = $productCategories[$category];
+        $baseProducts = $productCategories[$categoryKey];
         $qualifiers = ['Premium', 'Standard', 'Economy', 'Deluxe', 'Basic', 'Pro', 'Max', 'Mini', 'Plus', 'Elite', 'Special', 'Limited'];
         $productCount = rand(40, 50);
         
         // Create base category products
         foreach ($baseProducts as $index => $productName) {
+            // Assign to a random category
+            $category = $categories->random();
             $this->createProduct($tenant, $productName, $category, $index + 1, $qualifiers);
         }
         
@@ -327,6 +338,7 @@ class TenantDataSeeder extends Seeder
             $baseProduct = $baseProducts[array_rand($baseProducts)];
             $variant = ['Variant', 'Model', 'Type', 'Series', 'Edition'][rand(0, 4)] . ' ' . chr(65 + rand(0, 25));
             $productName = $baseProduct . ' ' . $variant;
+            $category = $categories->random();
             $this->createProduct($tenant, $productName, $category, count($baseProducts) + $i + 1, $qualifiers);
         }
     }
@@ -337,7 +349,9 @@ class TenantDataSeeder extends Seeder
         $price = rand(25000, 15000000); // Wider price range
         $stock = rand(0, 500); // Higher stock variety
         $isDigital = rand(0, 10) > 7; // 30% chance for digital/service
-        $sku = strtoupper(substr($category, 0, 3)) . '-' . str_pad($index, 4, '0', STR_PAD_LEFT);
+        // Generate tenant-specific SKU to avoid global unique constraint violations
+        $tenantPrefix = strtoupper(substr($tenant->slug, 0, 3));
+        $sku = $tenantPrefix . '-' . strtoupper(substr($category->slug, 0, 3)) . '-' . str_pad($index, 4, '0', STR_PAD_LEFT);
         
         Product::updateOrCreate(
             [
@@ -346,8 +360,9 @@ class TenantDataSeeder extends Seeder
             ],
             [
                 'name' => $productName . ' ' . $qualifier,
-                'slug' => Str::slug($productName . ' ' . $qualifier) . '-' . $index,
+                'slug' => Str::slug($productName . ' ' . $qualifier) . '-' . $tenantPrefix . '-' . $index,
                 'description' => $this->generateProductDescription($productName, $qualifier),
+                'category_id' => $category->id,
                 'price' => $price,
                 'currency' => 'IDR',
                 'status' => rand(0, 10) > 2 ? 'published' : 'draft', // 80% published
@@ -359,7 +374,7 @@ class TenantDataSeeder extends Seeder
                     '/images/products/' . Str::slug($productName) . '_2.jpg',
                     '/images/products/' . Str::slug($productName) . '_3.jpg'
                 ],
-                'categories' => [$category, rand(0, 5) > 3 ? 'featured' : 'regular'],
+                'categories' => [$category->slug, rand(0, 5) > 3 ? 'featured' : 'regular'],
                 'tags' => array_slice(['new', 'popular', 'discount', 'trending', 'bestseller', 'premium', 'sale', 'limited'], 0, rand(2, 5)),
                 'dimensions' => $isDigital ? null : [
                     'length' => rand(5, 200),

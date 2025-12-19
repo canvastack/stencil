@@ -219,6 +219,15 @@ Route::prefix('public')->group(function () {
         ]);
     });
     
+    // Global Categories API (all tenants)
+    Route::prefix('categories')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\V1\Public\CategoryController::class, 'index']);
+        Route::get('/tree', [App\Http\Controllers\Api\V1\Public\CategoryController::class, 'tree']);
+        Route::get('/{id}', [App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show'])->where('id', '[0-9]+');
+        Route::get('/slug/{slug}', [App\Http\Controllers\Api\V1\Public\CategoryController::class, 'showBySlug']);
+        Route::get('/{categoryId}/products', [App\Http\Controllers\Api\V1\Public\CategoryController::class, 'products'])->where('categoryId', '[0-9]+');
+    });
+
     // Global Products API (all tenants)
     Route::prefix('products')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'index']);

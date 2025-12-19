@@ -49,14 +49,18 @@ interface GlobalContextProviderProps {
 
 export const GlobalContextProvider: React.FC<GlobalContextProviderProps> = ({ children }) => {
   const [userType, setUserType] = useState<UserType>('anonymous');
-  const [tenant, setTenant] = useState<TenantInfo | undefined>(undefined);
-  const [platform, setPlatform] = useState<PlatformInfo | undefined>(undefined);
+  const [tenantState, setTenant] = useState<TenantInfo | undefined>(undefined);
+  const [platformState, setPlatform] = useState<PlatformInfo | undefined>(undefined);
   // CRITICAL FIX: Start with loading=true until auth contexts initialize
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const platformAuth = usePlatformAuth();
   const tenantAuth = useTenantAuth();
+  
+  // Memoize tenant and platform to prevent unnecessary re-renders
+  const tenant = useMemo(() => tenantState, [tenantState?.uuid, tenantState?.slug]);
+  const platform = useMemo(() => platformState, [platformState?.name, platformState?.version]);
 
   // Detect context on component mount and auth state changes
   const detectContext = useCallback(async (): Promise<UserType> => {

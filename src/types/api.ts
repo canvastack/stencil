@@ -11,29 +11,48 @@ export interface ApiResponse<T = any> {
     timestamp: string;
     tenant_id?: string;
     request_id?: string;
-    pagination?: {
-      current_page: number;
-      per_page: number;
-      total: number;
-      last_page: number;
-      from: number;
-      to: number;
-    };
+    pagination?: PaginationMeta;
   };
+}
+
+export interface PaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from?: number;
+  to?: number;
+}
+
+export interface PaginationLinks {
+  first?: string;
+  last?: string;
+  prev?: string | null;
+  next?: string | null;
 }
 
 export interface PaginatedResponse<T> {
   data: T[];
-  meta: {
-    pagination: {
-      current_page: number;
-      per_page: number;
-      total: number;
-      last_page: number;
-      from: number;
-      to: number;
-    };
-  };
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from?: number;
+  to?: number;
+  links?: PaginationLinks;
+}
+
+export interface UnwrappedPaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+  links?: PaginationLinks;
+}
+
+export interface ApiError {
+  message: string;
+  errors?: Record<string, string[]>;
+  status?: number;
+  code?: string;
 }
 
 export interface ListRequestParams {

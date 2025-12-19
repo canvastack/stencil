@@ -18,7 +18,16 @@ class VendorController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Vendor::query();
+            $query = Vendor::query()->select([
+                'id', 'uuid', 'tenant_id', 'code', 'name', 'category', 
+                'company_name', 'industry', 'company_size', 'email', 'phone',
+                'contact_person', 'address', 'location', 'status', 'rating', 
+                'total_orders', 'total_value', 'lead_time', 'payment_terms',
+                'tax_id', 'bank_account', 'bank_name', 'specializations',
+                'minimum_order', 'notes',
+                'completion_rate', 'average_lead_time_days', 'performance_score',
+                'created_at', 'updated_at'
+            ]);
 
             if ($request->filled('search')) {
                 $query->where(function ($q) use ($request) {
@@ -38,7 +47,7 @@ class VendorController extends Controller
 
             $sortBy = $request->get('sort_by', 'created_at');
             $sortOrder = $request->get('sort_order', 'desc');
-            $perPage = $request->get('per_page', 20);
+            $perPage = min($request->get('per_page', 20), 50);
 
             $vendors = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
@@ -255,10 +264,10 @@ class VendorController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         try {
-            $vendor = Vendor::findOrFail($id);
+            $vendor = Vendor::findOrFail((int) $id);
             return (new VendorResource($vendor))->response()->setStatusCode(200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Vendor tidak ditemukan'], 404);
@@ -273,7 +282,18 @@ class VendorController extends Controller
     public function store(StoreVendorRequest $request): JsonResponse
     {
         try {
-            $vendor = Vendor::create($request->validated());
+            $data = $request->validated();
+            
+            // Map 'company' to 'company_name' for database compatibility
+            if (isset($data['company']) && !isset($data['company_name'])) {
+                $data['company_name'] = $data['company'];
+                unset($data['company']);
+            }
+            
+            // Remove extra fields not in database
+            unset($data['latitude'], $data['longitude'], $data['city'], $data['province']);
+            
+            $vendor = Vendor::create($data);
             return (new VendorResource($vendor))->response()->setStatusCode(201);
         } catch (\Exception $e) {
             return response()->json([
@@ -283,11 +303,23 @@ class VendorController extends Controller
         }
     }
 
-    public function update(UpdateVendorRequest $request, int $id): JsonResponse
+    public function update(UpdateVendorRequest $request, string $id): JsonResponse
     {
         try {
-            $vendor = Vendor::findOrFail($id);
-            $vendor->update($request->validated());
+            $vendor = Vendor::findOrFail((int) $id);
+            
+            $data = $request->validated();
+            
+            // Map 'company' to 'company_name' for database compatibility
+            if (isset($data['company']) && !isset($data['company_name'])) {
+                $data['company_name'] = $data['company'];
+                unset($data['company']);
+            }
+            
+            // Remove extra fields not in database
+            unset($data['latitude'], $data['longitude'], $data['city'], $data['province']);
+            
+            $vendor->update($data);
             return (new VendorResource($vendor))->response()->setStatusCode(200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Vendor tidak ditemukan'], 404);
@@ -299,10 +331,10 @@ class VendorController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         try {
-            $vendor = Vendor::findOrFail($id);
+            $vendor = Vendor::findOrFail((int) $id);
             $vendor->delete();
             return response()->json(['message' => 'Vendor berhasil dihapus'], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -315,10 +347,10 @@ class VendorController extends Controller
         }
     }
 
-    public function activate(Request $request, int $id): JsonResponse
+    public function activate(Request $request, string $id): JsonResponse
     {
         try {
-            $vendor = Vendor::findOrFail($id);
+            $vendor = Vendor::findOrFail((int) $id);
             $vendor->update(['status' => 'active']);
             return (new VendorResource($vendor))->response()->setStatusCode(200);
         } catch (\Exception $e) {
@@ -329,10 +361,10 @@ class VendorController extends Controller
         }
     }
 
-    public function deactivate(Request $request, int $id): JsonResponse
+    public function deactivate(Request $request, string $id): JsonResponse
     {
         try {
-            $vendor = Vendor::findOrFail($id);
+            $vendor = Vendor::findOrFail((int) $id);
             $vendor->update(['status' => 'inactive']);
             return (new VendorResource($vendor))->response()->setStatusCode(200);
         } catch (\Exception $e) {

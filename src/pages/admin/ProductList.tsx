@@ -344,13 +344,13 @@ export default function ProductList() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to={`/admin/products/${product.id}/edit`}>
+                <Link to={`/admin/products/${product.uuid}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to={`/admin/products/${product.id}`}>
+                <Link to={`/admin/products/${product.uuid}`}>
                   <Package className="mr-2 h-4 w-4" />
                   Manage Variants
                 </Link>

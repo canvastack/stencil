@@ -270,7 +270,7 @@ class ActivityService {
       if (filters.page) params.append('page', filters.page.toString());
       if (filters.limit) params.append('limit', filters.limit.toString());
 
-      const response = await apiClient.get(`/activity-logs?${params.toString()}`);
+      const response = await tenantApiClient.get(`/activity-logs?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get activity logs:', error);
@@ -294,7 +294,7 @@ class ActivityService {
       if (filters.dateFrom) params.append('date_from', filters.dateFrom);
       if (filters.dateTo) params.append('date_to', filters.dateTo);
 
-      const response = await apiClient.get(`/activity-logs/stats?${params.toString()}`);
+      const response = await tenantApiClient.get(`/activity-logs/statistics?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get activity stats:', error);
@@ -358,9 +358,10 @@ class ActivityService {
         activities: logsToSend,
       });
     } catch (error) {
-      console.warn('Failed to send activity logs batch:', error);
-      // Re-add logs to pending if they failed to send
-      this.pendingLogs.unshift(...this.pendingLogs.slice(0, 5)); // Keep only the first 5 to avoid memory issues
+      // Silently handle errors to avoid console noise - activity logs are non-critical
+      // Only keep a small number of logs to avoid memory issues
+      const logsToKeep = Math.min(3, this.pendingLogs.length);
+      this.pendingLogs = this.pendingLogs.slice(0, logsToKeep);
     }
   }
 

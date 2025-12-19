@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
 import { productsService } from '@/services/api/products';
 import { Card } from '@/components/ui/card';
@@ -161,8 +161,10 @@ const variantColumns: ColumnDef<ProductVariant>[] = [
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { product, isLoading: productLoading, error: productError } = useProduct(id);
 
+  const [activeTab, setActiveTab] = useState<string>(searchParams.get('tab') || 'overview');
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [isLoadingVariants, setIsLoadingVariants] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -185,6 +187,13 @@ export default function ProductDetail() {
   };
 
   const [formData, setFormData] = useState<VariantFormData>(defaultFormData);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && (tabParam === 'overview' || tabParam === 'variants')) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (id) {
@@ -290,6 +299,11 @@ export default function ProductDetail() {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchParams({ tab: value });
+  };
+
   const handleFormChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -346,7 +360,7 @@ export default function ProductDetail() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <AlertCircle className="h-12 w-12 text-destructive" />
         <p className="text-lg font-semibold">Product not found</p>
-        <Button variant="outline" onClick={() => navigate('/admin/products')}>
+        <Button variant="outline" onClick={() => navigate('/admin/products/catalog')}>
           Back to Products
         </Button>
       </div>
@@ -357,7 +371,7 @@ export default function ProductDetail() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/products')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/products/catalog')}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -365,12 +379,12 @@ export default function ProductDetail() {
             <p className="text-muted-foreground">{product.slug}</p>
           </div>
         </div>
-        <Link to={`/admin/products/${product.id}/edit`}>
+        <Link to={`/admin/products/${product.uuid}/edit`}>
           <Button>Edit Product</Button>
         </Link>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="variants">Variants</TabsTrigger>
@@ -406,7 +420,11 @@ export default function ProductDetail() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Category</Label>
-                <p className="font-semibold">{product.category}</p>
+                <p className="font-semibold">
+                  {typeof product.category === 'object' && product.category !== null
+                    ? product.category.name
+                    : product.category || 'N/A'}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Subcategory</Label>

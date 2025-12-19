@@ -169,7 +169,9 @@ class AuthService {
           expires_in: 3600,
           user: authData.user,
           account: authData.account,
-          tenant: authData.tenant
+          tenant: authData.tenant,
+          permissions: authData.permissions || [],
+          roles: authData.roles || []
         };
       } else {
         throw new Error(response.message || 'Login failed');
@@ -227,7 +229,7 @@ class AuthService {
     const accountType = data.accountType || 'tenant';
     
     let endpoint: string;
-    let payload: any = {
+    const payload: any = {
       name: data.name,
       email: data.email,
       password: data.password,
