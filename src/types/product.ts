@@ -31,7 +31,7 @@ export interface Product {
   customizable?: boolean;
   customOptions?: ProductCustomOption[];
   inStock?: boolean;
-  stockQuantity?: number | null;
+  stockQuantity: number;
   leadTime?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;

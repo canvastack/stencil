@@ -108,24 +108,22 @@ describe('Product Schema - Stock Quantity Validation', () => {
     });
   });
 
-  describe('Optional Stock Validation', () => {
-    it('should ACCEPT undefined stock quantity (field omitted)', () => {
+  describe('Required Stock Validation', () => {
+    it('should REQUIRE stock quantity (field cannot be omitted)', () => {
       const productWithoutStock = {
         ...baseValidProduct,
       };
 
-      const result = createProductSchema.parse(productWithoutStock);
-      expect(result.stockQuantity).toBeUndefined();
+      expect(() => createProductSchema.parse(productWithoutStock)).toThrow();
     });
 
-    it('should ACCEPT null stock quantity', () => {
+    it('should REJECT null stock quantity', () => {
       const productWithNullStock = {
         ...baseValidProduct,
         stockQuantity: null,
       };
 
-      const result = createProductSchema.parse(productWithNullStock);
-      expect(result.stockQuantity).toBeNull();
+      expect(() => createProductSchema.parse(productWithNullStock)).toThrow();
     });
   });
 

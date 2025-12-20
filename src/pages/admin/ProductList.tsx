@@ -135,7 +135,7 @@ const columns: ColumnDef<Product>[] = [
       const stockQuantity = row.getValue("stockQuantity") as number;
       return (
         <Badge variant={inStock ? 'default' : 'secondary'}>
-          {inStock ? `${stockQuantity || 0} in stock` : 'Out of stock'}
+          {inStock ? `${stockQuantity} in stock` : 'Out of stock'}
         </Badge>
       );
     },

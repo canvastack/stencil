@@ -14,6 +14,10 @@ use App\Http\Resources\Product\ProductVariantResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use App\Events\ProductCreated;
+use App\Events\ProductUpdated;
+use App\Events\ProductDeleted;
+use App\Events\ProductBulkUpdated;
 
 class ProductController extends Controller
 {
@@ -228,6 +232,36 @@ class ProductController extends Controller
     }
 
     /**
+     * Show a specific product by slug
+     */
+    public function showBySlug(Request $request, string $slug): JsonResponse
+    {
+        try {
+            $product = Product::with('category', 'variants')
+                ->where('slug', $slug)
+                ->firstOrFail();
+            
+            $product->increment('view_count');
+            $product->last_viewed_at = now();
+            $product->save();
+
+            return (new ProductResource($product))
+                ->response()
+                ->setStatusCode(200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil detail produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
      * Create a new product
      */
     public function store(StoreProductRequest $request): JsonResponse
@@ -253,6 +287,14 @@ class ProductController extends Controller
 
             $product = Product::create($productData);
             $product->load('category');
+
+            // Broadcast product created event
+            event(new ProductCreated(
+                $product->uuid,
+                auth()->user()->tenant_id ?? null,
+                auth()->id(),
+                auth()->user()->name ?? null
+            ));
 
             return (new ProductResource($product))
                 ->response()
@@ -297,6 +339,14 @@ class ProductController extends Controller
             $product->update($productData);
             $product->load('category');
 
+            // Broadcast product updated event
+            event(new ProductUpdated(
+                $product->uuid,
+                auth()->user()->tenant_id ?? null,
+                auth()->id(),
+                auth()->user()->name ?? null
+            ));
+
             return (new ProductResource($product))
                 ->response()
                 ->setStatusCode(200);
@@ -324,7 +374,16 @@ class ProductController extends Controller
 
         try {
             $product = Product::where('uuid', $id)->firstOrFail();
+            $productUuid = $product->uuid;
             $product->delete();
+
+            // Broadcast product deleted event
+            event(new ProductDeleted(
+                $productUuid,
+                auth()->user()->tenant_id ?? null,
+                auth()->id(),
+                auth()->user()->name ?? null
+            ));
 
             return response()->json([
                 'message' => 'Produk berhasil dihapus'
@@ -929,6 +988,7 @@ class ProductController extends Controller
             $updated = 0;
             $failed = 0;
             $errors = [];
+            $updatedProductIds = [];
 
             foreach ($productIds as $productId) {
                 try {
@@ -982,6 +1042,7 @@ class ProductController extends Controller
 
                     $product->save();
                     $updated++;
+                    $updatedProductIds[] = $productId;
 
                 } catch (\Exception $e) {
                     $failed++;
@@ -990,6 +1051,16 @@ class ProductController extends Controller
                         'error' => $e->getMessage()
                     ];
                 }
+            }
+
+            // Broadcast bulk update event if any products were updated
+            if (!empty($updatedProductIds)) {
+                event(new ProductBulkUpdated(
+                    $updatedProductIds,
+                    auth()->user()->tenant_id ?? null,
+                    auth()->id(),
+                    auth()->user()->name ?? null
+                ));
             }
 
             return response()->json([

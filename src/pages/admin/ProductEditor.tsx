@@ -152,6 +152,13 @@ export default function ProductEditor() {
 
     setIsSaving(true);
     try {
+      const specificationsObject: Record<string, any> = {};
+      formData.specifications.forEach((spec: { key: string; value: string }) => {
+        if (spec.key) {
+          specificationsObject[spec.key] = spec.value;
+        }
+      });
+
       if (isNew) {
         await createProduct({
           name: formData.name,
@@ -175,7 +182,7 @@ export default function ProductEditor() {
           seoKeywords: formData.seoKeywords,
           status: formData.status,
           featured: formData.featured,
-          specifications: formData.specifications,
+          specifications: specificationsObject,
           customizable: formData.customizable,
           customOptions: formData.customOptions,
         });
@@ -202,7 +209,7 @@ export default function ProductEditor() {
           seoKeywords: formData.seoKeywords,
           status: formData.status,
           featured: formData.featured,
-          specifications: formData.specifications,
+          specifications: specificationsObject,
           customizable: formData.customizable,
           customOptions: formData.customOptions,
         });

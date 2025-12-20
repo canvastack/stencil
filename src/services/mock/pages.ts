@@ -3,7 +3,6 @@ import homeContentData from './data/page-content-home.json';
 import aboutContentData from './data/page-content-about.json';
 import contactContentData from './data/page-content-contact.json';
 import faqContentData from './data/page-content-faq.json';
-import productsContentData from './data/page-content-products.json';
 
 interface PageContentData {
   id: string;
@@ -23,7 +22,6 @@ const initialPages: PageContentData[] = [
   aboutContentData as PageContentData,
   contactContentData as PageContentData,
   faqContentData as PageContentData,
-  productsContentData as PageContentData,
 ];
 
 let mockPages: Page[] = initialPages.map(page => ({

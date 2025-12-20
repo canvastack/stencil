@@ -97,6 +97,9 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::put('/{product}/variants/{variant}', [ProductController::class, 'updateVariant'])->name('tenant.products.variants.update');
             Route::delete('/{product}/variants/{variant}', [ProductController::class, 'deleteVariant'])->name('tenant.products.variants.destroy');
             
+            // Product by slug (must come before /{product})
+            Route::get('/slug/{slug}', [ProductController::class, 'showBySlug'])->name('tenant.products.show_by_slug');
+            
             // Product by ID (catch-all - must come last)
             Route::get('/{product}', [ProductController::class, 'show'])->name('tenant.products.show');
             Route::put('/{product}', [ProductController::class, 'update'])->name('tenant.products.update');

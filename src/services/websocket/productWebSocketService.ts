@@ -1,5 +1,9 @@
 import { envConfig } from '@/config/env.config';
 import { logger } from '@/lib/logger';
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+(window as any).Pusher = Pusher;
 
 export type ProductEventType = 
   | 'product.created'
@@ -30,13 +34,12 @@ interface WebSocketServiceConfig {
 }
 
 export class ProductWebSocketService {
-  private ws: WebSocket | null = null;
+  private echo: Echo | null = null;
+  private channel: any = null;
   private listeners: Map<ProductEventType, Set<ProductEventCallback>> = new Map();
-  private reconnectAttempts = 0;
-  private reconnectTimer: NodeJS.Timeout | null = null;
-  private heartbeatTimer: NodeJS.Timeout | null = null;
   private isIntentionallyClosed = false;
   private config: WebSocketServiceConfig;
+  private currentTenantId: string | null = null;
 
   constructor(config?: Partial<WebSocketServiceConfig>) {
     this.config = {
@@ -49,81 +52,94 @@ export class ProductWebSocketService {
   }
 
   connect(tenantId: string, userId?: string): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      logger.debug('WebSocket already connected');
+    if (this.echo && this.currentTenantId === tenantId) {
+      logger.debug('WebSocket already connected to tenant', { tenantId });
       return;
     }
 
     this.isIntentionallyClosed = false;
+    this.currentTenantId = tenantId;
     
     try {
+      // Parse WebSocket URL to get host and port
       const wsUrl = new URL(this.config.url);
-      wsUrl.searchParams.set('tenant_id', tenantId);
-      if (userId) {
-        wsUrl.searchParams.set('user_id', userId);
+      const host = wsUrl.hostname;
+      const port = parseInt(wsUrl.port || '8081');
+
+      // Initialize Laravel Echo with Reverb (Pusher protocol)
+      this.echo = new Echo({
+        broadcaster: 'reverb',
+        key: import.meta.env.VITE_REVERB_APP_KEY || 'pambesuv4iy0f2mma1rf',
+        wsHost: host,
+        wsPort: port,
+        wssPort: port,
+        forceTLS: false,
+        enabledTransports: ['ws', 'wss'],
+        disableStats: true,
+      });
+
+      // Subscribe to tenant-specific product channel
+      const channelName = `products.${tenantId}`;
+      this.channel = this.echo.channel(channelName);
+
+      logger.info('WebSocket connected via Echo', { tenantId, userId, channelName });
+
+      // Listen to all product events
+      const eventTypes: ProductEventType[] = [
+        'product.created',
+        'product.updated',
+        'product.deleted',
+        'product.bulk_updated',
+      ];
+
+      eventTypes.forEach(eventType => {
+        this.channel.listen(`.${eventType}`, (data: any) => {
+          const event: ProductWebSocketEvent = {
+            type: eventType,
+            data: {
+              ...data,
+              tenantId,
+              timestamp: data.timestamp || new Date().toISOString(),
+            },
+          };
+          this.handleEvent(event);
+        });
+      });
+
+      // Handle connection state changes
+      if (this.echo.connector?.pusher) {
+        this.echo.connector.pusher.connection.bind('connected', () => {
+          logger.info('Pusher connected');
+        });
+
+        this.echo.connector.pusher.connection.bind('disconnected', () => {
+          logger.warn('Pusher disconnected');
+        });
+
+        this.echo.connector.pusher.connection.bind('error', (error: any) => {
+          logger.error('Pusher error', { error });
+        });
       }
 
-      this.ws = new WebSocket(wsUrl.toString());
-
-      this.ws.onopen = () => {
-        logger.info('WebSocket connected', { tenantId, userId });
-        this.reconnectAttempts = 0;
-        this.startHeartbeat();
-        
-        this.send({
-          type: 'subscribe',
-          channel: `products.${tenantId}`,
-        });
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data);
-          
-          if (message.type === 'pong') {
-            return;
-          }
-
-          if (message.type && message.data) {
-            this.handleEvent(message as ProductWebSocketEvent);
-          }
-        } catch (error) {
-          logger.error('Failed to parse WebSocket message', { error, data: event.data });
-        }
-      };
-
-      this.ws.onerror = (error) => {
-        logger.error('WebSocket error', { error });
-      };
-
-      this.ws.onclose = (event) => {
-        logger.info('WebSocket closed', { code: event.code, reason: event.reason });
-        this.stopHeartbeat();
-
-        if (!this.isIntentionallyClosed && this.reconnectAttempts < this.config.maxReconnectAttempts) {
-          this.scheduleReconnect(tenantId, userId);
-        }
-      };
     } catch (error) {
       logger.error('Failed to create WebSocket connection', { error });
-      this.scheduleReconnect(tenantId, userId);
     }
   }
 
   disconnect(): void {
     this.isIntentionallyClosed = true;
-    this.stopHeartbeat();
-    
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
+
+    if (this.channel) {
+      this.echo?.leaveChannel(this.channel.name);
+      this.channel = null;
     }
 
-    if (this.ws) {
-      this.ws.close(1000, 'Client disconnect');
-      this.ws = null;
+    if (this.echo) {
+      this.echo.disconnect();
+      this.echo = null;
     }
 
+    this.currentTenantId = null;
     logger.info('WebSocket disconnected');
   }
 
@@ -175,56 +191,12 @@ export class ProductWebSocketService {
     }
   }
 
-  private send(message: any): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
-    }
-  }
-
-  private startHeartbeat(): void {
-    this.stopHeartbeat();
-    
-    this.heartbeatTimer = setInterval(() => {
-      this.send({ type: 'ping' });
-    }, this.config.heartbeatInterval);
-  }
-
-  private stopHeartbeat(): void {
-    if (this.heartbeatTimer) {
-      clearInterval(this.heartbeatTimer);
-      this.heartbeatTimer = null;
-    }
-  }
-
-  private scheduleReconnect(tenantId: string, userId?: string): void {
-    if (this.reconnectTimer) {
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = Math.min(
-      this.config.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1),
-      30000
-    );
-
-    logger.info('Scheduling WebSocket reconnect', { 
-      attempt: this.reconnectAttempts, 
-      delay,
-      maxAttempts: this.config.maxReconnectAttempts 
-    });
-
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null;
-      this.connect(tenantId, userId);
-    }, delay);
-  }
-
   isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.echo?.connector?.pusher?.connection?.state === 'connected';
   }
 
-  getConnectionState(): number | null {
-    return this.ws?.readyState ?? null;
+  getConnectionState(): string | null {
+    return this.echo?.connector?.pusher?.connection?.state ?? null;
   }
 }
 

@@ -18,6 +18,7 @@ export interface EnvironmentConfig {
     useMockData: boolean;
     enableAnalytics: boolean;
     enableErrorTracking: boolean;
+    enableWebSocket: boolean;
   };
   defaults: {
     tenantId: string | null;
@@ -62,6 +63,7 @@ export const envConfig: EnvironmentConfig = {
     useMockData: getEnvBoolean('VITE_USE_MOCK_DATA', false),
     enableAnalytics: getEnvBoolean('VITE_ENABLE_ANALYTICS', false),
     enableErrorTracking: getEnvBoolean('VITE_ENABLE_ERROR_TRACKING', false),
+    enableWebSocket: getEnvBoolean('VITE_ENABLE_WEBSOCKET', false),
   },
   defaults: {
     tenantId: getEnvVariable('VITE_DEFAULT_TENANT_ID') || null,

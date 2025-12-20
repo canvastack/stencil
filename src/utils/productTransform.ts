@@ -30,7 +30,7 @@ export function transformProduct(backendProduct: any): Product {
     customizable: backendProduct.customizable || false,
     customOptions: backendProduct.custom_options || [],
     inStock: backendProduct.in_stock ?? backendProduct.inStock,
-    stockQuantity: backendProduct.stock_quantity ?? backendProduct.stockQuantity,
+    stockQuantity: backendProduct.stock_quantity ?? backendProduct.stockQuantity ?? 0,
     leadTime: backendProduct.lead_time,
     seoTitle: backendProduct.seo_title,
     seoDescription: backendProduct.seo_description,

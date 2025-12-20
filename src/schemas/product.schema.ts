@@ -107,9 +107,7 @@ const baseProductSchema = z.object({
   stockQuantity: z.number()
     .int('Stock quantity must be a whole number')
     .min(0, 'Stock quantity cannot be negative')
-    .max(999999, 'Stock quantity exceeds maximum allowed value')
-    .optional()
-    .or(z.literal(null)),
+    .max(999999, 'Stock quantity exceeds maximum allowed value'),
 });
 
 export const createProductSchema = baseProductSchema.refine(

@@ -5,6 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useProductWebSocket } from '@/hooks/useProductWebSocket';
 import type { Product, ProductFilters } from '@/types/product';
+import { envConfig } from '@/config/env.config';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
@@ -19,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DataTable } from '@/components/ui/data-table';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { KeyboardShortcutsDialog } from '@/components/admin/KeyboardShortcutsDialog';
 import { Kbd } from '@/components/ui/kbd';
 import {
@@ -146,9 +148,47 @@ export default function ProductCatalog() {
   }
 
   return (
-    <ProductComparisonProvider>
-      <ProductCatalogContent />
-    </ProductComparisonProvider>
+    <ErrorBoundary
+      fallback={
+        <div className="flex items-center justify-center min-h-screen p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <CardTitle>Error Memuat Katalog Produk</CardTitle>
+              </div>
+              <CardDescription>
+                Terjadi kesalahan yang tidak terduga saat memuat katalog produk.
+                Silakan coba muat ulang halaman atau hubungi support jika masalah berlanjut.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="w-full"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Muat Ulang Halaman
+              </Button>
+              <Button 
+                onClick={() => window.history.back()} 
+                variant="outline" 
+                className="w-full"
+              >
+                Kembali
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      }
+      onError={(error, errorInfo) => {
+        console.error('Product Catalog Error:', error, errorInfo);
+      }}
+    >
+      <ProductComparisonProvider>
+        <ProductCatalogContent />
+      </ProductComparisonProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -229,7 +269,7 @@ function ProductCatalogContent() {
   });
 
   const { isConnected: wsConnected } = useProductWebSocket({
-    enabled: true,
+    enabled: envConfig.features.enableWebSocket,
     showToasts: true,
   });
 
@@ -1133,7 +1173,7 @@ function ProductCatalogContent() {
               </Badge>
             </div>
             
-            {product.inStock && product.stockQuantity !== undefined && (
+            {product.inStock && (
               <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
                 <Package className="w-3 h-3" />
                 <span>Stock: {product.stockQuantity}</span>
@@ -1193,7 +1233,7 @@ function ProductCatalogContent() {
               
               {product.inStock ? (
                 <Badge variant="outline" className="text-green-600 border-green-600 text-xs hidden md:inline-flex">
-                  In Stock ({product.stockQuantity || 0})
+                  In Stock ({product.stockQuantity})
                 </Badge>
               ) : (
                 <Badge variant="destructive" className="text-xs hidden md:inline-flex">Out of Stock</Badge>
@@ -1858,6 +1898,7 @@ function ProductCatalogContent() {
                   className="hidden"
                   id="import-file-input"
                   disabled={isImporting}
+                  aria-label="Upload product import file (CSV, Excel, or JSON format)"
                 />
                 <label
                   htmlFor="import-file-input"

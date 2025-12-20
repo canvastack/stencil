@@ -23,7 +23,7 @@ export const useProductAnalytics = (products: Product[]): ProductAnalytics => {
     const totalProducts = products.length;
     
     const totalValue = products.reduce((sum, p) => {
-      const stock = p.stock_quantity || p.stockQuantity || 0;
+      const stock = p.stockQuantity;
       return sum + (p.price * stock);
     }, 0);
     
@@ -37,17 +37,17 @@ export const useProductAnalytics = (products: Product[]): ProductAnalytics => {
     const archivedCount = products.filter(p => p.status === 'archived').length;
     
     const inStockCount = products.filter(p => {
-      const stock = p.stock_quantity || p.stockQuantity || 0;
+      const stock = p.stockQuantity;
       return stock > 0;
     }).length;
     
     const outOfStockCount = products.filter(p => {
-      const stock = p.stock_quantity || p.stockQuantity || 0;
+      const stock = p.stockQuantity;
       return stock === 0;
     }).length;
     
     const lowStockCount = products.filter(p => {
-      const stock = p.stock_quantity || p.stockQuantity || 0;
+      const stock = p.stockQuantity;
       return stock > 0 && stock <= 10;
     }).length;
     
@@ -55,7 +55,7 @@ export const useProductAnalytics = (products: Product[]): ProductAnalytics => {
     products.forEach(p => {
       const categoryName = p.category?.name || 'Uncategorized';
       const existing = categoryMap.get(categoryName) || { count: 0, value: 0 };
-      const stock = p.stock_quantity || p.stockQuantity || 0;
+      const stock = p.stockQuantity;
       categoryMap.set(categoryName, {
         count: existing.count + 1,
         value: existing.value + (p.price * stock)
@@ -77,7 +77,7 @@ export const useProductAnalytics = (products: Product[]): ProductAnalytics => {
     
     const stockAlerts = products
       .map(p => {
-        const stock = p.stock_quantity || p.stockQuantity || 0;
+        const stock = p.stockQuantity;
         if (stock === 0) {
           return { product: p, stockLevel: stock, status: 'critical' as const };
         } else if (stock <= 10) {
@@ -91,7 +91,7 @@ export const useProductAnalytics = (products: Product[]): ProductAnalytics => {
     
     const topProducts = products
       .map(p => {
-        const stock = p.stock_quantity || p.stockQuantity || 0;
+        const stock = p.stockQuantity;
         return { product: p, value: p.price * stock };
       })
       .sort((a, b) => b.value - a.value)

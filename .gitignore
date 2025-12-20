@@ -40,3 +40,10 @@ docs/DEVELOPMENTS/
 *.bak
 *test*.txt
 *.log
+
+# Mock data files (ZERO TOLERANCE POLICY - NO MOCK DATA IN PRODUCTION)
+src/services/mock/*product*.ts
+src/services/mock/*product*.js
+src/services/mock/data/*product*.json
+src/services/mock/production.ts
+src/services/mock/production.js

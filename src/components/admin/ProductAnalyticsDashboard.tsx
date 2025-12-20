@@ -394,7 +394,7 @@ export const ProductAnalyticsDashboard: React.FC<ProductAnalyticsDashboardProps>
                           <p className="font-medium truncate">{item.product.name}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-muted-foreground">
-                              {formatPrice(item.product.price)} × {item.product.stock_quantity || item.product.stockQuantity || 0}
+                              {formatPrice(item.product.price)} × {item.product.stockQuantity}
                             </span>
                             {item.product.featured && (
                               <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />

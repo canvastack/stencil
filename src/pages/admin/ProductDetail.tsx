@@ -196,10 +196,10 @@ export default function ProductDetail() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (id) {
+    if (product?.uuid) {
       loadVariants();
     }
-  }, [id]);
+  }, [product?.uuid]);
 
   useEffect(() => {
     if (selectedVariant) {
@@ -221,10 +221,10 @@ export default function ProductDetail() {
   }, [selectedVariant]);
 
   const loadVariants = async () => {
-    if (!id) return;
+    if (!product?.uuid) return;
     setIsLoadingVariants(true);
     try {
-      const data = await productsService.getProductVariants(id);
+      const data = await productsService.getProductVariants(product.uuid);
       setVariants(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error('Failed to load product variants');
@@ -251,10 +251,10 @@ export default function ProductDetail() {
   };
 
   const confirmDelete = async () => {
-    if (!id || !variantToDelete) return;
+    if (!product?.uuid || !variantToDelete) return;
     setIsSaving(true);
     try {
-      await productsService.deleteVariant(id, variantToDelete);
+      await productsService.deleteVariant(product.uuid, variantToDelete);
       setVariants(variants.filter((v) => v.id !== variantToDelete));
       setIsDeleteDialogOpen(false);
       setVariantToDelete(null);
@@ -268,7 +268,7 @@ export default function ProductDetail() {
   };
 
   const handleSaveVariant = async () => {
-    if (!id) return;
+    if (!product?.uuid) return;
     if (!formData.sku || !formData.name) {
       toast.error('SKU and name are required');
       return;
@@ -277,7 +277,7 @@ export default function ProductDetail() {
     setIsSaving(true);
     try {
       if (selectedVariant) {
-        await productsService.updateVariant(id, selectedVariant.id, formData);
+        await productsService.updateVariant(product.uuid, selectedVariant.id, formData);
         setVariants(
           variants.map((v) =>
             v.id === selectedVariant.id ? { ...v, ...formData } : v
@@ -285,7 +285,7 @@ export default function ProductDetail() {
         );
         toast.success('Variant updated successfully');
       } else {
-        const newVariant = await productsService.createVariant(id, formData);
+        const newVariant = await productsService.createVariant(product.uuid, formData);
         setVariants([...variants, newVariant]);
         toast.success('Variant created successfully');
       }
@@ -490,7 +490,7 @@ export default function ProductDetail() {
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Stock Quantity</Label>
-                <p className="font-semibold">{product.stockQuantity || 0}</p>
+                <p className="font-semibold">{product.stockQuantity}</p>
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">Lead Time</Label>
