@@ -827,4 +827,214 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Duplicate a product
+     */
+    public function duplicate(string $productId): JsonResponse
+    {
+        if ($error = $this->validateUuid($productId)) {
+            return $error;
+        }
+
+        try {
+            $originalProduct = Product::where('uuid', $productId)->firstOrFail();
+            
+            // Create duplicate with modified name
+            $duplicateData = $originalProduct->toArray();
+            unset($duplicateData['id']);
+            unset($duplicateData['uuid']);
+            unset($duplicateData['created_at']);
+            unset($duplicateData['updated_at']);
+            unset($duplicateData['deleted_at']);
+            
+            // Modify name to indicate it's a copy
+            $duplicateData['name'] = $originalProduct->name . ' (Copy)';
+            $duplicateData['sku'] = $originalProduct->sku ? $originalProduct->sku . '-COPY-' . time() : null;
+            $duplicateData['status'] = 'draft'; // Set to draft by default
+            
+            // Generate unique slug
+            $baseSlug = \Illuminate\Support\Str::slug($duplicateData['name']);
+            $slug = $baseSlug;
+            $counter = 1;
+            
+            // Check if slug exists and increment until unique
+            while (Product::where('tenant_id', $originalProduct->tenant_id)
+                ->where('slug', $slug)
+                ->exists()) {
+                $slug = $baseSlug . '-' . $counter;
+                $counter++;
+            }
+            
+            $duplicateData['slug'] = $slug;
+            
+            $newProduct = Product::create($duplicateData);
+            $newProduct->load('category');
+
+            return (new ProductResource($newProduct))
+                ->response()
+                ->setStatusCode(201);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Produk tidak ditemukan'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal menduplikasi produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk update products
+     */
+    public function bulkUpdate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'required|uuid'
+        ]);
+
+        try {
+            $productIds = $request->product_ids;
+            $updateData = [];
+
+            // Build update data based on provided fields
+            if ($request->has('priceUpdate')) {
+                $priceUpdate = $request->priceUpdate;
+                $updateData['price_mode'] = $priceUpdate['mode'];
+                $updateData['price_value'] = $priceUpdate['value'];
+            }
+
+            if ($request->has('stockUpdate')) {
+                $stockUpdate = $request->stockUpdate;
+                $updateData['stock_mode'] = $stockUpdate['mode'];
+                $updateData['stock_value'] = $stockUpdate['value'];
+            }
+
+            if ($request->has('status')) {
+                $updateData['status'] = $request->status;
+            }
+
+            if ($request->has('featured')) {
+                $updateData['featured'] = $request->boolean('featured');
+            }
+
+            if ($request->has('category')) {
+                $updateData['category_id'] = $request->category;
+            }
+
+            $updated = 0;
+            $failed = 0;
+            $errors = [];
+
+            foreach ($productIds as $productId) {
+                try {
+                    $product = Product::where('uuid', $productId)->firstOrFail();
+                    
+                    // Apply price updates
+                    if (isset($updateData['price_mode']) && isset($updateData['price_value'])) {
+                        switch ($updateData['price_mode']) {
+                            case 'add':
+                                $product->price += $updateData['price_value'];
+                                break;
+                            case 'subtract':
+                                $product->price -= $updateData['price_value'];
+                                break;
+                            case 'multiply':
+                                $product->price *= $updateData['price_value'];
+                                break;
+                            case 'set':
+                                $product->price = $updateData['price_value'];
+                                break;
+                        }
+                    }
+
+                    // Apply stock updates
+                    if (isset($updateData['stock_mode']) && isset($updateData['stock_value'])) {
+                        switch ($updateData['stock_mode']) {
+                            case 'add':
+                                $product->stock_quantity += $updateData['stock_value'];
+                                break;
+                            case 'subtract':
+                                $product->stock_quantity -= $updateData['stock_value'];
+                                break;
+                            case 'set':
+                                $product->stock_quantity = $updateData['stock_value'];
+                                break;
+                        }
+                    }
+
+                    // Apply other updates
+                    if (isset($updateData['status'])) {
+                        $product->status = $updateData['status'];
+                    }
+
+                    if (isset($updateData['featured'])) {
+                        $product->featured = $updateData['featured'];
+                    }
+
+                    if (isset($updateData['category_id'])) {
+                        $product->category_id = $updateData['category_id'];
+                    }
+
+                    $product->save();
+                    $updated++;
+
+                } catch (\Exception $e) {
+                    $failed++;
+                    $errors[] = [
+                        'product_id' => $productId,
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
+
+            return response()->json([
+                'updated' => $updated,
+                'failed' => $failed,
+                'errors' => $errors
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal melakukan bulk update',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Reorder products
+     */
+    public function reorder(Request $request): JsonResponse
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*.id' => 'required|uuid',
+            'order.*.position' => 'required|integer|min:0'
+        ]);
+
+        try {
+            $orderData = $request->order;
+            
+            foreach ($orderData as $item) {
+                Product::where('uuid', $item['id'])
+                    ->update(['sort_order' => $item['position']]);
+            }
+
+            return response()->json([
+                'message' => 'Urutan produk berhasil diperbarui',
+                'updated' => count($orderData)
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengubah urutan produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
 }

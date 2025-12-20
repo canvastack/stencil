@@ -167,6 +167,48 @@ export const createContextAwareProductsService = (userType: UserType) => {
       } catch (error) {
         handleError(error, 'bulk update status');
       }
+    },
+
+    async reorderProducts(productIds: string[]): Promise<{ success: boolean; message: string }> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, 'products/reorder');
+        const response = await apiClient.post<{ success: boolean; message: string }>(endpoint, { product_ids: productIds });
+        return response.data;
+      } catch (error) {
+        handleError(error, 'reorder products');
+      }
+    },
+
+    async bulkUpdateProducts(productIds: string[], updateData: {
+      priceUpdate?: { mode: 'set' | 'add' | 'subtract' | 'multiply'; value: number };
+      stockUpdate?: { mode: 'set' | 'add' | 'subtract'; value: number };
+      status?: 'draft' | 'published' | 'archived';
+      featured?: boolean;
+      category?: string;
+    }): Promise<{ updated: number; failed: number; errors?: any[] }> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, 'products/bulk-update');
+        const response = await apiClient.post<{ updated: number; failed: number; errors?: any[] }>(
+          endpoint, 
+          { 
+            product_ids: productIds,
+            ...updateData 
+          }
+        );
+        return response.data;
+      } catch (error) {
+        handleError(error, 'bulk update products');
+      }
+    },
+
+    async duplicateProduct(id: string): Promise<Product> {
+      try {
+        const endpoint = getContextAwareEndpoint(userType, `products/${id}/duplicate`);
+        const response = await apiClient.post<Product>(endpoint);
+        return response.data as Product;
+      } catch (error) {
+        handleError(error, 'duplicate product');
+      }
     }
   };
 };

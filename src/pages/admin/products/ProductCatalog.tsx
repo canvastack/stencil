@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
-import { useProductsQuery, useDeleteProductMutation, useBulkDeleteProductsMutation, type BulkDeleteProgress } from '@/hooks/useProductsQuery';
+import { useProductsQuery, useDeleteProductMutation, useBulkDeleteProductsMutation, useReorderProductsMutation, useBulkUpdateProductsMutation, useDuplicateProductMutation, type BulkDeleteProgress } from '@/hooks/useProductsQuery';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useProductWebSocket } from '@/hooks/useProductWebSocket';
 import type { Product, ProductFilters } from '@/types/product';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -61,24 +62,36 @@ import {
   TrendingUp,
   X,
   GitCompare,
+  BarChart3,
   Loader2,
   AlertCircle,
   RefreshCw,
-  CheckSquare
+  CheckSquare,
+  GripVertical
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
+import { announceToScreenReader } from '@/lib/utils/accessibility';
 import { ProductComparisonProvider, useProductComparison } from '@/contexts/ProductComparisonContext';
 import { ComparisonBar } from '@/components/products/ComparisonBar';
 import { ProductExportService, type ExportFormat } from '@/services/export/productExportService';
 import { ProductImportService, type ImportResult } from '@/services/import/productImportService';
 import { FileSpreadsheet, FileText, FileJson } from 'lucide-react';
 import { APP_CONFIG } from '@/lib/constants';
+import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/react-query';
+import { DraggableProductList } from '@/components/admin/DraggableProductList';
+import { AdvancedFiltersPanel } from '@/components/admin/AdvancedFiltersPanel';
+import { SavedSearches } from '@/components/admin/SavedSearches';
+import { ColumnCustomization, type ColumnConfig } from '@/components/admin/ColumnCustomization';
+import { BulkEditDialog } from '@/components/admin/BulkEditDialog';
+import { ProductAnalyticsDashboard } from '@/components/admin/ProductAnalyticsDashboard';
 
 export default function ProductCatalog() {
   const { userType, tenant } = useGlobalContext();
   const { isAuthenticated } = useTenantAuth();
-  const { canAccess } = usePermissions();
+  const { canAccess, permissions, roles } = usePermissions();
 
   if (!isAuthenticated) {
     return <Navigate to="/tenant/login" replace />;
@@ -139,35 +152,14 @@ export default function ProductCatalog() {
   );
 }
 
-// Enhanced Card component - defined OUTSIDE to prevent recreation
-const EnhancedCard = React.memo(({ 
-  children, 
-  className = "",
-  ...props 
-}: { 
-  children: React.ReactNode; 
-  className?: string;
-  [key: string]: any;
-}) => (
-  <Card 
-    className={`relative overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${className}`}
-    {...props}
-  >
-    {/* Shine effect */}
-    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
-    {children}
-  </Card>
-));
-EnhancedCard.displayName = 'EnhancedCard';
-
 function ProductCatalogContent() {
   const { canAccess } = usePermissions();
   const { addToCompare, comparedProducts, clearComparison } = useProductComparison();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [filters, setFilters] = useState<ProductFilters>({
     page: 1,
@@ -183,13 +175,30 @@ function ProductCatalogContent() {
   
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [bulkProgress, setBulkProgress] = useState<BulkDeleteProgress | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [isComparisonMode, setIsComparisonMode] = useState(false);
+  const [isReorderMode, setIsReorderMode] = useState(false);
+  const [reorderProducts, setReorderProducts] = useState<Product[]>([]);
+  
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>([
+    { id: 'name', label: 'Product', visible: true, required: true },
+    { id: 'category', label: 'Category', visible: true },
+    { id: 'price', label: 'Price', visible: true },
+    { id: 'stock_quantity', label: 'Stock', visible: true },
+    { id: 'status', label: 'Status', visible: true },
+    { id: 'featured', label: 'Featured', visible: true },
+    { id: 'actions', label: 'Actions', visible: true, required: true },
+  ]);
   
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
   const [isExporting, setIsExporting] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -209,11 +218,19 @@ function ProductCatalogContent() {
     search: debouncedSearch,
   }), [filters, debouncedSearch]);
 
-  const { data, isLoading, error } = useProductsQuery(debouncedFilters);
+  const { data, isLoading, error, refetch } = useProductsQuery(debouncedFilters);
   const deleteProductMutation = useDeleteProductMutation();
+  const reorderMutation = useReorderProductsMutation();
+  const bulkUpdateMutation = useBulkUpdateProductsMutation();
+  const duplicateProductMutation = useDuplicateProductMutation();
   
   const bulkDeleteMutation = useBulkDeleteProductsMutation((progress) => {
     setBulkProgress(progress);
+  });
+
+  const { isConnected: wsConnected } = useProductWebSocket({
+    enabled: true,
+    showToasts: true,
   });
 
   const products = data?.data || [];
@@ -223,6 +240,12 @@ function ProductCatalogContent() {
     total: data?.total || 0,
     last_page: data?.last_page || 1,
   };
+
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
+    toast.success('Product data refreshed');
+    announceToScreenReader('Product data refreshed');
+  }, [queryClient]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
@@ -260,6 +283,15 @@ function ProductCatalogContent() {
       deleteProductMutation.mutate(productId);
     }
   }, [deleteProductMutation, canAccess]);
+
+  const handleDuplicateProduct = useCallback((productId: string) => {
+    if (!canAccess('products.create')) {
+      toast.error('You do not have permission to create products');
+      return;
+    }
+    
+    duplicateProductMutation.mutate(productId);
+  }, [duplicateProductMutation, canAccess]);
 
   const formatPrice = useCallback((price: number, currency: string) => {
     return new Intl.NumberFormat('id-ID', {
@@ -403,7 +435,7 @@ function ProductCatalogContent() {
   useKeyboardShortcuts([
     {
       key: 'k',
-      ctrlKey: true,
+      shiftKey: true,
       description: 'Focus search',
       callback: () => {
         searchInputRef.current?.focus();
@@ -411,7 +443,7 @@ function ProductCatalogContent() {
     },
     {
       key: 'n',
-      ctrlKey: true,
+      shiftKey: true,
       description: 'New product',
       callback: () => {
         if (canAccess('products.create')) {
@@ -422,16 +454,8 @@ function ProductCatalogContent() {
       },
     },
     {
-      key: 'f',
-      ctrlKey: true,
-      description: 'Toggle filters',
-      callback: () => {
-        setShowFilters(prev => !prev);
-      },
-    },
-    {
       key: 'r',
-      ctrlKey: true,
+      shiftKey: true,
       description: 'Refresh products',
       callback: () => {
         window.location.reload();
@@ -439,7 +463,6 @@ function ProductCatalogContent() {
     },
     {
       key: 'c',
-      ctrlKey: true,
       shiftKey: true,
       description: 'Clear filters',
       callback: () => {
@@ -449,7 +472,6 @@ function ProductCatalogContent() {
     },
     {
       key: 's',
-      ctrlKey: true,
       shiftKey: true,
       description: 'Toggle selection mode',
       callback: () => {
@@ -463,6 +485,84 @@ function ProductCatalogContent() {
       },
     },
     {
+      key: 'e',
+      shiftKey: true,
+      description: 'Export products',
+      callback: () => {
+        if (products.length === 0) {
+          toast.error('No products to export');
+          return;
+        }
+        setShowExportDialog(true);
+      },
+    },
+    {
+      key: 'i',
+      shiftKey: true,
+      description: 'Import products',
+      callback: () => {
+        if (canAccess('products.create')) {
+          handleImportClick();
+        } else {
+          toast.error('You do not have permission to import products');
+        }
+      },
+    },
+    {
+      key: 'a',
+      shiftKey: true,
+      description: 'Select all products',
+      callback: () => {
+        if (products.length === 0) return;
+        handleSelectAll();
+        announceToScreenReader(`${products.length} products selected`);
+      },
+    },
+    {
+      key: 'p',
+      shiftKey: true,
+      description: 'Compare selected products',
+      callback: () => {
+        if (selectedProducts.size < 2) {
+          toast.error('Select at least 2 products to compare');
+          return;
+        }
+        if (selectedProducts.size > 4) {
+          toast.error('You can compare maximum 4 products');
+          return;
+        }
+        handleBulkCompare();
+      },
+    },
+    {
+      key: 'd',
+      shiftKey: true,
+      description: 'Delete selected products',
+      callback: () => {
+        if (!canAccess('products.delete')) {
+          toast.error('You do not have permission to delete products');
+          return;
+        }
+        if (selectedProducts.size === 0) {
+          toast.error('No products selected');
+          return;
+        }
+        handleBulkDelete();
+      },
+    },
+    {
+      key: 'Escape',
+      description: 'Clear selection',
+      callback: () => {
+        if (selectedProducts.size > 0) {
+          setSelectedProducts(new Set());
+          toast.info('Selection cleared');
+          announceToScreenReader('Selection cleared');
+        }
+      },
+      preventDefault: false,
+    },
+    {
       key: '?',
       description: 'Show keyboard shortcuts',
       callback: () => {
@@ -471,18 +571,6 @@ function ProductCatalogContent() {
       preventDefault: true,
     },
   ], true);
-
-  const handleToggleSelection = useCallback((productId: string) => {
-    setSelectedProducts(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(productId)) {
-        newSet.delete(productId);
-      } else {
-        newSet.add(productId);
-      }
-      return newSet;
-    });
-  }, []);
 
   const handleSelectAll = useCallback(() => {
     if (selectedProducts.size === products.length) {
@@ -524,6 +612,31 @@ function ProductCatalogContent() {
     }
   }, [selectedProducts, canAccess, bulkDeleteMutation]);
 
+  const handleBulkEdit = useCallback(() => {
+    if (selectedProducts.size === 0) {
+      toast.error('No products selected');
+      return;
+    }
+
+    if (!canAccess('products.update')) {
+      toast.error('You do not have permission to edit products');
+      return;
+    }
+
+    setShowBulkEditDialog(true);
+  }, [selectedProducts, canAccess]);
+
+  const handleBulkEditSave = useCallback(async (productIds: string[], updateData: any) => {
+    try {
+      await bulkUpdateMutation.mutateAsync({ productIds, updateData });
+      setSelectedProducts(new Set());
+      setShowBulkEditDialog(false);
+      announceToScreenReader(`Successfully updated ${productIds.length} products`);
+    } catch (error) {
+      console.error('Bulk edit failed', error);
+    }
+  }, [bulkUpdateMutation]);
+
   const handleBulkCompare = useCallback(() => {
     if (selectedProducts.size === 0) {
       toast.error('Tidak ada produk yang dipilih');
@@ -550,39 +663,67 @@ function ProductCatalogContent() {
     navigate('/admin/products/compare');
   }, [selectedProducts, products, addToCompare, clearComparison, navigate]);
 
+  const deselectAllProducts = useCallback(() => {
+    setSelectedProducts(new Set());
+    announceToScreenReader('All products deselected');
+  }, []);
+
+  const handleReorder = useCallback(async (reorderedProducts: Product[]) => {
+    setReorderProducts(reorderedProducts);
+    
+    const productIds = reorderedProducts.map(p => p.uuid || p.id);
+    
+    try {
+      await reorderMutation.mutateAsync(productIds);
+    } catch (error) {
+      setReorderProducts(products);
+    }
+  }, [reorderMutation, products]);
+
+  const handleToggleReorderMode = useCallback(() => {
+    const newReorderMode = !isReorderMode;
+    setIsReorderMode(newReorderMode);
+    
+    if (newReorderMode) {
+      setReorderProducts([...products]);
+      if (isSelectMode) setIsSelectMode(false);
+      if (isComparisonMode) setIsComparisonMode(false);
+      deselectAllProducts();
+      toast.info('Reorder mode active - Drag products to reorder');
+      announceToScreenReader('Reorder mode activated. Drag products to reorder them.');
+    } else {
+      toast.info('Reorder mode deactivated');
+      announceToScreenReader('Reorder mode deactivated');
+    }
+  }, [isReorderMode, products, isSelectMode, isComparisonMode, deselectAllProducts]);
+
   // Calculate stats - MEMOIZED to prevent re-calculation on every render
   const stats = useMemo(() => {
     const productsData = products || [];
     return {
       productsData,
       totalProducts: pagination?.total || 0,
-      featuredProducts: productsData.filter((p) => p.featured).length,
-      activeProducts: productsData.filter((p) => p.status === 'active').length,
-      totalValue: productsData.reduce((sum, p) => sum + (p.price || 0), 0),
+      featuredCount: productsData.filter((p) => p.featured).length,
+      activeCount: productsData.filter((p) => p.status === 'published').length,
+      totalValue: productsData.reduce((sum, p) => sum + (p.price * (p.stock_quantity || 0)), 0),
     };
   }, [products, pagination?.total]);
 
   // Memoize columns to prevent recreation on every render
-  const columns: ColumnDef<Product>[] = useMemo(() => [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={selectedProducts.size === products.length && products.length > 0}
-          onCheckedChange={handleSelectAll}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={selectedProducts.has(row.original.uuid)}
-          onCheckedChange={() => handleToggleSelection(row.original.uuid)}
-          aria-label="Select row"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
+  const toggleProductSelection = useCallback((productId: string) => {
+    setSelectedProducts((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
+  }, []);
+
+  const columns: ColumnDef<Product>[] = useMemo(() => {
+    const baseColumns: ColumnDef<Product>[] = [
     {
       accessorKey: 'name',
       header: ({ column }) => (
@@ -720,6 +861,12 @@ function ProductCatalogContent() {
                   </Link>
                 </DropdownMenuItem>
               )}
+              {canAccess('products.create') && (
+                <DropdownMenuItem onClick={() => handleDuplicateProduct(product.uuid)}>
+                  <GitCompare className="mr-2 h-4 w-4" />
+                  Duplicate Product
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               {canAccess('products.delete') && (
                 <DropdownMenuItem 
@@ -735,7 +882,41 @@ function ProductCatalogContent() {
         );
       },
     },
-  ], [canAccess, formatPrice, handleQuickView, handleDeleteProduct, selectedProducts, products.length, handleSelectAll, handleToggleSelection]);
+  ];
+
+  if (isSelectMode || isComparisonMode) {
+    return [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={selectedProducts.size === products.length && products.length > 0}
+            onCheckedChange={handleSelectAll}
+            aria-label={isComparisonMode ? "Select all products for comparison" : "Select all products on current page"}
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={selectedProducts.has(row.original.uuid)}
+            onCheckedChange={() => toggleProductSelection(row.original.uuid)}
+            aria-label={`Select product ${row.original.name}${isComparisonMode ? ' for comparison' : ''}`}
+            disabled={isComparisonMode && !selectedProducts.has(row.original.uuid) && selectedProducts.size >= 4}
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      ...baseColumns,
+    ];
+  }
+
+  const visibleColumns = baseColumns.filter(col => {
+    const config = columnConfigs.find(c => c.id === col.id || c.id === col.accessorKey);
+    return config ? config.visible : true;
+  });
+
+  return visibleColumns;
+}, [canAccess, formatPrice, handleQuickView, handleDeleteProduct, selectedProducts, products.length, handleSelectAll, isSelectMode, isComparisonMode, toggleProductSelection, columnConfigs]);
 
   const renderContent = useCallback(() => {
     if (!isLoading && error) {
@@ -798,8 +979,50 @@ function ProductCatalogContent() {
       );
     }
 
+    if (isReorderMode) {
+      return (
+        <Card hover={false} className="p-6" role="region" aria-label="Draggable product list for reordering">
+          <div className="mb-4">
+            <p className="text-sm text-muted-foreground">
+              Drag products to reorder them. Click <strong>Save Order</strong> when done.
+            </p>
+          </div>
+          <DraggableProductList
+            products={reorderProducts}
+            onReorder={handleReorder}
+            renderProduct={(product) => (
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  <ProductImage
+                    src={product.images?.[0] || product.image_url}
+                    alt={product.name}
+                    className="h-16 w-16 rounded-lg object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold truncate">{product.name}</h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline">{product.category?.name || 'Uncategorized'}</Badge>
+                    <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
+                      {product.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex-shrink-0 text-right">
+                  <p className="font-semibold">{formatPrice(product.price, product.currency)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Stock: {product.stock_quantity || 0}
+                  </p>
+                </div>
+              </div>
+            )}
+          />
+        </Card>
+      );
+    }
+
     return (
-      <Card className="p-6" role="region" aria-label="Product catalog table">
+      <Card hover={false} className="p-6" role="region" aria-label="Product catalog table">
         <DataTable
           columns={columns}
           data={stats.productsData}
@@ -810,17 +1033,17 @@ function ProductCatalogContent() {
         />
       </Card>
     );
-  }, [isLoading, error, hasActiveFilters, products.length, filters.search, canAccess, navigate, handleClearFilters, columns, stats.productsData]);
+  }, [isLoading, error, hasActiveFilters, products.length, filters.search, canAccess, navigate, handleClearFilters, columns, stats.productsData, isReorderMode, reorderProducts, handleReorder, formatPrice]);
 
   // Product Grid Card Component
   const ProductCard = ({ product }: { product: Product }) => (
-    <Card className="group hover:shadow-lg transition-all duration-200">
+    <Card hover={false} className="group transition-all duration-200">
       <div className="relative">
         <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden">
           <ProductImage
             src={product.images}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover"
           />
           
           {/* Badges */}
@@ -880,38 +1103,38 @@ function ProductCatalogContent() {
           </div>
         </div>
 
-        <CardContent className="p-4">
+        <CardContent className="p-3 md:p-4">
           <div className="space-y-2">
             <div>
-              <h3 className="font-semibold text-lg line-clamp-2 hover:text-blue-600 transition-colors">
+              <h3 className="font-semibold text-base md:text-lg line-clamp-2 hover:text-blue-600 transition-colors">
                 <Link to={`/admin/products/${product.uuid}`}>
                   {product.name}
                 </Link>
               </h3>
-              <p className="text-sm text-muted-foreground">{product.category?.name || 'Uncategorized'}</p>
+              <p className="text-xs md:text-sm text-muted-foreground">{product.category?.name || 'Uncategorized'}</p>
             </div>
             
-            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
               {product.description}
             </p>
 
             <div className="flex items-center justify-between pt-2">
               <div>
-                <p className="text-lg font-bold text-green-600">
+                <p className="text-base md:text-lg font-bold text-green-600">
                   {formatPrice(product.price, product.currency)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Min. order: {product.minOrder} {product.priceUnit}
+                  Min. {product.minOrder} {product.priceUnit}
                 </p>
               </div>
               
-              <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
+              <Badge variant={product.status === 'published' ? 'default' : 'secondary'} className="text-xs">
                 {product.status}
               </Badge>
             </div>
             
             {product.inStock && product.stockQuantity !== undefined && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
                 <Package className="w-3 h-3" />
                 <span>Stock: {product.stockQuantity}</span>
               </div>
@@ -924,89 +1147,80 @@ function ProductCatalogContent() {
 
   // Product List Row Component  
   const ProductRow = ({ product }: { product: Product }) => (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden flex-shrink-0">
-            {product.images.length > 0 ? (
-              <img
-                src={resolveImageUrl(product.images[0])}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <ImageIcon className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold hover:text-blue-600 transition-colors">
-                    <Link to={`/admin/products/${product.uuid}`}>
-                      {product.name}
-                    </Link>
-                  </h3>
-                  {product.featured && (
-                    <Star className="w-4 h-4 text-yellow-500" />
-                  )}
+    <Card hover={false}>
+      <CardContent className="p-3 md:p-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden flex-shrink-0">
+              {product.images.length > 0 ? (
+                <img
+                  src={resolveImageUrl(product.images[0])}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ImageIcon className="w-4 h-4 md:w-6 md:h-6 text-gray-400" />
                 </div>
-                <p className="text-sm text-muted-foreground">{product.category?.name || 'Uncategorized'}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
-                  {product.description}
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="text-lg font-bold text-green-600">
-                  {formatPrice(product.price, product.currency)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Min. {product.minOrder} {product.priceUnit}
-                </p>
-              </div>
+              )}
             </div>
 
-            <div className="flex items-center justify-between mt-3">
-              <div className="flex items-center gap-4">
-                <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-sm md:text-base hover:text-blue-600 transition-colors truncate">
+                  <Link to={`/admin/products/${product.uuid}`}>
+                    {product.name}
+                  </Link>
+                </h3>
+                {product.featured && (
+                  <Star className="w-3 h-3 md:w-4 md:h-4 text-yellow-500 flex-shrink-0" />
+                )}
+              </div>
+              <p className="text-xs md:text-sm text-muted-foreground truncate">{product.category?.name || 'Uncategorized'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between md:flex-1 gap-3">
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
+              <div className="flex items-center gap-2">
+                <p className="text-base md:text-lg font-bold text-green-600">
+                  {formatPrice(product.price, product.currency)}
+                </p>
+                <Badge variant={product.status === 'published' ? 'default' : 'secondary'} className="text-xs">
                   {product.status}
                 </Badge>
-                
-                {product.inStock ? (
-                  <Badge variant="outline" className="text-green-600 border-green-600">
-                    In Stock ({product.stockQuantity || 0})
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive">Out of Stock</Badge>
-                )}
               </div>
+              
+              {product.inStock ? (
+                <Badge variant="outline" className="text-green-600 border-green-600 text-xs hidden md:inline-flex">
+                  In Stock ({product.stockQuantity || 0})
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="text-xs hidden md:inline-flex">Out of Stock</Badge>
+              )}
+            </div>
 
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleQuickView(product)}>
-                  <Eye className="w-4 h-4" />
+            <div className="flex items-center gap-1 md:gap-2">
+              <Button variant="outline" size="sm" onClick={() => handleQuickView(product)}>
+                <Eye className="w-3 h-3 md:w-4 md:h-4" />
+              </Button>
+              {canAccess('products.edit') && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/admin/products/${product.uuid}/edit`}>
+                    <Edit className="w-3 h-3 md:w-4 md:h-4" />
+                  </Link>
                 </Button>
-                {canAccess('products.edit') && (
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/admin/products/${product.uuid}/edit`}>
-                      <Edit className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                )}
-                {canAccess('products.delete') && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteProduct(product.uuid)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
+              )}
+              {canAccess('products.delete') && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleDeleteProduct(product.uuid)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -1021,288 +1235,438 @@ function ProductCatalogContent() {
         onOpenChange={setShowKeyboardHelp}
       />
       
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold">Product Catalog</h1>
-          <p className="text-muted-foreground">Manage your product inventory and catalog</p>
+        <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Product Catalog</h1>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Manage your product inventory and catalog</p>
+          </div>
+          {canAccess('products.create') && (
+            <Button 
+              size="sm"
+              onClick={() => navigate('/admin/products/new')}
+              aria-label="Add new product"
+            >
+              <Plus className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Add Product</span>
+            </Button>
+          )}
+        </div>
+
+        {/* Sticky Toolbar */}
+        <div className="sticky top-0 z-10 -mx-4 md:-mx-6 px-4 md:px-6 py-3 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-gray-200/50 dark:border-gray-700/50 shadow-lg shadow-gray-200/20 dark:shadow-black/20">
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRefresh} 
+              disabled={isLoading}
+              aria-label="Refresh product list"
+              aria-busy={isLoading}
+            >
+              <RefreshCw className={cn("w-4 h-4 md:mr-2", isLoading && "animate-spin")} />
+              <span className="hidden md:inline">Refresh</span>
+            </Button>
+            <div 
+              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+              title={wsConnected ? "Real-time sync active" : "Real-time sync disconnected"}
+            >
+              <div className={cn(
+                "w-2 h-2 rounded-full",
+                wsConnected ? "bg-green-500 animate-pulse" : "bg-gray-400"
+              )} />
+              <span className="hidden md:inline text-xs text-gray-600 dark:text-gray-400">
+                {wsConnected ? 'Live' : 'Offline'}
+              </span>
+            </div>
+            <Button 
+              variant={showAnalytics ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowAnalytics(!showAnalytics)}
+              aria-label={showAnalytics ? "Hide analytics" : "Show analytics"}
+            >
+              <BarChart3 className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">{showAnalytics ? 'Hide Analytics' : 'Analytics'}</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoading || products.length === 0}
+                  aria-label="Export product data"
+                >
+                  <Download className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Export</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setExportFormat('csv'); setShowExportDialog(true); }}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setExportFormat('excel'); setShowExportDialog(true); }}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Export as Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setExportFormat('json'); setShowExportDialog(true); }}>
+                  <FileJson className="mr-2 h-4 w-4" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {canAccess('products.create') && (
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={handleImportClick}
+                disabled={isLoading}
+                aria-label="Import products from file"
+              >
+                <Upload className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Import</span>
+              </Button>
+            )}
+            <ColumnCustomization
+              columns={columnConfigs}
+              onColumnsChange={setColumnConfigs}
+            />
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsSelectMode(!isSelectMode);
+                if (isComparisonMode) {
+                  setIsComparisonMode(false);
+                  deselectAllProducts();
+                }
+                if (!isSelectMode) {
+                  toast.info('Selection mode active');
+                } else {
+                  deselectAllProducts();
+                  toast.info('Selection mode deactivated');
+                }
+              }}
+              aria-label={isSelectMode ? 'Exit selection mode' : 'Enter selection mode for bulk operations'}
+            >
+              <CheckSquare className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">{isSelectMode ? 'Exit Select Mode' : 'Select Mode'}</span>
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsComparisonMode(!isComparisonMode);
+                if (isSelectMode) {
+                  setIsSelectMode(false);
+                  deselectAllProducts();
+                }
+                if (!isComparisonMode) {
+                  toast.info('Comparison mode active - Select 2-4 products');
+                } else {
+                  deselectAllProducts();
+                  toast.info('Comparison mode deactivated');
+                }
+              }}
+              aria-label={isComparisonMode ? 'Exit comparison mode' : 'Enter comparison mode'}
+            >
+              <GitCompare className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">{isComparisonMode ? 'Exit Compare' : 'Compare Products'}</span>
+            </Button>
+            {canAccess('products.edit') && (
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={handleToggleReorderMode}
+                disabled={isLoading || products.length === 0}
+                aria-label={isReorderMode ? 'Exit reorder mode' : 'Enter reorder mode'}
+              >
+                <GripVertical className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">{isReorderMode ? 'Save Order' : 'Reorder Products'}</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Left Column - Stacked Cards */}
-          <div className="space-y-3">
-            <EnhancedCard className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-primary/10 rounded-lg">
-                  <Package className="w-6 h-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Total Products</p>
-                  {isLoading ? (
-                    <div className="h-8 w-16 bg-muted animate-pulse rounded mt-1"></div>
-                  ) : (
-                    <p className="text-2xl font-bold">{stats.totalProducts}</p>
-                  )}
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Products
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+                <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
-            </EnhancedCard>
-            
-            <EnhancedCard className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-yellow-500/10 rounded-lg">
-                  <Star className="w-6 h-6 text-yellow-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Featured</p>
-                  {isLoading ? (
-                    <div className="h-8 w-12 bg-muted animate-pulse rounded mt-1"></div>
-                  ) : (
-                    <p className="text-2xl font-bold">{stats.featuredProducts}</p>
-                  )}
-                </div>
-              </div>
-            </EnhancedCard>
-            
-            <EnhancedCard className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-500/10 rounded-lg">
-                  <ShoppingCart className="w-6 h-6 text-green-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Active</p>
-                  {isLoading ? (
-                    <div className="h-8 w-12 bg-muted animate-pulse rounded mt-1"></div>
-                  ) : (
-                    <p className="text-2xl font-bold">{stats.activeProducts}</p>
-                  )}
-                </div>
-              </div>
-            </EnhancedCard>
-          </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.totalProducts}</div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Total items in catalog
+              </p>
+            </CardContent>
+          </Card>
 
-          {/* Middle Column - Total Value */}
-          <EnhancedCard className="p-6 flex items-center justify-center min-h-[200px]">
-            <div className="text-center">
-              <div className="p-4 bg-blue-500/10 rounded-lg inline-block mb-4">
-                <DollarSign className="w-8 h-8 text-blue-500" />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Featured Products
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900">
+                <Star className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <p className="text-sm text-muted-foreground mb-2">Total Value</p>
-              {isLoading ? (
-                <div className="h-9 w-40 bg-muted animate-pulse rounded mx-auto"></div>
-              ) : (
-                <p className="text-3xl font-bold text-blue-600">
-                  {formatPrice(stats.totalValue, 'IDR')}
-                </p>
-              )}
-            </div>
-          </EnhancedCard>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.featuredCount}</div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Highlighted items
+              </p>
+            </CardContent>
+          </Card>
 
-          {/* Right Column - Quick Actions */}
-          <EnhancedCard className="p-6 flex items-center justify-center min-h-[200px]">
-            <div className="text-center space-y-4">
-              <div className="p-4 bg-purple-500/10 rounded-lg inline-block mb-4">
-                <TrendingUp className="w-8 h-8 text-purple-500" />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Active Products
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
+                <TrendingUp className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
-              <div className="space-y-2">
-                {canAccess('products.create') && (
-                  <Button asChild className="w-full">
-                    <Link to="/admin/products/new" className="flex items-center justify-center gap-2">
-                      <Plus className="w-4 h-4" />
-                      <span>Add Product</span>
-                      <span className="ml-auto text-xs opacity-60">
-                        <Kbd>Ctrl</Kbd>+<Kbd>N</Kbd>
-                      </span>
-                    </Link>
-                  </Button>
-                )}
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => setShowExportDialog(true)}
-                    disabled={isLoading || products.length === 0}
-                    aria-label="Export products to file"
-                    aria-disabled={isLoading || products.length === 0}
-                  >
-                    <Download className="w-4 h-4 mr-1" aria-hidden="true" />
-                    Export
-                  </Button>
-                  {canAccess('products.create') && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={handleImportClick}
-                      disabled={isLoading}
-                      aria-label="Import products from file"
-                      aria-disabled={isLoading}
-                    >
-                      <Upload className="w-4 h-4 mr-1" aria-hidden="true" />
-                      Import
-                    </Button>
-                  )}
-                </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{stats.activeCount}</div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Published products
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Inventory Value
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900">
+                <DollarSign className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
-            </div>
-          </EnhancedCard>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">
+                ${stats.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Total stock value
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Filters */}
-        <Card className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                aria-expanded={showFilters}
-                aria-controls="product-filters-panel"
-                aria-label={showFilters ? 'Hide product filters' : 'Show product filters'}
-              >
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
-                <span className="ml-2 text-xs opacity-60" aria-hidden="true">
-                  <Kbd>Ctrl</Kbd>+<Kbd>F</Kbd>
-                </span>
-              </Button>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowKeyboardHelp(true)}
-              className="text-muted-foreground"
-            >
-              <Kbd>?</Kbd>
-              <span className="ml-2">Shortcuts</span>
-            </Button>
-          </div>
+        {/* Analytics Dashboard */}
+        {showAnalytics && (
+          <ProductAnalyticsDashboard products={products} />
+        )}
 
-          {showFilters && (
-            <div id="product-filters-panel" className="space-y-4 border-t pt-4" role="region" aria-label="Product filters">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <Label className="mb-2 flex items-center justify-between">
-                    <span>Search</span>
-                    <span className="text-xs opacity-60 font-normal">
-                      <Kbd>Ctrl</Kbd>+<Kbd>K</Kbd>
-                    </span>
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      ref={searchInputRef}
-                      placeholder="Product name, description, SKU..."
-                      value={searchQuery}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pr-10"
-                      aria-label="Search products by name, description, or SKU"
-                      aria-describedby={isSearching ? "search-status" : undefined}
-                    />
-                    {isSearching && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden="true" />
-                        <span id="search-status" className="sr-only" aria-live="polite">Searching for products...</span>
-                      </div>
-                    )}
+        {/* Filters */}
+        <Card hover={false}>
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-4">
+              {/* Search */}
+              <div className="relative w-full md:flex-1 md:min-w-[250px]">
+                <Label htmlFor="product-search" className="sr-only">
+                  Search products by name, description, or SKU
+                </Label>
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" aria-hidden="true" />
+                <Input
+                  id="product-search"
+                  ref={searchInputRef}
+                  type="search"
+                  role="searchbox"
+                  aria-label="Search products by name, description, or SKU"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10"
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden="true" />
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="category-filter" className="mb-2 block">Category</Label>
-                  <Select value={filters.category || 'all'} onValueChange={(value) => handleFilterChange('category', value)}>
-                    <SelectTrigger id="category-filter" aria-label="Filter products by category">
-                      <SelectValue placeholder="All categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="etching">Etching</SelectItem>
-                      <SelectItem value="engraving">Engraving</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                      <SelectItem value="award">Awards</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="status-filter" className="mb-2 block">Status</Label>
-                  <Select value={filters.status || 'all'} onValueChange={(value) => handleFilterChange('status', value)}>
-                    <SelectTrigger id="status-filter" aria-label="Filter products by status">
-                      <SelectValue placeholder="All status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end gap-2">
-                  <div className="flex-1 text-sm text-muted-foreground">
-                    Filters auto-applied
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={handleClearFilters}
-                    disabled={isLoading}
-                    size="icon"
-                    aria-label="Clear all filters"
-                    title="Clear all filters"
-                  >
-                    <X className="w-4 h-4" aria-hidden="true" />
-                  </Button>
+                )}
+                <div 
+                  role="status" 
+                  aria-live="polite" 
+                  aria-atomic="true"
+                  className="sr-only"
+                >
+                  {debouncedSearch ? `${products.length} products found` : ''}
                 </div>
               </div>
+
+              {/* Advanced Filters */}
+              <AdvancedFiltersPanel
+                filters={filters}
+                onFiltersChange={(newFilters) => {
+                  setFilters(newFilters);
+                  announceToScreenReader('Filters applied');
+                }}
+                onClearFilters={() => {
+                  handleClearFilters();
+                  announceToScreenReader('All filters cleared');
+                }}
+              />
+
+              {/* Saved Searches */}
+              <SavedSearches
+                currentFilters={filters}
+                onLoadSearch={(loadedFilters) => {
+                  setFilters(loadedFilters);
+                  announceToScreenReader('Search loaded');
+                }}
+              />
             </div>
-          )}
+          </CardContent>
         </Card>
 
 
 
-        {/* Bulk Actions Bar */}
-        {selectedProducts.size > 0 && !isLoading && !error && products.length > 0 && (
-          <Card className="p-4 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={selectedProducts.size === products.length}
-                  onCheckedChange={handleSelectAll}
-                  aria-label={`Select all ${products.length} products`}
-                  aria-describedby="bulk-selection-status"
-                />
-                <span id="bulk-selection-status" className="font-medium" aria-live="polite">
-                  {selectedProducts.size} product{selectedProducts.size > 1 ? 's' : ''} selected
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
+        {/* Select Mode Toolbar */}
+        {isSelectMode && (
+          <Card hover={false} className="p-3 md:p-4 bg-primary/5 border-primary/20">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSelectedProducts(new Set())}
+                  onClick={handleSelectAll}
+                  aria-label={`Select all ${products.length} products`}
                 >
-                  Clear Selection
+                  Select All ({products.length})
                 </Button>
                 <Button
-                  variant="default"
+                  variant="outline"
                   size="sm"
-                  onClick={handleBulkCompare}
-                  disabled={selectedProducts.size < 2 || selectedProducts.size > 4}
+                  onClick={deselectAllProducts}
+                  disabled={selectedProducts.size === 0}
+                  aria-label="Deselect all selected products"
                 >
-                  <GitCompare className="w-4 h-4 mr-2" />
-                  Compare Selected
+                  Deselect All
                 </Button>
+                <span className="text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {selectedProducts.size} product{selectedProducts.size !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-2">
+                {canAccess('products.update') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBulkEdit}
+                    disabled={selectedProducts.size === 0}
+                    aria-label="Bulk edit selected products"
+                  >
+                    <Edit className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Bulk Edit</span>
+                  </Button>
+                )}
+                
                 {canAccess('products.delete') && (
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={handleBulkDelete}
-                    disabled={bulkDeleteMutation.isPending}
+                    disabled={selectedProducts.size === 0 || bulkDeleteMutation.isPending}
+                    aria-label="Delete selected products"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Selected
+                    <Trash2 className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Delete Selected</span>
                   </Button>
                 )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsSelectMode(false);
+                    deselectAllProducts();
+                  }}
+                  aria-label="Exit selection mode"
+                >
+                  <X className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Cancel</span>
+                </Button>
               </div>
             </div>
+          </Card>
+        )}
+
+        {/* Comparison Mode Toolbar */}
+        {isComparisonMode && (
+          <Card hover={false} className="p-3 md:p-4 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  aria-label={`Select all ${products.length} products for comparison`}
+                >
+                  Select All ({products.length})
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={deselectAllProducts}
+                  disabled={selectedProducts.size === 0}
+                  aria-label="Deselect all selected products"
+                >
+                  Deselect All
+                </Button>
+                <span className="text-xs md:text-sm font-medium text-blue-900 dark:text-blue-100">
+                  {selectedProducts.size} product{selectedProducts.size !== 1 ? 's' : ''} selected for comparison
+                </span>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleBulkCompare}
+                  disabled={selectedProducts.size < 2}
+                  aria-label={`Compare ${selectedProducts.size} selected products`}
+                >
+                  <GitCompare className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Compare {selectedProducts.size >= 2 ? `${selectedProducts.size} Products` : 'Products'}</span>
+                  <span className="md:hidden">Compare</span>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsComparisonMode(false);
+                    deselectAllProducts();
+                  }}
+                  aria-label="Exit comparison mode"
+                >
+                  <X className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Cancel</span>
+                </Button>
+              </div>
+            </div>
+            {selectedProducts.size < 2 && (
+              <p className="text-xs md:text-sm text-blue-700 dark:text-blue-300 mt-2">
+                Select at least 2 products to compare. Maximum 4 products.
+              </p>
+            )}
+            {selectedProducts.size > 4 && (
+              <p className="text-xs md:text-sm text-orange-700 dark:text-orange-300 mt-2">
+                You have selected more than 4 products. Only the first 4 will be compared.
+              </p>
+            )}
           </Card>
         )}
 
@@ -1684,6 +2048,15 @@ function ProductCatalogContent() {
           </div>
         </div>
       )}
+
+      {/* Bulk Edit Dialog */}
+      <BulkEditDialog
+        products={products.filter(p => selectedProducts.has(p.uuid))}
+        open={showBulkEditDialog}
+        onOpenChange={setShowBulkEditDialog}
+        onSave={handleBulkEditSave}
+        onCancel={() => setShowBulkEditDialog(false)}
+      />
       </div>
 
       <ComparisonBar />

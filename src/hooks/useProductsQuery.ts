@@ -403,3 +403,195 @@ export const useBulkDeleteProductsMutation = (
     },
   });
 };
+
+export const useReorderProductsMutation = () => {
+  const { userType } = useGlobalContext();
+  const { tenant } = useTenantAuth();
+  const queryClient = useQueryClient();
+
+  const productsService = useMemo(() => {
+    return createContextAwareProductsService(userType || 'tenant');
+  }, [userType]);
+
+  return useMutation({
+    mutationFn: async (productIds: string[]): Promise<{ success: boolean; message: string }> => {
+      if (!tenant?.uuid) {
+        throw new TenantContextError('Tenant context required');
+      }
+      return await productsService.reorderProducts(productIds);
+    },
+    onMutate: async (productIds) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.products.lists() });
+
+      const previousData = queryClient.getQueriesData<PaginatedResponse<Product>>({
+        queryKey: queryKeys.products.lists()
+      });
+
+      queryClient.setQueriesData<PaginatedResponse<Product>>(
+        { queryKey: queryKeys.products.lists() },
+        (old) => {
+          if (!old) return old;
+          
+          const productMap = new Map(old.data.map(p => [p.uuid || p.id, p]));
+          const reorderedData = productIds
+            .map(id => productMap.get(id))
+            .filter((p): p is Product => p !== undefined);
+          
+          return {
+            ...old,
+            data: reorderedData,
+          };
+        }
+      );
+
+      return { previousData };
+    },
+    onSuccess: () => {
+      toast.success('Products reordered successfully');
+      logger.info('Products reordered');
+    },
+    onError: (error: Error, variables, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([key, value]) => {
+          queryClient.setQueryData(key, value);
+        });
+      }
+
+      logger.error('Failed to reorder products', { error: error.message });
+
+      if (error instanceof TenantContextError) {
+        toast.error('Tenant context not available. Please refresh the page.');
+      } else if (error instanceof AuthError) {
+        toast.error('Session expired. Please login again.');
+      } else if (error instanceof PermissionError) {
+        toast.error('You do not have permission to reorder products.');
+      } else {
+        toast.error(error.message || 'Failed to reorder products');
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
+    },
+  });
+};
+
+export const useBulkUpdateProductsMutation = () => {
+  const { userType } = useGlobalContext();
+  const { tenant } = useTenantAuth();
+  const queryClient = useQueryClient();
+
+  const productsService = useMemo(() => {
+    return createContextAwareProductsService(userType || 'tenant');
+  }, [userType]);
+
+  return useMutation({
+    mutationFn: async ({ 
+      productIds, 
+      updateData 
+    }: { 
+      productIds: string[]; 
+      updateData: any;
+    }): Promise<{ updated: number; failed: number; errors?: any[] }> => {
+      if (!tenant?.uuid) {
+        throw new TenantContextError('Tenant context required');
+      }
+      return await productsService.bulkUpdateProducts(productIds, updateData);
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.products.lists() });
+      const previousData = queryClient.getQueriesData<PaginatedResponse<Product>>({
+        queryKey: queryKeys.products.lists()
+      });
+      return { previousData };
+    },
+    onSuccess: (result, { productIds }) => {
+      if (result.updated === productIds.length) {
+        toast.success(`Successfully updated ${result.updated} product${result.updated > 1 ? 's' : ''}`);
+      } else if (result.updated > 0) {
+        toast.warning(`Updated ${result.updated} of ${productIds.length} products. ${result.failed} failed.`);
+      } else {
+        toast.error('Failed to update products');
+      }
+      
+      logger.info('Bulk update completed', { 
+        updated: result.updated, 
+        failed: result.failed 
+      });
+    },
+    onError: (error: Error, variables, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([key, value]) => {
+          queryClient.setQueryData(key, value);
+        });
+      }
+
+      logger.error('Failed to bulk update products', { error: error.message });
+
+      if (error instanceof TenantContextError) {
+        toast.error('Tenant context not available. Please refresh the page.');
+      } else if (error instanceof AuthError) {
+        toast.error('Session expired. Please login again.');
+      } else if (error instanceof PermissionError) {
+        toast.error('You do not have permission to update products.');
+      } else {
+        toast.error(error.message || 'Failed to update products');
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
+    },
+  });
+};
+
+export const useDuplicateProductMutation = () => {
+  const { userType } = useGlobalContext();
+  const { tenant } = useTenantAuth();
+  const queryClient = useQueryClient();
+
+  const productsService = useMemo(() => {
+    return createContextAwareProductsService(userType || 'tenant');
+  }, [userType]);
+
+  return useMutation({
+    mutationFn: async (productId: string): Promise<Product> => {
+      if (!tenant?.uuid) {
+        throw new TenantContextError('Tenant context required');
+      }
+      return await productsService.duplicateProduct(productId);
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.products.lists() });
+      const previousData = queryClient.getQueriesData<PaginatedResponse<Product>>({
+        queryKey: queryKeys.products.lists()
+      });
+      return { previousData };
+    },
+    onSuccess: (duplicatedProduct) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
+      toast.success(`Product duplicated: ${duplicatedProduct.name}`);
+      logger.info('Product duplicated', { productId: duplicatedProduct.id });
+    },
+    onError: (error: Error, variables, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([key, value]) => {
+          queryClient.setQueryData(key, value);
+        });
+      }
+
+      logger.error('Failed to duplicate product', { error: error.message });
+
+      if (error instanceof TenantContextError) {
+        toast.error('Tenant context not available. Please refresh the page.');
+      } else if (error instanceof AuthError) {
+        toast.error('Session expired. Please login again.');
+      } else if (error instanceof PermissionError) {
+        toast.error('You do not have permission to duplicate products.');
+      } else {
+        toast.error(error.message || 'Failed to duplicate product');
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
+    },
+  });
+};

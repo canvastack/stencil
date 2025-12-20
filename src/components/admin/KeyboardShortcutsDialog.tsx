@@ -8,13 +8,17 @@ interface Shortcut {
 }
 
 const shortcuts: Shortcut[] = [
-  { keys: ['Ctrl', 'K'], description: 'Focus search', section: 'Navigation' },
-  { keys: ['Ctrl', 'N'], description: 'New product', section: 'Actions' },
-  { keys: ['Ctrl', 'F'], description: 'Toggle filters', section: 'Navigation' },
-  { keys: ['Ctrl', 'R'], description: 'Refresh products', section: 'Actions' },
-  { keys: ['Ctrl', 'Shift', 'C'], description: 'Clear filters', section: 'Actions' },
-  { keys: ['Ctrl', 'Shift', 'S'], description: 'Toggle selection mode', section: 'Actions' },
-  { keys: ['Escape'], description: 'Close dialogs', section: 'Navigation' },
+  { keys: ['Shift', 'K'], description: 'Focus search', section: 'Navigation' },
+  { keys: ['Escape'], description: 'Clear selection / Close dialogs', section: 'Navigation' },
+  { keys: ['Shift', 'N'], description: 'New product', section: 'Actions' },
+  { keys: ['Shift', 'R'], description: 'Refresh products', section: 'Actions' },
+  { keys: ['Shift', 'C'], description: 'Clear filters', section: 'Actions' },
+  { keys: ['Shift', 'S'], description: 'Toggle selection mode', section: 'Actions' },
+  { keys: ['Shift', 'A'], description: 'Select all products', section: 'Selection' },
+  { keys: ['Shift', 'P'], description: 'Compare selected products', section: 'Selection' },
+  { keys: ['Shift', 'D'], description: 'Delete selected products', section: 'Selection' },
+  { keys: ['Shift', 'E'], description: 'Export products', section: 'Import/Export' },
+  { keys: ['Shift', 'I'], description: 'Import products', section: 'Import/Export' },
   { keys: ['?'], description: 'Show keyboard shortcuts', section: 'Help' },
 ];
 

@@ -86,6 +86,10 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/inventory/out-of-stock', [ProductController::class, 'outOfStock'])->name('tenant.products.out_of_stock');
             Route::get('/search', [ProductController::class, 'search'])->name('tenant.products.search');
             
+            // Bulk Operations (must come before /{product})
+            Route::post('/bulk-update', [ProductController::class, 'bulkUpdate'])->name('tenant.products.bulk_update');
+            Route::post('/reorder', [ProductController::class, 'reorder'])->name('tenant.products.reorder');
+            
             // Product Variants (must come before /{product})
             Route::get('/{product}/variants', [ProductController::class, 'getVariants'])->name('tenant.products.variants.index');
             Route::post('/{product}/variants', [ProductController::class, 'createVariant'])->name('tenant.products.variants.store');
@@ -100,6 +104,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{product}/publish', [ProductController::class, 'publish'])->name('tenant.products.publish');
             Route::post('/{product}/unpublish', [ProductController::class, 'unpublish'])->name('tenant.products.unpublish');
             Route::put('/{product}/stock', [ProductController::class, 'updateStock'])->name('tenant.products.update_stock');
+            Route::post('/{product}/duplicate', [ProductController::class, 'duplicate'])->name('tenant.products.duplicate');
         });
         
         // Product Category Management

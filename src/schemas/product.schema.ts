@@ -103,6 +103,13 @@ const baseProductSchema = z.object({
   status: z.enum(['draft', 'published', 'archived'], {
     errorMap: () => ({ message: 'Invalid status' }),
   }).optional(),
+  
+  stockQuantity: z.number()
+    .int('Stock quantity must be a whole number')
+    .min(0, 'Stock quantity cannot be negative')
+    .max(999999, 'Stock quantity exceeds maximum allowed value')
+    .optional()
+    .or(z.literal(null)),
 });
 
 export const createProductSchema = baseProductSchema.refine(
