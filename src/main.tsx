@@ -5,19 +5,21 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { LanguageProvider } from "./contexts/LanguageContext";
 import App from "./App.tsx";
 import "./index.css";
+import { initMonitoring } from './lib/monitoring';
 
-// Configure React Query client with optimized defaults
+initMonitoring();
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
-      gcTime: 10 * 60 * 1000, // Cache retained for 10 minutes (formerly cacheTime)
-      retry: 2, // Retry failed requests twice
-      refetchOnWindowFocus: false, // Don't refetch when window regains focus
-      refetchOnReconnect: true, // Refetch when reconnecting to network
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: 2,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
     },
     mutations: {
-      retry: 1, // Retry failed mutations once
+      retry: 1,
     },
   },
 });

@@ -92,6 +92,15 @@ class ProductsService {
   }
 
   async getProductById(id: string): Promise<Product> {
+    // Validate UUID format - if it looks like a slug, use slug endpoint instead
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    if (!uuidRegex.test(id)) {
+      // If not a valid UUID, assume it's a slug and redirect to slug endpoint
+      console.warn(`getProductById called with non-UUID value "${id}", redirecting to getProductBySlug`);
+      return await this.getProductBySlug(id);
+    }
+    
     try {
       const publicResponse = await anonymousApiClient.get<any>(`/public/products/${id}`);
       return transformProduct(publicResponse);

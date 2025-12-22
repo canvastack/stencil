@@ -82,4 +82,12 @@ export interface ProductFilters {
   priceMin?: number;
   priceMax?: number;
   tags?: string[];
+  createdAfter?: string;
+  createdBefore?: string;
+  updatedAfter?: string;
+  updatedBefore?: string;
+  categories?: string[];
+  vendors?: string[];
+  stockMin?: number;
+  stockMax?: number;
 }

@@ -179,7 +179,7 @@ export const realtimeConfig = {
     dashboard: 30000, // 30 seconds
     orders: 15000,    // 15 seconds
     inventory: 60000, // 1 minute
-    notifications: 10000, // 10 seconds
+    notifications: 60000, // 1 minute (reduced from 10s for performance)
     payments: 30000,  // 30 seconds
     shipping: 45000,  // 45 seconds
   },
@@ -189,7 +189,7 @@ export const realtimeConfig = {
     dashboard: 30000, // 30 seconds
     orders: 15000,    // 15 seconds
     inventory: 60000, // 1 minute
-    notifications: 5000, // 5 seconds
+    notifications: 30000, // 30 seconds (increased from 5s)
     payments: 30000,  // 30 seconds
     shipping: 45000,  // 45 seconds
   },

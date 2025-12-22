@@ -10,9 +10,9 @@ class VendorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => (string) $this->id,
+            'id' => $this->uuid, // Use UUID as public identifier
             'uuid' => $this->uuid,
-            'tenant_id' => (string) $this->tenant_id,
+            // SECURITY: tenant_id is internal key, never expose to public
             
             'name' => $this->name,
             'code' => $this->code,

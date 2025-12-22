@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
-import { X, CheckCircle, XCircle, Minus, TrendingDown, Clock, Package } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { X, CheckCircle, XCircle, Minus, TrendingDown, Clock, Package, Eye, Save, Share2, FolderOpen } from 'lucide-react';
 import { useProductComparison } from '@/contexts/ProductComparisonContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ComparisonModal } from './ComparisonModal';
+import { SavedComparisonsDialog } from './SavedComparisonsDialog';
+import { ShareComparisonDialog } from './ShareComparisonDialog';
 import { formatPrice } from '@/lib/utils';
 import type { Product } from '@/types/product';
 
@@ -18,6 +21,12 @@ interface ComparisonField {
 
 export const ComparisonTable: React.FC = () => {
   const { comparedProducts, removeFromCompare, clearComparison } = useProductComparison();
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [loadDialogOpen, setLoadDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [highlightDifferences, setHighlightDifferences] = useState(true);
 
   const comparisonFields: ComparisonField[] = useMemo(() => [
     {
@@ -151,6 +160,7 @@ export const ComparisonTable: React.FC = () => {
   };
 
   const isHighlighted = (field: ComparisonField, product: Product) => {
+    if (!highlightDifferences) return false;
     const highlightValue = getHighlightedValue(field);
     if (highlightValue === null) return false;
     return field.getValue(product) === highlightValue;
@@ -171,18 +181,64 @@ export const ComparisonTable: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Product Comparison</h2>
-          <p className="text-muted-foreground">
-            Comparing {comparedProducts.length} product{comparedProducts.length > 1 ? 's' : ''}
-          </p>
+    <>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h2 className="text-2xl font-bold">Product Comparison</h2>
+            <p className="text-muted-foreground">
+              Comparing {comparedProducts.length} product{comparedProducts.length > 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setHighlightDifferences(!highlightDifferences)}
+            >
+              {highlightDifferences ? 'Hide' : 'Show'} Best Values
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setModalOpen(true)}
+              className="gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Modal View
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLoadDialogOpen(true)}
+              className="gap-2"
+            >
+              <FolderOpen className="h-4 w-4" />
+              Load
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSaveDialogOpen(true)}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Save
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShareDialogOpen(true)}
+              className="gap-2"
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+            <Button variant="outline" size="sm" onClick={clearComparison}>
+              Clear All
+            </Button>
+          </div>
         </div>
-        <Button variant="outline" onClick={clearComparison}>
-          Clear All
-        </Button>
-      </div>
 
       <div className="overflow-x-auto">
         <div className="min-w-[800px]">
@@ -267,6 +323,31 @@ export const ComparisonTable: React.FC = () => {
           ))}
         </div>
       </div>
-    </div>
+      </div>
+
+      <ComparisonModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        products={comparedProducts}
+        onRemoveProduct={removeFromCompare}
+      />
+
+      <SavedComparisonsDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        mode="save"
+      />
+
+      <SavedComparisonsDialog
+        open={loadDialogOpen}
+        onOpenChange={setLoadDialogOpen}
+        mode="load"
+      />
+
+      <ShareComparisonDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+      />
+    </>
   );
 };

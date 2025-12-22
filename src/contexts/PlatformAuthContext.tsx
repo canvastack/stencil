@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, Rea
 import { authService } from '@/services/api/auth';
 import type { PlatformAccount, LoginRequest, AccountType } from '@/services/api/auth';
 import { handleApiError } from '@/services/api/errorHandler';
+import { logger, setUserContext, clearUserContext } from '@/lib/monitoring';
 
 interface PlatformAuthContextType {
   account: PlatformAccount | null;
@@ -99,10 +100,26 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
         if (response.permissions) {
           setPermissions(response.permissions);
         }
+        
+        setUserContext({
+          id: response.account.uuid,
+          email: response.account.email,
+          name: response.account.name,
+          account_type: 'platform',
+        });
+        
+        logger.info('Platform admin login successful', {
+          account_id: response.account.uuid,
+          account_name: response.account.name,
+          permissions: response.permissions,
+        });
       } else {
         throw new Error('Platform account data not received');
       }
     } catch (err) {
+      logger.error('Platform login failed', err instanceof Error ? err : new Error(String(err)), {
+        email,
+      });
       handleError(err);
       throw err;
     } finally {
@@ -113,14 +130,59 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
-      await authService.logout();
+
+      // CRITICAL: Only clear auth if current account is platform
+      // Do NOT clear tenant auth by mistake
+      const currentAccountType = authService.getAccountType();
+      
+      if (currentAccountType !== 'platform') {
+        console.warn('PlatformAuthContext: Logout called but account type is not platform', {
+          currentAccountType,
+        });
+        // Clear local state but do NOT touch global auth
+        setAccount(null);
+        setPermissions([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Try to call logout API
+      try {
+        await authService.logout();
+      } catch (logoutError) {
+        console.warn('PlatformAuthContext: Logout API call failed, continuing with local cleanup', logoutError);
+      }
+
+      authService.clearAuth();
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('account_type');
+      
+      clearUserContext();
+      
+      logger.info('Platform admin logout successful');
+      
+      console.log('PlatformAuthContext: Platform logout completed successfully');
     } catch (err) {
       handleError(err);
+      
+      // Only force cleanup if this is actually a platform session
+      const currentAccountType = authService.getAccountType();
+      if (currentAccountType === 'platform') {
+        authService.clearAuth();
+        localStorage.clear();
+      }
     } finally {
       setAccount(null);
       setPermissions([]);
       clearError();
       setIsLoading(false);
+      
+      // Navigate to login page only if we actually logged out
+      const currentAccountType = authService.getAccountType();
+      if (!currentAccountType && window.location.pathname !== '/platform/login') {
+        window.location.href = '/platform/login';
+      }
     }
   }, [clearError, handleError]);
 

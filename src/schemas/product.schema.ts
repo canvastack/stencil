@@ -123,7 +123,10 @@ export const createProductSchema = baseProductSchema.refine(
   }
 );
 
-export const updateProductSchema = baseProductSchema.partial().refine(
+// For updates: slug is optional and not validated (backend auto-generates from name)
+export const updateProductSchema = baseProductSchema.partial().omit({ slug: true }).extend({
+  slug: z.string().optional(),
+}).refine(
   (data) => {
     if (data.minOrder && data.maxOrder) {
       return data.maxOrder >= data.minOrder;

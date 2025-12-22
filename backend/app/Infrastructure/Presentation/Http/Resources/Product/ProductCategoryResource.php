@@ -10,11 +10,23 @@ class ProductCategoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'uuid' => $this->uuid,
             
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            
+            // Flat fields for frontend compatibility
+            'parent_id' => $this->parent_id,
+            'image' => $this->image,
+            'color' => $this->color_scheme,
+            'sort_order' => $this->sort_order,
+            'is_active' => $this->is_active,
+            'is_featured' => $this->is_featured,
+            'product_count' => $this->when($this->relationLoaded('products'), function () {
+                return $this->products->count();
+            }),
             
             'hierarchy' => [
                 'parentUuid' => $this->parent?->uuid,

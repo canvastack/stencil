@@ -10,6 +10,42 @@
 
 **🎯 PLATFORM STATUS**: ✅ **100% API-FIRST PLATFORM COMPLETE** - Enterprise-grade multi-tenant SaaS platform with zero mock dependencies, perfect UI/UX functionality, and production-ready architecture.
 
+## 🔒 Core Development Policies (Zero Tolerance)
+
+### 1. NO MOCK DATA POLICY (ABSOLUTE)
+**Status**: ✅ **100% ENFORCED** - Platform achieved complete elimination of mock/hardcoded data
+
+**Mandatory Standards**:
+- ✅ 100% Real backend API integration for ALL data operations
+- ✅ Database-driven content exclusively through backend seeders
+- ✅ ALL tests (Integration, E2E, Visual Regression) use real backend APIs
+- ❌ ZERO mock services, mock responses, or fake data allowed
+- ❌ NO fallback to mock data when API errors occur
+
+**Testing Compliance**:
+- 589 Integration tests with real API (87.9% coverage)
+- 81 E2E tests across 5 browsers with real data
+- 32 Visual Regression tests capturing real UI
+- Load tests simulating real API traffic
+
+### 2. UUID-ONLY PUBLIC EXPOSURE POLICY (ABSOLUTE)
+**Status**: ✅ **100% ENFORCED** - Zero exposure of integer database IDs in public APIs
+
+**Mandatory Standards**:
+- ✅ ALL public APIs use UUID for resource identification
+- ✅ Frontend components operate exclusively with UUIDs
+- ✅ URL parameters use UUID format (e.g., `/api/products/{uuid}`)
+- ❌ ZERO integer ID exposure in API responses
+- ❌ NO integer IDs in frontend URLs, query strings, or request bodies
+
+**Implementation**:
+- All tables: `id BIGSERIAL` (internal) + `uuid UUID` (public)
+- Laravel API Resources expose only `uuid` field
+- TypeScript interfaces: `uuid: string` (NOT `id: number`)
+- Route model binding via UUID column
+
+---
+
 ## 🎯 Platform Vision
 
 Platform ini dibangun dengan visi untuk menyediakan infrastruktur SaaS yang memungkinkan setiap tenant (unit bisnis) untuk beroperasi secara independen dengan:

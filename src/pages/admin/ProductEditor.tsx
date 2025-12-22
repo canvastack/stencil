@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProducts, useProduct } from '@/hooks/useProducts';
+import { useCategoriesQuery } from '@/hooks/useCategoriesQuery';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ import { toast } from 'sonner';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
 import { LivePreview } from '@/components/admin/LivePreview';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductEditor() {
   const { id } = useParams();
@@ -30,13 +32,27 @@ export default function ProductEditor() {
   // Only fetch product data when editing an existing product
   const { product, isLoading } = useProduct(isNew ? '' : (id || ''));
   const { createProduct, updateProduct } = useProducts();
+  const { data: categoriesData, isLoading: categoriesLoading } = useCategoriesQuery({ per_page: 100, is_active: true });
+  const categories = categoriesData?.data || [];
+  
+  // Debug: log categories structure
+  React.useEffect(() => {
+    if (categories.length > 0) {
+      console.log('Categories loaded:', { 
+        count: categories.length, 
+        first: categories[0],
+        hasId: 'id' in categories[0],
+        hasUuid: 'uuid' in categories[0]
+      });
+    }
+  }, [categories]);
 
   const defaultFormData = {
     name: '',
     slug: '',
     description: '',
     longDescription: '',
-    category: '',
+    categoryId: '',
     subcategory: '',
     tags: [] as string[],
     material: '',
@@ -80,12 +96,17 @@ export default function ProductEditor() {
     if (isNew) {
       // For new products, set default form values
       setFormData(defaultFormData);
-    } else if (product) {
+    } else if (product && categories.length > 0) {
       // For existing products, merge product data with defaults
-      // Handle category field - backend returns object, form needs string
-      const categoryValue = typeof product.category === 'object' && product.category !== null
-        ? product.category.name || ''
-        : product.category || '';
+      // Handle category field - map category object to category ID
+      let categoryId = '';
+      if (product.category) {
+        const matchingCategory = categories.find(
+          (cat) => cat.uuid === product.category?.uuid || cat.id === product.category?.uuid
+        );
+        categoryId = matchingCategory ? String(matchingCategory.id) : '';
+        console.log('Category mapping:', { productCategory: product.category, matchingCategory, categoryId });
+      }
       
       // Handle specifications - backend returns object, form needs array
       let specificationsArray: Array<{ key: string; value: string }> = [];
@@ -106,7 +127,7 @@ export default function ProductEditor() {
         slug: product.slug ?? '',
         description: product.description ?? '',
         longDescription: product.longDescription ?? '',
-        category: categoryValue,
+        categoryId: categoryId,
         subcategory: product.subcategory ?? '',
         tags: product.tags ?? [],
         material: product.material ?? '',
@@ -142,11 +163,11 @@ export default function ProductEditor() {
         notesWysiwyg: product.notesWysiwyg ?? '',
       });
     }
-  }, [product, isNew]);
+  }, [product, isNew, categories]);
 
   const handleSave = async () => {
-    if (!formData.name || !formData.slug) {
-      toast.error('Product name and slug are required');
+    if (!formData.name || !formData.slug || !formData.categoryId) {
+      toast.error('Product name, slug, and category are required');
       return;
     }
 
@@ -169,7 +190,7 @@ export default function ProductEditor() {
           currency: formData.currency,
           priceUnit: formData.priceUnit,
           minOrder: formData.minOrder,
-          category: formData.category,
+          category_id: parseInt(formData.categoryId),
           subcategory: formData.subcategory,
           tags: formData.tags,
           material: formData.material,
@@ -196,7 +217,7 @@ export default function ProductEditor() {
           currency: formData.currency,
           priceUnit: formData.priceUnit,
           minOrder: formData.minOrder,
-          category: formData.category,
+          category_id: parseInt(formData.categoryId),
           subcategory: formData.subcategory,
           tags: formData.tags,
           material: formData.material,
@@ -241,10 +262,69 @@ export default function ProductEditor() {
   // Only show loading when fetching existing product
   if (isLoading && !isNew) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="p-6 text-center">
-          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-          <p>Loading product...</p>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        <Skeleton className="h-10 w-full" />
+
+        <div className="space-y-4">
+          <Card className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-32 w-full" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+
+            <Skeleton className="h-6 w-40" />
+          </Card>
         </div>
       </div>
     );
@@ -377,15 +457,23 @@ export default function ProductEditor() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
-                <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                <Select 
+                  value={formData.categoryId} 
+                  onValueChange={(v) => setFormData({ ...formData, categoryId: v })}
+                  disabled={categoriesLoading}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select category"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Etching">Etching</SelectItem>
-                    <SelectItem value="Awards">Awards</SelectItem>
-                    <SelectItem value="Signage">Signage</SelectItem>
-                    <SelectItem value="Custom">Custom</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                    {categories.length === 0 && !categoriesLoading && (
+                      <SelectItem value="" disabled>No categories available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

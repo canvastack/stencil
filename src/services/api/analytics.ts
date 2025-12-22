@@ -1,4 +1,13 @@
 import { tenantApiClient } from '@/services/api/tenantApiClient';
+import type {
+  ProductAnalytics,
+  AnalyticsResponse,
+  AnalyticsFilters as ProductAnalyticsFilters,
+  CatalogOverview,
+  ProductPerformance,
+  InventoryHealth,
+  CategoryRevenue,
+} from '@/types/analytics';
 
 export interface AnalyticsTimeRange {
   start_date: string;
@@ -191,6 +200,98 @@ export const analyticsService = {
     } catch (error) {
       console.error('Failed to load performance metrics:', error);
       return [];
+    }
+  },
+
+  getProductAnalytics: async (filters: ProductAnalyticsFilters = {}): Promise<ProductAnalytics> => {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.dateRange) {
+        params.append('start_date', filters.dateRange.from);
+        params.append('end_date', filters.dateRange.to);
+      }
+      if (filters.category) {
+        params.append('category', filters.category);
+      }
+      if (filters.status) {
+        params.append('status', filters.status);
+      }
+
+      const response = await tenantApiClient.get<AnalyticsResponse>(
+        `/analytics/products?${params.toString()}`
+      );
+      
+      return response.data.analytics;
+    } catch (error) {
+      console.error('Failed to load product analytics:', error);
+      throw error;
+    }
+  },
+
+  getCatalogOverview: async (): Promise<CatalogOverview> => {
+    try {
+      const response = await tenantApiClient.get<{ overview: CatalogOverview }>(
+        '/analytics/products/overview'
+      );
+      
+      return response.data.overview;
+    } catch (error) {
+      console.error('Failed to load catalog overview:', error);
+      throw error;
+    }
+  },
+
+  getProductPerformance: async (filters: ProductAnalyticsFilters = {}): Promise<ProductPerformance> => {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.dateRange) {
+        params.append('start_date', filters.dateRange.from);
+        params.append('end_date', filters.dateRange.to);
+      }
+
+      const response = await tenantApiClient.get<{ performance: ProductPerformance }>(
+        `/analytics/products/performance?${params.toString()}`
+      );
+      
+      return response.data.performance;
+    } catch (error) {
+      console.error('Failed to load product performance:', error);
+      throw error;
+    }
+  },
+
+  getInventoryHealth: async (): Promise<InventoryHealth> => {
+    try {
+      const response = await tenantApiClient.get<{ inventory: InventoryHealth }>(
+        '/analytics/products/inventory'
+      );
+      
+      return response.data.inventory;
+    } catch (error) {
+      console.error('Failed to load inventory health:', error);
+      throw error;
+    }
+  },
+
+  getRevenueByCategory: async (filters: ProductAnalyticsFilters = {}): Promise<CategoryRevenue[]> => {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.dateRange) {
+        params.append('start_date', filters.dateRange.from);
+        params.append('end_date', filters.dateRange.to);
+      }
+
+      const response = await tenantApiClient.get<{ categories: CategoryRevenue[] }>(
+        `/analytics/products/revenue-by-category?${params.toString()}`
+      );
+      
+      return response.data.categories;
+    } catch (error) {
+      console.error('Failed to load revenue by category:', error);
+      throw error;
     }
   }
 };

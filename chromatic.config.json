@@ -1,0 +1,16 @@
+{
+  "$schema": "https://www.chromatic.com/config-file.schema.json",
+  "projectId": "PROJECT_ID_PLACEHOLDER",
+  "playwright": true,
+  "buildScriptName": "e2e",
+  "exitZeroOnChanges": true,
+  "exitOnceUploaded": false,
+  "autoAcceptChanges": false,
+  "skip": "dependabot/**",
+  "ignoreLastBuildOnBranch": "main",
+  "externals": [
+    "public/**"
+  ],
+  "diagnosticsFile": true,
+  "zip": true
+}

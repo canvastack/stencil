@@ -338,10 +338,10 @@ export default function ProductList() {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to={`/products/${product.slug}`} target="_blank">
+                <a href={`/products/${product.slug}`} target="_blank" rel="noopener noreferrer">
                   <Eye className="mr-2 h-4 w-4" />
-                  View
-                </Link>
+                  View (Public)
+                </a>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to={`/admin/products/${product.uuid}/edit`}>

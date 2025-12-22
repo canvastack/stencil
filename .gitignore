@@ -10,13 +10,23 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-dist_local
 *.local
+backups*
+.zenco*
+.qod*
+*.bak*
+*.zip
+*.tar.gz
+-p
+*backup*
+backend/tests/Debugs/results/*.txt
+*.tmp
+*temp_*
+
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.vs
 .idea
 .DS_Store
 *.suo
@@ -24,26 +34,33 @@ dist_local
 *.njsproj
 *.sln
 *.sw?
-*.zip
-*.backup*
-*.bak
-*.tmp
-*.orig*
-*.qod*
-*.vscode
 
-# Ignore docs/DEVELOPMENTS folder
-docs/DEVELOPMENTS/
-.backups/
-.zenco*
-*backup*
-*.bak
-*test*.txt
-*.log
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
 
-# Mock data files (ZERO TOLERANCE POLICY - NO MOCK DATA IN PRODUCTION)
-src/services/mock/*product*.ts
-src/services/mock/*product*.js
-src/services/mock/data/*product*.json
-src/services/mock/production.ts
-src/services/mock/production.js
+# Test coverage
+coverage
+.nyc_output
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Chromatic
+.chromatic/
+chromatic-build-*.log
+build-storybook.log
+
+# Build artifacts
+*.tsbuildinfo
+
+# OS
+Thumbs.db
+
+
+

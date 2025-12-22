@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { authService } from '@/services/api/auth';
 import type { AuthUser, AuthTenant, LoginRequest, AccountType } from '@/services/api/auth';
 import { handleApiError } from '@/services/api/errorHandler';
+import { logger, setUserContext, setTenantContext, clearUserContext, clearTenantContext } from '@/lib/monitoring';
 
 interface TenantAuthContextType {
   user: AuthUser | null;
@@ -145,10 +146,34 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
         if (response.roles) {
           setRoles(response.roles);
         }
+        
+        setUserContext({
+          id: response.user.uuid,
+          email: response.user.email,
+          name: response.user.name,
+          account_type: 'tenant',
+        });
+        
+        setTenantContext({
+          id: response.tenant.uuid,
+          name: response.tenant.name,
+          domain: response.tenant.domain,
+        });
+        
+        logger.info('Tenant user login successful', {
+          user_id: response.user.uuid,
+          tenant_id: response.tenant.uuid,
+          tenant_slug: tenantSlug,
+          roles: response.roles,
+        });
       } else {
         throw new Error('Tenant user data not received');
       }
     } catch (err) {
+      logger.error('Tenant login failed', err instanceof Error ? err : new Error(String(err)), {
+        email,
+        tenant_slug: tenantSlug,
+      });
       handleError(err);
       throw err;
     } finally {
@@ -159,6 +184,23 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
   const logout = useCallback(async () => {
     try {
       setIsLoading(true);
+
+      // CRITICAL: Only clear auth if current account is tenant
+      // Do NOT clear platform auth by mistake
+      const currentAccountType = authService.getAccountType();
+      
+      if (currentAccountType !== 'tenant') {
+        console.warn('TenantAuthContext: Logout called but account type is not tenant', {
+          currentAccountType,
+        });
+        // Clear local state but do NOT touch global auth
+        setUserState(null);
+        setTenantState(null);
+        setPermissions([]);
+        setRoles([]);
+        setIsLoading(false);
+        return;
+      }
       
       // Clear local state immediately to prevent UI confusion
       setUserState(null);
@@ -174,24 +216,33 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
         console.warn('TenantAuthContext: Logout API call failed, continuing with local cleanup', logoutError);
       }
       
-      // Force complete cleanup regardless of API response
       authService.clearAuth();
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_id');
       localStorage.removeItem('tenant_id');
       localStorage.removeItem('account_type');
       
-      console.log('TenantAuthContext: Logout completed successfully');
+      clearUserContext();
+      clearTenantContext();
+      
+      logger.info('Tenant user logout successful');
+      
+      console.log('TenantAuthContext: Tenant logout completed successfully');
       
     } catch (err) {
       console.error('TenantAuthContext: Logout failed', err);
-      // Force cleanup even on error
-      authService.clearAuth();
-      localStorage.clear();
+      
+      // Only force cleanup if this is actually a tenant session
+      const currentAccountType = authService.getAccountType();
+      if (currentAccountType === 'tenant') {
+        authService.clearAuth();
+        localStorage.clear();
+      }
     } finally {
       setIsLoading(false);
-      // Navigate to login page
-      if (window.location.pathname !== '/login') {
+      // Navigate to login page only if we actually logged out a tenant
+      const currentAccountType = authService.getAccountType();
+      if (!currentAccountType && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }

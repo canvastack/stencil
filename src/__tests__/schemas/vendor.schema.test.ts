@@ -5,24 +5,30 @@ import {
   vendorFilterSchema,
 } from '@/schemas/vendor.schema';
 
+const validVendorBase = {
+  name: 'PT. Vendor Indonesia',
+  email: 'vendor@example.com',
+  phone: '+62 812 3456 7890',
+  contact_person: 'John Doe',
+  category: 'Manufacturing',
+  status: 'active' as const,
+  payment_terms: 'Net 30',
+  tax_id: '01.234.567.8-901.000',
+};
+
 describe('Vendor Schema Validation', () => {
   describe('createVendorSchema', () => {
     describe('name field', () => {
       it('should validate correct name', () => {
-        const result = createVendorSchema.safeParse({
-          name: 'PT. Vendor Indonesia',
-          email: 'vendor@example.com',
-          status: 'active',
-        });
+        const result = createVendorSchema.safeParse(validVendorBase);
         
         expect(result.success).toBe(true);
       });
 
       it('should reject name less than 3 characters', () => {
         const result = createVendorSchema.safeParse({
+          ...validVendorBase,
           name: 'AB',
-          email: 'vendor@example.com',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -33,9 +39,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject name more than 100 characters', () => {
         const result = createVendorSchema.safeParse({
+          ...validVendorBase,
           name: 'A'.repeat(101),
-          email: 'vendor@example.com',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -46,9 +51,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject empty name', () => {
         const result = createVendorSchema.safeParse({
+          ...validVendorBase,
           name: '',
-          email: 'vendor@example.com',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -58,9 +62,8 @@ describe('Vendor Schema Validation', () => {
     describe('email field', () => {
       it('should validate correct email', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
+          ...validVendorBase,
           email: 'valid.email@example.com',
-          status: 'active',
         });
         
         expect(result.success).toBe(true);
@@ -68,9 +71,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject invalid email format', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
+          ...validVendorBase,
           email: 'invalid-email',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -81,9 +83,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject email without domain', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
+          ...validVendorBase,
           email: 'vendor@',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -93,10 +94,8 @@ describe('Vendor Schema Validation', () => {
     describe('code field', () => {
       it('should accept valid vendor code', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           code: 'VEND-001',
-          status: 'active',
         });
         
         expect(result.success).toBe(true);
@@ -104,10 +103,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should accept uppercase letters and numbers', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           code: 'ABC123',
-          status: 'active',
         });
         
         expect(result.success).toBe(true);
@@ -115,10 +112,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject lowercase letters', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           code: 'vend-001',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -129,10 +124,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should accept empty string for optional code', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           code: '',
-          status: 'active',
         });
         
         expect(result.success).toBe(true);
@@ -142,10 +135,8 @@ describe('Vendor Schema Validation', () => {
     describe('phone field', () => {
       it('should accept valid phone number', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           phone: '+62 812 3456 7890',
-          status: 'active',
         });
         
         expect(result.success).toBe(true);
@@ -153,10 +144,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should accept phone with parentheses', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           phone: '(021) 1234-5678',
-          status: 'active',
         });
         
         expect(result.success).toBe(true);
@@ -164,10 +153,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject phone less than 10 digits', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           phone: '12345',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -178,10 +165,8 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject invalid characters in phone', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           phone: '0812-abc-defg',
-          status: 'active',
         });
         
         expect(result.success).toBe(false);
@@ -191,8 +176,7 @@ describe('Vendor Schema Validation', () => {
     describe('status field', () => {
       it('should accept active status', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           status: 'active',
         });
         
@@ -200,12 +184,11 @@ describe('Vendor Schema Validation', () => {
       });
 
       it('should accept all valid statuses', () => {
-        const statuses = ['active', 'inactive', 'suspended', 'blacklisted'];
+        const statuses = ['active', 'inactive', 'suspended', 'blacklisted'] as const;
         
         statuses.forEach(status => {
           const result = createVendorSchema.safeParse({
-            name: 'Vendor Name',
-            email: 'vendor@example.com',
+            ...validVendorBase,
             status,
           });
           
@@ -215,8 +198,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject invalid status', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
+          ...validVendorBase,
           status: 'invalid-status',
         });
         
@@ -226,13 +208,11 @@ describe('Vendor Schema Validation', () => {
 
     describe('company_size field', () => {
       it('should accept valid company sizes', () => {
-        const sizes = ['small', 'medium', 'large'];
+        const sizes = ['small', 'medium', 'large'] as const;
         
         sizes.forEach(company_size => {
           const result = createVendorSchema.safeParse({
-            name: 'Vendor Name',
-            email: 'vendor@example.com',
-            status: 'active',
+            ...validVendorBase,
             company_size,
           });
           
@@ -242,9 +222,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject invalid company size', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           company_size: 'enterprise',
         });
         
@@ -252,11 +230,7 @@ describe('Vendor Schema Validation', () => {
       });
 
       it('should accept undefined company_size', () => {
-        const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
-        });
+        const result = createVendorSchema.safeParse(validVendorBase);
         
         expect(result.success).toBe(true);
       });
@@ -266,9 +240,7 @@ describe('Vendor Schema Validation', () => {
       it('should accept rating between 0 and 5', () => {
         [0, 2.5, 5].forEach(rating => {
           const result = createVendorSchema.safeParse({
-            name: 'Vendor Name',
-            email: 'vendor@example.com',
-            status: 'active',
+            ...validVendorBase,
             rating,
           });
           
@@ -278,9 +250,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject rating less than 0', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           rating: -1,
         });
         
@@ -289,9 +259,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject rating greater than 5', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           rating: 6,
         });
         
@@ -302,9 +270,7 @@ describe('Vendor Schema Validation', () => {
     describe('website field', () => {
       it('should accept valid website URL', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           website: 'https://example.com',
         });
         
@@ -313,9 +279,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should accept http URLs', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           website: 'http://example.com',
         });
         
@@ -324,9 +288,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject invalid URL format', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           website: 'not-a-url',
         });
         
@@ -335,9 +297,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should accept empty string for optional website', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           website: '',
         });
         
@@ -348,9 +308,7 @@ describe('Vendor Schema Validation', () => {
     describe('latitude and longitude fields', () => {
       it('should accept valid coordinates', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           latitude: -6.2088,
           longitude: 106.8456,
         });
@@ -360,9 +318,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject latitude outside range', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           latitude: 91,
           longitude: 106.8456,
         });
@@ -372,9 +328,7 @@ describe('Vendor Schema Validation', () => {
 
       it('should reject longitude outside range', () => {
         const result = createVendorSchema.safeParse({
-          name: 'Vendor Name',
-          email: 'vendor@example.com',
-          status: 'active',
+          ...validVendorBase,
           latitude: -6.2088,
           longitude: 181,
         });

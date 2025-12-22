@@ -26,6 +26,52 @@ class ProductController extends Controller
     }
 
     /**
+     * Resolve tenant from multiple sources with fallback
+     */
+    private function resolveTenant(Request $request)
+    {
+        // Try from request attributes (set by middleware)
+        $tenant = $request->attributes->get('tenant');
+        if ($tenant) {
+            return $tenant;
+        }
+        
+        // Try from request merge
+        $tenant = $request->get('current_tenant');
+        if ($tenant) {
+            return $tenant;
+        }
+        
+        // Try from app container
+        if (app()->bound('current_tenant')) {
+            $tenant = app('current_tenant');
+            if ($tenant) {
+                return $tenant;
+            }
+        }
+        
+        // Try from config
+        $tenant = config('multitenancy.current_tenant');
+        if ($tenant) {
+            return $tenant;
+        }
+        
+        // FALLBACK: Try from authenticated user
+        $user = auth('sanctum')->user() ?? auth()->user();
+        if ($user && isset($user->tenant_id)) {
+            $tenant = $user->tenant ?? \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::find($user->tenant_id);
+            if ($tenant) {
+                // Cache tenant in request for subsequent calls
+                $request->attributes->set('tenant', $tenant);
+                $request->merge(['current_tenant' => $tenant]);
+                return $tenant;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
      * Validate UUID format
      */
     private function validateUuid(string $id): ?JsonResponse
@@ -45,8 +91,27 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
+            // CRITICAL: Explicit tenant filtering (defense in depth)
+            $tenant = $this->resolveTenant($request);
+            
+            if (!$tenant) {
+                \Log::error('[RBAC] Tenant context not found in ProductController::index', [
+                    'user_id' => auth()->id(),
+                    'request_path' => $request->path(),
+                    'headers' => $request->headers->all(),
+                ]);
+                
+                return response()->json([
+                    'message' => 'Tenant context not available',
+                    'error' => 'TENANT_CONTEXT_MISSING'
+                ], 500);
+            }
+            
             $perPage = $request->get('per_page', 20);
-            $query = Product::with('category');
+            
+            // CRITICAL: Explicit tenant_id filtering as safety net
+            $query = Product::where('tenant_id', $tenant->id)
+                ->with('category');
 
             if ($request->filled('search')) {
                 $query->where(function ($q) use ($request) {
@@ -117,6 +182,17 @@ class ProductController extends Controller
     public function search(Request $request): JsonResponse
     {
         try {
+            // CRITICAL: Explicit tenant filtering
+            $tenant = $this->resolveTenant($request);
+            
+            if (!$tenant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tenant context not available',
+                    'error' => 'TENANT_CONTEXT_MISSING'
+                ], 500);
+            }
+            
             $validated = $request->validate([
                 'query' => 'nullable|string|max:255',
                 'category_id' => 'nullable|integer',
@@ -130,7 +206,9 @@ class ProductController extends Controller
             $limit = $validated['limit'] ?? 25;
             $includeInventory = (bool) ($validated['include_inventory'] ?? false);
 
-            $builder = Product::with('category');
+            // CRITICAL: Explicit tenant_id filtering
+            $builder = Product::where('tenant_id', $tenant->id)
+                ->with('category');
 
             if ($queryTerm) {
                 $builder->where(function ($q) use ($queryTerm) {
@@ -207,7 +285,18 @@ class ProductController extends Controller
         }
 
         try {
-            $product = Product::with('category', 'variants')
+            // CRITICAL: Explicit tenant filtering
+            $tenant = $this->resolveTenant($request);
+            
+            if (!$tenant) {
+                return response()->json([
+                    'message' => 'Tenant context not available'
+                ], 500);
+            }
+            
+            // CRITICAL: Explicit tenant_id filtering
+            $product = Product::where('tenant_id', $tenant->id)
+                ->with('category', 'variants')
                 ->where('uuid', $id)
                 ->firstOrFail();
             
@@ -237,7 +326,18 @@ class ProductController extends Controller
     public function showBySlug(Request $request, string $slug): JsonResponse
     {
         try {
-            $product = Product::with('category', 'variants')
+            // CRITICAL: Explicit tenant filtering
+            $tenant = $this->resolveTenant($request);
+            
+            if (!$tenant) {
+                return response()->json([
+                    'message' => 'Tenant context not available'
+                ], 500);
+            }
+            
+            // CRITICAL: Explicit tenant_id filtering
+            $product = Product::where('tenant_id', $tenant->id)
+                ->with('category', 'variants')
                 ->where('slug', $slug)
                 ->firstOrFail();
             
@@ -318,14 +418,26 @@ class ProductController extends Controller
         }
 
         try {
-            $product = Product::where('uuid', $id)->firstOrFail();
+            // CRITICAL: Explicit tenant filtering
+            $tenant = $this->resolveTenant($request);
+            
+            if (!$tenant) {
+                return response()->json([
+                    'message' => 'Tenant context not available'
+                ], 500);
+            }
+            
+            // CRITICAL: Explicit tenant_id filtering
+            $product = Product::where('tenant_id', $tenant->id)
+                ->where('uuid', $id)
+                ->firstOrFail();
             $productData = $request->validated();
             
             if ($request->has('name') && $productData['name'] !== $product->name) {
                 $slug = Str::slug($productData['name']);
                 $originalSlug = $slug;
                 $counter = 1;
-                while (Product::where('slug', $slug)->where('uuid', '!=', $id)->exists()) {
+                while (Product::where('slug', $slug)->where('uuid', '!=', $id)->whereNull('deleted_at')->exists()) {
                     $slug = $originalSlug . '-' . $counter;
                     $counter++;
                 }
@@ -373,7 +485,19 @@ class ProductController extends Controller
         }
 
         try {
-            $product = Product::where('uuid', $id)->firstOrFail();
+            // CRITICAL: Explicit tenant filtering
+            $tenant = $this->resolveTenant($request);
+            
+            if (!$tenant) {
+                return response()->json([
+                    'message' => 'Tenant context not available'
+                ], 500);
+            }
+            
+            // CRITICAL: Explicit tenant_id filtering
+            $product = Product::where('tenant_id', $tenant->id)
+                ->where('uuid', $id)
+                ->firstOrFail();
             $productUuid = $product->uuid;
             $product->delete();
 
@@ -907,22 +1031,38 @@ class ProductController extends Controller
             unset($duplicateData['updated_at']);
             unset($duplicateData['deleted_at']);
             
-            // Modify name to indicate it's a copy
-            $duplicateData['name'] = $originalProduct->name . ' (Copy)';
-            $duplicateData['sku'] = $originalProduct->sku ? $originalProduct->sku . '-COPY-' . time() : null;
+            // Generate unique name and slug with timestamp to avoid collisions
+            $timestamp = time();
+            $baseName = $originalProduct->name;
+            $duplicateName = $baseName . ' (Copy)';
+            $duplicateSku = $originalProduct->sku ? $originalProduct->sku . '-COPY-' . $timestamp : null;
+            
+            // Check if name already exists (excluding soft-deleted) and increment
+            $nameCounter = 1;
+            while (Product::where('tenant_id', $originalProduct->tenant_id)
+                ->where('name', $duplicateName)
+                ->whereNull('deleted_at')
+                ->exists()) {
+                $duplicateName = $baseName . ' (Copy ' . $nameCounter . ')';
+                $nameCounter++;
+            }
+            
+            $duplicateData['name'] = $duplicateName;
+            $duplicateData['sku'] = $duplicateSku;
             $duplicateData['status'] = 'draft'; // Set to draft by default
             
-            // Generate unique slug
-            $baseSlug = \Illuminate\Support\Str::slug($duplicateData['name']);
+            // Generate unique slug based on the final name
+            $baseSlug = \Illuminate\Support\Str::slug($duplicateName);
             $slug = $baseSlug;
-            $counter = 1;
+            $slugCounter = 1;
             
-            // Check if slug exists and increment until unique
+            // Check if slug exists (excluding soft-deleted) and increment until unique
             while (Product::where('tenant_id', $originalProduct->tenant_id)
                 ->where('slug', $slug)
+                ->whereNull('deleted_at')
                 ->exists()) {
-                $slug = $baseSlug . '-' . $counter;
-                $counter++;
+                $slug = $baseSlug . '-' . $slugCounter;
+                $slugCounter++;
             }
             
             $duplicateData['slug'] = $slug;

@@ -16,48 +16,89 @@ class TenantContextMiddleware
 
     public function handle(Request $request, Closure $next)
     {
+        // 1. Try to identify tenant from domain/headers
         $tenant = $this->identifyTenant($request);
 
+        // 2. If not found, try from authenticated user
         if (!$tenant) {
             $tenant = $this->resolveTenantFromAuthenticatedUser($request);
         }
 
+        // 3. If still not found, check if this is a tenant route that requires context
         if (!$tenant) {
+            // Allow platform routes without tenant context
+            if ($this->isPlatformRoute($request)) {
+                return $next($request);
+            }
+            
+            // For tenant routes, tenant context is required
             return $this->handleTenantNotFound($request);
         }
 
+        // 4. Validate tenant is active
         if (!$tenant->isActive()) {
             return $this->handleInactiveTenant($request, $tenant);
         }
 
-        // Validate cross-tenant access for authenticated users
-        $user = auth('tenant')->user();
-        if ($user && $user->tenant_id !== $tenant->id) {
+        // 5. CRITICAL: Validate cross-tenant access for authenticated users
+        $user = $this->getAuthenticatedUser($request);
+        if ($user && isset($user->tenant_id) && $user->tenant_id !== $tenant->id) {
+            \Log::error('[RBAC] Cross-tenant access attempt detected', [
+                'user_id' => $user->id,
+                'user_tenant_id' => $user->tenant_id,
+                'requested_tenant_id' => $tenant->id,
+                'request_path' => $request->path(),
+            ]);
+            
             return response()->json([
                 'message' => 'User does not belong to this tenant',
                 'error' => 'Cross-tenant access denied'
             ], 403);
         }
 
-        // Set tenant context
+        // 6. Set tenant context for the request
         $this->setTenantContext($tenant, $request);
 
         return $next($request);
     }
+    
+    /**
+     * Get authenticated user from any guard
+     */
+    private function getAuthenticatedUser($request)
+    {
+        // Try sanctum first (API authentication)
+        $user = auth('sanctum')->user();
+        if ($user) {
+            return $user;
+        }
+        
+        // Try tenant guard
+        $user = auth('tenant')->user();
+        if ($user) {
+            return $user;
+        }
+        
+        // Try default guard
+        $user = auth()->user();
+        if ($user) {
+            return $user;
+        }
+        
+        // Try from request
+        return $request->user();
+    }
 
     private function resolveTenantFromAuthenticatedUser(Request $request): ?TenantEloquentModel
     {
-        $guards = ['tenant', 'api', config('auth.defaults.guard')];
-
-        foreach (array_filter(array_unique($guards)) as $guard) {
-            $tenant = $this->tenantFromUser(auth()->guard($guard)->user());
-
-            if ($tenant) {
-                return $tenant;
-            }
+        // Use the new helper to get user from any guard
+        $user = $this->getAuthenticatedUser($request);
+        
+        if ($user) {
+            return $this->tenantFromUser($user);
         }
-
-        return $this->tenantFromUser($request->user());
+        
+        return null;
     }
 
     private function tenantFromUser($user): ?TenantEloquentModel
@@ -66,21 +107,39 @@ class TenantContextMiddleware
             return null;
         }
 
-        $relationTenant = $user->tenant;
-
-        if ($relationTenant instanceof TenantEloquentModel) {
-            return $relationTenant;
+        // Try eager loaded relationship first (most efficient)
+        if (isset($user->tenant) && $user->tenant instanceof TenantEloquentModel) {
+            return $user->tenant;
         }
 
+        // Try relationship method
         if (method_exists($user, 'tenant')) {
-            $tenant = $user->tenant()->first();
-
-            if ($tenant instanceof TenantEloquentModel) {
-                return $tenant;
+            try {
+                $tenant = $user->tenant()->first();
+                if ($tenant instanceof TenantEloquentModel) {
+                    return $tenant;
+                }
+            } catch (\Exception $e) {
+                // Relationship might not be properly configured
+                \Log::warning('[RBAC] Failed to load tenant relationship', [
+                    'user_id' => $user->id,
+                    'tenant_id' => $user->tenant_id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
-        return TenantEloquentModel::find($user->tenant_id);
+        // Fallback: direct query by tenant_id
+        try {
+            return TenantEloquentModel::find($user->tenant_id);
+        } catch (\Exception $e) {
+            \Log::error('[RBAC] Failed to find tenant by ID', [
+                'user_id' => $user->id,
+                'tenant_id' => $user->tenant_id,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 
     private function identifyTenant(Request $request): ?TenantEloquentModel

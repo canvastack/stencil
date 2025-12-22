@@ -1,60 +1,108 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Printer } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { ArrowLeft, Download, Printer, FileSpreadsheet, FileText, Loader2, StickyNote } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useProductComparison } from '@/contexts/ProductComparisonContext';
 import { ComparisonTable } from '@/components/products/ComparisonTable';
+import { ComparisonNotesPanel } from '@/components/products/ComparisonNotesPanel';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { comparisonService } from '@/services/api/comparison';
+import type { ComparisonExportConfig } from '@/types/comparison';
 
 export default function ProductComparison() {
   const navigate = useNavigate();
-  const { comparedProducts } = useProductComparison();
+  const { comparedProducts, notes } = useProductComparison();
   const printRef = useRef<HTMLDivElement>(null);
+  const [showNotes, setShowNotes] = useState(false);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const handleExportPDF = async () => {
-    try {
-      const { jsPDF } = await import('jspdf');
-      const autoTableModule = await import('jspdf-autotable');
-      const autoTable = (autoTableModule as any).default || (autoTableModule as any);
+  const exportMutation = useMutation({
+    mutationFn: async (format: 'pdf' | 'excel') => {
+      const config: ComparisonExportConfig = {
+        format,
+        includeImages: true,
+        includeNotes: notes.length > 0,
+        includeMetadata: true,
+        orientation: 'landscape',
+      };
 
-      const doc = new (jsPDF as any)('l', 'mm', 'a4');
-      
-      doc.setFontSize(18);
-      doc.text('Product Comparison', 14, 20);
-      doc.setFontSize(11);
-      doc.text(`Comparing ${comparedProducts.length} products`, 14, 28);
+      const exportConfig = {
+        productIds: comparedProducts.map(p => p.id),
+        notes,
+        highlightDifferences: true,
+      };
 
-      const headers = [['Product', ...comparedProducts.map(p => p.name)]];
-      
-      const rows = [
-        ['Price', ...comparedProducts.map(p => `${p.currency || 'IDR'} ${p.price.toLocaleString()}`)],
-        ['Min Order', ...comparedProducts.map(p => `${p.minOrder || 0} ${p.priceUnit || 'pcs'}`)],
-        ['Lead Time', ...comparedProducts.map(p => p.leadTime || 'N/A')],
-        ['Material', ...comparedProducts.map(p => p.material || 'N/A')],
-        ['Category', ...comparedProducts.map(p => p.category?.name || 'N/A')],
-        ['Availability', ...comparedProducts.map(p => p.availability || 'in-stock')],
-      ];
-
-      autoTable(doc, {
-        head: headers,
-        body: rows,
-        startY: 35,
-        theme: 'striped',
-        headStyles: { fillColor: [59, 130, 246] },
+      return await comparisonService.exportComparison(exportConfig, config);
+    },
+    onSuccess: async (job, format) => {
+      toast.success(`${format.toUpperCase()} export started`, {
+        description: 'Your file will download when ready',
       });
 
-      doc.save(`product-comparison-${new Date().toISOString().slice(0, 10)}.pdf`);
-      toast.success('PDF exported successfully');
-    } catch (error) {
-      console.error('Export PDF error:', error);
-      toast.error('Failed to export PDF');
+      const checkStatus = setInterval(async () => {
+        try {
+          const updatedJob = await comparisonService.getExportJob(job.id);
+          
+          if (updatedJob.status === 'completed') {
+            clearInterval(checkStatus);
+            const blob = await comparisonService.downloadExport(job.id);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = updatedJob.fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success('Export downloaded successfully');
+          } else if (updatedJob.status === 'failed') {
+            clearInterval(checkStatus);
+            toast.error('Export failed', {
+              description: updatedJob.errorMessage || 'An error occurred',
+            });
+          }
+        } catch (error) {
+          console.error('Error checking export status:', error);
+        }
+      }, 2000);
+    },
+    onError: (error: any) => {
+      toast.error('Failed to start export', {
+        description: error?.message || 'An error occurred',
+      });
+    },
+  });
+
+  const handleExportPDF = async () => {
+    if (comparedProducts.length === 0) {
+      toast.error('No products to export');
+      return;
     }
+
+    exportMutation.mutate('pdf');
+  };
+
+  const handleExportExcel = async () => {
+    if (comparedProducts.length === 0) {
+      toast.error('No products to export');
+      return;
+    }
+
+    exportMutation.mutate('excel');
   };
 
   return (
@@ -86,16 +134,41 @@ export default function ProductComparison() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportPDF}
-                    className="gap-2"
-                    disabled={comparedProducts.length === 0}
-                  >
-                    <Download className="h-4 w-4" />
-                    Export PDF
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        disabled={comparedProducts.length === 0 || exportMutation.isPending}
+                      >
+                        {exportMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Exporting...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4" />
+                            Export
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Export Format</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleExportPDF} className="gap-2">
+                        <FileText className="h-4 w-4" />
+                        Export as PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
+                        <FileSpreadsheet className="h-4 w-4" />
+                        Export as Excel
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
                   <Button
                     variant="outline"
                     size="sm"
@@ -106,10 +179,25 @@ export default function ProductComparison() {
                     <Printer className="h-4 w-4" />
                     Print
                   </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowNotes(!showNotes)}
+                    className="gap-2"
+                    disabled={comparedProducts.length === 0}
+                  >
+                    <StickyNote className="h-4 w-4" />
+                    {showNotes ? 'Hide' : 'Show'} Notes
+                  </Button>
                 </div>
               </div>
             </Card>
           </div>
+
+          {showNotes && comparedProducts.length > 0 && (
+            <ComparisonNotesPanel products={comparedProducts} />
+          )}
 
           <ComparisonTable />
 

@@ -546,6 +546,14 @@ class AuthService {
     return this.getAuthToken();
   }
 
+  getUserIdFromStorage(): string | null {
+    return localStorage.getItem('user_id');
+  }
+
+  getTenantIdFromStorage(): string | null {
+    const tenant = this.getCurrentTenantFromStorage();
+    return tenant?.uuid || null;
+  }
 
 }
 

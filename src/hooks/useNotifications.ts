@@ -8,24 +8,27 @@ export const useNotifications = (options: {
   page?: number;
   limit?: number;
   unreadOnly?: boolean;
+  enablePolling?: boolean;
 } = {}) => {
+  const { enablePolling = true, ...queryOptions } = options;
+  
   return useQuery({
-    queryKey: queryKeys.notifications.list(options),
-    queryFn: () => notificationService.getNotifications(options),
+    queryKey: queryKeys.notifications.list(queryOptions),
+    queryFn: () => notificationService.getNotifications(queryOptions),
     staleTime: realtimeConfig.staleTime.notifications,
-    refetchInterval: realtimeConfig.polling.notifications,
-    refetchIntervalInBackground: true,
+    refetchInterval: enablePolling ? realtimeConfig.polling.notifications : false,
+    refetchIntervalInBackground: false, // Don't poll when tab is not visible
   });
 };
 
 // Get unread notifications count
-export const useUnreadNotifications = () => {
+export const useUnreadNotifications = (enablePolling: boolean = true) => {
   return useQuery({
     queryKey: queryKeys.notifications.unread(),
     queryFn: () => notificationService.getNotifications({ unreadOnly: true, limit: 100 }),
     staleTime: realtimeConfig.staleTime.notifications,
-    refetchInterval: realtimeConfig.polling.notifications,
-    refetchIntervalInBackground: true,
+    refetchInterval: enablePolling ? realtimeConfig.polling.notifications : false,
+    refetchIntervalInBackground: false, // Don't poll when tab is not visible
     select: (data) => ({
       count: data.notifications.length,
       notifications: data.notifications,

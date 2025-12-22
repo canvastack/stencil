@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Product } from '@/types/product';
+import type { ComparisonNote, SavedComparison } from '@/types/comparison';
 import { toast } from 'sonner';
 
 interface ProductComparisonContextType {
@@ -9,14 +10,21 @@ interface ProductComparisonContextType {
   addToCompare: (product: Product) => void;
   removeFromCompare: (productId: string) => void;
   clearComparison: () => void;
+  loadComparison: (comparison: SavedComparison) => void;
   maxProducts: number;
   isMaxReached: boolean;
+  notes: ComparisonNote[];
+  addNote: (productId: string, content: string) => void;
+  removeNote: (noteId: string) => void;
+  currentComparison?: SavedComparison;
+  setCurrentComparison: (comparison?: SavedComparison) => void;
 }
 
 const ProductComparisonContext = createContext<ProductComparisonContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'product-comparison';
-const MAX_PRODUCTS = 4;
+const NOTES_STORAGE_KEY = 'product-comparison-notes';
+const MAX_PRODUCTS = 10;
 
 export const ProductComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [comparedProducts, setComparedProducts] = useState<Product[]>(() => {
@@ -29,6 +37,18 @@ export const ProductComparisonProvider: React.FC<{ children: React.ReactNode }> 
     }
   });
 
+  const [notes, setNotes] = useState<ComparisonNote[]>(() => {
+    try {
+      const stored = localStorage.getItem(NOTES_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Failed to load notes from localStorage:', error);
+      return [];
+    }
+  });
+
+  const [currentComparison, setCurrentComparison] = useState<SavedComparison | undefined>();
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(comparedProducts));
@@ -36,6 +56,14 @@ export const ProductComparisonProvider: React.FC<{ children: React.ReactNode }> 
       console.error('Failed to save comparison to localStorage:', error);
     }
   }, [comparedProducts]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes));
+    } catch (error) {
+      console.error('Failed to save notes to localStorage:', error);
+    }
+  }, [notes]);
 
   const comparedProductIds = comparedProducts.map(p => p.id);
   const isMaxReached = comparedProducts.length >= MAX_PRODUCTS;
@@ -73,7 +101,33 @@ export const ProductComparisonProvider: React.FC<{ children: React.ReactNode }> 
 
   const clearComparison = useCallback(() => {
     setComparedProducts([]);
+    setNotes([]);
+    setCurrentComparison(undefined);
     toast.info('Comparison cleared');
+  }, []);
+
+  const loadComparison = useCallback((comparison: SavedComparison) => {
+    setCurrentComparison(comparison);
+    setNotes(comparison.config.notes || []);
+    toast.success(`Loaded comparison: ${comparison.name}`);
+  }, []);
+
+  const addNote = useCallback((productId: string, content: string) => {
+    const newNote: ComparisonNote = {
+      id: Date.now().toString(),
+      uuid: Date.now().toString(),
+      productId,
+      content,
+      createdBy: 'current-user',
+      createdAt: new Date().toISOString(),
+    };
+    setNotes(prev => [...prev, newNote]);
+    toast.success('Note added');
+  }, []);
+
+  const removeNote = useCallback((noteId: string) => {
+    setNotes(prev => prev.filter(n => n.id !== noteId));
+    toast.info('Note removed');
   }, []);
 
   const value: ProductComparisonContextType = {
@@ -83,8 +137,14 @@ export const ProductComparisonProvider: React.FC<{ children: React.ReactNode }> 
     addToCompare,
     removeFromCompare,
     clearComparison,
+    loadComparison,
     maxProducts: MAX_PRODUCTS,
     isMaxReached,
+    notes,
+    addNote,
+    removeNote,
+    currentComparison,
+    setCurrentComparison,
   };
 
   return (

@@ -19,25 +19,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Bookmark, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Bookmark, Plus, Trash2, Edit2, Check, X, Globe, Lock, Loader2, Copy } from 'lucide-react';
 import type { ProductFilters } from '@/types/product';
+import { SavedSearch } from '@/types/savedSearch';
+import { savedSearchesService } from '@/services/api/savedSearches';
 import { toast } from 'sonner';
 import { announceToScreenReader } from '@/lib/utils/accessibility';
-
-interface SavedSearch {
-  id: string;
-  name: string;
-  filters: ProductFilters;
-  createdAt: string;
-}
 
 interface SavedSearchesProps {
   currentFilters: ProductFilters;
   onLoadSearch: (filters: ProductFilters) => void;
   className?: string;
 }
-
-const STORAGE_KEY = 'product-catalog-saved-searches';
 
 export const SavedSearches: React.FC<SavedSearchesProps> = ({
   currentFilters,
@@ -47,90 +42,126 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [searchName, setSearchName] = useState('');
+  const [searchDescription, setSearchDescription] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadSavedSearches();
   }, []);
 
-  const loadSavedSearches = () => {
+  const loadSavedSearches = async () => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const searches = JSON.parse(stored) as SavedSearch[];
-        setSavedSearches(searches);
-      }
+      setIsLoading(true);
+      const searches = await savedSearchesService.getSavedSearches();
+      setSavedSearches(searches);
     } catch (error) {
       console.error('Failed to load saved searches:', error);
       toast.error('Failed to load saved searches');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const saveSavedSearches = (searches: SavedSearch[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(searches));
-      setSavedSearches(searches);
-    } catch (error) {
-      console.error('Failed to save searches:', error);
-      toast.error('Failed to save search');
-    }
-  };
-
-  const handleSaveCurrentSearch = () => {
+  const handleSaveCurrentSearch = async () => {
     if (!searchName.trim()) {
       toast.error('Please enter a name for this search');
       return;
     }
 
-    const newSearch: SavedSearch = {
-      id: Date.now().toString(),
-      name: searchName.trim(),
-      filters: {
-        ...currentFilters,
-        page: 1,
-      },
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      setIsSaving(true);
+      const newSearch = await savedSearchesService.createSavedSearch({
+        name: searchName.trim(),
+        description: searchDescription.trim() || undefined,
+        filters: {
+          ...currentFilters,
+          page: 1,
+        },
+        isPublic,
+      });
 
-    const updatedSearches = [...savedSearches, newSearch];
-    saveSavedSearches(updatedSearches);
-
-    setShowSaveDialog(false);
-    setSearchName('');
-    toast.success(`Search "${newSearch.name}" saved successfully`);
-    announceToScreenReader(`Search "${newSearch.name}" saved successfully`);
-  };
-
-  const handleLoadSearch = (search: SavedSearch) => {
-    onLoadSearch(search.filters);
-    toast.success(`Loaded search: ${search.name}`);
-    announceToScreenReader(`Loaded search: ${search.name}`);
-  };
-
-  const handleDeleteSearch = (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete the search "${name}"?`)) {
-      const updatedSearches = savedSearches.filter(s => s.id !== id);
-      saveSavedSearches(updatedSearches);
-      toast.success(`Search "${name}" deleted`);
-      announceToScreenReader(`Search "${name}" deleted`);
+      setSavedSearches([newSearch, ...savedSearches]);
+      setShowSaveDialog(false);
+      setSearchName('');
+      setSearchDescription('');
+      setIsPublic(false);
+      toast.success(`Search "${newSearch.name}" saved successfully`);
+      announceToScreenReader(`Search "${newSearch.name}" saved successfully`);
+    } catch (error) {
+      console.error('Failed to save search:', error);
+      toast.error('Failed to save search');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const handleRenameSearch = (id: string, newName: string) => {
+  const handleLoadSearch = async (search: SavedSearch) => {
+    try {
+      await savedSearchesService.incrementUsage(search.uuid);
+      onLoadSearch(search.filters);
+      toast.success(`Loaded search: ${search.name}`);
+      announceToScreenReader(`Loaded search: ${search.name}`);
+    } catch (error) {
+      onLoadSearch(search.filters);
+    }
+  };
+
+  const handleDeleteSearch = async (uuid: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete the search "${name}"?`)) {
+      return;
+    }
+
+    try {
+      await savedSearchesService.deleteSavedSearch(uuid);
+      setSavedSearches(savedSearches.filter(s => s.uuid !== uuid));
+      toast.success(`Search "${name}" deleted`);
+      announceToScreenReader(`Search "${name}" deleted`);
+    } catch (error) {
+      console.error('Failed to delete search:', error);
+      toast.error('Failed to delete search');
+    }
+  };
+
+  const handleRenameSearch = async (uuid: string, newName: string) => {
     if (!newName.trim()) {
       toast.error('Search name cannot be empty');
       return;
     }
 
-    const updatedSearches = savedSearches.map(s =>
-      s.id === id ? { ...s, name: newName.trim() } : s
-    );
-    saveSavedSearches(updatedSearches);
-    setEditingId(null);
-    setEditingName('');
-    toast.success('Search renamed successfully');
-    announceToScreenReader('Search renamed successfully');
+    try {
+      const updated = await savedSearchesService.updateSavedSearch(uuid, {
+        name: newName.trim(),
+      });
+      setSavedSearches(savedSearches.map(s =>
+        s.uuid === uuid ? updated : s
+      ));
+      setEditingId(null);
+      setEditingName('');
+      toast.success('Search renamed successfully');
+      announceToScreenReader('Search renamed successfully');
+    } catch (error) {
+      console.error('Failed to rename search:', error);
+      toast.error('Failed to rename search');
+    }
+  };
+
+  const handleDuplicateSearch = async (uuid: string, name: string) => {
+    try {
+      const duplicated = await savedSearchesService.duplicateSavedSearch(
+        uuid,
+        `${name} (Copy)`
+      );
+      setSavedSearches([duplicated, ...savedSearches]);
+      toast.success(`Search duplicated as "${duplicated.name}"`);
+      announceToScreenReader(`Search duplicated as "${duplicated.name}"`);
+    } catch (error) {
+      console.error('Failed to duplicate search:', error);
+      toast.error('Failed to duplicate search');
+    }
   };
 
   const getFilterSummary = (filters: ProductFilters): string => {
@@ -184,7 +215,12 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           
-          {savedSearches.length === 0 ? (
+          {isLoading ? (
+            <div className="px-2 py-8 text-center">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Loading saved searches...</p>
+            </div>
+          ) : savedSearches.length === 0 ? (
             <div className="px-2 py-8 text-center text-sm text-muted-foreground">
               <Bookmark className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No saved searches yet</p>
@@ -194,17 +230,17 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
             <div className="max-h-[400px] overflow-y-auto">
               {savedSearches.map((search) => (
                 <div
-                  key={search.id}
+                  key={search.uuid}
                   className="px-2 py-2 hover:bg-accent rounded-sm group"
                 >
-                  {editingId === search.id ? (
+                  {editingId === search.uuid ? (
                     <div className="flex items-center gap-1">
                       <Input
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
-                            handleRenameSearch(search.id, editingName);
+                            handleRenameSearch(search.uuid, editingName);
                           } else if (e.key === 'Escape') {
                             setEditingId(null);
                             setEditingName('');
@@ -216,7 +252,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRenameSearch(search.id, editingName)}
+                        onClick={() => handleRenameSearch(search.uuid, editingName)}
                         className="h-7 w-7 p-0"
                       >
                         <Check className="h-3 w-3" />
@@ -240,7 +276,24 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
                           onClick={() => handleLoadSearch(search)}
                           className="flex-1 text-left"
                         >
-                          <div className="font-medium text-sm">{search.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{search.name}</span>
+                            {search.isPublic ? (
+                              <Globe className="h-3 w-3 text-muted-foreground" />
+                            ) : (
+                              <Lock className="h-3 w-3 text-muted-foreground" />
+                            )}
+                            {search.usageCount > 0 && (
+                              <Badge variant="outline" className="text-xs px-1">
+                                {search.usageCount}
+                              </Badge>
+                            )}
+                          </div>
+                          {search.description && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {search.description}
+                            </div>
+                          )}
                           <div className="text-xs text-muted-foreground mt-1">
                             {getFilterSummary(search.filters)}
                           </div>
@@ -251,7 +304,19 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setEditingId(search.id);
+                              handleDuplicateSearch(search.uuid, search.name);
+                            }}
+                            className="h-7 w-7 p-0"
+                            aria-label={`Duplicate search "${search.name}"`}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingId(search.uuid);
                               setEditingName(search.name);
                             }}
                             className="h-7 w-7 p-0"
@@ -264,7 +329,7 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteSearch(search.id, search.name);
+                              handleDeleteSearch(search.uuid, search.name);
                             }}
                             className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                             aria-label={`Delete search "${search.name}"`}
@@ -291,30 +356,56 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
           <DialogHeader>
             <DialogTitle>Save Current Search</DialogTitle>
             <DialogDescription>
-              Give this search a name so you can quickly access it later.
+              Give this search a name and description so you and your team can quickly access it later.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="search-name">Search Name</Label>
+              <Label htmlFor="search-name">
+                Search Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="search-name"
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
-                placeholder="e.g., Published Featured Products"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSaveCurrentSearch();
-                  }
-                }}
+                placeholder="e.g., Out of Stock Products"
+                disabled={isSaving}
                 autoFocus
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="search-description">Description (Optional)</Label>
+              <Textarea
+                id="search-description"
+                value={searchDescription}
+                onChange={(e) => setSearchDescription(e.target.value)}
+                placeholder="Describe what this search is for..."
+                rows={2}
+                disabled={isSaving}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="is-public"
+                checked={isPublic}
+                onCheckedChange={(checked) => setIsPublic(checked as boolean)}
+                disabled={isSaving}
+              />
+              <Label
+                htmlFor="is-public"
+                className="text-sm font-normal cursor-pointer flex items-center gap-2"
+              >
+                <Globe className="h-3 w-3" />
+                Make this search public (visible to all team members)
+              </Label>
             </div>
             
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Current Filters</Label>
-              <div className="text-sm p-3 bg-muted rounded-md">
+              <div className="text-sm p-3 bg-muted rounded-md max-h-32 overflow-y-auto">
                 {getFilterSummary(currentFilters)}
               </div>
             </div>
@@ -326,12 +417,22 @@ export const SavedSearches: React.FC<SavedSearchesProps> = ({
               onClick={() => {
                 setShowSaveDialog(false);
                 setSearchName('');
+                setSearchDescription('');
+                setIsPublic(false);
               }}
+              disabled={isSaving}
             >
               Cancel
             </Button>
-            <Button onClick={handleSaveCurrentSearch}>
-              Save Search
+            <Button onClick={handleSaveCurrentSearch} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Search'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

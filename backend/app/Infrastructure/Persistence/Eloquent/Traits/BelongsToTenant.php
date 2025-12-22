@@ -19,60 +19,80 @@ trait BelongsToTenant
         });
 
         static::addGlobalScope('tenant', function (Builder $builder) {
-            if ($tenant = self::resolveTenant()) {
+            $tenant = self::resolveTenant();
+            
+            if ($tenant) {
                 $builder->where($builder->getModel()->getTable() . '.tenant_id', $tenant->id);
             }
+            // NOTE: Logging removed to prevent infinite recursion
+            // Explicit tenant filtering in controllers provides safety net
         });
     }
 
     protected static function resolveTenant(): ?BaseTenant
     {
-        if (function_exists('tenant')) {
-            $tenant = tenant();
-            if ($tenant instanceof BaseTenant) {
-                return $tenant;
+        // Use static cache to prevent infinite recursion
+        static $resolving = false;
+        static $cachedTenant = null;
+        
+        if ($resolving) {
+            return $cachedTenant;
+        }
+        
+        $resolving = true;
+        
+        try {
+            // 1. Try Spatie Multitenancy helper function
+            if (function_exists('tenant')) {
+                $tenant = tenant();
+                if ($tenant instanceof BaseTenant) {
+                    $cachedTenant = $tenant;
+                    return $tenant;
+                }
             }
-        }
 
-        if (app()->bound('tenant.current')) {
-            $tenant = app('tenant.current');
-            if ($tenant instanceof BaseTenant) {
-                return $tenant;
+            // 2. Try from app container
+            if (app()->bound('current_tenant')) {
+                $tenant = app('current_tenant');
+                if ($tenant instanceof BaseTenant) {
+                    $cachedTenant = $tenant;
+                    return $tenant;
+                }
             }
-        }
 
-        if (app()->bound('current_tenant')) {
-            $tenant = app('current_tenant');
-            if ($tenant instanceof BaseTenant) {
-                return $tenant;
+            // 3. Try from config
+            $configTenant = config('multitenancy.current_tenant');
+            if ($configTenant instanceof BaseTenant) {
+                $cachedTenant = $configTenant;
+                return $configTenant;
             }
-        }
 
-        $configTenant = config('multitenancy.current_tenant');
-        if ($configTenant instanceof BaseTenant) {
-            return $configTenant;
-        }
+            // 4. Try from request attributes (set by middleware)
+            if (app()->bound('request')) {
+                $request = app('request');
+                $requestTenant = $request->attributes->get('tenant')
+                    ?? $request->get('current_tenant');
 
-        if (app()->bound('request')) {
-            $request = app('request');
-            $requestTenant = $request->attributes->get('tenant')
-                ?? $request->attributes->get('current_tenant')
-                ?? $request->get('current_tenant');
-
-            if ($requestTenant instanceof BaseTenant) {
-                return $requestTenant;
+                if ($requestTenant instanceof BaseTenant) {
+                    $cachedTenant = $requestTenant;
+                    return $requestTenant;
+                }
             }
-        }
 
-        $user = auth()->user();
-        if ($user && isset($user->tenant_id)) {
-            $tenant = $user->tenant ?? BaseTenant::find($user->tenant_id);
-            if ($tenant instanceof BaseTenant) {
-                return $tenant;
+            // 5. SIMPLE FALLBACK: Try default auth guard only (avoid infinite loop)
+            $user = auth('sanctum')->user();
+            if ($user && isset($user->tenant_id)) {
+                $tenant = BaseTenant::find($user->tenant_id);
+                if ($tenant instanceof BaseTenant) {
+                    $cachedTenant = $tenant;
+                    return $tenant;
+                }
             }
-        }
 
-        return null;
+            return null;
+        } finally {
+            $resolving = false;
+        }
     }
 
     public function scopeForTenant(Builder $query, BaseTenant|string $tenant): Builder

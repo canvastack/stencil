@@ -229,19 +229,149 @@ All colors MUST be HSL.
   }
 
   /* Skip to main content link for accessibility */
-  .skip-to-main {
+  .skip-to-main,
+  .skip-to-content {
     position: absolute;
-    top: -40px;
+    top: -100px;
     left: 0;
     background: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
-    padding: 8px 16px;
+    padding: 12px 24px;
     text-decoration: none;
-    z-index: 100;
+    font-weight: 600;
+    border-radius: 0 0 4px 0;
+    z-index: 9999;
+    transition: top 0.2s ease-in-out;
   }
 
-  .skip-to-main:focus {
+  .skip-to-main:focus,
+  .skip-to-content:focus {
     top: 0;
+    outline: 3px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  /* =====================================
+     Smooth Theme Transitions
+  ===================================== */
+  
+  .theme-transitioning,
+  .theme-transitioning *,
+  .theme-transitioning *::before,
+  .theme-transitioning *::after {
+    transition: background-color 0.3s ease,
+                border-color 0.3s ease,
+                color 0.3s ease,
+                fill 0.3s ease,
+                stroke 0.3s ease !important;
+    transition-delay: 0s !important;
+  }
+
+  /* Prevent FOUC on theme switch */
+  html {
+    color-scheme: light dark;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  /* Dark mode image optimization */
+  .dark img:not([data-no-dark-filter]) {
+    filter: brightness(0.95) contrast(0.95);
+    transition: filter 0.3s ease;
+  }
+
+  .dark img[data-no-dark-filter] {
+    filter: none;
+  }
+
+  /* =====================================
+     Enhanced Dark Mode Support
+  ===================================== */
+  
+  /* Dark mode scrollbar */
+  .dark ::-webkit-scrollbar-track {
+    background: hsl(213 24% 18%);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(30 100% 50%);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(30 100% 60%);
+  }
+
+  /* Dark mode selection */
+  .dark ::selection {
+    background: hsl(30 100% 50% / 0.3);
+    color: hsl(210 40% 98%);
+  }
+
+  /* =====================================
+     Touch Target Optimization (Mobile)
+  ===================================== */
+  
+  @media (max-width: 768px) {
+    /* Ensure minimum touch target size on mobile */
+    button,
+    [role="button"],
+    a,
+    input[type="checkbox"],
+    input[type="radio"] {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 8px;
+    }
+
+    /* Larger tap targets for interactive elements */
+    .touch-target {
+      min-width: 48px;
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  /* =====================================
+     Loading States & Skeletons
+  ===================================== */
+  
+  .loading-skeleton {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted) / 0.6) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: loading-shimmer 1.5s ease-in-out infinite;
+    border-radius: 4px;
+  }
+
+  @keyframes loading-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  /* =====================================
+     Keyboard Navigation Hints
+  ===================================== */
+  
+  .keyboard-user *:focus-visible {
+    outline: 3px solid hsl(var(--primary));
+    outline-offset: 3px;
+  }
+
+  .mouse-user *:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
   }
 }
 

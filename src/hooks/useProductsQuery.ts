@@ -31,12 +31,46 @@ export const useProductsQuery = (filters?: ProductFilters) => {
       }
 
       logger.debug('Fetching products', { filters, tenantId: tenant.uuid });
-      return await productsService.getProducts(filters, signal);
+      
+      try {
+        return await productsService.getProducts(filters, signal);
+      } catch (error: any) {
+        // Handle RBAC violations specifically
+        if (error?.code === 'TENANT_ISOLATION_VIOLATION') {
+          logger.error('[RBAC] Tenant isolation violation detected', {
+            error: error.message,
+            details: error.details,
+            tenantId: tenant.uuid,
+          });
+          
+          toast.error('Critical Security Error', {
+            description: 'Data isolation violation detected. Please contact support immediately.',
+            duration: 10000,
+          });
+          
+          // Return empty result set to prevent any cross-tenant data display
+          return {
+            data: [],
+            current_page: 1,
+            last_page: 1,
+            per_page: filters?.per_page || 12,
+            total: 0,
+            from: 0,
+            to: 0,
+          };
+        }
+        
+        throw error;
+      }
     },
     enabled: !!tenant?.uuid && !!user?.id,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     retry: (failureCount, error: any) => {
+      // Never retry on RBAC violations
+      if (error?.code === 'TENANT_ISOLATION_VIOLATION') {
+        return false;
+      }
       if (error instanceof AuthError || error instanceof PermissionError) {
         return false;
       }
@@ -318,17 +352,33 @@ export const useBulkDeleteProductsMutation = (
         failedIds: [],
       };
 
+      let lastProgressUpdate = Date.now();
+      const PROGRESS_THROTTLE_MS = 200;
+
       const results = await Promise.allSettled(
         productIds.map(async (id) => {
           try {
             await productsService.deleteProduct(id);
             progress.completed++;
-            onProgress?.(progress);
+            
+            const now = Date.now();
+            const shouldUpdate = now - lastProgressUpdate >= PROGRESS_THROTTLE_MS || 
+                                progress.completed === productIds.length;
+            
+            if (shouldUpdate && onProgress) {
+              onProgress({ ...progress });
+              lastProgressUpdate = now;
+            }
+            
             return { success: true, id };
           } catch (error) {
             progress.failed++;
             progress.failedIds.push(id);
-            onProgress?.(progress);
+            
+            if (onProgress) {
+              onProgress({ ...progress });
+            }
+            
             logger.error('Failed to delete product in bulk', { 
               error: error instanceof Error ? error.message : 'Unknown error', 
               productId: id 

@@ -146,6 +146,11 @@ const ShippingCarriers = lazy(() => import("./pages/admin/shipping/ShippingCarri
 const ShippingTracking = lazy(() => import("./pages/admin/shipping/ShippingTracking"));
 const ShippingReports = lazy(() => import("./pages/admin/shipping/ShippingReports"));
 
+// Deployment & Feature Management Pages
+const FeatureFlagsManagement = lazy(() => import("./pages/admin/system/FeatureFlagsManagement"));
+const StatusPage = lazy(() => import("./pages/StatusPage"));
+const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
+
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -191,6 +196,8 @@ function App() {
                   <Route path="/products/:slug" element={<ProductDetail />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/faq" element={<FAQ />} />
+                  <Route path="/status" element={<Suspense fallback={<LoadingFallback />}><StatusPage /></Suspense>} />
+                  <Route path="/announcements" element={<Suspense fallback={<LoadingFallback />}><AnnouncementsPage /></Suspense>} />
                   
                   {/* Tenant-Scoped Public Routes */}
                   <Route path="/:tenantSlug" element={<Home />} />
@@ -236,6 +243,7 @@ function App() {
                   <Route path="appearance/*" element={<div className="p-6">Platform Appearance - Coming Soon</div>} />
                   <Route path="users/*" element={<div className="p-6">Platform User Management - Coming Soon</div>} />
                   <Route path="system" element={<div className="p-6">System - Coming Soon</div>} />
+                  <Route path="system/feature-flags" element={<Suspense fallback={<LoadingFallback />}><FeatureFlagsManagement /></Suspense>} />
                   <Route path="activity" element={<div className="p-6">Platform Activity Monitor - Coming Soon</div>} />
                   <Route path="settings/*" element={<div className="p-6">Platform Settings - Coming Soon</div>} />
                 </Route>

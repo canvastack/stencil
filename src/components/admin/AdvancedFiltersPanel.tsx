@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Filter, X, ChevronDown } from 'lucide-react';
 import type { ProductFilters } from '@/types/product';
 import { cn } from '@/lib/utils';
+import { DateRangeFilter } from './filters/DateRangeFilter';
+import { PriceRangeFilter } from './filters/PriceRangeFilter';
+import { MultiSelectFilter, type MultiSelectOption } from './filters/MultiSelectFilter';
+import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
 
 interface AdvancedFiltersPanelProps {
   filters: ProductFilters;
@@ -24,17 +27,84 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<ProductFilters>(filters);
+  
+  const [createdDateRange, setCreatedDateRange] = useState<DateRange | undefined>(
+    filters.createdAfter && filters.createdBefore
+      ? {
+          from: new Date(filters.createdAfter),
+          to: new Date(filters.createdBefore),
+        }
+      : undefined
+  );
+  
+  const [updatedDateRange, setUpdatedDateRange] = useState<DateRange | undefined>(
+    filters.updatedAfter && filters.updatedBefore
+      ? {
+          from: new Date(filters.updatedAfter),
+          to: new Date(filters.updatedBefore),
+        }
+      : undefined
+  );
 
-  const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
-    if (key === 'page' || key === 'per_page' || key === 'search') return false;
-    return value !== undefined && value !== '' && value !== null;
-  }).length;
+  useEffect(() => {
+    setLocalFilters(filters);
+    setCreatedDateRange(
+      filters.createdAfter && filters.createdBefore
+        ? { from: new Date(filters.createdAfter), to: new Date(filters.createdBefore) }
+        : undefined
+    );
+    setUpdatedDateRange(
+      filters.updatedAfter && filters.updatedBefore
+        ? { from: new Date(filters.updatedAfter), to: new Date(filters.updatedBefore) }
+        : undefined
+    );
+  }, [filters]);
+
+  const activeFiltersCount = useMemo(() => {
+    return Object.entries(filters).filter(([key, value]) => {
+      if (key === 'page' || key === 'per_page' || key === 'search') return false;
+      if (Array.isArray(value)) return value.length > 0;
+      return value !== undefined && value !== '' && value !== null;
+    }).length;
+  }, [filters]);
 
   const handleLocalFilterChange = (key: keyof ProductFilters, value: any) => {
     setLocalFilters(prev => ({
       ...prev,
       [key]: value,
     }));
+  };
+
+  const handleCreatedDateRangeChange = (range?: DateRange) => {
+    setCreatedDateRange(range);
+    if (range?.from && range?.to) {
+      setLocalFilters(prev => ({
+        ...prev,
+        createdAfter: format(range.from!, 'yyyy-MM-dd'),
+        createdBefore: format(range.to!, 'yyyy-MM-dd'),
+      }));
+    } else {
+      setLocalFilters(prev => {
+        const { createdAfter, createdBefore, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  const handleUpdatedDateRangeChange = (range?: DateRange) => {
+    setUpdatedDateRange(range);
+    if (range?.from && range?.to) {
+      setLocalFilters(prev => ({
+        ...prev,
+        updatedAfter: format(range.from!, 'yyyy-MM-dd'),
+        updatedBefore: format(range.to!, 'yyyy-MM-dd'),
+      }));
+    } else {
+      setLocalFilters(prev => {
+        const { updatedAfter, updatedBefore, ...rest } = prev;
+        return rest;
+      });
+    }
   };
 
   const handleApplyFilters = () => {
@@ -49,14 +119,40 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
       search: filters.search,
     };
     setLocalFilters(resetFilters);
+    setCreatedDateRange(undefined);
+    setUpdatedDateRange(undefined);
     onClearFilters();
     setOpen(false);
   };
 
-  const priceRange = {
-    min: localFilters.priceMin ?? 0,
-    max: localFilters.priceMax ?? 10000000,
-  };
+  const categoryOptions: MultiSelectOption[] = useMemo(
+    () => [
+      { label: 'Etching', value: 'etching', description: 'Chemical etching products' },
+      { label: 'Engraving', value: 'engraving', description: 'Laser & mechanical engraving' },
+      { label: 'Custom', value: 'custom', description: 'Custom fabrication' },
+      { label: 'Awards', value: 'award', description: 'Trophy & award products' },
+    ],
+    []
+  );
+
+  const vendorOptions: MultiSelectOption[] = useMemo(
+    () => [
+      { label: 'Internal', value: 'internal', description: 'In-house production' },
+      { label: 'Partner A', value: 'partner-a', description: 'External vendor' },
+      { label: 'Partner B', value: 'partner-b', description: 'External vendor' },
+    ],
+    []
+  );
+
+  const tagOptions: MultiSelectOption[] = useMemo(
+    () => [
+      { label: 'New Arrival', value: 'new-arrival' },
+      { label: 'Best Seller', value: 'best-seller' },
+      { label: 'On Sale', value: 'on-sale' },
+      { label: 'Limited Edition', value: 'limited-edition' },
+    ],
+    []
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -90,44 +186,72 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
           </div>
 
           <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-            {/* Price Range */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Price Range (IDR)</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="price-min" className="text-xs text-muted-foreground">
-                    Min
-                  </Label>
-                  <Input
-                    id="price-min"
-                    type="number"
-                    min="0"
-                    value={localFilters.priceMin ?? ''}
-                    onChange={(e) => handleLocalFilterChange('priceMin', e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder="0"
-                    className="h-9"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="price-max" className="text-xs text-muted-foreground">
-                    Max
-                  </Label>
-                  <Input
-                    id="price-max"
-                    type="number"
-                    min="0"
-                    value={localFilters.priceMax ?? ''}
-                    onChange={(e) => handleLocalFilterChange('priceMax', e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder="No limit"
-                    className="h-9"
-                  />
-                </div>
-              </div>
-            </div>
+            <DateRangeFilter
+              label="Created Date"
+              value={createdDateRange}
+              onChange={handleCreatedDateRangeChange}
+              placeholder="Select date range"
+            />
 
             <Separator />
 
-            {/* Stock Status */}
+            <DateRangeFilter
+              label="Updated Date"
+              value={updatedDateRange}
+              onChange={handleUpdatedDateRangeChange}
+              placeholder="Select date range"
+            />
+
+            <Separator />
+
+            <PriceRangeFilter
+              label="Price Range"
+              min={0}
+              max={10000000}
+              value={[localFilters.priceMin ?? 0, localFilters.priceMax ?? 10000000]}
+              onChange={([min, max]) => {
+                handleLocalFilterChange('priceMin', min === 0 ? undefined : min);
+                handleLocalFilterChange('priceMax', max === 10000000 ? undefined : max);
+              }}
+              currency="IDR"
+              step={10000}
+            />
+
+            <Separator />
+
+            <MultiSelectFilter
+              label="Categories"
+              options={categoryOptions}
+              value={localFilters.categories ?? []}
+              onChange={(values) => handleLocalFilterChange('categories', values.length > 0 ? values : undefined)}
+              placeholder="Select categories..."
+              maxDisplay={3}
+            />
+
+            <Separator />
+
+            <MultiSelectFilter
+              label="Tags"
+              options={tagOptions}
+              value={localFilters.tags ?? []}
+              onChange={(values) => handleLocalFilterChange('tags', values.length > 0 ? values : undefined)}
+              placeholder="Select tags..."
+              maxDisplay={3}
+            />
+
+            <Separator />
+
+            <MultiSelectFilter
+              label="Vendors"
+              options={vendorOptions}
+              value={localFilters.vendors ?? []}
+              onChange={(values) => handleLocalFilterChange('vendors', values.length > 0 ? values : undefined)}
+              placeholder="Select vendors..."
+              maxDisplay={3}
+            />
+
+            <Separator />
+
             <div className="space-y-3">
               <Label className="text-sm font-medium">Stock Status</Label>
               <div className="space-y-2">
@@ -151,7 +275,6 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
 
             <Separator />
 
-            {/* Featured */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">Product Type</Label>
               <div className="space-y-2">
@@ -175,28 +298,6 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
 
             <Separator />
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category-filter" className="text-sm font-medium">
-                Category
-              </Label>
-              <select
-                id="category-filter"
-                value={localFilters.category || ''}
-                onChange={(e) => handleLocalFilterChange('category', e.target.value || undefined)}
-                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">All Categories</option>
-                <option value="etching">Etching</option>
-                <option value="engraving">Engraving</option>
-                <option value="custom">Custom</option>
-                <option value="award">Awards</option>
-              </select>
-            </div>
-
-            <Separator />
-
-            {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="status-filter" className="text-sm font-medium">
                 Status
@@ -216,7 +317,6 @@ export const AdvancedFiltersPanel: React.FC<AdvancedFiltersPanelProps> = ({
 
             <Separator />
 
-            {/* Sort Options */}
             <div className="space-y-2">
               <Label htmlFor="sort-filter" className="text-sm font-medium">
                 Sort By
