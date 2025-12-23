@@ -235,7 +235,7 @@ export const analyticsService = {
         '/analytics/products/overview'
       );
       
-      return response.data.overview;
+      return response.overview;
     } catch (error) {
       console.error('Failed to load catalog overview:', error);
       throw error;
@@ -255,7 +255,7 @@ export const analyticsService = {
         `/analytics/products/performance?${params.toString()}`
       );
       
-      return response.data.performance;
+      return response.performance;
     } catch (error) {
       console.error('Failed to load product performance:', error);
       throw error;
@@ -268,7 +268,7 @@ export const analyticsService = {
         '/analytics/products/inventory'
       );
       
-      return response.data.inventory;
+      return response.inventory;
     } catch (error) {
       console.error('Failed to load inventory health:', error);
       throw error;
@@ -288,7 +288,7 @@ export const analyticsService = {
         `/analytics/products/revenue-by-category?${params.toString()}`
       );
       
-      return response.data.categories;
+      return response.categories;
     } catch (error) {
       console.error('Failed to load revenue by category:', error);
       throw error;

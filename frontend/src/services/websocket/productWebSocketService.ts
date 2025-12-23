@@ -52,6 +52,11 @@ export class ProductWebSocketService {
   }
 
   connect(tenantId: string, userId?: string): void {
+    if (!envConfig.features.enableWebSocket) {
+      logger.debug('WebSocket disabled by feature flag', { tenantId });
+      return;
+    }
+
     if (this.echo && this.currentTenantId === tenantId) {
       logger.debug('WebSocket already connected to tenant', { tenantId });
       return;
@@ -113,16 +118,29 @@ export class ProductWebSocketService {
         });
 
         this.echo.connector.pusher.connection.bind('disconnected', () => {
-          logger.warn('Pusher disconnected');
+          logger.debug('Pusher disconnected');
+        });
+
+        this.echo.connector.pusher.connection.bind('unavailable', () => {
+          logger.debug('Pusher unavailable - WebSocket server not running');
+          this.disconnect();
+        });
+
+        this.echo.connector.pusher.connection.bind('failed', () => {
+          logger.debug('Pusher connection failed - WebSocket server not reachable');
+          this.disconnect();
         });
 
         this.echo.connector.pusher.connection.bind('error', (error: any) => {
-          logger.error('Pusher error', { error });
+          logger.debug('Pusher error', { error: error?.message || 'Connection error' });
         });
       }
 
     } catch (error) {
-      logger.error('Failed to create WebSocket connection', { error });
+      logger.debug('Failed to create WebSocket connection', { 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        hint: 'WebSocket server may not be running. Application will continue without real-time updates.'
+      });
     }
   }
 

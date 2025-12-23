@@ -367,7 +367,7 @@
                 
                 <div class="progress-steps">
                     <div class="progress-line"></div>
-                    <div class="progress-line-filled" style="width: {{ $progressPercentage }}%;"></div>
+                    <div class="progress-line-filled" style="width: {{ $progressPercentage ?? 0 }}%"></div>
                     
                     <div class="progress-step {{ in_array('submitted', $completedSteps) ? 'completed' : '' }}">1</div>
                     <div class="progress-step {{ in_array('reviewed', $completedSteps) ? 'completed' : (in_array('reviewing', $activeSteps) ? 'active' : '') }}">2</div>

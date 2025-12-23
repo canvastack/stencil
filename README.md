@@ -540,7 +540,7 @@ xl: 1280px  /* Large desktop */
 API documentation menggunakan **Modular OpenAPI 3.0** structure:
 
 ```
-docs/openapi/
+openapi/
 ├── openapi.yaml              # Main file dengan references
 ├── paths/                    # Endpoint definitions
 │   ├── products.yaml

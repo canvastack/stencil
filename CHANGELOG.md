@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Documentation Created/Updated:**
 - ✅ `docs/TESTING/VISUAL_REGRESSION_TESTING.md` (700+ lines comprehensive guide)
 - ✅ `CHROMATIC_SETUP_GUIDE.md` (quick 5-minute setup reference)
-- ✅ `docs/ROADMAPS/TESTING/INFRASTRUCTURE/CICD_CONFIGURATION_DASHBOARD_ROADMAP.md` (1456 lines)
+- ✅ `docs/TESTING/INFRASTRUCTURE/CICD_CONFIGURATION_DASHBOARD_ROADMAP.md` (1456 lines)
 - ✅ Updated testing strategy, summary, and phase 5 roadmap documentation
 
 #### **📋 Core Development Policies - Strict Enforcement Documentation**

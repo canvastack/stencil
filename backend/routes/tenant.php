@@ -279,6 +279,10 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/customers/segmentation', [AnalyticsController::class, 'customerSegmentation'])->name('tenant.analytics.customers.segmentation');
             Route::get('/vendors', [AnalyticsController::class, 'vendors'])->name('tenant.analytics.vendors');
             Route::get('/products', [AnalyticsController::class, 'products'])->name('tenant.analytics.products');
+            Route::get('/products/overview', [AnalyticsController::class, 'productsOverview'])->name('tenant.analytics.products.overview');
+            Route::get('/products/performance', [AnalyticsController::class, 'productsPerformance'])->name('tenant.analytics.products.performance');
+            Route::get('/products/inventory', [AnalyticsController::class, 'productsInventory'])->name('tenant.analytics.products.inventory');
+            Route::get('/products/revenue-by-category', [AnalyticsController::class, 'revenueByCategory'])->name('tenant.analytics.products.revenue_by_category');
             Route::get('/inventory', [AnalyticsController::class, 'inventory'])->name('tenant.analytics.inventory');
             
             // Reports

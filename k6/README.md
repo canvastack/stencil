@@ -335,7 +335,7 @@ curl -X POST http://localhost:8000/api/v1/tenant/login \
 
 - [k6 Documentation](https://k6.io/docs/)
 - [k6 Examples](https://k6.io/docs/examples/)
-- [Performance Testing Best Practices](https://k6.io/docs/testing-guides/best-practices/)
+- [Performance Testing Best Practices](https://k6.io/roadmaps/TESTING-guides/best-practices/)
 - [Grafana k6 Cloud](https://k6.io/cloud/)
 
 ---

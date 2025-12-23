@@ -12,13 +12,15 @@ export const queryClient = new QueryClient({
       retry: (failureCount, error: any) => {
         // Don't retry on 4xx errors except 408, 429
         if (error?.response?.status >= 400 && error?.response?.status < 500) {
+          // 408 Request Timeout, 429 Too Many Requests - retry
           if ([408, 429].includes(error.response.status)) {
-            return failureCount < 3;
+            return failureCount < 2;
           }
+          // 404 Not Found, 401 Unauthorized, etc - don't retry
           return false;
         }
-        // Retry up to 3 times for network errors and 5xx
-        return failureCount < 3;
+        // Retry up to 2 times for network errors and 5xx (reduced from 3)
+        return failureCount < 2;
       },
       // Exponential backoff with jitter
       retryDelay: (attemptIndex, error) => {
@@ -169,6 +171,18 @@ export const queryKeys = {
     list: (filters?: Record<string, any>) => [...queryKeys.notifications.all, 'list', filters] as const,
     unread: () => [...queryKeys.notifications.all, 'unread'] as const,
     preferences: () => [...queryKeys.notifications.all, 'preferences'] as const,
+  },
+
+  // Analytics
+  analytics: {
+    all: ['analytics'] as const,
+    productOverview: () => [...queryKeys.analytics.all, 'product-overview'] as const,
+    productPerformance: (filters?: Record<string, any>) => 
+      [...queryKeys.analytics.all, 'product-performance', filters] as const,
+    inventoryHealth: (filters?: Record<string, any>) => 
+      [...queryKeys.analytics.all, 'inventory-health', filters] as const,
+    revenueByCategory: (filters?: Record<string, any>) => 
+      [...queryKeys.analytics.all, 'revenue-by-category', filters] as const,
   },
 } as const;
 

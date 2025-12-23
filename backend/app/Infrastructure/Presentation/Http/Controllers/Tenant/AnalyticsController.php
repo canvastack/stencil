@@ -666,6 +666,274 @@ class AnalyticsController extends Controller
         }
     }
 
+    public function productsOverview(Request $request): JsonResponse
+    {
+        try {
+            $totalProducts = Product::count();
+            $publishedProducts = Product::where('status', 'published')->count();
+            $draftProducts = Product::where('status', 'draft')->count();
+            $archivedProducts = Product::where('status', 'archived')->count();
+
+            $inventoryStats = Product::where('track_inventory', true)
+                ->selectRaw('
+                    COUNT(CASE WHEN stock_quantity = 0 THEN 1 END) as out_of_stock,
+                    COUNT(CASE WHEN stock_quantity <= low_stock_threshold AND stock_quantity > 0 THEN 1 END) as low_stock
+                ')
+                ->first();
+
+            $valueStats = Product::selectRaw('
+                    SUM(CASE 
+                        WHEN track_inventory IS TRUE THEN stock_quantity * price 
+                        ELSE 0 
+                    END) as total_value,
+                    AVG(price) as average_price
+                ')
+                ->first();
+
+            return response()->json([
+                'message' => 'Ikhtisar katalog produk berhasil diambil',
+                'overview' => [
+                    'totalProducts' => $totalProducts,
+                    'publishedProducts' => $publishedProducts,
+                    'draftProducts' => $draftProducts,
+                    'archivedProducts' => $archivedProducts,
+                    'outOfStock' => $inventoryStats->out_of_stock ?? 0,
+                    'lowStock' => $inventoryStats->low_stock ?? 0,
+                    'totalValue' => round($valueStats->total_value ?? 0, 2),
+                    'averagePrice' => round($valueStats->average_price ?? 0, 2),
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil ikhtisar katalog produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan yang tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function productsPerformance(Request $request): JsonResponse
+    {
+        try {
+            $startDate = $request->has('start_date') 
+                ? Carbon::parse($request->input('start_date'))
+                : Carbon::now()->subDays(30);
+            
+            $endDate = $request->has('end_date')
+                ? Carbon::parse($request->input('end_date'))
+                : Carbon::now();
+
+            $topSelling = DB::table('orders')
+                ->join(DB::raw('jsonb_array_elements(orders.items::jsonb) as item'), DB::raw('true'), '=', DB::raw('true'))
+                ->join('products', 'products.id', '=', DB::raw("(item->>'product_id')::bigint"))
+                ->whereBetween('orders.created_at', [$startDate, $endDate])
+                ->whereIn('orders.status', ['completed', 'processing', 'shipped', 'delivered'])
+                ->select(
+                    'products.id',
+                    'products.uuid',
+                    'products.name',
+                    'products.slug',
+                    'products.status',
+                    'products.stock_quantity',
+                    DB::raw("SUM((item->>'quantity')::integer) as sales"),
+                    DB::raw("SUM((item->>'quantity')::integer * (item->>'unit_price')::bigint) as revenue"),
+                    DB::raw("COALESCE(products.view_count, 0) as views")
+                )
+                ->groupBy('products.id', 'products.uuid', 'products.name', 'products.slug', 'products.status', 'products.stock_quantity', 'products.view_count')
+                ->orderByDesc('sales')
+                ->limit(10)
+                ->get();
+
+            $topSelling = $topSelling->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'uuid' => $product->uuid,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'views' => (int) $product->views,
+                    'sales' => (int) $product->sales,
+                    'revenue' => (int) $product->revenue,
+                    'conversionRate' => $product->views > 0 ? round(($product->sales / $product->views) * 100, 2) : 0,
+                    'stockQuantity' => (int) $product->stock_quantity,
+                    'status' => $product->status,
+                ];
+            });
+
+            $allProducts = Product::with('category')->get();
+            $productSales = DB::table('orders')
+                ->join(DB::raw('jsonb_array_elements(orders.items::jsonb) as item'), DB::raw('true'), '=', DB::raw('true'))
+                ->whereBetween('orders.created_at', [$startDate, $endDate])
+                ->whereIn('orders.status', ['completed', 'processing', 'shipped', 'delivered'])
+                ->select(
+                    DB::raw("(item->>'product_id')::bigint as product_id"),
+                    DB::raw("MAX(orders.created_at) as last_sold")
+                )
+                ->groupBy(DB::raw("(item->>'product_id')::bigint"))
+                ->pluck('last_sold', 'product_id');
+
+            $slowMoving = $allProducts
+                ->whereNotIn('id', $productSales->keys())
+                ->take(10)
+                ->map(function ($product) use ($startDate) {
+                    $daysSinceLastSale = $product->created_at ? $product->created_at->diffInDays(Carbon::now()) : null;
+                    return [
+                        'id' => $product->id,
+                        'uuid' => $product->uuid,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'stockQuantity' => $product->stock_quantity ?? 0,
+                        'lastSold' => null,
+                        'daysSinceLastSale' => $daysSinceLastSale,
+                    ];
+                })
+                ->values();
+
+            return response()->json([
+                'message' => 'Performa produk berhasil diambil',
+                'performance' => [
+                    'topSelling' => $topSelling,
+                    'trending' => $topSelling->take(5),
+                    'slowMoving' => $slowMoving,
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil performa produk',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan yang tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function productsInventory(Request $request): JsonResponse
+    {
+        try {
+            $outOfStock = Product::where('track_inventory', true)
+                ->where('stock_quantity', 0)
+                ->select('id', 'uuid', 'name', 'slug', 'stock_quantity', 'low_stock_threshold', 'updated_at')
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'uuid' => $product->uuid,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'stockQuantity' => 0,
+                        'lowStockThreshold' => $product->low_stock_threshold ?? 10,
+                        'status' => 'out_of_stock',
+                        'lastRestocked' => $product->updated_at?->toISOString(),
+                    ];
+                });
+
+            $lowStock = Product::where('track_inventory', true)
+                ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+                ->where('stock_quantity', '>', 0)
+                ->select('id', 'uuid', 'name', 'slug', 'stock_quantity', 'low_stock_threshold', 'updated_at')
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'uuid' => $product->uuid,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'stockQuantity' => $product->stock_quantity,
+                        'lowStockThreshold' => $product->low_stock_threshold ?? 10,
+                        'status' => 'low_stock',
+                        'lastRestocked' => $product->updated_at?->toISOString(),
+                    ];
+                });
+
+            $overstock = Product::where('track_inventory', true)
+                ->whereRaw('stock_quantity > (low_stock_threshold * 5)')
+                ->select('id', 'uuid', 'name', 'slug', 'stock_quantity', 'low_stock_threshold', 'updated_at')
+                ->get()
+                ->map(function ($product) {
+                    return [
+                        'id' => $product->id,
+                        'uuid' => $product->uuid,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'stockQuantity' => $product->stock_quantity,
+                        'lowStockThreshold' => $product->low_stock_threshold ?? 10,
+                        'status' => 'overstock',
+                        'lastRestocked' => $product->updated_at?->toISOString(),
+                    ];
+                });
+
+            $totalTracked = Product::where('track_inventory', true)->count();
+            $stockTurnoverRate = $totalTracked > 0 ? round(($outOfStock->count() / $totalTracked) * 100, 2) : 0;
+            
+            $averageAge = Product::where('track_inventory', true)
+                ->selectRaw('AVG(EXTRACT(EPOCH FROM (NOW() - updated_at))/86400) as avg_days')
+                ->value('avg_days');
+
+            return response()->json([
+                'message' => 'Kesehatan inventori berhasil diambil',
+                'inventory' => [
+                    'outOfStock' => $outOfStock->values(),
+                    'lowStock' => $lowStock->values(),
+                    'overstock' => $overstock->values(),
+                    'stockTurnoverRate' => $stockTurnoverRate,
+                    'averageStockAge' => round($averageAge ?? 0, 2),
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil kesehatan inventori',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan yang tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function revenueByCategory(Request $request): JsonResponse
+    {
+        try {
+            $startDate = $request->has('start_date') 
+                ? Carbon::parse($request->input('start_date'))
+                : Carbon::now()->subDays(30);
+            
+            $endDate = $request->has('end_date')
+                ? Carbon::parse($request->input('end_date'))
+                : Carbon::now();
+
+            $categoryRevenue = DB::table('orders')
+                ->join(DB::raw('jsonb_array_elements(orders.items::jsonb) as item'), DB::raw('true'), '=', DB::raw('true'))
+                ->join('products', 'products.id', '=', DB::raw("(item->>'product_id')::bigint"))
+                ->leftJoin('product_categories', 'products.category_id', '=', 'product_categories.id')
+                ->whereBetween('orders.created_at', [$startDate, $endDate])
+                ->whereIn('orders.status', ['completed', 'processing', 'shipped', 'delivered'])
+                ->select(
+                    DB::raw("COALESCE(product_categories.name, 'Uncategorized') as category"),
+                    DB::raw("COALESCE(product_categories.slug, 'uncategorized') as category_slug"),
+                    DB::raw("COUNT(DISTINCT products.id) as product_count"),
+                    DB::raw("SUM((item->>'quantity')::integer * (item->>'unit_price')::bigint) as revenue"),
+                    DB::raw("AVG((item->>'unit_price')::bigint) as average_price"),
+                    DB::raw("SUM((item->>'quantity')::integer) as total_sales")
+                )
+                ->groupBy('product_categories.name', 'product_categories.slug')
+                ->orderByDesc('revenue')
+                ->get()
+                ->map(function ($category) {
+                    return [
+                        'category' => $category->category,
+                        'categorySlug' => $category->category_slug,
+                        'productCount' => (int) $category->product_count,
+                        'revenue' => (int) $category->revenue,
+                        'averagePrice' => round((float) $category->average_price, 2),
+                        'totalSales' => (int) $category->total_sales,
+                    ];
+                });
+
+            return response()->json([
+                'message' => 'Pendapatan per kategori berhasil diambil',
+                'categories' => $categoryRevenue
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil pendapatan per kategori',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan yang tidak terduga'
+            ], 500);
+        }
+    }
+
     private function getStartDate(string $period): Carbon
     {
         return match($period) {
