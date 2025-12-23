@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const projectRoot = path.join(__dirname, '..');
+const projectRoot = path.join(__dirname, '../..');
 
 const args = process.argv.slice(2);
 
@@ -55,7 +55,7 @@ const runServers = async (options = {}) => {
     const env = { ...process.env, NODE_ENV: dev ? 'development' : 'development' };
     if (dev) env.VITE_DEV_MODE = 'true';
     const frontendProcess = spawn('npm', ['run', 'dev:frontend'], {
-      cwd: projectRoot,
+      cwd: path.join(projectRoot, 'frontend'),
       stdio: 'inherit',
       shell: true,
       env,
@@ -69,7 +69,7 @@ const runServers = async (options = {}) => {
     const env = { ...process.env, NODE_ENV: dev ? 'development' : 'development' };
     if (dev) env.APP_DEBUG = 'true';
     const backendProcess = spawn('npm', ['run', 'dev:backend'], {
-      cwd: projectRoot,
+      cwd: path.join(projectRoot, 'backend'),
       stdio: 'inherit',
       shell: true,
       env,

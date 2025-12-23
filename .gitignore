@@ -1,34 +1,4 @@
 # Logs
-# Frontend artifacts
-frontend/node_modules/
-frontend/dist/
-frontend/dist-ssr/
-frontend/.vite/
-frontend/dev-dist/
-frontend/coverage/
-frontend/test-results/
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.production.local
-frontend/.nyc_output/
-frontend/playwright-report/
-frontend/playwright/.cache/
-frontend/.chromatic/
-frontend/*.tsbuildinfo
-
-# Backend artifacts
-backend/vendor/
-backend/node_modules/
-backend/storage/logs/
-backend/storage/framework/cache/
-backend/storage/framework/sessions/
-backend/storage/framework/views/
-backend/bootstrap/cache/*.php
-backend/.env
-backend/.phpunit.result.cache
-backend/tests/Debugs/results/*.txt
-
-# Shared/Root level
 logs
 *.log
 npm-debug.log*
@@ -36,6 +6,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
 backups*
 .zenco*
 .qod*
@@ -44,26 +19,76 @@ backups*
 *.tar.gz
 -p
 *backup*
+*.bak*
+backend/tests/Debugs/results/*.txt
 *.tmp
 *temp_*
-chromatic-build-*.log
-build-storybook.log
+ROADMAPS/*
+roadmaps/
+
 
 # Editor directories and files
-frontend/.vscode/*
-!frontend/.vscode/extensions.json
-backend/.vscode/*
-!backend/.vscode/extensions.json
 .vscode/*
 !.vscode/extensions.json
 .idea
+.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# OS files
-.DS_Store
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Test coverage
+coverage
+.nyc_output
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Chromatic
+.chromatic/
+chromatic-build-*.log
+build-storybook.log
+
+# Build artifacts
+*.tsbuildinfo
+
+# OS
 Thumbs.db
 
+# Frontend artifacts
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+frontend/.vite
+frontend/dev-dist
+frontend/coverage
+frontend/test-results
+frontend/playwright-report
+
+# Backend artifacts
+backend/vendor
+backend/node_modules
+backend/public/hot
+backend/storage/*.key
+
+# Vite cache (juga bisa ada di root jika run dari root)
+.vite/
+dev-dist/
+
+# Lock files (pilih salah satu package manager)
+# bun.lockb         # Uncomment jika tidak pakai Bun
+# package-lock.json # Uncomment jika pakai Yarn/PNPM
+
+# Build artifacts di root (jika ada)
+/dist
+/dist-ssr

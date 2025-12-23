@@ -153,7 +153,7 @@ This comprehensive user documentation covers all aspects of the CanvaStack Stenc
 ## **Support Resources**
 
 ### **📚 Technical Documentation**
-- **Architecture Docs**: `docs/ARCHITECTURE/`
+- **Architecture Docs**: `roadmaps/ARCHITECTURE/`
 - **Database Schema**: `docs/database-schema/`
 - **Development Roadmap**: `docs/ROADMAPS/`
 - **API Documentation**: Available in tenant admin panels

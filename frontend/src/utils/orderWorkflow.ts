@@ -2,7 +2,7 @@ import { OrderStatus, PaymentType } from '@/types/order';
 
 /**
  * PT CEX Business Workflow - Order Status Transitions
- * Based on docs/ARCHITECTURE/BUSINESS_HEXAGONAL_PLAN/BUSINESS_CYCLE_PLAN.md
+ * Based on roadmaps/ARCHITECTURE/BUSINESS_HEXAGONAL_PLAN/BUSINESS_CYCLE_PLAN.md
  */
 export class OrderWorkflow {
   /**

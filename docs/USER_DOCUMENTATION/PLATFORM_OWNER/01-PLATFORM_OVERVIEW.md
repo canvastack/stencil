@@ -113,7 +113,7 @@ Platform Manager:
 
 ## **Support & Resources**
 
-- **Technical Documentation**: `/docs/ARCHITECTURE/`
+- **Technical Documentation**: `/roadmaps/ARCHITECTURE/`
 - **API Documentation**: `/docs/API/`
 - **Database Schema**: `/docs/database-schema/`
 - **Development Roadmap**: `/docs/ROADMAPS/`

@@ -13,7 +13,7 @@ plugins_content = """# PLUGIN MARKETPLACE SYSTEM
 **Total Fields:** 199+ fields  
 **Total Tables:** 8 tables (plugins, plugin_installations, plugin_settings, plugin_hooks, plugin_events, plugin_marketplace_listings, plugin_purchases, plugin_api_keys)  
 **Status:** 🚧 PLANNED - Architecture Blueprint  
-**Architecture Reference:** `docs/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md`
+**Architecture Reference:** `roadmaps/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md`
 
 ---
 
@@ -21,7 +21,7 @@ plugins_content = """# PLUGIN MARKETPLACE SYSTEM
 
 This is a **comprehensive reference** for the Plugin Marketplace System database schema.  
 For complete architectural details, implementation examples, and code samples, refer to:  
-📘 **[docs/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md)**
+📘 **[roadmaps/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md)**
 
 ---
 
@@ -92,7 +92,7 @@ Plugin Marketplace System adalah **platform extensibility** yang memungkinkan St
 | **TOTAL** | **199** | **8 tables** |
 
 **Complete SQL schemas available in:**  
-[docs/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md#database-schema) (Lines 1319-1825)
+[roadmaps/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md#database-schema) (Lines 1319-1825)
 
 ---
 
@@ -119,7 +119,7 @@ PUT    /api/v1/tenants/{id}/plugins/{id}/settings  # Update settings
 **Total**: 35+ endpoints
 
 **Complete API specification available in:**  
-[docs/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md#api-endpoints) (Lines 1842-1895)
+[roadmaps/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md#api-endpoints) (Lines 1842-1895)
 
 ---
 
@@ -127,7 +127,7 @@ PUT    /api/v1/tenants/{id}/plugins/{id}/settings  # Update settings
 
 ```sql
 -- See complete migration script with all 8 tables in:
--- docs/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md
+-- roadmaps/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md
 -- Lines 1319-1825
 
 BEGIN;
@@ -183,7 +183,7 @@ CREATE INDEX idx_plugins_tags ON plugins USING GIN(tags);
 ```
 
 **Complete indexing strategy available in:**  
-[docs/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md#database-schema)
+[roadmaps/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md](../ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md#database-schema)
 
 ---
 
@@ -203,7 +203,7 @@ CREATE INDEX idx_plugins_tags ON plugins USING GIN(tags);
 4. Develop CLI tools for plugin development
 
 **For Complete Details**:
-- Architecture: `docs/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md`
+- Architecture: `roadmaps/ARCHITECTURE/ADVANCED_SYSTEMS/4-PLUGIN_MARKETPLACE_SYSTEM.md`
 - Plugin lifecycle workflows
 - Security & sandboxing implementation
 - Hook/filter system code examples
