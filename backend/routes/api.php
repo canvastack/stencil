@@ -233,6 +233,7 @@ Route::prefix('public')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'index']);
         Route::get('/featured', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'featured']);
         Route::get('/search', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'search']);
+        Route::get('/categories', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'getCategories']);
         Route::get('/category/{category}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'byCategory']);
         Route::get('/{id}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'show'])->where('id', '[0-9]+');
         Route::get('/slug/{slug}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'showBySlugGlobal']);
@@ -242,7 +243,9 @@ Route::prefix('public')->group(function () {
     Route::get('/{tenantSlug}/products', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'index']);
     Route::get('/{tenantSlug}/products/featured', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'featured']);
     Route::get('/{tenantSlug}/products/search', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'search']);
+    Route::get('/{tenantSlug}/products/categories', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'getCategories']);
     Route::get('/{tenantSlug}/products/slug/{slug}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'showBySlug']);
+    Route::get('/{tenantSlug}/products/{uuid}/options', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'options']);
     Route::get('/{tenantSlug}/products/category/{category}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'byCategory']);
     Route::get('/{tenantSlug}/products/{id}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'show'])->where('id', '[0-9]+');
     

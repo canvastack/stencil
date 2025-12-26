@@ -4,18 +4,101 @@ import { useProductComparison } from '@/contexts/ProductComparisonContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Trash2, ShoppingCart, Check, X } from 'lucide-react';
+import { ArrowLeft, Trash2, ShoppingCart, Check, X, Download, Share2, Copy } from 'lucide-react';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { Product } from '@/types/product';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const ProductComparison = () => {
   const navigate = useNavigate();
   const { comparedProducts, removeFromCompare, clearComparison } = useProductComparison();
   const { addToCart } = useCart();
+
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF('l', 'mm', 'a4');
+      
+      doc.setFontSize(18);
+      doc.text('Perbandingan Produk', 14, 15);
+      
+      doc.setFontSize(10);
+      doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID')}`, 14, 22);
+      doc.text(`Total Produk: ${comparedProducts.length}`, 14, 27);
+
+      const tableData: any[] = [];
+      
+      tableData.push([
+        'Spesifikasi',
+        ...comparedProducts.map(p => p.name)
+      ]);
+      
+      specs.forEach(spec => {
+        const row = [
+          spec.label,
+          ...comparedProducts.map(product => {
+            const value = spec.format ? spec.format(product) : (product as any)[spec.key] || '-';
+            if (typeof value === 'string') return value;
+            if (spec.key === 'featured') return (product as any).featured ? 'Ya' : 'Tidak';
+            return String(value);
+          })
+        ];
+        tableData.push(row);
+      });
+
+      tableData.push([
+        'Deskripsi',
+        ...comparedProducts.map(p => p.description || '-')
+      ]);
+
+      autoTable(doc, {
+        head: [tableData[0]],
+        body: tableData.slice(1),
+        startY: 32,
+        theme: 'grid',
+        headStyles: { fillColor: [59, 130, 246] },
+        styles: { fontSize: 9, cellPadding: 3 },
+        columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240] } },
+      });
+
+      doc.save(`perbandingan-produk-${Date.now()}.pdf`);
+      toast.success('PDF berhasil diunduh');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error('Gagal mengekspor PDF');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      const productIds = comparedProducts.map(p => p.id).join(',');
+      const shareUrl = `${window.location.origin}/comparison?products=${productIds}`;
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Perbandingan Produk',
+          text: `Bandingkan ${comparedProducts.length} produk di CanvaStencil`,
+          url: shareUrl,
+        });
+        toast.success('Berhasil dibagikan');
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link perbandingan disalin ke clipboard');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      if ((error as Error).name !== 'AbortError') {
+        const productIds = comparedProducts.map(p => p.id).join(',');
+        const shareUrl = `${window.location.origin}/comparison?products=${productIds}`;
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link perbandingan disalin ke clipboard');
+      }
+    }
+  };
 
   if (comparedProducts.length === 0) {
     return (
@@ -271,7 +354,22 @@ const ProductComparison = () => {
         </div>
 
         {/* Bottom Actions */}
-        <div className="mt-8 flex justify-center gap-4">
+        <div className="mt-8 flex flex-wrap justify-center gap-4">
+          <Button 
+            onClick={handleExportPDF}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Ekspor ke PDF
+          </Button>
+          <Button
+            onClick={handleShare}
+            variant="outline"
+            className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Bagikan Perbandingan
+          </Button>
           <Button 
             onClick={() => navigate(-1)}
             className="bg-primary hover:bg-primary/90"

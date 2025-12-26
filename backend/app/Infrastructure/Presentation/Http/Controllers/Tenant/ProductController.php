@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Presentation\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ProductSearch;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant;
@@ -21,6 +22,7 @@ use App\Events\ProductBulkUpdated;
 
 class ProductController extends Controller
 {
+    use ProductSearch;
     public function __construct()
     {
     }
@@ -114,11 +116,7 @@ class ProductController extends Controller
                 ->with('category');
 
             if ($request->filled('search')) {
-                $query->where(function ($q) use ($request) {
-                    $q->where('name', 'ILIKE', '%' . $request->search . '%')
-                      ->orWhere('description', 'ILIKE', '%' . $request->search . '%')
-                      ->orWhere('sku', 'ILIKE', '%' . $request->search . '%');
-                });
+                $this->applyProductSearch($query, $request->search);
             }
 
             if ($request->filled('category_id')) {
@@ -211,11 +209,7 @@ class ProductController extends Controller
                 ->with('category');
 
             if ($queryTerm) {
-                $builder->where(function ($q) use ($queryTerm) {
-                    $q->where('name', 'ILIKE', '%' . $queryTerm . '%')
-                      ->orWhere('description', 'ILIKE', '%' . $queryTerm . '%')
-                      ->orWhere('sku', 'ILIKE', '%' . $queryTerm . '%');
-                });
+                $this->applyProductSearch($builder, $queryTerm);
             }
 
             if (!empty($validated['category_id'])) {

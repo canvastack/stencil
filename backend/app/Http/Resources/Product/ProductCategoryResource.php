@@ -15,7 +15,16 @@ class ProductCategoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            // ✅ FIX: Use UUID for public consumption (ZERO TOLERANCE RULE)
+            'id' => $this->uuid,
+            'uuid' => $this->uuid,
+            
+            // Internal ID only for authenticated admins with products.manage permission
+            '_internal_id' => $this->when(
+                $request->user()?->can('products.manage'),
+                $this->id
+            ),
+            
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
@@ -79,7 +88,7 @@ class ProductCategoryResource extends JsonResource
         
         while ($current) {
             array_unshift($breadcrumb, [
-                'id' => $current->id,
+                'id' => $current->uuid, // ✅ Use UUID instead of integer ID
                 'name' => $current->name,
                 'slug' => $current->slug,
             ]);

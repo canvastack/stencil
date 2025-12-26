@@ -35,6 +35,11 @@ export interface Product {
   subcategory?: string | null;
   tags?: string[];
   material?: string | null;
+  type?: 'physical' | 'digital' | 'service' | null; // Technical type
+  business_type?: string | null; // Business domain type (metal_etching, glass_etching, etc)
+  type_display?: string | null; // Human-readable label
+  size?: string | null; // Default/recommended size
+  available_sizes?: string[] | null; // Available size options
   price?: number;
   currency?: string;
   priceUnit?: string;
@@ -50,6 +55,8 @@ export interface Product {
   seoKeywords?: string[] | null;
   status?: 'draft' | 'published' | 'archived';
   featured?: boolean;
+  rating?: number; // Average rating from reviews
+  reviewCount?: number; // Total number of reviews
   reviewSummary?: ReviewSummary;
   createdAt?: string;
   updatedAt?: string;

@@ -26,6 +26,7 @@ class Product extends Model implements TenantAwareModel
         'currency',
         'status',
         'type',
+        'business_type',
         'stock_quantity',
         'low_stock_threshold',
         'track_inventory',
@@ -43,6 +44,8 @@ class Product extends Model implements TenantAwareModel
         'dimensions',
         'features',
         'material',
+        'size',
+        'available_sizes',
         'subcategory',
         'customizable',
         'custom_options',
@@ -90,6 +93,7 @@ class Product extends Model implements TenantAwareModel
         'quality_levels' => 'array',
         'specifications' => 'array',
         'available_materials' => 'array',
+        'available_sizes' => 'array',
         'base_markup_percentage' => 'decimal:2',
         'vendor_pricing' => 'array',
         'featured' => 'boolean',
@@ -169,11 +173,35 @@ class Product extends Model implements TenantAwareModel
     }
 
     /**
+     * Scope to get products by business type
+     */
+    public function scopeBusinessType($query, string $type)
+    {
+        return $query->where('business_type', $type);
+    }
+
+    /**
      * Scope to get customizable products
      */
     public function scopeCustomizable($query)
     {
         return $query->where('customizable', true);
+    }
+
+    /**
+     * Get display label for business type
+     */
+    public function getBusinessTypeLabel(): string
+    {
+        return match($this->business_type) {
+            'metal_etching' => 'Metal Etching',
+            'glass_etching' => 'Glass Etching',
+            'award_plaque' => 'Awards & Plaques',
+            'signage' => 'Signage Solutions',
+            'industrial_etching' => 'Industrial Etching',
+            'general' => 'General',
+            default => ucwords(str_replace('_', ' ', $this->business_type ?? 'General'))
+        };
     }
 
     /**
@@ -221,5 +249,63 @@ class Product extends Model implements TenantAwareModel
         }
 
         return (($this->price - $this->vendor_price) / $this->vendor_price) * 100;
+    }
+
+    /**
+     * Get available colors for the product from specifications
+     */
+    public function getAvailableColors(): array
+    {
+        if ($this->specifications && isset($this->specifications['colors'])) {
+            return $this->specifications['colors'];
+        }
+        
+        // Default colors for etching business
+        return [
+            ['name' => 'Natural', 'hex' => null, 'label' => 'Natural'],
+            ['name' => 'Black', 'hex' => '#000000', 'label' => 'Hitam'],
+            ['name' => 'Silver', 'hex' => '#C0C0C0', 'label' => 'Silver'],
+            ['name' => 'Gold', 'hex' => '#FFD700', 'label' => 'Emas'],
+        ];
+    }
+
+    /**
+     * Get thickness options from specifications
+     */
+    public function getThicknessOptions(): array
+    {
+        return $this->specifications['thickness_options'] ?? ['2mm', '3mm', '5mm'];
+    }
+
+    /**
+     * Get all product options for order customization
+     */
+    public function getProductOptions(): array
+    {
+        return [
+            'materials' => $this->available_materials ?? [],
+            'sizes' => $this->available_sizes ?? [],
+            'quality_levels' => $this->quality_levels ?? ['standard', 'premium'],
+            'colors' => $this->getAvailableColors(),
+            'thickness_options' => $this->getThicknessOptions(),
+            'custom_options' => $this->custom_options ?? [],
+            'customizable' => $this->customizable,
+        ];
+    }
+
+    /**
+     * Check if product has multiple material options
+     */
+    public function hasMultipleMaterials(): bool
+    {
+        return !empty($this->available_materials) && count($this->available_materials) > 1;
+    }
+
+    /**
+     * Check if product has multiple size options
+     */
+    public function hasMultipleSizes(): bool
+    {
+        return !empty($this->available_sizes) && count($this->available_sizes) > 1;
     }
 }

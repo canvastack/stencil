@@ -15,7 +15,16 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            // ✅ FIX: Use UUID for public consumption (ZERO TOLERANCE RULE)
+            'id' => $this->uuid,
+            'uuid' => $this->uuid,
+            
+            // Internal ID only for authenticated admins with products.manage permission
+            '_internal_id' => $this->when(
+                $request->user()?->can('products.manage'),
+                $this->id
+            ),
+            
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
@@ -26,6 +35,13 @@ class ProductResource extends JsonResource
             'subcategory' => $this->subcategory,
             'tags' => $this->tags,
             'material' => $this->material,
+            'size' => $this->size,
+            'available_sizes' => $this->available_sizes,
+            
+            // Product type classification
+            'type' => $this->type, // Technical type (physical/digital/service)
+            'business_type' => $this->business_type, // Business domain type (metal_etching/glass_etching/etc)
+            'type_display' => $this->getBusinessTypeLabel(), // Human-readable label
             
             // Pricing information
             'price' => [
@@ -37,6 +53,13 @@ class ProductResource extends JsonResource
             
             'min_order' => $this->min_order,
             'specifications' => $this->specifications,
+            
+            // Product options (previously hardcoded in frontend)
+            'quality_levels' => $this->quality_levels ?? ['standard', 'premium'],
+            'available_materials' => $this->available_materials ?? [],
+            'production_type' => $this->production_type,
+            'available_colors' => $this->getAvailableColors(),
+            'thickness_options' => $this->specifications['thickness_options'] ?? [],
             
             // Customization options
             'customizable' => $this->customizable,
@@ -76,8 +99,10 @@ class ProductResource extends JsonResource
             
             // Review summary (aggregated from customer_reviews)
             'reviewSummary' => [
-                'averageRating' => round((float) ($this->avg_rating ?? 0), 1),
+                'averageRating' => round((float) ($this->average_rating ?? 0), 1),
                 'totalReviews' => (int) ($this->review_count ?? 0),
+                'reviewCount' => (int) ($this->review_count ?? 0), // Alias for backward compatibility
+                'ratingDistribution' => null, // TODO: Implement rating distribution
             ],
             
             // Backward compatibility - deprecated, use reviewSummary instead
@@ -112,19 +137,31 @@ class ProductResource extends JsonResource
     }
 
     /**
-     * Transform images array to include full URLs.
+     * Transform images array to include full URLs with CDN support.
+     * Returns default placeholder if no images available.
      */
     private function transformImages(?array $images): array
     {
-        if (!$images) {
-            return [];
+        if (!$images || empty($images)) {
+            return [config('app.url') . '/images/product-placeholder.svg'];
         }
 
-        return array_map(function ($image) {
+        $cdnUrl = config('app.cdn_url');
+        $storageUrl = config('app.storage_url', config('app.url') . '/storage');
+
+        return array_map(function ($image) use ($cdnUrl, $storageUrl) {
+            // Already a full URL
             if (filter_var($image, FILTER_VALIDATE_URL)) {
                 return $image;
             }
-            return url('storage/' . ltrim($image, '/'));
+            
+            // Use CDN if configured
+            if ($cdnUrl) {
+                return $cdnUrl . '/' . ltrim($image, '/');
+            }
+            
+            // Use storage URL
+            return $storageUrl . '/' . ltrim($image, '/');
         }, $images);
     }
 
@@ -185,6 +222,24 @@ class ProductResource extends JsonResource
         $baseUrl = $tenant ? $tenant->getPublicUrl() : url('/');
         
         return $baseUrl . '/products/' . $this->slug;
+    }
+
+    /**
+     * Get available colors for the product.
+     */
+    private function getAvailableColors(): array
+    {
+        if ($this->specifications && isset($this->specifications['colors'])) {
+            return $this->specifications['colors'];
+        }
+        
+        // Default colors for etching business
+        return [
+            ['name' => 'Natural', 'hex' => null, 'label' => 'Natural'],
+            ['name' => 'Black', 'hex' => '#000000', 'label' => 'Hitam'],
+            ['name' => 'Silver', 'hex' => '#C0C0C0', 'label' => 'Silver'],
+            ['name' => 'Gold', 'hex' => '#FFD700', 'label' => 'Emas'],
+        ];
     }
 
     /**

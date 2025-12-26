@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
 import { useProductsQuery, type BulkDeleteProgress } from '@/hooks/useProductsQuery';
+import { useCategoriesQuery } from '@/hooks/useCategoriesQuery';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useProductWebSocket } from '@/hooks/useProductWebSocket';
@@ -202,6 +203,7 @@ function ProductCatalogContent() {
   }), [state.filters, debouncedSearch]);
 
   const { data, isLoading, error } = useProductsQuery(debouncedFilters);
+  const { data: categoriesData } = useCategoriesQuery({ per_page: 100 });
   
   useEffect(() => {
     announceLoading(isLoading, 'products');
@@ -772,6 +774,22 @@ function ProductCatalogContent() {
             </div>
             <div className="flex gap-2 flex-wrap">
               <Select
+                value={state.filters.type || 'all'}
+                onValueChange={(value) => actions.handleFilterChange('type', value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Product Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="metal_etching">Metal Etching</SelectItem>
+                  <SelectItem value="glass_etching">Glass Etching</SelectItem>
+                  <SelectItem value="award_plaque">Awards & Plaques</SelectItem>
+                  <SelectItem value="signage">Signage Solutions</SelectItem>
+                  <SelectItem value="industrial_etching">Industrial Etching</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
                 value={state.filters.category || 'all'}
                 onValueChange={(value) => actions.handleFilterChange('category', value)}
               >
@@ -780,6 +798,46 @@ function ProductCatalogContent() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
+                  {categoriesData?.data?.map((category) => (
+                    <SelectItem key={category.id} value={category.slug}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={state.filters.size || 'all'}
+                onValueChange={(value) => actions.handleFilterChange('size', value)}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sizes</SelectItem>
+                  <SelectItem value="10x15">10x15 cm</SelectItem>
+                  <SelectItem value="15x20">15x20 cm</SelectItem>
+                  <SelectItem value="20x30">20x30 cm</SelectItem>
+                  <SelectItem value="25x35">25x35 cm</SelectItem>
+                  <SelectItem value="30x40">30x40 cm</SelectItem>
+                  <SelectItem value="custom">Custom Size</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={state.filters.material || 'all'}
+                onValueChange={(value) => actions.handleFilterChange('material', value)}
+              >
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Material" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Materials</SelectItem>
+                  <SelectItem value="Acrylic">Acrylic</SelectItem>
+                  <SelectItem value="Brass">Brass</SelectItem>
+                  <SelectItem value="Copper">Copper</SelectItem>
+                  <SelectItem value="Stainless Steel">Stainless Steel</SelectItem>
+                  <SelectItem value="Aluminum">Aluminum</SelectItem>
+                  <SelectItem value="Glass">Glass</SelectItem>
+                  <SelectItem value="Wood">Wood</SelectItem>
                 </SelectContent>
               </Select>
               <Select

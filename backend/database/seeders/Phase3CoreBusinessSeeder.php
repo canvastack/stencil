@@ -230,6 +230,7 @@ class Phase3CoreBusinessSeeder extends Seeder
                 
                 'status' => ['draft', 'published', 'published', 'published'][rand(0, 3)],
                 'type' => ['physical', 'physical', 'service'][rand(0, 2)],
+                'business_type' => $this->determineBusinessType($material, $item),
                 'production_type' => ['internal', 'vendor', 'both'][rand(0, 2)],
                 
                 'stock_quantity' => rand(0, 100),
@@ -250,6 +251,8 @@ class Phase3CoreBusinessSeeder extends Seeder
                 'dimensions' => $this->generateDimensions(),
                 
                 'material' => $material,
+                'size' => $this->generateDefaultSize(),
+                'available_sizes' => $this->generateAvailableSizes(),
                 'available_materials' => $this->materials[$materialType],
                 'quality_levels' => array_keys($this->qualityLevels),
                 
@@ -491,6 +494,15 @@ EOT;
             ['key' => 'Thickness', 'value' => rand(3, 12) . 'mm'],
             ['key' => 'Warranty', 'value' => '1 Year'],
             ['key' => 'Production', 'value' => 'Made to Order'],
+            'thickness_options' => ['2mm', '3mm', '5mm', '8mm', '10mm'],
+            'colors' => [
+                ['name' => 'Natural', 'hex' => null, 'label' => 'Natural'],
+                ['name' => 'Black', 'hex' => '#000000', 'label' => 'Hitam'],
+                ['name' => 'Silver', 'hex' => '#C0C0C0', 'label' => 'Silver'],
+                ['name' => 'Gold', 'hex' => '#FFD700', 'label' => 'Emas'],
+                ['name' => 'Bronze', 'hex' => '#CD7F32', 'label' => 'Perunggu'],
+            ],
+            'finishes' => ['Glossy', 'Matte', 'Brushed', 'Polished'],
         ];
     }
 
@@ -557,5 +569,59 @@ EOT;
         $this->command->info("   - Products: {$productCount} (with detailed specs)");
         $this->command->info("   - Orders: {$orderCount} (realistic workflow states)");
         $this->command->info('');
+    }
+
+    private function determineBusinessType(string $material, string $item): string
+    {
+        $metalKeywords = ['metal', 'steel', 'aluminum', 'brass', 'copper', 'bronze'];
+        $glassKeywords = ['glass'];
+        $awardKeywords = ['trophy', 'award', 'plaque'];
+        $signageKeywords = ['sign', 'display', 'holder', 'stand'];
+        
+        $combinedText = strtolower($material . ' ' . $item);
+        
+        foreach ($metalKeywords as $keyword) {
+            if (str_contains($combinedText, $keyword)) {
+                return 'metal_etching';
+            }
+        }
+        
+        foreach ($glassKeywords as $keyword) {
+            if (str_contains($combinedText, $keyword)) {
+                return 'glass_etching';
+            }
+        }
+        
+        foreach ($awardKeywords as $keyword) {
+            if (str_contains($combinedText, $keyword)) {
+                return 'award_plaque';
+            }
+        }
+        
+        foreach ($signageKeywords as $keyword) {
+            if (str_contains($combinedText, $keyword)) {
+                return 'signage';
+            }
+        }
+        
+        return 'general';
+    }
+
+    private function generateDefaultSize(): string
+    {
+        $sizes = ['10x15', '15x20', '20x30', '25x35', '30x40'];
+        return $sizes[array_rand($sizes)];
+    }
+
+    private function generateAvailableSizes(): array
+    {
+        return [
+            '10x15' => '10cm x 15cm',
+            '15x20' => '15cm x 20cm (Rekomendasi)',
+            '20x30' => '20cm x 30cm',
+            '25x35' => '25cm x 35cm',
+            '30x40' => '30cm x 40cm',
+            'custom' => 'Custom Size',
+        ];
     }
 }

@@ -61,11 +61,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart, GitCompare } from "lucide-react";
+import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart, GitCompare, Clock, Wand2, Award } from "lucide-react";
 import { APP_CONFIG, TYPING_TEXTS } from "@/lib/constants";
-import { resolveImageUrl } from '@/utils/imageUtils';
+import { resolveImageUrl, getProductImage, DEFAULT_PRODUCT_IMAGE } from '@/utils/imageUtils';
 import { Product, ProductFilters } from "@/types/product";
 import { usePageContent } from "@/hooks/usePageContent";
 import { RatingStars } from "@/components/ui/rating-stars";
@@ -74,6 +75,7 @@ import { PlatformProductsView } from "@/components/products/PlatformProductsView
 import { useProductComparison } from "@/contexts/ProductComparisonContext";
 import { ComparisonBar } from "@/components/products/ComparisonBar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProductQuickView } from "@/components/products/ProductQuickView";
 
 
 
@@ -128,6 +130,8 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("name-asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [typingTextIndex, setTypingTextIndex] = useState(0);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const { PRODUCTS_PER_PAGE } = APP_CONFIG;
   
   // Debounced search (300ms delay for server-side filtering)
@@ -236,7 +240,41 @@ const Products = () => {
 
   // Helper function to get product rating from reviewSummary (from API)
   const getProductRating = useCallback((product: Product): number => {
-    return (product as any).reviewSummary?.averageRating || 0;
+    return product.rating ?? (product as any).reviewSummary?.averageRating ?? 0;
+  }, []);
+
+  // Helper function to get stock status variant
+  const getStockVariant = useCallback((status?: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+      case 'in_stock':
+        return 'default';
+      case 'low_stock':
+        return 'secondary';
+      case 'out_of_stock':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  }, []);
+
+  // Helper function to get stock label
+  const getStockLabel = useCallback((status?: string): string => {
+    switch (status) {
+      case 'in_stock':
+        return 'Tersedia';
+      case 'low_stock':
+        return 'Stok Terbatas';
+      case 'out_of_stock':
+        return 'Habis';
+      default:
+        return 'Hubungi Kami';
+    }
+  }, []);
+
+  // Handler for quick view
+  const handleQuickView = useCallback((product: Product) => {
+    setQuickViewProduct(product);
+    setIsQuickViewOpen(true);
   }, []);
 
   // Platform users get a different view focused on tenant management and analytics
@@ -304,9 +342,11 @@ const Products = () => {
                 </SelectTrigger>
                 <SelectContent className="bg-[#1e293b] border-slate-700">
                   <SelectItem value="all">Semua Produk</SelectItem>
-                  <SelectItem value="metal">Metal Etching</SelectItem>
-                  <SelectItem value="glass">Glass Etching</SelectItem>
-                  <SelectItem value="award">Awards & Plaques</SelectItem>
+                  <SelectItem value="metal_etching">Metal Etching</SelectItem>
+                  <SelectItem value="glass_etching">Glass Etching</SelectItem>
+                  <SelectItem value="award_plaque">Awards & Plaques</SelectItem>
+                  <SelectItem value="signage">Signage Solutions</SelectItem>
+                  <SelectItem value="industrial_etching">Industrial Etching</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -387,9 +427,11 @@ const Products = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e293b] border-slate-700">
                       <SelectItem value="all">Semua Tipe</SelectItem>
-                      <SelectItem value="metal">Metal Etching</SelectItem>
-                      <SelectItem value="glass">Glass Etching</SelectItem>
-                      <SelectItem value="award">Awards & Plaques</SelectItem>
+                      <SelectItem value="metal_etching">Metal Etching</SelectItem>
+                      <SelectItem value="glass_etching">Glass Etching</SelectItem>
+                      <SelectItem value="award_plaque">Awards & Plaques</SelectItem>
+                      <SelectItem value="signage">Signage Solutions</SelectItem>
+                      <SelectItem value="industrial_etching">Industrial Etching</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -503,16 +545,24 @@ const Products = () => {
                         >
                           {/* Product Image */}
                           <div className="relative aspect-video overflow-hidden bg-muted">
-                            {product.images && product.images.length > 0 ? (
-                              <img
-                                src={resolveImageUrl(product.images[0])}
-                                alt={product.name}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                                <Fish className="w-16 h-16 text-gray-400" />
-                              </div>
+                            <img
+                              src={getProductImage(product.images, 0)}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target.src !== DEFAULT_PRODUCT_IMAGE) {
+                                  target.src = DEFAULT_PRODUCT_IMAGE;
+                                }
+                              }}
+                            />
+                            
+                            {/* Featured Badge */}
+                            {(product as any).featured && (
+                              <Badge variant="default" className="absolute top-3 right-3 bg-primary text-primary-foreground shadow-lg">
+                                <Award className="w-3 h-3 mr-1" />
+                                Featured
+                              </Badge>
                             )}
                           </div>
 
@@ -524,26 +574,71 @@ const Products = () => {
                               {product.name}
                             </h3>
                             <p className="text-lg font-bold text-primary mb-2">{formatPrice(product.price, product.currency)}</p>
-                            <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-2">{product.description}</p>
+                            <p className="text-muted-foreground mb-4 leading-relaxed line-clamp-2">{product.description}</p>
+                            
+                            {/* Product Info Badges */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {/* Stock Status */}
+                              {(product as any).stock?.status && (
+                                <Badge variant={getStockVariant((product as any).stock.status)} className="text-xs">
+                                  {getStockLabel((product as any).stock.status)}
+                                </Badge>
+                              )}
+                              
+                              {/* Material */}
+                              {(product as any).material && (
+                                <Badge variant="outline" className="text-xs">
+                                  {(product as any).material}
+                                </Badge>
+                              )}
+                              
+                              {/* Customizable */}
+                              {(product as any).customizable && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Wand2 className="w-3 h-3 mr-1" />
+                                  Customizable
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            {/* Lead Time */}
+                            {(product as any).lead_time && (
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                                <Clock className="w-4 h-4" />
+                                <span>{(product as any).lead_time}</span>
+                              </div>
+                            )}
                             
                             <div className="flex flex-col gap-3">
-                              <div className="flex gap-3">
+                              <div className="grid grid-cols-3 gap-2">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuickView(product);
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-primary/50 text-primary hover:bg-primary/10 font-semibold"
+                                >
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  Quick
+                                </Button>
                                 <Button
                                   onClick={() => navigate(getProductDetailPath(product.slug))}
                                   variant="outline"
-                                  className="flex-1 border-primary text-primary hover:bg-primary/10 font-semibold"
+                                  size="sm"
+                                  className="col-span-2 border-primary text-primary hover:bg-primary/10 font-semibold"
                                 >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  Detail
-                                </Button>
-                                <Button
-                                  onClick={() => navigate(getProductDetailPath(product.slug))}
-                                  className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
-                                >
-                                  <ShoppingCart className="w-4 h-4 mr-2" />
-                                  Pesan
+                                  Detail Lengkap
                                 </Button>
                               </div>
+                              <Button
+                                onClick={() => navigate(getProductDetailPath(product.slug))}
+                                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
+                              >
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Pesan Sekarang
+                              </Button>
                               
                               <Button
                                 variant={isComparing(product.id) ? "secondary" : "outline"}
@@ -756,6 +851,19 @@ const Products = () => {
           </div>
         </section>
       )}
+
+      {/* Product Quick View Modal */}
+      <ProductQuickView
+        product={quickViewProduct}
+        open={isQuickViewOpen}
+        onClose={() => {
+          setIsQuickViewOpen(false);
+          setQuickViewProduct(null);
+        }}
+        onViewDetails={(slug) => navigate(getProductDetailPath(slug))}
+        onCompare={addToCompare}
+        formatPrice={formatPrice}
+      />
 
       {/* Comparison Bar - Floating bottom */}
       <ComparisonBar />

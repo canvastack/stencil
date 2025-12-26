@@ -45,7 +45,8 @@ import { useProductReviews } from "@/hooks/useReviews.tsx";
 import { usePublicProductBySlug } from "@/hooks/usePublicProducts";
 import { usePublicTenant } from "@/contexts/PublicTenantContext";
 import { useRelatedProducts } from "@/hooks/useRelatedProducts";
-import { resolveImageUrl } from '@/utils/imageUtils';
+import { useProductOptions } from "@/hooks/useProductOptions";
+import { resolveImageUrl, getProductImage, DEFAULT_PRODUCT_IMAGE } from '@/utils/imageUtils';
 import { reviewService } from "@/services/api/reviews";
 import { ordersService } from "@/services/api/orders";
 import { customersService } from "@/services/api/customers";
@@ -113,6 +114,13 @@ const ProductDetail = () => {
   const { product: cmsProduct, isLoading: loadingProduct } = usePublicProductBySlug(slug || '');
   
   const product = draftProduct || cmsProduct;
+  
+  // Fetch dynamic product options (Phase 1.6: Remove hardcoded data)
+  const { data: productOptionsData, isLoading: loadingOptions } = useProductOptions(
+    tenantSlug || undefined,
+    product?.id
+  );
+  const productOptions = productOptionsData?.data;
   
   // Only use product-specific reviews to eliminate duplicate calls
   const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(product?.id || '');
@@ -394,7 +402,7 @@ const ProductDetail = () => {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.images && product.images.length > 0 ? (typeof product.images[0] === 'string' ? resolveImageUrl(product.images[0], { preview: isPreview }) : product.images[0]) : '/images/placeholder.jpg',
+      image: getProductImage(product.images, 0),
       type: formData.productType,
       size: formData.size,
       material: formData.bahan,
@@ -461,7 +469,7 @@ const ProductDetail = () => {
               <Card className="overflow-hidden border-border bg-card shadow-xl group">
                 <Carousel className="w-full">
                   <CarouselContent>
-                    {(product.images || []).map((image, index) => {
+                    {(product.images && product.images.length > 0 ? product.images : [DEFAULT_PRODUCT_IMAGE]).map((image, index) => {
                       const srcUrl = typeof image === 'string' ? resolveImageUrl(image, { preview: isPreview }) : image;
                       return (
                         <CarouselItem key={index}>
@@ -473,6 +481,12 @@ const ProductDetail = () => {
                               src={srcUrl}
                               alt={`${product.name} ${index + 1}`}
                               className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target.src !== DEFAULT_PRODUCT_IMAGE) {
+                                  target.src = DEFAULT_PRODUCT_IMAGE;
+                                }
+                              }}
                             />
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
                               <ZoomIn className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -658,16 +672,11 @@ const ProductDetail = () => {
 
                   <div>
                     <Label htmlFor="productType" className="text-foreground">Tipe Produk *</Label>
-                    <Select value={formData.productType} onValueChange={(value) => handleInputChange("productType", value)}>
-                      <SelectTrigger className="bg-background border-border">
-                        <SelectValue placeholder="Pilih tipe produk" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border">
-                        <SelectItem value="metal">Etching Logam</SelectItem>
-                        <SelectItem value="glass">Etching Kaca</SelectItem>
-                        <SelectItem value="award">Plakat Penghargaan</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input 
+                      value={product?.type_display || product?.business_type || 'N/A'} 
+                      disabled 
+                      className="bg-muted border-border"
+                    />
                   </div>
 
                   <div>
@@ -677,11 +686,15 @@ const ProductDetail = () => {
                         <SelectValue placeholder="Pilih ukuran" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border">
-                        <SelectItem value="10x15">10cm x 15cm</SelectItem>
-                        <SelectItem value="15x20">15cm x 20cm (Rekomendasi)</SelectItem>
-                        <SelectItem value="20x30">20cm x 30cm</SelectItem>
-                        <SelectItem value="30x40">30cm x 40cm</SelectItem>
-                        <SelectItem value="custom">Custom Size</SelectItem>
+                        {loadingOptions ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : productOptions?.sizes && Object.keys(productOptions.sizes).length > 0 ? (
+                          Object.entries(productOptions.sizes).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="custom">Custom Size</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -693,11 +706,17 @@ const ProductDetail = () => {
                         <SelectValue placeholder="Pilih bahan" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border">
-                        <SelectItem value="akrilik">Akrilik</SelectItem>
-                        <SelectItem value="kuningan">Kuningan</SelectItem>
-                        <SelectItem value="tembaga">Tembaga</SelectItem>
-                        <SelectItem value="stainless-steel">Stainless Steel</SelectItem>
-                        <SelectItem value="aluminum">Aluminum</SelectItem>
+                        {loadingOptions ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : productOptions?.materials && productOptions.materials.length > 0 ? (
+                          productOptions.materials.map((material) => (
+                            <SelectItem key={material} value={material.toLowerCase().replace(/\s+/g, '-')}>
+                              {material}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="general">General</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -709,8 +728,17 @@ const ProductDetail = () => {
                         <SelectValue placeholder="Pilih kualitas" />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-border">
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="tinggi">Tinggi</SelectItem>
+                        {loadingOptions ? (
+                          <SelectItem value="loading" disabled>Loading...</SelectItem>
+                        ) : productOptions?.quality_levels && productOptions.quality_levels.length > 0 ? (
+                          productOptions.quality_levels.map((quality) => (
+                            <SelectItem key={quality} value={quality.toLowerCase()}>
+                              {quality.charAt(0).toUpperCase() + quality.slice(1)}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="standard">Standard</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1064,9 +1092,15 @@ const ProductDetail = () => {
                       >
                         <div className="aspect-video relative overflow-hidden bg-muted">
                           <img
-                            src={resolveImageUrl(relatedProduct.images[0], { preview: isPreview })}
+                            src={getProductImage(relatedProduct.images, 0)}
                             alt={relatedProduct.name}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              if (target.src !== DEFAULT_PRODUCT_IMAGE) {
+                                target.src = DEFAULT_PRODUCT_IMAGE;
+                              }
+                            }}
                           />
                         </div>
                         <div className="p-4">

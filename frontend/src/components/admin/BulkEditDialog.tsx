@@ -33,6 +33,11 @@ import type {
   BulkTagsUpdate,
   BulkStockUpdate,
   BulkDuplicateConfig,
+  BulkProductionTypeUpdate,
+  BulkLeadTimeUpdate,
+  BulkBusinessTypeUpdate,
+  BulkMaterialsUpdate,
+  BulkCustomizableUpdate,
 } from '@/types/bulkOperations';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +68,12 @@ export const BulkEditDialog: React.FC<BulkEditDialogProps> = ({
   const [includeImages, setIncludeImages] = useState(true);
   const [includeVariants, setIncludeVariants] = useState(true);
   const [nameSuffix, setNameSuffix] = useState(' - Copy');
+  const [productionType, setProductionType] = useState<'internal' | 'vendor' | 'both'>('vendor');
+  const [leadTime, setLeadTime] = useState('');
+  const [businessType, setBusinessType] = useState('');
+  const [materialsOperation, setMaterialsOperation] = useState<'add' | 'remove' | 'replace'>('add');
+  const [materials, setMaterials] = useState('');
+  const [customizable, setCustomizable] = useState(true);
   const [dryRun, setDryRun] = useState(false);
 
   const bulkMutation = useMutation({
@@ -133,6 +144,41 @@ export const BulkEditDialog: React.FC<BulkEditDialogProps> = ({
         } as BulkDuplicateConfig;
         break;
       
+      case 'update_production_type':
+        data = { production_type: productionType } as BulkProductionTypeUpdate;
+        break;
+      
+      case 'update_lead_time':
+        if (!leadTime.trim()) {
+          toast.error('Please enter lead time');
+          return;
+        }
+        data = { lead_time: leadTime } as BulkLeadTimeUpdate;
+        break;
+      
+      case 'update_business_type':
+        if (!businessType.trim()) {
+          toast.error('Please enter business type');
+          return;
+        }
+        data = { business_type: businessType } as BulkBusinessTypeUpdate;
+        break;
+      
+      case 'add_materials':
+        if (!materials.trim()) {
+          toast.error('Please enter materials');
+          return;
+        }
+        data = {
+          operation: materialsOperation,
+          materials: materials.split(',').map(m => m.trim()).filter(Boolean),
+        } as BulkMaterialsUpdate;
+        break;
+      
+      case 'toggle_customizable':
+        data = { customizable } as BulkCustomizableUpdate;
+        break;
+      
       default:
         toast.error('Invalid action');
         return;
@@ -158,6 +204,16 @@ export const BulkEditDialog: React.FC<BulkEditDialogProps> = ({
         return 'Bulk Manage Tags';
       case 'update_stock':
         return 'Bulk Update Stock';
+      case 'update_production_type':
+        return 'Bulk Update Production Type';
+      case 'update_lead_time':
+        return 'Bulk Update Lead Time';
+      case 'update_business_type':
+        return 'Bulk Update Business Type';
+      case 'add_materials':
+        return 'Bulk Manage Materials';
+      case 'toggle_customizable':
+        return 'Bulk Toggle Customizable';
       case 'duplicate':
         return 'Bulk Duplicate Products';
       default:
@@ -348,6 +404,114 @@ export const BulkEditDialog: React.FC<BulkEditDialogProps> = ({
                 </Label>
               </div>
             </div>
+          </div>
+        );
+
+      case 'update_production_type':
+        return (
+          <div className="space-y-3">
+            <Label>Production Type</Label>
+            <RadioGroup value={productionType} onValueChange={(v) => setProductionType(v as any)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="internal" id="prod-internal" />
+                <Label htmlFor="prod-internal" className="cursor-pointer">Internal</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="vendor" id="prod-vendor" />
+                <Label htmlFor="prod-vendor" className="cursor-pointer">Vendor</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="both" id="prod-both" />
+                <Label htmlFor="prod-both" className="cursor-pointer">Both (Hybrid)</Label>
+              </div>
+            </RadioGroup>
+          </div>
+        );
+
+      case 'update_lead_time':
+        return (
+          <div className="space-y-3">
+            <Label htmlFor="lead-time">Lead Time</Label>
+            <Input
+              id="lead-time"
+              value={leadTime}
+              onChange={(e) => setLeadTime(e.target.value)}
+              placeholder="e.g., 7-10 hari kerja"
+            />
+            <p className="text-xs text-muted-foreground">
+              Example: "7-10 hari kerja", "2 minggu", "1 bulan"
+            </p>
+          </div>
+        );
+
+      case 'update_business_type':
+        return (
+          <div className="space-y-3">
+            <Label htmlFor="business-type">Business Type</Label>
+            <Select value={businessType} onValueChange={setBusinessType}>
+              <SelectTrigger id="business-type">
+                <SelectValue placeholder="Select business type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="metal_etching">Metal Etching</SelectItem>
+                <SelectItem value="glass_etching">Glass Etching</SelectItem>
+                <SelectItem value="award_plaque">Awards & Plaques</SelectItem>
+                <SelectItem value="signage">Signage Solutions</SelectItem>
+                <SelectItem value="industrial_etching">Industrial Etching</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        );
+
+      case 'add_materials':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <Label>Operation</Label>
+              <RadioGroup value={materialsOperation} onValueChange={(v) => setMaterialsOperation(v as any)}>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="add" id="mat-add" />
+                  <Label htmlFor="mat-add" className="cursor-pointer">Add Materials</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="remove" id="mat-remove" />
+                  <Label htmlFor="mat-remove" className="cursor-pointer">Remove Materials</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="replace" id="mat-replace" />
+                  <Label htmlFor="mat-replace" className="cursor-pointer">Replace All Materials</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="materials">Materials (comma-separated)</Label>
+              <Input
+                id="materials"
+                value={materials}
+                onChange={(e) => setMaterials(e.target.value)}
+                placeholder="akrilik, kuningan, tembaga"
+              />
+              <p className="text-xs text-muted-foreground">
+                Separate multiple materials with commas
+              </p>
+            </div>
+          </div>
+        );
+
+      case 'toggle_customizable':
+        return (
+          <div className="space-y-3">
+            <Label>Customizable Status</Label>
+            <RadioGroup value={customizable ? 'true' : 'false'} onValueChange={(v) => setCustomizable(v === 'true')}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="true" id="custom-true" />
+                <Label htmlFor="custom-true" className="cursor-pointer">Enable Customization</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="false" id="custom-false" />
+                <Label htmlFor="custom-false" className="cursor-pointer">Disable Customization</Label>
+              </div>
+            </RadioGroup>
           </div>
         );
 

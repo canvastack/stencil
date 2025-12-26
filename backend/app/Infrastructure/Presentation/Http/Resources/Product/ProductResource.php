@@ -33,6 +33,7 @@ class ProductResource extends JsonResource
             
             'status' => $this->status,
             'type' => $this->type,
+            'businessType' => $this->business_type,
             'productionType' => $this->production_type,
             
             'stockQuantity' => $this->stock_quantity,
@@ -103,6 +104,7 @@ class ProductResource extends JsonResource
             'materials' => [
                 'material' => $this->material,
                 'availableMaterials' => $this->available_materials ?? [],
+                'availableSizes' => $this->available_sizes ?? [],
                 'qualityLevels' => $this->quality_levels ?? [],
             ],
             

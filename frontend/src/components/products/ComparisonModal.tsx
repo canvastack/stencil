@@ -183,17 +183,17 @@ export const ComparisonModal: React.FC<ComparisonModalProps> = ({
                   )}
                   <div className="p-4 border rounded-lg space-y-3 bg-card">
                     <div className="aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                      {product.images && product.images[0] ? (
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-                          No image
-                        </div>
-                      )}
+                      <img
+                        src={product.images && product.images[0] ? product.images[0] : '/images/product-placeholder.svg'}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== '/images/product-placeholder.svg') {
+                            target.src = '/images/product-placeholder.svg';
+                          }
+                        }}
+                      />
                     </div>
                     <div>
                       <h3 className="font-semibold line-clamp-2 min-h-[3rem]">{product.name}</h3>

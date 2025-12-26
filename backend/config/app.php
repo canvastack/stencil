@@ -61,6 +61,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | CDN URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used for serving static assets (images, CSS, JS) from a CDN.
+    | If configured, all asset URLs will be prefixed with this CDN URL.
+    |
+    */
+
+    'cdn_url' => env('CDN_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Storage URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used for serving uploaded files from storage.
+    | Defaults to APP_URL/storage if not configured.
+    |
+    */
+
+    'storage_url' => env('STORAGE_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

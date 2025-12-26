@@ -5,6 +5,11 @@ export type BulkActionType =
   | 'update_tags'
   | 'update_stock'
   | 'update_featured'
+  | 'update_production_type'
+  | 'update_lead_time'
+  | 'update_business_type'
+  | 'add_materials'
+  | 'toggle_customizable'
   | 'duplicate'
   | 'delete';
 
@@ -56,6 +61,27 @@ export interface BulkDeleteConfig {
   permanent?: boolean;
 }
 
+export interface BulkProductionTypeUpdate {
+  production_type: 'internal' | 'vendor' | 'both';
+}
+
+export interface BulkLeadTimeUpdate {
+  lead_time: string;
+}
+
+export interface BulkBusinessTypeUpdate {
+  business_type: string;
+}
+
+export interface BulkMaterialsUpdate {
+  operation: 'add' | 'remove' | 'replace';
+  materials: string[];
+}
+
+export interface BulkCustomizableUpdate {
+  customizable: boolean;
+}
+
 export type BulkActionData =
   | BulkStatusUpdate
   | BulkPriceUpdate
@@ -63,6 +89,11 @@ export type BulkActionData =
   | BulkTagsUpdate
   | BulkStockUpdate
   | BulkFeaturedUpdate
+  | BulkProductionTypeUpdate
+  | BulkLeadTimeUpdate
+  | BulkBusinessTypeUpdate
+  | BulkMaterialsUpdate
+  | BulkCustomizableUpdate
   | BulkDuplicateConfig
   | BulkDeleteConfig;
 

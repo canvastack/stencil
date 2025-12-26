@@ -41,6 +41,8 @@ function transformApiProduct(apiProduct: any): Product {
     seoKeywords: product.seo?.seoKeywords || [],
     status: product.status || 'published',
     featured: product.marketing?.featured ?? product.is_featured ?? product.featured ?? false,
+    rating: product.reviewSummary?.averageRating ?? product.marketing?.averageRating ?? 0,
+    reviewCount: product.reviewSummary?.reviewCount ?? product.marketing?.reviewCount ?? 0,
     createdAt: product.timestamps?.createdAt || product.created_at || '',
     updatedAt: product.timestamps?.updatedAt || product.updated_at || '',
   };
@@ -67,6 +69,9 @@ class PublicProductsService {
       if (filters.order) params.append('order', filters.order);
       
       // Filters
+      if (filters.type) params.append('type', filters.type);
+      if (filters.size) params.append('size', filters.size);
+      if (filters.material) params.append('material', filters.material);
       if (filters.category) params.append('category', filters.category);
       if (filters.subcategory) params.append('subcategory', filters.subcategory);
       if (filters.status) params.append('status', filters.status);

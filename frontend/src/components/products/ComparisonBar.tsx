@@ -67,13 +67,17 @@ export const ComparisonBar: React.FC = () => {
                   key={product.id}
                   className="flex items-center gap-2 bg-secondary/50 rounded-lg px-3 py-2 min-w-[200px] group hover:bg-secondary transition-colors"
                 >
-                  {product.images && product.images[0] && (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-10 h-10 object-cover rounded"
-                    />
-                  )}
+                  <img
+                    src={product.images && product.images[0] ? product.images[0] : '/images/product-placeholder.svg'}
+                    alt={product.name}
+                    className="w-10 h-10 object-cover rounded"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target.src !== '/images/product-placeholder.svg') {
+                        target.src = '/images/product-placeholder.svg';
+                      }
+                    }}
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{product.name}</p>
                     <p className="text-xs text-muted-foreground">

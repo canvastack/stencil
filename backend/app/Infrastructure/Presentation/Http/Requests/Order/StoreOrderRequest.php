@@ -5,6 +5,7 @@ namespace App\Infrastructure\Presentation\Http\Requests\Order;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
 
 class StoreOrderRequest extends FormRequest
 {
@@ -21,11 +22,95 @@ class StoreOrderRequest extends FormRequest
             
             'items' => 'required|array|min:1',
             'items.*.product_id' => ['required', 'integer', $this->existsForTenant('products')],
-            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.quantity' => [
+                'required',
+                'integer',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $index = explode('.', $attribute)[1];
+                    $productId = $this->input("items.{$index}.product_id");
+                    
+                    if (!$productId) {
+                        return;
+                    }
+                    
+                    $product = Product::where('tenant_id', $this->resolveTenantId())
+                        ->where('id', $productId)
+                        ->first();
+                    
+                    if (!$product) {
+                        return;
+                    }
+                    
+                    if ($product->min_order_quantity && $value < $product->min_order_quantity) {
+                        $fail("Minimal pesanan untuk {$product->name} adalah {$product->min_order_quantity} unit");
+                    }
+                    
+                    if ($product->max_order_quantity && $value > $product->max_order_quantity) {
+                        $fail("Maksimal pesanan untuk {$product->name} adalah {$product->max_order_quantity} unit");
+                    }
+                },
+            ],
             'items.*.unit_price' => 'required|integer|min:0',
             'items.*.specifications' => 'nullable|array',
+            'items.*.specifications.material' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (!$value) return;
+                    
+                    $index = explode('.', $attribute)[1];
+                    $productId = $this->input("items.{$index}.product_id");
+                    
+                    if (!$productId) {
+                        return;
+                    }
+                    
+                    $product = Product::where('tenant_id', $this->resolveTenantId())
+                        ->where('id', $productId)
+                        ->first();
+                    
+                    if (!$product || !$product->available_materials) {
+                        return;
+                    }
+                    
+                    if (!in_array($value, $product->available_materials)) {
+                        $fail("Material '{$value}' tidak tersedia untuk produk ini. Pilihan: " . implode(', ', $product->available_materials));
+                    }
+                },
+            ],
+            'items.*.specifications.quality' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (!$value) return;
+                    
+                    $index = explode('.', $attribute)[1];
+                    $productId = $this->input("items.{$index}.product_id");
+                    
+                    if (!$productId) {
+                        return;
+                    }
+                    
+                    $product = Product::where('tenant_id', $this->resolveTenantId())
+                        ->where('id', $productId)
+                        ->first();
+                    
+                    if (!$product || !$product->quality_levels) {
+                        return;
+                    }
+                    
+                    if (!in_array($value, $product->quality_levels)) {
+                        $fail("Tingkat kualitas '{$value}' tidak tersedia. Pilihan: " . implode(', ', $product->quality_levels));
+                    }
+                },
+            ],
+            'items.*.specifications.size' => 'nullable|string|max:100',
+            'items.*.specifications.color' => 'nullable|string|max:100',
+            'items.*.specifications.custom_text' => 'nullable|array',
             'items.*.custom_options' => 'nullable|array',
             'items.*.notes' => 'nullable|string',
+            'items.*.design_file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,ai,svg,eps|max:10240',
             
             'subtotal' => 'required|integer|min:0',
             'tax' => 'required|integer|min:0',
@@ -108,6 +193,13 @@ class StoreOrderRequest extends FormRequest
             'items.*.quantity.required' => 'Jumlah wajib diisi',
             'items.*.quantity.min' => 'Jumlah minimal 1',
             'items.*.unit_price.required' => 'Harga satuan wajib diisi',
+            'items.*.specifications.material.string' => 'Material harus berupa teks',
+            'items.*.specifications.quality.string' => 'Tingkat kualitas harus berupa teks',
+            'items.*.specifications.size.max' => 'Ukuran maksimal 100 karakter',
+            'items.*.specifications.color.max' => 'Warna maksimal 100 karakter',
+            'items.*.design_file.file' => 'Design harus berupa file',
+            'items.*.design_file.mimes' => 'Format file design harus: jpg, jpeg, png, pdf, ai, svg, eps',
+            'items.*.design_file.max' => 'Ukuran file design maksimal 10MB',
             'shipping_address.required' => 'Alamat pengiriman wajib diisi',
             'subtotal.required' => 'Subtotal wajib diisi',
             'tax.required' => 'Pajak wajib diisi',

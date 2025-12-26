@@ -1,46 +1,46 @@
 /**
- * Resolves image URL based on current base path and environment
+ * Default placeholder image for products
+ */
+export const DEFAULT_PRODUCT_IMAGE = '/images/product-placeholder.svg';
+
+/**
+ * Resolves image URL - Simplified to trust backend URLs
  * @param img - Image path/URL to resolve
- * @param options - Optional configuration for image resolution
+ * @param options - Optional configuration (reserved for future use)
  * @returns Resolved image URL
+ * 
+ * NOTE: Backend (ProductResource) now handles all URL resolution including:
+ * - Full CDN URLs when CDN_URL is configured
+ * - Storage URLs with proper prefixes
+ * - Already-absolute URLs (passed through)
+ * 
+ * Frontend should simply trust and use the URLs provided by the backend.
  */
 export const resolveImageUrl = (img: string, options?: { prefix?: string; preview?: boolean }): string => {
-  if (!img) return img;
-  // Handle full absolute URLs, data URLs, and blob URLs
-  if (/^(https?:\/\/|data:|blob:)/.test(img) || img.startsWith('//')) return img;
+  // Return default placeholder for null/undefined
+  if (!img) return DEFAULT_PRODUCT_IMAGE;
+  
+  // Backend already provides full URLs - trust and return as-is
+  // This includes:
+  // - CDN URLs: https://cdn.canvastencil.com/...
+  // - Storage URLs: http://localhost:8000/storage/...
+  // - Absolute URLs: http://... or https://...
+  // - Data URLs: data:image/...
+  // - Blob URLs: blob:...
+  return img;
+};
 
-  const base = import.meta.env.BASE_URL || '/';
-  // normalize base so it has no trailing slash (but keeps leading slash if present)
-  const normalizedBase = base.replace(/\/+$/, ''); // '/' -> '' ; '/stencil/' -> '/stencil'
-
-  // If img is already an absolute path (starts with '/'), handle carefully to avoid double-prefixing base
-  if (img.startsWith('/')) {
-    // If img already starts with the configured base (e.g. '/stencil/...'), return as-is
-    if (normalizedBase && img.startsWith(normalizedBase + '/')) {
-      return img;
-    }
-
-    // If base is not root, prefix it so production served under a base path resolves correctly
-    if (normalizedBase) {
-      return `${normalizedBase}${img}`; // normalizedBase already contains leading '/'
-    }
-
-    // base is root '/', return the absolute path unchanged
-    return img;
+/**
+ * Get product image with fallback to default placeholder
+ * @param images - Array of product images
+ * @param index - Index of image to retrieve (default: 0)
+ * @returns Image URL or default placeholder
+ */
+export const getProductImage = (images: string[] | undefined | null, index: number = 0): string => {
+  if (!images || images.length === 0) {
+    return DEFAULT_PRODUCT_IMAGE;
   }
-
-  // At this point img is a relative path (no leading slash)
-  // Support developer-friendly 'src/assets/...' -> map to '/images/...'
-  if (img.startsWith('src/assets/')) {
-    const rel = img.replace(/^src\/assets\//, '');
-    return (normalizedBase ? `${normalizedBase}/images/${rel}` : `/${['images', rel].join('/')}`);
-  }
-
-  // Support relative 'images/...' entries (from CMS/mock data)
-  if (img.startsWith('images/')) {
-    return normalizedBase ? `${normalizedBase}/${img}` : `/${img}`;
-  }
-
-  // Default: return relative path prefixed with base (or root)
-  return normalizedBase ? `${normalizedBase}/${img}` : `/${img}`;
+  
+  const image = images[index];
+  return resolveImageUrl(image);
 };

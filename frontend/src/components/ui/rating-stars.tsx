@@ -13,7 +13,7 @@ interface RatingStarsProps {
 }
 
 export const RatingStars = ({
-  rating,
+  rating: ratingProp,
   maxStars = 5,
   size = "md",
   interactive = false,
@@ -22,6 +22,9 @@ export const RatingStars = ({
   className,
 }: RatingStarsProps) => {
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
+  
+  // Ensure rating is always a valid number
+  const rating = Number(ratingProp) || 0;
 
   const sizeClasses = {
     sm: "w-4 h-4",

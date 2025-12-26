@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Traits\ProductSearch;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use App\Infrastructure\Presentation\Http\Resources\Product\ProductResource;
@@ -11,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 
 class ProductController extends Controller
 {
+    use ProductSearch;
     /**
      * Get public products (global or tenant-specific)
      * Enhanced with comprehensive server-side filtering, search, sorting, and pagination
@@ -45,7 +47,7 @@ class ProductController extends Controller
             $query = Product::query()
                 ->select([
                     'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
                     \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
                 ])
                 ->leftJoin('customer_reviews', function($join) {
@@ -67,14 +69,7 @@ class ProductController extends Controller
 
             // Server-side search with ILIKE (case-insensitive)
             if (!empty($validated['search'])) {
-                $search = $validated['search'];
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'ILIKE', "%{$search}%")
-                      ->orWhere('description', 'ILIKE', "%{$search}%")
-                      ->orWhere('long_description', 'ILIKE', "%{$search}%")
-                      ->orWhere('sku', 'ILIKE', "%{$search}%")
-                      ->orWhereJsonContains('tags', $search);
-                });
+                $this->applyProductSearch($query, $validated['search']);
             }
 
             // Category filter
@@ -90,22 +85,31 @@ class ProductController extends Controller
                 $query->where('subcategory', 'ILIKE', "%{$validated['subcategory']}%");
             }
 
-            // Type filter
+            // Type filter - supports both technical type and business type
+            // Priority: business_type > type (for backward compatibility)
             if (!empty($validated['type'])) {
-                $query->where('type', 'ILIKE', "%{$validated['type']}%");
+                $query->where(function($q) use ($validated) {
+                    $q->where('business_type', $validated['type'])
+                      ->orWhere('type', $validated['type']);
+                });
             }
 
-            // Size filter
+            // Size filter - supports exact size match or available_sizes array
             if (!empty($validated['size'])) {
                 $query->where(function ($q) use ($validated) {
-                    $q->where('size', 'ILIKE', "%{$validated['size']}%")
+                    $q->where('size', $validated['size'])
+                      ->orWhereJsonContains('available_sizes', $validated['size'])
                       ->orWhereJsonContains('specifications->size', $validated['size']);
                 });
             }
 
-            // Material filter
+            // Material filter - supports exact material match or available_materials array
             if (!empty($validated['material'])) {
-                $query->where('material', 'ILIKE', "%{$validated['material']}%");
+                $query->where(function ($q) use ($validated) {
+                    $q->where('material', 'ILIKE', "%{$validated['material']}%")
+                      ->orWhereJsonContains('available_materials', $validated['material'])
+                      ->orWhereJsonContains('specifications->material', $validated['material']);
+                });
             }
 
             // Rating filter - using HAVING since avg_rating is aggregated
@@ -217,7 +221,7 @@ class ProductController extends Controller
             $query = Product::query()
                 ->select([
                     'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
                     \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
                 ])
                 ->leftJoin('customer_reviews', function($join) {
@@ -266,7 +270,7 @@ class ProductController extends Controller
             $query = Product::query()
                 ->select([
                     'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
                     \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
                 ])
                 ->leftJoin('customer_reviews', function($join) {
@@ -319,7 +323,7 @@ class ProductController extends Controller
             $productQuery = Product::query()
                 ->select([
                     'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
                     \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
                 ])
                 ->leftJoin('customer_reviews', function($join) {
@@ -343,7 +347,9 @@ class ProductController extends Controller
                 $productQuery->where(function ($q) use ($query) {
                     $q->where('products.name', 'ILIKE', '%' . $query . '%')
                       ->orWhere('products.description', 'ILIKE', '%' . $query . '%')
-                      ->orWhere('products.sku', 'ILIKE', '%' . $query . '%');
+                      ->orWhere('products.long_description', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('products.sku', 'ILIKE', '%' . $query . '%')
+                      ->orWhereJsonContains('products.tags', $query);
                 });
             }
 
@@ -472,6 +478,107 @@ class ProductController extends Controller
             
             return response()->json([
                 'message' => 'Failed to fetch product details',
+                'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get product categories (public API)
+     * Phase 1.4: Dynamic category list for frontend filters
+     */
+    public function getCategories(Request $request, ?string $tenantSlug = null): JsonResponse
+    {
+        try {
+            $query = \App\Infrastructure\Persistence\Eloquent\Models\ProductCategory::query()
+                ->where('is_active', true)
+                ->where('show_in_menu', true)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('name', 'asc');
+            
+            // If tenant slug is provided, filter by tenant
+            if ($tenantSlug) {
+                $tenant = \App\Infrastructure\Persistence\Eloquent\Models\Tenant::where('slug', $tenantSlug)->first();
+                if (!$tenant) {
+                    return response()->json(['error' => 'Tenant not found'], 404);
+                }
+                $query->where('tenant_id', $tenant->id);
+            }
+            
+            $categories = $query->get(['id', 'uuid', 'name', 'slug', 'description', 'image', 'icon']);
+            
+            // Transform to use UUID instead of integer ID
+            $categories = $categories->map(function ($category) {
+                return [
+                    'id' => $category->uuid,
+                    'uuid' => $category->uuid,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'description' => $category->description,
+                    'image' => $category->image,
+                    'icon' => $category->icon,
+                ];
+            });
+            
+            return response()->json([
+                'data' => $categories
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch product categories', [
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to fetch product categories',
+                'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get product options for customization
+     * Phase 1.6: Remove hardcoded data from frontend
+     * 
+     * @param Request $request
+     * @param string $tenantSlug
+     * @param string $uuid Product UUID
+     * @return JsonResponse
+     */
+    public function options(Request $request, string $tenantSlug, string $uuid): JsonResponse
+    {
+        try {
+            // Find tenant
+            $tenant = Tenant::where('slug', $tenantSlug)->first();
+            if (!$tenant) {
+                return response()->json(['error' => 'Tenant not found'], 404);
+            }
+            
+            // Find product by UUID and tenant
+            $product = Product::where('uuid', $uuid)
+                ->where('tenant_id', $tenant->id)
+                ->where('status', 'published')
+                ->first();
+            
+            if (!$product) {
+                return response()->json(['error' => 'Product not found'], 404);
+            }
+            
+            return response()->json([
+                'data' => $product->getProductOptions()
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch product options', [
+                'uuid' => $uuid,
+                'tenantSlug' => $tenantSlug,
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to fetch product options',
                 'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred'
             ], 500);
         }
