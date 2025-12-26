@@ -87,13 +87,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             throw new Error('Platform content not found');
           }
         } catch (error) {
-          if (import.meta.env.MODE === 'development') {
-            console.warn(`ContentContext: API failed, using fallback for development: ${slugParts[0]}`);
-            pageData = getPlatformFallbackContent(slugParts[0]);
-          } else {
-            console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);
-            throw new Error(`Failed to load platform content: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
+          console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);
+          throw new Error(`Failed to load platform content: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       } else if (isAdminRoute && globalContext.userType === 'tenant') {
         // Tenant admin accessing admin routes - use tenant API
@@ -101,8 +96,9 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           if (isTenantRoute && slugParts.length >= 2) {
             // For tenant routes like etchinx/home -> tenant admin accesses their own content as just "home"
             const [tenantSlug, pageSlug] = slugParts;
-            const response = await tenantApiClient.get(`/tenant/content/pages/${pageSlug}`);
-            console.log('ContentContext: Tenant API response:', response);
+            console.log('ContentContext: Fetching tenant content for multi-part slug:', { tenantSlug, pageSlug });
+            const response = await tenantApiClient.get(`/content/pages/${pageSlug}`);
+            console.log('ContentContext: Tenant API response (multi-part):', response);
             if (response && (response.id || (response.success && response.data))) {
               // Response could be direct content object or wrapped in success/data structure
               pageData = response.data || response;
@@ -110,9 +106,10 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               throw new Error('Tenant content not found');
             }
           } else {
-            // For single page routes like home -> /tenant/content/pages/home
-            const response = await tenantApiClient.get(`/tenant/content/pages/${slugParts[0]}`);
-            console.log('ContentContext: Tenant API single response:', response);
+            // For single page routes like home -> /content/pages/home
+            console.log('ContentContext: Fetching tenant content for single slug:', slugParts[0]);
+            const response = await tenantApiClient.get(`/content/pages/${slugParts[0]}`);
+            console.log('ContentContext: Tenant API response (single):', response);
             if (response && (response.id || (response.success && response.data))) {
               // Response could be direct content object or wrapped in success/data structure
               pageData = response.data || response;
@@ -122,13 +119,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         } catch (error) {
           const pageName = isTenantRoute && slugParts.length >= 2 ? `${slugParts[0]}/${slugParts[1]}` : slugParts[0];
-          if (import.meta.env.MODE === 'development') {
-            console.warn(`ContentContext: API failed, using fallback for development: ${pageName}`);
-            pageData = getTenantFallbackContent(isTenantRoute ? slugParts[0] : 'unknown', isTenantRoute ? slugParts[1] : slugParts[0]);
-          } else {
-            console.error(`ContentContext: Failed to load tenant content for ${pageName}:`, error);
-            throw new Error(`Failed to load tenant content: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
+          console.error(`ContentContext: Failed to load tenant content for ${pageName}:`, error);
+          throw new Error(`Failed to load tenant content: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       } else {
         // Anonymous users - use public API
@@ -144,13 +136,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               throw new Error('Tenant content not found');
             }
           } catch (error) {
-            if (import.meta.env.MODE === 'development') {
-              console.warn(`ContentContext: API failed, using fallback for development: ${tenantSlug}/${pageSlug}`);
-              pageData = getTenantFallbackContent(tenantSlug, pageSlug);
-            } else {
-              console.error(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}:`, error);
-              throw new Error(`Failed to load tenant content: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            console.error(`ContentContext: Failed to load tenant content for ${tenantSlug}/${pageSlug}:`, error);
+            throw new Error(`Failed to load tenant content: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         } else {
           // General platform content: about, faq, contact
@@ -162,13 +149,8 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
               throw new Error('Platform content not found');
             }
           } catch (error) {
-            if (import.meta.env.MODE === 'development') {
-              console.warn(`ContentContext: API failed, using fallback for development: ${slugParts[0]}`);
-              pageData = getPlatformFallbackContent(slugParts[0]);
-            } else {
-              console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);
-              throw new Error(`Failed to load platform content: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            console.error(`ContentContext: Failed to load platform content for ${slugParts[0]}:`, error);
+            throw new Error(`Failed to load platform content: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         }
       }
@@ -201,11 +183,15 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(true);
       setError(null);
       
+      console.log('ContentContext: Updating page content:', { slug, content });
+      
       let response;
       if (globalContext.userType === 'platform') {
-        response = await platformApiClient.put(`/platform/content/pages/${slug}`, { content });
+        console.log('ContentContext: Using platform API for update');
+        response = await platformApiClient.put(`/content/pages/${slug}`, { content });
       } else if (globalContext.userType === 'tenant') {
-        response = await tenantApiClient.put(`/content/pages/${slug}`, { content });
+        console.log('ContentContext: Using tenant API for update');
+        response = await tenantApiClient.patch(`/content/pages/${slug}/content`, { content });
       } else {
         throw new Error('Content updates not supported for anonymous users');
       }
@@ -319,102 +305,3 @@ export const usePageContent = (slugOverride?: string) => {
     updatePageContent
   };
 };
-
-// Helper functions for fallback content
-function getTenantFallbackContent(tenantSlug: string, pageSlug: string): any {
-  const fallbackData: Record<string, any> = {
-    products: {
-      hero: {
-        title: { prefix: 'Semua', highlight: 'Produk' },
-        subtitle: 'Temukan produk etching berkualitas tinggi dengan presisi sempurna.',
-        typingTexts: ['Etching Berkualitas', 'Produk Terbaik', 'Layanan Professional']
-      }
-    },
-    about: {
-      hero: {
-        title: { prefix: 'Tentang', highlight: tenantSlug.toUpperCase() },
-        subtitle: `Pelajari lebih lanjut tentang ${tenantSlug} dan layanan kami.`,
-        content: 'Informasi tentang perusahaan dan layanan yang kami tawarkan.'
-      }
-    },
-    faq: {
-      hero: {
-        title: { prefix: 'Pertanyaan', highlight: 'Umum' },
-        subtitle: 'Temukan jawaban untuk pertanyaan yang sering diajukan',
-      },
-      faqs: [
-        { question: 'Apa itu etching?', answer: 'Etching adalah proses mengukir permukaan material...' },
-        { question: 'Berapa lama waktu pengerjaan?', answer: 'Waktu pengerjaan bervariasi tergantung kompleksitas...' }
-      ]
-    },
-    contact: {
-      hero: {
-        title: { prefix: 'Hubungi', highlight: 'Kami' },
-        subtitle: 'Dapatkan konsultasi gratis untuk kebutuhan etching Anda',
-      },
-      contactInfo: {
-        email: 'info@' + tenantSlug.toLowerCase() + '.com',
-        phone: '+62 812-3456-7890',
-        address: 'Jalan Industri No. 123, Jakarta'
-      }
-    }
-  };
-  
-  return {
-    id: `page-${tenantSlug}-${pageSlug}-1`,
-    content: fallbackData[pageSlug] || { 
-      title: 'Page Not Found', 
-      subtitle: 'Content coming soon...',
-      message: `Page "${pageSlug}" untuk tenant "${tenantSlug}" sedang dalam pengembangan.`
-    }
-  };
-}
-
-function getPlatformFallbackContent(slug: string): any {
-  const fallbackData: Record<string, any> = {
-    about: {
-      title: 'About CanvaStencil',
-      subtitle: 'Professional Multi-Tenant CMS Platform',
-      content: 'CanvaStencil provides enterprise-grade CMS solutions for modern businesses.',
-      hero: {
-        title: { prefix: 'Tentang', highlight: 'CanvaStencil' },
-        subtitle: 'Platform CMS Multi-Tenant Profesional untuk Bisnis Modern',
-        description: 'Solusi enterprise terdepan untuk manajemen konten yang scalable.'
-      }
-    },
-    faq: {
-      title: 'Frequently Asked Questions',
-      subtitle: 'Find answers to common questions',
-      hero: {
-        title: { prefix: 'Pertanyaan', highlight: 'Umum' },
-        subtitle: 'Temukan jawaban untuk pertanyaan yang sering diajukan',
-      },
-      faqs: [
-        { question: 'What is CanvaStencil?', answer: 'A multi-tenant CMS platform for modern businesses.' },
-        { question: 'How to get started?', answer: 'Contact our team for consultation and setup.' }
-      ]
-    },
-    contact: {
-      title: 'Contact Us',
-      subtitle: 'Get in Touch',
-      hero: {
-        title: { prefix: 'Hubungi', highlight: 'Kami' },
-        subtitle: 'Dapatkan konsultasi gratis tentang solusi CMS yang tepat',
-      },
-      contactInfo: {
-        email: 'info@canvastencil.com',
-        phone: '+62 21-1234-5678', 
-        address: 'Jakarta, Indonesia'
-      }
-    }
-  };
-  
-  return {
-    id: `page-${slug}-1`,
-    content: fallbackData[slug] || { 
-      title: 'Page Not Found', 
-      subtitle: 'Content coming soon...',
-      message: `Platform page "${slug}" sedang dalam pengembangan.`
-    }
-  };
-}

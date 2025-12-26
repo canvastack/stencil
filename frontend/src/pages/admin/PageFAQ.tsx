@@ -23,11 +23,13 @@ import { toast } from "sonner";
 
 export default function PageFAQ() {
   const { content, loading, updatePageContent } = usePageContent("faq");
-  const [formData, setFormData] = useState<any>(content || {});
+  const [formData, setFormData] = useState<any>({});
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
-    if (content) {
+    console.log('PageFAQ: Content loaded:', content);
+    if (content && Object.keys(content).length > 0) {
+      console.log('PageFAQ: Setting formData with content:', content);
       setFormData(content);
     }
   }, [content]);
@@ -48,15 +50,33 @@ export default function PageFAQ() {
   };
 
   const handleReset = () => {
-    if (content?.content) {
-      setFormData(content.content);
+    if (content) {
+      setFormData(content);
       setHasChanges(false);
       toast.success("Changes reset successfully");
     }
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading content...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!content || Object.keys(formData).length === 0) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-gray-900 mb-2">No content found</p>
+          <p className="text-muted-foreground">Please ensure the FAQ page content is seeded in the database.</p>
+        </div>
+      </div>
+    );
   }
 
   return (

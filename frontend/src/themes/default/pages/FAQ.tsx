@@ -214,48 +214,68 @@ export default function FAQ() {
         )}
 
         {/* CTA Section */}
-        {pageData?.cta && pageData.cta?.enabled !== false && (
-          <section className="py-20 px-4 bg-gradient-to-r from-primary to-primary/80 text-white relative overflow-hidden">
-            <div className="container mx-auto max-w-4xl relative z-10">
-              <div className="text-center">
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  {pageData.cta.title}
-                </h2>
-                <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
-                  {pageData.cta.subtitle}
-                </p>
-                
-                {pageData.cta.buttons && (
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    {pageData.cta.buttons.map((button: any, index: number) => (
-                      <Button
-                        key={index}
-                        variant={button.variant === 'outline' ? 'outline' : 'default'}
-                        size="lg"
-                        className={`${button.variant === 'outline' 
-                          ? 'border-white text-white hover:bg-white hover:text-primary' 
-                          : 'bg-white text-primary hover:bg-white/90'
-                        } px-8`}
-                        asChild
-                      >
-                        <a href={button.link} target={button.link.startsWith('http') ? '_blank' : '_self'}>
-                          {button.text}
-                        </a>
-                      </Button>
-                    ))}
-                  </div>
-                )}
+        {(() => {
+          // Handle both array format and object format for backward compatibility
+          const ctaItems = Array.isArray(pageData?.cta) ? pageData.cta : 
+                          (pageData?.cta?.enabled !== false && pageData?.cta) ? [pageData.cta] : [];
+          
+          return ctaItems.length > 0 && ctaItems.map((ctaSection: any, index: number) => (
+            <section 
+              key={index}
+              className={`py-20 px-4 ${ctaSection.background || 'bg-gradient-to-r from-primary to-primary/80'} text-white relative overflow-hidden`}
+            >
+              <div className="container mx-auto max-w-4xl relative z-10">
+                <div className="text-center">
+                  <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                    {ctaSection.title}
+                  </h2>
+                  <p className="text-xl mb-8 max-w-3xl mx-auto opacity-90">
+                    {ctaSection.subtitle}
+                  </p>
+                  
+                  {ctaSection.stats && ctaSection.stats.length > 0 && (
+                    <div className={`grid grid-cols-1 md:grid-cols-${Math.min(ctaSection.stats.length, 3)} gap-6 mb-8`}>
+                      {ctaSection.stats.map((stat: any, i: number) => (
+                        <div key={i} className="text-center">
+                          <div className="text-4xl md:text-5xl font-bold mb-2 text-white">{stat.value}</div>
+                          <div className="text-white/90">{stat.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {ctaSection.buttons && ctaSection.buttons.length > 0 && (
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      {ctaSection.buttons.map((button: any, i: number) => (
+                        <Button
+                          key={i}
+                          variant={button.variant === 'outline' ? 'outline' : 'default'}
+                          size="lg"
+                          className={`${button.variant === 'outline' 
+                            ? 'border-white text-white hover:bg-white hover:text-primary' 
+                            : 'bg-white text-primary hover:bg-white/90'
+                          } px-8`}
+                          asChild
+                        >
+                          <a href={button.link} target={button.link?.startsWith('http') ? '_blank' : '_self'}>
+                            {button.text}
+                          </a>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            {/* Background decoration */}
-            <div className="absolute top-0 left-0 w-full h-full opacity-10">
-              <div className="absolute top-10 right-10 w-32 h-32 border border-white rounded-full"></div>
-              <div className="absolute bottom-10 left-10 w-48 h-48 border border-white rounded-full"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-white rounded-full"></div>
-            </div>
-          </section>
-        )}
+              
+              {/* Background decoration */}
+              <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                <div className="absolute top-10 right-10 w-32 h-32 border border-white rounded-full"></div>
+                <div className="absolute bottom-10 left-10 w-48 h-48 border border-white rounded-full"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border border-white rounded-full"></div>
+              </div>
+            </section>
+          ));
+        })()}
       </div>
       
       <Footer />
