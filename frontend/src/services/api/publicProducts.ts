@@ -53,19 +53,56 @@ function transformApiProduct(apiProduct: any): Product {
 class PublicProductsService {
   async getProducts(filters?: ProductFilters, tenantSlug?: string): Promise<PaginatedResponse<Product>> {
     const params = new URLSearchParams();
+    
     if (filters) {
+      // Pagination
       if (filters.page) params.append('page', filters.page.toString());
       if (filters.per_page) params.append('per_page', filters.per_page.toString());
+      
+      // Search
       if (filters.search) params.append('search', filters.search);
+      
+      // Sorting
       if (filters.sort) params.append('sort', filters.sort);
       if (filters.order) params.append('order', filters.order);
+      
+      // Filters
       if (filters.category) params.append('category', filters.category);
       if (filters.subcategory) params.append('subcategory', filters.subcategory);
       if (filters.status) params.append('status', filters.status);
       if (filters.featured !== undefined) params.append('featured', String(filters.featured));
       if (filters.inStock !== undefined) params.append('in_stock', String(filters.inStock));
+      
+      // Price range
       if (filters.priceMin !== undefined) params.append('price_min', filters.priceMin.toString());
       if (filters.priceMax !== undefined) params.append('price_max', filters.priceMax.toString());
+      
+      // Additional filters from ProductFilters type
+      if (filters.tags && filters.tags.length > 0) {
+        filters.tags.forEach(tag => params.append('tags[]', tag));
+      }
+      if (filters.categories && filters.categories.length > 0) {
+        filters.categories.forEach(cat => params.append('categories[]', cat));
+      }
+      if (filters.vendors && filters.vendors.length > 0) {
+        filters.vendors.forEach(vendor => params.append('vendors[]', vendor));
+      }
+      
+      // Stock range
+      if (filters.stockMin !== undefined) params.append('stock_min', filters.stockMin.toString());
+      if (filters.stockMax !== undefined) params.append('stock_max', filters.stockMax.toString());
+      
+      // Rating filter (support both minRating and min_rating)
+      const minRating = filters.minRating ?? filters.min_rating;
+      if (minRating !== undefined && minRating > 0) {
+        params.append('min_rating', minRating.toString());
+      }
+      
+      // Date filters
+      if (filters.createdAfter) params.append('created_after', filters.createdAfter);
+      if (filters.createdBefore) params.append('created_before', filters.createdBefore);
+      if (filters.updatedAfter) params.append('updated_after', filters.updatedAfter);
+      if (filters.updatedBefore) params.append('updated_before', filters.updatedBefore);
     }
 
     const endpoint = tenantSlug 

@@ -119,6 +119,13 @@ class ProductResource extends JsonResource
                 'reviewCount' => $this->review_count,
             ],
             
+            // Review summary for easy frontend access (Phase 04 optimization)
+            'reviewSummary' => [
+                'averageRating' => $this->average_rating ?? 0,
+                'reviewCount' => $this->review_count ?? 0,
+                'ratingDistribution' => $this->rating_distribution ?? null,
+            ],
+            
             'seo' => [
                 'seoTitle' => $this->seo_title,
                 'seoDescription' => $this->seo_description,

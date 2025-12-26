@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getProductDetailPath } from "@/utils/routes";
+import { useDebounce } from "@/hooks/useDebounce";
+import { usePublicProductsQuery } from "@/hooks/usePublicProductsQuery";
 
 interface PageContent {
   hero: {
@@ -61,32 +63,62 @@ import {
 } from "@/components/ui/pagination";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart } from "lucide-react";
+import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart, GitCompare } from "lucide-react";
 import { APP_CONFIG, TYPING_TEXTS } from "@/lib/constants";
-import { usePublicProducts } from '@/hooks/usePublicProducts';
-import { useReviews } from '@/hooks/useReviews.tsx';
 import { resolveImageUrl } from '@/utils/imageUtils';
-import { Product } from "@/types/product";
+import { Product, ProductFilters } from "@/types/product";
 import { usePageContent } from "@/hooks/usePageContent";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { useGlobalContext } from "@/contexts/GlobalContext";
 import { PlatformProductsView } from "@/components/products/PlatformProductsView";
+import { useProductComparison } from "@/contexts/ProductComparisonContext";
+import { ComparisonBar } from "@/components/products/ComparisonBar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
+
+// Skeleton Components
+const ProductCardSkeleton = ({ viewMode }: { viewMode: 'grid' | 'list' }) => (
+  <Card className="overflow-hidden bg-card border-border">
+    <Skeleton className="aspect-video w-full" />
+    <div className="p-6">
+      <Skeleton className="h-4 w-24 mb-3" />
+      <Skeleton className="h-6 w-3/4 mb-3" />
+      <Skeleton className="h-5 w-1/2 mb-2" />
+      <Skeleton className="h-16 w-full mb-6" />
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-3">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 flex-1" />
+        </div>
+        <Skeleton className="h-9 w-full" />
+      </div>
+    </div>
+  </Card>
+);
+
+const FilterSkeleton = () => (
+  <div className="bg-[#1e293b] rounded-xl p-6 border border-slate-700/50 sticky top-32 shadow-xl">
+    <div className="flex items-center gap-2 mb-6">
+      <Filter className="w-5 h-5 text-primary" />
+      <Skeleton className="h-7 w-32" />
+    </div>
+    {[...Array(5)].map((_, i) => (
+      <div key={i} className="mb-6">
+        <Skeleton className="h-4 w-24 mb-2" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    ))}
+    <Skeleton className="h-10 w-full" />
+  </div>
+);
 
 const Products = () => {
   const { userType } = useGlobalContext();
-  
-  // Always use public products service for better real data access
-  const { products: cmsProducts, isLoading: loadingProducts, fetchProducts } = usePublicProducts();
-  
-  const { reviews: allReviews, loading: loadingReviews } = useReviews(undefined, userType);
-  
-  // Fetch products on component mount
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
   const navigate = useNavigate();
+  const { addToCompare, isComparing, isMaxReached } = useProductComparison();
+  
+  // UI State
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedType, setSelectedType] = useState("all");
@@ -97,6 +129,29 @@ const Products = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [typingTextIndex, setTypingTextIndex] = useState(0);
   const { PRODUCTS_PER_PAGE } = APP_CONFIG;
+  
+  // Debounced search (300ms delay for server-side filtering)
+  const debouncedSearch = useDebounce(searchQuery, APP_CONFIG.SEARCH_DEBOUNCE_MS);
+  
+  // Build server-side filters from UI state
+  const filters: ProductFilters = useMemo(() => ({
+    page: currentPage,
+    per_page: PRODUCTS_PER_PAGE,
+    search: debouncedSearch || undefined,
+    type: selectedType !== "all" ? selectedType : undefined,
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    size: selectedSize !== "all" ? selectedSize : undefined,
+    min_rating: minRating > 0 ? minRating : undefined,
+    sort: sortBy,
+    status: 'published',
+  }), [currentPage, PRODUCTS_PER_PAGE, debouncedSearch, selectedType, selectedCategory, selectedSize, minRating, sortBy]);
+  
+  // Server-side data fetching with TanStack Query
+  // Use isFetching to show skeleton during pagination/filter changes
+  const { data: productsResponse, isFetching, isLoading, error } = usePublicProductsQuery(filters);
+  
+  // Show skeleton: isLoading (initial) OR isFetching (pagination/filters)
+  const loadingProducts = isLoading || isFetching;
 
   const { pageContent: cmsPageContent, loading: pageContentLoading } = usePageContent("products");
 
@@ -121,8 +176,8 @@ const Products = () => {
     ]
   };
 
-  // Fix: Ensure pageContent always has proper structure
-  const pageContent = {
+  // Fix: Ensure pageContent always has proper structure (memoized)
+  const pageContent = useMemo(() => ({
     ...defaultPageContent,
     ...(cmsPageContent?.content || {}),
     hero: {
@@ -133,8 +188,9 @@ const Products = () => {
       ...defaultPageContent.informationSection,
       ...(cmsPageContent?.content?.informationSection || {})
     }
-  };
-  const typingTexts = pageContent.hero?.typingTexts || TYPING_TEXTS;
+  }), [cmsPageContent]);
+  
+  const typingTexts = useMemo(() => pageContent.hero?.typingTexts || TYPING_TEXTS, [pageContent]);
 
   // Set up typing effect for all users - MOVED BEFORE CONDITIONAL RETURNS
   useEffect(() => {
@@ -144,36 +200,22 @@ const Products = () => {
     return () => clearInterval(interval);
   }, [typingTexts]);
 
-  // Reset pagination when filters change - MOVED BEFORE CONDITIONAL RETURNS
+  // Reset pagination when filters change (excluding page itself)
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedType, selectedCategory, minRating]);
+  }, [debouncedSearch, selectedType, selectedCategory, selectedSize, minRating, sortBy]);
 
-  // Show loading state while content is loading
-  if (pageContentLoading && !cmsPageContent) {
-    return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Extract products and pagination from API response (memoized) - MOVED BEFORE CONDITIONAL RETURNS
+  const products = useMemo(() => productsResponse?.data || [], [productsResponse]);
+  
+  const pagination = useMemo(() => ({
+    total: productsResponse?.total || 0,
+    currentPage: productsResponse?.current_page || 1,
+    lastPage: productsResponse?.last_page || 1,
+    perPage: productsResponse?.per_page || PRODUCTS_PER_PAGE,
+  }), [productsResponse, PRODUCTS_PER_PAGE]);
 
-  // Platform users get a different view focused on tenant management and analytics
-  if (userType === 'platform') {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="pt-20 px-4 py-8">
-          <PlatformProductsView />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  const allProducts: ExtendedProduct[] = cmsProducts || [];
-
-  const formatPrice = (price: number, currency: string): string => {
+  const formatPrice = useCallback((price: number, currency: string): string => {
     // Handle case where currency is empty or invalid
     if (!currency || currency.trim() === '') {
       currency = 'IDR'; // Default to IDR
@@ -190,54 +232,25 @@ const Products = () => {
       // Fallback to simple number formatting if currency is invalid
       return `Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
     }
-  };
+  }, []);
 
-  const getProductRating = (productId: string): number => {
-    const productReviews = allReviews.filter(review => review.productId === productId);
-    
-    if (productReviews.length === 0) {
-      return 0;
-    }
-    
-    const sum = productReviews.reduce((acc, review) => acc + review.rating, 0);
-    return parseFloat((sum / productReviews.length).toFixed(1));
-  };
+  // Helper function to get product rating from reviewSummary (from API)
+  const getProductRating = useCallback((product: Product): number => {
+    return (product as any).reviewSummary?.averageRating || 0;
+  }, []);
 
-  const filteredProducts = allProducts.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesType = selectedType === "all" || 
-                       product.category.toLowerCase().includes(selectedType.toLowerCase()) ||
-                       product.tags.some(tag => tag.toLowerCase() === selectedType.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || 
-                          product.category.toLowerCase().includes(selectedCategory.toLowerCase()) ||
-                          product.subcategory?.toLowerCase().includes(selectedCategory.toLowerCase());
-    const matchesRating = getProductRating(product.id) >= minRating;
-    
-    return matchesSearch && matchesType && matchesCategory && matchesRating && product.status === 'published';
-  });
-
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortBy) {
-      case "name-asc":
-        return a.name.localeCompare(b.name);
-      case "name-desc":
-        return b.name.localeCompare(a.name);
-      case "rating-high":
-        return getProductRating(b.id) - getProductRating(a.id);
-      case "rating-low":
-        return getProductRating(a.id) - getProductRating(b.id);
-      default:
-        return 0;
-    }
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedProducts.length / PRODUCTS_PER_PAGE);
-  const indexOfLastProduct = currentPage * PRODUCTS_PER_PAGE;
-  const indexOfFirstProduct = indexOfLastProduct - PRODUCTS_PER_PAGE;
-  const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  // Platform users get a different view focused on tenant management and analytics
+  if (userType === 'platform') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="pt-20 px-4 py-8">
+          <PlatformProductsView />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a]">
@@ -341,11 +354,14 @@ const Products = () => {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Sidebar Filters */}
             <aside className="lg:w-64 flex-shrink-0">
-              <div className="bg-[#1e293b] rounded-xl p-6 border border-slate-700/50 sticky top-32 shadow-xl">
-                <div className="flex items-center gap-2 mb-6">
-                  <Filter className="w-5 h-5 text-primary" />
-                  <h3 className="text-xl font-bold text-white">Filter Produk</h3>
-                </div>
+              {loadingProducts ? (
+                <FilterSkeleton />
+              ) : (
+                <div className="bg-[#1e293b] rounded-xl p-6 border border-slate-700/50 sticky top-32 shadow-xl">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Filter className="w-5 h-5 text-primary" />
+                    <h3 className="text-xl font-bold text-white">Filter Produk</h3>
+                  </div>
 
                 {/* Search in Sidebar */}
                 <div className="mb-6">
@@ -452,22 +468,19 @@ const Products = () => {
                 >
                   Reset Filter
                 </Button>
-              </div>
+                </div>
+              )}
             </aside>
 
             {/* Products Grid */}
             <div className="flex-1">
               {loadingProducts ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-                  <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-full p-8 mb-6 animate-pulse">
-                    <ShoppingCart className="w-16 h-16 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Memuat produk...</h3>
-                  <p className="text-slate-400 max-w-md">
-                    Mohon tunggu sebentar
-                  </p>
+                <div className={`grid ${viewMode === "grid" ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"} gap-6`}>
+                  {[...Array(9)].map((_, i) => (
+                    <ProductCardSkeleton key={i} viewMode={viewMode} />
+                  ))}
                 </div>
-              ) : sortedProducts.length === 0 ? (
+              ) : products.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
                   <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-full p-8 mb-6">
                     <Fish className="w-16 h-16 text-primary animate-float" />
@@ -480,8 +493,8 @@ const Products = () => {
               ) : (
                 <>
                   <div className={`grid ${viewMode === "grid" ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"} gap-6`}>
-                    {currentProducts.map((product, i) => {
-                      const rating = getProductRating(product.id);
+                    {products.map((product, i) => {
+                      const rating = getProductRating(product);
                       return (
                         <Card
                           key={product.id}
@@ -513,21 +526,37 @@ const Products = () => {
                             <p className="text-lg font-bold text-primary mb-2">{formatPrice(product.price, product.currency)}</p>
                             <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-2">{product.description}</p>
                             
-                            <div className="flex gap-3">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex gap-3">
+                                <Button
+                                  onClick={() => navigate(getProductDetailPath(product.slug))}
+                                  variant="outline"
+                                  className="flex-1 border-primary text-primary hover:bg-primary/10 font-semibold"
+                                >
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Detail
+                                </Button>
+                                <Button
+                                  onClick={() => navigate(getProductDetailPath(product.slug))}
+                                  className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
+                                >
+                                  <ShoppingCart className="w-4 h-4 mr-2" />
+                                  Pesan
+                                </Button>
+                              </div>
+                              
                               <Button
-                                onClick={() => navigate(getProductDetailPath(product.slug))}
-                                variant="outline"
-                                className="flex-1 border-primary text-primary hover:bg-primary/10 font-semibold"
+                                variant={isComparing(product.id) ? "secondary" : "outline"}
+                                size="sm"
+                                className="w-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addToCompare(product);
+                                }}
+                                disabled={!isComparing(product.id) && isMaxReached}
                               >
-                                <Eye className="w-4 h-4 mr-2" />
-                                Detail
-                              </Button>
-                              <Button
-                                onClick={() => navigate(getProductDetailPath(product.slug))}
-                                className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
-                              >
-                                <ShoppingCart className="w-4 h-4 mr-2" />
-                                Pesan
+                                <GitCompare className="w-4 h-4 mr-2" />
+                                {isComparing(product.id) ? 'Ditambahkan' : 'Bandingkan'}
                               </Button>
                             </div>
                           </div>
@@ -536,32 +565,32 @@ const Products = () => {
                     })}
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
+                {/* Pagination - Server-side */}
+                {pagination.lastPage > 1 && (
                   <div className="mt-12">
                     <Pagination>
                       <PaginationContent className="bg-[#1e293b] rounded-lg p-2 border border-slate-700/50">
                         <PaginationItem>
                           <PaginationPrevious 
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10 text-white"}
+                            className={pagination.currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10 text-white"}
                           />
                         </PaginationItem>
                         
-                        {[...Array(totalPages)].map((_, idx) => {
+                        {[...Array(pagination.lastPage)].map((_, idx) => {
                           const pageNum = idx + 1;
                           if (
                             pageNum === 1 ||
-                            pageNum === totalPages ||
-                            (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                            pageNum === pagination.lastPage ||
+                            (pageNum >= pagination.currentPage - 1 && pageNum <= pagination.currentPage + 1)
                           ) {
                             return (
                               <PaginationItem key={pageNum}>
                                 <PaginationLink
                                   onClick={() => setCurrentPage(pageNum)}
-                                  isActive={currentPage === pageNum}
+                                  isActive={pagination.currentPage === pageNum}
                                   className={`cursor-pointer ${
-                                    currentPage === pageNum
+                                    pagination.currentPage === pageNum
                                       ? "bg-primary text-white hover:bg-primary/90"
                                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                                   }`}
@@ -571,8 +600,8 @@ const Products = () => {
                               </PaginationItem>
                             );
                           } else if (
-                            pageNum === currentPage - 2 ||
-                            pageNum === currentPage + 2
+                            pageNum === pagination.currentPage - 2 ||
+                            pageNum === pagination.currentPage + 2
                           ) {
                             return (
                               <PaginationItem key={pageNum}>
@@ -585,8 +614,8 @@ const Products = () => {
                         
                         <PaginationItem>
                           <PaginationNext
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10 text-white"}
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, pagination.lastPage))}
+                            className={pagination.currentPage === pagination.lastPage ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-primary/10 text-white"}
                           />
                         </PaginationItem>
                       </PaginationContent>
@@ -727,6 +756,9 @@ const Products = () => {
           </div>
         </section>
       )}
+
+      {/* Comparison Bar - Floating bottom */}
+      <ComparisonBar />
 
       <Footer />
     </div>

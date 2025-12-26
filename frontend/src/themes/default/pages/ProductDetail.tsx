@@ -32,8 +32,10 @@ import {
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
-import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, Plus, Trash2, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, Plus, Trash2, ArrowUpDown, GitCompare } from "lucide-react";
 import { ColorPicker } from "@/components/ui/color-picker";
+import { useProductComparison } from "@/contexts/ProductComparisonContext";
+import { ComparisonBar } from "@/components/products/ComparisonBar";
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
 import { Modal } from "@/components/ui/modal";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
@@ -54,6 +56,7 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { addToCart } = useCart();
+  const { addToCompare, isComparing, isMaxReached } = useProductComparison();
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
@@ -921,6 +924,23 @@ const ProductDetail = () => {
                       Chat WhatsApp
                     </Button>
                   </div>
+
+                  {/* Compare Button */}
+                  <div className="mt-4">
+                    <Button
+                      variant={isComparing(product.id) ? "secondary" : "outline"}
+                      className="w-full"
+                      onClick={() => {
+                        if (product) {
+                          addToCompare(product);
+                        }
+                      }}
+                      disabled={!isComparing(product.id) && isMaxReached}
+                    >
+                      <GitCompare className="w-5 h-5 mr-2" />
+                      {isComparing(product.id) ? 'Ditambahkan ke Perbandingan' : 'Bandingkan Produk'}
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </div>
@@ -1089,6 +1109,10 @@ const ProductDetail = () => {
       </section>
 
       <ScrollToTop />
+      
+      {/* Comparison Bar - Floating bottom */}
+      <ComparisonBar />
+
       <Footer />
 
       {/* Review Modal */}

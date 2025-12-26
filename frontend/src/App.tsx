@@ -32,14 +32,15 @@ import { DebugAuth } from "@/components/DebugAuth";
 import { TenantRedirectWrapper } from "@/components/TenantRedirectWrapper";
 import DevDebugger from "@/components/debug/DevDebugger";
 
-import Home from "@/themes/default/pages/Home";
-import About from "@/themes/default/pages/About";
-import Contact from "@/themes/default/pages/Contact";
-import Products from "@/themes/default/pages/Products";
-import ProductDetail from "@/themes/default/pages/ProductDetail";
-import FAQ from "@/themes/default/pages/FAQ";
-import NotFound from "@/themes/default/pages/NotFound";
-import Cart from "@/themes/default/pages/Cart";
+const Home = lazy(() => import("@/themes/default/pages/Home"));
+const About = lazy(() => import("@/themes/default/pages/About"));
+const Contact = lazy(() => import("@/themes/default/pages/Contact"));
+const Products = lazy(() => import("@/themes/default/pages/Products"));
+const ProductDetail = lazy(() => import("@/themes/default/pages/ProductDetail"));
+const ProductComparison = lazy(() => import("@/themes/default/pages/ProductComparison"));
+const FAQ = lazy(() => import("@/themes/default/pages/FAQ"));
+const NotFound = lazy(() => import("@/themes/default/pages/NotFound"));
+const Cart = lazy(() => import("@/themes/default/pages/Cart"));
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -91,7 +92,7 @@ const OrderAnalytics = lazy(() => import("./pages/admin/OrderAnalytics"));
 const QuoteManagement = lazy(() => import("./pages/tenant/QuoteManagement"));
 const InvoiceManagement = lazy(() => import("./pages/tenant/InvoiceManagement"));
 const PaymentManagement = lazy(() => import("./pages/tenant/PaymentManagement"));
-const ProductComparison = lazy(() => import("./pages/tenant/ProductComparison"));
+const TenantProductComparison = lazy(() => import("./pages/tenant/ProductComparison"));
 const ProductionManagement = lazy(() => import("./pages/tenant/ProductionManagement"));
 const QualityManagement = lazy(() => import("./pages/tenant/QualityManagement"));
 const ShippingManagement = lazy(() => import("./pages/tenant/ShippingManagement"));
@@ -176,37 +177,40 @@ function App() {
                     <ThemeProvider initialTheme="default">
                       <ContentProvider>
                         <CartProvider>
-                        <Toaster />
-                        <Sonner />
-                    {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
-                        import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
-                        Fallback to '/' when empty. */}
-                    <BrowserRouter
-                      basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
-                      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-                    >
-                      <PublicTenantProvider>
+                          <ProductComparisonProvider>
+                            <Toaster />
+                            <Sonner />
+                            {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
+                                import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
+                                Fallback to '/' when empty. */}
+                            <BrowserRouter
+                              basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
+                              future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+                            >
+                              <PublicTenantProvider>
                         <TenantRedirectWrapper>
                           <Routes>
                   {/* Global Public Routes (no tenant) */}
-                  <Route path="/" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/products/:slug" element={<ProductDetail />} />
-                  <Route path="/cart" element={<Cart />} />
-                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/" element={<Suspense fallback={<LoadingFallback />}><Home /></Suspense>} />
+                  <Route path="/about" element={<Suspense fallback={<LoadingFallback />}><About /></Suspense>} />
+                  <Route path="/contact" element={<Suspense fallback={<LoadingFallback />}><Contact /></Suspense>} />
+                  <Route path="/products" element={<Suspense fallback={<LoadingFallback />}><Products /></Suspense>} />
+                  <Route path="/products/compare" element={<Suspense fallback={<LoadingFallback />}><ProductComparison /></Suspense>} />
+                  <Route path="/products/:slug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+                  <Route path="/cart" element={<Suspense fallback={<LoadingFallback />}><Cart /></Suspense>} />
+                  <Route path="/faq" element={<Suspense fallback={<LoadingFallback />}><FAQ /></Suspense>} />
                   <Route path="/status" element={<Suspense fallback={<LoadingFallback />}><StatusPage /></Suspense>} />
                   <Route path="/announcements" element={<Suspense fallback={<LoadingFallback />}><AnnouncementsPage /></Suspense>} />
                   
                   {/* Tenant-Scoped Public Routes */}
-                  <Route path="/:tenantSlug" element={<Home />} />
-                  <Route path="/:tenantSlug/about" element={<About />} />
-                  <Route path="/:tenantSlug/contact" element={<Contact />} />
-                  <Route path="/:tenantSlug/products" element={<Products />} />
-                  <Route path="/:tenantSlug/products/:slug" element={<ProductDetail />} />
-                  <Route path="/:tenantSlug/cart" element={<Cart />} />
-                  <Route path="/:tenantSlug/faq" element={<FAQ />} />
+                  <Route path="/:tenantSlug" element={<Suspense fallback={<LoadingFallback />}><Home /></Suspense>} />
+                  <Route path="/:tenantSlug/about" element={<Suspense fallback={<LoadingFallback />}><About /></Suspense>} />
+                  <Route path="/:tenantSlug/contact" element={<Suspense fallback={<LoadingFallback />}><Contact /></Suspense>} />
+                  <Route path="/:tenantSlug/products" element={<Suspense fallback={<LoadingFallback />}><Products /></Suspense>} />
+                  <Route path="/:tenantSlug/products/compare" element={<Suspense fallback={<LoadingFallback />}><ProductComparison /></Suspense>} />
+                  <Route path="/:tenantSlug/products/:slug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
+                  <Route path="/:tenantSlug/cart" element={<Suspense fallback={<LoadingFallback />}><Cart /></Suspense>} />
+                  <Route path="/:tenantSlug/faq" element={<Suspense fallback={<LoadingFallback />}><FAQ /></Suspense>} />
                   
                   {/* Tenant-scoped Auth Routes */}
                   <Route path="/:tenantSlug/login" element={<Login />} />
@@ -346,8 +350,9 @@ function App() {
                         <ThemeScrollToTop />
                         <DebugAuth />
                       </PublicTenantProvider>
-                      </BrowserRouter>
-                          </CartProvider>
+                            </BrowserRouter>
+                          </ProductComparisonProvider>
+                        </CartProvider>
                       </ContentProvider>
                     </ThemeProvider>
                   </GlobalContextProvider>

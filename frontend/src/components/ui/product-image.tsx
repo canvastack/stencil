@@ -24,6 +24,8 @@ interface ProductImageProps {
   className?: string;
   loading?: 'lazy' | 'eager';
   fallback?: React.ReactNode;
+  priority?: boolean;
+  sizes?: string;
 }
 
 const DEFAULT_PRODUCT_IMAGE = '/images/product-placeholder.svg';
@@ -35,7 +37,9 @@ export const ProductImage = React.memo<ProductImageProps>(({
   alt, 
   className = "",
   loading = 'lazy',
-  fallback
+  fallback,
+  priority = false,
+  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
 }) => {
   const imageSrc = useMemo(() => {
     if (!src) return DEFAULT_PRODUCT_IMAGE;
@@ -46,12 +50,12 @@ export const ProductImage = React.memo<ProductImageProps>(({
   }, [src]);
 
   const [isLoaded, setIsLoaded] = useState(() => loadedImagesCache.has(imageSrc));
-  const [isInView, setIsInView] = useState(loading === 'eager');
+  const [isInView, setIsInView] = useState(priority || loading === 'eager');
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (loading === 'eager' || !imgRef.current) {
+    if (priority || loading === 'eager' || !imgRef.current) {
       setIsInView(true);
       return;
     }
@@ -74,7 +78,7 @@ export const ProductImage = React.memo<ProductImageProps>(({
     return () => {
       observer.disconnect();
     };
-  }, [loading]);
+  }, [priority, loading]);
 
   const handleImageLoad = useCallback(() => {
     loadedImagesCache.add(imageSrc);
@@ -107,8 +111,9 @@ export const ProductImage = React.memo<ProductImageProps>(({
             className={`w-full h-full object-cover transition-opacity duration-300 ${
               isLoaded ? 'opacity-100' : 'opacity-0'
             }`}
-            loading={loading}
+            loading={priority ? 'eager' : loading}
             decoding="async"
+            sizes={sizes}
             onLoad={handleImageLoad}
             onError={handleImageError}
           />

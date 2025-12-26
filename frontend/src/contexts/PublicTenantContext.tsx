@@ -73,6 +73,7 @@ export const PublicTenantProvider: React.FC<PublicTenantProviderProps> = ({ chil
     
     if (currentTenantSlug && currentTenantSlug !== tenantSlug) {
       console.log('PublicTenantContext: Detected tenant slug from URL:', currentTenantSlug);
+      setIsLoading(true);
       setTenantSlug(currentTenantSlug);
       fetchTenantData(currentTenantSlug);
     } else if (!currentTenantSlug && tenantSlug) {
@@ -80,6 +81,7 @@ export const PublicTenantProvider: React.FC<PublicTenantProviderProps> = ({ chil
       setTenantId(null);
       setTenantData(null);
       setError(null);
+      setIsLoading(false);
     }
   }, [location.pathname, tenantSlug]);
 

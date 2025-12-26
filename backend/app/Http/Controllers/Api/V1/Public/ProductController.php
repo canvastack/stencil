@@ -13,12 +13,48 @@ class ProductController extends Controller
 {
     /**
      * Get public products (global or tenant-specific)
+     * Enhanced with comprehensive server-side filtering, search, sorting, and pagination
      */
     public function index(Request $request, ?string $tenantSlug = null): JsonResponse
     {
         try {
-            $perPage = $request->get('per_page', 20);
-            $query = Product::with('category')->published();
+            // Validate request parameters
+            $validated = $request->validate([
+                'page' => 'integer|min:1',
+                'per_page' => 'integer|min:1|max:100',
+                'search' => 'string|nullable|max:255',
+                'category' => 'string|nullable',
+                'subcategory' => 'string|nullable',
+                'type' => 'string|nullable',
+                'size' => 'string|nullable',
+                'material' => 'string|nullable',
+                'min_rating' => 'numeric|nullable|min:0|max:5',
+                'sort' => 'string|nullable',
+                'order' => 'string|nullable|in:asc,desc',
+                'status' => 'string|nullable|in:published,draft,archived',
+                'featured' => 'boolean|nullable',
+                'in_stock' => 'boolean|nullable',
+                'customizable' => 'boolean|nullable',
+                'price_min' => 'numeric|nullable|min:0',
+                'price_max' => 'numeric|nullable|min:0',
+            ]);
+
+            $perPage = $validated['per_page'] ?? 20;
+            
+            // Build query with review aggregation
+            $query = Product::query()
+                ->select([
+                    'products.*',
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
+                ])
+                ->leftJoin('customer_reviews', function($join) {
+                    $join->on('customer_reviews.product_id', '=', 'products.id')
+                         ->where('customer_reviews.is_approved', '=', true);
+                })
+                ->with('category')
+                ->where('products.status', 'published')
+                ->groupBy('products.id');
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -26,86 +62,142 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $query->where('tenant_id', $tenant->id);
+                $query->where('products.tenant_id', $tenant->id);
             }
 
-            // Apply filters
-            if ($request->filled('search')) {
-                $query->where(function ($q) use ($request) {
-                    $q->where('name', 'ILIKE', '%' . $request->search . '%')
-                      ->orWhere('description', 'ILIKE', '%' . $request->search . '%')
-                      ->orWhere('sku', 'ILIKE', '%' . $request->search . '%');
+            // Server-side search with ILIKE (case-insensitive)
+            if (!empty($validated['search'])) {
+                $search = $validated['search'];
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'ILIKE', "%{$search}%")
+                      ->orWhere('description', 'ILIKE', "%{$search}%")
+                      ->orWhere('long_description', 'ILIKE', "%{$search}%")
+                      ->orWhere('sku', 'ILIKE', "%{$search}%")
+                      ->orWhereJsonContains('tags', $search);
                 });
             }
 
-            if ($request->filled('category')) {
-                $query->whereHas('category', function ($q) use ($request) {
-                    $q->where('slug', $request->category);
+            // Category filter
+            if (!empty($validated['category'])) {
+                $query->whereHas('category', function ($q) use ($validated) {
+                    $q->where('slug', $validated['category'])
+                      ->orWhere('name', 'ILIKE', "%{$validated['category']}%");
                 });
             }
 
-            if ($request->filled('subcategory')) {
-                $query->where('subcategory', $request->subcategory);
+            // Subcategory filter
+            if (!empty($validated['subcategory'])) {
+                $query->where('subcategory', 'ILIKE', "%{$validated['subcategory']}%");
             }
 
-            if ($request->filled('featured')) {
-                $query->where('featured', $request->boolean('featured'));
+            // Type filter
+            if (!empty($validated['type'])) {
+                $query->where('type', 'ILIKE', "%{$validated['type']}%");
             }
 
-            if ($request->filled('in_stock')) {
-                if ($request->boolean('in_stock')) {
+            // Size filter
+            if (!empty($validated['size'])) {
+                $query->where(function ($q) use ($validated) {
+                    $q->where('size', 'ILIKE', "%{$validated['size']}%")
+                      ->orWhereJsonContains('specifications->size', $validated['size']);
+                });
+            }
+
+            // Material filter
+            if (!empty($validated['material'])) {
+                $query->where('material', 'ILIKE', "%{$validated['material']}%");
+            }
+
+            // Rating filter - using HAVING since avg_rating is aggregated
+            // PostgreSQL requires full expression in HAVING, not alias
+            if (isset($validated['min_rating']) && $validated['min_rating'] > 0) {
+                $query->havingRaw('COALESCE(AVG(customer_reviews.rating), 0) >= ?', [$validated['min_rating']]);
+            }
+
+            // Featured filter
+            if (isset($validated['featured'])) {
+                $query->where('featured', $validated['featured']);
+            }
+
+            // Stock filter
+            if (isset($validated['in_stock'])) {
+                if ($validated['in_stock']) {
                     $query->where('stock_quantity', '>', 0);
+                } else {
+                    $query->where('stock_quantity', '<=', 0);
                 }
             }
 
-            if ($request->filled('price_min')) {
-                $query->where('price', '>=', $request->price_min * 100); // Convert to cents
+            // Customizable filter
+            if (isset($validated['customizable'])) {
+                $query->where('customizable', $validated['customizable']);
             }
 
-            if ($request->filled('price_max')) {
-                $query->where('price', '<=', $request->price_max * 100); // Convert to cents
+            // Price range filter (convert from rupiah to cents for database)
+            if (isset($validated['price_min'])) {
+                $query->where('price', '>=', $validated['price_min'] * 100);
             }
 
-            if ($request->filled('material')) {
-                $query->where('material', $request->material);
+            if (isset($validated['price_max'])) {
+                $query->where('price', '<=', $validated['price_max'] * 100);
             }
 
-            if ($request->filled('customizable')) {
-                $query->where('customizable', $request->boolean('customizable'));
-            }
-
-            // Sorting
-            $sortBy = $request->get('sort', 'created_at');
-            $sortOrder = $request->get('order', 'desc');
+            // Server-side sorting
+            $sortBy = $validated['sort'] ?? 'created_at';
+            $sortOrder = $validated['order'] ?? 'desc';
 
             // Map frontend sort options to database columns
             $sortMapping = [
+                'name' => 'name',
                 'name-asc' => ['name', 'asc'],
-                'name-desc' => ['name', 'desc'], 
+                'name-desc' => ['name', 'desc'],
+                'price' => 'price',
                 'price-asc' => ['price', 'asc'],
                 'price-desc' => ['price', 'desc'],
+                'rating' => 'average_rating',
+                'rating-high' => ['average_rating', 'desc'],
+                'rating-low' => ['average_rating', 'asc'],
+                'created_at' => 'created_at',
                 'created-asc' => ['created_at', 'asc'],
                 'created-desc' => ['created_at', 'desc'],
                 'featured' => ['featured', 'desc'],
                 'popular' => ['view_count', 'desc'],
-                'rating' => ['average_rating', 'desc'],
             ];
 
             if (isset($sortMapping[$sortBy])) {
-                [$column, $direction] = $sortMapping[$sortBy];
-                $query->orderBy($column, $direction);
+                $mapping = $sortMapping[$sortBy];
+                if (is_array($mapping)) {
+                    [$column, $direction] = $mapping;
+                    $query->orderBy($column, $direction);
+                } else {
+                    $query->orderBy($mapping, $sortOrder);
+                }
             } else {
-                // Legacy support for individual sort/order params
-                $query->orderBy($sortBy, $sortOrder);
+                // Fallback to created_at if invalid sort column
+                $query->orderBy('created_at', 'desc');
             }
 
+            // Add secondary sort for consistency
+            $query->orderBy('id', 'asc');
+
+            // Paginate results
             $products = $query->paginate($perPage);
 
             return ProductResource::collection($products)
                 ->response()
                 ->setStatusCode(200);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
+            \Log::error('Failed to fetch products', [
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ]);
+            
             return response()->json([
                 'message' => 'Failed to fetch products',
                 'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred'
@@ -120,7 +212,22 @@ class ProductController extends Controller
     {
         try {
             $limit = $request->get('limit', 10);
-            $query = Product::with('category')->published()->featured();
+            
+            // Build query with review aggregation
+            $query = Product::query()
+                ->select([
+                    'products.*',
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
+                ])
+                ->leftJoin('customer_reviews', function($join) {
+                    $join->on('customer_reviews.product_id', '=', 'products.id')
+                         ->where('customer_reviews.is_approved', '=', true);
+                })
+                ->with('category')
+                ->where('products.status', 'published')
+                ->where('products.featured', true)
+                ->groupBy('products.id');
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -128,7 +235,7 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $query->where('tenant_id', $tenant->id);
+                $query->where('products.tenant_id', $tenant->id);
             }
 
             $products = $query->orderBy('view_count', 'desc')
@@ -154,7 +261,21 @@ class ProductController extends Controller
     {
         try {
             $limit = $request->get('limit', 20);
-            $query = Product::with('category')->published();
+            
+            // Build query with review aggregation
+            $query = Product::query()
+                ->select([
+                    'products.*',
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
+                ])
+                ->leftJoin('customer_reviews', function($join) {
+                    $join->on('customer_reviews.product_id', '=', 'products.id')
+                         ->where('customer_reviews.is_approved', '=', true);
+                })
+                ->with('category')
+                ->where('products.status', 'published')
+                ->groupBy('products.id');
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -162,7 +283,7 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $query->where('tenant_id', $tenant->id);
+                $query->where('products.tenant_id', $tenant->id);
             }
 
             $query->whereHas('category', function ($q) use ($category) {
@@ -194,7 +315,20 @@ class ProductController extends Controller
             $query = $request->get('q', '');
             $limit = $request->get('limit', 20);
             
-            $productQuery = Product::with('category')->published();
+            // Build query with review aggregation
+            $productQuery = Product::query()
+                ->select([
+                    'products.*',
+                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as avg_rating'),
+                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
+                ])
+                ->leftJoin('customer_reviews', function($join) {
+                    $join->on('customer_reviews.product_id', '=', 'products.id')
+                         ->where('customer_reviews.is_approved', '=', true);
+                })
+                ->with('category')
+                ->where('products.status', 'published')
+                ->groupBy('products.id');
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -202,14 +336,14 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $productQuery->where('tenant_id', $tenant->id);
+                $productQuery->where('products.tenant_id', $tenant->id);
             }
 
             if ($query) {
                 $productQuery->where(function ($q) use ($query) {
-                    $q->where('name', 'ILIKE', '%' . $query . '%')
-                      ->orWhere('description', 'ILIKE', '%' . $query . '%')
-                      ->orWhere('sku', 'ILIKE', '%' . $query . '%');
+                    $q->where('products.name', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('products.description', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('products.sku', 'ILIKE', '%' . $query . '%');
                 });
             }
 

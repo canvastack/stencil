@@ -34,7 +34,7 @@ return new class extends Migration
             
             // Assigned approver
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('role_required')->nullable()->constrained('roles')->nullOnDelete(); // Alternative to specific user
+            $table->unsignedBigInteger('role_required')->nullable(); // Alternative to specific user (NO FK to avoid migration order issues)
             $table->json('permission_requirements')->nullable(); // Required permissions
             
             // Approval decision

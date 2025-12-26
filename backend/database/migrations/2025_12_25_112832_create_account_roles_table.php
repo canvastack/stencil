@@ -12,21 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('account_roles', function (Blueprint $table) {
-            // Primary Key (Simple BIGINT auto-increment)
             $table->id();
-            
-            // Foreign Keys
-            $table->foreignId('account_id')->constrained('accounts')->cascadeOnDelete();
-            $table->foreignId('role_id')->constrained('roles')->cascadeOnDelete();
-            
-            // Timestamps
+            $table->foreignId('account_id')->constrained('accounts')->onDelete('cascade');
+            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
             $table->timestamps();
             
-            // Indexes
-            $table->index('account_id');
-            $table->index('role_id');
-            
-            // Unique constraint to prevent duplicate role assignments
             $table->unique(['account_id', 'role_id']);
         });
     }

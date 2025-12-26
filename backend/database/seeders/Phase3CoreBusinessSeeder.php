@@ -58,7 +58,7 @@ class Phase3CoreBusinessSeeder extends Seeder
         $existingCount = ProductCategory::where('tenant_id', $tenant->id)->count();
         if ($existingCount > 0) {
             $this->command->info("      ℹ️  Categories already exist for {$tenant->name}, skipping...");
-            return ProductCategory::where('tenant_id', $tenant->id)->get()->toArray();
+            return ProductCategory::where('tenant_id', $tenant->id)->get()->all();
         }
         
         $categoriesData = [

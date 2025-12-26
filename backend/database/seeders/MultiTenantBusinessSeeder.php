@@ -93,6 +93,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'slug' => 'admin',
+                'guard_name' => 'web',
                 'description' => 'Full tenant access with all business permissions',
                 'is_system' => true,
                 'abilities' => [
@@ -109,6 +110,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Manager',
                 'slug' => 'manager',
+                'guard_name' => 'web',
                 'description' => 'Business operations management',
                 'is_system' => true,
                 'abilities' => [
@@ -122,6 +124,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Sales',
                 'slug' => 'sales',
+                'guard_name' => 'web',
                 'description' => 'Customer and order management',
                 'is_system' => true,
                 'abilities' => [
@@ -133,6 +136,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Viewer',
                 'slug' => 'viewer',
+                'guard_name' => 'web',
                 'description' => 'Read-only access to business data',
                 'is_system' => true,
                 'abilities' => [

@@ -74,7 +74,13 @@ class ProductResource extends JsonResource
             
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
             
-            // Computed properties
+            // Review summary (aggregated from customer_reviews)
+            'reviewSummary' => [
+                'averageRating' => round((float) ($this->avg_rating ?? 0), 1),
+                'totalReviews' => (int) ($this->review_count ?? 0),
+            ],
+            
+            // Backward compatibility - deprecated, use reviewSummary instead
             'average_rating' => $this->when(
                 isset($this->average_rating),
                 $this->average_rating

@@ -1,14 +1,16 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { X, ArrowRight, Trash2 } from 'lucide-react';
 import { useProductComparison } from '@/contexts/ProductComparisonContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice } from '@/lib/utils';
+import { usePublicTenant } from '@/contexts/PublicTenantContext';
 
 export const ComparisonBar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     comparedProducts, 
     removeFromCompare, 
@@ -16,9 +18,34 @@ export const ComparisonBar: React.FC = () => {
     maxProducts 
   } = useProductComparison();
 
+  // Get tenant context for routing (for public pages)
+  let tenantSlug: string | null = null;
+  try {
+    const publicTenantContext = usePublicTenant();
+    tenantSlug = publicTenantContext.tenantSlug;
+  } catch {
+    // No public tenant context available
+  }
+
+  // Determine if we're in admin or public context
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   if (comparedProducts.length === 0) {
     return null;
   }
+
+  const handleCompare = () => {
+    if (isAdminRoute) {
+      // Admin route
+      navigate('/admin/products/compare');
+    } else {
+      // Public route - with optional tenant scoping
+      const comparePath = tenantSlug 
+        ? `/${tenantSlug}/products/compare` 
+        : '/products/compare';
+      navigate(comparePath);
+    }
+  };
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-5xl px-4">
@@ -78,7 +105,7 @@ export const ComparisonBar: React.FC = () => {
             </Button>
             <Button
               size="sm"
-              onClick={() => navigate('/admin/products/compare')}
+              onClick={handleCompare}
               className="gap-2"
               disabled={comparedProducts.length < 2}
             >

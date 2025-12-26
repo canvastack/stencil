@@ -33,6 +33,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Super Administrator',
                 'slug' => 'super-admin',
+                'guard_name' => 'web',
                 'description' => 'Full platform access with all permissions',
                 'is_system' => true,
                 'abilities' => [
@@ -54,6 +55,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Platform Manager',
                 'slug' => 'platform-manager',
+                'guard_name' => 'web',
                 'description' => 'Platform management with limited system access',
                 'is_system' => true,
                 'abilities' => [
@@ -69,7 +71,8 @@ class PlatformSeeder extends Seeder
             ],
             [
                 'name' => 'Support Agent',
-                'slug' => 'support-agent', 
+                'slug' => 'support-agent',
+                'guard_name' => 'web',
                 'description' => 'Customer support with read-only access',
                 'is_system' => true,
                 'abilities' => [
@@ -182,6 +185,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'slug' => 'admin',
+                'guard_name' => 'web',
                 'description' => 'Full tenant access with all business permissions',
                 'is_system' => true,
                 'abilities' => [
@@ -203,6 +207,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Manager',
                 'slug' => 'manager',
+                'guard_name' => 'web',
                 'description' => 'Business operations management',
                 'is_system' => true,
                 'abilities' => [
@@ -220,6 +225,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Sales',
                 'slug' => 'sales',
+                'guard_name' => 'web',
                 'description' => 'Customer and order management',
                 'is_system' => true,
                 'abilities' => [
@@ -234,6 +240,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Viewer',
                 'slug' => 'viewer',
+                'guard_name' => 'web',
                 'description' => 'Read-only access to business data',
                 'is_system' => true,
                 'abilities' => [
