@@ -175,7 +175,7 @@ nano .env  # or use cPanel File Manager editor
 
 ```env
 # Application
-APP_NAME="CanvasTencil API"
+APP_NAME="CanvaStencil API"
 APP_ENV=production
 APP_KEY=  # Will generate in next step
 APP_DEBUG=false  # IMPORTANT: Set to false in production!

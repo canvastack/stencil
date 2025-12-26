@@ -20,7 +20,8 @@ export default defineConfig(({ mode }) => {
     }
     
     // Use env variable or fallback to root
-    return env.VITE_APP_BASE_URL || (mode === 'production' ? '/stencil/' : '/');
+    return env.VITE_APP_BASE_URL || (mode === 'production' ? '/' : '/');
+    //return env.VITE_APP_BASE_URL || (mode === 'production' ? '/stencil/' : '/');
   };
   
   return {
