@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { useCart } from "@/contexts/CartContext";
+import { useTheme } from '@/core/engine/ThemeContext';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Cart = () => {
+  const { currentTheme } = useTheme();
+  const { Header, Footer } = currentTheme?.components ?? {};
   const { items, removeFromCart, updateQuantity, getTotalItems, getTotalPrice, clearCart } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
@@ -74,6 +75,18 @@ const Cart = () => {
     setShowCheckout(false);
     setCustomerInfo({ name: "", email: "", phone: "", address: "", notes: "" });
   };
+
+  // Theme components loading guard
+  if (!Header || !Footer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading theme components...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

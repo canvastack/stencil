@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Trash2, ShoppingCart, Check, X, Download, Share2, Copy } from 'lucide-react';
 import { resolveImageUrl } from '@/utils/imageUtils';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { useCart } from '@/contexts/CartContext';
+import { useTheme } from '@/core/engine/ThemeContext';
 import { toast } from 'sonner';
 import { Product } from '@/types/product';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const ProductComparison = () => {
+  const { currentTheme } = useTheme();
+  const { Header, Footer } = currentTheme?.components ?? {};
   const navigate = useNavigate();
   const { comparedProducts, removeFromCompare, clearComparison } = useProductComparison();
   const { addToCart } = useCart();
@@ -99,6 +100,18 @@ const ProductComparison = () => {
       }
     }
   };
+
+  // Theme components loading guard
+  if (!Header || !Footer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading theme components...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (comparedProducts.length === 0) {
     return (

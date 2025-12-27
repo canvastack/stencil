@@ -29,9 +29,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { useTheme } from '@/core/engine/ThemeContext';
 import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, Plus, Trash2, ArrowUpDown, GitCompare } from "lucide-react";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useProductComparison } from "@/contexts/ProductComparisonContext";
@@ -53,6 +52,8 @@ import { customersService } from "@/services/api/customers";
 import { RatingStars } from "@/components/ui/rating-stars";
 
 const ProductDetail = () => {
+  const { currentTheme } = useTheme();
+  const { Header, Footer } = currentTheme?.components ?? {};
   const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -123,7 +124,7 @@ const ProductDetail = () => {
   const productOptions = productOptionsData?.data;
   
   // Only use product-specific reviews to eliminate duplicate calls
-  const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(product?.id || '');
+  const { reviews: productReviews = [], loading: reviewsLoading } = useProductReviews(product?.id || '', tenantSlug || undefined);
   
   // Optimize related products fetch with targeted category
   const { relatedProducts } = useRelatedProducts({ 
@@ -181,6 +182,18 @@ const ProductDetail = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slug]);
+
+  // Theme components loading guard
+  if (!Header || !Footer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading theme components...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loadingProduct) {
     return (

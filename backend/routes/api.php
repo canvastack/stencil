@@ -249,6 +249,9 @@ Route::prefix('public')->group(function () {
     Route::get('/{tenantSlug}/products/category/{category}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'byCategory']);
     Route::get('/{tenantSlug}/products/{id}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'show'])->where('id', '[0-9]+');
     
+    // Tenant-specific Reviews API
+    Route::get('/{tenantSlug}/reviews/product/{productUuid}', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'byProductUuid']);
+    
     // Global Reviews API
     Route::prefix('reviews')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'index']);

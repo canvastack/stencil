@@ -60,14 +60,16 @@ export const reviewService = {
     }
   },
 
-  async getReviewsByProductId(productId: string): Promise<Review[]> {
+  async getReviewsByProductId(productId: string, tenantSlug?: string): Promise<Review[]> {
     if (USE_MOCK) {
       return mockReviews.getReviewsByProductId(productId);
     }
     
     try {
-      // Use public endpoint for better compatibility
-      const response = await anonymousApiClient.get<{data: Review[]}>(`/public/reviews/product/${productId}`);
+      const endpoint = tenantSlug 
+        ? `/public/${tenantSlug}/reviews/product/${productId}`
+        : `/public/reviews/product/${productId}`;
+      const response = await anonymousApiClient.get<{data: Review[]}>(endpoint);
       return response.data || [];
     } catch (error) {
       console.warn('Public Review API not available, falling back to mock data:', error);

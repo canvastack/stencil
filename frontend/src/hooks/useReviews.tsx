@@ -54,7 +54,7 @@ export const useReview = (id: string) => {
   return { review, loading, error };
 };
 
-export const useProductReviews = (productId: string) => {
+export const useProductReviews = (productId: string, tenantSlug?: string) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -62,7 +62,7 @@ export const useProductReviews = (productId: string) => {
   const loadProductReviews = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await reviewService.getReviewsByProductId(productId);
+      const data = await reviewService.getReviewsByProductId(productId, tenantSlug);
       setReviews(data);
       setError(null);
     } catch (err) {
@@ -70,7 +70,7 @@ export const useProductReviews = (productId: string) => {
     } finally {
       setLoading(false);
     }
-  }, [productId]);
+  }, [productId, tenantSlug]);
 
   useEffect(() => {
     if (productId) {

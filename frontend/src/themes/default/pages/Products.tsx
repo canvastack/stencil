@@ -62,9 +62,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { Search, Filter, Grid3x3, List, Star, Phone, Target, Fish, Eye, ShoppingCart, GitCompare, Clock, Wand2, Award } from "lucide-react";
+import { useTheme } from '@/core/engine/ThemeContext';
 import { APP_CONFIG, TYPING_TEXTS } from "@/lib/constants";
 import { resolveImageUrl, getProductImage, DEFAULT_PRODUCT_IMAGE } from '@/utils/imageUtils';
 import { Product, ProductFilters } from "@/types/product";
@@ -116,6 +115,8 @@ const FilterSkeleton = () => (
 );
 
 const Products = () => {
+  const { currentTheme } = useTheme();
+  const { Header, Footer } = currentTheme?.components ?? {};
   const { userType } = useGlobalContext();
   const navigate = useNavigate();
   const { addToCompare, isComparing, isMaxReached } = useProductComparison();
@@ -276,6 +277,18 @@ const Products = () => {
     setQuickViewProduct(product);
     setIsQuickViewOpen(true);
   }, []);
+
+  // Theme components loading guard
+  if (!Header || !Footer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading theme components...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Platform users get a different view focused on tenant management and analytics
   if (userType === 'platform') {

@@ -34,6 +34,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🎨 Seeding Product Variants...');
         $this->call(ProductVariantSeeder::class);
         
+        // Seed Customer Reviews (database-driven, realistic distribution)
+        $this->command->info('⭐ Seeding Customer Reviews...');
+        $this->call(CustomerReviewSeeder::class);
+        
         // Seed Phase 3 Core Business Logic Data
         $this->command->info('🚀 Seeding Phase 3 Core Business Logic...');
         $this->call(Phase3CoreBusinessSeeder::class);
@@ -72,6 +76,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Total Products: 300+ products (Phase 3 enhanced)');
         $this->command->info('- Product Categories: 20+ categories with hierarchy');
         $this->command->info('- Product Variants: 600+ variants (2-5 per product, multi-tenant)');
+        $this->command->info('- Customer Reviews: Database-driven reviews (1-5 per product, realistic ratings)');
         $this->command->info('- Total Orders: 400+ orders (with realistic workflows)');
         $this->command->info('- Total Vendors: 50+ vendors (5 enhanced for PT CEX)');
         $this->command->info('- Vendor Performance: 720+ vendor orders with metrics');

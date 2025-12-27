@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Domain\Content\Repositories\PlatformPageRepositoryInterface;
 use App\Domain\Content\Repositories\TenantPageRepositoryInterface;
 use App\Domain\Settings\Repositories\SettingsRepositoryInterface;
+use App\Domain\Review\Repositories\ReviewRepositoryInterface;
 use App\Infrastructure\Repositories\PlatformPageRepository;
 use App\Infrastructure\Repositories\TenantPageRepository;
 use App\Infrastructure\Persistence\Repositories\SettingsRepository;
+use App\Infrastructure\Persistence\Repositories\ReviewEloquentRepository;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
         
         // Settings Repository Binding
         $this->app->bind(SettingsRepositoryInterface::class, SettingsRepository::class);
+        
+        // Review Repository Binding
+        $this->app->bind(ReviewRepositoryInterface::class, ReviewEloquentRepository::class);
     }
 
     /**

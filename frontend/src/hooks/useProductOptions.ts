@@ -24,7 +24,7 @@ export const useProductOptions = (tenantSlug?: string, productUuid?: string) => 
       }
       
       const response = await anonymousApiClient.get(
-        `/api/v1/public/${tenantSlug}/products/${productUuid}/options`
+        `/public/${tenantSlug}/products/${productUuid}/options`
       );
       
       return response.data;
