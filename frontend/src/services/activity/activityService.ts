@@ -334,6 +334,25 @@ class ActivityService {
       return;
     }
 
+    // CRITICAL: Skip flushing if within grace period after login
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp, 10);
+      if (timeSinceLogin < 10000) { // 10 seconds
+        console.log('ActivityService: Skipping flush - within grace period', {
+          timeSinceLogin,
+          pendingLogsCount: this.pendingLogs.length
+        });
+        // Reschedule for after grace period
+        if (!this.batchTimeout) {
+          setTimeout(() => {
+            this.flushPendingLogs();
+          }, 10000 - timeSinceLogin);
+        }
+        return;
+      }
+    }
+
     // In demo mode, skip API calls and just clear pending logs
     if (this.isDemoMode()) {
       console.log('Demo mode: Clearing pending activity logs (skipping API)', this.pendingLogs.length);

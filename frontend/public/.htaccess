@@ -1,0 +1,21 @@
+# Force correct MIME types
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType font/woff .woff
+  AddType font/woff2 .woff2
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  
+  # If an existing asset or file is requested go to it as it is
+  RewriteRule ^assets/ - [L]
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  
+  # If the requested resource doesn't exist, use index.html
+  RewriteRule ^ index.html [L]
+</IfModule> 

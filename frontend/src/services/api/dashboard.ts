@@ -26,6 +26,22 @@ class DashboardService {
       return this.cache.data;
     }
 
+    // CRITICAL: Check if we're within grace period after login (5 seconds)
+    // This prevents dashboard API calls from triggering logout immediately after login
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp, 10);
+      if (timeSinceLogin < 5000) { // 5 seconds
+        console.log('Dashboard: Within grace period after login, using mock data temporarily', {
+          timeSinceLogin
+        });
+        const mockData = this.getMockTenantDashboardStats();
+        this.cache.data = mockData;
+        this.cache.timestamp = Date.now();
+        return mockData;
+      }
+    }
+
     // If already loading, wait for it
     if (this.isLoading) {
       return new Promise((resolve, reject) => {

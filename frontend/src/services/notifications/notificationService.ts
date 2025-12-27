@@ -70,6 +70,24 @@ class NotificationService {
 
     try {
       await this.loadPreferences();
+      
+      // CRITICAL: Delay polling start if within grace period after login
+      const loginTimestamp = localStorage.getItem('login_timestamp');
+      if (loginTimestamp) {
+        const timeSinceLogin = Date.now() - parseInt(loginTimestamp, 10);
+        if (timeSinceLogin < 10000) { // 10 seconds
+          console.log('NotificationService: Delaying polling start due to grace period', {
+            timeSinceLogin,
+            delayMs: 10000 - timeSinceLogin
+          });
+          setTimeout(() => {
+            this.startPolling();
+          }, 10000 - timeSinceLogin);
+          this.isInitialized = true;
+          return;
+        }
+      }
+      
       this.startPolling();
       this.isInitialized = true;
     } catch (error) {
@@ -142,6 +160,18 @@ class NotificationService {
   }
 
   private async pollNotifications(): Promise<void> {
+    // CRITICAL: Skip polling if within grace period after login
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp, 10);
+      if (timeSinceLogin < 10000) { // 10 seconds
+        console.log('NotificationService: Skipping poll - within grace period', {
+          timeSinceLogin
+        });
+        return;
+      }
+    }
+
     try {
       // Get recent notifications
       const response = await tenantApiClient.get('/notifications', {

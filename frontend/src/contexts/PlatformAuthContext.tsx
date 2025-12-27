@@ -54,16 +54,29 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
             setAccount(storedAccount);
             setPermissions(storedPermissions);
           } else {
-            console.log('PlatformAuthContext: No stored account found, clearing auth');
-            authService.clearAuth(true); // Force clear non-platform auth
+            console.log('PlatformAuthContext: No stored account found, clearing LOCAL platform state only');
+            // CRITICAL FIX: Only clear local state, don't call authService.clearAuth()
+            // because account_type could have changed to 'tenant' between checks
+            setAccount(null);
+            setPermissions([]);
           }
         } else if (storedAccountType === 'platform' && !hasValidToken) {
-          console.log('PlatformAuthContext: Invalid token, clearing auth');
-          authService.clearAuth(true); // Force clear invalid platform tokens
+          console.log('PlatformAuthContext: Invalid platform token, clearing LOCAL platform state only');
+          // CRITICAL FIX: Only clear local state
+          setAccount(null);
+          setPermissions([]);
+        } else if (storedAccountType && storedAccountType !== 'platform') {
+          // IMPORTANT: Non-platform account (e.g. 'tenant') - this context does nothing
+          console.log('PlatformAuthContext: Non-platform account detected, skipping platform auth initialization');
+          setAccount(null);
+          setPermissions([]);
         }
       } catch (error) {
         console.error('PlatformAuthContext: Initialization error', error);
-        authService.clearAuth(true); // Force clear on errors
+        // CRITICAL FIX: Only clear local state on errors, don't touch global auth
+        // The error might be from a tenant session, not platform
+        setAccount(null);
+        setPermissions([]);
       } finally {
         // Mark initialization as complete
         setIsLoading(false);
@@ -100,6 +113,10 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
         if (response.permissions) {
           setPermissions(response.permissions);
         }
+        
+        // CRITICAL: Set login timestamp for API client grace period
+        // This prevents immediate logout on 401 errors within 10 seconds of login
+        localStorage.setItem('login_timestamp', Date.now().toString());
         
         setUserContext({
           id: response.account.uuid,
@@ -157,6 +174,7 @@ export const PlatformAuthProvider: React.FC<PlatformAuthProviderProps> = ({ chil
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_id');
       localStorage.removeItem('account_type');
+      localStorage.removeItem('login_timestamp');
       
       clearUserContext();
       

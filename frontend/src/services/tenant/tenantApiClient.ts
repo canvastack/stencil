@@ -154,10 +154,33 @@ class TenantApiClientManager {
   }
 
   private async handleUnauthorized(config: InternalAxiosRequestConfig, error: AxiosError) {
-    // In development mode or with demo credentials, don't auto-logout for API failures
+    // CRITICAL: Only handle 401 errors for tenant accounts
+    const currentAccountType = this.getAccountType();
+    
+    if (currentAccountType !== 'tenant') {
+      this.log('warn', '401 error but account is not tenant, skipping logout', { 
+        currentAccountType,
+        url: config.url 
+      });
+      return Promise.reject(error);
+    }
 
+    // CRITICAL: Don't logout immediately after login - give 10 seconds grace period
+    // This prevents race conditions where API calls happen before session fully propagates
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp, 10);
+      if (timeSinceLogin < 10000) { // 10 seconds
+        this.log('warn', '401 error within 10s of login - not logging out (grace period)', {
+          timeSinceLogin,
+          url: config.url
+        });
+        return Promise.reject(error);
+      }
+    }
 
     if (!config || this.isRefreshing) {
+      this.log('warn', '401 error - max retries or already refreshing, logging out');
       this.logout();
       return Promise.reject(error);
     }
@@ -177,11 +200,13 @@ class TenantApiClientManager {
         config.headers.Authorization = `Bearer ${newToken}`;
       }
 
+      this.log('info', 'Token refreshed, retrying request', { url: config.url });
       return this.instance(config);
     } catch (refreshError) {
       this.refreshPromise = null;
       this.isRefreshing = false;
       
+      this.log('error', 'Token refresh failed, logging out', refreshError);
       this.logout();
       return Promise.reject(refreshError);
     }
@@ -255,6 +280,7 @@ class TenantApiClientManager {
     localStorage.removeItem('user');
     localStorage.removeItem('tenant_id');
     localStorage.removeItem('tenant');
+    localStorage.removeItem('login_timestamp');
 
     this.log('info', 'Tenant user logged out due to authentication error');
 

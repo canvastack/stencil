@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
-import { VitePWA } from 'vite-plugin-pwa';
+// import { VitePWA } from 'vite-plugin-pwa'; // Disabled - not needed for production
 import path from "path";
 import fs from 'fs-extra';
 
@@ -35,36 +35,36 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       
-      // PWA Plugin disabled to avoid workbox errors
-      ...(mode === 'production' ? [VitePWA({
-        registerType: 'autoUpdate',
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,gif,svg,woff,woff2}']
-        },
-        manifest: {
-          name: 'CanvaStack Stencil CMS',
-          short_name: 'Stencil CMS',
-          description: 'Multi-tenant CMS platform for custom engraving and personalization businesses',
-          theme_color: '#1f2937',
-          background_color: '#ffffff',
-          display: 'standalone',
-          orientation: 'portrait',
-          scope: '/',
-          start_url: '/',
-          icons: [
-            {
-              src: 'icons/icon-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-            },
-            {
-              src: 'icons/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-            },
-          ],
-        }
-      })] : []),
+      // PWA Plugin completely disabled for production
+      // ...(mode === 'production' ? [VitePWA({
+      //   registerType: 'autoUpdate',
+      //   workbox: {
+      //     globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,gif,svg,woff,woff2}']
+      //   },
+      //   manifest: {
+      //     name: 'CanvaStack Stencil CMS',
+      //     short_name: 'Stencil CMS',
+      //     description: 'Multi-tenant CMS platform for custom engraving and personalization businesses',
+      //     theme_color: '#1f2937',
+      //     background_color: '#ffffff',
+      //     display: 'standalone',
+      //     orientation: 'portrait',
+      //     scope: '/',
+      //     start_url: '/',
+      //     icons: [
+      //       {
+      //         src: 'icons/icon-192x192.png',
+      //         sizes: '192x192',
+      //         type: 'image/png',
+      //       },
+      //       {
+      //         src: 'icons/icon-512x512.png',
+      //         sizes: '512x512',
+      //         type: 'image/png',
+      //       },
+      //     ],
+      //   }
+      // })] : []),
       
       // Asset copy plugin
       {
@@ -112,100 +112,30 @@ export default defineConfig(({ mode }) => {
       // Optimize build for production
       outDir: 'dist',
       assetsDir: 'assets',
-      sourcemap: mode === 'development',
-      minify: 'terser',
+      sourcemap: false, // Disable source maps to avoid errors
+      minify: 'esbuild', // Use esbuild instead of terser - faster and handles circular deps better
       target: 'es2020',
-      
-      // Terser options for better minification
-      terserOptions: {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug'],
-        },
-        mangle: {
-          safari10: true,
-        },
-      },
       
       // Rollup options for advanced bundling
       rollupOptions: {
         output: {
-          // Manual chunks for better caching and loading performance
+          // Manual chunks DISABLED: modulepreload race condition causes "Cannot read properties of undefined"
+          // All React-dependent libraries must be in the main vendor bundle to guarantee load order
           manualChunks: (id) => {
-            // Vendor chunks
+            // Only split truly standalone utilities that don't depend on React
             if (id.includes('node_modules')) {
-              // React ecosystem
-              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-                return 'react-vendor';
-              }
-              
-              // UI library chunks
-              if (id.includes('@radix-ui') || id.includes('@headlessui')) {
-                return 'ui-vendor';
-              }
-              
-              // Query and state management
-              if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
-                return 'query-vendor';
-              }
-              
-              // Form handling
-              if (id.includes('react-hook-form') || id.includes('zod')) {
-                return 'form-vendor';
-              }
-              
-              // Charting and visualization
-              if (id.includes('recharts') || id.includes('three') || id.includes('@react-three')) {
+              // CRITICAL: Recharts has circular dependencies that break with terser minification
+              // Keep it separate and don't mangle it aggressively
+              if (id.includes('recharts')) {
                 return 'chart-vendor';
               }
-              
-              // Utilities
               if (id.includes('lodash') || id.includes('date-fns') || id.includes('axios')) {
                 return 'utils-vendor';
               }
-              
-              // Default vendor chunk for other node_modules
+              // Everything else goes to main vendor (React, React-DOM, all UI libs, all React-dependent libs)
               return 'vendor';
             }
-            
-            // App chunks based on routes/features
-            if (id.includes('/pages/admin/')) {
-              if (id.includes('Product') || id.includes('Inventory')) {
-                return 'admin-products';
-              }
-              if (id.includes('Order') || id.includes('Quote') || id.includes('Payment')) {
-                return 'admin-orders';
-              }
-              if (id.includes('Customer') || id.includes('Vendor')) {
-                return 'admin-customers';
-              }
-              if (id.includes('Theme') || id.includes('Media')) {
-                return 'admin-content';
-              }
-              if (id.includes('Performance') || id.includes('Activity') || id.includes('Settings')) {
-                return 'admin-system';
-              }
-              return 'admin-core';
-            }
-            
-            if (id.includes('/pages/public/') || id.includes('/pages/home/')) {
-              return 'public-pages';
-            }
-            
-            if (id.includes('/components/')) {
-              if (id.includes('/ui/')) {
-                return 'ui-components';
-              }
-              if (id.includes('/admin/')) {
-                return 'admin-components';
-              }
-              return 'shared-components';
-            }
-            
-            if (id.includes('/services/')) {
-              return 'services';
-            }
+            // No app-level chunking - everything stays in main bundle
           },
           
           // Asset naming for better caching

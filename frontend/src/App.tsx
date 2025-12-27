@@ -184,7 +184,7 @@ function App() {
                                 import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
                                 Fallback to '/' when empty. */}
                             <BrowserRouter
-                              basename={(import.meta.env.BASE_URL || '/').replace(/\/$/, '') || '/'}
+                              basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}
                               future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
                             >
                               <PublicTenantProvider>

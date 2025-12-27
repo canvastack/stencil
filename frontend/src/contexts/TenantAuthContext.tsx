@@ -147,6 +147,10 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
           setRoles(response.roles);
         }
         
+        // CRITICAL: Set login timestamp for API client grace period
+        // This prevents immediate logout on 401 errors within 10 seconds of login
+        localStorage.setItem('login_timestamp', Date.now().toString());
+        
         setUserContext({
           id: response.user.uuid,
           email: response.user.email,
@@ -221,6 +225,7 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       localStorage.removeItem('user_id');
       localStorage.removeItem('tenant_id');
       localStorage.removeItem('account_type');
+      localStorage.removeItem('login_timestamp');
       
       clearUserContext();
       clearTenantContext();
@@ -249,8 +254,16 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
   }, [clearError]);
 
   const getCurrentUser = useCallback(async () => {
+    // CRITICAL: Only get current user if account type is tenant
+    const currentAccountType = authService.getAccountType();
+    if (currentAccountType !== 'tenant') {
+      console.log('TenantAuthContext: getCurrentUser skipped - not a tenant account', { currentAccountType });
+      return;
+    }
+
     // Don't make API calls if not authenticated or already loading
     if (!authService.isAuthenticated() || isLoading) {
+      console.log('TenantAuthContext: getCurrentUser skipped - not authenticated or loading');
       return;
     }
 
@@ -261,8 +274,21 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       return;
     }
 
+    // CRITICAL: Check if we're within grace period after login
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp, 10);
+      if (timeSinceLogin < 5000) { // 5 seconds grace before making API calls
+        console.log('TenantAuthContext: Skipping getCurrentUser - within grace period after login', {
+          timeSinceLogin
+        });
+        return;
+      }
+    }
+
     try {
       setIsLoading(true);
+      console.log('TenantAuthContext: Fetching current user from API');
       const response = await authService.getCurrentUser();
       
       if (response.user) {
@@ -271,6 +297,7 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
       if (response.tenant) {
         setTenantState(response.tenant);
       }
+      console.log('TenantAuthContext: getCurrentUser successful');
     } catch (err) {
       console.error('TenantAuthContext: getCurrentUser failed', err);
       // Don't set error state for authentication failures to prevent loops

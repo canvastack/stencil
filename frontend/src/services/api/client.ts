@@ -116,6 +116,20 @@ class ApiClientManager {
   }
 
   private async handleUnauthorized(config: InternalAxiosRequestConfig, error: AxiosError) {
+    // CRITICAL: Don't logout immediately after login - give 10 seconds grace period
+    // This prevents race conditions where API calls happen before session fully propagates
+    const loginTimestamp = localStorage.getItem('login_timestamp');
+    if (loginTimestamp) {
+      const timeSinceLogin = Date.now() - parseInt(loginTimestamp, 10);
+      if (timeSinceLogin < 10000) { // 10 seconds
+        this.log('warn', '401 error within 10s of login - not logging out (grace period)', {
+          timeSinceLogin,
+          url: config.url
+        });
+        return Promise.reject(error);
+      }
+    }
+
     // CRITICAL FIX: Prevent infinite retry loops
     const isRetryRequest = config.headers?.['X-Retry-Count'];
     const retryCount = parseInt(isRetryRequest as string || '0', 10);
@@ -125,8 +139,6 @@ class ApiClientManager {
       this.logout();
       return Promise.reject(error);
     }
-
-
 
     this.isRefreshing = true;
 
@@ -144,6 +156,7 @@ class ApiClientManager {
         config.headers['X-Retry-Count'] = '1'; // Mark as retry attempt
       }
 
+      this.log('info', 'Token refreshed, retrying request', { url: config.url });
       return this.instance(config);
     } catch (refreshError) {
       this.refreshPromise = null;
@@ -214,6 +227,7 @@ class ApiClientManager {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_id');
     localStorage.removeItem('tenant_id');
+    localStorage.removeItem('login_timestamp');
 
     this.log('info', 'User logged out due to authentication error');
 
