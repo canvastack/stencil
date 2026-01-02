@@ -263,6 +263,13 @@ Route::prefix('public')->group(function () {
         Route::get('/pages/{slug}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getPage']);
         Route::get('/pages/{tenantSlug}/{page}', [App\Http\Controllers\Api\V1\Public\ContentController::class, 'getTenantPage']);
     });
+    
+    // Public Navigation API (for frontend public pages)
+    Route::prefix('navigation')->group(function () {
+        Route::get('/{tenantSlug}/header', [App\Http\Controllers\Api\V1\Public\NavigationController::class, 'getHeader']);
+        Route::get('/{tenantSlug}/footer', [App\Http\Controllers\Api\V1\Public\NavigationController::class, 'getFooter']);
+        Route::get('/{tenantSlug}/menus', [App\Http\Controllers\Api\V1\Public\NavigationController::class, 'getMenus']);
+    });
 
     // Platform statistics for anonymous users
     Route::get('/stats', function () {

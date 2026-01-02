@@ -20,7 +20,8 @@ import {
   Zap,
   LogOut,
   Activity,
-  Store
+  Store,
+  Layout
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -112,6 +113,13 @@ const menuItems: MenuItem[] = [
     title: 'Financial Report',
     icon: TrendingUp,
     path: '/admin/financial-report',
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
+  },
+  {
+    title: 'Navigation',
+    icon: Layout,
+    path: '/admin/navigation',
     visibleFor: 'tenant',
     requiredRoles: ['admin', 'manager'],
   },

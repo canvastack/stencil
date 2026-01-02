@@ -3,9 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Menu, X, ShoppingCart, LogOut } from "lucide-react";
 import type { HeaderProps } from "@/core/engine/interfaces";
-import { useThemeComponents } from "@/hooks/useThemeComponents";
 import { useAuthState } from "@/hooks/useAuthState";
 import { useTenantAwareNavigation } from "@/hooks/useTenantAwareNavigation";
+import { usePublicHeaderConfig, usePublicMenus } from "@/hooks/usePublicNavigation";
 
 const Header: React.FC<HeaderProps> = ({ className }) => {
   // const [isDark, setIsDark] = useState(true);
@@ -30,6 +30,9 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
   const navigate = useNavigate();
   const { isAuthenticated, logout, user, account } = useAuthState();
   const { getUrl } = useTenantAwareNavigation();
+  
+  const { data: headerConfig } = usePublicHeaderConfig();
+  const { data: menus = [] } = usePublicMenus('header');
 
   // useEffect(() => {
     // const root = document.documentElement;
@@ -60,7 +63,12 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const { headerContent } = useThemeComponents();
+  const brandName = headerConfig?.brand_name || "Etching Xenial";
+  const brandInitials = headerConfig?.brand_initials || "CEX";
+  const showCart = headerConfig?.show_cart ?? true;
+  const showLogin = headerConfig?.show_login ?? true;
+  const cartButtonText = headerConfig?.cart_button_text || "Keranjang";
+  const loginButtonText = headerConfig?.login_button_text || "Login";
 
   return (
     <header
@@ -74,45 +82,74 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to={getUrl("")} className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-orange-light rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform">
-              <span className="text-white font-bold text-xl">CEX</span>
-            </div>
-            <span className="text-xl font-bold text-foreground">
-              Etching <span className="text-primary">Xenial</span>
-            </span>
+            {headerConfig?.use_logo && headerConfig?.logo_url ? (
+              <img
+                src={isDark && headerConfig?.logo_dark_url ? headerConfig.logo_dark_url : headerConfig.logo_url}
+                alt={headerConfig.logo_alt_text || brandName}
+                style={{
+                  width: headerConfig.logo_width ? `${headerConfig.logo_width}px` : 'auto',
+                  height: headerConfig.logo_height ? `${headerConfig.logo_height}px` : 'auto',
+                }}
+                className="transform group-hover:scale-110 transition-transform"
+              />
+            ) : (
+              <>
+                <div className="w-12 h-12 bg-gradient-to-br from-primary to-orange-light rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform">
+                  <span className="text-white font-bold text-xl">{brandInitials}</span>
+                </div>
+                <span className="text-xl font-bold text-foreground">
+                  {brandName.split(' ').map((word, i) => (
+                    <span key={i} className={i === brandName.split(' ').length - 1 ? 'text-primary' : ''}>
+                      {word}{' '}
+                    </span>
+                  ))}
+                </span>
+              </>
+            )}
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {headerContent.navigation.map((item) => (
+            {menus.map((menu) => (
               <Link
-                key={item.path}
-                to={getUrl(item.path)}
+                key={menu.uuid}
+                to={menu.is_external ? menu.path || '#' : getUrl(menu.path || '')}
+                target={menu.target}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  location.pathname === item.path
+                  location.pathname === menu.path
                     ? "bg-primary text-white"
                     : isScrolled
                       ? "text-foreground/80 hover:text-foreground hover:bg-muted"
                       : "text-white/90 hover:text-white hover:bg-white/10"
                 }`}
               >
-                {item.name}
+                {menu.label}
+                {menu.badge_text && (
+                  <span
+                    className="ml-2 px-2 py-0.5 text-xs rounded-full"
+                    style={{ backgroundColor: menu.badge_color || '#ff6b35' }}
+                  >
+                    {menu.badge_text}
+                  </span>
+                )}
               </Link>
             ))}
           </nav>
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="rounded-lg"
-            >
-              <Link to={getUrl("cart")}>
-                <ShoppingCart className="h-5 w-5" />
-              </Link>
-            </Button>
+            {showCart && (
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="rounded-lg"
+              >
+                <Link to={getUrl("cart")}>
+                  <ShoppingCart className="h-5 w-5" />
+                </Link>
+              </Button>
+            )}
 
             <Button
               variant="ghost"
@@ -146,14 +183,16 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                 </Button>
               </div>
             ) : (
-              <Button
-                className="hidden md:flex bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow"
-                asChild
-              >
-                <Link to={getUrl("login")}>
-                  Login
-                </Link>
-              </Button>
+              showLogin && (
+                <Button
+                  className="hidden md:flex bg-gradient-to-r from-primary to-orange-light text-white hover:shadow-glow"
+                  asChild
+                >
+                  <Link to={getUrl("login")}>
+                    {loginButtonText}
+                  </Link>
+                </Button>
+              )
             )}
 
             {/* Mobile Menu Button */}
@@ -176,30 +215,41 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-white/10">
             <nav className="flex flex-col space-y-2">
-              {headerContent.navigation.map((item) => (
+              {menus.map((menu) => (
                 <Link
-                  key={item.path}
-                  to={getUrl(item.path)}
+                  key={menu.uuid}
+                  to={menu.is_external ? menu.path || '#' : getUrl(menu.path || '')}
+                  target={menu.target}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-                    location.pathname === item.path
+                    location.pathname === menu.path
                       ? "bg-primary text-white"
                       : "text-foreground/80 hover:bg-muted"
                   }`}
                 >
-                  {item.name}
+                  {menu.label}
+                  {menu.badge_text && (
+                    <span
+                      className="ml-2 px-2 py-0.5 text-xs rounded-full"
+                      style={{ backgroundColor: menu.badge_color || '#ff6b35' }}
+                    >
+                      {menu.badge_text}
+                    </span>
+                  )}
                 </Link>
               ))}
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                asChild
-              >
-                <Link to={getUrl("cart")} onClick={() => setIsMobileMenuOpen(false)}>
-                  <ShoppingCart className="h-5 w-5 mr-2" />
-                  Keranjang
-                </Link>
-              </Button>
+              {showCart && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  asChild
+                >
+                  <Link to={getUrl("cart")} onClick={() => setIsMobileMenuOpen(false)}>
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    {cartButtonText}
+                  </Link>
+                </Button>
+              )}
               {isAuthenticated ? (
                 <>
                   <div className="px-4 py-3 rounded-lg bg-primary/10">
@@ -220,14 +270,16 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                   </Button>
                 </>
               ) : (
-                <Button
-                  className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
-                  asChild
-                >
-                  <Link to={getUrl("login")} onClick={() => setIsMobileMenuOpen(false)}>
-                    Login
-                  </Link>
-                </Button>
+                showLogin && (
+                  <Button
+                    className="w-full bg-gradient-to-r from-primary to-orange-light text-white"
+                    asChild
+                  >
+                    <Link to={getUrl("login")} onClick={() => setIsMobileMenuOpen(false)}>
+                      {loginButtonText}
+                    </Link>
+                  </Button>
+                )
               )}
             </nav>
           </div>

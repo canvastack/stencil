@@ -162,23 +162,15 @@ const Products = () => {
 
   const defaultPageContent: PageContent = {
     hero: {
-      title: { prefix: "Semua", highlight: "Produk" },
-      subtitle: "Temukan produk etching berkualitas tinggi dengan presisi sempurna untuk kebutuhan Anda.",
+      title: { prefix: "", highlight: "", suffix: "" },
+      subtitle: "",
       typingTexts: TYPING_TEXTS
     },
     informationSection: {
-      title: { prefix: "Layanan", highlight: "Etching", suffix: "Kami" },
-      subtitle: "Tiga kategori utama produk etching dengan kualitas terbaik dan presisi tinggi",
-      cards: [
-        { title: "Etching Logam", description: "Stainless steel, kuningan, tembaga, aluminium untuk berbagai aplikasi industri dan dekorasi.", features: ["Presisi tinggi", "Tahan lama", "Kustomisasi penuh"], icon: "⚙️", buttonText: "Pelajari Lebih Lanjut" },
-        { title: "Etching Kaca", description: "Kaca berkualitas tinggi dengan hasil etching yang halus dan elegan untuk interior dan hadiah.", features: ["Desain artistik", "Food-grade safe", "Transparan premium"], icon: "🏆", buttonText: "Pelajari Lebih Lanjut" },
-        { title: "Plakat Penghargaan", description: "Plakat custom untuk penghargaan perusahaan, acara, dan apresiasi dengan desain profesional.", features: ["Desain eksklusif", "Material premium", "Personalisasi lengkap"], icon: "🎖️", buttonText: "Pelajari Lebih Lanjut" }
-      ]
-    },
-    ctaSections: [
-      { id: "cta-1", title: "Siap Mewujudkan Proyek Anda?", subtitle: "Hubungi kami sekarang dan dapatkan konsultasi gratis untuk proyek etching Anda", stats: [{ value: "1000+", label: "Produk" }, { value: "15+", label: "Tahun Pengalaman" }, { value: "98%", label: "Tingkat Kepuasan" }], buttons: [{ text: "Hubungi Kami", variant: "primary" as const, icon: "Phone" }, { text: "Lihat Produk Kami", variant: "outline" as const, icon: "Target" }] },
-      { id: "cta-2", title: "Punya Pertanyaan atau Siap Memulai?", subtitle: "Tim ahli kami siap membantu Anda menemukan solusi terbaik untuk kebutuhan etching Anda.", buttons: [{ text: "Hubungi Tim Kami", variant: "primary" as const }] }
-    ]
+      title: { prefix: "", highlight: "", suffix: "" },
+      subtitle: "",
+      cards: []
+    }
   };
 
   // Fix: Ensure pageContent always has proper structure (memoized)

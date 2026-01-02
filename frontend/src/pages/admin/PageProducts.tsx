@@ -513,6 +513,188 @@ const PageProducts: React.FC = () => {
                     Add Stat
                   </Button>
                 </div>
+                
+                {(formData.ctaSections?.[0]?.stats || []).map((stat: any, statIndex: number) => (
+                  <Card key={statIndex} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Statistic #{statIndex + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                            if (!ctaArray[0]) return;
+                            const newStats = (ctaArray[0]?.stats || []).filter((_: any, i: number) => i !== statIndex);
+                            ctaArray[0] = { ...ctaArray[0], stats: newStats };
+                            setFormData({
+                              ...formData,
+                              ctaSections: ctaArray
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Value</Label>
+                          <Input
+                            value={stat.value || ""}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[0]) return;
+                              const newStats = [...(ctaArray[0]?.stats || [])];
+                              newStats[statIndex] = { ...stat, value: e.target.value };
+                              ctaArray[0] = { ...ctaArray[0], stats: newStats };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            placeholder="1000+"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Label</Label>
+                          <Input
+                            value={stat.label || ""}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[0]) return;
+                              const newStats = [...(ctaArray[0]?.stats || [])];
+                              newStats[statIndex] = { ...stat, label: e.target.value };
+                              ctaArray[0] = { ...ctaArray[0], stats: newStats };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            placeholder="Produk"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Buttons Management */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Buttons</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                      if (!ctaArray[0]) ctaArray[0] = { id: 'cta-1' };
+                      const currentButtons = ctaArray[0]?.buttons || [];
+                      ctaArray[0] = { ...ctaArray[0], buttons: [...currentButtons, { text: "", variant: "primary", icon: "" }] };
+                      setFormData({
+                        ...formData,
+                        ctaSections: ctaArray
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Button
+                  </Button>
+                </div>
+                
+                {(formData.ctaSections?.[0]?.buttons || []).map((button: any, btnIndex: number) => (
+                  <Card key={btnIndex} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Button #{btnIndex + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                            if (!ctaArray[0]) return;
+                            const newButtons = (ctaArray[0]?.buttons || []).filter((_: any, i: number) => i !== btnIndex);
+                            ctaArray[0] = { ...ctaArray[0], buttons: newButtons };
+                            setFormData({
+                              ...formData,
+                              ctaSections: ctaArray
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Button Text</Label>
+                          <Input
+                            value={button.text || ""}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[0]) return;
+                              const newButtons = [...(ctaArray[0]?.buttons || [])];
+                              newButtons[btnIndex] = { ...button, text: e.target.value };
+                              ctaArray[0] = { ...ctaArray[0], buttons: newButtons };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            placeholder="Hubungi Kami"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Variant</Label>
+                          <select
+                            value={button.variant || "primary"}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[0]) return;
+                              const newButtons = [...(ctaArray[0]?.buttons || [])];
+                              newButtons[btnIndex] = { ...button, variant: e.target.value };
+                              ctaArray[0] = { ...ctaArray[0], buttons: newButtons };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                          >
+                            <option value="primary">Primary</option>
+                            <option value="outline">Outline</option>
+                            <option value="secondary">Secondary</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Icon (optional)</Label>
+                          <Input
+                            value={button.icon || ""}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[0]) return;
+                              const newButtons = [...(ctaArray[0]?.buttons || [])];
+                              newButtons[btnIndex] = { ...button, icon: e.target.value };
+                              ctaArray[0] = { ...ctaArray[0], buttons: newButtons };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            placeholder="Phone, Target, etc"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -581,6 +763,121 @@ const PageProducts: React.FC = () => {
                   }}
                   placeholder="CTA subtitle"
                 />
+              </div>
+
+              {/* Buttons Management */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Buttons</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                      if (!ctaArray[1]) ctaArray[1] = { id: 'cta-2' };
+                      const currentButtons = ctaArray[1]?.buttons || [];
+                      ctaArray[1] = { ...ctaArray[1], buttons: [...currentButtons, { text: "", variant: "primary", icon: "" }] };
+                      setFormData({
+                        ...formData,
+                        ctaSections: ctaArray
+                      });
+                      setHasChanges(true);
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Button
+                  </Button>
+                </div>
+                
+                {(formData.ctaSections?.[1]?.buttons || []).map((button: any, btnIndex: number) => (
+                  <Card key={btnIndex} className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-semibold">Button #{btnIndex + 1}</Label>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                            if (!ctaArray[1]) return;
+                            const newButtons = (ctaArray[1]?.buttons || []).filter((_: any, i: number) => i !== btnIndex);
+                            ctaArray[1] = { ...ctaArray[1], buttons: newButtons };
+                            setFormData({
+                              ...formData,
+                              ctaSections: ctaArray
+                            });
+                            setHasChanges(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-sm">Button Text</Label>
+                          <Input
+                            value={button.text || ""}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[1]) return;
+                              const newButtons = [...(ctaArray[1]?.buttons || [])];
+                              newButtons[btnIndex] = { ...button, text: e.target.value };
+                              ctaArray[1] = { ...ctaArray[1], buttons: newButtons };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            placeholder="Hubungi Tim Kami"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Variant</Label>
+                          <select
+                            value={button.variant || "primary"}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[1]) return;
+                              const newButtons = [...(ctaArray[1]?.buttons || [])];
+                              newButtons[btnIndex] = { ...button, variant: e.target.value };
+                              ctaArray[1] = { ...ctaArray[1], buttons: newButtons };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                          >
+                            <option value="primary">Primary</option>
+                            <option value="outline">Outline</option>
+                            <option value="secondary">Secondary</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm">Icon (optional)</Label>
+                          <Input
+                            value={button.icon || ""}
+                            onChange={(e) => {
+                              const ctaArray = Array.isArray(formData.ctaSections) ? [...formData.ctaSections] : [];
+                              if (!ctaArray[1]) return;
+                              const newButtons = [...(ctaArray[1]?.buttons || [])];
+                              newButtons[btnIndex] = { ...button, icon: e.target.value };
+                              ctaArray[1] = { ...ctaArray[1], buttons: newButtons };
+                              setFormData({
+                                ...formData,
+                                ctaSections: ctaArray
+                              });
+                              setHasChanges(true);
+                            }}
+                            placeholder="Phone, Target, etc"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>

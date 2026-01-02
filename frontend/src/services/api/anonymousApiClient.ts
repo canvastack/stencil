@@ -24,6 +24,7 @@ class AnonymousApiClient {
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 30000, // Increased timeout for anonymous users
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -75,18 +76,10 @@ class AnonymousApiClient {
           throw new Error('Too many requests. Please try again later.');
         }
 
-        // Handle content not available
+        // Handle content not available - don't intercept, let query handle it
         if (error.response?.status === 404) {
-          console.log('AnonymousApiClient: Content not found, falling back to defaults');
-          // Don't throw error for 404s, let the component handle fallbacks
-          return {
-            ...error.response,
-            data: {
-              data: null,
-              message: 'Content not available',
-              success: false
-            }
-          };
+          console.log('AnonymousApiClient: Content not found (404)');
+          // Let the error propagate so queryFn can catch it
         }
 
         // Handle server errors

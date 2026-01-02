@@ -22,6 +22,12 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🏢 Seeding Multi-Tenant Business Data...');
         $this->call(MultiTenantBusinessSeeder::class);
         
+        // Seed Navigation System (Header, Footer, Menus)
+        $this->command->info('🧭 Seeding Navigation System...');
+        $this->call(TenantHeaderConfigSeeder::class);
+        $this->call(TenantMenuSeeder::class);
+        $this->call(TenantFooterConfigSeeder::class);
+        
         // Seed Product Categories (before other tenant data)
         $this->command->info('🏷️ Seeding Product Categories...');
         $this->call(ProductCategorySeeder::class);
@@ -86,6 +92,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Tenant Roles: 4 roles per tenant');
         $this->command->info('- Platform Content Pages: 25+ pages (Home, About, Features, Blog)');
         $this->command->info('- Tenant Content Pages: 35+ pages per tenant (Home, About, Services, Blog)');
+        $this->command->info('- Navigation Configs: 6+ header configs, 130+ menus, 6+ footer configs');
         $this->command->info('- Refund Requests: 25+ per tenant (various statuses & scenarios)');
         $this->command->info('- Insurance Fund: Initial fund + monthly contributions per tenant');
         $this->command->info('');

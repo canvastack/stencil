@@ -350,6 +350,30 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::patch('/pages/{slug}/publish', [ContentController::class, 'publish'])->name('tenant.content.publish');
             Route::patch('/pages/{slug}/archive', [ContentController::class, 'archive'])->name('tenant.content.archive');
             Route::patch('/pages/{slug}/content', [ContentController::class, 'updateContent'])->name('tenant.content.update-content');
+            
+            // Navigation Management (Header, Footer, Menus)
+            Route::prefix('navigation')->group(function () {
+                // Header Configuration
+                Route::get('/header', [\App\Http\Controllers\Api\V1\Tenant\Navigation\HeaderConfigController::class, 'index'])->name('tenant.navigation.header.index');
+                Route::post('/header', [\App\Http\Controllers\Api\V1\Tenant\Navigation\HeaderConfigController::class, 'store'])->name('tenant.navigation.header.store');
+                Route::put('/header', [\App\Http\Controllers\Api\V1\Tenant\Navigation\HeaderConfigController::class, 'update'])->name('tenant.navigation.header.update');
+                
+                // Footer Configuration
+                Route::get('/footer', [\App\Http\Controllers\Api\V1\Tenant\Navigation\FooterConfigController::class, 'index'])->name('tenant.navigation.footer.index');
+                Route::post('/footer', [\App\Http\Controllers\Api\V1\Tenant\Navigation\FooterConfigController::class, 'store'])->name('tenant.navigation.footer.store');
+                Route::put('/footer', [\App\Http\Controllers\Api\V1\Tenant\Navigation\FooterConfigController::class, 'update'])->name('tenant.navigation.footer.update');
+                
+                // Menu Management
+                Route::prefix('menus')->group(function () {
+                    Route::get('/', [\App\Http\Controllers\Api\V1\Tenant\Navigation\MenuController::class, 'index'])->name('tenant.navigation.menus.index');
+                    Route::post('/', [\App\Http\Controllers\Api\V1\Tenant\Navigation\MenuController::class, 'store'])->name('tenant.navigation.menus.store');
+                    Route::get('/{uuid}', [\App\Http\Controllers\Api\V1\Tenant\Navigation\MenuController::class, 'show'])->name('tenant.navigation.menus.show');
+                    Route::put('/{uuid}', [\App\Http\Controllers\Api\V1\Tenant\Navigation\MenuController::class, 'update'])->name('tenant.navigation.menus.update');
+                    Route::delete('/{uuid}', [\App\Http\Controllers\Api\V1\Tenant\Navigation\MenuController::class, 'destroy'])->name('tenant.navigation.menus.destroy');
+                    Route::post('/reorder', [\App\Http\Controllers\Api\V1\Tenant\Navigation\MenuController::class, 'reorder'])->name('tenant.navigation.menus.reorder');
+                    Route::post('/{uuid}/restore', [\App\Http\Controllers\Api\V1\Tenant\Navigation\MenuController::class, 'restore'])->name('tenant.navigation.menus.restore');
+                });
+            });
         });
         
         // Activity Logs

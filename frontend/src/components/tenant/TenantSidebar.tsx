@@ -38,7 +38,8 @@ import {
   Activity,
   Book,
   RotateCcw,
-  DollarSign
+  DollarSign,
+  Menu as MenuIcon
 } from 'lucide-react';
 
 interface MenuItem {
@@ -206,6 +207,11 @@ const menuItems: MenuItem[] = [
       { title: 'FAQ Page', path: '/admin/content/faq' },
       { title: 'Products Page', path: '/admin/content/products' }
     ]
+  },
+  {
+    title: 'Navigation',
+    icon: MenuIcon,
+    path: '/admin/navigation',
   },
   {
     title: 'Appearance',
