@@ -123,14 +123,14 @@ export const publicNavigationService = {
     const response = await anonymousApiClient.get<{ success: boolean; data: HeaderConfig }>(
       `/public/navigation/${tenantSlug}/header`
     );
-    return response.data.data;
+    return response.data;
   },
 
   async getFooter(tenantSlug: string): Promise<FooterConfig> {
     const response = await anonymousApiClient.get<{ success: boolean; data: FooterConfig }>(
       `/public/navigation/${tenantSlug}/footer`
     );
-    return response.data.data;
+    return response.data;
   },
 
   async getMenus(tenantSlug: string, location?: 'header' | 'footer' | 'mobile' | 'all'): Promise<Menu[]> {
@@ -138,7 +138,7 @@ export const publicNavigationService = {
       `/public/navigation/${tenantSlug}/menus`,
       {params: { location }}
     );
-    return response.data.data;
+    return response.data;
   },
 };
 
