@@ -141,6 +141,17 @@ export const createContextAwareProductsService = (userType: UserType) => {
     throw new ApiError(`Failed to ${operation}`, error);
   };
   
+  const transformToSnakeCase = (data: any): any => {
+    const transformed: any = {};
+    for (const key in data) {
+      if (data.hasOwnProperty(key)) {
+        const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        transformed[snakeKey] = data[key];
+      }
+    }
+    return transformed;
+  };
+  
   return {
     async getProducts(params?: ListRequestParams & ProductFilters, signal?: AbortSignal): Promise<PaginatedResponse<Product>> {
       try {
@@ -261,7 +272,8 @@ export const createContextAwareProductsService = (userType: UserType) => {
         // - tenant_id matches authenticated user's tenant (if tenant user)
         // - User has products.create permission
         const endpoint = getContextAwareEndpoint(userType, 'products');
-        const response = await apiClient.post<Product>(endpoint, productData, {
+        const transformedData = transformToSnakeCase(productData);
+        const response = await apiClient.post<Product>(endpoint, transformedData, {
           headers: {
             'X-Tenant-ID': authContext.tenantId || '',
             'X-User-Type': authContext.userType,
@@ -288,7 +300,8 @@ export const createContextAwareProductsService = (userType: UserType) => {
         }
 
         const endpoint = getContextAwareEndpoint(userType, `products/${id}`);
-        const response = await apiClient.put<Product>(endpoint, data, {
+        const transformedData = transformToSnakeCase(data);
+        const response = await apiClient.put<Product>(endpoint, transformedData, {
           headers: {
             'X-Tenant-ID': authContext.tenantId || '',
             'X-User-Type': authContext.userType,

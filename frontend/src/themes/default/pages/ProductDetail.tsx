@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -152,6 +152,24 @@ const ProductDetail = () => {
   const averageRating = productReviews.length 
     ? productReviews.reduce((acc, review) => acc + review.rating, 0) / productReviews.length 
     : 0;
+
+  // Transform specifications from object to array format (backend returns object, UI needs array)
+  const specifications = useMemo(() => {
+    if (!product?.specifications) return [];
+    
+    if (Array.isArray(product.specifications)) {
+      return product.specifications;
+    }
+    
+    if (typeof product.specifications === 'object') {
+      return Object.entries(product.specifications).map(([key, value]) => ({
+        key,
+        value: typeof value === 'string' ? value : JSON.stringify(value)
+      }));
+    }
+    
+    return [];
+  }, [product?.specifications]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -618,12 +636,14 @@ const ProductDetail = () => {
                 <RatingStars rating={averageRating} size="md" className="mb-3" />
 
                 <h1 className="text-4xl font-bold text-foreground mb-4">{product.name}</h1>
-                <p className="text-2xl font-bold text-primary mb-4">{formatPrice(product.price, product.currency)}</p>
+                {product.price !== null && product.price !== undefined && Number(product.price) > 0 && (
+                  <p className="text-2xl font-bold text-primary mb-4">{formatPrice(product.price, product.currency)}</p>
+                )}
                 <p className="text-muted-foreground leading-relaxed mb-6">{product.description}</p>
 
                 <div className="space-y-3 mb-6">
                   <h3 className="text-lg font-bold text-foreground">Spesifikasi:</h3>
-                  {product.specifications.map((spec, idx) => (
+                  {specifications.map((spec, idx) => (
                     <div key={idx} className="flex items-start gap-3">
                       <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                       <span className="text-muted-foreground"><strong>{spec.key}:</strong> {spec.value}</span>

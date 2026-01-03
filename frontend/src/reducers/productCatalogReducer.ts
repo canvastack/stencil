@@ -33,6 +33,7 @@ export interface ProductCatalogState {
     showImportDialog: boolean;
     showBulkEditDialog: boolean;
     showAnalytics: boolean;
+    isRefreshing: boolean;
   };
   modes: {
     isSelectMode: boolean;
@@ -71,6 +72,7 @@ export type ProductCatalogAction =
   | { type: 'CLOSE_QUICK_VIEW' }
   | { type: 'TOGGLE_SELECT_MODE' }
   | { type: 'TOGGLE_COMPARISON_MODE' }
+  | { type: 'TOGGLE_REORDER_MODE'; payload: Product[] }
   | { type: 'ENTER_REORDER_MODE'; payload: Product[] }
   | { type: 'EXIT_REORDER_MODE' }
   | { type: 'UPDATE_REORDER_PRODUCTS'; payload: Product[] }
@@ -90,6 +92,7 @@ export type ProductCatalogAction =
   | { type: 'OPEN_BULK_EDIT_DIALOG' }
   | { type: 'CLOSE_BULK_EDIT_DIALOG' }
   | { type: 'TOGGLE_ANALYTICS' }
+  | { type: 'SET_IS_REFRESHING'; payload: boolean }
   | { type: 'UPDATE_COLUMN_CONFIGS'; payload: ColumnConfig[] };
 
 export const initialProductCatalogState: ProductCatalogState = {
@@ -116,6 +119,7 @@ export const initialProductCatalogState: ProductCatalogState = {
     showImportDialog: false,
     showBulkEditDialog: false,
     showAnalytics: false,
+    isRefreshing: false,
   },
   modes: {
     isSelectMode: false,
@@ -244,6 +248,18 @@ export function productCatalogReducer(
         modes: {
           ...state.modes,
           isComparisonMode: !state.modes.isComparisonMode,
+        },
+      };
+
+    case 'TOGGLE_REORDER_MODE':
+      return {
+        ...state,
+        modes: {
+          ...state.modes,
+          isReorderMode: !state.modes.isReorderMode,
+        },
+        reorder: {
+          products: !state.modes.isReorderMode ? action.payload : [],
         },
       };
 
@@ -435,6 +451,15 @@ export function productCatalogReducer(
         ui: {
           ...state.ui,
           showAnalytics: !state.ui.showAnalytics,
+        },
+      };
+
+    case 'SET_IS_REFRESHING':
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          isRefreshing: action.payload,
         },
       };
 

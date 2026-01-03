@@ -75,6 +75,11 @@ export interface Product {
   designFileUrl?: string;
   customTexts?: Array<{ text: string; placement: string; position: string; color: string }>;
   notesWysiwyg?: string;
+  // Business logic fields
+  productionType?: 'internal' | 'vendor' | null;
+  quotationRequired?: boolean;
+  vendorPrice?: number | null;
+  markupPercentage?: number | null;
 }
 
 export interface ProductCategory {

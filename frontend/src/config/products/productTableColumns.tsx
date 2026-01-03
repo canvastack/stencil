@@ -52,7 +52,7 @@ export function getProductTableColumns(config: ProductTableColumnsConfig): Colum
     {
       accessorKey: 'name',
       header: ({ column }) => <SortableHeader label="Product" column={column} />,
-      cell: ({ row }) => <ProductNameCell product={row.original} />,
+      cell: ({ row }) => <ProductNameCell product={row.original} canEdit={canAccessEdit} />,
     },
     {
       accessorKey: 'category',

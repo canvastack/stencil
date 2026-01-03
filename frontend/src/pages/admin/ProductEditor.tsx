@@ -18,12 +18,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2, Package } from 'lucide-react';
+import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2, Package, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
 import { LivePreview } from '@/components/admin/LivePreview';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ZodError } from 'zod';
 
 export default function ProductEditor() {
   const { id } = useParams();
@@ -56,7 +58,7 @@ export default function ProductEditor() {
     subcategory: '',
     tags: [] as string[],
     material: '',
-    price: 0,
+    price: 1,
     currency: 'IDR',
     priceUnit: 'per pcs',
     minOrder: 1,
@@ -72,6 +74,11 @@ export default function ProductEditor() {
     status: 'draft',
     featured: false,
     images: [] as string[],
+    // Business logic fields
+    productionType: 'internal' as 'internal' | 'vendor',
+    quotationRequired: false,
+    vendorPrice: null as number | null,
+    markupPercentage: 0,
     // Form order fields with default values
     productType: '',
     size: '',
@@ -91,6 +98,84 @@ export default function ProductEditor() {
   
   const [formData, setFormData] = useState(defaultFormData);
   const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState('basic');
+
+  const fieldToTabMap: Record<string, string> = {
+    name: 'basic',
+    slug: 'basic',
+    description: 'basic',
+    longDescription: 'basic',
+    categoryId: 'basic',
+    category: 'basic',
+    subcategory: 'basic',
+    tags: 'basic',
+    material: 'basic',
+    featured: 'basic',
+    price: 'pricing',
+    currency: 'pricing',
+    priceUnit: 'pricing',
+    minOrder: 'pricing',
+    maxOrder: 'pricing',
+    stockQuantity: 'pricing',
+    leadTime: 'pricing',
+    inStock: 'pricing',
+    vendorPrice: 'pricing',
+    markupPercentage: 'pricing',
+    productionType: 'pricing',
+    quotationRequired: 'pricing',
+    specifications: 'specifications',
+    customizable: 'customization',
+    customOptions: 'customization',
+    productType: 'customization',
+    size: 'customization',
+    bahan: 'customization',
+    kualitas: 'customization',
+    ketebalan: 'customization',
+    ukuran: 'customization',
+    warnaBackground: 'customization',
+    designFileUrl: 'customization',
+    customTexts: 'customization',
+    notesWysiwyg: 'customization',
+    images: 'images',
+    seoTitle: 'seo',
+    seoDescription: 'seo',
+    seoKeywords: 'seo',
+    status: 'seo',
+  };
+
+  const getErrorsForTab = (tab: string): string[] => {
+    return Object.entries(validationErrors)
+      .filter(([field]) => fieldToTabMap[field] === tab)
+      .map(([, message]) => message);
+  };
+
+  const hasErrorsInTab = (tab: string): boolean => {
+    return Object.keys(validationErrors).some(field => fieldToTabMap[field] === tab);
+  };
+
+  const parseValidationError = (error: any): Record<string, string> => {
+    const errors: Record<string, string> = {};
+    
+    if (error instanceof ZodError) {
+      error.errors.forEach((err) => {
+        const field = err.path.join('.');
+        errors[field] = err.message;
+      });
+    } else if (error?.message) {
+      const message = error.message;
+      Object.keys(fieldToTabMap).forEach(field => {
+        if (message.toLowerCase().includes(field.toLowerCase())) {
+          errors[field] = message;
+        }
+      });
+      if (Object.keys(errors).length === 0) {
+        errors['general'] = message;
+      }
+    }
+    
+    return errors;
+  };
 
   useEffect(() => {
     if (isNew) {
@@ -147,6 +232,10 @@ export default function ProductEditor() {
         status: product.status ?? 'draft',
         featured: product.featured ?? false,
         images: product.images ?? [],
+        productionType: product.productionType ?? 'internal',
+        quotationRequired: product.quotationRequired ?? false,
+        vendorPrice: product.vendorPrice ?? null,
+        markupPercentage: product.markupPercentage ?? 0,
         productType: product.productType ?? '',
         size: product.size ?? '',
         bahan: product.bahan ?? '',
@@ -166,8 +255,56 @@ export default function ProductEditor() {
   }, [product, isNew, categories]);
 
   const handleSave = async () => {
-    if (!formData.name || !formData.slug || !formData.categoryId) {
-      toast.error('Product name, slug, and category are required');
+    setValidationErrors({});
+    
+    const errors: Record<string, string> = {};
+    
+    if (!formData.name || formData.name.trim().length < 3) {
+      errors.name = 'Product name must be at least 3 characters';
+    }
+    if (!formData.slug || formData.slug.trim().length < 3) {
+      errors.slug = 'Slug must be at least 3 characters';
+    }
+    if (!formData.description || formData.description.trim().length < 10) {
+      errors.description = 'Description must be at least 10 characters';
+    }
+    if (!formData.categoryId) {
+      errors.categoryId = 'Category is required';
+    }
+    if (!formData.material || formData.material.trim().length === 0) {
+      errors.material = 'Material is required';
+    }
+    if (formData.images.length === 0) {
+      errors.images = 'At least one image is required';
+    }
+    
+    if (formData.productionType === 'internal') {
+      if (!formData.price || formData.price <= 0) {
+        errors.price = 'Price is required for internal production and must be greater than 0';
+      }
+      if (formData.stockQuantity === null || formData.stockQuantity === undefined || formData.stockQuantity < 0) {
+        errors.stockQuantity = 'Stock quantity is required for internal production';
+      }
+    }
+    
+    if (formData.seoTitle && formData.seoTitle.length > 60) {
+      errors.seoTitle = 'SEO title must be less than 60 characters';
+    }
+    
+    if (formData.seoDescription && formData.seoDescription.length > 160) {
+      errors.seoDescription = 'SEO description must be less than 160 characters';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const firstErrorField = Object.keys(errors)[0];
+      const firstErrorTab = fieldToTabMap[firstErrorField] || 'basic';
+      setActiveTab(firstErrorTab);
+      
+      const errorCount = Object.keys(errors).length;
+      toast.error(`Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please check the highlighted fields.`, {
+        duration: 5000,
+      });
       return;
     }
 
@@ -186,7 +323,7 @@ export default function ProductEditor() {
           slug: formData.slug,
           description: formData.description,
           longDescription: formData.longDescription,
-          price: formData.price,
+          price: formData.productionType === 'internal' ? formData.price : null,
           currency: formData.currency,
           priceUnit: formData.priceUnit,
           minOrder: formData.minOrder,
@@ -196,7 +333,7 @@ export default function ProductEditor() {
           material: formData.material,
           images: formData.images.length > 0 ? formData.images : [],
           inStock: formData.inStock,
-          stockQuantity: formData.stockQuantity,
+          stockQuantity: formData.productionType === 'internal' ? formData.stockQuantity : 0,
           leadTime: formData.leadTime,
           seoTitle: formData.seoTitle,
           seoDescription: formData.seoDescription,
@@ -206,6 +343,10 @@ export default function ProductEditor() {
           specifications: specificationsObject,
           customizable: formData.customizable,
           customOptions: formData.customOptions,
+          productionType: formData.productionType,
+          quotationRequired: formData.quotationRequired,
+          vendorPrice: formData.vendorPrice,
+          markupPercentage: formData.markupPercentage,
         });
       } else {
         await updateProduct(id || '', {
@@ -213,7 +354,7 @@ export default function ProductEditor() {
           slug: formData.slug,
           description: formData.description,
           longDescription: formData.longDescription,
-          price: formData.price,
+          price: formData.productionType === 'internal' ? formData.price : null,
           currency: formData.currency,
           priceUnit: formData.priceUnit,
           minOrder: formData.minOrder,
@@ -223,7 +364,7 @@ export default function ProductEditor() {
           material: formData.material,
           images: formData.images.length > 0 ? formData.images : [],
           inStock: formData.inStock,
-          stockQuantity: formData.stockQuantity,
+          stockQuantity: formData.productionType === 'internal' ? formData.stockQuantity : 0,
           leadTime: formData.leadTime,
           seoTitle: formData.seoTitle,
           seoDescription: formData.seoDescription,
@@ -233,13 +374,33 @@ export default function ProductEditor() {
           specifications: specificationsObject,
           customizable: formData.customizable,
           customOptions: formData.customOptions,
+          productionType: formData.productionType,
+          quotationRequired: formData.quotationRequired,
+          vendorPrice: formData.vendorPrice,
+          markupPercentage: formData.markupPercentage,
         });
       }
+      setValidationErrors({});
       toast.success(isNew ? 'Product created successfully' : 'Product updated successfully');
       navigate('/admin/products/catalog');
     } catch (error) {
       console.error('Save error:', error);
-      toast.error('Failed to save product');
+      
+      const parsedErrors = parseValidationError(error);
+      setValidationErrors(parsedErrors);
+      
+      if (Object.keys(parsedErrors).length > 0) {
+        const firstErrorField = Object.keys(parsedErrors)[0];
+        const firstErrorTab = fieldToTabMap[firstErrorField] || 'basic';
+        setActiveTab(firstErrorTab);
+        
+        const errorCount = Object.keys(parsedErrors).length;
+        toast.error(`Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please check the highlighted fields.`, {
+          duration: 5000,
+        });
+      } else {
+        toast.error('Failed to save product. Please try again.');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -399,48 +560,168 @@ export default function ProductEditor() {
         </div>
       </div>
 
-      <Tabs defaultValue="basic" className="space-y-4">
+      {Object.keys(validationErrors).length > 0 && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Validation Errors ({Object.keys(validationErrors).length})</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              {Object.entries(validationErrors).slice(0, 5).map(([field, message]) => (
+                <li key={field} className="text-sm">
+                  <strong className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</strong> {message}
+                </li>
+              ))}
+              {Object.keys(validationErrors).length > 5 && (
+                <li className="text-sm font-medium">
+                  ... and {Object.keys(validationErrors).length - 5} more error{Object.keys(validationErrors).length - 5 > 1 ? 's' : ''}
+                </li>
+              )}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
-          <TabsTrigger value="basic">Basic Info</TabsTrigger>
-          <TabsTrigger value="pricing">Pricing & Stock</TabsTrigger>
-          <TabsTrigger value="specifications">Specifications</TabsTrigger>
-          <TabsTrigger value="customization">Form Order</TabsTrigger>
-          <TabsTrigger value="images">Images</TabsTrigger>
-          <TabsTrigger value="seo">SEO</TabsTrigger>
+          <TabsTrigger value="basic" className="relative">
+            Basic Info
+            {hasErrorsInTab('basic') && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1 text-[10px]">
+                {getErrorsForTab('basic').length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="pricing" className="relative">
+            Pricing & Stock
+            {hasErrorsInTab('pricing') && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1 text-[10px]">
+                {getErrorsForTab('pricing').length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="specifications" className="relative">
+            Specifications
+            {hasErrorsInTab('specifications') && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1 text-[10px]">
+                {getErrorsForTab('specifications').length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="customization" className="relative">
+            Form Order
+            {hasErrorsInTab('customization') && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1 text-[10px]">
+                {getErrorsForTab('customization').length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="images" className="relative">
+            Images
+            {hasErrorsInTab('images') && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1 text-[10px]">
+                {getErrorsForTab('images').length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="seo" className="relative">
+            SEO
+            {hasErrorsInTab('seo') && (
+              <Badge variant="destructive" className="ml-2 h-4 px-1 text-[10px]">
+                {getErrorsForTab('seo').length}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="basic" className="space-y-4">
           <Card className="p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Product Name *</Label>
+                <Label htmlFor="name" className="flex items-center gap-2">
+                  Product Name *
+                  {validationErrors.name && (
+                    <span className="text-destructive text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Error
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (validationErrors.name) {
+                      const newErrors = { ...validationErrors };
+                      delete newErrors.name;
+                      setValidationErrors(newErrors);
+                    }
+                  }}
                   placeholder="Enter product name"
+                  className={validationErrors.name ? 'border-destructive' : ''}
                 />
+                {validationErrors.name && (
+                  <p className="text-xs text-destructive">{validationErrors.name}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="slug">URL Slug *</Label>
+                <Label htmlFor="slug" className="flex items-center gap-2">
+                  URL Slug *
+                  {validationErrors.slug && (
+                    <span className="text-destructive text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Error
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="slug"
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, slug: e.target.value });
+                    if (validationErrors.slug) {
+                      const newErrors = { ...validationErrors };
+                      delete newErrors.slug;
+                      setValidationErrors(newErrors);
+                    }
+                  }}
                   placeholder="product-url-slug"
+                  className={validationErrors.slug ? 'border-destructive' : ''}
                 />
+                {validationErrors.slug && (
+                  <p className="text-xs text-destructive">{validationErrors.slug}</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Short Description *</Label>
+              <Label htmlFor="description" className="flex items-center gap-2">
+                Short Description *
+                {validationErrors.description && (
+                  <span className="text-destructive text-xs flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Error
+                  </span>
+                )}
+              </Label>
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, description: e.target.value });
+                  if (validationErrors.description) {
+                    const newErrors = { ...validationErrors };
+                    delete newErrors.description;
+                    setValidationErrors(newErrors);
+                  }
+                }}
                 placeholder="Brief product description"
                 rows={3}
+                className={validationErrors.description ? 'border-destructive' : ''}
               />
+              {validationErrors.description && (
+                <p className="text-xs text-destructive">{validationErrors.description}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -456,13 +737,28 @@ export default function ProductEditor() {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
+                <Label htmlFor="category" className="flex items-center gap-2">
+                  Category *
+                  {validationErrors.categoryId && (
+                    <span className="text-destructive text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Error
+                    </span>
+                  )}
+                </Label>
                 <Select 
                   value={formData.categoryId} 
-                  onValueChange={(v) => setFormData({ ...formData, categoryId: v })}
+                  onValueChange={(v) => {
+                    setFormData({ ...formData, categoryId: v });
+                    if (validationErrors.categoryId) {
+                      const newErrors = { ...validationErrors };
+                      delete newErrors.categoryId;
+                      setValidationErrors(newErrors);
+                    }
+                  }}
                   disabled={categoriesLoading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={validationErrors.categoryId ? 'border-destructive' : ''}>
                     <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select category"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -476,6 +772,9 @@ export default function ProductEditor() {
                     )}
                   </SelectContent>
                 </Select>
+                {validationErrors.categoryId && (
+                  <p className="text-xs text-destructive">{validationErrors.categoryId}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="subcategory">Subcategory</Label>
@@ -487,13 +786,32 @@ export default function ProductEditor() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="material">Material *</Label>
+                <Label htmlFor="material" className="flex items-center gap-2">
+                  Material *
+                  {validationErrors.material && (
+                    <span className="text-destructive text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Error
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="material"
                   value={formData.material}
-                  onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, material: e.target.value });
+                    if (validationErrors.material) {
+                      const newErrors = { ...validationErrors };
+                      delete newErrors.material;
+                      setValidationErrors(newErrors);
+                    }
+                  }}
                   placeholder="e.g., Stainless Steel"
+                  className={validationErrors.material ? 'border-destructive' : ''}
                 />
+                {validationErrors.material && (
+                  <p className="text-xs text-destructive">{validationErrors.material}</p>
+                )}
               </div>
             </div>
 
@@ -520,16 +838,84 @@ export default function ProductEditor() {
 
         <TabsContent value="pricing" className="space-y-4">
           <Card className="p-6 space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-4 border-b pb-4 mb-4">
+              <h3 className="text-lg font-semibold">Production Type & Pricing Model</h3>
               <div className="space-y-2">
-                <Label htmlFor="price">Price *</Label>
+                <Label htmlFor="productionType">Production Type *</Label>
+                <Select 
+                  value={formData.productionType} 
+                  onValueChange={(v: 'internal' | 'vendor') => {
+                    setFormData({ 
+                      ...formData, 
+                      productionType: v,
+                      quotationRequired: v === 'vendor',
+                      price: v === 'vendor' ? 0 : formData.price,
+                      stockQuantity: v === 'vendor' ? 0 : formData.stockQuantity
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">
+                      <div className="flex flex-col">
+                        <span className="font-semibold">Internal Production</span>
+                        <span className="text-xs text-muted-foreground">Fixed price, tracked stock</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="vendor">
+                      <div className="flex flex-col">
+                        <span className="font-semibold">Vendor/Broker (Open PO)</span>
+                        <span className="text-xs text-muted-foreground">Quotation required, no stock tracking</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {formData.productionType === 'internal' 
+                    ? '✅ Price & stock are REQUIRED. Customer can order directly with fixed price.' 
+                    : '✅ Price & stock are OPTIONAL. Customer requests quotation first.'}
+                </p>
+              </div>
+            </div>
+
+            {formData.productionType === 'internal' ? (
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="flex items-center gap-2">
+                    Price *
+                    {validationErrors.price && (
+                      <span className="text-destructive text-xs flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Error
+                      </span>
+                    )}
+                  </Label>
                 <Input
                   id="price"
                   type="number"
+                  min="1"
+                  step="0.01"
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                  placeholder="0"
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value) || 1;
+                    setFormData({ ...formData, price: Math.max(1, value) });
+                    if (validationErrors.price) {
+                      const newErrors = { ...validationErrors };
+                      delete newErrors.price;
+                      setValidationErrors(newErrors);
+                    }
+                  }}
+                  placeholder="1"
+                  className={validationErrors.price || formData.price <= 0 ? 'border-destructive' : ''}
                 />
+                {validationErrors.price && (
+                  <p className="text-xs text-destructive">{validationErrors.price}</p>
+                )}
+                {!validationErrors.price && formData.price <= 0 && (
+                  <p className="text-xs text-destructive">Price must be greater than 0</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency</Label>
@@ -553,6 +939,45 @@ export default function ProductEditor() {
                 />
               </div>
             </div>
+            
+            ) : (
+              <>
+                <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed">
+                  <p className="text-sm font-semibold mb-2">📋 Quotation-Based Pricing (Open PO)</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Product ini akan menggunakan model quotation. Customer akan request penawaran harga terlebih dahulu sebelum order.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="vendorPrice">Vendor Base Price (Optional)</Label>
+                      <Input
+                        id="vendorPrice"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.vendorPrice || ''}
+                        onChange={(e) => setFormData({ ...formData, vendorPrice: parseFloat(e.target.value) || null })}
+                        placeholder="0"
+                      />
+                      <p className="text-xs text-muted-foreground">Harga dari vendor (untuk internal reference)</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="markupPercentage">Markup Percentage (%)</Label>
+                      <Input
+                        id="markupPercentage"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={formData.markupPercentage || 0}
+                        onChange={(e) => setFormData({ ...formData, markupPercentage: parseFloat(e.target.value) || 0 })}
+                        placeholder="0"
+                      />
+                      <p className="text-xs text-muted-foreground">Persentase markup untuk customer pricing</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -564,15 +989,38 @@ export default function ProductEditor() {
                   onChange={(e) => setFormData({ ...formData, minOrder: parseInt(e.target.value) })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="stockQuantity">Stock Quantity</Label>
-                <Input
-                  id="stockQuantity"
-                  type="number"
-                  value={formData.stockQuantity}
-                  onChange={(e) => setFormData({ ...formData, stockQuantity: parseInt(e.target.value) })}
-                />
-              </div>
+              {formData.productionType === 'internal' && (
+                <div className="space-y-2">
+                  <Label htmlFor="stockQuantity" className="flex items-center gap-2">
+                    Stock Quantity *
+                    {validationErrors.stockQuantity && (
+                      <span className="text-destructive text-xs flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Error
+                      </span>
+                    )}
+                  </Label>
+                  <Input
+                    id="stockQuantity"
+                    type="number"
+                    value={formData.stockQuantity}
+                    onChange={(e) => {
+                      setFormData({ ...formData, stockQuantity: parseInt(e.target.value) });
+                      if (validationErrors.stockQuantity) {
+                        const newErrors = { ...validationErrors };
+                        delete newErrors.stockQuantity;
+                        setValidationErrors(newErrors);
+                      }
+                    }}
+                    className={validationErrors.stockQuantity ? 'border-destructive' : ''}
+                  />
+                  {validationErrors.stockQuantity ? (
+                    <p className="text-xs text-destructive">{validationErrors.stockQuantity}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Required for internal production</p>
+                  )}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="leadTime">Lead Time</Label>
                 <Input
@@ -1069,8 +1517,22 @@ export default function ProductEditor() {
 
         <TabsContent value="images" className="space-y-4">
           <Card className="p-6 space-y-4">
+            {validationErrors.images && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{validationErrors.images}</AlertDescription>
+              </Alert>
+            )}
             <div className="flex justify-between items-center">
-              <Label>Product Images (Max 10MB per image)</Label>
+              <Label className="flex items-center gap-2">
+                Product Images (Max 10MB per image) *
+                {validationErrors.images && (
+                  <span className="text-destructive text-xs flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Error
+                  </span>
+                )}
+              </Label>
               <Button 
                 variant="outline" 
                 size="sm"
@@ -1092,6 +1554,11 @@ export default function ProductEditor() {
                           ...prev,
                           images: [...prev.images, reader.result as string]
                         }));
+                        if (validationErrors.images) {
+                          const newErrors = { ...validationErrors };
+                          delete newErrors.images;
+                          setValidationErrors(newErrors);
+                        }
                       };
                       reader.readAsDataURL(file);
                     });
@@ -1151,6 +1618,11 @@ export default function ProductEditor() {
                           ...prev,
                           images: [...prev.images, reader.result as string]
                         }));
+                        if (validationErrors.images) {
+                          const newErrors = { ...validationErrors };
+                          delete newErrors.images;
+                          setValidationErrors(newErrors);
+                        }
                       };
                       reader.readAsDataURL(file);
                     });
@@ -1159,9 +1631,11 @@ export default function ProductEditor() {
                 }}
               >
                 <div className="text-center">
-                  <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mt-2">Upload Image</p>
-                  <p className="text-xs text-muted-foreground mt-1">Max 10MB</p>
+                  <ImageIcon className={`mx-auto h-8 w-8 ${validationErrors.images ? 'text-destructive' : 'text-muted-foreground'}`} />
+                  <p className={`text-sm mt-2 ${validationErrors.images ? 'text-destructive' : 'text-muted-foreground'}`}>Upload Image</p>
+                  <p className={`text-xs mt-1 ${validationErrors.images ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    {validationErrors.images ? 'Required!' : 'Max 10MB'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1171,28 +1645,66 @@ export default function ProductEditor() {
         <TabsContent value="seo" className="space-y-4">
           <Card className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="seoTitle">SEO Title</Label>
+              <Label htmlFor="seoTitle" className="flex items-center gap-2">
+                SEO Title
+                {validationErrors.seoTitle && (
+                  <span className="text-destructive text-xs flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Error
+                  </span>
+                )}
+              </Label>
               <Input
                 id="seoTitle"
                 value={formData.seoTitle}
-                onChange={(e) => setFormData({ ...formData, seoTitle: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, seoTitle: e.target.value });
+                  if (validationErrors.seoTitle) {
+                    const newErrors = { ...validationErrors };
+                    delete newErrors.seoTitle;
+                    setValidationErrors(newErrors);
+                  }
+                }}
                 placeholder="Product name - Company"
                 maxLength={60}
+                className={validationErrors.seoTitle || formData.seoTitle.length > 60 ? 'border-destructive' : ''}
               />
-              <p className="text-xs text-muted-foreground">{formData.seoTitle.length}/60 characters</p>
+              <p className={`text-xs ${validationErrors.seoTitle || formData.seoTitle.length > 60 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {formData.seoTitle.length}/60 characters
+                {(validationErrors.seoTitle || formData.seoTitle.length > 60) && ' - SEO title must be less than 60 characters'}
+              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="seoDescription">SEO Description</Label>
+              <Label htmlFor="seoDescription" className="flex items-center gap-2">
+                SEO Description
+                {validationErrors.seoDescription && (
+                  <span className="text-destructive text-xs flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Error
+                  </span>
+                )}
+              </Label>
               <Textarea
                 id="seoDescription"
                 value={formData.seoDescription}
-                onChange={(e) => setFormData({ ...formData, seoDescription: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, seoDescription: e.target.value });
+                  if (validationErrors.seoDescription) {
+                    const newErrors = { ...validationErrors };
+                    delete newErrors.seoDescription;
+                    setValidationErrors(newErrors);
+                  }
+                }}
                 placeholder="Brief description for search engines"
                 rows={3}
                 maxLength={160}
+                className={validationErrors.seoDescription || formData.seoDescription.length > 160 ? 'border-destructive' : ''}
               />
-              <p className="text-xs text-muted-foreground">{formData.seoDescription.length}/160 characters</p>
+              <p className={`text-xs ${validationErrors.seoDescription || formData.seoDescription.length > 160 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {formData.seoDescription.length}/160 characters
+                {(validationErrors.seoDescription || formData.seoDescription.length > 160) && ' - Must be less than 160 characters'}
+              </p>
             </div>
 
             <div className="space-y-2">

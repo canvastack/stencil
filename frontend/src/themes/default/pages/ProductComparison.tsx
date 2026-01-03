@@ -42,10 +42,16 @@ const ProductComparison = () => {
         const row = [
           spec.label,
           ...comparedProducts.map(product => {
-            const value = spec.format ? spec.format(product) : (product as any)[spec.key] || '-';
+            let value = spec.format ? spec.format(product) : (product as any)[spec.key] || '-';
+            
+            if (typeof value === 'object' && value !== null && 'name' in value) {
+              value = value.name;
+            }
+            
             if (typeof value === 'string') return value;
+            if (typeof value === 'number') return String(value);
             if (spec.key === 'featured') return (product as any).featured ? 'Ya' : 'Tidak';
-            return String(value);
+            return '-';
           })
         ];
         tableData.push(row);
@@ -165,7 +171,11 @@ const ProductComparison = () => {
     { 
       key: 'category', 
       label: 'Kategori',
-      format: (p: Product) => p.category || '-'
+      format: (p: Product) => {
+        if (!p.category) return '-';
+        if (typeof p.category === 'string') return p.category;
+        return (p.category as any).name || '-';
+      }
     },
     { 
       key: 'stockQuantity', 

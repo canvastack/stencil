@@ -63,6 +63,8 @@ interface DataTableProps<TData> {
   loading?: boolean;
   // Performance monitoring identifier
   datasetId?: string;
+  // Row click handler
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData>({
@@ -74,6 +76,7 @@ export function DataTable<TData>({
   showPrint = true,
   loading = false,
   datasetId = 'datatable',
+  onRowClick,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -560,6 +563,19 @@ export function DataTable<TData>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    onClick={(e) => {
+                      // Don't trigger row click if clicking on action buttons or checkboxes
+                      const target = e.target as HTMLElement;
+                      const isActionClick = target.closest('button') || 
+                                           target.closest('a') || 
+                                           target.closest('[role="checkbox"]') ||
+                                           target.closest('[data-radix-collection-item]');
+                      
+                      if (!isActionClick && onRowClick) {
+                        onRowClick(row.original);
+                      }
+                    }}
+                    className={onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="max-w-[280px] break-words">

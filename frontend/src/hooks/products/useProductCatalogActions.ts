@@ -467,10 +467,20 @@ export function useProductCatalogActions({
   }, [selectedProducts.size, products, dispatch]);
 
   const handleRefresh = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
-    toast.success('Product data refreshed');
-    announceToScreenReader('Product data refreshed');
-  }, [queryClient]);
+    try {
+      dispatch({ type: 'SET_IS_REFRESHING', payload: true });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.products.lists() });
+      toast.success('Product data refreshed');
+      announceToScreenReader('Product data refreshed');
+    } catch (error) {
+      toast.error('Failed to refresh data');
+      console.error('Refresh failed:', error);
+    } finally {
+      setTimeout(() => {
+        dispatch({ type: 'SET_IS_REFRESHING', payload: false });
+      }, 500);
+    }
+  }, [queryClient, dispatch]);
 
   const handleQuickView = useCallback((product: Product) => {
     dispatch({ type: 'OPEN_QUICK_VIEW', payload: product });

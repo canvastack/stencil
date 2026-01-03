@@ -500,8 +500,13 @@ function ProductCatalogContent() {
           data={stats.productsData}
           searchKey="name"
           searchPlaceholder="Search products..."
-          loading={isLoading}
+          loading={isLoading || state.ui.isRefreshing}
           datasetId="product-catalog"
+          onRowClick={(product) => {
+            if (canAccess('products.edit')) {
+              navigate(`/admin/products/${product.uuid}/edit`);
+            }
+          }}
         />
       </Card>
     );
@@ -513,6 +518,7 @@ function ProductCatalogContent() {
     state.filters.search,
     state.modes.isReorderMode,
     state.reorder.products,
+    state.ui.isRefreshing,
     canAccess,
     navigate,
     actions,
@@ -551,11 +557,11 @@ function ProductCatalogContent() {
               variant="outline" 
               size="sm"
               onClick={actions.handleRefresh} 
-              disabled={isLoading}
+              disabled={isLoading || state.ui.isRefreshing}
               aria-label="Refresh product list"
-              aria-busy={isLoading}
+              aria-busy={state.ui.isRefreshing}
             >
-              <RefreshCw className={cn("w-4 h-4 md:mr-2", isLoading && "animate-spin")} />
+              <RefreshCw className={cn("w-4 h-4 md:mr-2", (isLoading || state.ui.isRefreshing) && "animate-spin")} />
               <span className="hidden md:inline">Refresh</span>
             </Button>
             <div 
@@ -683,7 +689,7 @@ function ProductCatalogContent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          <Card>
+          <Card className={cn(state.ui.isRefreshing && "animate-pulse")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Products
@@ -700,7 +706,7 @@ function ProductCatalogContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={cn(state.ui.isRefreshing && "animate-pulse")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Featured Products
@@ -717,7 +723,7 @@ function ProductCatalogContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={cn(state.ui.isRefreshing && "animate-pulse")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Active Products
@@ -734,7 +740,7 @@ function ProductCatalogContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={cn(state.ui.isRefreshing && "animate-pulse")}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Inventory Value

@@ -22,7 +22,7 @@ class StoreProductRequest extends FormRequest
             'category_id' => 'required|integer|exists:product_categories,id',
             'subcategory' => 'nullable|string|max:255',
             
-            'price' => 'required|integer|min:0',
+            'price' => 'nullable|integer|min:0',
             'currency' => 'required|string|size:3',
             'price_unit' => 'required|string|max:50',
             'vendor_price' => 'nullable|integer|min:0',
@@ -41,7 +41,7 @@ class StoreProductRequest extends FormRequest
             'lead_time' => 'nullable|string|max:100',
             
             'images' => 'nullable|array',
-            'images.*' => 'string|max:500',
+            'images.*' => 'string|max:2000000',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
             'categories' => 'nullable|array',

@@ -19,7 +19,16 @@ const baseProductSchema = z.object({
     .optional()
     .or(z.literal('')),
   
-  images: z.array(z.string().url('Invalid image URL'))
+  images: z.array(
+      z.string()
+        .refine((val) => {
+          if (!val) return false;
+          return val.startsWith('http://') || 
+                 val.startsWith('https://') || 
+                 val.startsWith('data:image/') ||
+                 val.startsWith('/uploads/');
+        }, 'Invalid image URL or data format')
+    )
     .min(1, 'At least one image is required')
     .max(10, 'Maximum 10 images allowed'),
   
@@ -39,7 +48,9 @@ const baseProductSchema = z.object({
   
   price: z.number()
     .positive('Price must be positive')
-    .max(999999999, 'Price is too high'),
+    .max(999999999, 'Price is too high')
+    .nullable()
+    .optional(),
   
   currency: z.string()
     .length(3, 'Currency must be 3 characters (e.g., USD, IDR)')

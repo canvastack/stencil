@@ -578,7 +578,11 @@ const Products = () => {
                             <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors line-clamp-2">
                               {product.name}
                             </h3>
-                            <p className="text-lg font-bold text-primary mb-2">{formatPrice(product.price, product.currency)}</p>
+                            <div className="min-h-[28px] mb-2">
+                              {product.price !== null && product.price !== undefined && Number(product.price) > 0 && (
+                                <p className="text-lg font-bold text-primary">{formatPrice(product.price, product.currency)}</p>
+                              )}
+                            </div>
                             <p className="text-muted-foreground mb-4 leading-relaxed line-clamp-2">{product.description}</p>
                             
                             {/* Product Info Badges */}

@@ -15,6 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProductImage } from '@/components/ui/product-image';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -39,20 +45,121 @@ import type { Product } from '@/types/product';
  */
 interface ProductNameCellProps {
   product: Product;
+  canEdit?: boolean;
 }
 
-export const ProductNameCell = React.memo(({ product }: ProductNameCellProps) => {
+export const ProductNameCell = React.memo(({ product, canEdit = true }: ProductNameCellProps) => {
+  const nameRef = React.useRef<HTMLParagraphElement>(null);
+  const skuRef = React.useRef<HTMLParagraphElement>(null);
+  const [isNameTruncated, setIsNameTruncated] = React.useState(false);
+  const [isSkuTruncated, setIsSkuTruncated] = React.useState(false);
+  const [isNameTooltipOpen, setIsNameTooltipOpen] = React.useState(false);
+  const [isSkuTooltipOpen, setIsSkuTooltipOpen] = React.useState(false);
+  const [tooltipSide, setTooltipSide] = React.useState<'top' | 'bottom'>('top');
+
+  React.useEffect(() => {
+    const checkTruncation = () => {
+      if (nameRef.current) {
+        setIsNameTruncated(nameRef.current.scrollWidth > nameRef.current.clientWidth);
+        
+        const rect = nameRef.current.getBoundingClientRect();
+        const isNearTop = rect.top < 200;
+        setTooltipSide(isNearTop ? 'bottom' : 'top');
+      }
+      if (skuRef.current) {
+        setIsSkuTruncated(skuRef.current.scrollWidth > skuRef.current.clientWidth);
+      }
+    };
+
+    checkTruncation();
+    window.addEventListener('resize', checkTruncation);
+    window.addEventListener('scroll', checkTruncation, true);
+    return () => {
+      window.removeEventListener('resize', checkTruncation);
+      window.removeEventListener('scroll', checkTruncation, true);
+    };
+  }, [product.name, product.sku]);
+
   return (
     <div className="flex items-center gap-3">
       <ProductImage
         src={product.images?.[0] || product.image_url}
         alt={product.name}
-        className="h-12 w-12 rounded-lg object-cover"
+        className="h-12 w-12 shrink-0 rounded-lg object-cover"
         loading="lazy"
       />
-      <div>
-        <p className="font-medium">{product.name}</p>
-        <p className="text-sm text-muted-foreground">{product.sku}</p>
+      <div className="min-w-0 flex-1">
+        {isNameTruncated ? (
+          <TooltipProvider delayDuration={100}>
+            <Tooltip onOpenChange={(open) => {
+              if (open && nameRef.current) {
+                const rect = nameRef.current.getBoundingClientRect();
+                const isNearTop = rect.top < 200;
+                setTooltipSide(isNearTop ? 'bottom' : 'top');
+              }
+              setIsNameTooltipOpen(open);
+            }}>
+              <TooltipTrigger asChild>
+                <p 
+                  ref={nameRef}
+                  className={`font-medium truncate cursor-help transition-all duration-200 ${
+                    isNameTooltipOpen ? 'blur-[0.5px]' : ''
+                  }`}
+                >
+                  {product.name}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent 
+                side={tooltipSide} 
+                align="start"
+                sideOffset={5}
+                className="max-w-xs z-[100]"
+              >
+                <p className="text-sm">{product.name}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <p ref={nameRef} className="font-medium truncate">
+            {product.name}
+          </p>
+        )}
+        
+        {isSkuTruncated ? (
+          <TooltipProvider delayDuration={100}>
+            <Tooltip onOpenChange={(open) => {
+              if (open && skuRef.current) {
+                const rect = skuRef.current.getBoundingClientRect();
+                const isNearTop = rect.top < 200;
+                setTooltipSide(isNearTop ? 'bottom' : 'top');
+              }
+              setIsSkuTooltipOpen(open);
+            }}>
+              <TooltipTrigger asChild>
+                <p 
+                  ref={skuRef}
+                  className={`text-sm text-muted-foreground truncate cursor-help transition-all duration-200 ${
+                    isSkuTooltipOpen ? 'blur-[0.5px]' : ''
+                  }`}
+                >
+                  {product.sku}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent 
+                side={tooltipSide} 
+                align="start"
+                sideOffset={5}
+                className="max-w-xs z-[100]"
+              >
+                <p className="text-sm">{product.sku}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : (
+          <p ref={skuRef} className="text-sm text-muted-foreground truncate">
+            {product.sku}
+          </p>
+        )}
       </div>
     </div>
   );
