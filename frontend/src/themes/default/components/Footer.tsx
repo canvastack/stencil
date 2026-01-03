@@ -6,7 +6,7 @@ import type { FooterProps } from "@/core/engine/interfaces";
 import { usePublicFooterConfig, usePublicHeaderConfig } from "@/hooks/usePublicNavigation";
 
 const Footer: React.FC<FooterProps> = ({ className, showSocialLinks = true }) => {
-  const { data: footerConfig } = usePublicFooterConfig();
+  const { data: footerConfig, isLoading: isFooterLoading } = usePublicFooterConfig();
   const { data: headerConfig } = usePublicHeaderConfig();
 
   const brandName = headerConfig?.brand_name || "Etching Xenial";
@@ -79,23 +79,38 @@ const Footer: React.FC<FooterProps> = ({ className, showSocialLinks = true }) =>
           </div>
 
           {/* Footer Sections */}
-          {showSections && sections.map((section) => (
-            <div key={section.title}>
-              <h3 className="font-semibold text-foreground mb-4">{section.title}</h3>
-              <ul className="space-y-2 text-sm">
-                {section.links.map((link) => (
-                  <li key={link.path}>
-                    <Link 
-                      to={link.path} 
-                      className="text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {isFooterLoading ? (
+            <>
+              {[1, 2].map((i) => (
+                <div key={i}>
+                  <div className="h-6 w-24 bg-muted/50 rounded animate-pulse mb-4" />
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((j) => (
+                      <div key={j} className="h-4 w-32 bg-muted/30 rounded animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            showSections && sections.map((section) => (
+              <div key={section.title}>
+                <h3 className="font-semibold text-foreground mb-4">{section.title}</h3>
+                <ul className="space-y-2 text-sm">
+                  {section.links.map((link) => (
+                    <li key={link.path}>
+                      <Link 
+                        to={link.path} 
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          )}
 
           {/* Contact Info */}
           {showContactInfo && (

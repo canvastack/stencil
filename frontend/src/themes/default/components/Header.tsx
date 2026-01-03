@@ -26,11 +26,11 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
   
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, logout, user, account } = useAuthState();
+  const { isAuthenticated, logout, tenantUser, platformAccount } = useAuthState();
   const { getUrl } = useTenantAwareNavigation();
   
   const { data: headerConfig } = usePublicHeaderConfig();
-  const { data: menus = [] } = usePublicMenus('header');
+  const { data: menus = [], isLoading: isMenusLoading } = usePublicMenus('header');
 
   // useEffect(() => {
     // const root = document.documentElement;
@@ -108,7 +108,14 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {menus.map((menu) => {
+            {isMenusLoading ? (
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-9 w-20 bg-muted/50 rounded-lg animate-pulse" />
+                ))}
+              </>
+            ) : (
+              menus.map((menu) => {
               const hasChildren = menu.children && menu.children.length > 0;
               
               if (hasChildren) {
@@ -139,7 +146,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                       <ChevronDown className={`h-4 w-4 transition-transform ${openDropdown === menu.uuid ? 'rotate-180' : ''}`} />
                     </button>
                     
-                    {openDropdown === menu.uuid && (
+                    {openDropdown === menu.uuid && menu.children && (
                       <div 
                         className="absolute top-full left-0 pt-2 z-50"
                         onMouseEnter={() => setOpenDropdown(menu.uuid)}
@@ -198,7 +205,8 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                   )}
                 </Link>
               );
-            })}
+              })
+            )}
           </nav>
 
           {/* Right Side Actions */}
@@ -233,7 +241,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
               <div className="flex items-center gap-2">
                 <div className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10">
                   <span className="text-sm font-medium text-foreground">
-                    {user?.name || account?.name || 'User'}
+                    {tenantUser?.name || platformAccount?.name || 'User'}
                   </span>
                 </div>
                 <Button
@@ -280,7 +288,14 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-white/10">
             <nav className="flex flex-col space-y-2">
-              {menus.map((menu) => {
+              {isMenusLoading ? (
+                <>
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-12 bg-muted/50 rounded-lg animate-pulse" />
+                  ))}
+                </>
+              ) : (
+                menus.map((menu) => {
                 const hasChildren = menu.children && menu.children.length > 0;
                 
                 if (hasChildren) {
@@ -308,7 +323,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                         <ChevronDown className={`h-4 w-4 transition-transform ${openMobileSubmenu === menu.uuid ? 'rotate-180' : ''}`} />
                       </button>
                       
-                      {openMobileSubmenu === menu.uuid && (
+                      {openMobileSubmenu === menu.uuid && menu.children && (
                         <div className="ml-4 mt-2 space-y-1">
                           {menu.children.map((child: any) => (
                             <Link
@@ -361,7 +376,8 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                     )}
                   </Link>
                 );
-              })}
+                })
+              )}
               {showCart && (
                 <Button
                   variant="ghost"
@@ -378,7 +394,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                 <>
                   <div className="px-4 py-3 rounded-lg bg-primary/10">
                     <span className="text-sm font-medium text-foreground">
-                      {user?.name || account?.name || 'User'}
+                      {tenantUser?.name || platformAccount?.name || 'User'}
                     </span>
                   </div>
                   <Button

@@ -26,6 +26,9 @@ export default defineConfig(({ mode }) => {
   
   return {
     base: getBaseUrl(),
+    
+    // Configure environment variable prefix
+    envPrefix: ['VITE_', 'NODE_'],
   
     server: {
       host: "::",
@@ -124,15 +127,14 @@ export default defineConfig(({ mode }) => {
           manualChunks: (id) => {
             // Only split truly standalone utilities that don't depend on React
             if (id.includes('node_modules')) {
-              // CRITICAL: Recharts has circular dependencies that break with terser minification
-              // Keep it separate and don't mangle it aggressively
-              if (id.includes('recharts')) {
-                return 'chart-vendor';
-              }
+              // CRITICAL FIX: Recharts has circular dependencies that break when isolated in separate chunk
+              // Solution: Keep recharts in main vendor bundle to prevent variable hoisting errors
+              // Removed: recharts → 'chart-vendor' (caused "can't access lexical declaration 'F' before initialization")
+              
               if (id.includes('lodash') || id.includes('date-fns') || id.includes('axios')) {
                 return 'utils-vendor';
               }
-              // Everything else goes to main vendor (React, React-DOM, all UI libs, all React-dependent libs)
+              // Everything else goes to main vendor (React, React-DOM, all UI libs, recharts, all React-dependent libs)
               return 'vendor';
             }
             // No app-level chunking - everything stays in main bundle

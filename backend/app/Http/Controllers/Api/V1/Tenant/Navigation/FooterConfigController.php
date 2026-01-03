@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class FooterConfigController extends Controller
 {
@@ -60,7 +61,7 @@ class FooterConfigController extends Controller
                 'message' => 'Footer configuration retrieved successfully'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to retrieve footer configuration', [
+            Log::error('Failed to retrieve footer configuration', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -154,7 +155,7 @@ class FooterConfigController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Failed to create footer configuration', [
+            Log::error('Failed to create footer configuration', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -278,7 +279,7 @@ class FooterConfigController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Failed to update footer configuration', [
+            Log::error('Failed to update footer configuration', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

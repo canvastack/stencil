@@ -12,8 +12,7 @@ import type {
   MenuReorderInput,
   FooterConfig,
   FooterConfigInput,
-  FooterConfigResponse,
-  ApiError
+  FooterConfigResponse
 } from '../../types/navigation';
 
 const NAVIGATION_BASE = '/content/navigation';
@@ -24,17 +23,14 @@ export const navigationService = {
     const response = await tenantApiClient.get<HeaderConfigResponse>(`${NAVIGATION_BASE}/header`);
     console.log('[navigationService] 📦 Raw response:', response);
     console.log('[navigationService] 📦 response.data:', response.data);
-    console.log('[navigationService] 📦 response.data.data:', (response as any).data?.data);
     
-    // The tenantApiClient interceptor unwraps axios response, so response is already the API data
-    // Check if we need to unwrap further
     if (response && typeof response === 'object' && 'data' in response) {
       console.log('[navigationService] ✅ Returning response.data');
       return (response as any).data;
     }
     
     console.log('[navigationService] ✅ Returning response directly');
-    return response.data.data;
+    return response as any;
   },
 
   async createHeaderConfig(data: HeaderConfigInput): Promise<HeaderConfig> {
@@ -54,7 +50,7 @@ export const navigationService = {
     console.log('📡 [navigationService] response.data:', response.data);
     console.log('📡 [navigationService] response.data type:', typeof response.data);
     console.log('📡 [navigationService] response.data is Array?:', Array.isArray(response.data));
-    return response;
+    return response as any;
   },
 
   async getMenu(uuid: string): Promise<Menu> {
@@ -96,7 +92,7 @@ export const navigationService = {
     }
     
     console.log('[navigationService] ✅ Returning response directly for footer');
-    return response.data.data;
+    return response as any;
   },
 
   async createFooterConfig(data: FooterConfigInput): Promise<FooterConfig> {
@@ -105,7 +101,7 @@ export const navigationService = {
     if (response && typeof response === 'object' && 'data' in response) {
       return (response as any).data;
     }
-    return response.data.data;
+    return response as any;
   },
 
   async updateFooterConfig(data: FooterConfigInput): Promise<FooterConfig> {
@@ -114,7 +110,7 @@ export const navigationService = {
     if (response && typeof response === 'object' && 'data' in response) {
       return (response as any).data;
     }
-    return response.data.data;
+    return response as any;
   },
 };
 
@@ -123,14 +119,14 @@ export const publicNavigationService = {
     const response = await anonymousApiClient.get<{ success: boolean; data: HeaderConfig }>(
       `/public/navigation/${tenantSlug}/header`
     );
-    return response.data;
+    return (response as any).data;
   },
 
   async getFooter(tenantSlug: string): Promise<FooterConfig> {
     const response = await anonymousApiClient.get<{ success: boolean; data: FooterConfig }>(
       `/public/navigation/${tenantSlug}/footer`
     );
-    return response.data;
+    return (response as any).data;
   },
 
   async getMenus(tenantSlug: string, location?: 'header' | 'footer' | 'mobile' | 'all'): Promise<Menu[]> {
@@ -138,7 +134,6 @@ export const publicNavigationService = {
       `/public/navigation/${tenantSlug}/menus`,
       {params: { location }}
     );
-    return response.data;
+    return (response as any).data;
   },
 };
-

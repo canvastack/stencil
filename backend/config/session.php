@@ -192,11 +192,13 @@ return [
     | take place, and can be used to mitigate CSRF attacks. By default, we
     | will set this value to "lax" since this is a secure default value.
     |
+    | For cross-domain SPA (different domains), use "none" with secure=true
+    |
     | Supported: "lax", "strict", "none", null
     |
     */
 
-    'same_site' => 'lax',
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
     /*
     |--------------------------------------------------------------------------

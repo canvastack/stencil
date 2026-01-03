@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class HeaderConfigController extends Controller
 {
@@ -58,7 +59,7 @@ class HeaderConfigController extends Controller
                 'message' => 'Header configuration retrieved successfully'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to retrieve header configuration', [
+            Log::error('Failed to retrieve header configuration', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -91,10 +92,10 @@ class HeaderConfigController extends Controller
                 'sticky_header' => 'nullable|boolean',
                 'transparent_on_scroll' => 'nullable|boolean',
                 'styling_options' => 'nullable|array',
-                'styling_options.backgroundColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
-                'styling_options.textColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
-                'styling_options.activeColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
-                'styling_options.hoverColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+                'styling_options.backgroundColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+                'styling_options.textColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+                'styling_options.activeColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+                'styling_options.hoverColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
                 'login_button_text' => 'nullable|string|max:50',
                 'cart_button_text' => 'nullable|string|max:50',
                 'search_placeholder' => 'nullable|string|max:100',
@@ -148,7 +149,7 @@ class HeaderConfigController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Failed to create header configuration', [
+            Log::error('Failed to create header configuration', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -181,10 +182,10 @@ class HeaderConfigController extends Controller
                 'sticky_header' => 'nullable|boolean',
                 'transparent_on_scroll' => 'nullable|boolean',
                 'styling_options' => 'nullable|array',
-                'styling_options.backgroundColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
-                'styling_options.textColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
-                'styling_options.activeColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
-                'styling_options.hoverColor' => 'nullable|string|regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/',
+                'styling_options.backgroundColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+                'styling_options.textColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+                'styling_options.activeColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+                'styling_options.hoverColor' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
                 'login_button_text' => 'nullable|string|max:50',
                 'cart_button_text' => 'nullable|string|max:50',
                 'search_placeholder' => 'nullable|string|max:100',
@@ -246,7 +247,7 @@ class HeaderConfigController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Failed to update header configuration', [
+            Log::error('Failed to update header configuration', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

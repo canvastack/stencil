@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "build:analyze": "npm run build && node scripts/optimize-build.js",
     "build:prod": "NODE_ENV=production npm run build:analyze",
