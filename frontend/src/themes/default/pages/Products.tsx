@@ -1,5 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import * as React from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,8 +77,7 @@ import { useProductComparison } from "@/contexts/ProductComparisonContext";
 import { ComparisonBar } from "@/components/products/ComparisonBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProductQuickView } from "@/components/products/ProductQuickView";
-
-
+import { CursorTooltip } from "@/components/ui/cursor-tooltip";
 
 // Skeleton Components
 const ProductCardSkeleton = ({ viewMode }: { viewMode: 'grid' | 'list' }) => (
@@ -575,15 +576,27 @@ const Products = () => {
                             {/* Rating */}
                             <RatingStars rating={rating} size="sm" className="mb-3" />
 
-                            <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                              {product.name}
-                            </h3>
+                            <div className="mb-3">
+                              <CursorTooltip 
+                                text={product.name}
+                                className="text-xl font-bold text-foreground group-hover:text-primary transition-colors cursor-help"
+                                maxLines={1}
+                                as="p"
+                              />
+                            </div>
                             <div className="min-h-[28px] mb-2">
                               {product.price !== null && product.price !== undefined && Number(product.price) > 0 && (
                                 <p className="text-lg font-bold text-primary">{formatPrice(product.price, product.currency)}</p>
                               )}
                             </div>
-                            <p className="text-muted-foreground mb-4 leading-relaxed line-clamp-2">{product.description}</p>
+                            <div className="mb-4">
+                              <CursorTooltip 
+                                text={product.description}
+                                className="text-muted-foreground leading-relaxed cursor-help"
+                                maxLines={3}
+                                as="p"
+                              />
+                            </div>
                             
                             {/* Product Info Badges */}
                             <div className="flex flex-wrap gap-2 mb-4">

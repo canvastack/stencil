@@ -472,7 +472,7 @@ function ProductCatalogContent() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate">{product.name}</h3>
+                  <TruncatedText text={product.name} className="font-semibold" maxLines={1} />
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline">{product.category?.name || 'Uncategorized'}</Badge>
                     <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
