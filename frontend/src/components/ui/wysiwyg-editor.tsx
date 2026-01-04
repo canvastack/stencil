@@ -91,14 +91,16 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
   const [textColorDialog, setTextColorDialog] = useState(false);
   const [bgColorDialog, setBgColorDialog] = useState(false);
 
-  // Initialize editor content only once
+  // Initialize editor content when value changes from parent
   useEffect(() => {
-    if (editorRef.current && !isInitialized) {
-      editorRef.current.innerHTML = value || '';
+    if (editorRef.current && value && !isInitialized) {
+      editorRef.current.innerHTML = value;
       setIsInitialized(true);
+      setHistory([value]);
+      setHistoryIndex(0);
       updateWordCount();
     }
-  }, []);
+  }, [value, isInitialized]);
 
   const updateWordCount = () => {
     if (editorRef.current) {

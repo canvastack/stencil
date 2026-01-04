@@ -68,6 +68,19 @@ class Product extends Model implements TenantAwareModel
         'review_count',
         'published_at',
         'last_viewed_at',
+        'product_type',
+        'bahan',
+        'bahan_options',
+        'kualitas',
+        'kualitas_options',
+        'ketebalan',
+        'ketebalan_options',
+        'ukuran',
+        'ukuran_options',
+        'warna_background',
+        'design_file_url',
+        'custom_texts',
+        'notes_wysiwyg',
     ];
 
     protected $casts = [
@@ -106,6 +119,11 @@ class Product extends Model implements TenantAwareModel
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'bahan_options' => 'array',
+        'kualitas_options' => 'array',
+        'ketebalan_options' => 'array',
+        'ukuran_options' => 'array',
+        'custom_texts' => 'array',
     ];
 
     protected $dates = [

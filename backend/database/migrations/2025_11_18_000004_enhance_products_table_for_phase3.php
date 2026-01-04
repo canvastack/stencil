@@ -24,7 +24,7 @@ return new class extends Migration
             // Business model fields
             $table->boolean('customizable')->default(true)->after('track_inventory'); // Most etching products are customizable
             $table->json('custom_options')->nullable()->after('customizable'); // Quick custom options reference
-            $table->enum('production_type', ['internal', 'vendor', 'both'])->default('vendor')->after('custom_options');
+            $table->enum('production_type', ['internal', 'vendor'])->default('vendor')->after('custom_options');
             $table->boolean('requires_quote')->default(false)->after('production_type');
             
             // Etching-specific fields

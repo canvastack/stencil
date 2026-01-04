@@ -153,7 +153,7 @@ const ProductDetail = () => {
     ? productReviews.reduce((acc, review) => acc + review.rating, 0) / productReviews.length 
     : 0;
 
-  // Transform specifications from object to array format (backend returns object, UI needs array)
+  // Transform specifications from object to array format with proper value formatting
   const specifications = useMemo(() => {
     if (!product?.specifications) return [];
     
@@ -162,10 +162,30 @@ const ProductDetail = () => {
     }
     
     if (typeof product.specifications === 'object') {
-      return Object.entries(product.specifications).map(([key, value]) => ({
-        key,
-        value: typeof value === 'string' ? value : JSON.stringify(value)
-      }));
+      return Object.entries(product.specifications).map(([key, value]) => {
+        let displayValue: string;
+        
+        if (typeof value === 'string' || typeof value === 'number') {
+          displayValue = String(value);
+        } else if (Array.isArray(value)) {
+          displayValue = value.join(', ');
+        } else if (typeof value === 'object' && value !== null) {
+          const keyValuePairs = Object.entries(value).map(([k, v]) => {
+            if (Array.isArray(v)) {
+              return `${k}: ${v.join(', ')}`;
+            }
+            return `${k}: ${v}`;
+          });
+          displayValue = keyValuePairs.join(' | ');
+        } else {
+          displayValue = JSON.stringify(value);
+        }
+        
+        return {
+          key,
+          value: displayValue
+        };
+      });
     }
     
     return [];

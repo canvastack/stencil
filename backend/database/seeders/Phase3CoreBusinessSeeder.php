@@ -191,15 +191,29 @@ class Phase3CoreBusinessSeeder extends Seeder
             'Professional %s %s',
             'Deluxe %s %s',
             'Executive %s %s',
+            'Handcrafted %s %s',
+            'Designer %s %s',
+            'Elegant %s %s',
         ];
 
         $items = [
             'Plaque', 'Trophy', 'Award', 'Sign', 'Display', 'Frame', 'Box', 'Holder',
-            'Stand', 'Plate', 'Tag', 'Label', 'Panel', 'Board', 'Case',
+            'Stand', 'Plate', 'Tag', 'Label', 'Panel', 'Board', 'Case', 'Medal',
+            'Certificate Holder', 'Name Badge', 'Door Sign', 'Wall Mount',
         ];
 
+        $subcategories = [
+            'Corporate Recognition', 'Employee Awards', 'Sales Achievement', 
+            'Customer Appreciation', 'Event Commemoration', 'Anniversary Gifts',
+            'Retirement Plaques', 'Sports Tournament', 'Academic Excellence',
+            'Safety Awards', 'Quality Achievement', 'Innovation Recognition'
+        ];
+
+        $productTypes = ['metal', 'glass', 'award'];
+        $backgroundColors = ['#FFFFFF', '#F5F5F5', '#E8E8E8', '#1A1A1A', '#2C3E50', '#34495E'];
+
         $productsCreated = 0;
-        $targetProducts = 60;
+        $targetProducts = 50;
 
         while ($productsCreated < $targetProducts) {
             $category = $categories[array_rand($categories)];
@@ -209,8 +223,17 @@ class Phase3CoreBusinessSeeder extends Seeder
             $item = $items[array_rand($items)];
 
             $name = sprintf($template, $material, $item);
-            $basePrice = rand(50000, 500000);
+            $basePrice = rand(75000, 500000);
             $vendorPrice = (int) ($basePrice * 0.6);
+            $productType = $productTypes[array_rand($productTypes)];
+            $businessType = $this->determineBusinessType($material, $item);
+            
+            // Generate comprehensive form order configuration
+            $bahanSlug = strtolower(str_replace(' ', '-', $material));
+            $bahanOptions = $this->generateBahanOptions($materialType);
+            $kualitasOptions = ['Standard', 'Premium', 'Professional', 'Luxury'];
+            $ketebalanOptions = $this->generateKetebalanOptions($materialType);
+            $ukuranOptions = ['10x15', '15x20', '20x30', '25x35', '30x40', 'custom'];
             
             $product = Product::create([
                 'tenant_id' => $tenant->id,
@@ -230,12 +253,12 @@ class Phase3CoreBusinessSeeder extends Seeder
                 
                 'status' => ['draft', 'published', 'published', 'published'][rand(0, 3)],
                 'type' => ['physical', 'physical', 'service'][rand(0, 2)],
-                'business_type' => $this->determineBusinessType($material, $item),
-                'production_type' => ['internal', 'vendor', 'both'][rand(0, 2)],
+                'business_type' => $businessType,
+                'production_type' => ['internal', 'vendor'][rand(0, 1)],
                 
-                'stock_quantity' => rand(0, 100),
+                'stock_quantity' => rand(10, 100),
                 'low_stock_threshold' => 10,
-                'track_inventory' => rand(0, 10) > 3,
+                'track_inventory' => true,
                 
                 'min_order_quantity' => rand(1, 5),
                 'max_order_quantity' => rand(100, 1000),
@@ -246,27 +269,51 @@ class Phase3CoreBusinessSeeder extends Seeder
                 'categories' => [$category->name],
                 
                 'features' => $this->generateFeatures($material, $item),
-                'specifications' => $this->generateSpecifications($material),
-                'metadata' => ['created_by' => 'seeder', 'phase' => 'phase_3'],
+                'specifications' => $this->generateSpecifications($material, $item),
+                'metadata' => [
+                    'created_by' => 'seeder', 
+                    'phase' => 'phase_3',
+                    'last_updated' => Carbon::now()->toDateTimeString(),
+                    'version' => '2.0',
+                ],
                 'dimensions' => $this->generateDimensions(),
                 
+                // Basic material and size
                 'material' => $material,
                 'size' => $this->generateDefaultSize(),
                 'available_sizes' => $this->generateAvailableSizes(),
                 'available_materials' => $this->materials[$materialType],
                 'quality_levels' => array_keys($this->qualityLevels),
                 
-                'customizable' => rand(0, 10) > 3,
+                // Form Order Configuration Fields (NEW - Complete Data)
+                'subcategory' => $subcategories[array_rand($subcategories)],
+                'product_type' => $productType,
+                'bahan' => $bahanSlug,
+                'bahan_options' => $bahanOptions,
+                'kualitas' => $kualitasOptions[array_rand($kualitasOptions)],
+                'kualitas_options' => $kualitasOptions,
+                'ketebalan' => $ketebalanOptions[array_rand($ketebalanOptions)],
+                'ketebalan_options' => $ketebalanOptions,
+                'ukuran' => $ukuranOptions[array_rand($ukuranOptions)],
+                'ukuran_options' => $ukuranOptions,
+                'warna_background' => $backgroundColors[array_rand($backgroundColors)],
+                'design_file_url' => 'https://via.placeholder.com/1920x1080?text=Design+Template',
+                'custom_texts' => $this->generateCustomTexts(),
+                'notes_wysiwyg' => $this->generateProductNotes($name, $material),
+                
+                // Customization
+                'customizable' => true,
                 'custom_options' => $this->generateCustomOptions(),
                 'requires_quote' => rand(0, 10) > 6,
                 
+                // SEO and visibility
                 'featured' => rand(0, 10) > 7,
-                'view_count' => rand(0, 500),
-                'average_rating' => rand(35, 50) / 10,
-                'review_count' => rand(0, 50),
+                'view_count' => rand(50, 1500),
+                'average_rating' => rand(40, 50) / 10,
+                'review_count' => rand(5, 100),
                 
-                'seo_title' => $name . ' - ' . $tenant->name,
-                'seo_description' => substr($this->generateProductDescription($name, $material), 0, 160),
+                'seo_title' => $name . ' | ' . $tenant->name . ' - Custom ' . $item,
+                'seo_description' => substr($this->generateProductDescription($name, $material), 0, 155) . '...',
                 'seo_keywords' => $this->generateKeywords($name),
                 
                 'published_at' => rand(0, 10) > 2 ? Carbon::now()->subDays(rand(1, 90)) : null,
@@ -486,23 +533,72 @@ EOT;
         ];
     }
 
-    private function generateSpecifications(string $material): array
+    private function generateSpecifications(string $material, string $item): array
     {
+        $finishes = ['Glossy', 'Matte', 'Satin', 'Polished', 'Brushed', 'Mirror Finish'];
+        $thicknessOptions = ['2mm', '3mm', '5mm', '8mm', '10mm', '12mm'];
+        
         return [
-            ['key' => 'Material', 'value' => $material],
-            ['key' => 'Finish', 'value' => ['Glossy', 'Matte', 'Satin', 'Polished'][rand(0, 3)]],
-            ['key' => 'Thickness', 'value' => rand(3, 12) . 'mm'],
-            ['key' => 'Warranty', 'value' => '1 Year'],
-            ['key' => 'Production', 'value' => 'Made to Order'],
-            'thickness_options' => ['2mm', '3mm', '5mm', '8mm', '10mm'],
-            'colors' => [
-                ['name' => 'Natural', 'hex' => null, 'label' => 'Natural'],
-                ['name' => 'Black', 'hex' => '#000000', 'label' => 'Hitam'],
-                ['name' => 'Silver', 'hex' => '#C0C0C0', 'label' => 'Silver'],
-                ['name' => 'Gold', 'hex' => '#FFD700', 'label' => 'Emas'],
-                ['name' => 'Bronze', 'hex' => '#CD7F32', 'label' => 'Perunggu'],
+            'Material' => $material,
+            'Product Type' => $item,
+            'Finish' => $finishes[array_rand($finishes)],
+            'Thickness' => $thicknessOptions[array_rand($thicknessOptions)],
+            'Warranty' => rand(1, 3) . ' Year' . (rand(1, 3) > 1 ? 's' : ''),
+            'Production Method' => 'Made to Order',
+            'Manufacturing Time' => rand(3, 14) . ' working days',
+            'Available Thickness Options' => $thicknessOptions,
+            'Color Options' => [
+                'Natural' => ['Natural finish', 'No coating', 'Original color'],
+                'Black' => ['Matte black', 'Glossy black', 'Jet black', '#000000'],
+                'Silver' => ['Brushed silver', 'Polished silver', 'Chrome silver', '#C0C0C0'],
+                'Gold' => ['Champagne gold', 'Rose gold', 'Classic gold', '#FFD700'],
+                'Bronze' => ['Antique bronze', 'Polished bronze', 'Vintage bronze', '#CD7F32'],
+                'White' => ['Pure white', 'Off-white', 'Pearl white', '#FFFFFF'],
             ],
-            'finishes' => ['Glossy', 'Matte', 'Brushed', 'Polished'],
+            'Surface Finishes' => ['Glossy', 'Matte', 'Brushed', 'Polished', 'Textured'],
+            'Engraving Methods' => ['Laser Engraving', 'Chemical Etching', 'Sandblasting', 'CNC Milling'],
+            'Engraving Depth' => rand(1, 5) / 10 . 'mm',
+            'Text Customization' => 'Available with up to 5 lines of text',
+            'Logo Support' => 'Yes, vector formats preferred (AI, EPS, SVG)',
+            'Minimum Order' => rand(1, 10) . ' piece' . (rand(1, 10) > 1 ? 's' : ''),
+            'Bulk Discount' => 'Available for orders above 50 pieces',
+            'Certification' => ['ISO 9001:2015', 'CE Certified', 'Quality Assured'][rand(0, 2)],
+            'Origin' => 'Indonesia',
+            'Eco-Friendly' => rand(0, 1) ? 'Yes' : 'No',
+            'Recyclable' => rand(0, 1) ? 'Yes' : 'No',
+            'Package Contents' => [
+                'Main product with protective film',
+                'Installation guide and instructions',
+                'Warranty card and certificate',
+                'Cleaning cloth (microfiber)',
+                'Mounting accessories (if applicable)',
+            ],
+            'Care Instructions' => [
+                'Cleaning' => [
+                    'Use soft microfiber cloth',
+                    'Avoid abrasive materials and harsh chemicals',
+                    'Mild soap solution recommended',
+                    'Wipe dry after cleaning',
+                ],
+                'Storage' => [
+                    'Keep in dry place away from moisture',
+                    'Avoid direct sunlight exposure',
+                    'Store in protective case or packaging',
+                    'Temperature: 15-30°C recommended',
+                ],
+                'Maintenance' => [
+                    'Regular cleaning recommended (weekly)',
+                    'Professional polishing available',
+                    'Inspect for damage periodically',
+                    'Contact customer service for repairs',
+                ],
+            ],
+            'Safety Information' => [
+                'Handle with care to avoid scratches',
+                'Wear gloves when handling sharp edges',
+                'Keep away from children under 3 years',
+                'Not for food contact use',
+            ],
         ];
     }
 
@@ -623,5 +719,79 @@ EOT;
             '30x40' => '30cm x 40cm',
             'custom' => 'Custom Size',
         ];
+    }
+
+    private function generateBahanOptions(string $materialType): array
+    {
+        $options = $this->materials[$materialType] ?? [];
+        
+        // Add additional material variations
+        $additionalOptions = [
+            'Premium Grade',
+            'Economy Grade',
+            'Commercial Grade',
+            'Industrial Grade',
+        ];
+        
+        return array_merge($options, $additionalOptions);
+    }
+
+    private function generateKetebalanOptions(string $materialType): array
+    {
+        $baseOptions = ['1mm', '2mm', '3mm', '5mm', '8mm', '10mm'];
+        
+        // Different material types have different thickness ranges
+        if ($materialType === 'Metal') {
+            return ['1mm', '1.5mm', '2mm', '3mm', '5mm', '8mm'];
+        } elseif ($materialType === 'Acrylic' || $materialType === 'Glass') {
+            return ['3mm', '5mm', '8mm', '10mm', '12mm', '15mm'];
+        } elseif ($materialType === 'Wood') {
+            return ['5mm', '8mm', '10mm', '12mm', '15mm', '18mm', '20mm'];
+        }
+        
+        return $baseOptions;
+    }
+
+    private function generateCustomTexts(): array
+    {
+        $placements = ['Top Center', 'Bottom Center', 'Center', 'Top Left', 'Top Right'];
+        $positions = ['header', 'body', 'footer', 'left', 'right'];
+        $colors = ['#000000', '#FFFFFF', '#FFD700', '#C0C0C0', '#1A1A1A'];
+        
+        $texts = [];
+        $textCount = rand(1, 3);
+        
+        for ($i = 0; $i < $textCount; $i++) {
+            $texts[] = [
+                'text' => 'Sample Text Line ' . ($i + 1),
+                'placement' => $placements[array_rand($placements)],
+                'position' => $positions[array_rand($positions)],
+                'color' => $colors[array_rand($colors)],
+            ];
+        }
+        
+        return $texts;
+    }
+
+    private function generateProductNotes(string $name, string $material): string
+    {
+        return <<<EOT
+<h3>Catatan Produksi</h3>
+<p>Produk <strong>{$name}</strong> dibuat dari material <strong>{$material}</strong> berkualitas tinggi dengan proses produksi yang teliti.</p>
+
+<h4>Perhatian Khusus:</h4>
+<ul>
+<li>Waktu produksi dapat bervariasi tergantung kompleksitas desain</li>
+<li>Untuk order dalam jumlah besar (>50 pcs), silakan hubungi tim sales untuk harga khusus</li>
+<li>Desain custom memerlukan approval sebelum produksi dimulai</li>
+<li>Perubahan desain setelah approval akan dikenakan biaya tambahan</li>
+</ul>
+
+<h4>Kualitas Terjamin:</h4>
+<p>Setiap produk melalui quality control ketat sebelum dikirim. Garansi 1 tahun untuk cacat produksi.</p>
+
+<h4>Pengiriman:</h4>
+<p>Produk dikemas dengan aman menggunakan bubble wrap dan box khusus untuk menghindari kerusakan saat pengiriman.</p>
+EOT;
     }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useProducts, useProduct } from '@/hooks/useProducts';
+import { useProducts, useProduct, useProductBySlug } from '@/hooks/useProducts';
 import { useCategoriesQuery } from '@/hooks/useCategoriesQuery';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2, Package, Ale
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
+import { SpecificationInput } from '@/components/ui/specification-input';
 import { LivePreview } from '@/components/admin/LivePreview';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -33,7 +34,7 @@ export default function ProductEditor() {
   const isNew = id === 'new';
   // Only fetch product data when editing an existing product
   const { product, isLoading } = useProduct(isNew ? '' : (id || ''));
-  const { createProduct, updateProduct } = useProducts();
+  const { createProduct, updateProduct, fetchProductBySlug } = useProducts();
   const { data: categoriesData, isLoading: categoriesLoading } = useCategoriesQuery({ per_page: 100, is_active: true });
   const categories = categoriesData?.data || [];
   
@@ -75,7 +76,7 @@ export default function ProductEditor() {
     featured: false,
     images: [] as string[],
     // Business logic fields
-    productionType: 'internal' as 'internal' | 'vendor',
+    productionType: '' as '' | 'internal' | 'vendor',
     quotationRequired: false,
     vendorPrice: null as number | null,
     markupPercentage: 0,
@@ -97,9 +98,13 @@ export default function ProductEditor() {
   };
   
   const [formData, setFormData] = useState(defaultFormData);
+  const [originalFormData, setOriginalFormData] = useState(defaultFormData);
   const [isSaving, setIsSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState('basic');
+  const [slugCheckTimeout, setSlugCheckTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isSlugChecking, setIsSlugChecking] = useState(false);
+  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
 
   const fieldToTabMap: Record<string, string> = {
     name: 'basic',
@@ -128,15 +133,30 @@ export default function ProductEditor() {
     customizable: 'customization',
     customOptions: 'customization',
     productType: 'customization',
+    product_type: 'customization',
     size: 'customization',
     bahan: 'customization',
+    bahanOptions: 'customization',
+    bahan_options: 'customization',
     kualitas: 'customization',
+    kualitasOptions: 'customization',
+    kualitas_options: 'customization',
     ketebalan: 'customization',
+    ketebalanOptions: 'customization',
+    ketebalan_options: 'customization',
     ukuran: 'customization',
+    ukuranOptions: 'customization',
+    ukuran_options: 'customization',
     warnaBackground: 'customization',
+    warna_background: 'customization',
     designFileUrl: 'customization',
+    design_file_url: 'customization',
     customTexts: 'customization',
+    custom_texts: 'customization',
     notesWysiwyg: 'customization',
+    notes_wysiwyg: 'customization',
+    availableSizes: 'customization',
+    available_sizes: 'customization',
     images: 'images',
     seoTitle: 'seo',
     seoDescription: 'seo',
@@ -154,6 +174,69 @@ export default function ProductEditor() {
     return Object.keys(validationErrors).some(field => fieldToTabMap[field] === tab);
   };
 
+  const formatFieldName = (field: string): string => {
+    const fieldMap: Record<string, string> = {
+      'production_type': 'Production Type',
+      'productionType': 'Production Type',
+      'category_id': 'Category',
+      'categoryId': 'Category',
+      'long_description': 'Long Description',
+      'longDescription': 'Long Description',
+      'product_type': 'Product Type',
+      'productType': 'Product Type',
+      'bahan': 'Material (Bahan)',
+      'bahan_options': 'Material Options',
+      'bahanOptions': 'Material Options',
+      'kualitas': 'Quality (Kualitas)',
+      'kualitas_options': 'Quality Options',
+      'kualitasOptions': 'Quality Options',
+      'ketebalan': 'Thickness (Ketebalan)',
+      'ketebalan_options': 'Thickness Options',
+      'ketebalanOptions': 'Thickness Options',
+      'ukuran': 'Size (Ukuran)',
+      'ukuran_options': 'Size Options',
+      'ukuranOptions': 'Size Options',
+      'warna_background': 'Background Color',
+      'warnaBackground': 'Background Color',
+      'design_file_url': 'Design File URL',
+      'designFileUrl': 'Design File URL',
+      'custom_texts': 'Custom Texts',
+      'customTexts': 'Custom Texts',
+      'notes_wysiwyg': 'Product Notes',
+      'notesWysiwyg': 'Product Notes',
+      'seo_title': 'SEO Title',
+      'seoTitle': 'SEO Title',
+      'seo_description': 'SEO Description',
+      'seoDescription': 'SEO Description',
+      'seo_keywords': 'SEO Keywords',
+      'seoKeywords': 'SEO Keywords',
+      'price_unit': 'Price Unit',
+      'priceUnit': 'Price Unit',
+      'min_order': 'Minimum Order',
+      'minOrder': 'Minimum Order',
+      'stock_quantity': 'Stock Quantity',
+      'stockQuantity': 'Stock Quantity',
+      'lead_time': 'Lead Time',
+      'leadTime': 'Lead Time',
+      'vendor_price': 'Vendor Price',
+      'vendorPrice': 'Vendor Price',
+      'markup_percentage': 'Markup Percentage',
+      'markupPercentage': 'Markup Percentage',
+    };
+
+    if (fieldMap[field]) {
+      return fieldMap[field];
+    }
+
+    return field
+      .replace(/_/g, ' ')
+      .replace(/([A-Z])/g, ' $1')
+      .trim()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const parseValidationError = (error: any): Record<string, string> => {
     const errors: Record<string, string> = {};
     
@@ -161,6 +244,18 @@ export default function ProductEditor() {
       error.errors.forEach((err) => {
         const field = err.path.join('.');
         errors[field] = err.message;
+      });
+    } else if (error?.originalError?.response?.data?.errors) {
+      const backendErrors = error.originalError.response.data.errors;
+      Object.entries(backendErrors).forEach(([field, messages]: [string, any]) => {
+        const messageArray = Array.isArray(messages) ? messages : [messages];
+        errors[field] = messageArray[0] || 'Validation error';
+      });
+    } else if (error?.response?.data?.errors) {
+      const backendErrors = error.response.data.errors;
+      Object.entries(backendErrors).forEach(([field, messages]: [string, any]) => {
+        const messageArray = Array.isArray(messages) ? messages : [messages];
+        errors[field] = messageArray[0] || 'Validation error';
       });
     } else if (error?.message) {
       const message = error.message;
@@ -181,6 +276,7 @@ export default function ProductEditor() {
     if (isNew) {
       // For new products, set default form values
       setFormData(defaultFormData);
+      setOriginalFormData(defaultFormData);
     } else if (product && categories.length > 0) {
       // For existing products, merge product data with defaults
       // Handle category field - map category object to category ID
@@ -193,21 +289,21 @@ export default function ProductEditor() {
         console.log('Category mapping:', { productCategory: product.category, matchingCategory, categoryId });
       }
       
-      // Handle specifications - backend returns object, form needs array
-      let specificationsArray: Array<{ key: string; value: string }> = [];
+      // Handle specifications - backend returns object, form needs array with proper value types
+      let specificationsArray: Array<{ key: string; value: any }> = [];
       if (product.specifications) {
         if (Array.isArray(product.specifications)) {
           specificationsArray = product.specifications;
         } else if (typeof product.specifications === 'object') {
-          // Convert object to array format
+          // Convert object to array format while preserving value types
           specificationsArray = Object.entries(product.specifications).map(([key, value]) => ({
             key,
-            value: typeof value === 'string' ? value : JSON.stringify(value)
+            value: value
           }));
         }
       }
       
-      setFormData({
+      const loadedFormData = {
         name: product.name ?? '',
         slug: product.slug ?? '',
         description: product.description ?? '',
@@ -232,7 +328,7 @@ export default function ProductEditor() {
         status: product.status ?? 'draft',
         featured: product.featured ?? false,
         images: product.images ?? [],
-        productionType: product.productionType ?? 'internal',
+        productionType: product.productionType ?? '',
         quotationRequired: product.quotationRequired ?? false,
         vendorPrice: product.vendorPrice ?? null,
         markupPercentage: product.markupPercentage ?? 0,
@@ -250,9 +346,19 @@ export default function ProductEditor() {
         designFileUrl: product.designFileUrl ?? '',
         customTexts: product.customTexts ?? [],
         notesWysiwyg: product.notesWysiwyg ?? '',
-      });
+      };
+      
+      setFormData(loadedFormData);
+      setOriginalFormData(loadedFormData);
     }
   }, [product, isNew, categories]);
+
+  // Check if form has any changes
+  const hasFormChanges = (): boolean => {
+    if (isNew) return true; // For new products, always enable save
+    
+    return JSON.stringify(formData) !== JSON.stringify(originalFormData);
+  };
 
   const handleSave = async () => {
     setValidationErrors({});
@@ -276,6 +382,9 @@ export default function ProductEditor() {
     }
     if (formData.images.length === 0) {
       errors.images = 'At least one image is required';
+    }
+    if (!formData.productionType || formData.productionType.trim().length === 0) {
+      errors.productionType = 'Production Type is required';
     }
     
     if (formData.productionType === 'internal') {
@@ -302,8 +411,9 @@ export default function ProductEditor() {
       setActiveTab(firstErrorTab);
       
       const errorCount = Object.keys(errors).length;
-      toast.error(`Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please check the highlighted fields.`, {
-        duration: 5000,
+      const errorFields = Object.keys(errors).slice(0, 3).map(formatFieldName).join(', ');
+      toast.error(`Please fix: ${errorFields}${errorCount > 3 ? `, and ${errorCount - 3} more field${errorCount - 3 > 1 ? 's' : ''}` : ''}`, {
+        duration: 6000,
       });
       return;
     }
@@ -347,6 +457,21 @@ export default function ProductEditor() {
           quotationRequired: formData.quotationRequired,
           vendorPrice: formData.vendorPrice,
           markupPercentage: formData.markupPercentage,
+          productType: formData.productType,
+          bahan: formData.bahan,
+          bahanOptions: formData.bahanOptions,
+          kualitas: formData.kualitas,
+          kualitasOptions: formData.kualitasOptions,
+          ketebalan: formData.ketebalan,
+          ketebalanOptions: formData.ketebalanOptions,
+          ukuran: formData.ukuran,
+          ukuranOptions: formData.ukuranOptions,
+          warnaBackground: formData.warnaBackground,
+          designFileUrl: formData.designFileUrl,
+          customTexts: formData.customTexts,
+          notesWysiwyg: formData.notesWysiwyg,
+          availableSizes: formData.availableSizes,
+          size: formData.size,
         });
       } else {
         await updateProduct(id || '', {
@@ -378,6 +503,21 @@ export default function ProductEditor() {
           quotationRequired: formData.quotationRequired,
           vendorPrice: formData.vendorPrice,
           markupPercentage: formData.markupPercentage,
+          productType: formData.productType,
+          bahan: formData.bahan,
+          bahanOptions: formData.bahanOptions,
+          kualitas: formData.kualitas,
+          kualitasOptions: formData.kualitasOptions,
+          ketebalan: formData.ketebalan,
+          ketebalanOptions: formData.ketebalanOptions,
+          ukuran: formData.ukuran,
+          ukuranOptions: formData.ukuranOptions,
+          warnaBackground: formData.warnaBackground,
+          designFileUrl: formData.designFileUrl,
+          customTexts: formData.customTexts,
+          notesWysiwyg: formData.notesWysiwyg,
+          availableSizes: formData.availableSizes,
+          size: formData.size,
         });
       }
       setValidationErrors({});
@@ -395,8 +535,9 @@ export default function ProductEditor() {
         setActiveTab(firstErrorTab);
         
         const errorCount = Object.keys(parsedErrors).length;
-        toast.error(`Found ${errorCount} validation error${errorCount > 1 ? 's' : ''}. Please check the highlighted fields.`, {
-          duration: 5000,
+        const errorFields = Object.keys(parsedErrors).slice(0, 3).map(formatFieldName).join(', ');
+        toast.error(`Validation failed: ${errorFields}${errorCount > 3 ? `, and ${errorCount - 3} more` : ''}`, {
+          duration: 6000,
         });
       } else {
         toast.error('Failed to save product. Please try again.');
@@ -405,6 +546,69 @@ export default function ProductEditor() {
       setIsSaving(false);
     }
   };
+
+  const generateSlugFromName = (name: string): string => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  const generateUniqueSlug = (baseSlug: string): string => {
+    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    return `${baseSlug}-${randomSuffix}`;
+  };
+
+  const checkSlugAvailability = async (slug: string) => {
+    if (!slug || slug.length < 3) {
+      setSlugAvailable(null);
+      return;
+    }
+
+    setIsSlugChecking(true);
+    try {
+      const existingProduct = await fetchProductBySlug(slug);
+      
+      if (existingProduct) {
+        if (isNew || existingProduct.uuid !== id) {
+          setSlugAvailable(false);
+          const uniqueSlug = generateUniqueSlug(slug.replace(/-[a-z0-9]{6}$/, ''));
+          setFormData(prev => ({ ...prev, slug: uniqueSlug }));
+          toast.warning(`Slug "${slug}" sudah digunakan. Diubah menjadi "${uniqueSlug}"`);
+        } else {
+          setSlugAvailable(true);
+        }
+      } else {
+        setSlugAvailable(true);
+      }
+    } catch (error) {
+      setSlugAvailable(true);
+    } finally {
+      setIsSlugChecking(false);
+    }
+  };
+
+  useEffect(() => {
+    if (slugCheckTimeout) {
+      clearTimeout(slugCheckTimeout);
+    }
+
+    if (formData.slug && formData.slug.length >= 3) {
+      const timeout = setTimeout(() => {
+        checkSlugAvailability(formData.slug);
+      }, 500);
+      setSlugCheckTimeout(timeout);
+    }
+
+    return () => {
+      if (slugCheckTimeout) {
+        clearTimeout(slugCheckTimeout);
+      }
+    };
+  }, [formData.slug]);
 
   const handleAddSpecification = () => {
     setFormData({
@@ -418,6 +622,12 @@ export default function ProductEditor() {
       ...formData,
       specifications: formData.specifications.filter((_, i) => i !== index),
     });
+  };
+
+  const handleSpecificationChange = (index: number, spec: { key: string; value: any }) => {
+    const newSpecs = [...formData.specifications];
+    newSpecs[index] = spec;
+    setFormData({ ...formData, specifications: newSpecs });
   };
 
   // Only show loading when fetching existing product
@@ -544,7 +754,7 @@ export default function ProductEditor() {
               Manage Variants
             </Button>
           )}
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving || !hasFormChanges()}>
             {isSaving ? (
               <>
                 <div className="h-4 w-4 mr-2 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -561,19 +771,27 @@ export default function ProductEditor() {
       </div>
 
       {Object.keys(validationErrors).length > 0 && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Validation Errors ({Object.keys(validationErrors).length})</AlertTitle>
-          <AlertDescription>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              {Object.entries(validationErrors).slice(0, 5).map(([field, message]) => (
-                <li key={field} className="text-sm">
-                  <strong className="capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}:</strong> {message}
+        <Alert variant="destructive" className="mb-4 border-red-600 bg-red-50 dark:bg-red-950/20">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertTitle className="text-red-900 dark:text-red-200 font-semibold">
+            Validation Errors ({Object.keys(validationErrors).length})
+          </AlertTitle>
+          <AlertDescription className="text-red-800 dark:text-red-300">
+            <p className="text-sm mb-2 font-medium">Please fix the following errors before saving:</p>
+            <ul className="list-none mt-3 space-y-2 bg-white dark:bg-gray-900/50 rounded-md p-3 border border-red-200 dark:border-red-800">
+              {Object.entries(validationErrors).slice(0, 10).map(([field, message]) => (
+                <li key={field} className="text-sm text-gray-900 dark:text-gray-100 flex items-start gap-2">
+                  <span className="text-red-500 mt-0.5">•</span>
+                  <span>
+                    <strong className="text-red-700 dark:text-red-400 font-semibold">{formatFieldName(field)}:</strong>
+                    <span className="ml-1.5 text-gray-700 dark:text-gray-300">{message}</span>
+                  </span>
                 </li>
               ))}
-              {Object.keys(validationErrors).length > 5 && (
-                <li className="text-sm font-medium">
-                  ... and {Object.keys(validationErrors).length - 5} more error{Object.keys(validationErrors).length - 5 > 1 ? 's' : ''}
+              {Object.keys(validationErrors).length > 10 && (
+                <li className="text-sm font-medium text-red-600 dark:text-red-400 flex items-start gap-2">
+                  <span className="text-red-500 mt-0.5">•</span>
+                  <span>... and {Object.keys(validationErrors).length - 10} more error{Object.keys(validationErrors).length - 10 > 1 ? 's' : ''}</span>
                 </li>
               )}
             </ul>
@@ -650,7 +868,9 @@ export default function ProductEditor() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => {
-                    setFormData({ ...formData, name: e.target.value });
+                    const newName = e.target.value;
+                    const autoSlug = generateSlugFromName(newName);
+                    setFormData({ ...formData, name: newName, slug: autoSlug });
                     if (validationErrors.name) {
                       const newErrors = { ...validationErrors };
                       delete newErrors.name;
@@ -673,6 +893,24 @@ export default function ProductEditor() {
                       Error
                     </span>
                   )}
+                  {isSlugChecking && (
+                    <span className="text-muted-foreground text-xs flex items-center gap-1">
+                      <div className="h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      Checking...
+                    </span>
+                  )}
+                  {!isSlugChecking && slugAvailable === true && (
+                    <span className="text-green-600 text-xs flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" />
+                      Available
+                    </span>
+                  )}
+                  {!isSlugChecking && slugAvailable === false && (
+                    <span className="text-destructive text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Not Available
+                    </span>
+                  )}
                 </Label>
                 <Input
                   id="slug"
@@ -691,6 +929,9 @@ export default function ProductEditor() {
                 {validationErrors.slug && (
                   <p className="text-xs text-destructive">{validationErrors.slug}</p>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Slug akan otomatis di-generate dari Product Name. Edit manual jika diperlukan.
+                </p>
               </div>
             </div>
 
@@ -725,13 +966,13 @@ export default function ProductEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="longDescription">Long Description</Label>
-              <Textarea
-                id="longDescription"
+              <WysiwygEditor
                 value={formData.longDescription}
-                onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
-                placeholder="Detailed product description"
-                rows={6}
+                onChange={(content) => setFormData({ ...formData, longDescription: content })}
+                label="Long Description"
+                placeholder="Detailed product description with rich text formatting..."
+                height={400}
+                required={false}
               />
             </div>
 
@@ -841,7 +1082,15 @@ export default function ProductEditor() {
             <div className="space-y-4 border-b pb-4 mb-4">
               <h3 className="text-lg font-semibold">Production Type & Pricing Model</h3>
               <div className="space-y-2">
-                <Label htmlFor="productionType">Production Type *</Label>
+                <Label htmlFor="productionType" className="flex items-center gap-2">
+                  Production Type *
+                  {validationErrors.productionType && (
+                    <span className="text-destructive text-xs flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Error
+                    </span>
+                  )}
+                </Label>
                 <Select 
                   value={formData.productionType} 
                   onValueChange={(v: 'internal' | 'vendor') => {
@@ -852,10 +1101,15 @@ export default function ProductEditor() {
                       price: v === 'vendor' ? 0 : formData.price,
                       stockQuantity: v === 'vendor' ? 0 : formData.stockQuantity
                     });
+                    if (validationErrors.productionType) {
+                      const newErrors = { ...validationErrors };
+                      delete newErrors.productionType;
+                      setValidationErrors(newErrors);
+                    }
                   }}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className={validationErrors.productionType ? 'border-destructive' : ''}>
+                    <SelectValue placeholder="Select production type..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="internal">
@@ -872,15 +1126,24 @@ export default function ProductEditor() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  {formData.productionType === 'internal' 
-                    ? '✅ Price & stock are REQUIRED. Customer can order directly with fixed price.' 
-                    : '✅ Price & stock are OPTIONAL. Customer requests quotation first.'}
-                </p>
+                {validationErrors.productionType && (
+                  <p className="text-xs text-destructive">{validationErrors.productionType}</p>
+                )}
+                {formData.productionType && (
+                  <p className="text-xs text-muted-foreground">
+                    {formData.productionType === 'internal' 
+                      ? '✅ Price & stock are REQUIRED. Customer can order directly with fixed price.' 
+                      : '✅ Price & stock are OPTIONAL. Customer requests quotation first.'}
+                  </p>
+                )}
               </div>
             </div>
 
-            {formData.productionType === 'internal' ? (
+            {!formData.productionType ? (
+              <div className="bg-muted/30 p-6 rounded-lg border-2 border-dashed text-center">
+                <p className="text-sm text-muted-foreground">Please select a production type above to configure pricing & stock settings.</p>
+              </div>
+            ) : formData.productionType === 'internal' ? (
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price" className="flex items-center gap-2">
@@ -1046,44 +1309,40 @@ export default function ProductEditor() {
         <TabsContent value="specifications" className="space-y-4">
           <Card className="p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <Label>Product Specifications</Label>
+              <div>
+                <Label className="text-lg font-semibold">Product Specifications</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Tambahkan spesifikasi produk dengan format yang fleksibel: text, array, atau key-value pairs
+                </p>
+              </div>
               <Button variant="outline" size="sm" onClick={handleAddSpecification}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Specification
               </Button>
             </div>
 
-            <div className="space-y-2">
-              {formData.specifications.map((spec, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    placeholder="Key"
-                    value={spec.key}
-                    onChange={(e) => {
-                      const newSpecs = [...formData.specifications];
-                      newSpecs[index].key = e.target.value;
-                      setFormData({ ...formData, specifications: newSpecs });
-                    }}
+            {formData.specifications.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                <p className="text-muted-foreground mb-4">Belum ada spesifikasi produk</p>
+                <Button variant="outline" onClick={handleAddSpecification}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Tambah Spesifikasi Pertama
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {formData.specifications.map((spec, index) => (
+                  <SpecificationInput
+                    key={index}
+                    index={index}
+                    value={spec}
+                    onChange={(newSpec) => handleSpecificationChange(index, newSpec)}
+                    onRemove={() => handleRemoveSpecification(index)}
                   />
-                  <Input
-                    placeholder="Value"
-                    value={spec.value}
-                    onChange={(e) => {
-                      const newSpecs = [...formData.specifications];
-                      newSpecs[index].value = e.target.value;
-                      setFormData({ ...formData, specifications: newSpecs });
-                    }}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemoveSpecification(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </Card>
         </TabsContent>
 
