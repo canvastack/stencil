@@ -69,6 +69,7 @@ const PageNavigation = lazy(() => import("./pages/admin/PageNavigation"));
 const ProductList = lazy(() => import("./pages/admin/ProductList"));
 const ProductEditor = lazy(() => import("./pages/admin/ProductEditor"));
 const AdminProductDetail = lazy(() => import("./pages/admin/ProductDetail"));
+const ProductFormBuilder = lazy(() => import("./pages/admin/products/FormBuilder"));
 const ProductPageContent = lazy(() => import("@/features/admin/pages/ProductPageContent"));
 const ProductSettings = lazy(() => import("@/features/admin/pages/ProductSettings"));
 const ReviewList = lazy(() => import("./pages/admin/ReviewList"));
@@ -271,6 +272,7 @@ function App() {
                   <Route path="products" element={<Suspense fallback={<LoadingFallback />}><ProductList /></Suspense>} />
                   <Route path="products/new" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
                   <Route path="products/:id/edit" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
+                  <Route path="products/:productUuid/form-builder" element={<Suspense fallback={<LoadingFallback />}><ProductFormBuilder /></Suspense>} />
                   <Route path="products/:id" element={<Suspense fallback={<LoadingFallback />}><AdminProductDetail /></Suspense>} />
                   <Route path="products/categories" element={<Suspense fallback={<LoadingFallback />}><ProductCategories /></Suspense>} />
                   <Route path="products/page-content" element={<Suspense fallback={<LoadingFallback />}><ProductPageContent /></Suspense>} />

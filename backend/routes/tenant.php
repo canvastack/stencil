@@ -15,6 +15,8 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\QuoteController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ActivityController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\NotificationController;
 use App\Http\Controllers\Tenant\ContentController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormConfigurationController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormTemplateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +110,23 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{product}/unpublish', [ProductController::class, 'unpublish'])->name('tenant.products.unpublish');
             Route::put('/{product}/stock', [ProductController::class, 'updateStock'])->name('tenant.products.update_stock');
             Route::post('/{product}/duplicate', [ProductController::class, 'duplicate'])->name('tenant.products.duplicate');
+            
+            // Product Form Configuration Management (must come before generic /{product})
+            Route::get('/{product}/form-configuration', [ProductFormConfigurationController::class, 'show'])->name('tenant.products.form_configuration.show');
+            Route::post('/{product}/form-configuration', [ProductFormConfigurationController::class, 'store'])->name('tenant.products.form_configuration.store');
+            Route::put('/{product}/form-configuration', [ProductFormConfigurationController::class, 'update'])->name('tenant.products.form_configuration.update');
+            Route::delete('/{product}/form-configuration', [ProductFormConfigurationController::class, 'destroy'])->name('tenant.products.form_configuration.destroy');
+            Route::post('/{product}/form-configuration/duplicate', [ProductFormConfigurationController::class, 'duplicate'])->name('tenant.products.form_configuration.duplicate');
+        });
+        
+        // Product Form Templates Management
+        Route::prefix('form-templates')->group(function () {
+            Route::get('/', [ProductFormTemplateController::class, 'index'])->name('tenant.form_templates.index');
+            Route::post('/', [ProductFormTemplateController::class, 'store'])->name('tenant.form_templates.store');
+            Route::get('/{template}', [ProductFormTemplateController::class, 'show'])->name('tenant.form_templates.show');
+            Route::put('/{template}', [ProductFormTemplateController::class, 'update'])->name('tenant.form_templates.update');
+            Route::delete('/{template}', [ProductFormTemplateController::class, 'destroy'])->name('tenant.form_templates.destroy');
+            Route::post('/{template}/apply', [ProductFormTemplateController::class, 'apply'])->name('tenant.form_templates.apply');
         });
         
         // Product Category Management

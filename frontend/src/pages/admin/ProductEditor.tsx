@@ -105,6 +105,7 @@ export default function ProductEditor() {
   const [slugCheckTimeout, setSlugCheckTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isSlugChecking, setIsSlugChecking] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [formBuilderMode, setFormBuilderMode] = useState<'simple' | 'advanced'>('simple');
 
   const fieldToTabMap: Record<string, string> = {
     name: 'basic',
@@ -1348,7 +1349,49 @@ export default function ProductEditor() {
 
         <TabsContent value="customization" className="space-y-4">
           <Card className="p-6 space-y-6">
-            <h3 className="text-lg font-semibold border-b pb-2">Product Form Order Configuration</h3>
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="text-lg font-semibold">Product Form Order Configuration</h3>
+              <div className="flex items-center gap-2">
+                <Badge variant={formBuilderMode === 'simple' ? 'default' : 'outline'}>
+                  {formBuilderMode === 'simple' ? 'Simple Mode' : 'Form Builder'}
+                </Badge>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (isNew || !product) {
+                      toast.error('Please save the product first before using Form Builder', {
+                        description: 'Form Builder is only available for existing products'
+                      });
+                      return;
+                    }
+                    // Use product.uuid for navigation (UUID-only public exposure policy)
+                    navigate(`/admin/products/${product.uuid}/form-builder`);
+                  }}
+                >
+                  Open Form Builder
+                </Button>
+              </div>
+            </div>
+
+            <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertTitle className="text-blue-900 dark:text-blue-200">Form Configuration Modes</AlertTitle>
+              <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
+                <strong>Simple Mode (Current):</strong> Quick setup with predefined fields for common product types.
+                {!isNew && id && (
+                  <>
+                    <br /><strong>Form Builder:</strong> Advanced drag-and-drop builder for custom form configurations.
+                  </>
+                )}
+                {isNew && (
+                  <>
+                    <br /><span className="text-yellow-700 dark:text-yellow-400">💡 Save this product first to unlock Form Builder mode.</span>
+                  </>
+                )}
+              </AlertDescription>
+            </Alert>
             
             {/* Product Type */}
             <div className="space-y-2">

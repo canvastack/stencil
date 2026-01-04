@@ -237,6 +237,10 @@ Route::prefix('public')->group(function () {
         Route::get('/category/{category}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'byCategory']);
         Route::get('/{id}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'show'])->where('id', '[0-9]+');
         Route::get('/slug/{slug}', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'showBySlugGlobal']);
+        
+        // Product Form Configuration (Public API)
+        Route::get('/{uuid}/form-configuration', [App\Infrastructure\Presentation\Http\Controllers\Public\ProductFormController::class, 'show']);
+        Route::post('/{uuid}/form-submission', [App\Infrastructure\Presentation\Http\Controllers\Public\ProductFormController::class, 'submit']);
     });
     
     // Tenant-specific Products API

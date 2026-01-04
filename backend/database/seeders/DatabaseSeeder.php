@@ -48,6 +48,12 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🚀 Seeding Phase 3 Core Business Logic...');
         $this->call(Phase3CoreBusinessSeeder::class);
         
+        // Seed Product Form Builder System
+        $this->command->info('📋 Seeding Product Form Builder System...');
+        $this->call(ProductFormFieldLibrarySeeder::class);
+        $this->call(ProductFormTemplateSeeder::class);
+        $this->call(ProductFormConfigurationSeeder::class);
+        
         // Seed Platform Pages Content
         $this->command->info('📄 Seeding Platform Pages Content...');
         $this->call(PlatformPagesSeeder::class);
@@ -82,6 +88,9 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Total Products: 300+ products (Phase 3 enhanced)');
         $this->command->info('- Product Categories: 20+ categories with hierarchy');
         $this->command->info('- Product Variants: 600+ variants (2-5 per product, multi-tenant)');
+        $this->command->info('- Product Form Configurations: 240+ configurations (40 per tenant)');
+        $this->command->info('- Product Form Templates: 8 system templates (plakat, trophy, award, etc.)');
+        $this->command->info('- Product Form Fields: 15 field types in library');
         $this->command->info('- Customer Reviews: Database-driven reviews (1-5 per product, realistic ratings)');
         $this->command->info('- Total Orders: 400+ orders (with realistic workflows)');
         $this->command->info('- Total Vendors: 50+ vendors (5 enhanced for PT CEX)');
