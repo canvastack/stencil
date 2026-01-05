@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getProductDetailPath } from "@/utils/routes";
 import {
   Dialog,
   DialogContent,
@@ -496,7 +497,7 @@ const ProductDetail = () => {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/products">Produk</Link>
+                  <Link to={tenantSlug ? `/${tenantSlug}/products` : "/products"}>Produk</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -508,7 +509,7 @@ const ProductDetail = () => {
 
           <Button
             variant="ghost"
-            onClick={() => navigate("/products")}
+            onClick={() => navigate(tenantSlug ? `/${tenantSlug}/products` : "/products")}
             className="mb-6 hover:bg-accent/10"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -674,6 +675,9 @@ const ProductDetail = () => {
               </div>
 
               {/* Dynamic Order Form */}
+              {console.log('[ProductDetail] Rendering DynamicFormRenderer with product:', product)}
+              {console.log('[ProductDetail] Product UUID being passed:', product.uuid)}
+              {console.log('[ProductDetail] Product Name:', product.name)}
               <DynamicFormRenderer
                 productUuid={product.uuid}
                 onSubmitSuccess={async (result) => {
@@ -797,7 +801,7 @@ const ProductDetail = () => {
                     {relatedProducts.slice(0, 3).map((relatedProduct) => (
                       <Link
                         key={relatedProduct.id}
-                        to={`/products/${relatedProduct.slug}`}
+                        to={getProductDetailPath(relatedProduct.slug, false, tenantSlug || undefined)}
                         className="block group"
                       >
                         <Card className="overflow-hidden border-border bg-card/50 backdrop-blur hover:bg-card hover:shadow-lg transition-all">

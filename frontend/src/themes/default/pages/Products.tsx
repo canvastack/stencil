@@ -72,6 +72,7 @@ import { Product, ProductFilters } from "@/types/product";
 import { usePageContent } from "@/hooks/usePageContent";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { useGlobalContext } from "@/contexts/GlobalContext";
+import { usePublicTenant } from "@/contexts/PublicTenantContext";
 import { PlatformProductsView } from "@/components/products/PlatformProductsView";
 import { useProductComparison } from "@/contexts/ProductComparisonContext";
 import { ComparisonBar } from "@/components/products/ComparisonBar";
@@ -119,6 +120,7 @@ const Products = () => {
   const { currentTheme } = useTheme();
   const { Header, Footer } = currentTheme?.components ?? {};
   const { userType } = useGlobalContext();
+  const { tenantSlug } = usePublicTenant();
   const navigate = useNavigate();
   const { addToCompare, isComparing, isMaxReached } = useProductComparison();
   
@@ -646,7 +648,7 @@ const Products = () => {
                                   Quick
                                 </Button>
                                 <Button
-                                  onClick={() => navigate(getProductDetailPath(product.slug))}
+                                  onClick={() => navigate(getProductDetailPath(product.slug, false, tenantSlug || undefined))}
                                   variant="outline"
                                   size="sm"
                                   className="col-span-2 border-primary text-primary hover:bg-primary/10 font-semibold"
@@ -655,7 +657,7 @@ const Products = () => {
                                 </Button>
                               </div>
                               <Button
-                                onClick={() => navigate(getProductDetailPath(product.slug))}
+                                onClick={() => navigate(getProductDetailPath(product.slug, false, tenantSlug || undefined))}
                                 className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40"
                               >
                                 <ShoppingCart className="w-4 h-4 mr-2" />
@@ -882,7 +884,7 @@ const Products = () => {
           setIsQuickViewOpen(false);
           setQuickViewProduct(null);
         }}
-        onViewDetails={(slug) => navigate(getProductDetailPath(slug))}
+        onViewDetails={(slug) => navigate(getProductDetailPath(slug, false, tenantSlug || undefined))}
         onCompare={addToCompare}
         formatPrice={formatPrice}
       />

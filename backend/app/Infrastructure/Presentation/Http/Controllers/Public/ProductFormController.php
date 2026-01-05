@@ -34,33 +34,41 @@ class ProductFormController extends Controller
                 ], 400);
             }
 
-            $cacheKey = "public:product_form_config:{$productUuid}";
+            // TEMPORARY: Disable cache for testing
+            // $cacheKey = "public:product_form_config:{$productUuid}";
+            // $formConfig = Cache::remember($cacheKey, now()->addHours(24), function () use ($productUuid) {
             
-            $formConfig = Cache::remember($cacheKey, now()->addHours(24), function () use ($productUuid) {
-                $product = Product::where('uuid', $productUuid)
-                    ->where('status', 'published')
-                    ->first();
+            $product = Product::where('uuid', $productUuid)
+                ->where('status', 'published')
+                ->first();
 
-                if (!$product) {
-                    return null;
-                }
+            if (!$product) {
+                return response()->json([
+                    'message' => 'Produk tidak ditemukan atau tidak tersedia',
+                    'error' => 'PRODUCT_NOT_FOUND'
+                ], 404);
+            }
 
-                $configuration = ProductFormConfiguration::where('product_id', $product->id)
-                    ->where('is_active', true)
-                    ->first();
+            $configuration = ProductFormConfiguration::where('product_id', $product->id)
+                ->where('is_active', true)
+                ->first();
 
-                if (!$configuration) {
-                    return null;
-                }
+            if (!$configuration) {
+                return response()->json([
+                    'message' => 'Form configuration tidak tersedia untuk produk ini',
+                    'error' => 'FORM_CONFIG_NOT_FOUND'
+                ], 404);
+            }
 
-                return [
-                    'product_uuid' => $product->uuid,
-                    'product_name' => $product->name,
-                    'form_schema' => $configuration->form_schema,
-                    'conditional_logic' => $configuration->conditional_logic,
-                    'version' => $configuration->version,
-                ];
-            });
+            $formConfig = [
+                'product_uuid' => $product->uuid,
+                'product_name' => $product->name,
+                'form_schema' => $configuration->form_schema,
+                'conditional_logic' => $configuration->conditional_logic,
+                'version' => $configuration->version,
+            ];
+            
+            // });
 
             if (!$formConfig) {
                 return response()->json([
@@ -72,7 +80,9 @@ class ProductFormController extends Controller
             return response()->json([
                 'data' => $formConfig
             ])
-            ->header('Cache-Control', 'public, max-age=21600')
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0')
             ->header('ETag', md5(json_encode($formConfig)));
 
         } catch (\Exception $e) {

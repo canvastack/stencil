@@ -24,13 +24,18 @@ export const ROUTES = {
   HOME: '/',
   PRODUCTS: '/products',
   PRODUCT_DETAIL: '/products/:slug',
+  TENANT_PRODUCTS: '/:tenantSlug/products',
+  TENANT_PRODUCT_DETAIL: '/:tenantSlug/products/:slug',
   ADMIN: '/admin',
   ADMIN_PRODUCTS: '/admin/products',
   // Add other routes as needed
 } as const;
 
 // Helper functions for commonly used routes
-export const getProductDetailPath = (slug: string, preview = false) => {
+export const getProductDetailPath = (slug: string, preview = false, tenantSlug?: string) => {
+  if (tenantSlug) {
+    return generatePath(ROUTES.TENANT_PRODUCT_DETAIL, { tenantSlug, slug }, preview ? { preview: 'true' } : {});
+  }
   return generatePath(ROUTES.PRODUCT_DETAIL, { slug }, preview ? { preview: 'true' } : {});
 };
 

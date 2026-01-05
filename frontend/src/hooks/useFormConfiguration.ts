@@ -43,18 +43,21 @@ export const useFormConfiguration = (productUuid?: string) => {
     async (uuid?: string) => {
       const targetUuid = uuid || productUuid;
       if (!targetUuid) {
-        console.warn('No product UUID provided to fetchConfiguration');
+        console.warn('[useFormConfiguration] No product UUID provided to fetchConfiguration');
         return;
       }
 
+      console.log('[useFormConfiguration] Fetching configuration for:', targetUuid);
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
       try {
         const configuration = await formConfigurationService.getFormConfiguration(targetUuid);
+        console.log('[useFormConfiguration] Configuration fetched:', configuration);
         setState((prev) => ({ ...prev, configuration, isLoading: false }));
         return configuration;
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to fetch form configuration';
-        setState((prev) => ({ ...prev, error: message, isLoading: false }));
+        console.log('[useFormConfiguration] Fetch error:', message);
+        setState((prev) => ({ ...prev, error: message, isLoading: false, configuration: null }));
         if (!message.includes('404')) {
           toast.error(message);
         }
@@ -283,15 +286,21 @@ export const usePublicFormConfiguration = (productUuid: string) => {
 
   useEffect(() => {
     const fetchPublicConfig = async () => {
-      if (!productUuid) return;
+      if (!productUuid) {
+        console.log('[usePublicFormConfiguration] No productUuid');
+        return;
+      }
 
+      console.log('[usePublicFormConfiguration] Fetching for:', productUuid);
       setIsLoading(true);
       setError(null);
       try {
         const config = await formConfigurationService.getPublicFormConfiguration(productUuid);
+        console.log('[usePublicFormConfiguration] Config received:', config);
         setFormConfig(config);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to fetch form configuration';
+        console.error('[usePublicFormConfiguration] Error:', err);
         setError(message);
       } finally {
         setIsLoading(false);

@@ -1,45 +1,37 @@
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__.'/vendor/autoload.php';
 
-$app = require_once __DIR__ . '/bootstrap/app.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-$productUuid = 'f5de74e0-1f44-464a-9121-ca0c25d0064d';
+use App\Models\ProductFormConfiguration;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
 
-$product = App\Infrastructure\Persistence\Eloquent\Models\Product::where('uuid', $productUuid)->first();
+$productUuid = '307815d4-e587-4b95-aa57-a40325326956';
+$product = Product::where('uuid', $productUuid)->first();
 
 if (!$product) {
-    echo "❌ Product not found with UUID: {$productUuid}\n";
+    echo "Product not found!\n";
     exit(1);
 }
 
-echo "✅ Product found:\n";
-echo "  - ID: {$product->id}\n";
-echo "  - UUID: {$product->uuid}\n";
-echo "  - Name: {$product->name}\n";
-echo "  - Tenant ID: {$product->tenant_id}\n";
-echo "\n";
+echo "Product: {$product->name}\n";
+echo "Product ID: {$product->id}\n";
+echo "Tenant ID: {$product->tenant_id}\n\n";
 
-$configs = App\Models\ProductFormConfiguration::where('product_id', $product->id)->get();
+$configs = ProductFormConfiguration::where('product_id', $product->id)->get();
+echo "Total configs: {$configs->count()}\n\n";
 
-echo "Form Configurations for this product: {$configs->count()}\n";
-echo "----------------------------------------\n";
-
-if ($configs->count() === 0) {
-    echo "❌ No form configurations found for this product!\n";
-    echo "\nThis is the problem - no configurations have been saved.\n";
-} else {
-    foreach ($configs as $config) {
-        echo "Config #{$config->id}:\n";
-        echo "  - UUID: {$config->uuid}\n";
-        echo "  - Name: {$config->name}\n";
-        echo "  - Active: " . ($config->is_active ? 'YES' : 'NO') . "\n";
-        echo "  - Tenant ID: {$config->tenant_id}\n";
-        echo "  - Product ID: {$config->product_id}\n";
-        echo "  - Version: {$config->version}\n";
-        echo "  - Created: {$config->created_at}\n";
-        echo "  - Form Schema Fields: " . (isset($config->form_schema['fields']) ? count($config->form_schema['fields']) : 0) . "\n";
-        echo "\n";
-    }
+foreach ($configs as $config) {
+    echo "Config UUID: {$config->uuid}\n";
+    echo "Name: {$config->name}\n";
+    echo "Title: " . ($config->form_schema['title'] ?? 'N/A') . "\n";
+    echo "Field Count: " . (isset($config->form_schema['fields']) ? count($config->form_schema['fields']) : 0) . "\n";
+    echo "Is Active: " . ($config->is_active ? 'YES' : 'NO') . "\n";
+    echo "Has Template: " . ($config->template_id ? "YES (ID: {$config->template_id})" : 'NO (from form builder)') . "\n";
+    echo "Version: {$config->version}\n";
+    echo "Created: {$config->created_at}\n";
+    echo "Updated: {$config->updated_at}\n";
+    echo "------------------------------\n\n";
 }

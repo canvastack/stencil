@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useProducts, useProduct, useProductBySlug } from '@/hooks/useProducts';
 import { useCategoriesQuery } from '@/hooks/useCategoriesQuery';
+import { useFormConfiguration } from '@/hooks/useFormConfiguration';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2, Package, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Save, Eye, X, Plus, Image as ImageIcon, Trash2, Package, AlertCircle, CheckCircle2, FileText, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
@@ -27,6 +28,7 @@ import { LivePreview } from '@/components/admin/LivePreview';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ZodError } from 'zod';
+import { DynamicFormField } from '@/components/form-builder/DynamicFormField';
 
 export default function ProductEditor() {
   const { id } = useParams();
@@ -106,6 +108,31 @@ export default function ProductEditor() {
   const [isSlugChecking, setIsSlugChecking] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [formBuilderMode, setFormBuilderMode] = useState<'simple' | 'advanced'>('simple');
+
+  const { 
+    configuration: formConfiguration, 
+    isLoading: formConfigLoading,
+    fetchConfiguration: refetchFormConfiguration
+  } = useFormConfiguration(!isNew && product?.uuid ? product.uuid : undefined);
+
+  React.useEffect(() => {
+    if (activeTab === 'customization' && !isNew && product?.uuid && refetchFormConfiguration) {
+      console.log('[ProductEditor] Customization tab activated, refetching form configuration...');
+      refetchFormConfiguration();
+    }
+  }, [activeTab, product?.uuid, isNew, refetchFormConfiguration]);
+
+  React.useEffect(() => {
+    const handleFocus = () => {
+      if (!isNew && product?.uuid && refetchFormConfiguration) {
+        console.log('[ProductEditor] Window focus regained, refetching form configuration...');
+        refetchFormConfiguration();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [product?.uuid, isNew, refetchFormConfiguration]);
 
   const fieldToTabMap: Record<string, string> = {
     name: 'basic',
@@ -1349,471 +1376,145 @@ export default function ProductEditor() {
 
         <TabsContent value="customization" className="space-y-4">
           <Card className="p-6 space-y-6">
-            <div className="flex items-center justify-between border-b pb-2">
-              <h3 className="text-lg font-semibold">Product Form Order Configuration</h3>
+            <div className="flex items-center justify-between border-b pb-4">
+              <div>
+                <h3 className="text-lg font-semibold">Product Form Order Configuration</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {formConfiguration 
+                    ? 'Form builder configuration sudah dibuat. Edit untuk mengubah form pemesanan.' 
+                    : 'Belum ada form configuration. Buat form builder untuk customize order form.'}
+                </p>
+              </div>
               <div className="flex items-center gap-2">
-                <Badge variant={formBuilderMode === 'simple' ? 'default' : 'outline'}>
-                  {formBuilderMode === 'simple' ? 'Simple Mode' : 'Form Builder'}
-                </Badge>
+                {formConfiguration && (
+                  <Badge variant="success" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Form Active
+                  </Badge>
+                )}
                 <Button
                   type="button"
-                  variant="outline"
+                  variant={formConfiguration ? "default" : "outline"}
                   size="sm"
                   onClick={() => {
                     if (isNew || !product) {
-                      toast.error('Please save the product first before using Form Builder', {
-                        description: 'Form Builder is only available for existing products'
+                      toast.error('Simpan produk terlebih dahulu', {
+                        description: 'Form Builder hanya tersedia untuk produk yang sudah disimpan'
                       });
                       return;
                     }
-                    // Use product.uuid for navigation (UUID-only public exposure policy)
                     navigate(`/admin/products/${product.uuid}/form-builder`);
                   }}
+                  disabled={isNew || !product}
                 >
-                  Open Form Builder
+                  <Settings2 className="h-4 w-4 mr-2" />
+                  {formConfiguration ? 'Edit Form Builder' : 'Create Form Builder'}
                 </Button>
               </div>
             </div>
 
-            <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-              <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <AlertTitle className="text-blue-900 dark:text-blue-200">Form Configuration Modes</AlertTitle>
-              <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
-                <strong>Simple Mode (Current):</strong> Quick setup with predefined fields for common product types.
-                {!isNew && id && (
-                  <>
-                    <br /><strong>Form Builder:</strong> Advanced drag-and-drop builder for custom form configurations.
-                  </>
-                )}
-                {isNew && (
-                  <>
-                    <br /><span className="text-yellow-700 dark:text-yellow-400">💡 Save this product first to unlock Form Builder mode.</span>
-                  </>
-                )}
-              </AlertDescription>
-            </Alert>
-            
-            {/* Product Type */}
-            <div className="space-y-2">
-              <Label htmlFor="productType">Tipe Produk *</Label>
-              <Select value={formData.productType} onValueChange={(v) => setFormData({ ...formData, productType: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih tipe produk" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="metal">Etching Logam</SelectItem>
-                  <SelectItem value="glass">Etching Kaca</SelectItem>
-                  <SelectItem value="award">Plakat Penghargaan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {isNew && (
+              <Alert className="bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800">
+                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                <AlertTitle className="text-yellow-900 dark:text-yellow-200">Simpan Produk Terlebih Dahulu</AlertTitle>
+                <AlertDescription className="text-yellow-800 dark:text-yellow-300 text-sm">
+                  💡 Form Builder hanya tersedia setelah produk disimpan. Simpan produk ini untuk mulai membuat form order custom.
+                </AlertDescription>
+              </Alert>
+            )}
 
-            {/* Bahan with Inline Add Option */}
-            <div className="space-y-3">
-              <Label htmlFor="bahan">Bahan *</Label>
-              <Select value={formData.bahan} onValueChange={(v) => setFormData({ ...formData, bahan: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih bahan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="akrilik">Akrilik</SelectItem>
-                  <SelectItem value="kuningan">Kuningan</SelectItem>
-                  <SelectItem value="tembaga">Tembaga</SelectItem>
-                  <SelectItem value="stainless-steel">Stainless Steel</SelectItem>
-                  <SelectItem value="aluminum">Aluminum</SelectItem>
-                  {formData.bahanOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt.toLowerCase().replace(/\s+/g, '-')}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Input
-                    id="newBahan"
-                    placeholder="Tambah bahan baru..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                        const newVal = e.currentTarget.value.trim();
-                        setFormData({ ...formData, bahanOptions: [...formData.bahanOptions, newVal] });
-                        e.currentTarget.value = '';
-                        toast.success(`Bahan "${newVal}" berhasil ditambahkan`);
-                      }
-                    }}
-                  />
+            {!isNew && formConfigLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-3">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-sm text-muted-foreground">Memuat form configuration...</p>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const input = document.getElementById('newBahan') as HTMLInputElement;
-                    if (input && input.value.trim()) {
-                      const newVal = input.value.trim();
-                      setFormData({ ...formData, bahanOptions: [...formData.bahanOptions, newVal] });
-                      input.value = '';
-                      toast.success(`Bahan "${newVal}" berhasil ditambahkan`);
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Tambah
-                </Button>
               </div>
-            </div>
+            )}
 
-            {/* Kualitas with Inline Add Option */}
-            <div className="space-y-3">
-              <Label htmlFor="kualitas">Kualitas *</Label>
-              <Select value={formData.kualitas} onValueChange={(v) => setFormData({ ...formData, kualitas: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih kualitas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard</SelectItem>
-                  <SelectItem value="tinggi">Tinggi</SelectItem>
-                  {formData.kualitasOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt.toLowerCase().replace(/\s+/g, '-')}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Input
-                    id="newKualitas"
-                    placeholder="Tambah kualitas baru..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                        const newVal = e.currentTarget.value.trim();
-                        setFormData({ ...formData, kualitasOptions: [...formData.kualitasOptions, newVal] });
-                        e.currentTarget.value = '';
-                        toast.success(`Kualitas "${newVal}" berhasil ditambahkan`);
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const input = document.getElementById('newKualitas') as HTMLInputElement;
-                    if (input && input.value.trim()) {
-                      const newVal = input.value.trim();
-                      setFormData({ ...formData, kualitasOptions: [...formData.kualitasOptions, newVal] });
-                      input.value = '';
-                      toast.success(`Kualitas "${newVal}" berhasil ditambahkan`);
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Tambah
-                </Button>
-              </div>
-            </div>
+            {!isNew && !formConfigLoading && formConfiguration?.formSchema && (
+              <div className="space-y-6">
+                <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                  <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertTitle className="text-blue-900 dark:text-blue-200">Form Preview</AlertTitle>
+                  <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
+                    Berikut adalah preview dari form order yang akan ditampilkan kepada customer. 
+                    Klik tombol "Edit Form Builder" di atas untuk mengubah konfigurasi form.
+                  </AlertDescription>
+                </Alert>
 
-            {/* Ketebalan with Inline Add Option */}
-            <div className="space-y-3">
-              <Label htmlFor="ketebalan">Ketebalan</Label>
-              <Select value={formData.ketebalan} onValueChange={(v) => setFormData({ ...formData, ketebalan: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih ketebalan" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0.5mm">0.5mm</SelectItem>
-                  <SelectItem value="1mm">1mm</SelectItem>
-                  <SelectItem value="2mm">2mm</SelectItem>
-                  <SelectItem value="3mm">3mm</SelectItem>
-                  {formData.ketebalanOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Input
-                    id="newKetebalan"
-                    placeholder="Tambah ketebalan baru (contoh: 5mm)..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                        const newVal = e.currentTarget.value.trim();
-                        setFormData({ ...formData, ketebalanOptions: [...formData.ketebalanOptions, newVal] });
-                        e.currentTarget.value = '';
-                        toast.success(`Ketebalan "${newVal}" berhasil ditambahkan`);
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const input = document.getElementById('newKetebalan') as HTMLInputElement;
-                    if (input && input.value.trim()) {
-                      const newVal = input.value.trim();
-                      setFormData({ ...formData, ketebalanOptions: [...formData.ketebalanOptions, newVal] });
-                      input.value = '';
-                      toast.success(`Ketebalan "${newVal}" berhasil ditambahkan`);
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Tambah
-                </Button>
-              </div>
-            </div>
-
-            {/* Ukuran with Inline Add Option */}
-            <div className="space-y-3">
-              <Label htmlFor="ukuran">Ukuran *</Label>
-              <Select value={formData.ukuran} onValueChange={(v) => setFormData({ ...formData, ukuran: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih ukuran" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10x15">10cm x 15cm</SelectItem>
-                  <SelectItem value="15x20">15cm x 20cm (Rekomendasi)</SelectItem>
-                  <SelectItem value="20x30">20cm x 30cm</SelectItem>
-                  <SelectItem value="30x40">30cm x 40cm</SelectItem>
-                  <SelectItem value="custom">Custom Size</SelectItem>
-                  {formData.ukuranOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Input
-                    id="newUkuran"
-                    placeholder="Tambah ukuran baru (contoh: 25cm x 35cm)..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                        const newVal = e.currentTarget.value.trim();
-                        setFormData({ ...formData, ukuranOptions: [...formData.ukuranOptions, newVal] });
-                        e.currentTarget.value = '';
-                        toast.success(`Ukuran "${newVal}" berhasil ditambahkan`);
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const input = document.getElementById('newUkuran') as HTMLInputElement;
-                    if (input && input.value.trim()) {
-                      const newVal = input.value.trim();
-                      setFormData({ ...formData, ukuranOptions: [...formData.ukuranOptions, newVal] });
-                      input.value = '';
-                      toast.success(`Ukuran "${newVal}" berhasil ditambahkan`);
-                    }
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Tambah
-                </Button>
-              </div>
-            </div>
-
-            {/* Warna Background - Color Picker */}
-            <ColorPicker
-              value={formData.warnaBackground}
-              onChange={(color) => setFormData({ ...formData, warnaBackground: color })}
-              label="Warna Dasar/Background"
-              showPresets={true}
-              required={true}
-            />
-
-            {/* Design File Upload with Local File Support */}
-            <div className="space-y-3">
-              <Label htmlFor="designFileUrl">File Upload Design</Label>
-              
-              <div className="flex gap-2">
-                <Input
-                  id="designFileUrl"
-                  value={formData.designFileUrl}
-                  onChange={(e) => setFormData({ ...formData, designFileUrl: e.target.value })}
-                  placeholder="URL atau upload dari komputer..."
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.onchange = (e: any) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 10 * 1024 * 1024) {
-                          toast.error('File terlalu besar. Maksimal 10MB.');
-                          return;
-                        }
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setFormData({ ...formData, designFileUrl: reader.result as string });
-                          toast.success('File berhasil diupload');
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    };
-                    input.click();
-                  }}
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
-              </div>
-              
-              {formData.designFileUrl && (
-                <div className="relative group border rounded-lg p-2">
-                  <img
-                    src={formData.designFileUrl}
-                    alt="Design preview"
-                    className="w-full h-48 object-contain bg-muted rounded"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-4 right-4"
-                    onClick={() => setFormData({ ...formData, designFileUrl: '' })}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              
-              <p className="text-xs text-muted-foreground">
-                Upload file dari komputer (max 10MB) atau masukkan URL
-              </p>
-            </div>
-
-            {/* Custom Text Section */}
-            <div className="space-y-3 border-t pt-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Teks Custom (Opsional)</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setFormData({
-                      ...formData,
-                      customTexts: [...formData.customTexts, { text: "", placement: "depan", position: "atas", color: "#000000" }]
-                    });
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Text
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {formData.customTexts.map((customText, index) => (
-                  <div key={index} className="p-4 border rounded-lg space-y-3 bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Teks Custom #{index + 1}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const newTexts = formData.customTexts.filter((_, i) => i !== index);
-                          setFormData({ ...formData, customTexts: newTexts });
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <Input
-                      value={customText.text}
-                      onChange={(e) => {
-                        const newTexts = [...formData.customTexts];
-                        newTexts[index].text = e.target.value;
-                        setFormData({ ...formData, customTexts: newTexts });
-                      }}
-                      placeholder="Masukkan teks custom"
-                    />
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label className="text-xs">Letak Teks</Label>
-                        <Select
-                          value={customText.placement}
-                          onValueChange={(v) => {
-                            const newTexts = [...formData.customTexts];
-                            newTexts[index].placement = v;
-                            setFormData({ ...formData, customTexts: newTexts });
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="depan">Depan</SelectItem>
-                            <SelectItem value="belakang">Belakang</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label className="text-xs">Posisi Teks</Label>
-                        <Select
-                          value={customText.position}
-                          onValueChange={(v) => {
-                            const newTexts = [...formData.customTexts];
-                            newTexts[index].position = v;
-                            setFormData({ ...formData, customTexts: newTexts });
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="atas">Atas</SelectItem>
-                            <SelectItem value="bawah">Bawah</SelectItem>
-                            <SelectItem value="kiri">Kiri</SelectItem>
-                            <SelectItem value="kanan">Kanan</SelectItem>
-                            <SelectItem value="tengah">Tengah</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <ColorPicker
-                      value={customText.color}
-                      onChange={(color) => {
-                        const newTexts = [...formData.customTexts];
-                        newTexts[index].color = color;
-                        setFormData({ ...formData, customTexts: newTexts });
-                      }}
-                      label="Warna Teks"
-                      showPresets={true}
-                    />
+                <div className="border rounded-lg p-6 bg-muted/30">
+                  <div className="mb-6">
+                    {formConfiguration.formSchema.title && (
+                      <h4 className="text-xl font-semibold mb-2">{formConfiguration.formSchema.title}</h4>
+                    )}
+                    {formConfiguration.formSchema.description && (
+                      <p className="text-sm text-muted-foreground">{formConfiguration.formSchema.description}</p>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Notes WYSIWYG Editor */}
-            <div className="space-y-2 border-t pt-4">
-              <WysiwygEditor
-                value={formData.notesWysiwyg}
-                onChange={(content) => setFormData({ ...formData, notesWysiwyg: content })}
-                label="Catatan Tambahan"
-                placeholder="Tambahkan catatan khusus atau instruksi tambahan untuk produk ini..."
-                height={300}
-                required={true}
-              />
-            </div>
+                  <div className="space-y-4">
+                    {formConfiguration.formSchema.fields
+                      ?.sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .map((field) => (
+                        <div key={field.id} className="bg-background p-4 rounded-lg border">
+                          <DynamicFormField
+                            field={field}
+                            value={undefined}
+                            onChange={() => {}}
+                            error={undefined}
+                          />
+                        </div>
+                      ))}
+                  </div>
+
+                  {formConfiguration.formSchema.fields?.length === 0 && (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground">Belum ada field yang ditambahkan ke form ini.</p>
+                      <p className="text-sm text-muted-foreground mt-2">Klik "Edit Form Builder" untuk menambahkan field.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">Form Configuration Details</p>
+                      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        <p>• Total Fields: {formConfiguration.formSchema.fields?.length || 0}</p>
+                        <p>• Version: {formConfiguration.formSchema.version || '1.0'}</p>
+                        <p>• Last Modified: {formConfiguration.updated_at ? new Date(formConfiguration.updated_at).toLocaleDateString('id-ID') : 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!isNew && !formConfigLoading && !formConfiguration && (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h4 className="text-lg font-semibold mb-2">Belum Ada Form Configuration</h4>
+                <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                  Form order untuk produk ini belum dibuat. Klik tombol "Create Form Builder" di atas untuk membuat form pemesanan yang dapat dikustomisasi sesuai kebutuhan produk Anda.
+                </p>
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    if (product?.uuid) {
+                      navigate(`/admin/products/${product.uuid}/form-builder`);
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Buat Form Sekarang
+                </Button>
+              </div>
+            )}
           </Card>
         </TabsContent>
 

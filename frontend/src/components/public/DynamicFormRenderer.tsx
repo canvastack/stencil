@@ -34,6 +34,12 @@ export function DynamicFormRenderer({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formStartTime] = useState<string>(new Date().toISOString());
 
+  console.log('[DynamicFormRenderer] Product UUID:', productUuid);
+  console.log('[DynamicFormRenderer] State:', { isLoading, error, hasConfig: !!formConfig });
+  console.log('[DynamicFormRenderer] Form Config:', formConfig);
+  console.log('[DynamicFormRenderer] Form Schema Title:', formConfig?.form_schema?.title);
+  console.log('[DynamicFormRenderer] Form Schema Fields Count:', formConfig?.form_schema?.fields?.length);
+
   const handleFieldChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({
       ...prev,

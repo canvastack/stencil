@@ -24,10 +24,10 @@ export interface ApplyTemplateRequest {
 
 class FormConfigurationService {
   async getFormConfiguration(productUuid: string): Promise<FormConfiguration> {
-    const response = await tenantApiClient.get<{ data: FormConfiguration }>(
+    const response = await tenantApiClient.get<FormConfiguration>(
       `/products/${productUuid}/form-configuration`
     );
-    return response.data;
+    return response;
   }
 
   async getPublicFormConfiguration(productUuid: string): Promise<{
@@ -46,6 +46,9 @@ class FormConfigurationService {
         version: number;
       };
     }>(`/public/products/${productUuid}/form-configuration`);
+    console.log('[formConfigurationService] Public config full response:', response);
+    console.log('[formConfigurationService] Public config response.data:', response.data);
+    console.log('[formConfigurationService] Public config response keys:', Object.keys(response));
     return response.data;
   }
 
@@ -53,22 +56,22 @@ class FormConfigurationService {
     productUuid: string,
     data: CreateFormConfigurationRequest
   ): Promise<FormConfiguration> {
-    const response = await tenantApiClient.post<{ data: FormConfiguration }>(
+    const response = await tenantApiClient.post<{ message: string; data: FormConfiguration }>(
       `/products/${productUuid}/form-configuration`,
       data
     );
-    return response.data;
+    return (response as any).data || response;
   }
 
   async updateFormConfiguration(
     productUuid: string,
     data: UpdateFormConfigurationRequest
   ): Promise<FormConfiguration> {
-    const response = await tenantApiClient.put<{ data: FormConfiguration }>(
+    const response = await tenantApiClient.put<{ message: string; data: FormConfiguration }>(
       `/products/${productUuid}/form-configuration`,
       data
     );
-    return response.data;
+    return (response as any).data || response;
   }
 
   async deleteFormConfiguration(productUuid: string): Promise<void> {

@@ -16,6 +16,7 @@ function transformApiProduct(apiProduct: any): Product {
   
   return {
     id: String(product.id),
+    uuid: product.uuid || '',
     name: product.name || '',
     slug: product.slug || '',
     description: product.description || '',
@@ -132,7 +133,9 @@ class PublicProductsService {
       ? `/public/${tenantSlug}/products/slug/${slug}`
       : `/public/products/slug/${slug}`;
       
+    console.log('[PublicProductsService] Fetching product by slug:', { slug, tenantSlug, endpoint });
     const response = await anonymousApiClient.get<any>(endpoint);
+    console.log('[PublicProductsService] Product response:', response);
     return response ? transformApiProduct(response) : null;
   }
 
