@@ -56,9 +56,112 @@ Lihat tampilan form secara real-time saat kamu mendesain dengan 3 pilihan mode p
 ### 4. Template Selector
 Pilih dari template siap pakai atau buat template kustom
 
+### 5. Workspace Mode (IDE-Style)
+Mode workspace fullscreen dengan panel management seperti IDE modern:
+- **Resizable Panels** - Resize Field Library, Canvas, dan Config Panel dengan drag handle
+- **Panel Visibility** - Hide/show Field Library dengan toggle button
+- **Main Panel Selection** - Pilih Canvas atau Config Panel sebagai fokus utama
+- **Adaptive Layout** - Panel otomatis adjust berdasarkan selection dan visibility
+
 ---
 
 ## Cara Menggunakan
+
+### Workspace Mode (Advanced)
+
+**Workspace Mode** adalah fitur IDE-style yang memberikan kontrol penuh terhadap layout dan panel management.
+
+#### Mengaktifkan Workspace Mode
+
+1. Klik tombol **"Workspace"** (icon MonitorPlay) di header kanan
+2. Form Builder akan switch ke fullscreen workspace mode
+3. Klik **"Exit Workspace"** untuk kembali ke normal view
+
+#### Workspace Features
+
+**1. Panel Visibility Toggle**
+- Klik **"Field Library"** di workspace header untuk hide/show panel Field Library
+- Berguna saat butuh lebih banyak space untuk Canvas atau Config Panel
+- Panel yang di-hide akan otomatis adjust layout
+
+**2. Main Panel Selection**
+Pilih panel mana yang jadi fokus utama di tengah workspace:
+
+- **Canvas Mode** (default):
+  - Canvas jadi main panel di tengah
+  - Field Library di kiri (optional)
+  - Config Panel di kanan (muncul saat field selected)
+  
+- **Config Panel Mode**:
+  - Config Panel jadi main panel di tengah
+  - Field Library di kiri (optional)
+  - Canvas jadi preview panel di kanan
+  - Ideal untuk fokus edit field configuration
+
+**Cara Switch Main Panel:**
+1. Klik button **"Canvas"** atau **"Config Panel"** di workspace header
+2. Layout akan otomatis adjust
+3. **Note:** Config Panel mode hanya available saat ada field yang selected
+
+**3. Resizable Panels**
+Semua panel bisa di-resize dengan drag handle:
+- **Vertical handles** muncul di antara panels
+- **Drag handle** (icon GripVertical) untuk resize
+- **Min/Max size** limits untuk prevent terlalu kecil/besar
+- Size preferences auto-saved di browser
+
+**Panel Size Limits:**
+- Field Library: 15% - 30% width
+- Main Panel: min 40% width
+- Secondary Panel: 15% - 40% width
+
+#### Workspace Layout Modes
+
+**Mode 1: Full Layout (Canvas Main)**
+```
+┌─────────────┬──────────────────────┬────────────────┐
+│   Field     │    Form Canvas       │ Field Config   │
+│   Library   │    (Main Panel)      │ Panel          │
+│   15-30%    │    40%+              │ 15-35%         │
+└─────────────┴──────────────────────┴────────────────┘
+```
+
+**Mode 2: Hidden Library (Canvas Main)**
+```
+┌──────────────────────────┬────────────────┐
+│    Form Canvas           │ Field Config   │
+│    (Main Panel)          │ Panel          │
+│    60%+                  │ 15-35%         │
+└──────────────────────────┴────────────────┘
+```
+
+**Mode 3: Config Main Panel**
+```
+┌─────────────┬──────────────────────┬────────────────┐
+│   Field     │  Field Config Panel  │ Canvas Preview │
+│   Library   │  (Main Panel)        │ 15-40%         │
+│   15-30%    │  40%+                │                │
+└─────────────┴──────────────────────┴────────────────┘
+```
+
+#### Tips Workspace Mode
+
+**💡 Best Practices:**
+- Gunakan **Canvas Main** untuk drag & drop workflow
+- Gunakan **Config Main** untuk fokus edit field properties
+- Hide Field Library saat sudah tau field apa yang mau ditambah
+- Resize panels sesuai monitor size dan preferences
+- Kombinasi dengan keyboard shortcuts untuk max productivity
+
+**🎯 Use Cases:**
+- **Large Monitor (27"+)**: Full layout dengan semua panels visible
+- **Laptop (13-15")**: Hide Field Library, fokus Canvas + Config
+- **Dual Monitor**: Workspace di monitor utama, preview di monitor kedua
+- **Touch Screen**: Resize panels lebih besar untuk touch-friendly
+
+---
+
+## Cara Menggunakan (Basic)
 
 ### Akses Form Builder
 
@@ -101,6 +204,26 @@ Pilih dari template siap pakai atau buat template kustom
 
 #### Cara 2: Quick Start
 Jika canvas kosong, tombol template akan muncul otomatis di tengah canvas.
+
+### Modes & Views
+
+Form Builder menyediakan **2 workspace modes** dan **3 preview modes**:
+
+#### Workspace Modes
+
+**1. Normal View (Default)**
+- Standard grid layout: Field Library (3 cols) - Canvas (6 cols) - Live Preview/Config (3 cols)
+- Fixed panel sizes dengan responsive breakpoints
+- Best for: Quick form building, standard workflow
+
+**2. Workspace Mode (Advanced)**
+- Fullscreen IDE-style layout dengan resizable panels
+- Panel visibility toggles dan main panel selection
+- Best for: Complex forms, focus mode, power users
+
+**Cara Switch:** Klik tombol **"Workspace"** di header
+
+---
 
 ### Preview Form (3 Mode)
 

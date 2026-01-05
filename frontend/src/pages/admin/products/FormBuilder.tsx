@@ -4,8 +4,12 @@ import { DndContext, DragEndEvent, closestCenter, PointerSensor, useSensor, useS
 import { arrayMove } from '@dnd-kit/sortable';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { toast } from 'sonner';
-import { Save, Eye, ArrowLeft, Loader2, AlertCircle, Maximize2, Minimize2, X } from 'lucide-react';
+import { 
+  Save, Eye, ArrowLeft, Loader2, AlertCircle, Maximize2, Minimize2, X,
+  PanelLeftClose, PanelRightClose, Settings, LayoutGrid, MonitorPlay
+} from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FieldLibrary } from '@/components/form-builder/FieldLibrary';
 import { FormCanvas } from '@/components/form-builder/FormCanvas';
@@ -14,6 +18,7 @@ import { FieldConfigPanel } from '@/components/form-builder/FieldConfigPanel';
 import { TemplateSelector } from '@/components/form-builder/TemplateSelector';
 import { useFormConfiguration } from '@/hooks/useFormConfiguration';
 import type { FormField, FormSchema, FieldType, FIELD_TYPES } from '@/types/form-builder';
+import { cn } from '@/lib/utils';
 
 export default function FormBuilder() {
   const { productUuid } = useParams<{ productUuid: string }>();
@@ -40,6 +45,12 @@ export default function FormBuilder() {
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
+  const [isFullscreenWorkspace, setIsFullscreenWorkspace] = useState(false);
+  
+  // Workspace panel states
+  const [showFieldLibrary, setShowFieldLibrary] = useState(true);
+  const [showConfigPanel, setShowConfigPanel] = useState(true);
+  const [mainPanel, setMainPanel] = useState<'canvas' | 'config'>('canvas');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -170,6 +181,189 @@ export default function FormBuilder() {
 
   const selectedField = formSchema.fields.find((f) => f.id === selectedFieldId);
 
+  const renderNormalView = () => (
+    <div className="container px-4 md:px-6 py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <aside className="lg:col-span-3">
+          <FieldLibrary onAddField={handleAddField} />
+        </aside>
+
+        <main className="lg:col-span-6">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <FormCanvas
+              fields={formSchema.fields}
+              selectedFieldId={selectedFieldId}
+              onSelectField={setSelectedFieldId}
+              onDeleteField={handleDeleteField}
+              onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
+            />
+          </DndContext>
+        </main>
+
+        <aside className="lg:col-span-3">
+          {selectedField ? (
+            <FieldConfigPanel
+              field={selectedField}
+              onUpdate={(updates) => handleUpdateField(selectedField.id, updates)}
+              onClose={() => setSelectedFieldId(null)}
+            />
+          ) : (
+            <LivePreview formSchema={formSchema} />
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+
+  const renderWorkspaceView = () => (
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      {/* Workspace Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-background/95 backdrop-blur">
+        <div className="flex items-center gap-2">
+          <MonitorPlay className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Workspace Mode</h2>
+          <div className="flex items-center gap-1 ml-4">
+            <Button
+              variant={showFieldLibrary ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowFieldLibrary(!showFieldLibrary)}
+            >
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Field Library
+            </Button>
+            <Button
+              variant={mainPanel === 'canvas' ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMainPanel('canvas')}
+            >
+              Canvas
+            </Button>
+            <Button
+              variant={mainPanel === 'config' ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMainPanel('config')}
+              disabled={!selectedField}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Config Panel
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFullscreenWorkspace(false)}
+          >
+            <Minimize2 className="h-4 w-4 mr-2" />
+            Exit Workspace
+          </Button>
+        </div>
+      </div>
+
+      {/* Workspace Panels */}
+      <div className="flex-1 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal">
+          {/* Field Library Panel */}
+          {showFieldLibrary && (
+            <>
+              <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+                <div className="h-full overflow-auto p-4">
+                  <FieldLibrary onAddField={handleAddField} />
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+            </>
+          )}
+
+          {/* Main Panel (Canvas or Config) */}
+          <ResizablePanel defaultSize={showFieldLibrary ? 60 : 80} minSize={40}>
+            <div className="h-full overflow-auto p-4">
+              {mainPanel === 'canvas' ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <FormCanvas
+                    fields={formSchema.fields}
+                    selectedFieldId={selectedFieldId}
+                    onSelectField={setSelectedFieldId}
+                    onDeleteField={handleDeleteField}
+                    onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
+                  />
+                </DndContext>
+              ) : (
+                selectedField ? (
+                  <FieldConfigPanel
+                    field={selectedField}
+                    onUpdate={(updates) => handleUpdateField(selectedField.id, updates)}
+                    onClose={() => setSelectedFieldId(null)}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-muted-foreground">
+                      <Settings className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>Select a field to configure</p>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          </ResizablePanel>
+
+          {/* Secondary Panel (Config or Canvas) */}
+          {mainPanel === 'canvas' && selectedField && showConfigPanel && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+                <div className="h-full overflow-auto p-4">
+                  <FieldConfigPanel
+                    field={selectedField}
+                    onUpdate={(updates) => handleUpdateField(selectedField.id, updates)}
+                    onClose={() => setSelectedFieldId(null)}
+                  />
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+
+          {mainPanel === 'config' && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+                <div className="h-full overflow-auto p-4">
+                  <div className="space-y-4">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Canvas Preview
+                    </div>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <FormCanvas
+                        fields={formSchema.fields}
+                        selectedFieldId={selectedFieldId}
+                        onSelectField={setSelectedFieldId}
+                        onDeleteField={handleDeleteField}
+                        onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
+                      />
+                    </DndContext>
+                  </div>
+                </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -212,12 +406,29 @@ export default function FormBuilder() {
               {isFullscreenPreview ? (
                 <>
                   <Minimize2 className="h-4 w-4 mr-2" />
-                  Exit Fullscreen
+                  Exit Preview
                 </>
               ) : (
                 <>
                   <Eye className="h-4 w-4 mr-2" />
                   Full Preview
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFullscreenWorkspace(!isFullscreenWorkspace)}
+            >
+              {isFullscreenWorkspace ? (
+                <>
+                  <Minimize2 className="h-4 w-4 mr-2" />
+                  Exit Workspace
+                </>
+              ) : (
+                <>
+                  <MonitorPlay className="h-4 w-4 mr-2" />
+                  Workspace
                 </>
               )}
             </Button>
@@ -248,43 +459,11 @@ export default function FormBuilder() {
         </div>
       )}
 
-      {!isFullscreenPreview ? (
-        <div className="container px-4 md:px-6 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <aside className="lg:col-span-3">
-              <FieldLibrary onAddField={handleAddField} />
-            </aside>
+      {/* Normal View */}
+      {!isFullscreenPreview && !isFullscreenWorkspace && renderNormalView()}
 
-            <main className="lg:col-span-6">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <FormCanvas
-                  fields={formSchema.fields}
-                  selectedFieldId={selectedFieldId}
-                  onSelectField={setSelectedFieldId}
-                  onDeleteField={handleDeleteField}
-                  onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
-                />
-              </DndContext>
-            </main>
-
-            <aside className="lg:col-span-3">
-              {selectedField ? (
-                <FieldConfigPanel
-                  field={selectedField}
-                  onUpdate={(updates) => handleUpdateField(selectedField.id, updates)}
-                  onClose={() => setSelectedFieldId(null)}
-                />
-              ) : (
-                <LivePreview formSchema={formSchema} />
-              )}
-            </aside>
-          </div>
-        </div>
-      ) : (
+      {/* Fullscreen Preview */}
+      {isFullscreenPreview && (
         <div className="fixed inset-0 z-50 bg-background p-4">
           <div className="h-full flex flex-col">
             <div className="flex items-center justify-between pb-4 border-b">
@@ -307,6 +486,9 @@ export default function FormBuilder() {
           </div>
         </div>
       )}
+
+      {/* Fullscreen Workspace */}
+      {isFullscreenWorkspace && renderWorkspaceView()}
 
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] p-0">
