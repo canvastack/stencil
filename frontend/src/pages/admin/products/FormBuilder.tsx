@@ -38,6 +38,7 @@ export default function FormBuilder() {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'builder' | 'preview'>('builder');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -189,7 +190,11 @@ export default function FormBuilder() {
             {hasUnsavedChanges && (
               <span className="text-sm text-muted-foreground mr-2">Unsaved changes</span>
             )}
-            <TemplateSelector onApplyTemplate={handleApplyTemplate} />
+            <TemplateSelector 
+              open={templateSelectorOpen}
+              onOpenChange={setTemplateSelectorOpen}
+              onApplyTemplate={handleApplyTemplate} 
+            />
             <Button
               variant="outline"
               size="sm"
@@ -244,7 +249,7 @@ export default function FormBuilder() {
                     selectedFieldId={selectedFieldId}
                     onSelectField={setSelectedFieldId}
                     onDeleteField={handleDeleteField}
-                    onOpenTemplateSelector={() => {}}
+                    onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
                   />
                 </DndContext>
               </main>

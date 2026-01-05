@@ -22,13 +22,18 @@ import { toast } from 'sonner';
 
 interface TemplateSelectorProps {
   onApplyTemplate: (schema: FormSchema) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TemplateSelector({ onApplyTemplate }: TemplateSelectorProps) {
-  const [open, setOpen] = useState(false);
+export function TemplateSelector({ onApplyTemplate, open: controlledOpen, onOpenChange }: TemplateSelectorProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
   const { templates, isLoading, fetchTemplates } = useFormConfiguration();
+
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   useEffect(() => {
     if (open && templates.length === 0) {
