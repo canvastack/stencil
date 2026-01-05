@@ -16,9 +16,10 @@ import { cn } from '@/lib/utils';
 interface LivePreviewProps {
   formSchema: FormSchema;
   fullSize?: boolean;
+  dialogMode?: boolean;
 }
 
-export function LivePreview({ formSchema, fullSize = false }: LivePreviewProps) {
+export function LivePreview({ formSchema, fullSize = false, dialogMode = false }: LivePreviewProps) {
   const [viewMode, setViewMode] = React.useState<'desktop' | 'mobile'>('desktop');
 
   const renderField = (field: FormField) => {
@@ -158,11 +159,35 @@ export function LivePreview({ formSchema, fullSize = false }: LivePreviewProps) 
         );
 
       case 'repeater':
+        const nestedFields = field.fields || field.repeaterFields || [];
         return (
-          <div className="border-2 border-dashed rounded-md p-4 bg-muted/20">
-            <p className="text-sm text-muted-foreground text-center">
-              Repeater field group
-            </p>
+          <div className="border-2 border-dashed rounded-md p-4 bg-muted/20 space-y-4">
+            {nestedFields.length > 0 ? (
+              <>
+                <div className="text-sm font-medium text-muted-foreground mb-3">
+                  Preview of one {field.label} item:
+                </div>
+                {nestedFields.map((nestedField) => (
+                  <div key={nestedField.id} className="space-y-2 pl-4 border-l-2 border-muted">
+                    <Label htmlFor={`preview-${nestedField.id}`} className="flex items-center gap-2">
+                      {nestedField.label}
+                      {nestedField.required && <Badge variant="destructive" className="text-xs px-1.5">Required</Badge>}
+                    </Label>
+                    {nestedField.description && (
+                      <p className="text-sm text-muted-foreground">{nestedField.description}</p>
+                    )}
+                    {renderFieldInput(nestedField)}
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" disabled className="w-full mt-3">
+                  {field.addButtonText || '+ Add Item'}
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center">
+                No nested fields configured
+              </p>
+            )}
           </div>
         );
 
@@ -222,41 +247,76 @@ export function LivePreview({ formSchema, fullSize = false }: LivePreviewProps) 
   if (fullSize) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Eye className="h-5 w-5 text-primary" />
-            Form Preview
-          </h2>
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'desktop' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('desktop')}
-            >
-              <Monitor className="h-4 w-4 mr-2" />
-              Desktop
-            </Button>
-            <Button
-              variant={viewMode === 'mobile' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('mobile')}
-            >
-              <Smartphone className="h-4 w-4 mr-2" />
-              Mobile
-            </Button>
+        {!dialogMode && (
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Form Preview
+            </h2>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'desktop' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('desktop')}
+              >
+                <Monitor className="h-4 w-4 mr-2" />
+                Desktop
+              </Button>
+              <Button
+                variant={viewMode === 'mobile' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('mobile')}
+              >
+                <Smartphone className="h-4 w-4 mr-2" />
+                Mobile
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="flex justify-center bg-muted/30 p-8 rounded-lg">
-          <div
-            className={cn(
-              'bg-background border rounded-lg shadow-lg p-8 transition-all',
-              viewMode === 'mobile' ? 'max-w-md w-full' : 'max-w-3xl w-full'
-            )}
-          >
-            {content}
+        {dialogMode ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-2 pb-4">
+              <Button
+                variant={viewMode === 'desktop' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('desktop')}
+              >
+                <Monitor className="h-4 w-4 mr-2" />
+                Desktop
+              </Button>
+              <Button
+                variant={viewMode === 'mobile' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('mobile')}
+              >
+                <Smartphone className="h-4 w-4 mr-2" />
+                Mobile
+              </Button>
+            </div>
+            <div className="flex justify-center">
+              <div
+                className={cn(
+                  'bg-background border rounded-lg p-6 transition-all',
+                  viewMode === 'mobile' ? 'max-w-md w-full' : 'w-full'
+                )}
+              >
+                {content}
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex justify-center bg-muted/30 p-8 rounded-lg">
+            <div
+              className={cn(
+                'bg-background border rounded-lg shadow-lg p-8 transition-all',
+                viewMode === 'mobile' ? 'max-w-md w-full' : 'max-w-3xl w-full'
+              )}
+            >
+              {content}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

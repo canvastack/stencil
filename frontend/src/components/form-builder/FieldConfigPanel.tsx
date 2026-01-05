@@ -56,6 +56,33 @@ export function FieldConfigPanel({ field, onUpdate, onClose }: FieldConfigPanelP
     handleChange('options', options);
   };
 
+  const handleAddNestedField = () => {
+    const newField: Partial<FormField> = {
+      id: `field_${Date.now()}`,
+      type: 'text',
+      name: `field_${Date.now()}`,
+      label: 'New Field',
+      required: false,
+      order: (localField.fields?.length || 0) + 1,
+    };
+    const updated = [...(localField.fields || localField.repeaterFields || []), newField as FormField];
+    handleChange('fields', updated);
+    handleChange('repeaterFields', updated);
+  };
+
+  const handleUpdateNestedField = (index: number, updates: Partial<FormField>) => {
+    const fields = [...(localField.fields || localField.repeaterFields || [])];
+    fields[index] = { ...fields[index], ...updates };
+    handleChange('fields', fields);
+    handleChange('repeaterFields', fields);
+  };
+
+  const handleDeleteNestedField = (index: number) => {
+    const fields = (localField.fields || localField.repeaterFields || []).filter((_, i) => i !== index);
+    handleChange('fields', fields);
+    handleChange('repeaterFields', fields);
+  };
+
   const needsOptions = ['select', 'multiselect', 'radio', 'checkbox'].includes(field.type);
 
   return (
@@ -76,9 +103,12 @@ export function FieldConfigPanel({ field, onUpdate, onClose }: FieldConfigPanelP
       </CardHeader>
       <CardContent className="p-0">
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mx-6">
+          <TabsList className={`grid w-full mx-6 ${field.type === 'repeater' ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="validation">Validation</TabsTrigger>
+            {field.type === 'repeater' && (
+              <TabsTrigger value="nested">Nested Fields</TabsTrigger>
+            )}
           </TabsList>
 
           <ScrollArea className="h-[calc(100vh-18rem)]">
@@ -145,6 +175,34 @@ export function FieldConfigPanel({ field, onUpdate, onClose }: FieldConfigPanelP
                   />
                 </div>
 
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Disabled</Label>
+                    <div className="text-xs text-muted-foreground">
+                      Field is read-only
+                    </div>
+                  </div>
+                  <Switch
+                    checked={localField.disabled || false}
+                    onCheckedChange={(checked) => handleChange('disabled', checked)}
+                  />
+                </div>
+
+                {field.type !== 'repeater' && (
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Repeatable</Label>
+                      <div className="text-xs text-muted-foreground">
+                        Allow users to add multiple entries
+                      </div>
+                    </div>
+                    <Switch
+                      checked={localField.repeatable || false}
+                      onCheckedChange={(checked) => handleChange('repeatable', checked)}
+                    />
+                  </div>
+                )}
+
                 {!needsOptions && !['file', 'wysiwyg', 'repeater'].includes(field.type) && (
                   <div className="space-y-2">
                     <Label htmlFor="defaultValue">Default Value</Label>
@@ -155,6 +213,125 @@ export function FieldConfigPanel({ field, onUpdate, onClose }: FieldConfigPanelP
                       placeholder="Default value"
                     />
                   </div>
+                )}
+
+                {(localField.repeatable || field.type === 'repeater') && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold">Dynamic Field Settings</Label>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="minItems">Min Items</Label>
+                          <Input
+                            id="minItems"
+                            type="number"
+                            min="0"
+                            value={localField.minItems || 0}
+                            onChange={(e) => handleChange('minItems', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="maxItems">Max Items</Label>
+                          <Input
+                            id="maxItems"
+                            type="number"
+                            min="1"
+                            value={localField.maxItems || 10}
+                            onChange={(e) => handleChange('maxItems', parseInt(e.target.value) || 10)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="addButtonText">Add Button Text</Label>
+                        <Input
+                          id="addButtonText"
+                          value={localField.addButtonText || ''}
+                          onChange={(e) => handleChange('addButtonText', e.target.value)}
+                          placeholder="+ Add Item"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {field.type === 'file' && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label htmlFor="accept">Accepted File Types</Label>
+                      <Input
+                        id="accept"
+                        value={localField.accept || ''}
+                        onChange={(e) => handleChange('accept', e.target.value)}
+                        placeholder="e.g. image/*"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        MIME types or file extensions
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {field.type === 'color' && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label htmlFor="presetColors">Preset Colors</Label>
+                      <Textarea
+                        id="presetColors"
+                        value={(localField.presetColors || []).join(', ')}
+                        onChange={(e) =>
+                          handleChange(
+                            'presetColors',
+                            e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                          )
+                        }
+                        placeholder="#FFFFFF, #000000, #FF0000"
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Comma-separated hex color codes
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {field.type === 'wysiwyg' && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label htmlFor="maxLength">Max Length</Label>
+                      <Input
+                        id="maxLength"
+                        type="number"
+                        min="1"
+                        value={localField.maxLength || ''}
+                        onChange={(e) => handleChange('maxLength', parseInt(e.target.value) || undefined)}
+                        placeholder="e.g. 5000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="toolbar">Toolbar Options</Label>
+                      <Textarea
+                        id="toolbar"
+                        value={(localField.toolbar || []).join(', ')}
+                        onChange={(e) =>
+                          handleChange(
+                            'toolbar',
+                            e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                          )
+                        }
+                        placeholder="bold, italic, underline, heading"
+                        rows={3}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Available: bold, italic, underline, strikethrough, heading, bulletList, orderedList, link, blockquote, codeBlock, undo, redo
+                      </p>
+                    </div>
+                  </>
                 )}
 
                 {needsOptions && (
@@ -347,6 +524,169 @@ export function FieldConfigPanel({ field, onUpdate, onClose }: FieldConfigPanelP
                   />
                 </div>
               </TabsContent>
+
+              {field.type === 'repeater' && (
+                <TabsContent value="nested" className="space-y-4 mt-0">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold">Nested Fields</Label>
+                      <Button variant="outline" size="sm" onClick={handleAddNestedField}>
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Field
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {(localField.fields || localField.repeaterFields || []).map((nestedField, index) => (
+                        <div
+                          key={nestedField.id || index}
+                          className="p-3 border border-border rounded-lg space-y-3 bg-muted/20"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Field #{index + 1}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => handleDeleteNestedField(index)}
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Field Type</Label>
+                              <select
+                                value={nestedField.type}
+                                onChange={(e) =>
+                                  handleUpdateNestedField(index, { type: e.target.value as any })
+                                }
+                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                              >
+                                <option value="text">Text</option>
+                                <option value="textarea">Textarea</option>
+                                <option value="number">Number</option>
+                                <option value="email">Email</option>
+                                <option value="tel">Phone</option>
+                                <option value="url">URL</option>
+                                <option value="date">Date</option>
+                                <option value="select">Select</option>
+                                <option value="multiselect">Multi Select</option>
+                                <option value="radio">Radio</option>
+                                <option value="checkbox">Checkbox</option>
+                                <option value="color">Color</option>
+                                <option value="file">File</option>
+                              </select>
+                            </div>
+
+                            <div className="space-y-1">
+                              <Label className="text-xs">Field Name</Label>
+                              <Input
+                                value={nestedField.name}
+                                onChange={(e) =>
+                                  handleUpdateNestedField(index, { name: e.target.value })
+                                }
+                                placeholder="field_name"
+                                className="h-9 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs">Field Label</Label>
+                            <Input
+                              value={nestedField.label}
+                              onChange={(e) =>
+                                handleUpdateNestedField(index, { label: e.target.value })
+                              }
+                              placeholder="Field Label"
+                              className="h-9"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label className="text-xs">Placeholder</Label>
+                            <Input
+                              value={nestedField.placeholder || ''}
+                              onChange={(e) =>
+                                handleUpdateNestedField(index, { placeholder: e.target.value })
+                              }
+                              placeholder="Placeholder text"
+                              className="h-9"
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between py-1">
+                            <Label className="text-xs">Required</Label>
+                            <Switch
+                              checked={nestedField.required || false}
+                              onCheckedChange={(checked) =>
+                                handleUpdateNestedField(index, { required: checked })
+                              }
+                            />
+                          </div>
+
+                          {['select', 'multiselect', 'radio', 'checkbox'].includes(nestedField.type) && (
+                            <div className="space-y-2">
+                              <Label className="text-xs">Options</Label>
+                              <Textarea
+                                value={(nestedField.options || [])
+                                  .map((opt) => `${opt.value}:${opt.label}`)
+                                  .join('\n')}
+                                onChange={(e) => {
+                                  const lines = e.target.value.split('\n').filter(Boolean);
+                                  const options = lines.map((line) => {
+                                    const [value, label] = line.split(':');
+                                    return {
+                                      value: value?.trim() || '',
+                                      label: label?.trim() || value?.trim() || '',
+                                    };
+                                  });
+                                  handleUpdateNestedField(index, { options });
+                                }}
+                                placeholder="value1:Label 1&#10;value2:Label 2"
+                                rows={3}
+                                className="text-xs font-mono"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                One per line, format: value:label
+                              </p>
+                            </div>
+                          )}
+
+                          {nestedField.type === 'color' && (
+                            <div className="space-y-1">
+                              <Label className="text-xs">Default Color</Label>
+                              <Input
+                                type="color"
+                                value={nestedField.defaultValue as string || '#000000'}
+                                onChange={(e) =>
+                                  handleUpdateNestedField(index, { defaultValue: e.target.value })
+                                }
+                                className="h-9"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {(localField.fields || localField.repeaterFields || []).length === 0 && (
+                        <div className="text-center py-8 border-2 border-dashed rounded-lg">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            No nested fields yet
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Click "Add Field" to add fields to this repeater group
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+              )}
             </div>
           </ScrollArea>
         </Tabs>

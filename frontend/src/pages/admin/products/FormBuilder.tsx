@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DndContext, DragEndEvent, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Save, Eye, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Save, Eye, ArrowLeft, Loader2, AlertCircle, Maximize2, Minimize2, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { FieldLibrary } from '@/components/form-builder/FieldLibrary';
 import { FormCanvas } from '@/components/form-builder/FormCanvas';
@@ -36,9 +36,10 @@ export default function FormBuilder() {
   });
 
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'builder' | 'preview'>('builder');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [isFullscreenPreview, setIsFullscreenPreview] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -198,10 +199,27 @@ export default function FormBuilder() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setActiveTab(activeTab === 'builder' ? 'preview' : 'builder')}
+              onClick={() => setPreviewDialogOpen(true)}
             >
-              <Eye className="h-4 w-4 mr-2" />
-              {activeTab === 'builder' ? 'Preview' : 'Builder'}
+              <Maximize2 className="h-4 w-4 mr-2" />
+              Preview
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFullscreenPreview(!isFullscreenPreview)}
+            >
+              {isFullscreenPreview ? (
+                <>
+                  <Minimize2 className="h-4 w-4 mr-2" />
+                  Exit Fullscreen
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Full Preview
+                </>
+              )}
             </Button>
             <Button size="sm" onClick={handleSave} disabled={isSaving || !hasUnsavedChanges}>
               {isSaving ? (
@@ -230,51 +248,79 @@ export default function FormBuilder() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsContent value="builder" className="m-0">
-          <div className="container px-4 md:px-6 py-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <aside className="lg:col-span-3">
-                <FieldLibrary onAddField={handleAddField} />
-              </aside>
+      {!isFullscreenPreview ? (
+        <div className="container px-4 md:px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <aside className="lg:col-span-3">
+              <FieldLibrary onAddField={handleAddField} />
+            </aside>
 
-              <main className="lg:col-span-6">
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <FormCanvas
-                    fields={formSchema.fields}
-                    selectedFieldId={selectedFieldId}
-                    onSelectField={setSelectedFieldId}
-                    onDeleteField={handleDeleteField}
-                    onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
-                  />
-                </DndContext>
-              </main>
+            <main className="lg:col-span-6">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <FormCanvas
+                  fields={formSchema.fields}
+                  selectedFieldId={selectedFieldId}
+                  onSelectField={setSelectedFieldId}
+                  onDeleteField={handleDeleteField}
+                  onOpenTemplateSelector={() => setTemplateSelectorOpen(true)}
+                />
+              </DndContext>
+            </main>
 
-              <aside className="lg:col-span-3">
-                {selectedField ? (
-                  <FieldConfigPanel
-                    field={selectedField}
-                    onUpdate={(updates) => handleUpdateField(selectedField.id, updates)}
-                    onClose={() => setSelectedFieldId(null)}
-                  />
-                ) : (
-                  <LivePreview formSchema={formSchema} />
-                )}
-              </aside>
+            <aside className="lg:col-span-3">
+              {selectedField ? (
+                <FieldConfigPanel
+                  field={selectedField}
+                  onUpdate={(updates) => handleUpdateField(selectedField.id, updates)}
+                  onClose={() => setSelectedFieldId(null)}
+                />
+              ) : (
+                <LivePreview formSchema={formSchema} />
+              )}
+            </aside>
+          </div>
+        </div>
+      ) : (
+        <div className="fixed inset-0 z-50 bg-background p-4">
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b">
+              <div className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Full Preview</h2>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFullscreenPreview(false)}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Close
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto pt-4">
+              <LivePreview formSchema={formSchema} fullSize />
             </div>
           </div>
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="preview" className="m-0">
-          <div className="container max-w-6xl mx-auto px-4 md:px-6 py-8">
-            <LivePreview formSchema={formSchema} fullSize />
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Form Preview
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[calc(90vh-5rem)] p-6">
+            <LivePreview formSchema={formSchema} fullSize dialogMode />
           </div>
-        </TabsContent>
-      </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -45,13 +45,35 @@ export interface FormField {
   label: string;
   placeholder?: string;
   description?: string;
+  helpText?: string;
   required?: boolean;
+  disabled?: boolean;
   order: number;
   options?: FieldOption[];
   validation?: FieldValidation;
   conditionalLogic?: ConditionalLogic;
   defaultValue?: string | number | boolean | string[];
   className?: string;
+  
+  // Dynamic field properties
+  repeatable?: boolean;
+  minItems?: number;
+  maxItems?: number;
+  addButtonText?: string;
+  
+  // File-specific properties
+  accept?: string;
+  maxSize?: number;
+  
+  // Color picker properties
+  presetColors?: string[];
+  
+  // WYSIWYG properties
+  toolbar?: string[];
+  maxLength?: number;
+  
+  // Repeater field properties
+  fields?: FormField[];
   repeaterFields?: FormField[];
 }
 

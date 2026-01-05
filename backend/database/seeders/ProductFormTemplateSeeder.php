@@ -226,6 +226,7 @@ class ProductFormTemplateSeeder extends Seeder
                         'helpText' => 'Tambahkan teks custom dengan letak dan posisi yang diinginkan pada produk etching',
                         'fields' => [
                             [
+                                'id' => 'field_012_text',
                                 'type' => 'text',
                                 'name' => 'text',
                                 'label' => 'Teks',
@@ -233,6 +234,7 @@ class ProductFormTemplateSeeder extends Seeder
                                 'required' => true,
                             ],
                             [
+                                'id' => 'field_012_placement',
                                 'type' => 'select',
                                 'name' => 'placement',
                                 'label' => 'Letak Teks',
@@ -244,6 +246,7 @@ class ProductFormTemplateSeeder extends Seeder
                                 'defaultValue' => 'depan',
                             ],
                             [
+                                'id' => 'field_012_position',
                                 'type' => 'select',
                                 'name' => 'position',
                                 'label' => 'Posisi Teks',
@@ -258,6 +261,7 @@ class ProductFormTemplateSeeder extends Seeder
                                 'defaultValue' => 'atas',
                             ],
                             [
+                                'id' => 'field_012_color',
                                 'type' => 'color',
                                 'name' => 'color',
                                 'label' => 'Warna Teks',
