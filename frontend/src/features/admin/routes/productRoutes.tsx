@@ -2,7 +2,7 @@ import { Package, LayoutGrid, Settings as SettingsIcon, FileText } from "lucide-
 import { lazy } from "react";
 import { RouteObject } from "react-router-dom";
 
-const ProductList = lazy(() => import("../pages/ProductList"));
+const ProductCatalog = lazy(() => import("../../pages/admin/products/ProductCatalog"));
 const ProductPageContent = lazy(() => import("../pages/ProductPageContent"));
 const ProductSettings = lazy(() => import("../pages/ProductSettings"));
 
@@ -14,8 +14,8 @@ interface ProductRoute extends RouteObject {
 export const productRoutes: ProductRoute[] = [
   {
     path: "",
-    element: <ProductList />,
-    label: "Product List",
+    element: <ProductCatalog />,
+    label: "Product Catalog",
     icon: <Package className="h-4 w-4" />,
   },
   {

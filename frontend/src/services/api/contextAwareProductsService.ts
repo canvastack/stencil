@@ -173,7 +173,7 @@ export const createContextAwareProductsService = (userType: UserType) => {
         
         if (scopedParams) {
           Object.entries(scopedParams).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
+            if (value !== undefined && value !== null && value !== '') {
               queryParams.append(key, String(value));
             }
           });

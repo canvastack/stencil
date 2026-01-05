@@ -3,7 +3,7 @@ import { lazy } from 'react';
 // Lazy load components for better code splitting
 export const LazyComponents = {
   // Admin Pages
-  ProductList: lazy(() => import('../pages/admin/ProductList')),
+  ProductCatalog: lazy(() => import('../pages/admin/products/ProductCatalog')),
   ProductEditor: lazy(() => import('../pages/admin/ProductEditor')),
   ProductDetail: lazy(() => import('../pages/admin/ProductDetail')),
   OrderManagement: lazy(() => import('../pages/admin/OrderManagement')),

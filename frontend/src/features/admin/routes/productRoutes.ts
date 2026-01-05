@@ -3,8 +3,8 @@ import { Package, LayoutGrid, Settings, FileText } from "lucide-react";
 export const productRoutes = [
   {
     path: "",
-    element: <ProductList />,
-    label: "Product List",
+    element: <ProductCatalog />,
+    label: "Product Catalog",
     icon: <Package className="h-4 w-4" />,
   },
   {

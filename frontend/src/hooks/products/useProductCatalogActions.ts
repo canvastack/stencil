@@ -45,6 +45,7 @@ export interface UseProductCatalogActionsReturn {
   handleFilterChange: (key: keyof ProductFilters, value: ProductFilters[keyof ProductFilters]) => void;
   handlePageChange: (page: number) => void;
   handleClearFilters: () => void;
+  handleClearSearch: () => void;
   handleToggleReorderMode: () => void;
   toggleProductSelection: (productId: string) => void;
   deselectAllProducts: () => void;
@@ -510,6 +511,12 @@ export function useProductCatalogActions({
     dispatch({ type: 'RESET_FILTERS' });
   }, [dispatch]);
 
+  const handleClearSearch = useCallback(() => {
+    dispatch({ type: 'SET_SEARCH_QUERY', payload: '' });
+    dispatch({ type: 'SET_FILTERS', payload: { search: '', page: 1 } });
+    announceToScreenReader('Search cleared');
+  }, [dispatch]);
+
   const handleToggleReorderMode = useCallback(() => {
     dispatch({ type: 'TOGGLE_REORDER_MODE', payload: [...products] });
     toast.info('Reorder mode toggled');
@@ -540,6 +547,7 @@ export function useProductCatalogActions({
     handleFilterChange,
     handlePageChange,
     handleClearFilters,
+    handleClearSearch,
     handleToggleReorderMode,
     toggleProductSelection,
     deselectAllProducts,

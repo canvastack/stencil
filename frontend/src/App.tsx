@@ -66,7 +66,7 @@ const PageContact = lazy(() => import("./pages/admin/PageContact"));
 const PageFAQ = lazy(() => import("./pages/admin/PageFAQ"));
 const PageProducts = lazy(() => import("./pages/admin/PageProducts"));
 const PageNavigation = lazy(() => import("./pages/admin/PageNavigation"));
-const ProductList = lazy(() => import("./pages/admin/ProductList"));
+const ProductCatalog = lazy(() => import("./pages/admin/products/ProductCatalog"));
 const ProductEditor = lazy(() => import("./pages/admin/ProductEditor"));
 const AdminProductDetail = lazy(() => import("./pages/admin/ProductDetail"));
 const ProductFormBuilder = lazy(() => import("./pages/admin/products/FormBuilder"));
@@ -127,7 +127,6 @@ const RefundManagement = lazy(() => import("./pages/admin/RefundManagement"));
 const InsuranceFundDashboard = lazy(() => import("./pages/admin/InsuranceFundDashboard"));
 
 // Track B Commerce Management Pages - Product Management
-const ProductCatalog = lazy(() => import("./pages/admin/products/ProductCatalog"));
 const ProductBulk = lazy(() => import("./pages/admin/products/ProductBulk"));
 const ProductAnalytics = lazy(() => import("./pages/admin/products/ProductAnalytics"));
 
@@ -269,7 +268,7 @@ function App() {
                   <Route path="content/faq" element={<Suspense fallback={<LoadingFallback />}><PageFAQ /></Suspense>} />
                   <Route path="content/products" element={<Suspense fallback={<LoadingFallback />}><PageProducts /></Suspense>} />
                   <Route path="navigation" element={<Suspense fallback={<LoadingFallback />}><PageNavigation /></Suspense>} />
-                  <Route path="products" element={<Suspense fallback={<LoadingFallback />}><ProductList /></Suspense>} />
+                  <Route path="products" element={<Suspense fallback={<LoadingFallback />}><ProductCatalog /></Suspense>} />
                   <Route path="products/new" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
                   <Route path="products/:id/edit" element={<Suspense fallback={<LoadingFallback />}><ProductEditor /></Suspense>} />
                   <Route path="products/:productUuid/form-builder" element={<Suspense fallback={<LoadingFallback />}><ProductFormBuilder /></Suspense>} />

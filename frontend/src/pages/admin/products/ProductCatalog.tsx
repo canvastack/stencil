@@ -197,12 +197,13 @@ function ProductCatalogContent() {
     dispatch({ type: 'SET_IS_SEARCHING', payload: state.search.query !== debouncedSearch });
   }, [state.search.query, debouncedSearch]);
 
-  const debouncedFilters = useMemo(() => ({
-    ...state.filters,
-    search: debouncedSearch,
-  }), [state.filters, debouncedSearch]);
+  useEffect(() => {
+    if (debouncedSearch !== state.filters.search) {
+      dispatch({ type: 'SET_FILTERS', payload: { search: debouncedSearch, page: 1 } });
+    }
+  }, [debouncedSearch, state.filters.search]);
 
-  const { data, isLoading, error } = useProductsQuery(debouncedFilters);
+  const { data, isLoading, error } = useProductsQuery(state.filters);
   const { data: categoriesData } = useCategoriesQuery({ per_page: 100 });
   
   useEffect(() => {
@@ -764,8 +765,8 @@ function ProductCatalogContent() {
 
         <Card className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
+            <div className="flex-1 flex gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   ref={searchInputRef}
@@ -773,10 +774,37 @@ function ProductCatalogContent() {
                   placeholder="Search products by name, SKU, or description..."
                   value={state.search.query}
                   onChange={(e) => actions.handleSearchChange(e.target.value)}
-                  className="pl-10"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      dispatch({ type: 'SET_FILTERS', payload: { search: state.search.query, page: 1 } });
+                    }
+                  }}
+                  className="pl-10 pr-10"
                   aria-label="Search products"
                 />
+                {state.search.query && (
+                  <button
+                    type="button"
+                    onClick={actions.handleClearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
+              {state.search.query && (state.search.isSearching || state.search.query !== state.filters.search) && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => dispatch({ type: 'SET_FILTERS', payload: { search: state.search.query, page: 1 } })}
+                  className="whitespace-nowrap"
+                  disabled={state.search.isSearching}
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  {state.search.isSearching ? 'Searching...' : 'Apply'}
+                </Button>
+              )}
             </div>
             <div className="flex gap-2 flex-wrap">
               <Select

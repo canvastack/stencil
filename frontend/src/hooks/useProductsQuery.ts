@@ -31,9 +31,12 @@ export const useProductsQuery = (filters?: ProductFilters) => {
       }
 
       logger.debug('Fetching products', { filters, tenantId: tenant.uuid });
+      console.log('[ProductsQuery] API Call ->', { filters, tenantId: tenant.uuid });
       
       try {
-        return await productsService.getProducts(filters, signal);
+        const result = await productsService.getProducts(filters, signal);
+        console.log('[ProductsQuery] API Response ->', { count: result.data.length, total: result.total });
+        return result;
       } catch (error: any) {
         // Handle RBAC violations specifically
         if (error?.code === 'TENANT_ISOLATION_VIOLATION') {
