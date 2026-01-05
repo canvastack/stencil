@@ -50,6 +50,7 @@ import { reviewService } from "@/services/api/reviews";
 import { ordersService } from "@/services/api/orders";
 import { customersService } from "@/services/api/customers";
 import { RatingStars } from "@/components/ui/rating-stars";
+import { DynamicFormRenderer } from "@/components/public";
 
 const ProductDetail = () => {
   const { currentTheme } = useTheme();
@@ -672,358 +673,43 @@ const ProductDetail = () => {
                 </div>
               </div>
 
-              {/* Order Form */}
-              <Card className="p-6 border-border bg-card shadow-xl">
-                <h3 className="text-xl font-bold text-foreground mb-6">Form Pemesanan</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="name" className="text-foreground">Nama Lengkap *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
-                      placeholder="Masukkan nama lengkap"
-                      className="bg-background border-border"
-                    />
-                  </div>
+              {/* Dynamic Order Form */}
+              <DynamicFormRenderer
+                productUuid={product.uuid}
+                onSubmitSuccess={async (result) => {
+                  toast({
+                    title: "Pesanan Diterima!",
+                    description: "Tim kami akan segera menghubungi Anda untuk konfirmasi.",
+                  });
+                }}
+                onWhatsApp={(formData) => {
+                  const message = `Halo, saya tertarik dengan produk *${product.name}*\n\n` +
+                    Object.entries(formData)
+                      .filter(([key]) => !key.startsWith('_'))
+                      .map(([key, value]) => `${key}: ${value}`)
+                      .join('\n');
+                  const whatsappUrl = `https://wa.me/62812345678?text=${encodeURIComponent(message)}`;
+                  window.open(whatsappUrl, "_blank");
+                }}
+                showCard={true}
+              />
 
-                  <div>
-                    <Label htmlFor="email" className="text-foreground">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      placeholder="email@example.com"
-                      className="bg-background border-border"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone" className="text-foreground">No. Telepon *</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      placeholder="08xxxxxxxxxx"
-                      className="bg-background border-border"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="quantity" className="text-foreground">Jumlah Pesanan *</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      value={formData.quantity}
-                      onChange={(e) => handleInputChange("quantity", e.target.value)}
-                      className="bg-background border-border"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="productType" className="text-foreground">Tipe Produk *</Label>
-                    <Input 
-                      value={product?.type_display || product?.business_type || 'N/A'} 
-                      disabled 
-                      className="bg-muted border-border"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="size" className="text-foreground">Ukuran *</Label>
-                    <Select value={formData.size} onValueChange={(value) => handleInputChange("size", value)}>
-                      <SelectTrigger className="bg-background border-border">
-                        <SelectValue placeholder="Pilih ukuran" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border">
-                        {loadingOptions ? (
-                          <SelectItem value="loading" disabled>Loading...</SelectItem>
-                        ) : productOptions?.sizes && Object.keys(productOptions.sizes).length > 0 ? (
-                          Object.entries(productOptions.sizes).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="custom">Custom Size</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="bahan" className="text-foreground">Bahan *</Label>
-                    <Select value={formData.bahan} onValueChange={(value) => handleInputChange("bahan", value)}>
-                      <SelectTrigger className="bg-background border-border">
-                        <SelectValue placeholder="Pilih bahan" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border">
-                        {loadingOptions ? (
-                          <SelectItem value="loading" disabled>Loading...</SelectItem>
-                        ) : productOptions?.materials && productOptions.materials.length > 0 ? (
-                          productOptions.materials.map((material) => (
-                            <SelectItem key={material} value={material.toLowerCase().replace(/\s+/g, '-')}>
-                              {material}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="general">General</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="kualitas" className="text-foreground">Kualitas *</Label>
-                    <Select value={formData.kualitas} onValueChange={(value) => handleInputChange("kualitas", value)}>
-                      <SelectTrigger className="bg-background border-border">
-                        <SelectValue placeholder="Pilih kualitas" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border">
-                        {loadingOptions ? (
-                          <SelectItem value="loading" disabled>Loading...</SelectItem>
-                        ) : productOptions?.quality_levels && productOptions.quality_levels.length > 0 ? (
-                          productOptions.quality_levels.map((quality) => (
-                            <SelectItem key={quality} value={quality.toLowerCase()}>
-                              {quality.charAt(0).toUpperCase() + quality.slice(1)}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="standard">Standard</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="ketebalan" className="text-foreground">Ketebalan</Label>
-                    <Input
-                      id="ketebalan"
-                      value={formData.ketebalan}
-                      onChange={(e) => handleInputChange("ketebalan", e.target.value)}
-                      placeholder="Contoh: 2mm, 3mm, dll"
-                      className="bg-background border-border"
-                    />
-                  </div>
-
-                  <ColorPicker
-                    value={formData.warna}
-                    onChange={(color) => handleInputChange("warna", color)}
-                    label="Warna"
-                    showPresets={true}
-                    required={true}
-                  />
-
-                  <div>
-                    <Label htmlFor="designFile" className="text-foreground">File Upload Design (Opsional)</Label>
-                    <div className="space-y-3">
-                      <Input
-                        id="designFile"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="bg-background border-border"
-                      />
-                      {designFilePreview && (
-                        <div className="relative group">
-                          <div 
-                            className="relative w-full h-48 border-2 border-border rounded-lg overflow-hidden cursor-zoom-in"
-                            onClick={() => setDesignFileZoom(designFilePreview)}
-                          >
-                            <img
-                              src={designFilePreview}
-                              alt="Preview design"
-                              className="w-full h-full object-contain bg-muted"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                              <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={removeDesignFile}
-                            className="absolute top-2 right-2"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Design File Zoom Dialog */}
-                  <Dialog open={!!designFileZoom} onOpenChange={() => setDesignFileZoom(null)}>
-                    <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
-                      <DialogHeader>
-                        <DialogTitle className="sr-only">File Design yang Diperbesar</DialogTitle>
-                        <DialogDescription className="sr-only">Tampilan lebih detail dari file design yang diupload</DialogDescription>
-                      </DialogHeader>
-                      <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-white/10 p-2 hover:bg-white/20 transition-all">
-                        <X className="w-6 h-6 text-white" />
-                      </DialogClose>
-                      {designFileZoom && (
-                        <div className="flex items-center justify-center w-full h-full p-8">
-                          <img
-                            src={designFileZoom}
-                            alt="Zoomed design"
-                            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-                          />
-                        </div>
-                      )}
-                    </DialogContent>
-                  </Dialog>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium text-foreground">
-                        Teks Custom (Opsional)
-                      </Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addCustomText}
-                        className="h-8 gap-1"
-                      >
-                        <Plus className="h-3 w-3" />
-                        Tambah
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {formData.customTexts.map((customText, index) => (
-                        <div key={index} className="p-3 border border-border rounded-lg space-y-2 bg-muted/30">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-muted-foreground">
-                              Teks Custom #{index + 1}
-                            </span>
-                            {formData.customTexts.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeCustomText(index)}
-                                className="h-6 w-6"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
-                          </div>
-                          
-                          <Input
-                            type="text"
-                            value={customText.text}
-                            onChange={(e) => handleCustomTextChange(index, 'text', e.target.value)}
-                            placeholder="Masukkan teks custom"
-                            className="w-full bg-background border-border"
-                          />
-                          
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Letak Teks</Label>
-                              <select
-                                value={customText.placement}
-                                onChange={(e) => handleCustomTextChange(index, 'placement', e.target.value)}
-                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                <option value="depan">Depan</option>
-                                <option value="belakang">Belakang</option>
-                              </select>
-                            </div>
-                            
-                            <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Posisi Teks</Label>
-                              <select
-                                value={customText.position}
-                                onChange={(e) => handleCustomTextChange(index, 'position', e.target.value)}
-                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                <option value="atas">Atas</option>
-                                <option value="bawah">Bawah</option>
-                                <option value="kiri">Kiri</option>
-                                <option value="kanan">Kanan</option>
-                                <option value="tengah">Tengah</option>
-                              </select>
-                            </div>
-                          </div>
-                          
-                          <ColorPicker
-                            value={customText.color}
-                            onChange={(color) => handleCustomTextChange(index, 'color', color)}
-                            label="Warna Teks"
-                            showPresets={true}
-                            required={false}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Tambahkan teks custom dengan letak dan posisi yang diinginkan pada produk etching
-                    </p>
-                  </div>
-
-                  <WysiwygEditor
-                    value={formData.notes}
-                    onChange={(content) => handleInputChange("notes", content)}
-                    label="Catatan Tambahan"
-                    placeholder="Catatan khusus untuk pesanan Anda..."
-                    height={400}
-                    required={true}
-                  />
-
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                    <Button
-                      onClick={handleAddToCart}
-                      className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-semibold shadow-lg px-6"
-                    >
-                      <ShoppingCart className="w-5 h-5 mr-2" />
-                      Tambah ke Keranjang
-                    </Button>
-                    <Button
-                      onClick={handleOrder}
-                      disabled={orderLoading}
-                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {orderLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2 inline-block"></div>
-                          Memproses...
-                        </>
-                      ) : (
-                        "Pesan Sekarang"
-                      )}
-                    </Button>
-                    <Button
-                      onClick={handleWhatsApp}
-                      variant="outline"
-                      className="flex-1 border-primary text-primary hover:bg-primary/10 font-semibold"
-                    >
-                      <MessageCircle className="w-5 h-5 mr-2" />
-                      Chat WhatsApp
-                    </Button>
-                  </div>
-
-                  {/* Compare Button */}
-                  <div className="mt-4">
-                    <Button
-                      variant={isComparing(product.id) ? "secondary" : "outline"}
-                      className="w-full"
-                      onClick={() => {
-                        if (product) {
-                          addToCompare(product);
-                        }
-                      }}
-                      disabled={!isComparing(product.id) && isMaxReached}
-                    >
-                      <GitCompare className="w-5 h-5 mr-2" />
-                      {isComparing(product.id) ? 'Ditambahkan ke Perbandingan' : 'Bandingkan Produk'}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+              {/* Compare Button */}
+              <div className="mt-6">
+                <Button
+                  variant={isComparing(product.id) ? "secondary" : "outline"}
+                  className="w-full"
+                  onClick={() => {
+                    if (product) {
+                      addToCompare(product);
+                    }
+                  }}
+                  disabled={!isComparing(product.id) && isMaxReached}
+                >
+                  <GitCompare className="w-5 h-5 mr-2" />
+                  {isComparing(product.id) ? 'Ditambahkan ke Perbandingan' : 'Bandingkan Produk'}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -1041,88 +727,60 @@ const ProductDetail = () => {
                       <ArrowUpDown className="w-4 h-4 mr-2" />
                       <SelectValue placeholder="Urutkan" />
                     </SelectTrigger>
-                    <SelectContent className="bg-card border-border">
-                      <SelectItem value="newest">Terbaru</SelectItem>
-                      <SelectItem value="oldest">Terlama</SelectItem>
+                    <SelectContent className="bg-popover border-border">
                       <SelectItem value="rating-high">Rating Tertinggi</SelectItem>
                       <SelectItem value="rating-low">Rating Terendah</SelectItem>
+                      <SelectItem value="newest">Terbaru</SelectItem>
+                      <SelectItem value="oldest">Terlama</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
-                {/* Rating Summary */}
-                <div className="flex flex-col md:flex-row gap-8 mb-8 pb-8 border-b border-border">
-                  <div className="text-center md:text-left">
-                    <div className="text-6xl font-bold text-primary mb-2">{averageRating.toFixed(1)}</div>
-                    <RatingStars rating={averageRating} size="md" showValue={false} className="justify-center md:justify-start mb-2" />
-                    <p className="text-sm text-muted-foreground">Berdasarkan {sortedReviews.length} ulasan</p>
+
+                {reviewsLoading ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Memuat ulasan...</p>
                   </div>
-                  
-                  <div className="flex-1 space-y-2">
+                ) : sortedReviews.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">Belum ada ulasan untuk produk ini</p>
                     <Button
                       onClick={() => setReviewModalOpen(true)}
-                      className="w-full mb-4 bg-primary hover:bg-primary/90"
+                      className="mt-4 bg-primary hover:bg-primary/90"
                     >
-                      Tulis Ulasan
+                      <Star className="w-4 h-4 mr-2" />
+                      Tulis Ulasan Pertama
                     </Button>
-
-                    {[5, 4, 3, 2, 1].map((star) => {
-                      const count = sortedReviews.filter(r => r.rating === star).length;
-                      const percentage = sortedReviews.length > 0 ? (count / sortedReviews.length) * 100 : 0;
-                      return (
-                        <div key={star} className="flex items-center gap-3">
-                          <span className="text-sm text-muted-foreground w-12">{star} bintang</span>
-                          <div className="flex-1 h-2 bg-muted rounded-full overflow-y-hidden">
-                            <div
-                              className="h-full bg-primary transition-all duration-300"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                          <span className="text-sm text-muted-foreground w-16 text-right">
-                            {count} ({Math.round(percentage)}%)
-                          </span>
-                        </div>
-                      );
-                    })}
                   </div>
-                </div>
-
-                {/* Individual Reviews */}
-                <div className="space-y-6 max-h-[800px] overflow-y-auto pr-2">
-                  {sortedReviews.map((review, idx) => (
-                    <div key={idx} className="pb-6 border-b border-border last:border-0">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                            {(review.userName || 'U').charAt(0)}
-                          </div>
+                ) : (
+                  <div className="space-y-6">
+                    {sortedReviews.map((review, index) => (
+                      <div
+                        key={index}
+                        className="p-6 border border-border rounded-lg bg-card/50 backdrop-blur hover:bg-card transition-all"
+                      >
+                        <div className="flex items-start justify-between mb-4">
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-foreground">{review.userName || 'User'}</h4>
-                              {review.verified && (
-                                <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                  <Check className="w-3 h-3" />
-                                  Terverifikasi
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <RatingStars rating={review.rating} size="sm" showValue={false} />
-                              <span className="text-xs text-muted-foreground">{review.date}</span>
-                            </div>
+                            <h4 className="font-semibold text-foreground">{review.userName}</h4>
+                            <RatingStars rating={review.rating} size="sm" className="mt-1" />
                           </div>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(review.date).toLocaleDateString('id-ID')}
+                          </p>
                         </div>
+                        <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
                       </div>
-                      <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {sortedReviews.length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">Belum ada ulasan untuk produk ini.</p>
+                    ))}
                   </div>
                 )}
+
+                <Button
+                  onClick={() => setReviewModalOpen(true)}
+                  className="w-full mt-6 bg-primary hover:bg-primary/90"
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Tulis Ulasan
+                </Button>
               </Card>
             </div>
 
@@ -1130,95 +788,66 @@ const ProductDetail = () => {
             <div className="lg:col-span-1">
               <Card className="p-6 border-border bg-card shadow-xl sticky top-32">
                 <h3 className="text-2xl font-bold text-foreground mb-6">Produk Terkait</h3>
-                <div className="space-y-4">
-                  {relatedProducts.map((relatedProduct) => {
-                    const relatedReviews = productReviews.filter(r => r.productId === relatedProduct.id);
-                    const relatedRating = relatedReviews.length 
-                      ? relatedReviews.reduce((sum, r) => sum + r.rating, 0) / relatedReviews.length 
-                      : 0;
-                    
-                    return (
-                      <Card
+                {relatedProducts.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Tidak ada produk terkait
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {relatedProducts.slice(0, 3).map((relatedProduct) => (
+                      <Link
                         key={relatedProduct.id}
-                        className="group cursor-pointer overflow-hidden border-border hover:border-primary transition-all duration-300 hover:shadow-lg"
-                        onClick={() => navigate(`/products/${relatedProduct.slug}`)}
+                        to={`/products/${relatedProduct.slug}`}
+                        className="block group"
                       >
-                        <div className="aspect-video relative overflow-hidden bg-muted">
-                          <img
-                            src={getProductImage(relatedProduct.images, 0)}
-                            alt={relatedProduct.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              if (target.src !== DEFAULT_PRODUCT_IMAGE) {
-                                target.src = DEFAULT_PRODUCT_IMAGE;
-                              }
-                            }}
-                          />
-                        </div>
-                        <div className="p-4">
-                          <h4 className="font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                            {relatedProduct.name}
-                          </h4>
-                          {relatedRating > 0 && (
-                            <div className="mb-2">
-                              <RatingStars rating={relatedRating} size="sm" className="text-xs" showValue={true} />
-                            </div>
-                          )}
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {relatedProduct.description}
-                          </p>
-                          <Button
-                            size="sm"
-                            className="w-full mt-3 bg-primary hover:bg-primary/90"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/products/${relatedProduct.slug}`);
-                            }}
-                          >
-                            Lihat Detail
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })}
-
-                  {relatedProducts.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-muted-foreground">Tidak ada produk terkait.</p>
-                    </div>
-                  )}
-                </div>
+                        <Card className="overflow-hidden border-border bg-card/50 backdrop-blur hover:bg-card hover:shadow-lg transition-all">
+                          <div className="aspect-video relative overflow-hidden bg-muted">
+                            <img
+                              src={resolveImageUrl(getProductImage(relatedProduct.images, 0))}
+                              alt={relatedProduct.name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target.src !== DEFAULT_PRODUCT_IMAGE) {
+                                  target.src = DEFAULT_PRODUCT_IMAGE;
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className="p-4">
+                            <h4 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                              {relatedProduct.name}
+                            </h4>
+                            {relatedProduct.price && relatedProduct.price > 0 && (
+                              <p className="text-primary font-bold">
+                                {formatPrice(relatedProduct.price, relatedProduct.currency || 'IDR')}
+                              </p>
+                            )}
+                          </div>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </Card>
             </div>
           </div>
         </div>
       </section>
 
-      <ScrollToTop />
-      
-      {/* Comparison Bar - Floating bottom */}
       <ComparisonBar />
-
       <Footer />
+      <ScrollToTop />
 
-      {/* Review Modal */}
       <Modal
-        open={reviewModalOpen}
-        onOpenChange={setReviewModalOpen}
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
         title="Tulis Ulasan"
-        submitLabel="Kirim Ulasan"
-        isSubmitting={reviewLoading}
-        onSubmit={() => {
-          const formElement = document.querySelector('form');
-          if (formElement) {
-            formElement.dispatchEvent(new Event('submit', { cancelable: true }));
-          }
-        }}
       >
         <ReviewForm
           onSubmit={handleSubmitReview}
           onCancel={() => setReviewModalOpen(false)}
+          isLoading={reviewLoading}
         />
       </Modal>
     </div>

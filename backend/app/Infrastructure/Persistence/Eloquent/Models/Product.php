@@ -159,6 +159,22 @@ class Product extends Model implements TenantAwareModel
     }
 
     /**
+     * Get the active form configuration for this product
+     */
+    public function formConfiguration(): HasMany
+    {
+        return $this->hasMany(\App\Models\ProductFormConfiguration::class, 'product_id', 'id');
+    }
+
+    /**
+     * Get the active form configuration (single)
+     */
+    public function activeFormConfiguration(): ?object
+    {
+        return $this->formConfiguration()->where('is_active', true)->first();
+    }
+
+    /**
      * Scope to get only published products
      */
     public function scopePublished($query)

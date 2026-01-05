@@ -27,7 +27,7 @@ class ProductFormConfigurationSeeder extends Seeder
 
     private function seedConfigurationsForTenant($tenant): void
     {
-        $existingConfigsCount = ProductFormConfiguration::where('tenant_id', $tenant->uuid)->count();
+        $existingConfigsCount = ProductFormConfiguration::where('tenant_id', $tenant->id)->count();
         
         if ($existingConfigsCount >= 30) {
             $this->command->info("      ℹ️  Configurations already exist for {$tenant->name}, skipping...");
@@ -76,7 +76,7 @@ class ProductFormConfigurationSeeder extends Seeder
             ProductFormConfiguration::updateOrCreate(
                 [
                     'product_id' => $product->id,
-                    'tenant_id' => $tenant->uuid,
+                    'tenant_id' => $tenant->id,
                 ],
                 [
                     'uuid' => Str::uuid()->toString(),

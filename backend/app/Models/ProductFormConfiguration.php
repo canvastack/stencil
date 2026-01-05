@@ -52,7 +52,7 @@ class ProductFormConfiguration extends Model
 
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\Models\Tenant::class, 'tenant_id', 'uuid');
+        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\Models\Tenant::class, 'tenant_id', 'id');
     }
 
     public function product(): BelongsTo

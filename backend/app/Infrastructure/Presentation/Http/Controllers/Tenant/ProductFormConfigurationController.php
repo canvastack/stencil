@@ -102,7 +102,7 @@ class ProductFormConfigurationController extends Controller
             }
 
             $configuration = ProductFormConfiguration::where('product_id', $product->id)
-                ->where('tenant_id', $tenant->uuid)
+                ->where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->with(['template', 'product'])
                 ->first();
@@ -162,7 +162,7 @@ class ProductFormConfigurationController extends Controller
 
             return DB::transaction(function () use ($request, $product, $tenant) {
                 $existingConfig = ProductFormConfiguration::where('product_id', $product->id)
-                    ->where('tenant_id', $tenant->uuid)
+                    ->where('tenant_id', $tenant->id)
                     ->where('is_active', true)
                     ->first();
 
@@ -174,7 +174,7 @@ class ProductFormConfigurationController extends Controller
 
                 $configuration = ProductFormConfiguration::create([
                     'uuid' => Str::uuid()->toString(),
-                    'tenant_id' => $tenant->uuid,
+                    'tenant_id' => $tenant->id,
                     'product_id' => $product->id,
                     'product_uuid' => $product->uuid,
                     'name' => $request->input('name', 'Order Form'),
@@ -240,7 +240,7 @@ class ProductFormConfigurationController extends Controller
             }
 
             $configuration = ProductFormConfiguration::where('product_id', $product->id)
-                ->where('tenant_id', $tenant->uuid)
+                ->where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->first();
 
@@ -313,7 +313,7 @@ class ProductFormConfigurationController extends Controller
             }
 
             $configuration = ProductFormConfiguration::where('product_id', $product->id)
-                ->where('tenant_id', $tenant->uuid)
+                ->where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->first();
 
@@ -389,7 +389,7 @@ class ProductFormConfigurationController extends Controller
             }
 
             $sourceConfig = ProductFormConfiguration::where('product_id', $sourceProduct->id)
-                ->where('tenant_id', $tenant->uuid)
+                ->where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->first();
 
@@ -401,7 +401,7 @@ class ProductFormConfigurationController extends Controller
 
             return DB::transaction(function () use ($request, $targetProduct, $sourceConfig, $tenant) {
                 $existingConfig = ProductFormConfiguration::where('product_id', $targetProduct->id)
-                    ->where('tenant_id', $tenant->uuid)
+                    ->where('tenant_id', $tenant->id)
                     ->where('is_active', true)
                     ->first();
 
@@ -411,7 +411,7 @@ class ProductFormConfigurationController extends Controller
 
                 $newConfig = ProductFormConfiguration::create([
                     'uuid' => Str::uuid()->toString(),
-                    'tenant_id' => $tenant->uuid,
+                    'tenant_id' => $tenant->id,
                     'product_id' => $targetProduct->id,
                     'product_uuid' => $targetProduct->uuid,
                     'name' => $sourceConfig->name,

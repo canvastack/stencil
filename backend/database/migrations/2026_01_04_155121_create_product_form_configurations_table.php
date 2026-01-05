@@ -18,7 +18,8 @@ return new class extends Migration
             $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             
             // Multi-Tenant Isolation (MANDATORY)
-            $table->foreignUuid('tenant_id')->constrained('tenants', 'uuid')->cascadeOnDelete();
+            $table->unsignedBigInteger('tenant_id');
+            $table->foreign('tenant_id')->references('id')->on('tenants')->cascadeOnDelete();
             
             // Product Relationship
             $table->unsignedBigInteger('product_id');
