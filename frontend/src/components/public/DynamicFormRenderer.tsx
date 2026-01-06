@@ -11,9 +11,10 @@ import { cn } from '@/lib/utils';
 interface DynamicFormRendererProps {
   productUuid: string;
   onSubmitSuccess?: (result: {
+    order_uuid: string;
+    order_number: string;
     submission_uuid: string;
-    product_uuid: string;
-    customer_uuid?: string;
+    customer_uuid: string;
     submitted_at: string;
   }) => void;
   onWhatsApp?: (formData: Record<string, any>) => void;

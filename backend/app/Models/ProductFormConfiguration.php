@@ -7,10 +7,37 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class ProductFormConfiguration extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function booted()
+    {
+        static::saved(function ($config) {
+            self::invalidateCache($config);
+        });
+
+        static::deleted(function ($config) {
+            self::invalidateCache($config);
+        });
+
+        static::restored(function ($config) {
+            self::invalidateCache($config);
+        });
+    }
+
+    private static function invalidateCache($config): void
+    {
+        if ($config->product_uuid) {
+            Cache::forget("product_form_config:{$config->product_uuid}");
+        }
+        
+        if ($config->uuid) {
+            Cache::forget("form_config:{$config->uuid}");
+        }
+    }
 
     protected $table = 'product_form_configurations';
 

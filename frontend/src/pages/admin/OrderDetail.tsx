@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useOrders } from '@/hooks/useOrders';
 import { OrderStatus, PaymentStatus, type Order } from '@/types/order';
+import { OrderStatusStepper } from '@/components/orders/OrderStatusStepper';
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -246,6 +247,11 @@ export default function OrderDetail() {
           </div>
         </Card>
       </div>
+
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Order Progress</h3>
+        <OrderStatusStepper currentStatus={currentOrder.status as OrderStatus} />
+      </Card>
 
       <Tabs defaultValue="items" className="w-full">
         <TabsList className="grid w-full grid-cols-5">

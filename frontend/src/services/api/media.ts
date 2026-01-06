@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { tenantApiClient } from './tenantApiClient';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 
 export interface MediaFile {
@@ -135,6 +136,58 @@ class MediaService {
   async bulkDelete(ids: string[]): Promise<{ message: string }> {
     const response = await apiClient.post<{ message: string }>('/media/bulk-delete', {
       ids,
+    });
+    return response;
+  }
+
+  async uploadFile(
+    file: File,
+    options?: {
+      folder?: string;
+      onProgress?: (progress: number) => void;
+    }
+  ): Promise<{
+    data: {
+      url: string;
+      path: string;
+      filename: string;
+      size: number;
+      mime_type: string;
+    };
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.folder) {
+      formData.append('folder', options.folder);
+    }
+
+    const response = await tenantApiClient.post<{
+      message: string;
+      data: {
+        url: string;
+        path: string;
+        filename: string;
+        size: number;
+        mime_type: string;
+      };
+    }>('/media/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (options?.onProgress && progressEvent.total) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          options.onProgress(progress);
+        }
+      },
+    });
+
+    return response;
+  }
+
+  async deleteFile(path: string): Promise<{ message: string }> {
+    const response = await tenantApiClient.post<{ message: string }>('/media/delete', {
+      path,
     });
     return response;
   }

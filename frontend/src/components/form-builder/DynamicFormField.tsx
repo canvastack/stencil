@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Upload, X, File as FileIcon, Loader2 } from 'lucide-react';
+import { mediaService } from '@/services/api/media';
+import { toast } from 'sonner';
 import type { FormField } from '@/types/form-builder';
 
 interface DynamicFormFieldProps {
@@ -192,13 +194,11 @@ function SingleField({ field, value, onChange, error }: DynamicFormFieldProps) {
 
       case 'file':
         return (
-          <Input
-            type="file"
-            onChange={(e) => onChange(e.target.files?.[0] || null)}
-            accept={field.accept}
-            disabled={field.disabled}
-            required={field.required}
-            className={error ? 'border-destructive' : ''}
+          <FileUploadInput
+            field={field}
+            value={value}
+            onChange={onChange}
+            error={error}
           />
         );
 
@@ -232,6 +232,141 @@ function SingleField({ field, value, onChange, error }: DynamicFormFieldProps) {
         <p className="text-xs text-muted-foreground">{field.helpText}</p>
       )}
       {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+function FileUploadInput({ field, value, onChange, error }: DynamicFormFieldProps) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileUrl = value;
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = field.maxSize || 10485760;
+    if (file.size > maxSize) {
+      toast.error(`Ukuran file maksimal ${maxSize / 1024 / 1024}MB`);
+      return;
+    }
+
+    if (field.accept) {
+      const allowedTypes = field.accept.split(',').map((t) => t.trim());
+      const fileExtension = '.' + file.name.split('.').pop();
+      if (!allowedTypes.includes(fileExtension)) {
+        toast.error(`Tipe file harus salah satu dari: ${field.accept}`);
+        return;
+      }
+    }
+
+    try {
+      setUploading(true);
+      setUploadProgress(0);
+
+      const response = await mediaService.uploadFile(file, {
+        folder: 'order-designs',
+        onProgress: (progress) => setUploadProgress(progress),
+      });
+
+      onChange(response.data.url);
+      toast.success('File berhasil diupload');
+    } catch (error: any) {
+      console.error('Upload failed:', error);
+      toast.error(error.response?.data?.message || 'Gagal mengupload file');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleRemove = async () => {
+    if (fileUrl) {
+      try {
+        const url = new URL(fileUrl);
+        const path = url.pathname.replace('/storage/', '');
+        await mediaService.deleteFile(path);
+      } catch (error) {
+        console.error('Failed to delete file:', error);
+      }
+    }
+    onChange(null);
+  };
+
+  return (
+    <div className="space-y-2">
+      {!fileUrl ? (
+        <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+          <input
+            type="file"
+            id={field.id}
+            accept={field.accept}
+            onChange={handleFileChange}
+            disabled={uploading || field.disabled}
+            className="hidden"
+          />
+          <label htmlFor={field.id} className="cursor-pointer">
+            {uploading ? (
+              <div className="space-y-2">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                <div className="text-sm text-muted-foreground">
+                  Mengupload... {uploadProgress}%
+                </div>
+                <div className="w-full bg-secondary rounded-full h-2 max-w-xs mx-auto">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <div className="text-sm text-muted-foreground">
+                  Klik untuk upload atau drag and drop
+                </div>
+                {field.accept && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Format: {field.accept}
+                  </div>
+                )}
+                {field.maxSize && (
+                  <div className="text-xs text-muted-foreground">
+                    Maksimal {field.maxSize / 1024 / 1024}MB
+                  </div>
+                )}
+              </>
+            )}
+          </label>
+        </div>
+      ) : (
+        <div className="border rounded-lg p-4 flex items-center justify-between bg-muted/30">
+          <div className="flex items-center gap-3">
+            <FileIcon className="h-8 w-8 text-primary" />
+            <div>
+              <div className="text-sm font-medium">File berhasil diupload</div>
+              <a
+                href={fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline"
+              >
+                Lihat file
+              </a>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleRemove}
+            disabled={field.disabled}
+            className="text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

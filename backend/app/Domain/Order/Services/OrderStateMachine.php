@@ -201,16 +201,14 @@ class OrderStateMachine
     protected function applyStatusSideEffects(Order $order, OrderStatus $newStatus, array $metadata): void
     {
         match ($newStatus) {
-            OrderStatus::SOURCING_VENDOR => $this->handleSourcingVendor($order),
+            OrderStatus::VENDOR_SOURCING => $this->handleSourcingVendor($order),
             OrderStatus::VENDOR_NEGOTIATION => $this->handleVendorNegotiation($order, $metadata),
-            OrderStatus::CUSTOMER_QUOTATION => $this->handleCustomerQuotation($order, $metadata),
-            OrderStatus::WAITING_PAYMENT => $this->handleWaitingPayment($order),
-            OrderStatus::PAYMENT_RECEIVED => $this->handlePaymentReceived($order, $metadata),
+            OrderStatus::CUSTOMER_QUOTE => $this->handleCustomerQuotation($order, $metadata),
+            OrderStatus::AWAITING_PAYMENT => $this->handleWaitingPayment($order),
+            OrderStatus::PARTIAL_PAYMENT, OrderStatus::FULL_PAYMENT => $this->handlePaymentReceived($order, $metadata),
             OrderStatus::IN_PRODUCTION => $this->handleInProduction($order, $metadata),
-            OrderStatus::QUALITY_CHECK => $this->handleQualityCheck($order),
-            OrderStatus::READY_TO_SHIP => $this->handleReadyToShip($order),
-            OrderStatus::SHIPPED => $this->handleShipped($order, $metadata),
-            OrderStatus::DELIVERED => $this->handleDelivered($order, $metadata),
+            OrderStatus::QUALITY_CONTROL => $this->handleQualityCheck($order),
+            OrderStatus::SHIPPING => $this->handleShipped($order, $metadata),
             OrderStatus::COMPLETED => $this->handleCompleted($order),
             OrderStatus::CANCELLED => $this->handleCancelled($order, $metadata),
             OrderStatus::REFUNDED => $this->handleRefunded($order, $metadata),
@@ -220,7 +218,8 @@ class OrderStateMachine
 
     protected function applyFinancialMetadata(Order $order, OrderStatus $status, array $metadata): void
     {
-        if ($status !== OrderStatus::PAYMENT_RECEIVED && isset($metadata['payment']) && is_array($metadata['payment'])) {
+        if (!in_array($status, [OrderStatus::PARTIAL_PAYMENT, OrderStatus::FULL_PAYMENT]) 
+            && isset($metadata['payment']) && is_array($metadata['payment'])) {
             $this->recentPaymentTransaction = $this->orderPaymentService->recordCustomerPayment($order, $metadata['payment']);
         }
 
@@ -787,7 +786,7 @@ class OrderStateMachine
                 }
                 break;
 
-            case OrderStatus::CUSTOMER_QUOTATION:
+            case OrderStatus::CUSTOMER_QUOTE:
                 if (!isset($metadata['quotation_amount'])) {
                     $errors[] = 'Jumlah penawaran harus diisi';
                 } elseif ((int) $metadata['quotation_amount'] <= 0) {
@@ -795,7 +794,8 @@ class OrderStateMachine
                 }
                 break;
 
-            case OrderStatus::PAYMENT_RECEIVED:
+            case OrderStatus::PARTIAL_PAYMENT:
+            case OrderStatus::FULL_PAYMENT:
                 $paymentData = $metadata['payment'] ?? [];
                 $providedMethod = $paymentData['method'] ?? $metadata['payment_method'] ?? null;
 
@@ -813,7 +813,7 @@ class OrderStateMachine
                 }
                 break;
 
-            case OrderStatus::SHIPPED:
+            case OrderStatus::SHIPPING:
                 if (!isset($metadata['tracking_number']) && !$order->tracking_number) {
                     $errors[] = 'Nomor resi pengiriman harus diisi';
                 }

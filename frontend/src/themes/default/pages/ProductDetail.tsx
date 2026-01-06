@@ -32,11 +32,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useTheme } from '@/core/engine/ThemeContext';
-import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, Plus, Trash2, ArrowUpDown, GitCompare } from "lucide-react";
-import { ColorPicker } from "@/components/ui/color-picker";
+import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, GitCompare, ArrowUpDown } from "lucide-react";
 import { useProductComparison } from "@/contexts/ProductComparisonContext";
 import { ComparisonBar } from "@/components/products/ComparisonBar";
-import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
 import { Modal } from "@/components/ui/modal";
 import { ReviewForm } from "@/features/reviews/components/ReviewForm";
 import { useToast } from "@/hooks/use-toast";
@@ -48,8 +46,6 @@ import { useRelatedProducts } from "@/hooks/useRelatedProducts";
 import { useProductOptions } from "@/hooks/useProductOptions";
 import { resolveImageUrl, getProductImage, DEFAULT_PRODUCT_IMAGE } from '@/utils/imageUtils';
 import { reviewService } from "@/services/api/reviews";
-import { ordersService } from "@/services/api/orders";
-import { customersService } from "@/services/api/customers";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { DynamicFormRenderer } from "@/components/public";
 
@@ -82,9 +78,10 @@ const ProductDetail = () => {
     
     setReviewLoading(true);
     try {
+      // TODO: Review submission needs proper user identification (authentication or name field in form)
       await reviewService.createReview({
         productId: product.id,
-        userName: formData.name || "Anonymous",
+        userName: "Anonymous", // Previously used formData.name but that was never properly set
         rating: review.rating,
         comment: review.comment,
         verified: true,
@@ -193,26 +190,9 @@ const ProductDetail = () => {
     return [];
   }, [product?.specifications]);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    quantity: "1",
-    productType: "",
-    size: "",
-    material: "",
-    bahan: "",
-    kualitas: "",
-    ketebalan: "",
-    warna: "",
-    designFile: null as File | null,
-    customTexts: [{ text: "", placement: "depan", position: "atas", color: "#000000" }] as Array<{ text: string; placement: string; position: string; color: string }>,
-    notes: "",
-  });
-
-  const [designFilePreview, setDesignFilePreview] = useState<string | null>(null);
-  const [designFileZoom, setDesignFileZoom] = useState<string | null>(null);
-
+  // Legacy form state removed - now using DynamicFormRenderer component
+  // All order form logic moved to DynamicFormRenderer for dynamic form configuration support
+  
   const [magnifiedImage, setMagnifiedImage] = useState<string | null>(null);
   const [view360, setView360] = useState<string | null>(null);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -260,160 +240,9 @@ const ProductDetail = () => {
     );
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, designFile: file }));
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setDesignFilePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeDesignFile = () => {
-    setFormData(prev => ({ ...prev, designFile: null }));
-    setDesignFilePreview(null);
-  };
-
-  const addCustomText = () => {
-    setFormData(prev => ({ 
-      ...prev, 
-      customTexts: [...prev.customTexts, { text: "", placement: "depan", position: "atas", color: "#000000" }] 
-    }));
-  };
-
-  const removeCustomText = (index: number) => {
-    const newCustomTexts = formData.customTexts.filter((_, i) => i !== index);
-    setFormData(prev => ({ 
-      ...prev, 
-      customTexts: newCustomTexts.length > 0 ? newCustomTexts : [{ text: "", placement: "depan", position: "atas", color: "#000000" }]
-    }));
-  };
-
-  const handleCustomTextChange = (index: number, field: 'text' | 'placement' | 'position' | 'color', value: string) => {
-    setFormData(prev => {
-      const newCustomTexts = [...prev.customTexts];
-      newCustomTexts[index] = {
-        ...newCustomTexts[index],
-        [field]: value
-      };
-      return { ...prev, customTexts: newCustomTexts };
-    });
-  };
-
-  const predefinedColors = [
-    { name: "Hitam", hex: "#000000" },
-    { name: "Putih", hex: "#FFFFFF" },
-    { name: "Merah", hex: "#DC2626" },
-    { name: "Biru", hex: "#2563EB" },
-    { name: "Hijau", hex: "#16A34A" },
-    { name: "Kuning", hex: "#EAB308" },
-    { name: "Oranje", hex: "#EA580C" },
-    { name: "Ungu", hex: "#9333EA" },
-    { name: "Pink", hex: "#EC4899" },
-    { name: "Abu-abu", hex: "#6B7280" },
-    { name: "Coklat", hex: "#92400E" },
-    { name: "Silver", hex: "#C0C0C0" },
-    { name: "Emas", hex: "#FFD700" },
-    { name: "Tembaga", hex: "#B87333" },
-  ];
-
-  const handleOrder = async () => {
-    if (!formData.name || !formData.phone || !formData.quantity || !formData.bahan || !formData.kualitas || !formData.warna || !formData.notes) {
-      toast({
-        title: "Form Belum Lengkap",
-        description: "Mohon lengkapi semua field yang wajib diisi (Nama, Telepon, Jumlah, Bahan, Kualitas, Warna, dan Catatan Tambahan).",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!product) return;
-
-    setOrderLoading(true);
-    try {
-      let customerId: string | null = null;
-      
-      try {
-        const customers = await customersService.getCustomers({
-          search: formData.email || formData.phone,
-          per_page: 1,
-        });
-        if (customers.data && customers.data.length > 0) {
-          customerId = customers.data[0].id;
-        }
-      } catch (error) {
-        console.log('Error searching for customer, will create new one:', error);
-      }
-
-      if (!customerId) {
-        const newCustomer = await customersService.createCustomer({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          type: 'individual',
-        });
-        customerId = newCustomer.id;
-      }
-
-      const quantity = parseInt(formData.quantity) || 1;
-      await ordersService.createOrder({
-        customer_id: customerId,
-        items: [
-          {
-            product_id: product.id,
-            quantity,
-            price: product.price,
-          },
-        ],
-        notes: `Bahan: ${formData.bahan}, Kualitas: ${formData.kualitas}, Warna: ${formData.warna}, Catatan: ${formData.notes}`,
-      });
-
-      toast({
-        title: "Pesanan Diterima!",
-        description: "Tim kami akan segera menghubungi Anda untuk konfirmasi.",
-      });
-
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        quantity: "1",
-        productType: "",
-        size: "",
-        material: "",
-        bahan: "",
-        kualitas: "",
-        ketebalan: "",
-        warna: "",
-        designFile: null,
-        customTexts: [{ text: "", placement: "depan", position: "atas", color: "#000000" }],
-        notes: "",
-      });
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast({
-        title: "Gagal Membuat Pesanan",
-        description: "Terjadi kesalahan saat membuat pesanan. Silakan coba lagi.",
-        variant: "destructive",
-      });
-    } finally {
-      setOrderLoading(false);
-    }
-  };
-
-  const handleWhatsApp = () => {
-    const message = `Halo, saya tertarik dengan produk *${product.name}*\n\nNama: ${formData.name}\nTelepon: ${formData.phone}\nJumlah: ${formData.quantity}\nCatatan: ${formData.notes || "-"}`;
-    const whatsappUrl = `https://wa.me/62812345678?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
-  };
-
+  // Legacy form handlers removed - now using DynamicFormRenderer component
+  // All order form logic moved to DynamicFormRenderer for dynamic form configuration support
+  
   const handle360Start = (clientX: number, clientY: number) => {
     setIsDragging(true);
     setDragStart({ x: clientX, y: clientY });
@@ -682,9 +511,10 @@ const ProductDetail = () => {
                 productUuid={product.uuid}
                 onSubmitSuccess={async (result) => {
                   toast({
-                    title: "Pesanan Diterima!",
-                    description: "Tim kami akan segera menghubungi Anda untuk konfirmasi.",
+                    title: "Pesanan Berhasil Dibuat!",
+                    description: `Nomor Pesanan: ${result.order_number}. Tim kami akan segera menghubungi Anda untuk konfirmasi.`,
                   });
+                  console.log('[ProductDetail] Order created:', result);
                 }}
                 onWhatsApp={(formData) => {
                   const message = `Halo, saya tertarik dengan produk *${product.name}*\n\n` +

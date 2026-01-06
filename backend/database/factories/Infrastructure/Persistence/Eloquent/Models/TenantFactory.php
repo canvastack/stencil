@@ -2,14 +2,14 @@
 
 namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 class TenantFactory extends Factory
 {
-    protected $model = Tenant::class;
+    protected $model = TenantEloquentModel::class;
 
     public function definition(): array
     {

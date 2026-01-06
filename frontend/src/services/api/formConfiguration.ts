@@ -198,16 +198,19 @@ class FormConfigurationService {
     productUuid: string,
     data: Record<string, any>
   ): Promise<{
+    order_uuid: string;
+    order_number: string;
     submission_uuid: string;
-    product_uuid: string;
-    customer_uuid?: string;
+    customer_uuid: string;
     submitted_at: string;
   }> {
     const response = await anonymousApiClient.post<{
+      message: string;
       data: {
+        order_uuid: string;
+        order_number: string;
         submission_uuid: string;
-        product_uuid: string;
-        customer_uuid?: string;
+        customer_uuid: string;
         submitted_at: string;
       };
     }>(`/public/products/${productUuid}/form-submission`, data);

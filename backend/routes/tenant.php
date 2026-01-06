@@ -17,6 +17,7 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\NotificationControll
 use App\Http\Controllers\Tenant\ContentController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormConfigurationController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormTemplateController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\MediaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -179,6 +180,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::delete('/{order}', [OrderController::class, 'destroy'])->name('tenant.orders.destroy');
             Route::put('/{order}/status', [OrderController::class, 'updateStatus'])->name('tenant.orders.update_status');
             Route::post('/{order}/process', [OrderController::class, 'process'])->name('tenant.orders.process');
+            Route::post('/{order}/approve', [OrderController::class, 'approve'])->name('tenant.orders.approve');
             Route::post('/{order}/ship', [OrderController::class, 'ship'])->name('tenant.orders.ship');
             Route::post('/{order}/complete', [OrderController::class, 'complete'])->name('tenant.orders.complete');
             Route::post('/{order}/cancel', [OrderController::class, 'cancel'])->name('tenant.orders.cancel');
@@ -334,6 +336,12 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             
             Route::get('/vendor', [SettingsController::class, 'getVendorSettings'])->name('tenant.settings.vendor');
             Route::put('/vendor', [SettingsController::class, 'updateVendorSettings'])->name('tenant.settings.update_vendor');
+        });
+
+        // Media Management
+        Route::prefix('media')->group(function () {
+            Route::post('/upload', [MediaController::class, 'upload'])->name('tenant.media.upload');
+            Route::post('/delete', [MediaController::class, 'delete'])->name('tenant.media.delete');
         });
 
         // Quote Management (Vendor Negotiations)

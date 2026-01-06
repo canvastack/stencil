@@ -233,6 +233,50 @@ class OrderController extends Controller
         return $this->updateStatus($request, $order);
     }
 
+    public function approve(Request $request, Order $order): JsonResponse
+    {
+        try {
+            $this->ensureOrderBelongsToTenant($request, $order);
+            
+            if ($order->status !== OrderStatus::DRAFT->value) {
+                return response()->json([
+                    'message' => 'Hanya pesanan dengan status Draft yang dapat disetujui',
+                    'current_status' => $order->status,
+                ], 422);
+            }
+            
+            $newStatus = OrderStatus::PENDING;
+            
+            $this->stateMachine->transitionTo($order, $newStatus, [
+                'approved_by' => auth()->id(),
+                'approved_at' => now()->toIso8601String(),
+            ]);
+            
+            $order->load(['customer', 'vendor']);
+            
+            return response()->json([
+                'message' => 'Pesanan berhasil disetujui',
+                'data' => new OrderResource($order),
+            ], 200);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Failed to approve order', [
+                'order_id' => $order->id,
+                'order_uuid' => $order->uuid,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'Gagal menyetujui pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
     public function ship(Request $request, int $id): JsonResponse
     {
         try {
@@ -606,7 +650,8 @@ class OrderController extends Controller
     private function ensureOrderBelongsToTenant(Request $request, Order $order): void
     {
         $tenant = $this->resolveTenant($request);
-        if ($order->tenant_id !== $tenant->id) {
+        
+        if ($order->tenant_id != $tenant->id) {
             abort(404, 'Pesanan tidak ditemukan');
         }
     }

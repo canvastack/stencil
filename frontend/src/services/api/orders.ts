@@ -2,6 +2,7 @@ import { tenantApiClient } from '../tenant/tenantApiClient';
 import { Order } from '@/types/order';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import { orderNotificationService } from '../notifications/orderNotificationService';
+import { anonymousApiClient } from './anonymousApiClient';
 
 export interface OrderFilters extends ListRequestParams {
   status?: string;
@@ -280,6 +281,37 @@ class OrdersService {
    */
   async testOrderNotification(orderId: string = 'TEST-001'): Promise<void> {
     await orderNotificationService.sendTestOrderNotification(orderId);
+  }
+
+  /**
+   * Submit order form from public product page
+   * This endpoint creates both customer and order records
+   */
+  async submitOrderForm(
+    productUuid: string,
+    formData: Record<string, any>
+  ): Promise<{
+    message: string;
+    data: {
+      order_uuid: string;
+      order_number: string;
+      submission_uuid: string;
+      customer_uuid: string;
+      submitted_at: string;
+    };
+  }> {
+    const response = await anonymousApiClient.post<{
+      message: string;
+      data: {
+        order_uuid: string;
+        order_number: string;
+        submission_uuid: string;
+        customer_uuid: string;
+        submitted_at: string;
+      };
+    }>(`/public/products/${productUuid}/form-submission`, formData);
+
+    return response;
   }
 }
 

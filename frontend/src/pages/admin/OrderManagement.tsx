@@ -56,6 +56,7 @@ import { useOrders, useUpdateOrder } from '@/hooks/useOrders';
 import { OrderStatus, PaymentStatus, PaymentType, type Order, type OrderItem } from '@/types/order';
 import { OrderWorkflow } from '@/utils/orderWorkflow';
 import { OrderStatusTransition } from '@/components/orders/OrderStatusTransition';
+import { OrderStatusStepper } from '@/components/orders/OrderStatusStepper';
 import { VendorSourcing } from '@/components/orders/VendorSourcing';
 import { PaymentProcessing } from '@/components/orders/PaymentProcessing';
 import { useNavigate } from 'react-router-dom';
@@ -803,9 +804,10 @@ export default function OrderManagement() {
                 const canTransition = validNextStatuses.length > 0;
                 
                 return (
-                  <TabsList className={`grid w-full ${canTransition ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <TabsList className={`grid w-full ${canTransition ? 'grid-cols-4' : 'grid-cols-3'}`}>
                     <TabsTrigger value="details">Order Details</TabsTrigger>
                     <TabsTrigger value="customer">Customer Info</TabsTrigger>
+                    <TabsTrigger value="progress">Progress</TabsTrigger>
                     {canTransition && (
                       <TabsTrigger value="status">Update Status</TabsTrigger>
                     )}
@@ -945,6 +947,16 @@ export default function OrderManagement() {
                       </div>
                     )}
                   </div>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="progress" className="space-y-4">
+                <Card className="p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Order Progress Tracker
+                  </h3>
+                  <OrderStatusStepper currentStatus={selectedOrder.status as OrderStatus} />
                 </Card>
               </TabsContent>
 

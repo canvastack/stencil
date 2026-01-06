@@ -8,6 +8,8 @@ use App\Models\ProductFormSubmission;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
+use App\Domain\Product\Services\ProductFormConfigurationService;
+use App\Domain\Product\Services\FormDataValidationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -18,6 +20,16 @@ use Illuminate\Support\Facades\Validator;
 
 class ProductFormController extends Controller
 {
+    private ProductFormConfigurationService $formConfigService;
+    private FormDataValidationService $validationService;
+
+    public function __construct(
+        ProductFormConfigurationService $formConfigService,
+        FormDataValidationService $validationService
+    ) {
+        $this->formConfigService = $formConfigService;
+        $this->validationService = $validationService;
+    }
     /**
      * Get form configuration for public product page
      * GET /api/public/products/{uuid}/form-configuration
@@ -34,10 +46,6 @@ class ProductFormController extends Controller
                 ], 400);
             }
 
-            // TEMPORARY: Disable cache for testing
-            // $cacheKey = "public:product_form_config:{$productUuid}";
-            // $formConfig = Cache::remember($cacheKey, now()->addHours(24), function () use ($productUuid) {
-            
             $product = Product::where('uuid', $productUuid)
                 ->where('status', 'published')
                 ->first();
@@ -49,9 +57,8 @@ class ProductFormController extends Controller
                 ], 404);
             }
 
-            $configuration = ProductFormConfiguration::where('product_id', $product->id)
-                ->where('is_active', true)
-                ->first();
+            // Use caching service for form configuration
+            $configuration = $this->formConfigService->getActiveFormConfiguration($productUuid);
 
             if (!$configuration) {
                 return response()->json([
@@ -125,9 +132,8 @@ class ProductFormController extends Controller
                 ], 404);
             }
 
-            $configuration = ProductFormConfiguration::where('product_id', $product->id)
-                ->where('is_active', true)
-                ->first();
+            // Use caching service for form configuration
+            $configuration = $this->formConfigService->getActiveFormConfiguration($productUuid);
 
             if (!$configuration) {
                 return response()->json([
@@ -136,51 +142,49 @@ class ProductFormController extends Controller
                 ], 404);
             }
 
-            $validationRules = $this->buildValidationRules($configuration->form_schema);
-            $validator = Validator::make($request->all(), $validationRules);
-
-            if ($validator->fails()) {
+            // Validate form data using schema-based validation service
+            try {
+                $formData = $request->except(['_form_started_at', '_token']);
+                $validatedData = $this->validationService->validate($configuration, $formData);
+            } catch (\Illuminate\Validation\ValidationException $e) {
                 return response()->json([
                     'message' => 'Validasi form gagal',
-                    'errors' => $validator->errors()
+                    'errors' => $e->errors()
                 ], 422);
             }
 
-            return DB::transaction(function () use ($request, $product, $configuration) {
+            return DB::transaction(function () use ($request, $product, $configuration, $validatedData) {
                 $startedAt = $request->input('_form_started_at');
                 $completionTime = $startedAt ? now()->diffInSeconds($startedAt) : null;
+                $formData = $validatedData;
 
-                $customerData = $this->extractCustomerData($request->all());
-                $customer = null;
+                $customerData = $this->extractCustomerData($formData);
+                $customer = $this->findOrCreateCustomer($customerData, $product->tenant_id);
 
-                if (!empty($customerData)) {
-                    $customer = Customer::where('tenant_id', $product->tenant_id)
-                        ->where('email', $customerData['email'] ?? '')
-                        ->first();
-
-                    if (!$customer && isset($customerData['email'])) {
-                        $customer = Customer::create(array_merge($customerData, [
-                            'uuid' => Str::uuid()->toString(),
-                            'tenant_id' => $product->tenant_id,
-                        ]));
-                    }
+                if (!$customer) {
+                    throw new \Exception('Failed to create or find customer record');
                 }
+
+                $order = $this->createOrder($product, $customer, $formData);
 
                 $submission = ProductFormSubmission::create([
                     'uuid' => Str::uuid()->toString(),
-                    'tenant_id' => $product->tenant->uuid ?? null,
+                    'tenant_id' => $product->tenant_id,
                     'product_id' => $product->id,
                     'product_uuid' => $product->uuid,
                     'form_configuration_id' => $configuration->id,
                     'form_configuration_uuid' => $configuration->uuid,
-                    'customer_id' => $customer?->id,
-                    'customer_uuid' => $customer?->uuid,
-                    'submission_data' => $request->except(['_form_started_at', '_token']),
+                    'order_id' => $order->id,
+                    'order_uuid' => $order->uuid,
+                    'customer_id' => $customer->id,
+                    'customer_uuid' => $customer->uuid,
+                    'submission_data' => $formData,
                     'user_agent' => $request->header('User-Agent'),
                     'ip_address' => $request->ip(),
                     'referrer' => $request->header('Referer'),
                     'completion_time' => $completionTime,
                     'is_completed' => true,
+                    'is_converted_to_order' => true,
                     'started_at' => $startedAt ? now()->parse($startedAt) : now(),
                     'submitted_at' => now(),
                 ]);
@@ -195,12 +199,20 @@ class ProductFormController extends Controller
                     $configuration->update(['avg_completion_time' => $avgTime]);
                 }
 
+                Log::info('[PublicFormSubmission] Order created successfully', [
+                    'order_uuid' => $order->uuid,
+                    'order_number' => $order->order_number,
+                    'customer_uuid' => $customer->uuid,
+                    'product_uuid' => $product->uuid,
+                ]);
+
                 return response()->json([
-                    'message' => 'Form berhasil disubmit',
+                    'message' => 'Pesanan berhasil dibuat',
                     'data' => [
+                        'order_uuid' => $order->uuid,
+                        'order_number' => $order->order_number,
                         'submission_uuid' => $submission->uuid,
-                        'product_uuid' => $product->uuid,
-                        'customer_uuid' => $customer?->uuid,
+                        'customer_uuid' => $customer->uuid,
                         'submitted_at' => $submission->submitted_at->toIso8601String(),
                     ]
                 ], 201);
@@ -221,91 +233,6 @@ class ProductFormController extends Controller
     }
 
     /**
-     * Build validation rules from form schema
-     */
-    private function buildValidationRules(array $formSchema): array
-    {
-        $rules = [];
-
-        if (!isset($formSchema['fields']) || !is_array($formSchema['fields'])) {
-            return $rules;
-        }
-
-        foreach ($formSchema['fields'] as $field) {
-            $fieldName = $field['name'] ?? null;
-            if (!$fieldName) {
-                continue;
-            }
-
-            $fieldRules = [];
-
-            if (isset($field['required']) && $field['required']) {
-                $fieldRules[] = 'required';
-            } else {
-                $fieldRules[] = 'nullable';
-            }
-
-            $fieldType = $field['type'] ?? 'text';
-            switch ($fieldType) {
-                case 'email':
-                    $fieldRules[] = 'email';
-                    break;
-                case 'number':
-                    $fieldRules[] = 'numeric';
-                    break;
-                case 'url':
-                    $fieldRules[] = 'url';
-                    break;
-                case 'date':
-                    $fieldRules[] = 'date';
-                    break;
-                case 'file':
-                    $fieldRules[] = 'file';
-                    if (isset($field['validation']['maxSize'])) {
-                        $fieldRules[] = 'max:' . ($field['validation']['maxSize'] / 1024);
-                    }
-                    break;
-                case 'select':
-                case 'radio':
-                    if (isset($field['options']) && is_array($field['options'])) {
-                        $allowedValues = array_column($field['options'], 'value');
-                        if (!empty($allowedValues)) {
-                            $fieldRules[] = 'in:' . implode(',', $allowedValues);
-                        }
-                    }
-                    break;
-                case 'multiselect':
-                case 'checkbox':
-                    $fieldRules[] = 'array';
-                    break;
-                default:
-                    $fieldRules[] = 'string';
-                    break;
-            }
-
-            if (isset($field['validation'])) {
-                $validation = $field['validation'];
-
-                if (isset($validation['minLength'])) {
-                    $fieldRules[] = 'min:' . $validation['minLength'];
-                }
-
-                if (isset($validation['maxLength'])) {
-                    $fieldRules[] = 'max:' . $validation['maxLength'];
-                }
-
-                if (isset($validation['pattern'])) {
-                    $fieldRules[] = 'regex:' . $validation['pattern'];
-                }
-            }
-
-            $rules[$fieldName] = implode('|', $fieldRules);
-        }
-
-        return $rules;
-    }
-
-    /**
      * Extract customer data from form submission
      */
     private function extractCustomerData(array $formData): array
@@ -323,8 +250,8 @@ class ProductFormController extends Controller
             'city' => 'city',
             'province' => 'province',
             'postal_code' => 'postal_code',
-            'company' => 'company_name',
-            'company_name' => 'company_name',
+            'company' => 'company',
+            'company_name' => 'company',
         ];
 
         foreach ($formData as $key => $value) {
@@ -335,5 +262,181 @@ class ProductFormController extends Controller
         }
 
         return $customerData;
+    }
+
+    /**
+     * Find or create customer from form data
+     */
+    private function findOrCreateCustomer(array $customerData, int $tenantId): ?Customer
+    {
+        if (empty($customerData)) {
+            return null;
+        }
+
+        $email = $this->sanitizeEmail($customerData['email'] ?? null);
+        $phone = $this->sanitizePhone($customerData['phone'] ?? null);
+        $name = trim($customerData['name'] ?? 'Guest Customer');
+
+        // Validate email format
+        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException('Invalid email format: ' . $email);
+        }
+
+        // Validate phone format (Indonesian phone numbers)
+        if ($phone && !$this->isValidIndonesianPhone($phone)) {
+            throw new \InvalidArgumentException('Invalid phone number format: ' . $phone);
+        }
+
+        if (!$email && !$phone) {
+            return null;
+        }
+
+        // Try to find existing customer (fuzzy match)
+        $customer = null;
+        if ($email || $phone) {
+            $customer = Customer::where('tenant_id', $tenantId)
+                ->where(function($q) use ($email, $phone) {
+                    if ($email) $q->orWhere('email', $email);
+                    if ($phone) $q->orWhere('phone', $phone);
+                })
+                ->first();
+        }
+
+        if ($customer) {
+            // Update customer info if changed
+            $customer->update([
+                'name' => $name,
+                'last_order_at' => now(),
+            ]);
+
+            Log::info('[PublicFormSubmission] Existing customer found and updated', [
+                'customer_uuid' => $customer->uuid,
+                'tenant_id' => $tenantId,
+            ]);
+
+            return $customer;
+        }
+
+        // Create new customer
+        $customer = Customer::create([
+            'uuid' => Str::uuid()->toString(),
+            'tenant_id' => $tenantId,
+            'name' => $name,
+            'email' => $email,
+            'phone' => $phone,
+            'company' => trim($customerData['company'] ?? '') ?: null,
+            'address' => trim($customerData['address'] ?? '') ?: null,
+            'city' => trim($customerData['city'] ?? '') ?: null,
+            'province' => trim($customerData['province'] ?? '') ?: null,
+            'postal_code' => trim($customerData['postal_code'] ?? '') ?: null,
+            'customer_type' => 'individual',
+            'status' => 'active',
+            'source' => 'website_form',
+            'first_order_at' => now(),
+            'last_order_at' => now(),
+            'metadata' => ['source' => 'website_form'],
+        ]);
+
+        Log::info('[PublicFormSubmission] New customer created', [
+            'customer_uuid' => $customer->uuid,
+            'tenant_id' => $tenantId,
+        ]);
+
+        return $customer;
+    }
+
+    /**
+     * Sanitize email address
+     */
+    private function sanitizeEmail(?string $email): ?string
+    {
+        if (!$email) {
+            return null;
+        }
+
+        return strtolower(trim($email));
+    }
+
+    /**
+     * Sanitize phone number
+     */
+    private function sanitizePhone(?string $phone): ?string
+    {
+        if (!$phone) {
+            return null;
+        }
+
+        // Remove spaces, dashes, parentheses
+        $phone = preg_replace('/[^0-9+]/', '', $phone);
+
+        // Normalize to +62 format for Indonesian numbers
+        if (str_starts_with($phone, '0')) {
+            $phone = '+62' . substr($phone, 1);
+        } elseif (str_starts_with($phone, '62') && !str_starts_with($phone, '+')) {
+            $phone = '+' . $phone;
+        } elseif (!str_starts_with($phone, '+')) {
+            // If no country code, assume Indonesian
+            $phone = '+62' . $phone;
+        }
+
+        return $phone;
+    }
+
+    /**
+     * Validate Indonesian phone number format
+     */
+    private function isValidIndonesianPhone(string $phone): bool
+    {
+        // Indonesian phone numbers should be +62 followed by 9-12 digits
+        // Examples: +628123456789, +62811234567890
+        return preg_match('/^\+62[0-9]{9,12}$/', $phone) === 1;
+    }
+
+    /**
+     * Create order from product and form data
+     */
+    private function createOrder($product, Customer $customer, array $formData): Order
+    {
+        $quantity = (int) ($formData['quantity'] ?? $formData['jumlah'] ?? 1);
+        $unitPrice = $product->price;
+        $subtotal = $unitPrice * $quantity;
+
+        $orderNumber = $this->generateOrderNumber();
+
+        $order = Order::create([
+            'uuid' => Str::uuid()->toString(),
+            'tenant_id' => $product->tenant_id,
+            'customer_id' => $customer->id,
+            'order_number' => $orderNumber,
+            'status' => 'draft',
+            'payment_status' => 'unpaid',
+            'production_type' => 'vendor',
+            'items' => [[
+                'product_id' => $product->id,
+                'product_uuid' => $product->uuid,
+                'product_name' => $product->name,
+                'quantity' => $quantity,
+                'price' => $unitPrice,
+                'subtotal' => $subtotal,
+                'customization' => $formData,
+            ]],
+            'subtotal' => $subtotal,
+            'total_amount' => $subtotal,
+            'currency' => $product->currency ?? 'IDR',
+            'customer_notes' => $formData['notes'] ?? $formData['catatan'] ?? $formData['customer_notes'] ?? null,
+        ]);
+
+        return $order;
+    }
+
+    /**
+     * Generate unique order number
+     */
+    private function generateOrderNumber(): string
+    {
+        $prefix = 'ORD';
+        $date = now()->format('Ymd');
+        $random = strtoupper(Str::random(6));
+        return "{$prefix}-{$date}-{$random}";
     }
 }

@@ -114,20 +114,9 @@ class ProductResource extends JsonResource
                 'requiresQuote' => $this->requires_quote,
             ],
             
-            // Form Order Configuration Fields
-            'productType' => $this->product_type,
-            'bahan' => $this->bahan,
-            'bahanOptions' => $this->bahan_options ?? [],
-            'kualitas' => $this->kualitas,
-            'kualitasOptions' => $this->kualitas_options ?? [],
-            'ketebalan' => $this->ketebalan,
-            'ketebalanOptions' => $this->ketebalan_options ?? [],
-            'ukuran' => $this->ukuran,
-            'ukuranOptions' => $this->ukuran_options ?? [],
-            'warnaBackground' => $this->warna_background,
-            'designFileUrl' => $this->design_file_url,
-            'customTexts' => $this->custom_texts ?? [],
-            'notesWysiwyg' => $this->notes_wysiwyg,
+            // Form configuration is now handled via /products/{uuid}/form-configuration endpoint
+            // Legacy hardcoded fields removed - use ProductFormConfiguration API instead
+            
             'size' => $this->size,
             'quotationRequired' => $this->requires_quote,
             'vendorPrice' => $this->vendor_price,
