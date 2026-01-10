@@ -15,6 +15,9 @@ class RefundFailed
         public PaymentRefund $refund,
         public string $errorCode,
         public string $errorMessage,
-        public array $gatewayResponse = []
-    ) {}
+        public array $gatewayResponse = [],
+        public ?string $failureReason = null
+    ) {
+        $this->failureReason = $failureReason ?? $errorMessage;
+    }
 }

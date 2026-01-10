@@ -5,7 +5,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 use App\Infrastructure\Persistence\Eloquent\Models\RefundRequest;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -15,7 +15,7 @@ class RefundRequestFactory extends Factory
 
     public function definition(): array
     {
-        $tenantFactory = Tenant::factory();
+        $tenantFactory = TenantEloquentModel::factory();
         $orderFactory = Order::factory()->for($tenantFactory, 'tenant');
         $userFactory = User::factory()->for($tenantFactory, 'tenant');
 

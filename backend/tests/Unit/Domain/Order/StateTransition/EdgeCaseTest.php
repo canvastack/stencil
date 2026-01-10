@@ -6,7 +6,7 @@ use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Services\OrderStateMachine;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +17,7 @@ class EdgeCaseTest extends TestCase
     use RefreshDatabase;
 
     protected OrderStateMachine $stateMachine;
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected Customer $customer;
     protected Vendor $vendor;
     protected Order $order;
@@ -26,7 +26,7 @@ class EdgeCaseTest extends TestCase
     {
         parent::setUp();
         $this->stateMachine = app(OrderStateMachine::class);
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->order = Order::factory()->create([
@@ -57,7 +57,7 @@ class EdgeCaseTest extends TestCase
 
         $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
     }
@@ -67,8 +67,8 @@ class EdgeCaseTest extends TestCase
         $this->order->update(['status' => 'new']);
 
         $this->assertFalse($this->stateMachine->canTransition(
-            OrderStatus::NEW,
-            OrderStatus::NEW
+            OrderStatus::PENDING,
+            OrderStatus::PENDING
         ));
     }
 
@@ -78,31 +78,31 @@ class EdgeCaseTest extends TestCase
 
         $result1 = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
         $this->assertTrue($result1);
         $this->order->refresh();
-        $this->assertEquals('sourcing_vendor', $this->order->status);
+        $this->assertEquals('vendor_sourcing', $this->order->status);
 
         $this->order->update(['status' => 'new']);
         $this->order->refresh();
 
         $result2 = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
         $this->assertTrue($result2);
         $this->order->refresh();
-        $this->assertEquals('sourcing_vendor', $this->order->status);
+        $this->assertEquals('vendor_sourcing', $this->order->status);
     }
 
     public function test_transition_with_missing_required_field(): void
     {
-        $this->order->update(['status' => 'sourcing_vendor', 'vendor_id' => null]);
+        $this->order->update(['status' => 'vendor_sourcing', 'vendor_id' => null]);
 
         $errors = $this->stateMachine->validateTransition(
             $this->order,
@@ -122,13 +122,13 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
         $this->assertTrue($result);
         $this->order->refresh();
-        $this->assertEquals('sourcing_vendor', $this->order->status);
+        $this->assertEquals('vendor_sourcing', $this->order->status);
     }
 
     public function test_transition_with_corrupted_metadata(): void
@@ -141,7 +141,7 @@ class EdgeCaseTest extends TestCase
         try {
             $result = $this->stateMachine->transitionTo(
                 $this->order,
-                OrderStatus::SOURCING_VENDOR,
+                OrderStatus::VENDOR_SOURCING,
                 []
             );
             $this->assertNotNull($result);
@@ -155,9 +155,9 @@ class EdgeCaseTest extends TestCase
         $this->order->update(['status' => 'new']);
 
         $statuses = [
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             OrderStatus::VENDOR_NEGOTIATION,
-            OrderStatus::CUSTOMER_QUOTATION,
+            OrderStatus::CUSTOMER_QUOTE,
         ];
 
         foreach ($statuses as $status) {
@@ -169,7 +169,7 @@ class EdgeCaseTest extends TestCase
 
     public function test_transition_with_null_vendor(): void
     {
-        $this->order->update(['status' => 'sourcing_vendor', 'vendor_id' => null]);
+        $this->order->update(['status' => 'vendor_sourcing', 'vendor_id' => null]);
 
         $errors = $this->stateMachine->validateTransition(
             $this->order,
@@ -189,7 +189,7 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -205,7 +205,7 @@ class EdgeCaseTest extends TestCase
 
         $errors = $this->stateMachine->validateTransition(
             $this->order,
-            OrderStatus::CUSTOMER_QUOTATION,
+            OrderStatus::CUSTOMER_QUOTE,
             ['quotation_amount' => 0]
         );
 
@@ -221,7 +221,7 @@ class EdgeCaseTest extends TestCase
 
         $errors = $this->stateMachine->validateTransition(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -247,11 +247,11 @@ class EdgeCaseTest extends TestCase
 
     public function test_validation_error_handling_missing_tracking_number(): void
     {
-        $this->order->update(['status' => 'ready_to_ship', 'tracking_number' => null]);
+        $this->order->update(['status' => 'quality_control', 'tracking_number' => null]);
 
         $errors = $this->stateMachine->validateTransition(
             $this->order,
-            OrderStatus::SHIPPED,
+            OrderStatus::SHIPPING,
             []
         );
 
@@ -283,7 +283,7 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -301,7 +301,7 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -316,7 +316,7 @@ class EdgeCaseTest extends TestCase
 
         $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -337,7 +337,7 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -353,7 +353,7 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -371,7 +371,7 @@ class EdgeCaseTest extends TestCase
 
     public function test_get_available_transitions_for_all_states(): void
     {
-        $states = ['new', 'sourcing_vendor', 'vendor_negotiation', 'customer_quotation'];
+        $states = ['new', 'vendor_sourcing', 'vendor_negotiation', 'customer_quote'];
 
         foreach ($states as $state) {
             $this->order->update(['status' => $state]);
@@ -394,44 +394,44 @@ class EdgeCaseTest extends TestCase
 
         $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
         $this->stateMachine->transitionTo(
             $order2,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
         $this->order->refresh();
         $order2->refresh();
 
-        $this->assertEquals('sourcing_vendor', $this->order->status);
-        $this->assertEquals('sourcing_vendor', $order2->status);
+        $this->assertEquals('vendor_sourcing', $this->order->status);
+        $this->assertEquals('vendor_sourcing', $order2->status);
     }
 
     public function test_transition_isolation_between_tenants(): void
     {
-        $tenant2 = Tenant::factory()->create();
+        $tenant2 = TenantEloquentModel::factory()->create();
         $customer2 = Customer::factory()->create(['tenant_id' => $tenant2->id]);
         $vendor2 = Vendor::factory()->create(['tenant_id' => $tenant2->id]);
         $order2 = Order::factory()->create([
             'tenant_id' => $tenant2->id,
             'customer_id' => $customer2->id,
             'vendor_id' => $vendor2->id,
-            'status' => 'new',
+            'status' => 'vendor_sourcing',
         ]);
 
         $this->order->update(['status' => 'new']);
 
-        $this->stateMachine->transitionTo($this->order, OrderStatus::SOURCING_VENDOR, []);
+        $this->stateMachine->transitionTo($this->order, OrderStatus::VENDOR_SOURCING, []);
         $this->stateMachine->transitionTo($order2, OrderStatus::VENDOR_NEGOTIATION, []);
 
         $this->order->refresh();
         $order2->refresh();
 
-        $this->assertEquals('sourcing_vendor', $this->order->status);
+        $this->assertEquals('vendor_sourcing', $this->order->status);
         $this->assertEquals('vendor_negotiation', $order2->status);
     }
 
@@ -441,7 +441,7 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -465,7 +465,7 @@ class EdgeCaseTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $this->order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -477,13 +477,13 @@ class EdgeCaseTest extends TestCase
     public function test_validation_with_multiple_errors(): void
     {
         $this->order->update([
-            'status' => 'ready_to_ship',
+            'status' => 'quality_control',
             'tracking_number' => null,
         ]);
 
         $errors = $this->stateMachine->validateTransition(
             $this->order,
-            OrderStatus::SHIPPED,
+            OrderStatus::SHIPPING,
             []
         );
 

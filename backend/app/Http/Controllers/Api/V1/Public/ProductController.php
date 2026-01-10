@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ProductSearch;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Presentation\Http\Resources\Product\ProductResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -60,7 +60,7 @@ class ProductController extends Controller
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
-                $tenant = Tenant::where('slug', $tenantSlug)->first();
+                $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
@@ -235,7 +235,7 @@ class ProductController extends Controller
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
-                $tenant = Tenant::where('slug', $tenantSlug)->first();
+                $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
@@ -283,7 +283,7 @@ class ProductController extends Controller
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
-                $tenant = Tenant::where('slug', $tenantSlug)->first();
+                $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
@@ -336,7 +336,7 @@ class ProductController extends Controller
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
-                $tenant = Tenant::where('slug', $tenantSlug)->first();
+                $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
@@ -414,7 +414,7 @@ class ProductController extends Controller
             $query = Product::with('category', 'variants')->published()->where('slug', $slug);
             
             // Filter by tenant since tenantSlug is always provided in this route
-            $tenant = Tenant::where('slug', $tenantSlug)->first();
+            $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
             \Log::info("Tenant lookup result", ['tenant' => $tenant]);
             
             if (!$tenant) {
@@ -498,7 +498,7 @@ class ProductController extends Controller
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
-                $tenant = \App\Infrastructure\Persistence\Eloquent\Models\Tenant::where('slug', $tenantSlug)->first();
+                $tenant = \App\Infrastructure\Persistence\Eloquent\Models\TenantEloquentModel::where('slug', $tenantSlug)->first();
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
@@ -550,7 +550,7 @@ class ProductController extends Controller
     {
         try {
             // Find tenant
-            $tenant = Tenant::where('slug', $tenantSlug)->first();
+            $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
             if (!$tenant) {
                 return response()->json(['error' => 'Tenant not found'], 404);
             }

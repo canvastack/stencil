@@ -89,7 +89,7 @@ class QueryHandlersTest extends TestCase
         
         $query = new GetOrdersByStatusQuery(
             tenantId: '550e8400-e29b-41d4-a716-446655440000',
-            status: OrderStatus::NEW->value,
+            status: OrderStatus::PENDING->value,
             page: 2,
             perPage: 10,
         );

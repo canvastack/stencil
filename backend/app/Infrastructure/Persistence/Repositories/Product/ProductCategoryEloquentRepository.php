@@ -9,7 +9,7 @@ use App\Domain\Product\ValueObjects\ProductCategoryName;
 use App\Domain\Product\ValueObjects\ProductCategorySlug;
 use App\Domain\Shared\ValueObjects\Uuid;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory as ProductCategoryModel;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -21,16 +21,16 @@ class ProductCategoryEloquentRepository
 {
     private ProductCategoryModel $categoryModel;
 
-    private Tenant $tenantModel;
+    private TenantEloquentModel $tenantModel;
 
     private array $tenantUuidMap = [];
 
     public function __construct(
         ?ProductCategoryModel $categoryModel = null,
-        ?Tenant $tenantModel = null,
+        ?TenantEloquentModel $tenantModel = null,
     ) {
         $this->categoryModel = $categoryModel ?? new ProductCategoryModel();
-        $this->tenantModel = $tenantModel ?? new Tenant();
+        $this->tenantModel = $tenantModel ?? new TenantEloquentModel();
     }
 
     public function save(ProductCategory $category): ProductCategory
@@ -436,7 +436,7 @@ class ProductCategoryEloquentRepository
         return $this->tenantUuidMap[$uuid];
     }
 
-    private function resolveTenant(string $uuid, ?string $name, ?string $slug, ?int $preferredId = null): Tenant
+    private function resolveTenant(string $uuid, ?string $name, ?string $slug, ?int $preferredId = null): TenantEloquentModel
     {
         $normalizedUuid = $this->normalizeTenantUuid($uuid);
 

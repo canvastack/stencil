@@ -41,6 +41,7 @@ class UserRegistrationTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'User',
             'slug' => 'user',
+            'guard_name' => 'api',
             'description' => 'Default user role',
         ]);
         
@@ -49,6 +50,7 @@ class UserRegistrationTest extends TestCase
             'tenant_id' => null,
             'name' => 'Platform Owner',
             'slug' => 'platform-owner',
+            'guard_name' => 'api',
             'description' => 'Platform owner role',
         ]);
         
@@ -384,7 +386,7 @@ class UserRegistrationTest extends TestCase
                 'name' => 'API Test Tenant',
                 'slug' => 'api-test-tenant',
                 'domain' => 'api-test-tenant.com',
-                'subscription_status' => 'basic',
+                'subscription_status' => 'trial',
             ],
             'admin' => [
                 'name' => $this->faker->name,

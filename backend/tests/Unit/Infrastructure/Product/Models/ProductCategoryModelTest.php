@@ -4,7 +4,7 @@ namespace Tests\Unit\Infrastructure\Product\Models;
 
 use Tests\TestCase;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,14 +13,14 @@ class ProductCategoryModelTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
 
     protected function setUp(): void
     {
         parent::setUp();
         
         // Create test tenant in database
-        $this->tenant = Tenant::create([
+        $this->tenant = TenantEloquentModel::create([
             'uuid' => '987e6543-e21c-34d5-b678-123456789012',
             'name' => 'Test Tenant',
             'slug' => 'test-tenant',

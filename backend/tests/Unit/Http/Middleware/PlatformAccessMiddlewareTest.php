@@ -93,9 +93,9 @@ class PlatformAccessMiddlewareTest extends TestCase
 
         $result = $this->middleware->handle($request, $next);
 
-        $this->assertEquals(403, $result->getStatusCode());
+        $this->assertEquals(401, $result->getStatusCode());
         $response = json_decode($result->getContent(), true);
-        $this->assertEquals('Unauthorized', $response['message']);
+        $this->assertEquals('Unauthenticated', $response['message']);
     }
 
     /** @test */

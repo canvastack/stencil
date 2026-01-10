@@ -5,13 +5,13 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Infrastructure\Persistence\Eloquent\Models\NotificationTemplate;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 
 class RefundNotificationTemplateSeeder extends Seeder
 {
     public function run(): void
     {
-        $tenants = Tenant::all();
+        $tenants = TenantEloquentModel::all();
 
         foreach ($tenants as $tenant) {
             $this->createRefundTemplates($tenant->id);

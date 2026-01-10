@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Domain\Content\Services\TenantContentService;
 use Illuminate\Support\Facades\DB;
 
@@ -40,7 +40,7 @@ class SeedTenantContent extends Command
             $this->seedTenant($tenantSlug);
         } else {
             $this->info('Seeding content for all tenants...');
-            $tenants = Tenant::all();
+            $tenants = TenantEloquentModel::all();
             foreach ($tenants as $tenant) {
                 $this->seedTenant($tenant->slug);
             }
@@ -51,7 +51,7 @@ class SeedTenantContent extends Command
 
     private function seedTenant(string $tenantSlug)
     {
-        $tenant = Tenant::where('slug', $tenantSlug)->first();
+        $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
         
         if (!$tenant) {
             $this->error("❌ Tenant '{$tenantSlug}' not found");

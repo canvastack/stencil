@@ -5,7 +5,7 @@ require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
 $app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
 
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use Illuminate\Support\Facades\DB;
 
@@ -26,14 +26,14 @@ $productCounts = Product::select('tenant_id', DB::raw('count(*) as count'))
     
 echo "PRODUCT COUNTS PER TENANT:" . PHP_EOL;
 foreach ($productCounts as $pc) {
-    $tenant = Tenant::find($pc->tenant_id);
+    $tenant = TenantEloquentModel::find($pc->tenant_id);
     $tenantInfo = $tenant ? "'{$tenant->slug}'" : "UNKNOWN/DELETED";
     echo "  - Tenant: {$tenantInfo} (ID: {$pc->tenant_id}) -> {$pc->count} products" . PHP_EOL;
 }
 echo PHP_EOL;
 
 // 3. Check if 'etchinx' tenant exists
-$etchinxTenant = Tenant::where('slug', 'etchinx')->first();
+$etchinxTenant = TenantEloquentModel::where('slug', 'etchinx')->first();
 if ($etchinxTenant) {
     echo "ETCHINX TENANT FOUND:" . PHP_EOL;
     echo "  - ID: {$etchinxTenant->id}" . PHP_EOL;
@@ -69,7 +69,7 @@ if ($etchinxTenant) {
     if ($otherProducts->count() > 0) {
         echo "PRODUCTS FROM OTHER TENANTS (should NOT appear on /etchinx/products):" . PHP_EOL;
         foreach ($otherProducts as $p) {
-            $tenant = Tenant::find($p->tenant_id);
+            $tenant = TenantEloquentModel::find($p->tenant_id);
             $tenantSlug = $tenant ? $tenant->slug : 'UNKNOWN';
             echo "  - UUID: {$p->uuid} | Name: {$p->name} | Tenant: {$tenantSlug} (ID: {$p->tenant_id})" . PHP_EOL;
         }

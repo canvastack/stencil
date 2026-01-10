@@ -100,11 +100,12 @@ Route::prefix('platform')->group(function () {
     Route::post('/check-email', [RegistrationController::class, 'checkEmailAvailability'])->name('platform.check.email');
     
     // Protected authentication routes
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('auth:platform', 'platform.access')->group(function () {
         Route::post('/logout', [PlatformAuthController::class, 'logout'])->name('platform.auth.logout');
         Route::post('/refresh', [PlatformAuthController::class, 'refresh'])->name('platform.auth.refresh');
         Route::get('/me', [PlatformAuthController::class, 'me'])->name('platform.auth.me');
         Route::post('/validate', [PlatformAuthController::class, 'validateToken'])->name('platform.auth.validate');
+        Route::get('/validate-token', [PlatformAuthController::class, 'validateToken'])->name('platform.auth.validate_token');
     });
 });
 
@@ -135,6 +136,7 @@ Route::prefix('tenant')->group(function () {
         Route::post('/refresh', [TenantAuthController::class, 'refresh'])->name('tenant.auth.refresh');
         Route::get('/me', [TenantAuthController::class, 'me'])->name('tenant.auth.me');
         Route::post('/validate', [TenantAuthController::class, 'validateToken'])->name('tenant.auth.validate');
+        Route::get('/validate-token', [TenantAuthController::class, 'validateToken'])->name('tenant.auth.validate_token');
         Route::post('/switch-role', [TenantAuthController::class, 'switchRole'])->name('tenant.auth.switch_role');
     });
 });
@@ -193,6 +195,49 @@ Route::prefix('auth')->group(function () {
     
     // Public registration routes for tenant creation
     Route::post('/register-tenant', [RegistrationController::class, 'registerTenantWithAdmin'])->name('auth.register.tenant');
+});
+
+// API v1 Authentication Routes (REST API with versioning)
+// Note: This file is included from routes/api.php which already has /api/v1 prefix from RouteServiceProvider
+// So we only need to add 'auth' prefix here
+Route::prefix('auth')->group(function () {
+    // Platform authentication routes
+    Route::prefix('platform')->group(function () {
+        Route::post('/register', [RegistrationController::class, 'registerPlatformAccount']);
+        Route::post('/check-email', [RegistrationController::class, 'checkEmailAvailability']);
+        Route::post('/login', [PlatformAuthController::class, 'login']);
+        
+        // Password reset
+        Route::post('/forgot-password', [PasswordResetController::class, 'forgotPasswordPlatform']);
+        Route::post('/reset-password', [PasswordResetController::class, 'resetPasswordPlatform']);
+        Route::post('/validate-token', [PasswordResetController::class, 'validateTokenPlatform']);
+        
+        // Email verification
+        Route::post('/send-verification', [EmailVerificationController::class, 'sendPlatformVerification']);
+        Route::post('/verify-email', [EmailVerificationController::class, 'verify']);
+        Route::get('/verification-status', [EmailVerificationController::class, 'checkVerificationStatus']);
+    });
+    
+    // Tenant authentication routes
+    Route::prefix('tenant/{tenantId}')->group(function () {
+        Route::post('/register', [RegistrationController::class, 'registerTenantUser']);
+        Route::post('/check-email', [RegistrationController::class, 'checkEmailAvailability']);
+        Route::get('/registration-stats', [RegistrationController::class, 'getRegistrationStats']);
+        Route::post('/login', [TenantAuthController::class, 'login']);
+        
+        // Password reset
+        Route::post('/forgot-password', [PasswordResetController::class, 'forgotPasswordTenant']);
+        Route::post('/reset-password', [PasswordResetController::class, 'resetPasswordTenant']);
+        Route::post('/validate-token', [PasswordResetController::class, 'validateTokenTenant']);
+        
+        // Email verification
+        Route::post('/send-verification', [EmailVerificationController::class, 'sendTenantVerification']);
+        Route::post('/verify-email', [EmailVerificationController::class, 'verify']);
+        Route::get('/verification-status', [EmailVerificationController::class, 'checkVerificationStatus']);
+    });
+    
+    // General registration routes
+    Route::post('/register-tenant', [RegistrationController::class, 'registerTenantWithAdmin']);
 });
 
 /*

@@ -23,7 +23,7 @@ class OrderWorkflowIntegrationTest extends TestCase
     private AssignVendorUseCase $assignVendorUseCase;
     private NegotiateWithVendorUseCase $negotiateWithVendorUseCase;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private Customer $customer;
     private Vendor $vendor;
     private Product $product;
@@ -39,7 +39,7 @@ class OrderWorkflowIntegrationTest extends TestCase
 
         Event::fake();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->product = Product::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -202,7 +202,7 @@ class OrderWorkflowIntegrationTest extends TestCase
     /** @test */
     public function order_workflow_respects_tenant_isolation(): void
     {
-        $tenantB = Tenant::factory()->create();
+        $tenantB = TenantEloquentModel::factory()->create();
         $customerB = Customer::factory()->create(['tenant_id' => $tenantB->id]);
         $productB = Product::factory()->create(['tenant_id' => $tenantB->id]);
 

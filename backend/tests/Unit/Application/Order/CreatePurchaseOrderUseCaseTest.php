@@ -61,7 +61,7 @@ class CreatePurchaseOrderUseCaseTest extends TestCase
             ->shouldReceive('save')
             ->once()
             ->andReturnUsing(function (Order $order) {
-                $this->assertEquals(OrderStatus::NEW, $order->getStatus());
+                $this->assertEquals(OrderStatus::PENDING, $order->getStatus());
                 $this->assertEquals(100000.00, $order->getTotal()->getAmount());
                 $this->assertEquals('IDR', $order->getTotal()->getCurrency());
                 return $order;
@@ -70,7 +70,7 @@ class CreatePurchaseOrderUseCaseTest extends TestCase
         $result = $this->useCase->execute($command);
 
         $this->assertInstanceOf(Order::class, $result);
-        $this->assertEquals(OrderStatus::NEW, $result->getStatus());
+        $this->assertEquals(OrderStatus::PENDING, $result->getStatus());
         $this->assertEquals(100000.00, $result->getTotal()->getAmount());
     }
 

@@ -3,7 +3,7 @@
 namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\ShippingMethod;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ShippingMethodFactory extends Factory
@@ -15,15 +15,17 @@ class ShippingMethodFactory extends Factory
         $carriers = ['JNE', 'JNT', 'SiCepat', 'Pos Indonesia', 'TIKI'];
         $types = ['standard', 'express', 'same_day', 'pickup', 'next_day'];
         $carrier = $this->faker->randomElement($carriers);
+        $type = $this->faker->randomElement($types);
+        $uniqueSuffix = uniqid();
         
         return [
             'uuid' => $this->faker->uuid(),
-            'tenant_id' => Tenant::factory(),
-            'name' => $carrier . ' ' . ucfirst($this->faker->randomElement($types)),
-            'code' => strtoupper($carrier) . '_' . strtoupper($this->faker->randomElement($types)),
+            'tenant_id' => TenantEloquentModel::factory(),
+            'name' => $carrier . ' ' . ucfirst($type),
+            'code' => strtoupper($carrier) . '_' . strtoupper($type) . '_' . $uniqueSuffix,
             'description' => $this->faker->text(100),
             'carrier' => $carrier,
-            'type' => $this->faker->randomElement($types),
+            'type' => $type,
             'service_areas' => [
                 'cities' => $this->faker->randomElements(['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang'], 3),
                 'provinces' => $this->faker->randomElements(['DKI Jakarta', 'Jawa Barat', 'Jawa Timur', 'Sumatera Utara'], 2)

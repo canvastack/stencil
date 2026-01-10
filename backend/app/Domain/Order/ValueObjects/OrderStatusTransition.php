@@ -54,7 +54,8 @@ class OrderStatusTransition
         $missing = [];
 
         foreach ($required as $field) {
-            if (empty($orderData[$field]) && $orderData[$field] !== 0 && $orderData[$field] !== '0') {
+            $value = $orderData[$field] ?? null;
+            if (empty($value) && $value !== 0 && $value !== '0') {
                 $description = self::FIELD_DESCRIPTIONS[$field] ?? $field;
                 $missing[] = [
                     'field' => $field,

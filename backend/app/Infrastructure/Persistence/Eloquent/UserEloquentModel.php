@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Persistence\Eloquent;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -12,11 +13,17 @@ use Illuminate\Notifications\Notifiable;
 
 class UserEloquentModel extends Authenticatable
 {
-    use HasApiTokens, Notifiable;
+    use HasApiTokens, Notifiable, HasFactory;
 
     protected $table = 'users';
+    
+    protected static function newFactory()
+    {
+        return \Database\Factories\Infrastructure\Persistence\Eloquent\UserEloquentModelFactory::new();
+    }
 
     protected $fillable = [
+        'uuid',
         'tenant_id',
         'name',
         'email',
@@ -26,6 +33,7 @@ class UserEloquentModel extends Authenticatable
         'department',
         'location',
         'avatar',
+        'email_verified_at',
         'last_login_at',
     ];
 

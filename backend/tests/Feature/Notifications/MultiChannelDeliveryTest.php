@@ -8,7 +8,7 @@ use App\Infrastructure\Notifications\Channels\SmsChannel;
 use App\Infrastructure\Notifications\Channels\WhatsappChannel;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -18,7 +18,7 @@ class MultiChannelDeliveryTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected Customer $customer;
     protected Order $order;
 
@@ -29,7 +29,7 @@ class MultiChannelDeliveryTest extends TestCase
         config()->set('services.sms.enabled', true);
         config()->set('app.frontend_url', 'https://example.com');
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
             'phone' => '081234567890',

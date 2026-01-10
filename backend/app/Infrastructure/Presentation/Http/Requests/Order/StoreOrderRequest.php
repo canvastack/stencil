@@ -124,8 +124,14 @@ class StoreOrderRequest extends FormRequest
             'down_payment_due_at' => 'nullable|date',
             'payment_schedule' => 'nullable|array',
             
-            'shipping_address' => 'required|string',
-            'billing_address' => 'nullable|string',
+            'shipping_address' => 'nullable|array',
+            'shipping_address.address' => 'required_with:shipping_address|string',
+            'shipping_address.city' => 'nullable|string',
+            'shipping_address.postal_code' => 'nullable|string',
+            'billing_address' => 'nullable|array',
+            'billing_address.address' => 'required_with:billing_address|string',
+            'billing_address.city' => 'nullable|string',
+            'billing_address.postal_code' => 'nullable|string',
             
             'customer_notes' => 'nullable|string',
             'internal_notes' => 'nullable|string',

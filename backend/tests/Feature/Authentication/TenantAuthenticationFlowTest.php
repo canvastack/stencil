@@ -41,6 +41,7 @@ class TenantAuthenticationFlowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Admin',
             'slug' => 'admin',
+            'guard_name' => 'api',
             'description' => 'Full tenant access',
             'abilities' => [
                 'dashboard.read',
@@ -67,6 +68,7 @@ class TenantAuthenticationFlowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Manager',
             'slug' => 'manager',
+            'guard_name' => 'api',
             'description' => 'Management access',
             'abilities' => [
                 'dashboard.read',
@@ -83,6 +85,7 @@ class TenantAuthenticationFlowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Sales',
             'slug' => 'sales',
+            'guard_name' => 'api',
             'description' => 'Sales access',
             'abilities' => [
                 'dashboard.read',

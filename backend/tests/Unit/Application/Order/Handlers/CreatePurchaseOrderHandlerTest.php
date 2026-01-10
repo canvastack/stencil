@@ -66,7 +66,7 @@ class CreatePurchaseOrderHandlerTest extends TestCase
         $result = $this->handler->handle($command);
 
         $this->assertInstanceOf(Order::class, $result);
-        $this->assertEquals(OrderStatus::NEW, $result->getStatus());
+        $this->assertEquals(OrderStatus::PENDING, $result->getStatus());
         $this->assertEquals(100000.00, $result->getTotal()->getAmount());
     }
 

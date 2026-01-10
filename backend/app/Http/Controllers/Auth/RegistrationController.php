@@ -153,11 +153,16 @@ class RegistrationController extends Controller
             \Log::error('Tenant with admin registration failed', [
                 'tenant_name' => $request->input('tenant.name', 'unknown'),
                 'admin_email' => $request->input('admin.email', 'unknown'),
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
+            $errorMessage = app()->environment('testing', 'local') 
+                ? $e->getMessage() 
+                : 'Registration failed. Please try again.';
+
             return response()->json([
-                'message' => 'Registration failed. Please try again.',
+                'message' => $errorMessage,
                 'success' => false,
             ], 500);
         }
@@ -170,7 +175,7 @@ class RegistrationController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'tenant_id' => 'nullable|string|exists:tenants,id',
+            'tenant_id' => 'nullable|exists:tenants,id',
         ]);
 
         try {

@@ -9,7 +9,7 @@ use App\Domain\Order\Jobs\OrderSlaMonitorJob;
 use App\Domain\Order\Services\OrderStateMachine;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -32,7 +32,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
     protected function createTestOrder(string $status = 'sourcing_vendor'): Order
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = TenantEloquentModel::factory()->create();
         $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
         $vendor = Vendor::factory()->create(['tenant_id' => $tenant->id]);
         $order = Order::factory()->create([
@@ -49,7 +49,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $order = $this->createTestOrder('sourcing_vendor');
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             thresholdCheck: true
         );
 
@@ -65,7 +65,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(300)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -76,7 +76,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             thresholdCheck: true
         );
 
@@ -91,7 +91,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(250)->toIso8601String(),
                 'escalations' => [
                     [
@@ -115,7 +115,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             escalationIndex: 0
         );
 
@@ -132,7 +132,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(370)->toIso8601String(),
                 'escalations' => [
                     [
@@ -156,7 +156,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             escalationIndex: 1
         );
 
@@ -173,7 +173,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(250)->toIso8601String(),
                 'escalations' => [
                     [
@@ -191,7 +191,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             escalationIndex: 0
         );
 
@@ -208,7 +208,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(240)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -219,7 +219,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             thresholdCheck: true
         );
 
@@ -261,7 +261,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(250)->toIso8601String(),
                 'escalations' => [
                     [
@@ -279,7 +279,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             escalationIndex: 0
         );
 
@@ -292,7 +292,7 @@ class OrderSlaMonitorJobTest extends TestCase
     {
         $job = new OrderSlaMonitorJob(
             orderId: 99999,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             thresholdCheck: true
         );
 
@@ -309,7 +309,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(250)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -320,7 +320,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             escalationIndex: 0
         );
 
@@ -335,7 +335,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(300)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -346,7 +346,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             escalationIndex: null,
             thresholdCheck: true
         );
@@ -362,7 +362,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(400)->toIso8601String(),
                 'escalations' => [
                     [
@@ -386,7 +386,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             escalationIndex: 1
         );
 
@@ -401,7 +401,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(300)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -412,7 +412,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             thresholdCheck: true
         );
 
@@ -461,7 +461,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'quality_check',
+                'status' => 'quality_control',
                 'started_at' => now()->subMinutes(750)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -472,7 +472,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'quality_check',
+            status: 'quality_control',
             thresholdCheck: true
         );
 
@@ -487,7 +487,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(100)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -498,7 +498,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             thresholdCheck: true
         );
 
@@ -511,20 +511,20 @@ class OrderSlaMonitorJobTest extends TestCase
     public function test_tenant_scoping_respected_in_job(): void
     {
         $order = $this->createTestOrder('sourcing_vendor');
-        $tenant2 = Tenant::factory()->create();
+        $tenant2 = TenantEloquentModel::factory()->create();
         $customer2 = Customer::factory()->create(['tenant_id' => $tenant2->id]);
         $vendor2 = Vendor::factory()->create(['tenant_id' => $tenant2->id]);
         $order2 = Order::factory()->create([
             'tenant_id' => $tenant2->id,
             'customer_id' => $customer2->id,
             'vendor_id' => $vendor2->id,
-            'status' => 'sourcing_vendor',
+            'status' => 'vendor_sourcing',
         ]);
 
         $metadata = $order->metadata ?? [];
         $metadata['sla'] = [
             'active' => [
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'started_at' => now()->subMinutes(300)->toIso8601String(),
                 'escalations' => [],
                 'breached' => false,
@@ -535,7 +535,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
-            status: 'sourcing_vendor',
+            status: 'vendor_sourcing',
             thresholdCheck: true
         );
 

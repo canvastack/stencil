@@ -46,6 +46,7 @@ class AuthControllerTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Admin',
             'slug' => 'admin',
+            'guard_name' => 'api',
             'description' => 'Administrator',
             'abilities' => ['read', 'write', 'delete']
         ]);

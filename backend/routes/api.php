@@ -192,6 +192,17 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
 // Tenant API (authenticated tenant users)
 // Note: Tenant content management routes are in tenant.php using Tenant\ContentController
 
+// Refund Management API Routes (RouteServiceProvider already adds api/v1 prefix)
+Route::prefix('refunds')->middleware(['auth:sanctum'])->group(function () {
+    Route::get('/', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'index']);
+    Route::post('/', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'store']);
+    Route::get('/statistics', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'statistics']);
+    Route::get('/{requestNumber}', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'show']);
+    Route::put('/{requestNumber}', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'update']);
+    Route::post('/{requestNumber}/approve', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'approve']);
+    Route::get('/{requestNumber}/approvals', [App\Infrastructure\Presentation\Http\Controllers\Tenant\RefundManagementController::class, 'approvals']);
+});
+
 // Public API (No authentication required)
 Route::prefix('public')->group(function () {
     // Tenant discovery by domain

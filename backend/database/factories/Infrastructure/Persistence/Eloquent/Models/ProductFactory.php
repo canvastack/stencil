@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
@@ -20,7 +20,7 @@ class ProductFactory extends Factory
 
         return [
             'uuid' => Uuid::uuid4()->toString(),
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => TenantEloquentModel::factory(),
             'name' => Str::title($name),
             'sku' => Str::upper($this->faker->unique()->bothify('SKU-####')),
             'description' => $this->faker->sentence(),

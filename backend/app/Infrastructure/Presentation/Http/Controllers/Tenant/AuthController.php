@@ -88,6 +88,11 @@ class AuthController extends Controller
             
             return response()->json($response);
 
+        } catch (\Illuminate\Auth\AuthenticationException $e) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+                'error' => $e->getMessage()
+            ], 401);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Authentication failed',
@@ -170,6 +175,11 @@ class AuthController extends Controller
             
             return response()->json($response);
 
+        } catch (\Illuminate\Auth\AuthenticationException $e) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+                'error' => $e->getMessage()
+            ], 401);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Authentication failed',
@@ -194,7 +204,21 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            $this->authService->logout($user);
+            
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+            
+            // Delete the current access token
+            $currentToken = $user->currentAccessToken();
+            if ($currentToken) {
+                $currentToken->delete();
+            } else {
+                // Fallback: delete all tokens for this user
+                $user->tokens()->delete();
+            }
             
             // Log logout
             // activity()
@@ -244,12 +268,52 @@ class AuthController extends Controller
         try {
             $user = $request->user();
             
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Unauthenticated',
+                    'error' => 'User not found'
+                ], 401);
+            }
+            
+            // Check if user is platform account (should use platform endpoints instead)
+            if ($user instanceof \App\Infrastructure\Persistence\Eloquent\AccountEloquentModel) {
+                return response()->json([
+                    'message' => 'Unauthorized',
+                    'error' => 'Platform accounts should use /api/v1/platform/me endpoint'
+                ], 401);
+            }
+            
+            // Ensure user has tenant_id
+            if (!isset($user->tenant_id) || empty($user->tenant_id)) {
+                return response()->json([
+                    'message' => 'Unauthorized',
+                    'error' => 'User does not belong to any tenant'
+                ], 401);
+            }
+            
+            // Load tenant relationship if not loaded
+            if (!$user->relationLoaded('tenant')) {
+                $user->load('tenant');
+            }
+            
+            $tenant = $user->tenant;
+            
+            if (!$tenant) {
+                // Fallback: direct query if relationship not working
+                $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::find($user->tenant_id);
+                
+                if (!$tenant) {
+                    return response()->json([
+                        'message' => 'Tenant not found',
+                        'error' => 'User tenant context is missing'
+                    ], 404);
+                }
+            }
+            
             // Load roles if not already loaded
             if (!$user->relationLoaded('roles')) {
                 $user->load('roles');
             }
-            
-            $tenant = $user->tenant;
             
             return response()->json([
                 'user' => [
@@ -268,21 +332,27 @@ class AuthController extends Controller
                     'id' => $tenant->id,
                     'name' => $tenant->name,
                     'slug' => $tenant->slug,
-                    'domain' => $tenant->domain,
+                    'domain' => $tenant->domain ?? null,
                     'status' => $tenant->status,
                     'subscription_status' => $tenant->subscription_status,
-                    'public_url' => $tenant->getPublicUrl(),
-                    'admin_url' => $tenant->getAdminUrl()
+                    'public_url' => method_exists($tenant, 'getPublicUrl') ? $tenant->getPublicUrl() : null,
+                    'admin_url' => method_exists($tenant, 'getAdminUrl') ? $tenant->getAdminUrl() : null
                 ],
-                'permissions' => $user->getAllPermissions(),
-                'roles' => $user->roles->pluck('name')->toArray(),
+                'permissions' => method_exists($user, 'getAllPermissions') ? $user->getAllPermissions() : [],
+                'roles' => $user->roles ? $user->roles->pluck('name')->toArray() : [],
                 'account_type' => 'tenant'
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('TenantAuthController::me() failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'message' => 'Failed to retrieve user information',
-                'error' => 'An unexpected error occurred'
+                'error' => 'An unexpected error occurred',
+                'details' => $e->getMessage()
             ], 500);
         }
     }

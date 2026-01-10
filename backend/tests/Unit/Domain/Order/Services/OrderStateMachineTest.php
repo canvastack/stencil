@@ -9,7 +9,7 @@ use App\Domain\Order\Jobs\OrderSlaMonitorJob;
 use App\Domain\Order\Services\OrderStateMachine;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,15 +31,15 @@ class OrderStateMachineTest extends TestCase
 
     public function test_can_transition_from_new_to_sourcing_vendor(): void
     {
-        $currentStatus = OrderStatus::NEW;
-        $newStatus = OrderStatus::SOURCING_VENDOR;
+        $currentStatus = OrderStatus::PENDING;
+        $newStatus = OrderStatus::VENDOR_SOURCING;
 
         $this->assertTrue($this->stateMachine->canTransition($currentStatus, $newStatus));
     }
 
     public function test_cannot_transition_from_new_to_completed(): void
     {
-        $currentStatus = OrderStatus::NEW;
+        $currentStatus = OrderStatus::PENDING;
         $newStatus = OrderStatus::COMPLETED;
 
         $this->assertFalse($this->stateMachine->canTransition($currentStatus, $newStatus));
@@ -47,7 +47,7 @@ class OrderStateMachineTest extends TestCase
 
     public function test_cannot_transition_to_same_status(): void
     {
-        $status = OrderStatus::NEW;
+        $status = OrderStatus::PENDING;
 
         $this->assertFalse($this->stateMachine->canTransition($status, $status));
     }
@@ -71,7 +71,7 @@ class OrderStateMachineTest extends TestCase
     public function test_validate_transition_requires_vendor_for_negotiation(): void
     {
         $order = Order::factory()->create([
-            'status' => 'sourcing_vendor',
+            'status' => 'vendor_sourcing',
             'vendor_id' => null,
         ]);
 
@@ -93,7 +93,7 @@ class OrderStateMachineTest extends TestCase
 
         $errors = $this->stateMachine->validateTransition(
             $order,
-            OrderStatus::CUSTOMER_QUOTATION,
+            OrderStatus::CUSTOMER_QUOTE,
             []
         );
 
@@ -104,13 +104,13 @@ class OrderStateMachineTest extends TestCase
     public function test_validate_transition_requires_tracking_number_for_shipped(): void
     {
         $order = Order::factory()->create([
-            'status' => 'ready_to_ship',
+            'status' => 'quality_control',
             'tracking_number' => null,
         ]);
 
         $errors = $this->stateMachine->validateTransition(
             $order,
-            OrderStatus::SHIPPED,
+            OrderStatus::SHIPPING,
             []
         );
 
@@ -138,12 +138,12 @@ class OrderStateMachineTest extends TestCase
 
         $result = $this->stateMachine->transitionTo(
             $order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
         $this->assertTrue($result);
-        $this->assertEquals('sourcing_vendor', $order->fresh()->status);
+        $this->assertEquals('vendor_sourcing', $order->fresh()->status);
     }
 
     public function test_transition_throws_exception_for_invalid_transition(): void
@@ -162,14 +162,14 @@ class OrderStateMachineTest extends TestCase
     public function test_transition_to_payment_received_updates_payment_info(): void
     {
         $order = Order::factory()->create([
-            'status' => 'waiting_payment',
+            'status' => 'awaiting_payment',
             'payment_status' => 'unpaid',
             'total_paid_amount' => 0,
         ]);
 
         $this->stateMachine->transitionTo(
             $order,
-            OrderStatus::PAYMENT_RECEIVED,
+            OrderStatus::FULL_PAYMENT,
             [
                 'payment' => [
                     'amount' => $order->total_amount,
@@ -181,7 +181,7 @@ class OrderStateMachineTest extends TestCase
 
         $order->refresh();
 
-        $this->assertEquals('payment_received', $order->status);
+        $this->assertEquals('full_payment', $order->status);
         $this->assertEquals('paid', $order->payment_status);
         $this->assertEquals($order->total_amount, $order->total_paid_amount);
         $this->assertNotNull($order->payment_date);
@@ -195,14 +195,14 @@ class OrderStateMachineTest extends TestCase
     public function test_partial_payment_sets_partially_paid_status(): void
     {
         $order = Order::factory()->create([
-            'status' => 'waiting_payment',
+            'status' => 'awaiting_payment',
             'payment_status' => 'unpaid',
             'total_paid_amount' => 0,
         ]);
 
         $this->stateMachine->transitionTo(
             $order,
-            OrderStatus::PAYMENT_RECEIVED,
+            OrderStatus::FULL_PAYMENT,
             [
                 'payment' => [
                     'amount' => (int) ($order->total_amount / 2),
@@ -213,7 +213,7 @@ class OrderStateMachineTest extends TestCase
 
         $order->refresh();
 
-        $this->assertEquals('payment_received', $order->status);
+        $this->assertEquals('full_payment', $order->status);
         $this->assertEquals('partially_paid', $order->payment_status);
         $this->assertEquals((int) ($order->total_amount / 2), $order->total_paid_amount);
         $this->assertNotNull($order->down_payment_paid_at);
@@ -222,14 +222,14 @@ class OrderStateMachineTest extends TestCase
 
     public function test_additional_payment_during_production_completes_balance(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = TenantEloquentModel::factory()->create();
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
 
         $order = Order::factory()
             ->for($tenant, 'tenant')
             ->for($customer)
             ->state([
-                'status' => 'waiting_payment',
+                'status' => 'awaiting_payment',
                 'payment_status' => 'unpaid',
                 'total_paid_amount' => 0,
             ])
@@ -239,7 +239,7 @@ class OrderStateMachineTest extends TestCase
 
         $this->stateMachine->transitionTo(
             $order,
-            OrderStatus::PAYMENT_RECEIVED,
+            OrderStatus::FULL_PAYMENT,
             [
                 'payment' => [
                     'amount' => $downPayment,
@@ -271,7 +271,7 @@ class OrderStateMachineTest extends TestCase
 
     public function test_vendor_disbursement_is_recorded_during_production_transition(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = TenantEloquentModel::factory()->create();
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
         $vendor = Vendor::factory()->for($tenant, 'tenant')->create();
 
@@ -279,7 +279,7 @@ class OrderStateMachineTest extends TestCase
             ->for($tenant, 'tenant')
             ->for($customer)
             ->state([
-                'status' => 'payment_received',
+                'status' => 'full_payment',
                 'payment_status' => 'paid',
                 'vendor_id' => $vendor->id,
                 'total_paid_amount' => 200000,
@@ -311,17 +311,17 @@ class OrderStateMachineTest extends TestCase
 
     public function test_transition_to_shipped_records_tracking_number(): void
     {
-        $order = Order::factory()->create(['status' => 'ready_to_ship']);
+        $order = Order::factory()->create(['status' => 'quality_control']);
 
         $this->stateMachine->transitionTo(
             $order,
-            OrderStatus::SHIPPED,
+            OrderStatus::SHIPPING,
             ['tracking_number' => 'TRACK123456']
         );
 
         $order->refresh();
 
-        $this->assertEquals('shipped', $order->status);
+        $this->assertEquals('shipping', $order->status);
         $this->assertEquals('TRACK123456', $order->tracking_number);
         $this->assertNotNull($order->shipped_at);
     }
@@ -348,7 +348,7 @@ class OrderStateMachineTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2025-01-01 09:00:00'));
 
-        $tenant = Tenant::factory()->create();
+        $tenant = TenantEloquentModel::factory()->create();
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
         $vendor = Vendor::factory()->for($tenant, 'tenant')->create();
 
@@ -356,7 +356,7 @@ class OrderStateMachineTest extends TestCase
             ->for($tenant, 'tenant')
             ->for($customer)
             ->state([
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'vendor_id' => $vendor->id,
                 'total_amount' => 200000,
                 'metadata' => null,
@@ -403,7 +403,7 @@ class OrderStateMachineTest extends TestCase
 
         $this->stateMachine->transitionTo(
             $order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
@@ -415,7 +415,7 @@ class OrderStateMachineTest extends TestCase
 
         $active = $metadata['sla']['active'];
 
-        $this->assertEquals('sourcing_vendor', $active['status']);
+        $this->assertEquals('vendor_sourcing', $active['status']);
         $this->assertEquals(Carbon::now()->toIso8601String(), $active['started_at']);
         $this->assertNotNull($active['due_at']);
         $this->assertNotNull($active['threshold_minutes']);
@@ -431,7 +431,7 @@ class OrderStateMachineTest extends TestCase
     {
         Carbon::setTestNow(Carbon::parse('2025-01-01 14:30:00'));
 
-        $tenant = Tenant::factory()->create();
+        $tenant = TenantEloquentModel::factory()->create();
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
         $vendor = Vendor::factory()->for($tenant, 'tenant')->create();
 
@@ -439,12 +439,12 @@ class OrderStateMachineTest extends TestCase
             ->for($tenant, 'tenant')
             ->for($customer)
             ->state([
-                'status' => 'sourcing_vendor',
+                'status' => 'vendor_sourcing',
                 'vendor_id' => $vendor->id,
                 'metadata' => [
                     'sla' => [
                         'active' => [
-                            'status' => 'sourcing_vendor',
+                            'status' => 'vendor_sourcing',
                             'started_at' => Carbon::parse('2025-01-01 08:00:00')->toIso8601String(),
                             'due_at' => Carbon::parse('2025-01-01 12:00:00')->toIso8601String(),
                             'threshold_minutes' => 240,
@@ -492,7 +492,7 @@ class OrderStateMachineTest extends TestCase
 
         $entry = $history[array_key_last($history)];
 
-        $this->assertEquals('sourcing_vendor', $entry['status']);
+        $this->assertEquals('vendor_sourcing', $entry['status']);
         $this->assertTrue($entry['breached']);
         $this->assertEquals('vendor_negotiation', $entry['next_status']);
         $this->assertEquals(23400, $entry['duration_seconds']);
@@ -520,13 +520,13 @@ class OrderStateMachineTest extends TestCase
 
         $this->stateMachine->transitionTo(
             $order,
-            OrderStatus::SOURCING_VENDOR,
+            OrderStatus::VENDOR_SOURCING,
             []
         );
 
         Bus::assertDispatched(OrderSlaMonitorJob::class, function ($job) use ($order) {
             return $job->orderId === $order->id
-                && $job->status === 'sourcing_vendor'
+                && $job->status === 'vendor_sourcing'
                 && $job->thresholdCheck
                 && $job->delay instanceof \DateTimeInterface
                 && Carbon::instance($job->delay)->equalTo(Carbon::now()->addMinutes(240));
@@ -534,7 +534,7 @@ class OrderStateMachineTest extends TestCase
 
         Bus::assertDispatched(OrderSlaMonitorJob::class, function ($job) use ($order) {
             return $job->orderId === $order->id
-                && $job->status === 'sourcing_vendor'
+                && $job->status === 'vendor_sourcing'
                 && $job->escalationIndex === 0
                 && !$job->thresholdCheck
                 && $job->delay instanceof \DateTimeInterface
@@ -543,7 +543,7 @@ class OrderStateMachineTest extends TestCase
 
         Bus::assertDispatched(OrderSlaMonitorJob::class, function ($job) use ($order) {
             return $job->orderId === $order->id
-                && $job->status === 'sourcing_vendor'
+                && $job->status === 'vendor_sourcing'
                 && $job->escalationIndex === 1
                 && !$job->thresholdCheck
                 && $job->delay instanceof \DateTimeInterface
@@ -559,11 +559,11 @@ class OrderStateMachineTest extends TestCase
         Event::fake([OrderSlaEscalated::class]);
 
         $order = Order::factory()->create([
-            'status' => 'sourcing_vendor',
+            'status' => 'vendor_sourcing',
             'metadata' => [
                 'sla' => [
                     'active' => [
-                        'status' => 'sourcing_vendor',
+                        'status' => 'vendor_sourcing',
                         'started_at' => Carbon::parse('2025-01-01 08:00:00')->toIso8601String(),
                         'due_at' => Carbon::parse('2025-01-01 12:00:00')->toIso8601String(),
                         'threshold_minutes' => 240,
@@ -586,7 +586,7 @@ class OrderStateMachineTest extends TestCase
             ],
         ]);
 
-        $job = new OrderSlaMonitorJob($order->id, 'sourcing_vendor', 0);
+        $job = new OrderSlaMonitorJob($order->id, 'vendor_sourcing', 0);
 
         $job->handle($this->stateMachine);
 
@@ -599,7 +599,7 @@ class OrderStateMachineTest extends TestCase
 
         Event::assertDispatched(OrderSlaEscalated::class, function ($event) use ($order) {
             return $event->order->is($order)
-                && $event->status === 'sourcing_vendor'
+                && $event->status === 'vendor_sourcing'
                 && $event->level === 'procurement_lead'
                 && $event->channel === 'slack';
         });
@@ -611,11 +611,11 @@ class OrderStateMachineTest extends TestCase
         Event::fake([OrderSlaBreached::class]);
 
         $order = Order::factory()->create([
-            'status' => 'sourcing_vendor',
+            'status' => 'vendor_sourcing',
             'metadata' => [
                 'sla' => [
                     'active' => [
-                        'status' => 'sourcing_vendor',
+                        'status' => 'vendor_sourcing',
                         'started_at' => Carbon::parse('2025-01-01 08:00:00')->toIso8601String(),
                         'due_at' => Carbon::parse('2025-01-01 12:00:00')->toIso8601String(),
                         'threshold_minutes' => 240,
@@ -632,7 +632,7 @@ class OrderStateMachineTest extends TestCase
             ],
         ]);
 
-        $job = new OrderSlaMonitorJob($order->id, 'sourcing_vendor', null, true);
+        $job = new OrderSlaMonitorJob($order->id, 'vendor_sourcing', null, true);
 
         $job->handle($this->stateMachine);
 
@@ -645,7 +645,7 @@ class OrderStateMachineTest extends TestCase
 
         Event::assertDispatched(OrderSlaBreached::class, function ($event) use ($order) {
             return $event->order->is($order)
-                && $event->status === 'sourcing_vendor'
+                && $event->status === 'vendor_sourcing'
                 && $event->breachedAt === Carbon::now()->toIso8601String();
         });
     }

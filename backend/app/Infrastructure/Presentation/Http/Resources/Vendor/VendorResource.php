@@ -9,10 +9,9 @@ class VendorResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return [
-            'id' => $this->uuid, // Use UUID as public identifier
+        $data = [
+            'id' => $this->uuid,
             'uuid' => $this->uuid,
-            // SECURITY: tenant_id is internal key, never expose to public
             
             'name' => $this->name,
             'code' => $this->code,
@@ -48,5 +47,13 @@ class VendorResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+        
+        // Only include tenant_id for authenticated tenant-specific API requests
+        // Public APIs should not expose internal tenant_id
+        if (!$request->is('api/v1/public/*')) {
+            $data['tenant_id'] = $this->tenant_id;
+        }
+        
+        return $data;
     }
 }

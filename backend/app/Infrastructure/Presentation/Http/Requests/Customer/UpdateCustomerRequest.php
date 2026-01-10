@@ -14,17 +14,34 @@ class UpdateCustomerRequest extends FormRequest
 
     public function rules(): array
     {
-        $customerId = $this->route('customer');
+        $customerIdentifier = $this->route('customer');
+        $tenant = $this->get('current_tenant') 
+            ?? request()->attributes->get('tenant')
+            ?? (app()->bound('current_tenant') ? app('current_tenant') : null);
+        
+        // Check if identifier is UUID or integer ID
+        $isUuid = is_string($customerIdentifier) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $customerIdentifier);
+        
+        $emailRule = [
+            'sometimes',
+            'required',
+            'email',
+            'max:255',
+        ];
+        
+        // Add unique rule with proper tenant scoping
+        if ($tenant) {
+            $emailRule[] = Rule::unique('customers', 'email')
+                ->ignore($customerIdentifier, $isUuid ? 'uuid' : 'id')
+                ->where('tenant_id', $tenant->id);
+        } else {
+            $emailRule[] = Rule::unique('customers', 'email')
+                ->ignore($customerIdentifier, $isUuid ? 'uuid' : 'id');
+        }
         
         return [
             'name' => 'sometimes|required|string|max:255',
-            'email' => [
-                'sometimes',
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('customers', 'email')->ignore($customerId),
-            ],
+            'email' => $emailRule,
             'phone' => 'sometimes|required|string|max:50',
             'company' => 'nullable|string|max:255',
             

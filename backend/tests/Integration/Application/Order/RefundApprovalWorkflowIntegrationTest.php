@@ -27,7 +27,7 @@ class RefundApprovalWorkflowIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private User $customer;
     private User $financeApprover;
     private User $managerApprover;
@@ -41,7 +41,7 @@ class RefundApprovalWorkflowIntegrationTest extends TestCase
         Notification::fake();
 
         // Setup test environment
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         
         $this->customer = User::factory()->create([
             'tenant_id' => $this->tenant->id

@@ -57,6 +57,11 @@ class AuthController extends Controller
             
             return response()->json($response);
 
+        } catch (\Illuminate\Auth\AuthenticationException $e) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+                'error' => $e->getMessage()
+            ], 401);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => 'Authentication failed',
@@ -78,30 +83,19 @@ class AuthController extends Controller
         try {
             $user = $request->user();
             
-            // More comprehensive logout approach
-            // First try to get current token
-            $currentToken = $user->currentAccessToken();
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
             
+            // Delete the current access token
+            $currentToken = $user->currentAccessToken();
             if ($currentToken) {
-                // Delete the specific token
                 $currentToken->delete();
             } else {
-                // If currentAccessToken doesn't work, try parsing the header
-                $authHeader = $request->header('Authorization', '');
-                if (preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
-                    $tokenValue = $matches[1];
-                    // Find the token by its value (plain text tokens are hashed in DB)
-                    $token = $user->tokens()->where('token', hash('sha256', $tokenValue))->first();
-                    if ($token) {
-                        $token->delete();
-                    } else {
-                        // Last resort: delete all tokens for this user
-                        $user->tokens()->delete();
-                    }
-                } else {
-                    // If no Authorization header, delete all tokens
-                    $user->tokens()->delete();
-                }
+                // Fallback: delete all tokens for this user
+                $user->tokens()->delete();
             }
 
             return response()->json([
@@ -153,18 +147,19 @@ class AuthController extends Controller
             $account = $request->user();
             
             return response()->json([
-                'user' => [
+                'account' => [
                     'id' => $account->id,
+                    'uuid' => $account->uuid ?? null,
                     'name' => $account->name,
                     'email' => $account->email,
-                    'account_type' => $account->account_type,
                     'status' => $account->status,
-                    'avatar' => $account->avatar,
+                    'account_type' => 'platform_owner',
+                    'avatar' => $account->avatar ?? null,
                     'last_login_at' => $account->last_login_at?->toISOString(),
-                    'settings' => $account->settings
+                    'settings' => $account->settings ?? []
                 ],
                 'permissions' => $this->authService->getPlatformAccountPermissions($account),
-                'account_type' => 'platform'
+                'account_type' => 'platform_owner'
             ]);
 
         } catch (\Exception $e) {

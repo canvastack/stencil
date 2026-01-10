@@ -126,7 +126,7 @@ class PasswordResetTest extends TestCase
         $plainToken = 'test-token-123';
         $resetToken->update(['token' => Hash::make($plainToken)]);
 
-        $newPassword = 'newpassword123@';
+        $newPassword = 'NewPassword123@';
 
         $response = $this->postJson("/api/v1/tenant/{$this->tenant->id}/reset-password", [
             'token' => $plainToken,
@@ -164,7 +164,7 @@ class PasswordResetTest extends TestCase
         $plainToken = 'test-platform-token';
         $resetToken->update(['token' => Hash::make($plainToken)]);
 
-        $newPassword = 'newplatformpassword123@';
+        $newPassword = 'NewPlatformPassword123@';
 
         $response = $this->postJson('/api/v1/platform/reset-password', [
             'token' => $plainToken,
@@ -190,8 +190,8 @@ class PasswordResetTest extends TestCase
         $response = $this->postJson("/api/v1/tenant/{$this->tenant->id}/reset-password", [
             'token' => 'invalid-token',
             'email' => $this->user->email,
-            'password' => 'newpassword123@',
-            'password_confirmation' => 'newpassword123@'
+            'password' => 'NewPassword123@',
+            'password_confirmation' => 'NewPassword123@'
         ]);
 
         $response->assertStatus(422)
@@ -276,8 +276,8 @@ class PasswordResetTest extends TestCase
         $response = $this->postJson("/api/v1/tenant/{$this->tenant->id}/reset-password", [
             'token' => 'expired-token',
             'email' => $this->user->email,
-            'password' => 'newpassword123@',
-            'password_confirmation' => 'newpassword123@'
+            'password' => 'NewPassword123@',
+            'password_confirmation' => 'NewPassword123@'
         ]);
 
         $response->assertStatus(422)

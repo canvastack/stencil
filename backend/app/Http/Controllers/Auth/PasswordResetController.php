@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Application\Auth\Services\PasswordResetService;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\ValidateTokenRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 
@@ -141,7 +142,7 @@ class PasswordResetController extends Controller
     /**
      * Validate reset token without using it
      */
-    public function validateTokenPlatform(ResetPasswordRequest $request): JsonResponse
+    public function validateTokenPlatform(ValidateTokenRequest $request): JsonResponse
     {
         $validated = $request->validated();
         
@@ -163,7 +164,7 @@ class PasswordResetController extends Controller
     /**
      * Validate reset token without using it (Tenant)
      */
-    public function validateTokenTenant(ResetPasswordRequest $request, string $tenantId): JsonResponse
+    public function validateTokenTenant(ValidateTokenRequest $request, string $tenantId): JsonResponse
     {
         $validated = $request->validated();
         

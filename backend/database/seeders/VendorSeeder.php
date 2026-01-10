@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
 
@@ -18,7 +18,7 @@ class VendorSeeder extends Seeder
      */
     public function run(): void
     {
-        $tenant = Tenant::where('slug', 'pt-custom-etching-xenial')->first();
+        $tenant = TenantEloquentModel::where('slug', 'pt-custom-etching-xenial')->first();
         
         if (!$tenant) {
             $this->command->warn('PT Custom Etching Xenial tenant not found. Skipping vendor seeding.');

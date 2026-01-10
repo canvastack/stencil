@@ -25,7 +25,7 @@ class OrderStateMachine
     protected ?OrderPaymentTransaction $recentPaymentTransaction = null;
 
     protected array $slaPolicies = [
-        'sourcing_vendor' => [
+        'vendor_sourcing' => [
             'threshold_minutes' => 240,
             'escalations' => [
                 [
@@ -55,7 +55,7 @@ class OrderStateMachine
                 ],
             ],
         ],
-        'customer_quotation' => [
+        'customer_quote' => [
             'threshold_minutes' => 1440,
             'escalations' => [
                 [
@@ -70,7 +70,7 @@ class OrderStateMachine
                 ],
             ],
         ],
-        'waiting_payment' => [
+        'awaiting_payment' => [
             'threshold_minutes' => 4320,
             'escalations' => [
                 [
@@ -95,7 +95,7 @@ class OrderStateMachine
                 ],
             ],
         ],
-        'quality_check' => [
+        'quality_control' => [
             'threshold_minutes' => 720,
             'escalations' => [
                 [
@@ -105,17 +105,7 @@ class OrderStateMachine
                 ],
             ],
         ],
-        'ready_to_ship' => [
-            'threshold_minutes' => 720,
-            'escalations' => [
-                [
-                    'level' => 'logistics_lead',
-                    'channel' => 'slack',
-                    'after_minutes' => 720,
-                ],
-            ],
-        ],
-        'shipped' => [
+        'shipping' => [
             'threshold_minutes' => 2880,
             'escalations' => [
                 [

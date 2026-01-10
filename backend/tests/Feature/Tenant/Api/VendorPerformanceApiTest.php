@@ -4,7 +4,7 @@ namespace Tests\Feature\Tenant\Api;
 
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use App\Infrastructure\Persistence\Eloquent\Models\VendorOrder;
 use App\Models\User;
@@ -17,7 +17,7 @@ class VendorPerformanceApiTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected string $tenantHost;
     protected Vendor $vendor;
 
@@ -25,7 +25,7 @@ class VendorPerformanceApiTest extends TestCase
     {
         parent::setUp();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->tenantHost = $this->tenant->slug . '.canvastencil.test';
         $this->tenant->update(['domain' => $this->tenantHost]);
 

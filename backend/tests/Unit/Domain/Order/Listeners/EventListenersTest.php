@@ -21,7 +21,7 @@ use App\Domain\Order\Listeners\UpdateInventoryOnOrderComplete;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
@@ -45,7 +45,7 @@ class EventListenersTest extends TestCase
         
         $this->tenantId = 1;
 
-        Tenant::factory()->create(['id' => $this->tenantId]);
+        TenantEloquentModel::factory()->create(['id' => $this->tenantId]);
 
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenantId]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenantId]);
@@ -284,7 +284,7 @@ class EventListenersTest extends TestCase
         Event::fake();
         Log::spy();
 
-        Tenant::factory()->create(['id' => 2]);
+        TenantEloquentModel::factory()->create(['id' => 2]);
         $otherCustomer = Customer::factory()->create(['tenant_id' => 2]);
         $otherVendor = Vendor::factory()->create(['tenant_id' => 2]);
         $otherOrder = Order::factory()

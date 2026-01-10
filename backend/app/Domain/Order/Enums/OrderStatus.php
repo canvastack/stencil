@@ -43,17 +43,17 @@ enum OrderStatus: string
     public function description(): string
     {
         return match ($this) {
-            self::NEW => 'Pesanan baru masuk ke sistem',
-            self::SOURCING_VENDOR => 'Tim sedang mencari vendor yang sesuai',
+            self::DRAFT => 'Pesanan dalam bentuk draft',
+            self::PENDING => 'Pesanan baru masuk ke sistem',
+            self::VENDOR_SOURCING => 'Tim sedang mencari vendor yang sesuai',
             self::VENDOR_NEGOTIATION => 'Negosiasi harga dan timeline dengan vendor',
-            self::CUSTOMER_QUOTATION => 'Menunggu konfirmasi penawaran harga dari customer',
-            self::WAITING_PAYMENT => 'Menunggu pembayaran dari customer',
-            self::PAYMENT_RECEIVED => 'Pembayaran telah diterima',
+            self::CUSTOMER_QUOTE => 'Menunggu konfirmasi penawaran harga dari customer',
+            self::AWAITING_PAYMENT => 'Menunggu pembayaran dari customer',
+            self::PARTIAL_PAYMENT => 'DP 50% telah diterima',
+            self::FULL_PAYMENT => 'Pembayaran telah diterima 100%',
             self::IN_PRODUCTION => 'Pesanan sedang dalam proses produksi',
-            self::QUALITY_CHECK => 'Produk sedang dalam pengecekan kualitas',
-            self::READY_TO_SHIP => 'Produk siap untuk dikirim',
-            self::SHIPPED => 'Pesanan sudah dikirim ke customer',
-            self::DELIVERED => 'Pesanan telah diterima customer',
+            self::QUALITY_CONTROL => 'Produk sedang dalam pengecekan kualitas',
+            self::SHIPPING => 'Pesanan sudah dikirim ke customer',
             self::COMPLETED => 'Pesanan selesai',
             self::CANCELLED => 'Pesanan dibatalkan',
             self::REFUNDED => 'Dana telah dikembalikan ke customer',
@@ -72,20 +72,22 @@ enum OrderStatus: string
     public function canBeCancelled(): bool
     {
         return in_array($this, [
-            self::NEW,
-            self::SOURCING_VENDOR,
+            self::DRAFT,
+            self::PENDING,
+            self::VENDOR_SOURCING,
             self::VENDOR_NEGOTIATION,
-            self::CUSTOMER_QUOTATION,
-            self::WAITING_PAYMENT,
+            self::CUSTOMER_QUOTE,
+            self::AWAITING_PAYMENT,
         ]);
     }
 
     public function canBeRefunded(): bool
     {
         return in_array($this, [
-            self::PAYMENT_RECEIVED,
+            self::PARTIAL_PAYMENT,
+            self::FULL_PAYMENT,
             self::IN_PRODUCTION,
-            self::QUALITY_CHECK,
+            self::QUALITY_CONTROL,
             self::CANCELLED,
         ]);
     }
@@ -102,15 +104,15 @@ enum OrderStatus: string
     public function requiresPayment(): bool
     {
         return in_array($this, [
-            self::CUSTOMER_QUOTATION,
-            self::WAITING_PAYMENT,
+            self::CUSTOMER_QUOTE,
+            self::AWAITING_PAYMENT,
         ]);
     }
 
     public function requiresVendor(): bool
     {
         return in_array($this, [
-            self::SOURCING_VENDOR,
+            self::VENDOR_SOURCING,
             self::VENDOR_NEGOTIATION,
             self::IN_PRODUCTION,
         ]);
@@ -182,17 +184,17 @@ enum OrderStatus: string
     {
         return match (strtolower($status)) {
             'draft' => self::DRAFT,
-            'pending' => self::PENDING,
-            'vendor_sourcing' => self::VENDOR_SOURCING,
+            'pending', 'new' => self::PENDING,
+            'vendor_sourcing', 'sourcing_vendor' => self::VENDOR_SOURCING,
             'vendor_negotiation' => self::VENDOR_NEGOTIATION,
-            'customer_quote' => self::CUSTOMER_QUOTE,
-            'awaiting_payment' => self::AWAITING_PAYMENT,
+            'customer_quote', 'customer_quotation' => self::CUSTOMER_QUOTE,
+            'awaiting_payment', 'waiting_payment' => self::AWAITING_PAYMENT,
             'partial_payment' => self::PARTIAL_PAYMENT,
-            'full_payment' => self::FULL_PAYMENT,
+            'full_payment', 'payment_received' => self::FULL_PAYMENT,
             'in_production' => self::IN_PRODUCTION,
-            'quality_control' => self::QUALITY_CONTROL,
-            'shipping' => self::SHIPPING,
-            'completed' => self::COMPLETED,
+            'quality_control', 'quality_check' => self::QUALITY_CONTROL,
+            'shipping', 'ready_to_ship', 'shipped' => self::SHIPPING,
+            'completed', 'delivered' => self::COMPLETED,
             'cancelled' => self::CANCELLED,
             'refunded' => self::REFUNDED,
             default => throw new \ValueError("Status pesanan tidak valid: {$status}"),

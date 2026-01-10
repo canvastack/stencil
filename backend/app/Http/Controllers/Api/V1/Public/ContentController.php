@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Public;
 use App\Http\Controllers\Controller;
 use App\Domain\Content\Entities\PlatformPage;
 use App\Domain\Content\Services\TenantContentService;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +84,7 @@ class ContentController extends Controller
     {
         try {
             // Find tenant by slug
-            $tenant = Tenant::where('slug', $tenantSlug)->first();
+            $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
             
             if (!$tenant) {
                 \Log::warning('Tenant not found', [

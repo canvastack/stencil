@@ -27,6 +27,7 @@ class PaymentRefund extends Model
         'status',
         'refund_amount',
         'original_amount',
+        'final_amount',
         'currency',
         'refund_method',
         'refund_details',
@@ -43,6 +44,8 @@ class PaymentRefund extends Model
         'rejected_at',
         'processed_at',
         'completed_at',
+        'failed_at',
+        'failure_reason',
         'gateway_response',
         'gateway_error_code',
         'gateway_error_message',
@@ -54,13 +57,14 @@ class PaymentRefund extends Model
 
     protected $casts = [
         'refund_amount' => 'integer',
-        'original_amount' => 'integer', 
+        'original_amount' => 'integer',
+        'final_amount' => 'integer',
         'fee_amount' => 'integer',
-        'refund_details' => 'array',
-        'supporting_documents' => 'array',
-        'approval_workflow' => 'array',
-        'gateway_response' => 'array',
-        'impact_analysis' => 'array',
+        'refund_details' => 'json',
+        'supporting_documents' => 'json',
+        'approval_workflow' => 'json',
+        'gateway_response' => 'json',
+        'impact_analysis' => 'json',
         'is_disputed' => 'boolean',
         'affects_vendor_payment' => 'boolean',
         'requested_at' => 'datetime',
@@ -68,6 +72,7 @@ class PaymentRefund extends Model
         'rejected_at' => 'datetime',
         'processed_at' => 'datetime',
         'completed_at' => 'datetime',
+        'failed_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -99,10 +104,12 @@ class PaymentRefund extends Model
             if (!$refund->requested_at) {
                 $refund->requested_at = now();
             }
+        });
 
-            // Validate cross-tenant relationships
-            if ($refund->customer_id && $refund->tenant_id) {
-                $customer = \App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel::withoutGlobalScopes()->find($refund->customer_id);
+        static::updating(function ($refund) {
+            // Validate cross-tenant relationships on updates only
+            if ($refund->isDirty('customer_id') && $refund->customer_id && $refund->tenant_id) {
+                $customer = \App\Infrastructure\Persistence\Eloquent\Models\Customer::withoutGlobalScopes()->find($refund->customer_id);
                 if ($customer && $customer->tenant_id !== $refund->tenant_id) {
                     throw new \Exception('Cross-tenant relationships are not allowed');
                 }
@@ -128,7 +135,7 @@ class PaymentRefund extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel::class, 'customer_id');
+        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\Models\Customer::class, 'customer_id');
     }
 
     public function vendor(): BelongsTo

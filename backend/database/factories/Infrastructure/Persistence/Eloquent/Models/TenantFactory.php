@@ -14,11 +14,12 @@ class TenantFactory extends Factory
     public function definition(): array
     {
         $name = $this->faker->company();
+        $uniqueSuffix = substr(md5(microtime() . rand()), 0, 10);
 
         return [
             'uuid' => Uuid::uuid4()->toString(),
             'name' => $name,
-            'slug' => Str::slug($name) . '-' . Str::lower(Str::random(6)),
+            'slug' => Str::slug($name) . '-' . $uniqueSuffix,
             'domain' => null,
             'status' => 'active',
             'subscription_status' => 'active',

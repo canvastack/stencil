@@ -3,15 +3,21 @@
 namespace App\Infrastructure\Persistence\Eloquent;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 class OrderEloquentModel extends Model
 {
+    use HasFactory;
 
     protected $table = 'orders';
+    
+    protected static function newFactory()
+    {
+        return \Database\Factories\Infrastructure\Persistence\Eloquent\Models\OrderFactory::new();
+    }
 
     protected $fillable = [
         'tenant_id',
@@ -133,8 +139,15 @@ class OrderEloquentModel extends Model
         });
 
         static::creating(function ($order) {
-            // Validate that customer belongs to the same tenant
-            if ($order->customer_id && $order->tenant_id) {
+            // Auto-set tenant_id if not set
+            if (!$order->tenant_id && app()->bound('current_tenant')) {
+                $order->tenant_id = app('current_tenant')->id;
+            }
+        });
+
+        static::updating(function ($order) {
+            // Validate that customer belongs to the same tenant on updates only
+            if ($order->isDirty('customer_id') && $order->customer_id && $order->tenant_id) {
                 $customer = CustomerEloquentModel::withoutGlobalScopes()->find($order->customer_id);
                 if ($customer && $customer->tenant_id !== $order->tenant_id) {
                     throw new \Exception('Cross-tenant relationships are not allowed');

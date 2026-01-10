@@ -3,14 +3,20 @@
 namespace App\Infrastructure\Persistence\Eloquent;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
 class VendorEloquentModel extends Model
 {
+    use HasFactory;
 
     protected $table = 'vendors';
+    
+    protected static function newFactory()
+    {
+        return \Database\Factories\Infrastructure\Persistence\Eloquent\Models\VendorFactory::new();
+    }
 
     protected $fillable = [
         'tenant_id',

@@ -11,32 +11,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class EnsureTenantScopedQueries
 {
-    private static bool $scopesRegistered = false;
-
     public function handle(Request $request, Closure $next)
     {
-        if (!self::$scopesRegistered) {
-            $this->registerTenantScopes();
-            self::$scopesRegistered = true;
-        }
-
+        // Resolve tenant FIRST before registering scopes
         $tenant = $this->resolveTenant($request);
 
         if ($tenant) {
-            if (!config('multitenancy.current_tenant')) {
-                config(['multitenancy.current_tenant' => $tenant]);
-            }
-
-            if (!$request->attributes->has('tenant')) {
-                $request->attributes->set('tenant', $tenant);
-            }
-
-            if (!$request->attributes->has('current_tenant')) {
-                $request->attributes->set('current_tenant', $tenant);
-            }
-
-            if (!$request->get('current_tenant')) {
-                $request->merge(['current_tenant' => $tenant]);
+            // Set tenant context in multiple places for reliability
+            config(['multitenancy.current_tenant' => $tenant]);
+            $request->attributes->set('tenant', $tenant);
+            $request->attributes->set('current_tenant', $tenant);
+            $request->merge(['current_tenant' => $tenant]);
+            
+            // Make tenant current for Spatie Multitenancy
+            if (method_exists($tenant, 'makeCurrent')) {
+                $tenant->makeCurrent();
             }
         }
 

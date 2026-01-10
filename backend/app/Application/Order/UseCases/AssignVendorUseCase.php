@@ -49,6 +49,7 @@ class AssignVendorUseCase
             throw new InvalidArgumentException('Vendor belongs to different tenant');
         }
 
+        $order->setVendorId($vendorId);
         $order->updateStatus(OrderStatus::VENDOR_NEGOTIATION);
 
         $savedOrder = $this->orderRepository->save($order);

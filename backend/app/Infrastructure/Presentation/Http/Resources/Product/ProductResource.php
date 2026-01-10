@@ -9,7 +9,7 @@ class ProductResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return [
+        $data = [
             'id' => $this->uuid,
             'uuid' => $this->uuid,
             
@@ -149,5 +149,13 @@ class ProductResource extends JsonResource
                 'updatedAt' => $this->updated_at?->toIso8601String(),
             ],
         ];
+        
+        // Only include tenant_id for authenticated tenant-specific API requests
+        // Public APIs should not expose internal tenant_id
+        if (!$request->is('api/v1/public/*')) {
+            $data['tenant_id'] = $this->tenant_id;
+        }
+        
+        return $data;
     }
 }

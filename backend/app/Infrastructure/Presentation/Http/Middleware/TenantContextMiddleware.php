@@ -16,44 +16,72 @@ class TenantContextMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        // 1. Try to identify tenant from domain/headers
-        $tenant = $this->identifyTenant($request);
-
-        // 2. If not found, try from authenticated user
-        if (!$tenant) {
-            $tenant = $this->resolveTenantFromAuthenticatedUser($request);
-        }
-
-        // 3. If still not found, check if this is a tenant route that requires context
-        if (!$tenant) {
-            // Allow platform routes without tenant context
-            if ($this->isPlatformRoute($request)) {
-                return $next($request);
+        // 0. Clear any previous tenant context (important for test isolation)
+        \Spatie\Multitenancy\Models\Tenant::forgetCurrent();
+        
+        // Clear app container bindings
+        app()->forgetInstance('tenant.current');
+        app()->forgetInstance('current_tenant');
+        
+        // Clear config
+        config(['multitenancy.current_tenant' => null]);
+        
+        // 1. Get authenticated user first
+        $user = $this->getAuthenticatedUser($request);
+        
+        // 2. Determine tenant context based on authentication status
+        if ($user && isset($user->tenant_id)) {
+            // CRITICAL: User is authenticated with a tenant
+            // Ignore headers to prevent tenant context manipulation
+            $userTenant = $this->tenantFromUser($user);
+            
+            if (!$userTenant) {
+                return response()->json([
+                    'message' => 'User tenant not found',
+                    'error' => 'Tenant context error'
+                ], 404);
             }
             
-            // For tenant routes, tenant context is required
-            return $this->handleTenantNotFound($request);
+            // Try to identify tenant from domain (ignoring headers)
+            $domainTenant = $this->identifyTenant($request, true);
+            
+            // SECURITY: If domain identifies a different tenant, reject (cross-tenant access)
+            if ($domainTenant && $domainTenant->id !== $userTenant->id) {
+                \Log::error('[RBAC] Cross-tenant access attempt via domain', [
+                    'user_id' => $user->id,
+                    'user_tenant_id' => $userTenant->id,
+                    'domain_tenant_id' => $domainTenant->id,
+                    'request_host' => $request->getHost(),
+                    'request_path' => $request->path(),
+                ]);
+                
+                return response()->json([
+                    'message' => 'User does not belong to this tenant',
+                    'error' => 'Cross-tenant access denied'
+                ], 403);
+            }
+            
+            // Use user's tenant (prevents header manipulation)
+            $tenant = $userTenant;
+        } else {
+            // 3. For unauthenticated requests, use all identification methods
+            $tenant = $this->identifyTenant($request, false);
+
+            // 4. If still not found, check if this is a tenant route that requires context
+            if (!$tenant) {
+                // Allow platform routes without tenant context
+                if ($this->isPlatformRoute($request)) {
+                    return $next($request);
+                }
+                
+                // For tenant routes, tenant context is required
+                return $this->handleTenantNotFound($request);
+            }
         }
 
-        // 4. Validate tenant is active
+        // 5. Validate tenant is active
         if (!$tenant->isActive()) {
             return $this->handleInactiveTenant($request, $tenant);
-        }
-
-        // 5. CRITICAL: Validate cross-tenant access for authenticated users
-        $user = $this->getAuthenticatedUser($request);
-        if ($user && isset($user->tenant_id) && $user->tenant_id !== $tenant->id) {
-            \Log::error('[RBAC] Cross-tenant access attempt detected', [
-                'user_id' => $user->id,
-                'user_tenant_id' => $user->tenant_id,
-                'requested_tenant_id' => $tenant->id,
-                'request_path' => $request->path(),
-            ]);
-            
-            return response()->json([
-                'message' => 'User does not belong to this tenant',
-                'error' => 'Cross-tenant access denied'
-            ], 403);
         }
 
         // 6. Set tenant context for the request
@@ -142,7 +170,7 @@ class TenantContextMiddleware
         }
     }
 
-    private function identifyTenant(Request $request): ?TenantEloquentModel
+    private function identifyTenant(Request $request, bool $ignoreHeaders = false): ?TenantEloquentModel
     {
         $host = $request->getHost();
         $path = $request->path();
@@ -158,10 +186,12 @@ class TenantContextMiddleware
             return TenantEloquentModel::where('slug', $subdomain)->first();
         }
 
-        // Check headers for tenant identification (API clients)
-        $tenantFromHeaders = $this->getTenantFromHeaders($request);
-        if ($tenantFromHeaders) {
-            return $tenantFromHeaders;
+        // Check headers for tenant identification (API clients) - only for unauthenticated requests
+        if (!$ignoreHeaders) {
+            $tenantFromHeaders = $this->getTenantFromHeaders($request);
+            if ($tenantFromHeaders) {
+                return $tenantFromHeaders;
+            }
         }
 
         if ($this->isMainDomain($host)) {
@@ -289,6 +319,23 @@ class TenantContextMiddleware
         if ($this->isPlatformRoute($request)) {
             // Allow platform routes to continue without tenant context
             return app()->handle($request);
+        }
+
+        // Check if user is authenticated as platform account trying to access tenant route
+        $user = $this->getAuthenticatedUser($request);
+        if ($user && isset($user->account_type) && in_array($user->account_type, ['platform_owner', 'platform_manager'])) {
+            return response()->json([
+                'message' => 'Platform accounts cannot access tenant-specific resources',
+                'error' => 'Unauthorized'
+            ], 401);
+        }
+        
+        // Also check if user has no tenant_id but is authenticated (platform account check)
+        if ($user && !isset($user->tenant_id)) {
+            return response()->json([
+                'message' => 'Platform accounts cannot access tenant-specific resources',
+                'error' => 'Unauthorized'
+            ], 401);
         }
 
         // Return 404 for unknown tenant

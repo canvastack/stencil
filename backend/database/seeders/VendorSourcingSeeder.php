@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Infrastructure\Persistence\Eloquent\Models\VendorSourcing;
 use App\Infrastructure\Persistence\Eloquent\Models\VendorQuote;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Carbon\Carbon;
 
 class VendorSourcingSeeder extends Seeder
@@ -14,7 +14,7 @@ class VendorSourcingSeeder extends Seeder
     public function run(): void
     {
         // Get first available tenant
-        $tenant = Tenant::first();
+        $tenant = TenantEloquentModel::first();
         
         if (!$tenant) {
             $this->command->warn('No tenant found. Skipping VendorSourcingSeeder.');

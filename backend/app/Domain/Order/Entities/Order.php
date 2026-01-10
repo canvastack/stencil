@@ -13,6 +13,7 @@ class Order
     private UuidValueObject $id;
     private UuidValueObject $tenantId;
     private UuidValueObject $customerId;
+    private ?UuidValueObject $vendorId;
     private OrderNumber $orderNumber;
     private OrderStatus $status;
     private OrderTotal $total;
@@ -29,8 +30,9 @@ class Order
         UuidValueObject $customerId,
         OrderNumber $orderNumber,
         OrderTotal $total,
-        OrderStatus $status = OrderStatus::NEW,
+        OrderStatus $status = OrderStatus::PENDING,
         array $items = [],
+        ?UuidValueObject $vendorId = null,
         ?array $shippingAddress = null,
         ?array $billingAddress = null,
         ?string $notes = null,
@@ -40,6 +42,7 @@ class Order
         $this->id = $id;
         $this->tenantId = $tenantId;
         $this->customerId = $customerId;
+        $this->vendorId = $vendorId;
         $this->orderNumber = $orderNumber;
         $this->status = $status;
         $this->total = $total;
@@ -64,6 +67,19 @@ class Order
     public function getCustomerId(): UuidValueObject
     {
         return $this->customerId;
+    }
+
+    public function getVendorId(): ?UuidValueObject
+    {
+        return $this->vendorId;
+    }
+
+    public function setVendorId(?UuidValueObject $vendorId): self
+    {
+        $this->vendorId = $vendorId;
+        $this->updatedAt = new DateTime();
+        
+        return $this;
     }
 
     public function getOrderNumber(): OrderNumber
@@ -110,6 +126,7 @@ class Order
             'id' => $this->id->getValue(),
             'tenant_id' => $this->tenantId->getValue(),
             'customer_id' => $this->customerId->getValue(),
+            'vendor_id' => $this->vendorId?->getValue(),
             'order_number' => $this->orderNumber->getValue(),
             'status' => $this->status->value,
             'total_amount' => $this->total->getAmount(),

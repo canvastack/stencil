@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 
 class OrderVendorNegotiationSeeder extends Seeder
 {
@@ -16,7 +16,7 @@ class OrderVendorNegotiationSeeder extends Seeder
     public function run(): void
     {
         // Get first available tenant (etchinx)
-        $tenant = Tenant::first();
+        $tenant = TenantEloquentModel::first();
         
         if (!$tenant) {
             $this->command->warn('No tenant found, skipping OrderVendorNegotiation seeder');

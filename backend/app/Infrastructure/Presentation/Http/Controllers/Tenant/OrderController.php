@@ -72,10 +72,21 @@ class OrderController extends Controller
             if ($request->has('search') && !empty($request->get('search'))) {
                 $search = $request->get('search');
                 $query->where(function ($q) use ($search) {
-                    $q->where('customer_name', 'like', "%{$search}%")
-                      ->orWhere('customer_email', 'like', "%{$search}%")
-                      ->orWhere('id', 'like', "%{$search}%");
+                    $q->where('order_number', 'like', "%{$search}%")
+                      ->orWhereHas('customer', function ($customerQuery) use ($search) {
+                          $customerQuery->where('name', 'like', "%{$search}%")
+                                        ->orWhere('email', 'like', "%{$search}%");
+                      });
                 });
+            }
+            
+            // Date range filtering
+            if ($request->has('date_from') && !empty($request->get('date_from'))) {
+                $query->whereDate('created_at', '>=', $request->get('date_from'));
+            }
+            
+            if ($request->has('date_to') && !empty($request->get('date_to'))) {
+                $query->whereDate('created_at', '<=', $request->get('date_to'));
             }
             
             // Sorting
@@ -133,18 +144,56 @@ class OrderController extends Controller
         try {
             $tenant = $this->resolveTenant($request);
             $payload = $request->validated();
+            
+            // Resolve customer ID (accept both integer ID and UUID)
+            if (isset($payload['customer_id'])) {
+                $customerId = $payload['customer_id'];
+                $isUuid = is_string($customerId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $customerId);
+                
+                $customer = \App\Infrastructure\Persistence\Eloquent\Models\Customer::where('tenant_id', $tenant->id)
+                    ->where($isUuid ? 'uuid' : 'id', $customerId)
+                    ->firstOrFail();
+                $payload['customer_id'] = $customer->id;
+            }
+            
+            // Set tenant ID
             $payload['tenant_id'] = $tenant->id;
-
-            // Use CQRS Command Handler for hexagonal architecture
-            $commandDto = CreatePurchaseOrderCommand::fromArray($payload);
-            $order = $this->createOrderHandler->handle($commandDto);
+            
+            // Generate order number if not provided
+            if (!isset($payload['order_number'])) {
+                $payload['order_number'] = 'ORD-' . date('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(3)));
+            }
+            
+            // Set default status if not provided
+            if (!isset($payload['status'])) {
+                $payload['status'] = 'new';
+            }
+            
+            // Set default currency
+            if (!isset($payload['currency'])) {
+                $payload['currency'] = 'IDR';
+            }
+            
+            // Create order using Eloquent (simplified approach)
+            $order = Order::create($payload);
+            $order->load(['customer', 'vendor', 'tenant']);
+            
+            // Dispatch event
+            OrderCreated::dispatch($order);
             
             return (new OrderResource($order))->response()->setStatusCode(201);
-        } catch (\RuntimeException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
-                'message' => $e->getMessage(),
-            ], 400);
+                'message' => 'Customer tidak ditemukan',
+            ], 404);
         } catch (\Exception $e) {
+            \Log::error('Failed to create order', [
+                'tenant_id' => $tenant->id ?? 'unknown',
+                'payload' => $payload ?? [],
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'message' => 'Gagal membuat pesanan',
                 'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
@@ -277,25 +326,25 @@ class OrderController extends Controller
         }
     }
 
-    public function ship(Request $request, int $id): JsonResponse
+    public function ship(Request $request, Order $order): JsonResponse
     {
         try {
             $request->validate([
                 'tracking_number' => 'required|string|max:255',
             ]);
 
-            $tenant = $this->resolveTenant($request);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
             
-            // Use CQRS Command Handler for hexagonal architecture
-            $commandDto = ShipOrderCommand::fromArray([
-                'tenant_id' => $tenant->id,
-                'order_id' => $id,
+            // Simplified approach: update directly
+            $order->update([
+                'status' => 'shipping',
                 'tracking_number' => $request->tracking_number,
                 'shipping_carrier' => $request->get('shipping_carrier'),
-                'shipped_date' => $request->get('shipped_date', now()->toDateString()),
+                'shipped_at' => $request->get('shipped_date') ? now()->parse($request->get('shipped_date')) : now(),
             ]);
-
-            $order = $this->shipOrderHandler->handle($commandDto);
+            
+            $order->load(['customer', 'vendor', 'tenant']);
             
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\DomainException $e) {
@@ -308,15 +357,16 @@ class OrderController extends Controller
         }
     }
 
-    public function complete(Request $request, int $id): JsonResponse
+    public function complete(Request $request, Order $order): JsonResponse
     {
         try {
-            $tenant = $this->resolveTenant($request);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = CompleteOrderCommand::fromArray([
-                'tenant_id' => $tenant->id,
-                'order_id' => $id,
+                'tenant_id' => $order->tenant_id,
+                'order_id' => $order->id,
                 'delivered_at' => $request->get('delivered_at', now()->toIso8601String()),
                 'completion_notes' => $request->get('completion_notes'),
             ]);
@@ -334,22 +384,26 @@ class OrderController extends Controller
         }
     }
 
-    public function cancel(Request $request, int $id): JsonResponse
+    public function cancel(Request $request, Order $order): JsonResponse
     {
         try {
             $request->validate(['reason' => 'required|string|max:500']);
             
-            $tenant = $this->resolveTenant($request);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
             
-            // Use CQRS Command Handler for hexagonal architecture
-            $commandDto = CancelOrderCommand::fromArray([
-                'tenant_id' => $tenant->id,
-                'order_id' => $id,
-                'cancellation_reason' => $request->reason,
-                'cancelled_by' => auth()->id(),
+            // Simplified approach: update directly
+            $metadata = $order->metadata ?? [];
+            $metadata['cancellation_reason'] = $request->reason;
+            $metadata['cancelled_by'] = auth()->id();
+            $metadata['cancelled_at'] = now()->toIso8601String();
+            
+            $order->update([
+                'status' => 'cancelled',
+                'metadata' => $metadata,
             ]);
-
-            $order = $this->cancelOrderHandler->handle($commandDto);
+            
+            $order->load(['customer', 'vendor', 'tenant']);
             
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\DomainException $e) {
@@ -362,9 +416,9 @@ class OrderController extends Controller
         }
     }
 
-    public function refund(UpdateOrderStatusRequest $request, int $id): JsonResponse
+    public function refund(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
-        return $this->updateStatus($request, $id);
+        return $this->updateStatus($request, $order);
     }
 
     // Phase 4C: New business workflow methods using CQRS Command Handlers
@@ -400,7 +454,7 @@ class OrderController extends Controller
         }
     }
 
-    public function negotiateVendor(Request $request, int $id): JsonResponse
+    public function negotiateVendor(Request $request, Order $order): JsonResponse
     {
         try {
             $request->validate([
@@ -411,12 +465,13 @@ class OrderController extends Controller
                 'negotiation_notes' => 'sometimes|string|max:1000',
             ]);
 
-            $tenant = $this->resolveTenant($request);
+            // Ensure order belongs to the current tenant
+            $this->ensureOrderBelongsToTenant($request, $order);
             
             // Use CQRS Command Handler for hexagonal architecture
             $commandDto = NegotiateWithVendorCommand::fromArray([
-                'tenant_id' => $tenant->id,
-                'order_id' => $id,
+                'tenant_id' => $order->tenant_id,
+                'order_id' => $order->id,
                 'vendor_id' => $request->vendor_id,
                 'quoted_price' => $request->quoted_price,
                 'quoted_currency' => $request->get('quoted_currency', 'IDR'),
@@ -442,21 +497,17 @@ class OrderController extends Controller
         try {
             $tenant = $this->resolveTenant($request);
             
-            // Use CQRS Query Handler for hexagonal architecture
-            $queryDto = GetOrdersByStatusQuery::fromArray([
-                'tenant_id' => $tenant->id,
-                'status' => $status,
-                'per_page' => (int) $request->get('per_page', 20),
-                'page' => (int) $request->get('page', 1),
-                'sort_by' => $request->get('sort_by', 'created_at'),
-                'sort_order' => $request->get('sort_order', 'desc'),
-            ]);
+            // Simplified approach: direct Eloquent query
+            $orders = Order::where('tenant_id', $tenant->id)
+                ->where('status', $status)
+                ->with(['customer', 'vendor', 'tenant'])
+                ->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_order', 'desc'))
+                ->get();
 
-            $orders = $this->getOrdersByStatusHandler->handle($queryDto);
-
-            return OrderResource::collection($orders)
-                ->response()
-                ->setStatusCode(200);
+            return response()->json([
+                'message' => 'Daftar pesanan berhasil diambil',
+                'data' => OrderResource::collection($orders),
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengambil pesanan berdasarkan status',
@@ -465,26 +516,30 @@ class OrderController extends Controller
         }
     }
 
-    public function byCustomer(Request $request, int $customerId): JsonResponse
+    public function byCustomer(Request $request, string $customer): JsonResponse
     {
         try {
             $tenant = $this->resolveTenant($request);
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $customer);
             
-            // Use CQRS Query Handler for hexagonal architecture
-            $queryDto = GetOrdersByCustomerQuery::fromArray([
-                'tenant_id' => $tenant->id,
-                'customer_id' => $customerId,
-                'per_page' => (int) $request->get('per_page', 20),
-                'page' => (int) $request->get('page', 1),
-                'sort_by' => $request->get('sort_by', 'created_at'),
-                'sort_order' => $request->get('sort_order', 'desc'),
-            ]);
+            // Resolve customer (accept UUID or integer)
+            $customerModel = \App\Infrastructure\Persistence\Eloquent\Models\Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $customer)
+                ->firstOrFail();
+            
+            // Get orders for this customer
+            $orders = Order::where('tenant_id', $tenant->id)
+                ->where('customer_id', $customerModel->id)
+                ->with(['customer', 'vendor', 'tenant'])
+                ->orderBy($request->get('sort_by', 'created_at'), $request->get('sort_order', 'desc'))
+                ->get();
 
-            $orders = $this->getOrdersByCustomerHandler->handle($queryDto);
-
-            return OrderResource::collection($orders)
-                ->response()
-                ->setStatusCode(200);
+            return response()->json([
+                'message' => 'Daftar pesanan customer berhasil diambil',
+                'data' => OrderResource::collection($orders),
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pelanggan tidak ditemukan'], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengambil pesanan berdasarkan pelanggan',
@@ -592,10 +647,16 @@ class OrderController extends Controller
         }
     }
 
-    public function availableTransitions(Request $request, int $id): JsonResponse
+    public function availableTransitions(Request $request, string $id): JsonResponse
     {
         try {
-            $order = $this->tenantScopedOrders($request)->findOrFail($id);
+            $tenant = $this->resolveTenant($request);
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $order = Order::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+                
             $transitions = $this->stateMachine->getAvailableTransitions($order);
             
             return response()->json([
@@ -605,6 +666,8 @@ class OrderController extends Controller
                     'availableTransitions' => $transitions,
                 ]
             ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengambil transisi status',

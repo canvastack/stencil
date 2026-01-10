@@ -31,6 +31,19 @@ class PasswordResetService
             return true;
         }
 
+        // Rate limiting: Check if a reset was requested recently (within 3 minutes)
+        $recentRequest = PasswordResetToken::where('email', $email)
+            ->where('user_type', $userType)
+            ->where('tenant_id', $tenantId)
+            ->where('created_at', '>', now()->subMinutes(3))
+            ->exists();
+            
+        if ($recentRequest) {
+            throw ValidationException::withMessages([
+                'email' => ['Please wait before requesting another password reset.']
+            ]);
+        }
+
         // Clean up old tokens for this email and user type
         $this->cleanupOldTokens($email, $tenantId, $userType);
 
@@ -160,9 +173,11 @@ class PasswordResetService
      */
     private function cleanupOldTokens(string $email, ?string $tenantId, string $userType): void
     {
+        // Only delete expired tokens, keep used tokens for audit trail
         PasswordResetToken::where('email', $email)
             ->where('user_type', $userType)
             ->where('tenant_id', $tenantId)
+            ->where('expires_at', '<', now())
             ->delete();
     }
 

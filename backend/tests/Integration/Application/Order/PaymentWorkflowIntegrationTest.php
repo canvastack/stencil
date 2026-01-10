@@ -26,7 +26,7 @@ class PaymentWorkflowIntegrationTest extends TestCase
     private RefundOrderUseCase $refundOrderUseCase;
     private PaymentApplicationService $paymentService;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private Customer $customer;
     private Vendor $vendor;
     private Product $product;
@@ -43,7 +43,7 @@ class PaymentWorkflowIntegrationTest extends TestCase
 
         Event::fake();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->product = Product::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -247,7 +247,7 @@ class PaymentWorkflowIntegrationTest extends TestCase
     /** @test */
     public function payment_service_respects_tenant_isolation(): void
     {
-        $tenantB = Tenant::factory()->create();
+        $tenantB = TenantEloquentModel::factory()->create();
         $customerB = Customer::factory()->create(['tenant_id' => $tenantB->id]);
         $productB = Product::factory()->create(['tenant_id' => $tenantB->id]);
 

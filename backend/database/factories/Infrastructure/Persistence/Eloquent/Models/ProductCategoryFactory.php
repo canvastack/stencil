@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -19,7 +19,7 @@ class ProductCategoryFactory extends Factory
 
         return [
             'uuid' => $this->faker->uuid(),
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => TenantEloquentModel::factory(),
             'name' => Str::title($name),
             'slug' => Str::slug($name) . '-' . Str::lower(Str::random(6)),
             'description' => $this->faker->sentence(),

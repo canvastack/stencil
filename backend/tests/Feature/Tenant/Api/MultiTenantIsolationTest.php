@@ -5,7 +5,7 @@ namespace Tests\Feature\Tenant\Api;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,8 +16,8 @@ class MultiTenantIsolationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected Tenant $tenantA;
-    protected Tenant $tenantB;
+    protected TenantEloquentModel $tenantA;
+    protected TenantEloquentModel $tenantB;
     protected User $userA;
     protected User $userB;
 
@@ -25,8 +25,8 @@ class MultiTenantIsolationTest extends TestCase
     {
         parent::setUp();
 
-        $this->tenantA = Tenant::factory()->create(['name' => 'Tenant A']);
-        $this->tenantB = Tenant::factory()->create(['name' => 'Tenant B']);
+        $this->tenantA = TenantEloquentModel::factory()->create(['name' => 'Tenant A']);
+        $this->tenantB = TenantEloquentModel::factory()->create(['name' => 'Tenant B']);
 
         $this->userA = User::factory()->create(['tenant_id' => $this->tenantA->id]);
         $this->userB = User::factory()->create(['tenant_id' => $this->tenantB->id]);
@@ -43,10 +43,10 @@ class MultiTenantIsolationTest extends TestCase
 
         $response->assertStatus(200);
         
-        $orderIds = collect($response->json('data'))->pluck('id')->toArray();
+        $orderUuids = collect($response->json('data'))->pluck('uuid')->toArray();
         
-        $this->assertContains($orderA->id, $orderIds);
-        $this->assertNotContains($orderB->id, $orderIds);
+        $this->assertContains($orderA->uuid, $orderUuids);
+        $this->assertNotContains($orderB->uuid, $orderUuids);
     }
 
     public function test_tenant_a_cannot_access_tenant_b_order_detail(): void
@@ -55,7 +55,7 @@ class MultiTenantIsolationTest extends TestCase
 
         $orderB = Order::factory()->create(['tenant_id' => $this->tenantB->id]);
 
-        $response = $this->getJson("/api/v1/tenant/orders/{$orderB->id}");
+        $response = $this->getJson("/api/v1/tenant/orders/{$orderB->uuid}");
 
         $response->assertStatus(404);
     }
@@ -71,10 +71,10 @@ class MultiTenantIsolationTest extends TestCase
 
         $response->assertStatus(200);
         
-        $customerIds = collect($response->json('data'))->pluck('id')->toArray();
+        $customerUuids = collect($response->json('data'))->pluck('uuid')->toArray();
         
-        $this->assertContains($customerA->id, $customerIds);
-        $this->assertNotContains($customerB->id, $customerIds);
+        $this->assertContains($customerA->uuid, $customerUuids);
+        $this->assertNotContains($customerB->uuid, $customerUuids);
     }
 
     public function test_tenant_a_cannot_access_tenant_b_customer_detail(): void
@@ -83,7 +83,7 @@ class MultiTenantIsolationTest extends TestCase
 
         $customerB = Customer::factory()->create(['tenant_id' => $this->tenantB->id]);
 
-        $response = $this->getJson("/api/v1/tenant/customers/{$customerB->id}");
+        $response = $this->getJson("/api/v1/tenant/customers/{$customerB->uuid}");
 
         $response->assertStatus(404);
     }
@@ -99,10 +99,10 @@ class MultiTenantIsolationTest extends TestCase
 
         $response->assertStatus(200);
         
-        $productIds = collect($response->json('data'))->pluck('id')->toArray();
+        $productUuids = collect($response->json('data'))->pluck('uuid')->toArray();
         
-        $this->assertContains($productA->id, $productIds);
-        $this->assertNotContains($productB->id, $productIds);
+        $this->assertContains($productA->uuid, $productUuids);
+        $this->assertNotContains($productB->uuid, $productUuids);
     }
 
     public function test_tenant_a_cannot_see_tenant_b_vendors(): void
@@ -116,10 +116,10 @@ class MultiTenantIsolationTest extends TestCase
 
         $response->assertStatus(200);
         
-        $vendorIds = collect($response->json('data'))->pluck('id')->toArray();
+        $vendorUuids = collect($response->json('data'))->pluck('uuid')->toArray();
         
-        $this->assertContains($vendorA->id, $vendorIds);
-        $this->assertNotContains($vendorB->id, $vendorIds);
+        $this->assertContains($vendorA->uuid, $vendorUuids);
+        $this->assertNotContains($vendorB->uuid, $vendorUuids);
     }
 
     public function test_tenant_a_cannot_update_tenant_b_order(): void
@@ -128,7 +128,7 @@ class MultiTenantIsolationTest extends TestCase
 
         $orderB = Order::factory()->create(['tenant_id' => $this->tenantB->id]);
 
-        $response = $this->putJson("/api/v1/tenant/orders/{$orderB->id}", [
+        $response = $this->putJson("/api/v1/tenant/orders/{$orderB->uuid}", [
             'notes' => 'Attempting to update'
         ]);
 
@@ -141,11 +141,11 @@ class MultiTenantIsolationTest extends TestCase
 
         $customerB = Customer::factory()->create(['tenant_id' => $this->tenantB->id]);
 
-        $response = $this->deleteJson("/api/v1/tenant/customers/{$customerB->id}");
+        $response = $this->deleteJson("/api/v1/tenant/customers/{$customerB->uuid}");
 
         $response->assertStatus(404);
 
-        $this->assertDatabaseHas('customers', ['id' => $customerB->id]);
+        $this->assertDatabaseHas('customers', ['uuid' => $customerB->uuid]);
     }
 
     public function test_orders_include_only_tenant_specific_customers(): void

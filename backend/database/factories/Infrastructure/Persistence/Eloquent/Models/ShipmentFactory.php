@@ -5,7 +5,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Shipment;
 use App\Infrastructure\Persistence\Eloquent\Models\ShippingMethod;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ShipmentFactory extends Factory
@@ -19,7 +19,7 @@ class ShipmentFactory extends Factory
         
         return [
             'uuid' => $this->faker->uuid(),
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => TenantEloquentModel::factory(),
             'order_id' => Order::factory(),
             'shipping_method_id' => ShippingMethod::factory(),
             'tracking_number' => $this->faker->regexify('[A-Z]{2}[0-9]{10}[A-Z]{2}'),

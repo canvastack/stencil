@@ -60,14 +60,17 @@ class Vendor extends Model implements TenantAwareModel
     ];
 
     protected $casts = [
-        'location' => 'array',
-        'specializations' => 'array',
-        'payment_terms' => 'array',
-        'certifications' => 'array',
-        'bank_account_details' => 'array',
+        'location' => 'json',
+        'specializations' => 'json',
+        'payment_terms' => 'json',
+        'contacts' => 'json',
+        'metadata' => 'json',
+        'certifications' => 'json',
+        'bank_account_details' => 'json',
         'minimum_order' => 'integer',
         'total_orders' => 'integer',
         'total_value' => 'integer',
+        'lead_time' => 'integer',
         'average_lead_time_days' => 'integer',
         'rating' => 'decimal:2',
         'performance_score' => 'decimal:2',

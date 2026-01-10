@@ -6,9 +6,9 @@ use App\Infrastructure\Persistence\Eloquent\Models\{
     Order, 
     RefundRequest, 
     RefundApproval, 
-    User, 
-    Tenant
+    User
 };
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Domain\Order\Enums\OrderStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -29,7 +29,7 @@ class RefundManagementApiTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private User $user;
     private User $approver;
     private Order $order;
@@ -39,7 +39,7 @@ class RefundManagementApiTest extends TestCase
         parent::setUp();
 
         // Setup test environment
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         
         $this->user = User::factory()->create([
             'tenant_id' => $this->tenant->id
@@ -59,6 +59,10 @@ class RefundManagementApiTest extends TestCase
 
         // Authenticate as user for tests
         Sanctum::actingAs($this->user);
+        
+        // Set tenant context for multi-tenancy
+        app()->instance('current_tenant', $this->tenant);
+        config(['multitenancy.current_tenant' => $this->tenant]);
     }
 
     /**

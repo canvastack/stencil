@@ -4,7 +4,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
@@ -15,7 +15,7 @@ class OrderVendorNegotiationFactory extends Factory
 
     public function definition(): array
     {
-        $tenantFactory = Tenant::factory();
+        $tenantFactory = TenantEloquentModel::factory();
 
         return [
             'tenant_id' => $tenantFactory,

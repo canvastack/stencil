@@ -15,6 +15,11 @@ class Order extends Model implements TenantAwareModel
     use HasFactory, SoftDeletes, BelongsToTenant;
 
     protected $table = 'orders';
+    
+    protected static function newFactory()
+    {
+        return \Database\Factories\Infrastructure\Persistence\Eloquent\Models\OrderFactory::new();
+    }
 
     protected $fillable = [
         'uuid',
@@ -59,11 +64,11 @@ class Order extends Model implements TenantAwareModel
     ];
 
     protected $casts = [
-        'items' => 'array',
-        'shipping_address' => 'array',
-        'billing_address' => 'array',
-        'metadata' => 'array',
-        'payment_schedule' => 'array',
+        'items' => 'json',
+        'shipping_address' => 'json',
+        'billing_address' => 'json',
+        'metadata' => 'json',
+        'payment_schedule' => 'json',
         'subtotal' => 'integer',
         'tax' => 'integer',
         'shipping_cost' => 'integer',

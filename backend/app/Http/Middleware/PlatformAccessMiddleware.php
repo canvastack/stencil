@@ -15,35 +15,44 @@ class PlatformAccessMiddleware
      */
     public function handle(Request $request, Closure $next): Response|JsonResponse
     {
-        // Use the platform guard to get the authenticated user
-        $user = auth('platform')->user();
+        // Try multiple auth guards (sanctum for API, platform for tests)
+        $user = auth('sanctum')->user() ?? auth('platform')->user();
 
-        // Check if user is authenticated via platform guard
+        // Check if user is authenticated
         if (!$user) {
-            // Check if user is authenticated via other guards (tenant/api) 
-            $tenantUser = auth('tenant')->user() ?? auth('api')->user();
-            
-            if ($tenantUser) {
-                // User is authenticated but not as platform account
-                return response()->json([
-                    'message' => 'Unauthorized',
-                    'error' => 'Platform access requires Account A credentials'
-                ], 403);
-            }
-            
-            // No authentication at all
             return response()->json([
                 'message' => 'Unauthenticated',
                 'error' => 'Authentication required for platform access'
             ], 401);
         }
 
-        // Check if user is a platform account (Account A)
+        // CRITICAL: Check if user is a platform account (Account A) FIRST
         if (!$user instanceof AccountEloquentModel) {
+            // This is a tenant user trying to access platform routes
             return response()->json([
-                'message' => 'Unauthorized',
-                'error' => 'Platform access requires Account A credentials'
-            ], 403);
+                'message' => 'Unauthenticated',
+                'error' => 'Invalid authentication type for platform access'
+            ], 401);
+        }
+        
+        // Additional validation: Check token abilities for Sanctum authentication
+        if ($request->user('sanctum') && method_exists($user, 'currentAccessToken')) {
+            $token = $user->currentAccessToken();
+            
+            if ($token) {
+                // Check if token has platform abilities
+                $hasPlatformAbility = $token->can('platform:read') || 
+                                     $token->can('platform:write') || 
+                                     $token->can('tenants:manage');
+                
+                if (!$hasPlatformAbility) {
+                    // This token doesn't have platform permissions
+                    return response()->json([
+                        'message' => 'Unauthenticated',
+                        'error' => 'Invalid token permissions for platform access'
+                    ], 401);
+                }
+            }
         }
 
         // Check if account is active
@@ -54,8 +63,15 @@ class PlatformAccessMiddleware
             ], 403);
         }
 
-        // Check if account can manage tenants
-        if (!$user->canManageTenants()) {
+        // Check if account can manage tenants (skip for some routes like /me)
+        $skipPermissionCheck = in_array($request->path(), [
+            'api/v1/platform/me',
+            'api/v1/platform/logout',
+            'api/v1/platform/validate-token',
+            'api/v1/platform/refresh'
+        ]);
+        
+        if (!$skipPermissionCheck && !$user->canManageTenants()) {
             return response()->json([
                 'message' => 'Insufficient Permissions', 
                 'error' => 'Account does not have platform management permissions'

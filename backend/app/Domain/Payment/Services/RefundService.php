@@ -194,7 +194,8 @@ class RefundService
                         $refund,
                         $gatewayResponse['error_code'],
                         $gatewayResponse['error_message'],
-                        $gatewayResponse['data'] ?? []
+                        $gatewayResponse['data'] ?? [],
+                        $gatewayResponse['error_message']
                     ));
 
                     Log::error('Refund processing failed', [
@@ -210,7 +211,7 @@ class RefundService
                 $refund->markAsFailed($processedBy, 'PROCESSING_ERROR', $e->getMessage());
 
                 // Fire event
-                event(new RefundFailed($refund, 'PROCESSING_ERROR', $e->getMessage()));
+                event(new RefundFailed($refund, 'PROCESSING_ERROR', $e->getMessage(), [], $e->getMessage()));
 
                 Log::error('Refund processing exception', [
                     'refund_id' => $refund->id,

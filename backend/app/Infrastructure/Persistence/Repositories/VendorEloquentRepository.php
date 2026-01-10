@@ -18,7 +18,7 @@ class VendorEloquentRepository implements VendorRepositoryInterface
 
     public function findById(UuidValueObject $id): ?Vendor
     {
-        $model = $this->model->find($id->getValue());
+        $model = $this->model->with('tenant')->where('uuid', $id->getValue())->first();
         
         if (!$model) {
             return null;
@@ -75,7 +75,7 @@ class VendorEloquentRepository implements VendorRepositoryInterface
         $data = $this->fromDomain($vendor);
         
         $model = $this->model->updateOrCreate(
-            ['id' => $data['id']],
+            ['uuid' => $data['uuid']],
             $data
         );
         
@@ -120,11 +120,29 @@ class VendorEloquentRepository implements VendorRepositoryInterface
         return $models->map(fn($model) => $this->toDomain($model))->toArray();
     }
 
-    private function toDomain(VendorEloquentModel $model): Vendor
+    private function getTenantUuid(int $tenantId): string
+    {
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::find($tenantId);
+        if (!$tenant) {
+            throw new \InvalidArgumentException("Tenant not found with ID: {$tenantId}");
+        }
+        return $tenant->uuid;
+    }
+
+    private function resolveTenantId(UuidValueObject $tenantUuid): int
+    {
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantUuid->getValue())->first();
+        if (!$tenant) {
+            throw new \InvalidArgumentException("Tenant not found with UUID: {$tenantUuid->getValue()}");
+        }
+        return $tenant->id;
+    }
+
+    private function toDomain(VendorModel $model): Vendor
     {
         return new Vendor(
-            new UuidValueObject($model->id),
-            new UuidValueObject($model->tenant_id),
+            new UuidValueObject($model->uuid),
+            new UuidValueObject($this->getTenantUuid($model->tenant_id)),
             new VendorName($model->name),
             new VendorEmail($model->email),
             $model->phone,
@@ -140,8 +158,8 @@ class VendorEloquentRepository implements VendorRepositoryInterface
     private function fromDomain(Vendor $vendor): array
     {
         return [
-            'id' => $vendor->getId()->getValue(),
-            'tenant_id' => $vendor->getTenantId()->getValue(),
+            'uuid' => $vendor->getId()->getValue(),
+            'tenant_id' => $this->resolveTenantId($vendor->getTenantId()),
             'name' => $vendor->getName()->getValue(),
             'email' => $vendor->getEmail()->getValue(),
             'phone' => null,

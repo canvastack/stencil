@@ -6,7 +6,7 @@ use App\Domain\Order\Services\VendorNegotiationService;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +17,7 @@ class VendorNegotiationServiceTest extends TestCase
     use RefreshDatabase;
 
     protected VendorNegotiationService $negotiationService;
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected Customer $customer;
     protected Vendor $vendor;
     protected Order $order;
@@ -26,7 +26,7 @@ class VendorNegotiationServiceTest extends TestCase
     {
         parent::setUp();
         $this->negotiationService = app(VendorNegotiationService::class);
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->order = Order::factory()->create([

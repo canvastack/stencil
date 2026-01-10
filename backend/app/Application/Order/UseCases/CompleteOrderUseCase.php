@@ -31,9 +31,9 @@ class CompleteOrderUseCase
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        if ($order->getStatus() !== OrderStatus::DELIVERED) {
+        if ($order->getStatus() !== OrderStatus::SHIPPING) {
             throw new InvalidArgumentException(
-                "Order status '{$order->getStatus()->value}' does not allow completion"
+                "Order status '{$order->getStatus()->value}' does not allow completion. Order must be in shipping status."
             );
         }
 

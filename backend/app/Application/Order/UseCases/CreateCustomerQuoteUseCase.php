@@ -37,7 +37,7 @@ class CreateCustomerQuoteUseCase
             );
         }
 
-        $order->updateStatus(OrderStatus::CUSTOMER_QUOTATION);
+        $order->updateStatus(OrderStatus::CUSTOMER_QUOTE);
 
         $savedOrder = $this->orderRepository->save($order);
 

@@ -20,10 +20,11 @@ class PublicProductsTest extends TestCase
     {
         parent::setUp();
         
+        $uniqueSuffix = uniqid();
         $this->tenant = TenantEloquentModel::create([
             'uuid' => Str::uuid(),
-            'name' => 'Test Company',
-            'slug' => 'test-company',
+            'name' => 'PublicProductsTest Company ' . $uniqueSuffix,
+            'slug' => 'publicproductstest-' . $uniqueSuffix,
             'status' => 'active',
             'subscription_status' => 'active'
         ]);
@@ -119,7 +120,8 @@ class PublicProductsTest extends TestCase
             'name' => 'Metal Product 1',
             'slug' => 'metal-product-1',
             'sku' => 'PRD-001',
-            'type' => 'metal',
+            'type' => 'physical',
+            'business_type' => 'metal_etching',
             'price' => 100000,
             'currency' => 'IDR',
             'status' => 'published',
@@ -133,7 +135,8 @@ class PublicProductsTest extends TestCase
             'name' => 'Glass Product 1',
             'slug' => 'glass-product-1',
             'sku' => 'PRD-002',
-            'type' => 'glass',
+            'type' => 'physical',
+            'business_type' => 'glass_etching',
             'price' => 150000,
             'currency' => 'IDR',
             'status' => 'published',
@@ -147,7 +150,8 @@ class PublicProductsTest extends TestCase
             'name' => 'Metal Product 2',
             'slug' => 'metal-product-2',
             'sku' => 'PRD-003',
-            'type' => 'metal',
+            'type' => 'physical',
+            'business_type' => 'metal_etching',
             'price' => 200000,
             'currency' => 'IDR',
             'status' => 'published',
@@ -155,7 +159,7 @@ class PublicProductsTest extends TestCase
             'stock_quantity' => 10
         ]);
 
-        $response = $this->getJson('/api/v1/public/products?type=metal');
+        $response = $this->getJson("/api/v1/public/{$this->tenant->slug}/products?type=metal_etching");
 
         $response->assertStatus(200)
                  ->assertJsonCount(2, 'data');
@@ -328,9 +332,14 @@ class PublicProductsTest extends TestCase
             'currency' => 'IDR',
             'status' => 'published',
             'production_type' => 'vendor',
-            'stock_quantity' => 10,
-            'average_rating' => 4.5,
-            'review_count' => 10
+            'stock_quantity' => 10
+        ]);
+
+        CustomerReview::factory()->count(10)->create([
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product1->id,
+            'rating' => 5,
+            'is_approved' => true
         ]);
 
         $product2 = Product::create([
@@ -343,9 +352,14 @@ class PublicProductsTest extends TestCase
             'currency' => 'IDR',
             'status' => 'published',
             'production_type' => 'vendor',
-            'stock_quantity' => 10,
-            'average_rating' => 2.5,
-            'review_count' => 5
+            'stock_quantity' => 10
+        ]);
+
+        CustomerReview::factory()->count(5)->create([
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product2->id,
+            'rating' => 2,
+            'is_approved' => true
         ]);
 
         $product3 = Product::create([
@@ -358,9 +372,14 @@ class PublicProductsTest extends TestCase
             'currency' => 'IDR',
             'status' => 'published',
             'production_type' => 'vendor',
-            'stock_quantity' => 10,
-            'average_rating' => 4.0,
-            'review_count' => 8
+            'stock_quantity' => 10
+        ]);
+
+        CustomerReview::factory()->count(8)->create([
+            'tenant_id' => $this->tenant->id,
+            'product_id' => $product3->id,
+            'rating' => 4,
+            'is_approved' => true
         ]);
 
         $response = $this->getJson('/api/v1/public/products?min_rating=4.0');
@@ -369,9 +388,9 @@ class PublicProductsTest extends TestCase
                  ->assertJsonCount(2, 'data');
         
         $productIds = collect($response->json('data'))->pluck('id')->toArray();
-        $this->assertContains($product1->uuid, $productIds);
-        $this->assertContains($product3->uuid, $productIds);
-        $this->assertNotContains($product2->uuid, $productIds);
+        $this->assertContains((string) $product1->uuid, $productIds);
+        $this->assertContains((string) $product3->uuid, $productIds);
+        $this->assertNotContains((string) $product2->uuid, $productIds);
     }
 
     /** @test */
@@ -403,7 +422,7 @@ class PublicProductsTest extends TestCase
             'stock_quantity' => 0
         ]);
 
-        $response = $this->getJson('/api/v1/public/products?in_stock=true');
+        $response = $this->getJson('/api/v1/public/products?in_stock=1');
 
         $response->assertStatus(200)
                  ->assertJsonCount(1, 'data');
@@ -522,7 +541,7 @@ class PublicProductsTest extends TestCase
             'featured' => false
         ]);
 
-        $response = $this->getJson('/api/v1/public/products?featured=true');
+        $response = $this->getJson('/api/v1/public/products?featured=1');
 
         $response->assertStatus(200)
                  ->assertJsonCount(1, 'data');

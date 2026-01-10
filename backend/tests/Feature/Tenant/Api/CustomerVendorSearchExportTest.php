@@ -8,7 +8,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,14 +20,14 @@ class CustomerVendorSearchExportTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->user = User::factory()->create([
             'tenant_id' => $this->tenant->id,
             'status' => 'active',

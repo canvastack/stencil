@@ -5,7 +5,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderPaymentTransaction;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
@@ -17,7 +17,7 @@ class OrderPaymentTransactionFactory extends Factory
     public function definition(): array
     {
         return [
-            'tenant_id' => Tenant::factory(),
+            'tenant_id' => TenantEloquentModel::factory(),
             'order_id' => Order::factory(),
             'customer_id' => null,
             'vendor_id' => null,

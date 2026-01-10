@@ -12,7 +12,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\InventoryLocation;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryReconciliation;
 use App\Infrastructure\Persistence\Eloquent\Models\InventoryReservation;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -24,7 +24,7 @@ class InventoryControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected User $user;
     protected Product $product;
 
@@ -32,7 +32,7 @@ class InventoryControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->user = User::factory()->create([
             'tenant_id' => $this->tenant->id,
             'status' => 'active',

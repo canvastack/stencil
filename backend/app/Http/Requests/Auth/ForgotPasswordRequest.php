@@ -25,7 +25,7 @@ class ForgotPasswordRequest extends FormRequest
             'email' => [
                 'required',
                 'string',
-                'email:rfc,dns',
+                'email:rfc',
                 'max:255',
             ]
         ];

@@ -21,7 +21,7 @@ class EmailVerificationController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'tenant_id' => 'required|string|exists:tenants,id',
+            'tenant_id' => 'required|integer|exists:tenants,id',
         ]);
 
         try {
@@ -131,7 +131,7 @@ class EmailVerificationController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'tenant_id' => 'nullable|string|exists:tenants,id',
+            'tenant_id' => 'nullable|integer|exists:tenants,id',
         ]);
 
         try {

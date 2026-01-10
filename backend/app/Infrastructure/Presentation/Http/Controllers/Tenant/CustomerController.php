@@ -55,10 +55,16 @@ class CustomerController extends Controller
         }
     }
 
-    public function show(Request $request, int $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         try {
-            $customer = Customer::findOrFail($id);
+            $tenant = $this->resolveTenant($request);
+            $isUuid = is_string($id) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+                
             return (new CustomerResource($customer))->response()->setStatusCode(200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['message' => 'Customer tidak ditemukan'], 404);
@@ -68,6 +74,31 @@ class CustomerController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }
+    }
+    
+    private function resolveTenant(Request $request)
+    {
+        $candidate = $request->get('current_tenant')
+            ?? $request->attributes->get('tenant')
+            ?? (function_exists('tenant') ? tenant() : null);
+
+        if (! $candidate && app()->bound('tenant.current')) {
+            $candidate = app('tenant.current');
+        }
+
+        if (! $candidate && app()->bound('current_tenant')) {
+            $candidate = app('current_tenant');
+        }
+
+        if (! $candidate) {
+            $candidate = config('multitenancy.current_tenant');
+        }
+
+        if ($candidate) {
+            return $candidate;
+        }
+
+        throw new \RuntimeException('Tenant context tidak ditemukan');
     }
 
     public function store(StoreCustomerRequest $request): JsonResponse
@@ -83,10 +114,16 @@ class CustomerController extends Controller
         }
     }
 
-    public function update(UpdateCustomerRequest $request, int $id): JsonResponse
+    public function update(UpdateCustomerRequest $request, string $id): JsonResponse
     {
         try {
-            $customer = Customer::findOrFail($id);
+            $tenant = $this->resolveTenant($request);
+            $isUuid = is_string($id) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+                
             $customer->update($request->validated());
             return (new CustomerResource($customer))->response()->setStatusCode(200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -99,10 +136,16 @@ class CustomerController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         try {
-            $customer = Customer::findOrFail($id);
+            $tenant = $this->resolveTenant($request);
+            $isUuid = is_string($id) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+                
             $customer->delete();
             return response()->json(['message' => 'Customer berhasil dihapus'], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
@@ -370,13 +413,19 @@ class CustomerController extends Controller
         }
     }
 
-    public function orders(Request $request, int $customerId): JsonResponse
+    public function orders(Request $request, string $customerId): JsonResponse
     {
         try {
-            $customer = Customer::findOrFail($customerId);
+            $tenant = $this->resolveTenant($request);
+            $isUuid = is_string($customerId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $customerId);
+            
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $customerId)
+                ->firstOrFail();
+                
             $perPage = $request->get('per_page', 20);
 
-            $orders = Order::with(['items', 'vendor'])
+            $orders = Order::with(['items', 'vendor', 'tenant'])
                 ->where('customer_id', $customer->id)
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
@@ -384,7 +433,7 @@ class CustomerController extends Controller
             return OrderResource::collection($orders)
                 ->additional([
                     'customer' => [
-                        'id' => $customer->id,
+                        'id' => $customer->uuid,
                         'uuid' => $customer->uuid,
                         'name' => $customer->name,
                         'email' => $customer->email,

@@ -13,7 +13,8 @@ use App\Application\Order\Commands\{
     NegotiateWithVendorCommand
 };
 use App\Application\Order\Services\VendorNegotiationService;
-use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Tenant, Vendor};
+use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Vendor};
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -27,7 +28,7 @@ class MultiVendorNegotiationTest extends TestCase
     private NegotiateWithVendorUseCase $negotiateWithVendorUseCase;
     private VendorNegotiationService $negotiationService;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private Customer $customer;
     private Vendor $vendor1;
     private Vendor $vendor2;
@@ -45,12 +46,33 @@ class MultiVendorNegotiationTest extends TestCase
 
         Event::fake();
 
-        $this->tenant = Tenant::factory()->create();
-        $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $this->vendor1 = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
-        $this->vendor2 = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
-        $this->vendor3 = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
-        $this->product = Product::factory()->create(['tenant_id' => $this->tenant->id]);
+        $this->tenant = TenantEloquentModel::factory()->create();
+        
+        // Ensure Customer and Vendor have uuid fields
+        $this->customer = Customer::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()
+        ]);
+        
+        $this->vendor1 = Vendor::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()
+        ]);
+        
+        $this->vendor2 = Vendor::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()
+        ]);
+        
+        $this->vendor3 = Vendor::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()
+        ]);
+        
+        $this->product = Product::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString()
+        ]);
     }
 
     /** @test */
@@ -71,6 +93,11 @@ class MultiVendorNegotiationTest extends TestCase
         );
 
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
+        
+        // Transition order to VENDOR_SOURCING status first
+        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
+        $orderRepository = app(\App\Domain\Order\Repositories\OrderRepositoryInterface::class);
+        $orderRepository->save($order);
 
         $assignCommand1 = new AssignVendorCommand(
             orderId: $order->getId(),
@@ -79,17 +106,18 @@ class MultiVendorNegotiationTest extends TestCase
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand1);
-        $this->assertEquals($this->vendor1->id, $order->vendor_id);
+        $this->assertEquals($this->vendor1->uuid, $order->getVendorId()->getValue());
 
         $negotiateCommand1 = new NegotiateWithVendorCommand(
             orderId: $order->getId(),
             tenantId: $this->tenant->uuid,
-            proposedPrice: 98000.00,
-            leadTimeDays: 7
+            vendorId: $this->vendor1->uuid,
+            quotedPrice: 98000.00,
+            leadTimeInDays: 7
         );
 
         $order = $this->negotiateWithVendorUseCase->execute($negotiateCommand1);
-        $this->assertEquals('negotiating', $order->status);
+        $this->assertEquals('vendor_negotiation', $order->getStatus()->value);
 
         $assignCommand2 = new AssignVendorCommand(
             orderId: $order->getId(),
@@ -98,13 +126,14 @@ class MultiVendorNegotiationTest extends TestCase
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand2);
-        $this->assertEquals($this->vendor2->id, $order->vendor_id);
+        $this->assertEquals($this->vendor2->uuid, $order->getVendorId()->getValue());
 
         $negotiateCommand2 = new NegotiateWithVendorCommand(
             orderId: $order->getId(),
             tenantId: $this->tenant->uuid,
-            proposedPrice: 95000.00,
-            leadTimeDays: 5
+            vendorId: $this->vendor2->uuid,
+            quotedPrice: 95000.00,
+            leadTimeInDays: 5
         );
 
         $order = $this->negotiateWithVendorUseCase->execute($negotiateCommand2);
@@ -116,17 +145,18 @@ class MultiVendorNegotiationTest extends TestCase
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand3);
-        $this->assertEquals($this->vendor3->id, $order->vendor_id);
+        $this->assertEquals($this->vendor3->uuid, $order->getVendorId()->getValue());
 
         $negotiateCommand3 = new NegotiateWithVendorCommand(
             orderId: $order->getId(),
             tenantId: $this->tenant->uuid,
-            proposedPrice: 92000.00,
-            leadTimeDays: 6
+            vendorId: $this->vendor3->uuid,
+            quotedPrice: 92000.00,
+            leadTimeInDays: 6
         );
 
         $order = $this->negotiateWithVendorUseCase->execute($negotiateCommand3);
-        $this->assertEquals('negotiating', $order->status);
+        $this->assertEquals('vendor_negotiation', $order->getStatus()->value);
     }
 
     /** @test */
@@ -254,6 +284,11 @@ class MultiVendorNegotiationTest extends TestCase
         );
 
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
+        
+        // Transition order to VENDOR_SOURCING status first
+        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
+        $orderRepository = app(\App\Domain\Order\Repositories\OrderRepositoryInterface::class);
+        $orderRepository->save($order);
 
         $assignCommand = new AssignVendorCommand(
             orderId: $order->getId(),
@@ -270,8 +305,9 @@ class MultiVendorNegotiationTest extends TestCase
             $negotiateCommand = new NegotiateWithVendorCommand(
                 orderId: $order->getId(),
                 tenantId: $this->tenant->uuid,
-                proposedPrice: $price,
-                leadTimeDays: 5
+                vendorId: $this->vendor1->uuid,
+                quotedPrice: $price,
+                leadTimeInDays: 5
             );
 
             $order = $this->negotiateWithVendorUseCase->execute($negotiateCommand);
@@ -283,7 +319,7 @@ class MultiVendorNegotiationTest extends TestCase
             ];
         }
 
-        $this->assertEquals('negotiating', $order->status);
+        $this->assertEquals('vendor_negotiation', $order->getStatus()->value);
         $this->assertCount(4, $quotes);
         $this->assertEquals(92000.00, $quotes[3]['quoted_price']);
     }
@@ -310,9 +346,25 @@ class MultiVendorNegotiationTest extends TestCase
     {
         $negotiationId = 'test-negotiation-4';
 
+        // Create a real order first
+        $createCommand = new CreatePurchaseOrderCommand(
+            tenantId: $this->tenant->uuid,
+            customerId: $this->customer->uuid,
+            totalAmount: 100000.00,
+            currency: 'IDR',
+            items: [
+                [
+                    'product_id' => $this->product->uuid,
+                    'quantity' => 1,
+                    'unit_price' => 100000.00,
+                ]
+            ]
+        );
+        $order = $this->createPurchaseOrderUseCase->execute($createCommand);
+        
         $startResult = $this->negotiationService->startNegotiation(
             $this->tenant->uuid,
-            'test-order-id',
+            $order->getId(),
             $this->vendor1->uuid
         );
 
@@ -332,7 +384,7 @@ class MultiVendorNegotiationTest extends TestCase
     /** @test */
     public function multi_tenant_vendor_negotiation_isolation(): void
     {
-        $tenantB = Tenant::factory()->create();
+        $tenantB = TenantEloquentModel::factory()->create();
         $vendorB1 = Vendor::factory()->create(['tenant_id' => $tenantB->id]);
         $vendorB2 = Vendor::factory()->create(['tenant_id' => $tenantB->id]);
 

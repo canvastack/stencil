@@ -23,7 +23,7 @@ class VendorNegotiationIntegrationTest extends TestCase
     private NegotiateWithVendorUseCase $negotiateWithVendorUseCase;
     private VendorNegotiationService $negotiationService;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private Customer $customer;
     private Vendor $vendor1;
     private Vendor $vendor2;
@@ -41,7 +41,7 @@ class VendorNegotiationIntegrationTest extends TestCase
 
         Event::fake();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor1 = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor2 = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -278,7 +278,7 @@ class VendorNegotiationIntegrationTest extends TestCase
     /** @test */
     public function vendor_negotiation_service_respects_tenant_isolation(): void
     {
-        $tenantB = Tenant::factory()->create();
+        $tenantB = TenantEloquentModel::factory()->create();
         $vendorB = Vendor::factory()->create(['tenant_id' => $tenantB->id]);
 
         $this->expectException(\InvalidArgumentException::class);

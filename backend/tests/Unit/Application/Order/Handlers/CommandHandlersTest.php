@@ -58,7 +58,8 @@ class CommandHandlersTest extends TestCase
 
         $mockOrder = Mockery::mock(Order::class);
         $mockOrder->shouldReceive('getTenantId->equals')->andReturn(true);
-        $mockOrder->shouldReceive('getStatus')->andReturn(OrderStatus::SOURCING_VENDOR);
+        $mockOrder->shouldReceive('getStatus')->andReturn(OrderStatus::VENDOR_SOURCING);
+        $mockOrder->shouldReceive('setVendorId')->once()->andReturn($mockOrder);
         $mockOrder->shouldReceive('updateStatus')->andReturn($mockOrder);
 
         $this->orderRepository
@@ -144,7 +145,7 @@ class CommandHandlersTest extends TestCase
 
         $mockOrder = Mockery::mock(Order::class);
         $mockOrder->shouldReceive('getTenantId->equals')->andReturn(true);
-        $mockOrder->shouldReceive('getStatus')->andReturn(OrderStatus::DELIVERED);
+        $mockOrder->shouldReceive('getStatus')->andReturn(OrderStatus::SHIPPING);
         $mockOrder->shouldReceive('updateStatus')->andReturn($mockOrder);
 
         $this->orderRepository

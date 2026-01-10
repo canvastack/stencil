@@ -5,7 +5,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 use App\Infrastructure\Persistence\Eloquent\Models\InsuranceFundTransaction;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\RefundRequest;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class InsuranceFundTransactionFactory extends Factory
@@ -14,7 +14,7 @@ class InsuranceFundTransactionFactory extends Factory
 
     public function definition(): array
     {
-        $tenantFactory = Tenant::factory();
+        $tenantFactory = TenantEloquentModel::factory();
         $amount = $this->faker->randomFloat(2, 10000, 500000);
         $balanceBefore = $this->faker->randomFloat(2, 0, 10000000);
         

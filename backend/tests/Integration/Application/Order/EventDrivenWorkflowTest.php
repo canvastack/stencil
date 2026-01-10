@@ -26,7 +26,7 @@ class EventDrivenWorkflowTest extends TestCase
     private AssignVendorUseCase $assignVendorUseCase;
     private NegotiateWithVendorUseCase $negotiateWithVendorUseCase;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private Customer $customer;
     private Vendor $vendor;
     private Product $product;
@@ -39,7 +39,7 @@ class EventDrivenWorkflowTest extends TestCase
         $this->assignVendorUseCase = app(AssignVendorUseCase::class);
         $this->negotiateWithVendorUseCase = app(NegotiateWithVendorUseCase::class);
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->product = Product::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -259,7 +259,7 @@ class EventDrivenWorkflowTest extends TestCase
     {
         Event::fake();
 
-        $tenantB = Tenant::factory()->create();
+        $tenantB = TenantEloquentModel::factory()->create();
         $customerB = Customer::factory()->create(['tenant_id' => $tenantB->id]);
         $productB = Product::factory()->create(['tenant_id' => $tenantB->id]);
 

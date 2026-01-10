@@ -9,23 +9,23 @@ class OrderResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        return [
-            'id' => $this->id,
+        $data = [
+            'id' => $this->uuid,
             'uuid' => $this->uuid,
-            'tenantId' => $this->tenant_id,
             
             // Flat structure for table compatibility
+            'order_number' => $this->order_number,
             'orderNumber' => $this->order_number,
             'orderCode' => $this->order_code,
             
             // Customer info (flattened)
-            'customerId' => $this->customer_id,
+            'customerId' => $this->customer?->uuid ?? $this->customer_id,
             'customerName' => $this->customer->name ?? 'Unknown Customer',
             'customerEmail' => $this->customer->email ?? '',
             'customerPhone' => $this->customer->phone ?? '',
             
             // Vendor info (flattened)  
-            'vendorId' => $this->vendor_id,
+            'vendorId' => $this->vendor?->uuid ?? $this->vendor_id,
             'vendorName' => $this->vendor->name ?? null,
             'vendorCode' => $this->vendor->code ?? null,
             
@@ -82,14 +82,14 @@ class OrderResource extends JsonResource
             
             // Nested objects for detailed view
             'customer' => [
-                'id' => $this->customer_id,
+                'id' => $this->customer?->uuid ?? $this->customer_id,
                 'name' => $this->customer->name ?? 'Unknown Customer',
                 'email' => $this->customer->email ?? '',
                 'phone' => $this->customer->phone ?? '',
             ],
             
             'vendor' => $this->when($this->vendor_id, fn() => [
-                'id' => $this->vendor_id,
+                'id' => $this->vendor?->uuid ?? $this->vendor_id,
                 'name' => $this->vendor->name ?? null,
                 'code' => $this->vendor->code ?? null,
             ]),
@@ -106,5 +106,14 @@ class OrderResource extends JsonResource
                 'currency' => $this->currency ?? 'IDR',
             ],
         ];
+        
+        // Only include tenant_id for authenticated tenant-specific API requests
+        // Public APIs should not expose internal tenant_id
+        if (!$request->is('api/v1/public/*')) {
+            $data['tenant_id'] = $this->tenant_id;
+            $data['tenantId'] = $this->tenant?->uuid ?? $this->tenant_id;
+        }
+        
+        return $data;
     }
 }

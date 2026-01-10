@@ -60,6 +60,7 @@ class JwtServiceTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'name' => 'Admin',
             'slug' => 'admin',
+            'guard_name' => 'api',
             'description' => 'Tenant Administrator',
             'abilities' => ['read', 'write', 'delete']
         ]);

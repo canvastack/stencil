@@ -27,9 +27,11 @@ class TenantEloquentModelFactory extends Factory
     public function definition(): array
     {
         $name = fake()->company();
-        $slug = Str::slug($name);
+        $uniqueSuffix = fake()->unique()->numberBetween(1000, 9999);
+        $slug = Str::slug($name) . '-' . $uniqueSuffix;
         
         return [
+            'uuid' => Str::uuid()->toString(),
             'name' => $name,
             'slug' => $slug,
             'domain' => null, // Optional custom domain

@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Enums\PaymentStatus;
@@ -19,7 +19,7 @@ class OrderSeeder extends Seeder
     public function run(): void
     {
         // Get first tenant
-        $tenant = Tenant::first();
+        $tenant = TenantEloquentModel::first();
         if (!$tenant) {
             $this->command->error('No tenant found. Please seed tenants first.');
             return;

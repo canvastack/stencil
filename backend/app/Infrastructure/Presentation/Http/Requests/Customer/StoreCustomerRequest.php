@@ -21,6 +21,7 @@ class StoreCustomerRequest extends FormRequest
             'company' => 'nullable|string|max:255',
             
             'customer_type' => ['required', Rule::in(['individual', 'business'])],
+            'type' => ['sometimes', Rule::in(['individual', 'business'])],
             'status' => ['nullable', Rule::in(['active', 'inactive', 'blocked'])],
             
             'address' => 'nullable|string',
@@ -33,6 +34,16 @@ class StoreCustomerRequest extends FormRequest
             'tax_id' => 'nullable|string|max:100',
             'business_license' => 'nullable|string|max:100',
         ];
+    }
+    
+    protected function prepareForValidation()
+    {
+        // Map 'type' to 'customer_type' for backward compatibility
+        if ($this->has('type') && !$this->has('customer_type')) {
+            $this->merge([
+                'customer_type' => $this->input('type')
+            ]);
+        }
     }
 
     public function messages(): array

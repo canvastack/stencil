@@ -5,7 +5,7 @@ namespace Tests\Unit\Domain\Vendor\Services;
 use App\Domain\Vendor\Services\VendorEvaluationService;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,14 +16,14 @@ class VendorPerformanceTest extends TestCase
     use RefreshDatabase;
 
     protected VendorEvaluationService $evaluationService;
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected Vendor $vendor;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->evaluationService = app(VendorEvaluationService::class);
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->vendor = Vendor::factory()->create([
             'tenant_id' => $this->tenant->id,
             'lead_time' => 7,
@@ -414,7 +414,7 @@ class VendorPerformanceTest extends TestCase
 
     public function test_tenant_scoping_in_evaluation(): void
     {
-        $tenant2 = Tenant::factory()->create();
+        $tenant2 = TenantEloquentModel::factory()->create();
         $vendor2 = Vendor::factory()->create(['tenant_id' => $tenant2->id]);
 
         $this->createOrdersForVendor($this->vendor, 5, ['status' => 'completed']);

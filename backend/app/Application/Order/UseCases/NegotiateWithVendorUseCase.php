@@ -37,7 +37,7 @@ class NegotiateWithVendorUseCase
         }
 
         if ($order->getStatus() !== OrderStatus::VENDOR_NEGOTIATION && 
-            $order->getStatus() !== OrderStatus::SOURCING_VENDOR) {
+            $order->getStatus() !== OrderStatus::VENDOR_SOURCING) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow vendor negotiation"
             );

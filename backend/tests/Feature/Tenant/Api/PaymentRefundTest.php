@@ -5,7 +5,7 @@ namespace Tests\Feature\Tenant\Api;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderPaymentTransaction;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,7 +18,7 @@ class PaymentRefundTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected string $tenantHost;
     protected Customer $customer;
     protected Vendor $vendor;
@@ -30,7 +30,7 @@ class PaymentRefundTest extends TestCase
         
         $this->markTestSkipped('Payment refund feature is not yet implemented. Routes and endpoints for refund processing need to be created.');
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->tenantHost = $this->tenant->slug . '.canvastencil.test';
         $this->tenant->update(['domain' => $this->tenantHost]);
 
@@ -338,7 +338,7 @@ class PaymentRefundTest extends TestCase
 
     public function test_refund_isolation_between_tenants(): void
     {
-        $tenant2 = Tenant::factory()->create();
+        $tenant2 = TenantEloquentModel::factory()->create();
         $customer2 = Customer::factory()->create(['tenant_id' => $tenant2->id]);
         $order2 = Order::factory()->create([
             'tenant_id' => $tenant2->id,

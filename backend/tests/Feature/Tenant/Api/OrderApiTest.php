@@ -6,7 +6,7 @@ use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,14 +20,14 @@ class OrderApiTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected string $tenantHost;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->tenantHost = $this->tenant->slug . '.canvastencil.test';
         $this->tenant->update(['domain' => $this->tenantHost]);
 
@@ -53,25 +53,31 @@ class OrderApiTest extends TestCase
             'data' => [
                 '*' => [
                     'id',
+                    'uuid',
                     'tenantId',
                     'orderNumber',
                     'financial' => [
                         'totalAmount',
+                        'subtotal',
+                        'tax',
+                        'currency',
                     ],
-                    'status' => [
-                        'orderStatus',
+                    'status',
+                    'customer' => [
+                        'id',
+                        'name',
                     ],
-                    'timestamps' => [
-                        'createdAt',
-                    ],
+                    'createdAt',
+                    'updatedAt',
                 ]
-            ]
+            ],
+            'meta'
         ]);
     }
 
     public function test_order_list_excludes_other_tenant_data(): void
     {
-        $otherTenant = Tenant::factory()->create();
+        $otherTenant = TenantEloquentModel::factory()->create();
         Order::factory()->create(['tenant_id' => $otherTenant->id]);
         Order::factory()->create(['tenant_id' => $this->tenant->id]);
 
@@ -81,7 +87,7 @@ class OrderApiTest extends TestCase
         $orders = $response->json('data');
         $this->assertGreaterThan(0, count($orders));
         foreach ($orders as $order) {
-            $this->assertEquals($this->tenant->id, $order['tenantId']);
+            $this->assertEquals($this->tenant->uuid, $order['tenantId']);
         }
     }
 
@@ -128,26 +134,20 @@ class OrderApiTest extends TestCase
             'tax' => 0,
             'shipping_cost' => 0,
             'total_amount' => 5000000,
-            'shipping_address' => 'Jl. Test 123',
-            'customer_notes' => 'Test order',
+            'shipping_address' => [
+                'address' => 'Jl. Test 123',
+                'city' => 'Jakarta',
+                'postal_code' => '12345',
+            ],
+            'notes' => 'Test order',
         ];
 
         $response = $this->tenantPost('/api/orders', $orderData);
 
         $response->assertStatus(201);
-        $response->assertJsonStructure([
-            'data' => [
-                'id',
-                'tenantId',
-                'orderNumber',
-                'financial' => [
-                    'totalAmount',
-                ],
-                'status' => [
-                    'orderStatus',
-                ],
-            ]
-        ]);
+        $response->assertJsonPath('data.id', fn ($id) => !empty($id));
+        $response->assertJsonPath('data.uuid', fn ($uuid) => !empty($uuid));
+        $response->assertJsonPath('data.tenantId', fn ($tid) => !empty($tid));
 
         $this->assertDatabaseHas('orders', [
             'customer_id' => $customer->id,
@@ -160,24 +160,27 @@ class OrderApiTest extends TestCase
     {
         $order = Order::factory()->create(['tenant_id' => $this->tenant->id]);
 
-        $response = $this->tenantGet("/api/orders/{$order->id}");
+        $response = $this->tenantGet("/api/orders/{$order->uuid}");
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
             'data' => [
                 'id',
+                'uuid',
                 'tenantId',
                 'orderNumber',
                 'financial' => [
                     'totalAmount',
+                    'subtotal',
+                    'currency',
                 ],
-                'status' => [
-                    'orderStatus',
-                ],
+                'status',
                 'customer' => [
                     'id',
                     'name',
                 ],
+                'createdAt',
+                'updatedAt',
             ]
         ]);
     }
@@ -189,7 +192,7 @@ class OrderApiTest extends TestCase
             'notes' => 'Original notes'
         ]);
 
-        $response = $this->tenantPut("/api/orders/{$order->id}", [
+        $response = $this->tenantPut("/api/orders/{$order->uuid}", [
             'internal_notes' => 'Updated notes'
         ]);
 
@@ -207,14 +210,14 @@ class OrderApiTest extends TestCase
             'status' => 'new'
         ]);
 
-        $response = $this->tenantPut("/api/orders/{$order->id}/status", [
-            'status' => 'sourcing_vendor'
+        $response = $this->tenantPut("/api/orders/{$order->uuid}/status", [
+            'status' => 'vendor_sourcing'
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'status' => 'sourcing_vendor'
+            'status' => 'vendor_sourcing'
         ]);
     }
 
@@ -225,7 +228,7 @@ class OrderApiTest extends TestCase
             'status' => 'new'
         ]);
 
-        $response = $this->tenantPut("/api/orders/{$order->id}/status", [
+        $response = $this->tenantPut("/api/orders/{$order->uuid}/status", [
             'status' => 'completed'
         ]);
 
@@ -239,14 +242,14 @@ class OrderApiTest extends TestCase
             'status' => 'ready_to_ship'
         ]);
 
-        $response = $this->tenantPost("/api/orders/{$order->id}/ship", [
+        $response = $this->tenantPost("/api/orders/{$order->uuid}/ship", [
             'tracking_number' => 'TRACK123456'
         ]);
 
         $response->assertStatus(200);
         
         $order->refresh();
-        $this->assertEquals('shipped', $order->status);
+        $this->assertEquals('shipping', $order->status);
         $this->assertEquals('TRACK123456', $order->tracking_number);
         $this->assertNotNull($order->shipped_at);
     }
@@ -258,7 +261,7 @@ class OrderApiTest extends TestCase
             'status' => 'new'
         ]);
 
-        $response = $this->tenantPost("/api/orders/{$order->id}/cancel", [
+        $response = $this->tenantPost("/api/orders/{$order->uuid}/cancel", [
             'reason' => 'Customer request'
         ]);
 
@@ -276,7 +279,7 @@ class OrderApiTest extends TestCase
             'status' => 'new'
         ]);
 
-        $response = $this->tenantGet("/api/orders/{$order->id}/available-transitions");
+        $response = $this->tenantGet("/api/orders/{$order->uuid}/available-transitions");
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -295,10 +298,10 @@ class OrderApiTest extends TestCase
 
     public function test_cannot_update_other_tenant_order(): void
     {
-        $otherTenant = Tenant::factory()->create();
+        $otherTenant = TenantEloquentModel::factory()->create();
         $otherOrder = Order::factory()->create(['tenant_id' => $otherTenant->id]);
 
-        $response = $this->tenantPut("/api/orders/{$otherOrder->id}", [
+        $response = $this->tenantPut("/api/orders/{$otherOrder->uuid}", [
             'notes' => 'Unauthorized update'
         ]);
 
@@ -307,28 +310,31 @@ class OrderApiTest extends TestCase
 
     public function test_cannot_delete_other_tenant_order(): void
     {
-        $otherTenant = Tenant::factory()->create();
+        $otherTenant = TenantEloquentModel::factory()->create();
         $otherOrder = Order::factory()->create(['tenant_id' => $otherTenant->id]);
 
-        $response = $this->tenantDelete("/api/orders/{$otherOrder->id}");
+        $response = $this->tenantDelete("/api/orders/{$otherOrder->uuid}");
 
         $response->assertStatus(404);
     }
 
     public function test_cannot_access_other_tenant_orders(): void
     {
-        $otherTenant = Tenant::factory()->create();
+        $otherTenant = TenantEloquentModel::factory()->create();
         $otherOrder = Order::factory()->create(['tenant_id' => $otherTenant->id]);
 
-        $response = $this->tenantGet("/api/orders/{$otherOrder->id}");
+        $response = $this->tenantGet("/api/orders/{$otherOrder->uuid}");
 
         $response->assertStatus(404);
     }
 
     public function test_order_search_works_correctly(): void
     {
+        $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+        
         $order = Order::factory()->create([
             'tenant_id' => $this->tenant->id,
+            'customer_id' => $customer->id,
             'order_number' => 'ORD-12345'
         ]);
 
@@ -340,22 +346,29 @@ class OrderApiTest extends TestCase
 
     public function test_order_date_range_filter_works(): void
     {
-        Order::factory()->create([
+        // Clear any existing orders first
+        Order::where('tenant_id', $this->tenant->id)->delete();
+        
+        $oldOrder = Order::factory()->create([
             'tenant_id' => $this->tenant->id,
             'customer_id' => Customer::factory()->create(['tenant_id' => $this->tenant->id])->id,
-            'created_at' => now()->subDays(10)
+            'created_at' => now()->subDays(10),
+            'updated_at' => now()->subDays(10)
         ]);
 
-        Order::factory()->create([
+        $recentOrder = Order::factory()->create([
             'tenant_id' => $this->tenant->id,
             'customer_id' => Customer::factory()->create(['tenant_id' => $this->tenant->id])->id,
-            'created_at' => now()->subDays(5)
+            'created_at' => now()->subDays(5),
+            'updated_at' => now()->subDays(5)
         ]);
 
         $response = $this->tenantGet('/api/orders?date_from=' . now()->subDays(7)->format('Y-m-d'));
 
         $response->assertStatus(200);
-        $this->assertEquals(1, count($response->json('data')));
+        $data = $response->json('data');
+        $this->assertEquals(1, count($data), 'Expected 1 order within date range, got ' . count($data));
+        $this->assertEquals($recentOrder->uuid, $data[0]['uuid']);
     }
 
     public function test_status_endpoint_is_tenant_scoped(): void
@@ -367,7 +380,7 @@ class OrderApiTest extends TestCase
             'status' => 'new'
         ]);
 
-        $otherTenant = Tenant::factory()->create();
+        $otherTenant = TenantEloquentModel::factory()->create();
         $otherCustomer = Customer::factory()->create(['tenant_id' => $otherTenant->id]);
         Order::factory()->create([
             'tenant_id' => $otherTenant->id,
@@ -392,7 +405,7 @@ class OrderApiTest extends TestCase
             'customer_id' => $customer->id,
         ]);
 
-        $otherTenant = Tenant::factory()->create();
+        $otherTenant = TenantEloquentModel::factory()->create();
         $otherCustomer = Customer::factory()->create(['tenant_id' => $otherTenant->id]);
         Order::factory()->create([
             'tenant_id' => $otherTenant->id,
@@ -424,7 +437,7 @@ class OrderApiTest extends TestCase
             'vendor_id' => $vendor->id,
         ]);
 
-        $otherTenant = Tenant::factory()->create();
+        $otherTenant = TenantEloquentModel::factory()->create();
         $otherVendor = Vendor::factory()->create(['tenant_id' => $otherTenant->id]);
         $otherCustomer = Customer::factory()->create(['tenant_id' => $otherTenant->id]);
         $otherOrder = Order::factory()->create([

@@ -4,16 +4,36 @@ namespace Database\Factories;
 
 use App\Models\PaymentRefund;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\OrderEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\CustomerEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\VendorEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\UserEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
+use App\Infrastructure\Persistence\Eloquent\Models\Customer;
+use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
+use App\Infrastructure\Persistence\Eloquent\Models\OrderPaymentTransaction;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 class PaymentRefundFactory extends Factory
 {
     protected $model = PaymentRefund::class;
+
+    public function configure()
+    {
+        return $this->afterMaking(function (PaymentRefund $refund) {
+            // If tenant_id is set but related models are not, create them with matching tenant_id
+            if ($refund->tenant_id && !$refund->customer_id) {
+                $refund->customer_id = Customer::factory()->create(['tenant_id' => $refund->tenant_id])->id;
+            }
+            if ($refund->tenant_id && !$refund->order_id && $refund->customer_id) {
+                $refund->order_id = Order::factory()->create([
+                    'tenant_id' => $refund->tenant_id,
+                    'customer_id' => $refund->customer_id
+                ])->id;
+            }
+            if ($refund->tenant_id && !$refund->initiated_by) {
+                $refund->initiated_by = User::factory()->create(['tenant_id' => $refund->tenant_id])->id;
+            }
+        });
+    }
 
     public function definition(): array
     {
@@ -23,13 +43,10 @@ class PaymentRefundFactory extends Factory
 
         return [
             'tenant_id' => TenantEloquentModel::factory(),
-            'order_id' => OrderEloquentModel::factory(),
-            'original_transaction_id' => 1, // Will be set by relationship
-            'customer_id' => CustomerEloquentModel::factory(),
-            'vendor_id' => $this->faker->optional(0.7)->randomElement([
-                VendorEloquentModel::factory(),
-                null
-            ]),
+            'order_id' => Order::factory(),
+            'original_transaction_id' => OrderPaymentTransaction::factory(),
+            'customer_id' => Customer::factory(),
+            'vendor_id' => null,
             
             // Refund identification
             'refund_reference' => 'REF-' . strtoupper(Str::random(10)),
@@ -77,15 +94,11 @@ class PaymentRefundFactory extends Factory
             
             // Approval workflow - simple default
             'approval_workflow' => null,
-            'initiated_by' => UserEloquentModel::factory(),
-            'approved_by' => $this->faker->optional(0.5)->randomElement([
-                UserEloquentModel::factory(),
-                null
-            ]),
-            'processed_by' => $this->faker->optional(0.3)->randomElement([
-                UserEloquentModel::factory(),
-                null
-            ]),
+            'initiated_by' => function (array $attributes) {
+                return User::factory()->create(['tenant_id' => $attributes['tenant_id']])->id;
+            },
+            'approved_by' => null,
+            'processed_by' => null,
             
             // Important timestamps
             'requested_at' => $requestedAt = $this->faker->dateTimeBetween('-30 days', 'now'),
@@ -166,7 +179,6 @@ class PaymentRefundFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'approved',
-            'approved_by' => UserEloquentModel::factory(),
             'approved_at' => $this->faker->dateTimeBetween($attributes['requested_at'], 'now'),
             'rejected_at' => null,
         ]);
@@ -179,8 +191,6 @@ class PaymentRefundFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'completed',
-            'approved_by' => UserEloquentModel::factory(),
-            'processed_by' => UserEloquentModel::factory(),
             'approved_at' => $approvedAt = $this->faker->dateTimeBetween($attributes['requested_at'], 'now'),
             'processed_at' => $processedAt = $this->faker->dateTimeBetween($approvedAt, 'now'),
             'completed_at' => $this->faker->dateTimeBetween($processedAt, 'now'),
@@ -200,7 +210,6 @@ class PaymentRefundFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'rejected',
-            'approved_by' => UserEloquentModel::factory(),
             'rejected_at' => $this->faker->dateTimeBetween($attributes['requested_at'], 'now'),
             'approved_at' => null,
             'processed_at' => null,
@@ -215,8 +224,6 @@ class PaymentRefundFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'failed',
-            'approved_by' => UserEloquentModel::factory(),
-            'processed_by' => UserEloquentModel::factory(),
             'approved_at' => $approvedAt = $this->faker->dateTimeBetween($attributes['requested_at'], 'now'),
             'processed_at' => $this->faker->dateTimeBetween($approvedAt, 'now'),
             'gateway_error_code' => $this->faker->randomElement(['INSUFFICIENT_FUNDS', 'INVALID_ACCOUNT', 'NETWORK_ERROR']),

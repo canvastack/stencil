@@ -27,13 +27,22 @@ class AuthenticationService
             ]);
         }
 
+        // Check if this email belongs to a tenant user (not platform account)
+        $tenantUser = UserEloquentModel::whereRaw('LOWER(email) = LOWER(?)', [$email])->first();
+        if ($tenantUser) {
+            RateLimiter::hit($key, 60);
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials for platform login.']
+            ]);
+        }
+
         $account = AccountEloquentModel::whereRaw('LOWER(email) = LOWER(?)', [$email])->first();
 
         if (!$account || !Hash::check($password, $account->password)) {
             RateLimiter::hit($key, 60);
             
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.']
+                'email' => ['Invalid credentials. Please check your email and password.']
             ]);
         }
 
@@ -93,6 +102,15 @@ class AuthenticationService
             ]);
         }
 
+        // Check if this email belongs to a platform account (not tenant user)
+        $platformAccount = AccountEloquentModel::whereRaw('LOWER(email) = LOWER(?)', [$email])->first();
+        if ($platformAccount) {
+            RateLimiter::hit($key, 60);
+            throw ValidationException::withMessages([
+                'email' => ['Invalid credentials for tenant login.']
+            ]);
+        }
+
         // Find user within tenant context
         $user = UserEloquentModel::where('tenant_id', $tenantId)
             ->whereRaw('LOWER(email) = LOWER(?)', [$email])
@@ -102,7 +120,7 @@ class AuthenticationService
             RateLimiter::hit($key, 60);
             
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.']
+                'email' => ['Invalid credentials. Please check your email and password.']
             ]);
         }
 

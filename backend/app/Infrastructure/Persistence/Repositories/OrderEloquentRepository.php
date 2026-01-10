@@ -9,15 +9,23 @@ use App\Domain\Order\ValueObjects\OrderNumber;
 use App\Domain\Order\ValueObjects\OrderTotal;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Infrastructure\Persistence\Eloquent\Models\Order as OrderModel;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
+use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use DateTime;
 
 class OrderEloquentRepository implements OrderRepositoryInterface
 {
+    private ?OrderModel $lastSavedModel = null;
+
     public function __construct(
         private OrderModel $model
     ) {}
+    
+    public function getLastSavedModel(): ?OrderModel
+    {
+        return $this->lastSavedModel;
+    }
 
     public function findById(UuidValueObject $id): ?Order
     {
@@ -100,12 +108,12 @@ class OrderEloquentRepository implements OrderRepositoryInterface
     {
         $data = $this->fromDomain($order);
         
-        $model = $this->model->updateOrCreate(
+        $this->lastSavedModel = $this->model->updateOrCreate(
             ['uuid' => $data['uuid']],
             $data
         );
         
-        return $this->toDomain($model);
+        return $this->toDomain($this->lastSavedModel);
     }
 
     public function delete(UuidValueObject $id): bool
@@ -163,7 +171,7 @@ class OrderEloquentRepository implements OrderRepositoryInterface
 
     private function resolveTenantId(UuidValueObject $tenantUuid): int
     {
-        $tenant = Tenant::where('uuid', $tenantUuid->getValue())->first();
+        $tenant = TenantEloquentModel::where('uuid', $tenantUuid->getValue())->first();
         if (!$tenant) {
             throw new \InvalidArgumentException("Tenant not found with UUID: {$tenantUuid->getValue()}");
         }
@@ -172,7 +180,7 @@ class OrderEloquentRepository implements OrderRepositoryInterface
 
     private function getTenantUuid(int $tenantId): string
     {
-        $tenant = Tenant::find($tenantId);
+        $tenant = TenantEloquentModel::find($tenantId);
         if (!$tenant) {
             throw new \InvalidArgumentException("Tenant not found with ID: {$tenantId}");
         }
@@ -197,8 +205,32 @@ class OrderEloquentRepository implements OrderRepositoryInterface
         return $customer->uuid;
     }
 
+    private function resolveVendorId(UuidValueObject $vendorUuid): ?int
+    {
+        $vendor = Vendor::where('uuid', $vendorUuid->getValue())->first();
+        if (!$vendor) {
+            return null;
+        }
+        return $vendor->id;
+    }
+
+    private function getVendorUuid(?int $vendorId): ?string
+    {
+        if ($vendorId === null) {
+            return null;
+        }
+        
+        $vendor = Vendor::find($vendorId);
+        if (!$vendor) {
+            return null;
+        }
+        return $vendor->uuid;
+    }
+
     private function toDomain(OrderModel $model): Order
     {
+        $vendorUuid = $model->vendor_id ? $this->getVendorUuid($model->vendor_id) : null;
+        
         return new Order(
             new UuidValueObject($model->uuid),
             new UuidValueObject($this->getTenantUuid($model->tenant_id)),
@@ -207,6 +239,7 @@ class OrderEloquentRepository implements OrderRepositoryInterface
             new OrderTotal($model->total_amount, $model->currency),
             OrderStatus::fromString($model->status),
             $model->items ?? [],
+            $vendorUuid ? new UuidValueObject($vendorUuid) : null,
             $model->shipping_address,
             $model->billing_address,
             $model->notes,
@@ -217,10 +250,16 @@ class OrderEloquentRepository implements OrderRepositoryInterface
 
     private function fromDomain(Order $order): array
     {
-        return [
+        $vendorId = null;
+        if ($order->getVendorId()) {
+            $vendorId = $this->resolveVendorId($order->getVendorId());
+        }
+        
+        $data = [
             'uuid' => $order->getId()->getValue(),
             'tenant_id' => $this->resolveTenantId($order->getTenantId()),
             'customer_id' => $this->resolveCustomerId($order->getCustomerId()),
+            'vendor_id' => $vendorId,
             'order_number' => $order->getOrderNumber()->getValue(),
             'status' => $order->getStatus()->value,
             'total_amount' => $order->getTotal()->getAmount(),
@@ -230,5 +269,14 @@ class OrderEloquentRepository implements OrderRepositoryInterface
             'billing_address' => null,
             'notes' => null,
         ];
+        
+        if ($order->getStatus() === OrderStatus::COMPLETED) {
+            $existingOrder = $this->model->where('uuid', $order->getId()->getValue())->first();
+            if (!$existingOrder || !$existingOrder->completed_at) {
+                $data['completed_at'] = now();
+            }
+        }
+        
+        return $data;
     }
 }

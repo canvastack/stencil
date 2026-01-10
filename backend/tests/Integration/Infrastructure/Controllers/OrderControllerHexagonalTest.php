@@ -4,7 +4,7 @@ namespace Tests\Integration\Infrastructure\Controllers;
 
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
@@ -27,7 +27,7 @@ class OrderControllerHexagonalTest extends TestCase
     {
         parent::setUp();
         
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->user = User::factory()->create();
         
         // Set tenant context

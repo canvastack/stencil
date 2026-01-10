@@ -73,6 +73,7 @@ Route::prefix('platform')
         
         // Platform Analytics
         Route::prefix('analytics')->group(function () {
+            Route::get('/', [AnalyticsController::class, 'index'])->name('platform.analytics.index');
             Route::get('/overview', [AnalyticsController::class, 'overview'])->name('platform.analytics.overview');
             Route::get('/tenants', [AnalyticsController::class, 'tenants'])->name('platform.analytics.tenants');
             Route::get('/revenue', [AnalyticsController::class, 'revenue'])->name('platform.analytics.revenue');

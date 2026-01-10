@@ -6,20 +6,20 @@ use Tests\TestCase;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\CustomerReview;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class PublicProductsReviewAggregationTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
 
     protected function setUp(): void
     {
         parent::setUp();
         
-        $this->tenant = Tenant::factory()->create([
+        $this->tenant = TenantEloquentModel::factory()->create([
             'slug' => 'test-tenant',
             'name' => 'Test Tenant'
         ]);

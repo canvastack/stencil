@@ -4,7 +4,7 @@ namespace Database\Factories\Infrastructure\Persistence\Eloquent\Models;
 
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
@@ -15,7 +15,7 @@ class OrderFactory extends Factory
 
     public function definition(): array
     {
-        $tenantFactory = Tenant::factory();
+        $tenantFactory = TenantEloquentModel::factory();
 
         return [
             'uuid' => Uuid::uuid4()->toString(),

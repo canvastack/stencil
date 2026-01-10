@@ -31,7 +31,7 @@ class VerifyCustomerPaymentUseCase
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        if ($order->getStatus() !== OrderStatus::WAITING_PAYMENT) {
+        if ($order->getStatus() !== OrderStatus::AWAITING_PAYMENT) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow payment verification"
             );
@@ -41,7 +41,18 @@ class VerifyCustomerPaymentUseCase
             throw new InvalidArgumentException('Paid amount must be non-negative');
         }
 
-        $order->updateStatus(OrderStatus::PAYMENT_RECEIVED);
+        $totalAmount = $order->getTotal()->getAmount();
+        $downPaymentThreshold = $totalAmount * 0.3;
+
+        if ($command->paidAmount >= $totalAmount) {
+            $order->updateStatus(OrderStatus::FULL_PAYMENT);
+        } elseif ($command->paidAmount >= $downPaymentThreshold) {
+            $order->updateStatus(OrderStatus::PARTIAL_PAYMENT);
+        } else {
+            throw new InvalidArgumentException(
+                "Payment amount must be at least 30% of total amount (minimum: {$downPaymentThreshold})"
+            );
+        }
 
         $savedOrder = $this->orderRepository->save($order);
 

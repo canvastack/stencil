@@ -32,14 +32,14 @@ class UpdateProductionProgressUseCase
         }
 
         if ($order->getStatus() !== OrderStatus::IN_PRODUCTION && 
-            $order->getStatus() !== OrderStatus::QUALITY_CHECK) {
+            $order->getStatus() !== OrderStatus::QUALITY_CONTROL) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow production updates"
             );
         }
 
         if ($command->progressPercentage >= 100) {
-            $order->updateStatus(OrderStatus::QUALITY_CHECK);
+            $order->updateStatus(OrderStatus::QUALITY_CONTROL);
         }
 
         $savedOrder = $this->orderRepository->save($order);

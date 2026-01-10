@@ -38,8 +38,8 @@ class MediaFile extends Model implements TenantAwareModel
     ];
 
     protected $casts = [
-        'dimensions' => 'array',
-        'metadata' => 'array',
+        'dimensions' => 'json',
+        'metadata' => 'json',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',

@@ -17,7 +17,7 @@ class NavigationController extends Controller
     public function getHeader(string $tenantSlug): JsonResponse
     {
         try {
-            $tenant = Tenant::where('slug', $tenantSlug)->first();
+            $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
             
             if (!$tenant) {
                 return response()->json([
@@ -79,7 +79,7 @@ class NavigationController extends Controller
     public function getFooter(string $tenantSlug): JsonResponse
     {
         try {
-            $tenant = Tenant::where('slug', $tenantSlug)->first();
+            $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
             
             if (!$tenant) {
                 return response()->json([
@@ -143,7 +143,7 @@ class NavigationController extends Controller
     public function getMenus(Request $request, string $tenantSlug): JsonResponse
     {
         try {
-            $tenant = Tenant::where('slug', $tenantSlug)->first();
+            $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
             
             if (!$tenant) {
                 return response()->json([

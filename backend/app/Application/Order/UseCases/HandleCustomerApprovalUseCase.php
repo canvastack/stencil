@@ -31,13 +31,13 @@ class HandleCustomerApprovalUseCase
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        if ($order->getStatus() !== OrderStatus::CUSTOMER_QUOTATION) {
+        if ($order->getStatus() !== OrderStatus::CUSTOMER_QUOTE) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow approval handling"
             );
         }
 
-        $newStatus = $command->approved ? OrderStatus::WAITING_PAYMENT : OrderStatus::VENDOR_NEGOTIATION;
+        $newStatus = $command->approved ? OrderStatus::AWAITING_PAYMENT : OrderStatus::VENDOR_NEGOTIATION;
         $order->updateStatus($newStatus);
 
         $savedOrder = $this->orderRepository->save($order);

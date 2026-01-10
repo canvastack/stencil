@@ -59,7 +59,7 @@ class AssignVendorUseCaseTest extends TestCase
             customerId: new UuidValueObject('880e8400-e29b-41d4-a716-446655440003'),
             orderNumber: new OrderNumber('ORD-001'),
             total: new OrderTotal(100000, 'IDR'),
-            status: OrderStatus::SOURCING_VENDOR,
+            status: OrderStatus::VENDOR_SOURCING,
             items: []
         );
 
@@ -135,7 +135,7 @@ class AssignVendorUseCaseTest extends TestCase
             customerId: new UuidValueObject('880e8400-e29b-41d4-a716-446655440003'),
             orderNumber: new OrderNumber('ORD-001'),
             total: new OrderTotal(100000, 'IDR'),
-            status: OrderStatus::SOURCING_VENDOR
+            status: OrderStatus::VENDOR_SOURCING
         );
 
         $this->orderRepository
@@ -168,7 +168,7 @@ class AssignVendorUseCaseTest extends TestCase
             customerId: new UuidValueObject('880e8400-e29b-41d4-a716-446655440003'),
             orderNumber: new OrderNumber('ORD-001'),
             total: new OrderTotal(100000, 'IDR'),
-            status: OrderStatus::SOURCING_VENDOR
+            status: OrderStatus::VENDOR_SOURCING
         );
 
         $this->orderRepository

@@ -31,13 +31,13 @@ class ShipOrderUseCase
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        if ($order->getStatus() !== OrderStatus::READY_TO_SHIP) {
+        if ($order->getStatus() !== OrderStatus::SHIPPING) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow shipping"
             );
         }
 
-        $order->updateStatus(OrderStatus::SHIPPED);
+        $order->updateStatus(OrderStatus::SHIPPING);
 
         $savedOrder = $this->orderRepository->save($order);
 

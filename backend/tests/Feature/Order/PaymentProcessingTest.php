@@ -15,7 +15,10 @@ use App\Application\Order\Commands\{
     RefundOrderCommand
 };
 use App\Application\Order\Services\PaymentApplicationService;
-use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Tenant, Vendor};
+use App\Domain\Order\Enums\OrderStatus;
+use App\Domain\Order\Services\OrderStateMachine;
+use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Vendor};
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -30,7 +33,7 @@ class PaymentProcessingTest extends TestCase
     private RefundOrderUseCase $refundOrderUseCase;
     private PaymentApplicationService $paymentService;
 
-    private Tenant $tenant;
+    private TenantEloquentModel $tenant;
     private Customer $customer;
     private Vendor $vendor;
     private Product $product;
@@ -47,7 +50,7 @@ class PaymentProcessingTest extends TestCase
 
         Event::fake();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->product = Product::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -128,6 +131,12 @@ class PaymentProcessingTest extends TestCase
 
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
 
+        $eloquentOrder = Order::where('uuid', $order->getId()->getValue())->firstOrFail();
+        $stateMachine = app(OrderStateMachine::class);
+        $stateMachine->transitionTo($eloquentOrder, OrderStatus::CUSTOMER_QUOTE);
+        $eloquentOrder->refresh();
+        $stateMachine->transitionTo($eloquentOrder, OrderStatus::AWAITING_PAYMENT);
+
         $downPaymentCommand = new VerifyCustomerPaymentCommand(
             orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
@@ -135,14 +144,20 @@ class PaymentProcessingTest extends TestCase
             paymentMethod: 'bank_transfer'
         );
 
-        $order = $this->verifyCustomerPaymentUseCase->execute($downPaymentCommand);
-        $this->assertNotNull($order->down_payment_at);
+        $verifiedOrder = $this->verifyCustomerPaymentUseCase->execute($downPaymentCommand);
+        
+        $eloquentOrder->refresh();
+        $this->assertEquals('partial_payment', $eloquentOrder->status);
+
+        $stateMachine->transitionTo($eloquentOrder, OrderStatus::IN_PRODUCTION);
+        $eloquentOrder->refresh();
+        $stateMachine->transitionTo($eloquentOrder, OrderStatus::QUALITY_CONTROL);
+        $eloquentOrder->refresh();
 
         $finalPaymentRequest = $this->requestFinalPaymentUseCase->execute(new RequestFinalPaymentCommand(
-            orderId: $order->getId()->getValue(),
+            orderId: $verifiedOrder->getId()->getValue(),
             tenantId: $this->tenant->uuid,
-            dueDate: now()->addDays(7)->format('Y-m-d'),
-            paymentMethod: 'bank_transfer'
+            finalAmount: 70000.00
         ));
 
         $this->assertNotNull($finalPaymentRequest);
@@ -386,7 +401,7 @@ class PaymentProcessingTest extends TestCase
     /** @test */
     public function payment_processing_multi_tenant_isolation(): void
     {
-        $tenantB = Tenant::factory()->create();
+        $tenantB = TenantEloquentModel::factory()->create();
         $customerB = Customer::factory()->create(['tenant_id' => $tenantB->id]);
         $productB = Product::factory()->create(['tenant_id' => $tenantB->id]);
 

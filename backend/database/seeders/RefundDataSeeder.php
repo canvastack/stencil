@@ -20,7 +20,7 @@ class RefundDataSeeder extends Seeder
     public function run(): void
     {
         // Run for each active tenant
-        $tenants = Tenant::where('status', 'active')->get();
+        $tenants = TenantEloquentModel::where('status', 'active')->get();
 
         foreach ($tenants as $tenant) {
             $this->seedTenantRefundData($tenant);

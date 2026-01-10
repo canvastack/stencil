@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Infrastructure\Persistence\Eloquent\Models\VendorOrder;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
 use Carbon\Carbon;
@@ -26,7 +26,7 @@ class VendorPerformanceSeeder extends Seeder
     public function run(): void
     {
         // Get first available tenant (flexible approach)
-        $tenant = Tenant::first();
+        $tenant = TenantEloquentModel::first();
         
         if (!$tenant) {
             $this->command->warn('No tenant found. Skipping vendor performance seeding.');

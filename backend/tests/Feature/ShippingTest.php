@@ -8,7 +8,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use App\Infrastructure\Persistence\Eloquent\Models\Shipment;
 use App\Infrastructure\Persistence\Eloquent\Models\ShippingMethod;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Domain\Shipping\Services\ShippingService;
 
@@ -16,7 +16,7 @@ class ShippingTest extends TestCase
 {
     use RefreshDatabase, WithFaker;
 
-    protected Tenant $tenant;
+    protected TenantEloquentModel $tenant;
     protected Customer $customer;
     protected Order $order;
     protected ShippingMethod $shippingMethod;
@@ -26,7 +26,7 @@ class ShippingTest extends TestCase
     {
         parent::setUp();
 
-        $this->tenant = Tenant::factory()->create();
+        $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->shippingMethod = ShippingMethod::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->shippingService = app(ShippingService::class);

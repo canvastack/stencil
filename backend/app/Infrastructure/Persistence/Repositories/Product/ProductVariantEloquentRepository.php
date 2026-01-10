@@ -11,7 +11,7 @@ use App\Domain\Shared\ValueObjects\Uuid;
 use App\Infrastructure\Persistence\Eloquent\Models\Product as ProductModel;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory as ProductCategoryModel;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant as ProductVariantModel;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -27,7 +27,7 @@ class ProductVariantEloquentRepository
 
     private ProductCategoryModel $categoryModel;
 
-    private Tenant $tenantModel;
+    private TenantEloquentModel $tenantModel;
 
     private array $tenantUuidMap = [];
 
@@ -35,12 +35,12 @@ class ProductVariantEloquentRepository
         ?ProductVariantModel $variantModel = null,
         ?ProductModel $productModel = null,
         ?ProductCategoryModel $categoryModel = null,
-        ?Tenant $tenantModel = null,
+        ?TenantEloquentModel $tenantModel = null,
     ) {
         $this->variantModel = $variantModel ?? new ProductVariantModel();
         $this->productModel = $productModel ?? new ProductModel();
         $this->categoryModel = $categoryModel ?? new ProductCategoryModel();
-        $this->tenantModel = $tenantModel ?? new Tenant();
+        $this->tenantModel = $tenantModel ?? new TenantEloquentModel();
     }
 
     public function save(ProductVariant $variant): ProductVariant
@@ -590,7 +590,7 @@ class ProductVariantEloquentRepository
         return $this->tenantUuidMap[$uuid];
     }
 
-    private function resolveTenant(string $uuid, ?string $name, ?string $slug, ?int $preferredId = null): Tenant
+    private function resolveTenant(string $uuid, ?string $name, ?string $slug, ?int $preferredId = null): TenantEloquentModel
     {
         $normalizedUuid = $this->normalizeTenantUuid($uuid);
 

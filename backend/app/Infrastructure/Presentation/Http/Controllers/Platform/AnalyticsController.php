@@ -6,6 +6,11 @@ use App\Http\Controllers\Controller;
 
 class AnalyticsController extends Controller
 {
+    public function index()
+    {
+        return response()->json(['message' => 'Analytics index']);
+    }
+
     public function overview()
     {
         return response()->json(['message' => 'Analytics overview not implemented yet']);

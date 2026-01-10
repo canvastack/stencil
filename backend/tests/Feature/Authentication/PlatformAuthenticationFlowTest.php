@@ -25,6 +25,7 @@ class PlatformAuthenticationFlowTest extends TestCase
             'tenant_id' => null, // Platform role
             'name' => 'Super Administrator',
             'slug' => 'super-admin',
+            'guard_name' => 'api',
             'description' => 'Full platform access',
             'is_system' => true,
             'abilities' => [
@@ -41,6 +42,7 @@ class PlatformAuthenticationFlowTest extends TestCase
             'tenant_id' => null, // Platform role
             'name' => 'Platform Manager',
             'slug' => 'platform-manager',
+            'guard_name' => 'api',
             'description' => 'Limited platform access',
             'is_system' => true,
             'abilities' => [
@@ -107,7 +109,7 @@ class PlatformAuthenticationFlowTest extends TestCase
 
         $meResponse->assertStatus(200)
                   ->assertJsonStructure([
-                      'user',
+                      'account',
                       'permissions'
                   ]);
 

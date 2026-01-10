@@ -33,7 +33,7 @@ class OrderPaymentTransaction extends Model
     ];
 
     protected $casts = [
-        'metadata' => 'array',
+        'metadata' => 'json',
         'amount' => 'integer',
         'due_at' => 'datetime',
         'paid_at' => 'datetime',

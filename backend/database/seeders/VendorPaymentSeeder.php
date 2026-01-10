@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Infrastructure\Persistence\Eloquent\Models\VendorPayment;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Carbon\Carbon;
 
 class VendorPaymentSeeder extends Seeder
@@ -13,7 +13,7 @@ class VendorPaymentSeeder extends Seeder
     public function run(): void
     {
         // Get first available tenant
-        $tenant = Tenant::first();
+        $tenant = TenantEloquentModel::first();
         
         if (!$tenant) {
             $this->command->warn('No tenant found. Skipping VendorPaymentSeeder.');

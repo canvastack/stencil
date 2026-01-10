@@ -131,14 +131,22 @@ class RegistrationService
         // Create admin user for the tenant
         $adminUser = $this->registerTenantUser($adminData, $tenant->id);
         
-        // Assign admin role
-        $adminRole = RoleEloquentModel::where('tenant_id', $tenant->id)
-            ->where('slug', 'admin')
-            ->first();
+        // Create or find admin role for the tenant
+        $adminRole = RoleEloquentModel::firstOrCreate(
+            [
+                'tenant_id' => $tenant->id,
+                'slug' => 'admin',
+            ],
+            [
+                'name' => 'Admin',
+                'description' => 'Administrator role with full access',
+                'guard_name' => 'api',
+                'is_system_role' => true,
+            ]
+        );
             
-        if ($adminRole) {
-            $adminUser->roles()->sync([$adminRole->id]);
-        }
+        // Assign admin role to user
+        $adminUser->roles()->sync([$adminRole->id]);
         
         return [
             'tenant' => $tenant,
@@ -184,7 +192,7 @@ class RegistrationService
             'slug' => 'required|string|max:50|alpha_dash',
             'domain' => 'required|string|max:255|unique:tenants,domain',
             'database_name' => 'nullable|string|max:100',
-            'subscription_status' => 'nullable|in:trial,basic,premium,enterprise',
+            'subscription_status' => 'nullable|in:trial,active,suspended,expired',
         ])->validate();
     }
     

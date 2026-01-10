@@ -39,7 +39,7 @@ class CreatePurchaseOrderUseCase
             customerId: $customerId,
             orderNumber: $orderNumber,
             total: $orderTotal,
-            status: OrderStatus::NEW,
+            status: OrderStatus::PENDING,
             items: $command->items,
             shippingAddress: $command->shippingAddress,
             billingAddress: $command->billingAddress,

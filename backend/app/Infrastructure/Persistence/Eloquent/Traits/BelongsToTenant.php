@@ -31,12 +31,11 @@ trait BelongsToTenant
 
     protected static function resolveTenant(): ?BaseTenant
     {
-        // Use static cache to prevent infinite recursion
+        // Use static flag to prevent infinite recursion
         static $resolving = false;
-        static $cachedTenant = null;
         
         if ($resolving) {
-            return $cachedTenant;
+            return null;
         }
         
         $resolving = true;
@@ -46,7 +45,6 @@ trait BelongsToTenant
             if (function_exists('tenant')) {
                 $tenant = tenant();
                 if ($tenant instanceof BaseTenant) {
-                    $cachedTenant = $tenant;
                     return $tenant;
                 }
             }
@@ -55,7 +53,6 @@ trait BelongsToTenant
             if (app()->bound('current_tenant')) {
                 $tenant = app('current_tenant');
                 if ($tenant instanceof BaseTenant) {
-                    $cachedTenant = $tenant;
                     return $tenant;
                 }
             }
@@ -63,7 +60,6 @@ trait BelongsToTenant
             // 3. Try from config
             $configTenant = config('multitenancy.current_tenant');
             if ($configTenant instanceof BaseTenant) {
-                $cachedTenant = $configTenant;
                 return $configTenant;
             }
 
@@ -74,7 +70,6 @@ trait BelongsToTenant
                     ?? $request->get('current_tenant');
 
                 if ($requestTenant instanceof BaseTenant) {
-                    $cachedTenant = $requestTenant;
                     return $requestTenant;
                 }
             }
@@ -84,7 +79,6 @@ trait BelongsToTenant
             if ($user && isset($user->tenant_id)) {
                 $tenant = BaseTenant::find($user->tenant_id);
                 if ($tenant instanceof BaseTenant) {
-                    $cachedTenant = $tenant;
                     return $tenant;
                 }
             }

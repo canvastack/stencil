@@ -31,8 +31,8 @@ class RequestFinalPaymentUseCase
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        if ($order->getStatus() !== OrderStatus::QUALITY_CHECK &&
-            $order->getStatus() !== OrderStatus::READY_TO_SHIP) {
+        if ($order->getStatus() !== OrderStatus::QUALITY_CONTROL &&
+            $order->getStatus() !== OrderStatus::SHIPPING) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow final payment request"
             );
@@ -42,7 +42,7 @@ class RequestFinalPaymentUseCase
             throw new InvalidArgumentException('Final amount must be non-negative');
         }
 
-        $order->updateStatus(OrderStatus::READY_TO_SHIP);
+        $order->updateStatus(OrderStatus::SHIPPING);
 
         $savedOrder = $this->orderRepository->save($order);
 
