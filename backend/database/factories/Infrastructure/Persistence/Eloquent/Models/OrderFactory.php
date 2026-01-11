@@ -15,13 +15,15 @@ class OrderFactory extends Factory
 
     public function definition(): array
     {
-        $tenantFactory = TenantEloquentModel::factory();
+        // Create tenant and customer with matching tenant_id for multi-tenant compliance
+        $tenant = TenantEloquentModel::factory()->create();
+        $customer = Customer::factory()->create(['tenant_id' => $tenant->id]);
 
         return [
             'uuid' => Uuid::uuid4()->toString(),
-            'tenant_id' => $tenantFactory,
+            'tenant_id' => $tenant->id,
             'order_number' => 'ORD-' . strtoupper(Str::random(8)),
-            'customer_id' => Customer::factory()->for($tenantFactory, 'tenant'),
+            'customer_id' => $customer->id,
             'vendor_id' => null,
             'status' => 'new',
             'payment_status' => 'unpaid',
@@ -72,4 +74,23 @@ class OrderFactory extends Factory
             ],
         ];
     }
+
+    /**
+     * Configure factory to handle tenant_id override when custom customer_id provided
+     * 
+     * MULTI-TENANT COMPLIANCE:
+     * When test provides customer_id, automatically use matching tenant_id
+     * to prevent cross-tenant relationship violations.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Order $order) {
+            // If custom customer_id was provided, sync tenant_id
+            $customer = Customer::find($order->customer_id);
+            if ($customer) {
+                $order->tenant_id = $customer->tenant_id;
+            }
+        });
+    }
+
 }

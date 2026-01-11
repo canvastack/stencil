@@ -25,6 +25,11 @@ use Tests\TestCase;
  * - Search and filtering
  * - Authentication and authorization
  * - API response formats
+ * 
+ * MULTI-TENANT COMPLIANCE:
+ * - All test data properly scoped to tenant_id
+ * - Customer created with matching tenant_id before order
+ * - Prevents OrderFactory afterMaking() hook from overriding tenant_id
  */
 class RefundManagementApiTest extends TestCase
 {
@@ -40,7 +45,7 @@ class RefundManagementApiTest extends TestCase
     {
         parent::setUp();
 
-        // Setup test environment
+        // Setup test environment with proper multi-tenant isolation
         $this->tenant = TenantEloquentModel::factory()->create();
         
         $this->user = User::factory()->create([
@@ -187,7 +192,7 @@ class RefundManagementApiTest extends TestCase
 
     public function test_list_refund_requests(): void
     {
-        // Create test refund requests
+        // Create test refund requests with proper tenant isolation
         RefundRequest::factory()->count(3)->create([
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,

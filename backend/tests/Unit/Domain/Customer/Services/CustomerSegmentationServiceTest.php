@@ -28,6 +28,7 @@ class CustomerSegmentationServiceTest extends TestCase
         ]);
 
         Order::factory()->count(15)->create([
+            'tenant_id' => $customer->tenant_id,
             'customer_id' => $customer->id,
             'status' => 'completed',
             'payment_status' => 'paid',
@@ -53,6 +54,7 @@ class CustomerSegmentationServiceTest extends TestCase
         ]);
 
         Order::factory()->create([
+            'tenant_id' => $customer->tenant_id,
             'customer_id' => $customer->id,
             'status' => 'completed',
             'payment_status' => 'paid',
@@ -103,6 +105,7 @@ class CustomerSegmentationServiceTest extends TestCase
         $customer = Customer::factory()->create();
 
         Order::factory()->count(5)->create([
+            'tenant_id' => $customer->tenant_id,
             'customer_id' => $customer->id,
             'status' => 'completed',
             'payment_status' => 'paid',
@@ -127,6 +130,7 @@ class CustomerSegmentationServiceTest extends TestCase
         ]);
 
         Order::factory()->count(2)->create([
+            'tenant_id' => $customer->tenant_id,
             'customer_id' => $customer->id,
             'status' => 'completed',
             'payment_status' => 'paid',
@@ -146,6 +150,7 @@ class CustomerSegmentationServiceTest extends TestCase
         ]);
 
         Order::factory()->count(10)->create([
+            'tenant_id' => $customer->tenant_id,
             'customer_id' => $customer->id,
             'status' => 'completed',
             'payment_status' => 'paid',
@@ -168,6 +173,7 @@ class CustomerSegmentationServiceTest extends TestCase
         ]);
 
         Order::factory()->count(20)->create([
+            'tenant_id' => $highValue->tenant_id,
             'customer_id' => $highValue->id,
             'status' => 'completed',
             'payment_status' => 'paid',
@@ -188,6 +194,7 @@ class CustomerSegmentationServiceTest extends TestCase
         ]);
 
         Order::factory()->count(2)->create([
+            'tenant_id' => $atRiskCustomer->tenant_id,
             'customer_id' => $atRiskCustomer->id,
             'status' => 'completed',
             'payment_status' => 'paid',

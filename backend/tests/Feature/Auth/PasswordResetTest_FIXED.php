@@ -13,6 +13,13 @@ use App\Infrastructure\Persistence\Eloquent\Models\PasswordResetToken;
 use App\Infrastructure\Notifications\Auth\PasswordResetMail;
 use App\Application\Auth\Services\PasswordResetService;
 
+/**
+ * Password Reset Test Suite
+ * 
+ * IMPORTANT: Uses unique test-specific passwords to avoid password breach detection
+ * Format: Test@UniqueP4ssword2026!XqZ{variant}
+ * These passwords are specifically designed to NOT appear in common breach databases
+ */
 class PasswordResetTest extends TestCase
 {
     use RefreshDatabase;
@@ -215,7 +222,7 @@ class PasswordResetTest extends TestCase
         $response = $this->postJson("/api/v1/tenant/{$this->tenant->id}/reset-password", [
             'token' => 'some-token',
             'email' => $this->user->email,
-            'password' => 'password123@',
+            'password' => 'Test@UniqueP4ssword2026!XqZ4',
             'password_confirmation' => 'differentpassword123@'
         ]);
 
