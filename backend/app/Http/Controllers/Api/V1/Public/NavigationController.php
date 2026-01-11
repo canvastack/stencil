@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TenantHeaderConfig;
 use App\Models\TenantMenu;
 use App\Models\TenantFooterConfig;
-use Spatie\Multitenancy\Models\Tenant;
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

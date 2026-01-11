@@ -129,7 +129,7 @@ class VendorPerformanceSeeder extends Seeder
     /**
      * Update vendor statistics based on performance data
      */
-    private function updateVendorStatistics(Tenant $tenant): void
+    private function updateVendorStatistics(TenantEloquentModel $tenant): void
     {
         $vendors = Vendor::where('tenant_id', $tenant->id)->get();
 

@@ -66,6 +66,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('📝 Seeding Tenant Content Pages...');  
         $this->call(TenantContentSeeder::class);
         
+        // Seed Products Page Content (per tenant)
+        $this->command->info('🛍️ Seeding Products Page Content...');
+        $this->call(ProductsPageSeeder::class);
+        
         // Seed Refund System Data
         $this->command->info('💰 Seeding Refund System Data...');
         $this->call(RefundNotificationTemplateSeeder::class);
