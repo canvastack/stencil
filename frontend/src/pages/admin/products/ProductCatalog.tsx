@@ -37,6 +37,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { 
   Plus, 
   Search, 
@@ -503,6 +512,7 @@ function ProductCatalogContent() {
           searchPlaceholder="Search products..."
           loading={isLoading || state.ui.isRefreshing}
           datasetId="product-catalog"
+          showPagination={false}
           onRowClick={(product) => {
             if (canAccess('products.edit')) {
               navigate(`/admin/products/${product.uuid}/edit`);
@@ -903,29 +913,73 @@ function ProductCatalogContent() {
 
           {renderContent()}
 
-          {!isLoading && products.length > 0 && pagination.last_page > 1 && (
-            <div className="mt-6 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {((pagination.page - 1) * pagination.per_page) + 1} to {Math.min(pagination.page * pagination.per_page, pagination.total)} of {pagination.total} products
+          {!isLoading && products.length > 0 && (
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <div className="text-sm text-muted-foreground whitespace-nowrap">
+                Menampilkan {((pagination.page - 1) * pagination.per_page) + 1} hingga {Math.min(pagination.page * pagination.per_page, pagination.total)} dari <span className="font-semibold text-foreground">{pagination.total} produk</span>
+                {state.filters.status && (
+                  <span className="ml-2">
+                    (Status: <span className="font-medium capitalize">{state.filters.status}</span>)
+                  </span>
+                )}
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => actions.handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => actions.handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.last_page}
-                >
-                  Next
-                </Button>
-              </div>
+              
+              {pagination.last_page > 1 && (
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    Halaman {pagination.page} dari {pagination.last_page}
+                  </div>
+                  <Pagination className="mx-0 justify-end">
+                    <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => actions.handlePageChange(pagination.page - 1)}
+                        className={pagination.page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    
+                    {Array.from({ length: pagination.last_page }, (_, i) => {
+                      const pageNum = i + 1;
+                      
+                      if (
+                        pageNum === 1 ||
+                        pageNum === pagination.last_page ||
+                        (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)
+                      ) {
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationLink
+                              onClick={() => actions.handlePageChange(pageNum)}
+                              isActive={pagination.page === pageNum}
+                              className="cursor-pointer"
+                            >
+                              {pageNum}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      } else if (
+                        pageNum === pagination.page - 2 ||
+                        pageNum === pagination.page + 2
+                      ) {
+                        return (
+                          <PaginationItem key={pageNum}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      return null;
+                    })}
+                    
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => actions.handlePageChange(pagination.page + 1)}
+                        className={pagination.page === pagination.last_page ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+                </div>
+              )}
             </div>
           )}
         </Card>

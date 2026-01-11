@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 
 interface DynamicFormRendererProps {
   productUuid: string;
+  productName?: string;
+  whatsappNumber?: string;
   onSubmitSuccess?: (result: {
     order_uuid: string;
     order_number: string;
@@ -24,6 +26,8 @@ interface DynamicFormRendererProps {
 
 export function DynamicFormRenderer({
   productUuid,
+  productName,
+  whatsappNumber = '62812345678',
   onSubmitSuccess,
   onWhatsApp,
   className,
@@ -205,14 +209,48 @@ export function DynamicFormRenderer({
   }
 
   if (error || !formConfig) {
-    return (
-      <Alert variant="destructive" className={className}>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          {error || 'Form konfigurasi tidak tersedia untuk produk ini'}
-        </AlertDescription>
-      </Alert>
+    const handleWhatsAppOrder = () => {
+      const message = productName 
+        ? `Halo, saya tertarik untuk memesan produk *${productName}*. Mohon informasi lebih lanjut.`
+        : `Halo, saya tertarik untuk memesan produk ini. Mohon informasi lebih lanjut.`;
+      
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, "_blank");
+    };
+
+    const content = (
+      <div className="text-center py-8 space-y-4">
+        <div className="space-y-2">
+          <MessageCircle className="h-12 w-12 mx-auto text-primary" />
+          <h3 className="text-lg font-semibold text-foreground">
+            Pesan Produk Ini
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Hubungi kami melalui WhatsApp untuk informasi dan pemesanan produk ini
+          </p>
+        </div>
+        <Button
+          size="lg"
+          onClick={handleWhatsAppOrder}
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-lg"
+        >
+          <MessageCircle className="h-5 w-5 mr-2" />
+          Order via WhatsApp
+        </Button>
+      </div>
     );
+
+    if (showCard) {
+      return (
+        <Card className={className}>
+          <CardContent className="pt-6">
+            {content}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return <div className={className}>{content}</div>;
   }
 
   const { form_schema } = formConfig;

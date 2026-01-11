@@ -509,6 +509,8 @@ const ProductDetail = () => {
               {console.log('[ProductDetail] Product Name:', product.name)}
               <DynamicFormRenderer
                 productUuid={product.uuid}
+                productName={product.name}
+                whatsappNumber="62812345678"
                 onSubmitSuccess={async (result) => {
                   toast({
                     title: "Pesanan Berhasil Dibuat!",

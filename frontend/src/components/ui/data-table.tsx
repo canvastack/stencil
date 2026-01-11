@@ -59,6 +59,8 @@ interface DataTableProps<TData> {
   // Show export/print controls (default true). Can be disabled per-page.
   showExport?: boolean;
   showPrint?: boolean;
+  // Show internal pagination (default true). Can be disabled if using external pagination.
+  showPagination?: boolean;
   // Loading state for skeleton animation
   loading?: boolean;
   // Performance monitoring identifier
@@ -74,6 +76,7 @@ export function DataTable<TData>({
   searchPlaceholder = "Search...",
   showExport = true,
   showPrint = true,
+  showPagination = true,
   loading = false,
   datasetId = 'datatable',
   onRowClick,
@@ -609,7 +612,7 @@ export function DataTable<TData>({
           </Table>
         </div>
         
-        {loading ? (
+        {showPagination && (loading ? (
           <PaginationSkeleton />
         ) : (
           <div className={`flex items-center justify-between py-4 ${isFullscreen ? "px-2" : "px-4"}`}>
@@ -681,7 +684,7 @@ export function DataTable<TData>({
                 </Pagination>
               </div>
             </div>
-        )}
+        ))}
       </div>
     </TooltipProvider>
   );
