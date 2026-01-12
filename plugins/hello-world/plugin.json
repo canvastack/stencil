@@ -1,0 +1,32 @@
+{
+  "name": "hello-world",
+  "version": "1.0.0",
+  "display_name": "Hello World Plugin",
+  "description": "A simple demo plugin to test the plugin infrastructure",
+  "author": "CanvaStack Team",
+  "requires": {
+    "php": ">=8.2",
+    "laravel": ">=10.0"
+  },
+  "dependencies": [],
+  "migrations": [
+    "database/migrations/2026_01_01_000001_create_hello_world_table.php"
+  ],
+  "seeders": [],
+  "permissions": [
+    "hello:view",
+    "hello:create",
+    "hello:update",
+    "hello:delete"
+  ],
+  "routes": {
+    "api": "routes/api.php"
+  },
+  "service_providers": [],
+  "frontend": {
+    "admin_module": "",
+    "public_module": ""
+  },
+  "uninstall_behavior": "delete_data",
+  "table_prefix": "hello_"
+}

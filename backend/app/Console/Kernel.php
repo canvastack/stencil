@@ -7,6 +7,7 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Domain\Inventory\Jobs\InventoryReconciliationJob;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
+use App\Jobs\CheckPluginExpiry;
 
 class Kernel extends ConsoleKernel
 {
@@ -28,6 +29,8 @@ class Kernel extends ConsoleKernel
                 }
             });
         })->hourly();
+
+        $schedule->job(new CheckPluginExpiry)->daily();
     }
 
     /**

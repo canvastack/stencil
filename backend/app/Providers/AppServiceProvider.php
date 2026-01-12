@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\PluginRepositoryInterface;
 use App\Domain\Content\Repositories\PlatformPageRepositoryInterface;
 use App\Domain\Content\Repositories\TenantPageRepositoryInterface;
 use App\Domain\Settings\Repositories\SettingsRepositoryInterface;
@@ -10,6 +11,7 @@ use App\Infrastructure\Repositories\PlatformPageRepository;
 use App\Infrastructure\Repositories\TenantPageRepository;
 use App\Infrastructure\Persistence\Repositories\SettingsRepository;
 use App\Infrastructure\Persistence\Repositories\ReviewEloquentRepository;
+use App\Repositories\PluginRepository;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Plugin System Repository Binding
+        $this->app->bind(PluginRepositoryInterface::class, PluginRepository::class);
+        
         // Content Management Repository Bindings
         $this->app->bind(PlatformPageRepositoryInterface::class, PlatformPageRepository::class);
         $this->app->bind(TenantPageRepositoryInterface::class, TenantPageRepository::class);

@@ -82,6 +82,10 @@ class DatabaseSeeder extends Seeder
         $this->call(VendorSourcingSeeder::class);
         $this->call(VendorPaymentSeeder::class);
         
+        // Seed Plugin Installation Requests
+        $this->command->info('🔌 Seeding Plugin Installation Requests...');
+        $this->call(InstalledPluginSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');
@@ -101,6 +105,7 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Vendor Performance: 720+ vendor orders with metrics');
         $this->command->info('- Vendor Sourcing: 10+ sourcing requests with quotes');
         $this->command->info('- Vendor Payments: 268+ payment records');
+        $this->command->info('- Plugin Requests: 34+ plugin installation requests (pending, approved, active, rejected, suspended, expired)');
         $this->command->info('- Platform Roles: 3 roles');
         $this->command->info('- Tenant Roles: 4 roles per tenant');
         $this->command->info('- Platform Content Pages: 25+ pages (Home, About, Features, Blog)');

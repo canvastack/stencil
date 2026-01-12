@@ -36,7 +36,8 @@ import {
   Languages,
   Image,
   Zap,
-  Book
+  Book,
+  Puzzle
 } from 'lucide-react';
 
 interface MenuItem {
@@ -80,6 +81,14 @@ const menuItems: MenuItem[] = [
       { title: 'Platform Users', path: '/platform/users' },
       { title: 'Platform Admins', path: '/platform/users/admins' },
       { title: 'User Roles', path: '/platform/users/roles' }
+    ]
+  },
+  {
+    title: 'Plugin Management',
+    icon: Puzzle,
+    children: [
+      { title: 'Installation Requests', path: '/platform/plugins/requests' },
+      { title: 'Plugin Analytics', path: '/platform/plugins/analytics' }
     ]
   },
   {

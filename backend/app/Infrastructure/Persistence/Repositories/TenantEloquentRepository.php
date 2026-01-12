@@ -44,7 +44,7 @@ class TenantEloquentRepository extends BaseEloquentRepository implements TenantR
             
             // Create tenant schema
             $schemaName = 'tenant_' . $eloquentModel->uuid;
-            DB::statement("CREATE SCHEMA IF NOT EXISTS {$schemaName}");
+            DB::statement("CREATE SCHEMA IF NOT EXISTS \"{$schemaName}\"");
             
             // Update tenant with schema name
             $eloquentModel->update(['schema_name' => $schemaName]);

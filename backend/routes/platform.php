@@ -6,6 +6,8 @@ use App\Infrastructure\Presentation\Http\Controllers\Platform\AnalyticsControlle
 use App\Infrastructure\Presentation\Http\Controllers\Platform\SubscriptionController;
 use App\Infrastructure\Presentation\Http\Controllers\Platform\DomainController;
 use App\Http\Controllers\Platform\ContentController;
+use App\Http\Controllers\Api\Platform\PluginController;
+use App\Http\Controllers\Api\Platform\PluginApprovalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -107,5 +109,24 @@ Route::prefix('platform')
             
             Route::get('/stats', [AnalyticsController::class, 'systemStats'])->name('platform.system.stats');
             Route::get('/logs', [AnalyticsController::class, 'logs'])->name('platform.system.logs');
+        });
+        
+        // Plugin Management
+        Route::prefix('plugins')->group(function () {
+            Route::get('/', [PluginController::class, 'index'])->name('platform.plugins.index');
+            Route::get('/installed', [PluginController::class, 'installed'])->name('platform.plugins.installed');
+            Route::post('/install', [PluginController::class, 'install'])->name('platform.plugins.install');
+            Route::post('/uninstall', [PluginController::class, 'uninstall'])->name('platform.plugins.uninstall');
+            Route::post('/enable', [PluginController::class, 'enable'])->name('platform.plugins.enable');
+            Route::post('/disable', [PluginController::class, 'disable'])->name('platform.plugins.disable');
+            
+            // Plugin Approval System
+            Route::get('/requests', [PluginApprovalController::class, 'requests'])->name('platform.plugins.approval.requests');
+            Route::get('/requests/{uuid}', [PluginApprovalController::class, 'show'])->name('platform.plugins.approval.show');
+            Route::post('/requests/{uuid}/approve', [PluginApprovalController::class, 'approve'])->name('platform.plugins.approval.approve');
+            Route::post('/requests/{uuid}/reject', [PluginApprovalController::class, 'reject'])->name('platform.plugins.approval.reject');
+            Route::post('/installed/{uuid}/suspend', [PluginApprovalController::class, 'suspend'])->name('platform.plugins.approval.suspend');
+            Route::post('/installed/{uuid}/extend', [PluginApprovalController::class, 'extend'])->name('platform.plugins.approval.extend');
+            Route::get('/analytics', [PluginApprovalController::class, 'analytics'])->name('platform.plugins.analytics');
         });
     });

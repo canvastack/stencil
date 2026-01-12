@@ -153,6 +153,18 @@ const FeatureFlagsManagement = lazy(() => import("./pages/admin/system/FeatureFl
 const StatusPage = lazy(() => import("./pages/StatusPage"));
 const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
 
+// Plugin Marketplace Pages (Tenant)
+const PluginMarketplace = lazy(() => import("./pages/admin/plugins/PluginMarketplace"));
+const PluginDetails = lazy(() => import("./pages/admin/plugins/PluginDetails"));
+const InstalledPlugins = lazy(() => import("./pages/admin/plugins/InstalledPlugins"));
+const InstalledPluginDetail = lazy(() => import("./pages/admin/plugins/InstalledPluginDetail"));
+const PluginSettings = lazy(() => import("./pages/admin/plugins/PluginSettings"));
+
+// Plugin Management Pages (Platform)
+const PlatformPluginRequests = lazy(() => import("./pages/platform/plugins/PluginRequests"));
+const PlatformRequestDetails = lazy(() => import("./pages/platform/plugins/RequestDetails"));
+const PlatformPluginAnalytics = lazy(() => import("./pages/platform/plugins/PluginAnalytics"));
+
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -251,6 +263,11 @@ function App() {
                   <Route path="system/feature-flags" element={<Suspense fallback={<LoadingFallback />}><FeatureFlagsManagement /></Suspense>} />
                   <Route path="activity" element={<div className="p-6">Platform Activity Monitor - Coming Soon</div>} />
                   <Route path="settings/*" element={<div className="p-6">Platform Settings - Coming Soon</div>} />
+                  
+                  {/* Plugin Management Routes */}
+                  <Route path="plugins/requests" element={<Suspense fallback={<LoadingFallback />}><PlatformPluginRequests /></Suspense>} />
+                  <Route path="plugins/requests/:uuid" element={<Suspense fallback={<LoadingFallback />}><PlatformRequestDetails /></Suspense>} />
+                  <Route path="plugins/analytics" element={<Suspense fallback={<LoadingFallback />}><PlatformPluginAnalytics /></Suspense>} />
                 </Route>
                 
                 {/* Tenant Routes */}
@@ -342,6 +359,13 @@ function App() {
                   <Route path="shipping/carriers" element={<Suspense fallback={<LoadingFallback />}><ShippingCarriers /></Suspense>} />
                   <Route path="shipping/tracking" element={<Suspense fallback={<LoadingFallback />}><ShippingTracking /></Suspense>} />
                   <Route path="shipping/reports" element={<Suspense fallback={<LoadingFallback />}><ShippingReports /></Suspense>} />
+                  
+                  {/* Plugin Marketplace Routes */}
+                  <Route path="plugins/marketplace" element={<Suspense fallback={<LoadingFallback />}><PluginMarketplace /></Suspense>} />
+                  <Route path="plugins/marketplace/:pluginName" element={<Suspense fallback={<LoadingFallback />}><PluginDetails /></Suspense>} />
+                  <Route path="plugins/installed" element={<Suspense fallback={<LoadingFallback />}><InstalledPlugins /></Suspense>} />
+                  <Route path="plugins/installed/:uuid" element={<Suspense fallback={<LoadingFallback />}><InstalledPluginDetail /></Suspense>} />
+                  <Route path="plugins/installed/:uuid/settings" element={<Suspense fallback={<LoadingFallback />}><PluginSettings /></Suspense>} />
                   
                   <Route path="profile" element={<UserProfile />} />
                 </Route>

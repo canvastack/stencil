@@ -18,6 +18,7 @@ use App\Http\Controllers\Tenant\ContentController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormConfigurationController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormTemplateController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\MediaController;
+use App\Http\Controllers\Api\Tenant\PluginMarketplaceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -425,5 +426,15 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
         Route::prefix('platform')->group(function () {
             Route::get('/subscription', [SettingsController::class, 'platformSubscription'])->name('tenant.platform.subscription');
             Route::post('/support/ticket', [SettingsController::class, 'createSupportTicket'])->name('tenant.platform.support_ticket');
+        });
+        
+        // Plugin Marketplace
+        Route::prefix('plugins')->group(function () {
+            Route::get('/marketplace', [PluginMarketplaceController::class, 'marketplace'])->name('tenant.plugins.marketplace');
+            Route::get('/marketplace/{pluginName}', [PluginMarketplaceController::class, 'show'])->name('tenant.plugins.show');
+            Route::post('/request', [PluginMarketplaceController::class, 'request'])->name('tenant.plugins.request');
+            Route::get('/installed', [PluginMarketplaceController::class, 'installed'])->name('tenant.plugins.installed');
+            Route::get('/installed/{uuid}', [PluginMarketplaceController::class, 'installedDetail'])->name('tenant.plugins.installed.detail');
+            Route::delete('/uninstall/{uuid}', [PluginMarketplaceController::class, 'uninstall'])->name('tenant.plugins.uninstall');
         });
     });
