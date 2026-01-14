@@ -165,6 +165,18 @@ const PlatformPluginRequests = lazy(() => import("./pages/platform/plugins/Plugi
 const PlatformRequestDetails = lazy(() => import("./pages/platform/plugins/RequestDetails"));
 const PlatformPluginAnalytics = lazy(() => import("./pages/platform/plugins/PluginAnalytics"));
 
+// CMS Pages System - Admin
+const ContentTypeList = lazy(() => import("./pages/admin/cms/ContentTypeList"));
+const ContentTypeForm = lazy(() => import("./pages/admin/cms/ContentTypeForm"));
+const ContentList = lazy(() => import("./pages/admin/cms/ContentList"));
+const ContentForm = lazy(() => import("./pages/admin/cms/ContentForm"));
+const CategoryManagement = lazy(() => import("./pages/admin/cms/CategoryManagement"));
+const CommentModeration = lazy(() => import("./pages/admin/cms/CommentModeration"));
+
+// CMS Pages System - Public
+const ContentArchive = lazy(() => import("./pages/public/cms/ContentArchive"));
+const ContentDetail = lazy(() => import("./pages/public/cms/ContentDetail"));
+
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -215,6 +227,10 @@ function App() {
                   <Route path="/status" element={<Suspense fallback={<LoadingFallback />}><StatusPage /></Suspense>} />
                   <Route path="/announcements" element={<Suspense fallback={<LoadingFallback />}><AnnouncementsPage /></Suspense>} />
                   
+                  {/* CMS Content Routes */}
+                  <Route path="/content" element={<Suspense fallback={<LoadingFallback />}><ContentArchive /></Suspense>} />
+                  <Route path="/content/:contentTypeSlug/:slug" element={<Suspense fallback={<LoadingFallback />}><ContentDetail /></Suspense>} />
+                  
                   {/* Tenant-Scoped Public Routes */}
                   <Route path="/:tenantSlug" element={<Suspense fallback={<LoadingFallback />}><Home /></Suspense>} />
                   <Route path="/:tenantSlug/about" element={<Suspense fallback={<LoadingFallback />}><About /></Suspense>} />
@@ -224,6 +240,10 @@ function App() {
                   <Route path="/:tenantSlug/products/:slug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
                   <Route path="/:tenantSlug/cart" element={<Suspense fallback={<LoadingFallback />}><Cart /></Suspense>} />
                   <Route path="/:tenantSlug/faq" element={<Suspense fallback={<LoadingFallback />}><FAQ /></Suspense>} />
+                  
+                  {/* Tenant-Scoped CMS Content Routes */}
+                  <Route path="/:tenantSlug/content" element={<Suspense fallback={<LoadingFallback />}><ContentArchive /></Suspense>} />
+                  <Route path="/:tenantSlug/content/:contentTypeSlug/:slug" element={<Suspense fallback={<LoadingFallback />}><ContentDetail /></Suspense>} />
                   
                   {/* Tenant-scoped Auth Routes */}
                   <Route path="/:tenantSlug/login" element={<Login />} />
@@ -366,6 +386,16 @@ function App() {
                   <Route path="plugins/installed" element={<Suspense fallback={<LoadingFallback />}><InstalledPlugins /></Suspense>} />
                   <Route path="plugins/installed/:uuid" element={<Suspense fallback={<LoadingFallback />}><InstalledPluginDetail /></Suspense>} />
                   <Route path="plugins/installed/:uuid/settings" element={<Suspense fallback={<LoadingFallback />}><PluginSettings /></Suspense>} />
+
+                  {/* CMS Pages System Routes */}
+                  <Route path="cms/content-types" element={<Suspense fallback={<LoadingFallback />}><ContentTypeList /></Suspense>} />
+                  <Route path="cms/content-types/new" element={<Suspense fallback={<LoadingFallback />}><ContentTypeForm /></Suspense>} />
+                  <Route path="cms/content-types/:uuid/edit" element={<Suspense fallback={<LoadingFallback />}><ContentTypeForm /></Suspense>} />
+                  <Route path="cms/contents" element={<Suspense fallback={<LoadingFallback />}><ContentList /></Suspense>} />
+                  <Route path="cms/contents/create" element={<Suspense fallback={<LoadingFallback />}><ContentForm /></Suspense>} />
+                  <Route path="cms/contents/:uuid/edit" element={<Suspense fallback={<LoadingFallback />}><ContentForm /></Suspense>} />
+                  <Route path="cms/categories" element={<Suspense fallback={<LoadingFallback />}><CategoryManagement /></Suspense>} />
+                  <Route path="cms/comments" element={<Suspense fallback={<LoadingFallback />}><CommentModeration /></Suspense>} />
                   
                   <Route path="profile" element={<UserProfile />} />
                 </Route>

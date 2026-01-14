@@ -5,6 +5,8 @@ namespace App\Repositories;
 use App\Contracts\PluginRepositoryInterface;
 use App\Models\InstalledPlugin;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PluginRepository implements PluginRepositoryInterface
 {
@@ -31,7 +33,25 @@ class PluginRepository implements PluginRepositoryInterface
 
     public function install(array $data): InstalledPlugin
     {
-        return InstalledPlugin::create($data);
+        $uuid = (string) Str::uuid();
+        $data['uuid'] = $uuid;
+        $data['installed_at'] = now();
+        $data['created_at'] = now();
+        $data['updated_at'] = now();
+        
+        if (isset($data['manifest']) && is_array($data['manifest'])) {
+            $data['manifest'] = json_encode($data['manifest']);
+        }
+        if (isset($data['migrations_run']) && is_array($data['migrations_run'])) {
+            $data['migrations_run'] = json_encode($data['migrations_run']);
+        }
+        if (isset($data['settings']) && is_array($data['settings'])) {
+            $data['settings'] = json_encode($data['settings']);
+        }
+        
+        DB::table('installed_plugins')->insert($data);
+        
+        return InstalledPlugin::where('uuid', $uuid)->first();
     }
 
     public function uninstall(string $tenantId, string $pluginName): bool

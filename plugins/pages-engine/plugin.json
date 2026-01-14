@@ -1,0 +1,201 @@
+{
+  "name": "pages-engine",
+  "version": "1.0.0",
+  "display_name": "CanvaStencil Pages Engine",
+  "description": "WordPress-like CMS Pages System untuk blog, news, events, dan custom content types dengan hierarchical categories, comment system, dan SEO optimization",
+  "author": "CanvaStack Team",
+  "requires": {
+    "php": ">=8.2",
+    "laravel": ">=10.0",
+    "postgresql": ">=15.0"
+  },
+  "dependencies": [],
+  "migrations": [
+    "database/migrations/2026_01_14_000001_create_canplug_pagen_content_types_table.php",
+    "database/migrations/2026_01_14_000002_create_canplug_pagen_contents_table.php",
+    "database/migrations/2026_01_14_000003_create_canplug_pagen_categories_table.php",
+    "database/migrations/2026_01_14_000004_create_canplug_pagen_category_pivot_table.php",
+    "database/migrations/2026_01_14_000005_create_canplug_pagen_revisions_table.php",
+    "database/migrations/2026_01_14_000006_create_canplug_pagen_comments_table.php",
+    "database/migrations/2026_01_14_000007_create_canplug_pagen_urls_table.php",
+    "database/migrations/2026_01_14_000008_create_canplug_pagen_tags_table.php",
+    "database/migrations/2026_01_14_000009_create_canplug_pagen_metadata_table.php"
+  ],
+  "seeders": [
+    "PagesEngineSeeder"
+  ],
+  "permissions": [
+    "pages:content-types:view",
+    "pages:content-types:create",
+    "pages:content-types:update",
+    "pages:content-types:delete",
+    "pages:contents:view",
+    "pages:contents:create",
+    "pages:contents:update",
+    "pages:contents:delete",
+    "pages:contents:publish",
+    "pages:contents:schedule",
+    "pages:categories:view",
+    "pages:categories:create",
+    "pages:categories:update",
+    "pages:categories:delete",
+    "pages:categories:reorder",
+    "pages:comments:view",
+    "pages:comments:moderate",
+    "pages:comments:approve",
+    "pages:comments:reject",
+    "pages:comments:spam",
+    "pages:comments:delete",
+    "pages:revisions:view",
+    "pages:revisions:restore",
+    "pages:urls:manage",
+    "pages:tags:view",
+    "pages:tags:create",
+    "pages:tags:update",
+    "pages:tags:delete"
+  ],
+  "routes": {
+    "api": "routes/api.php"
+  },
+  "service_providers": [
+    "Plugins\\PagesEngine\\Infrastructure\\Providers\\PagesEngineServiceProvider"
+  ],
+  "frontend": {
+    "admin_module": "src/pages/admin/cms",
+    "public_module": "src/pages/public/cms"
+  },
+  "menu": {
+    "title": "CMS Pages",
+    "icon": "FileType",
+    "position": 3,
+    "visible_for": "tenant",
+    "required_roles": ["admin", "manager"],
+    "children": [
+      {
+        "title": "Content Types",
+        "path": "/admin/cms/content-types",
+        "required_permissions": ["pages:content-types:view"]
+      },
+      {
+        "title": "Contents",
+        "path": "/admin/cms/contents",
+        "required_permissions": ["pages:contents:view"]
+      },
+      {
+        "title": "Categories",
+        "path": "/admin/cms/categories",
+        "required_permissions": ["pages:categories:view"]
+      },
+      {
+        "title": "Comments",
+        "path": "/admin/cms/comments",
+        "badge": "New",
+        "required_permissions": ["pages:comments:view"]
+      }
+    ]
+  },
+  "uninstall_behavior": "keep_data",
+  "table_prefix": "canplug_pagen_",
+  "features": {
+    "hierarchical_categories": true,
+    "comment_system": true,
+    "revision_history": true,
+    "seo_optimization": true,
+    "custom_url_patterns": true,
+    "multi_format_editor": true,
+    "scheduled_publishing": true,
+    "full_text_search": true
+  },
+  "settings": {
+    "default_content_type": "blog",
+    "comments_require_moderation": true,
+    "comments_require_login": false,
+    "max_revision_count": 50,
+    "enable_spam_detection": true,
+    "seo_auto_generate": true
+  },
+  "settings_schema": {
+    "fields": [
+      {
+        "key": "default_content_type",
+        "type": "select",
+        "label": "Default Content Type",
+        "description": "Default content type for new content",
+        "default": "blog",
+        "options": [
+          { "label": "Blog Post", "value": "blog" },
+          { "label": "News Article", "value": "news" },
+          { "label": "Event", "value": "event" },
+          { "label": "Documentation", "value": "docs" }
+        ],
+        "required": true
+      },
+      {
+        "key": "comments_require_moderation",
+        "type": "boolean",
+        "label": "Comments Require Moderation",
+        "description": "All comments must be approved by moderators before appearing publicly",
+        "default": true
+      },
+      {
+        "key": "comments_require_login",
+        "type": "boolean",
+        "label": "Comments Require Login",
+        "description": "Only authenticated users can post comments",
+        "default": false
+      },
+      {
+        "key": "max_revision_count",
+        "type": "number",
+        "label": "Max Revision Count",
+        "description": "Maximum number of content revisions to keep (older revisions will be deleted)",
+        "default": 50,
+        "min": 5,
+        "max": 200,
+        "required": true
+      },
+      {
+        "key": "enable_spam_detection",
+        "type": "boolean",
+        "label": "Enable Spam Detection",
+        "description": "Automatically detect and flag spam comments",
+        "default": true
+      },
+      {
+        "key": "seo_auto_generate",
+        "type": "boolean",
+        "label": "Auto-Generate SEO Meta Tags",
+        "description": "Automatically generate meta descriptions and keywords from content",
+        "default": true
+      },
+      {
+        "key": "posts_per_page",
+        "type": "number",
+        "label": "Posts Per Page",
+        "description": "Number of posts to display per page in listings",
+        "default": 10,
+        "min": 5,
+        "max": 50,
+        "required": true
+      },
+      {
+        "key": "excerpt_length",
+        "type": "number",
+        "label": "Excerpt Length (words)",
+        "description": "Number of words to show in content excerpts",
+        "default": 55,
+        "min": 10,
+        "max": 200
+      },
+      {
+        "key": "seo_default_description",
+        "type": "textarea",
+        "label": "Default SEO Description",
+        "description": "Default meta description used when auto-generation is disabled",
+        "default": "",
+        "max_length": 160,
+        "rows": 3
+      }
+    ]
+  }
+}

@@ -193,6 +193,11 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\DomainServiceProvider::class,
+        
+        /*
+         * Plugin Service Providers...
+         */
+        Plugins\PagesEngine\Infrastructure\Providers\PagesEngineServiceProvider::class,
     ])->toArray(),
 
     /*

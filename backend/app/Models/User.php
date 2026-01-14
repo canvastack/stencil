@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Multitenancy\Models\Tenant;
 
 class User extends Authenticatable
 {
@@ -22,6 +24,14 @@ class User extends Authenticatable
         'email',
         'password',
     ];
+
+    /**
+     * Get the tenant that owns the user.
+     */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id', 'id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.

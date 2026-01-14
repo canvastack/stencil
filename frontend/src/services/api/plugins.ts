@@ -40,6 +40,19 @@ export interface PluginActionResponse {
   message: string;
 }
 
+export interface PluginSettingsUpdatePayload {
+  settings: Record<string, any>;
+}
+
+export interface PluginSettingsUpdateResponse {
+  success: boolean;
+  data: {
+    uuid: string;
+    settings: Record<string, any>;
+  };
+  message: string;
+}
+
 class PluginService {
   async getMarketplacePlugins(): Promise<Plugin[]> {
     const response = await tenantApiClient.get<PluginMarketplaceResponse>('/plugins/marketplace');
@@ -68,6 +81,14 @@ class PluginService {
 
   async uninstallPlugin(uuid: string, payload?: PluginUninstallPayload): Promise<void> {
     await tenantApiClient.delete<PluginActionResponse>(`/plugins/uninstall/${uuid}`, payload);
+  }
+
+  async updatePluginSettings(uuid: string, payload: PluginSettingsUpdatePayload): Promise<InstalledPlugin> {
+    const response = await tenantApiClient.put<PluginSettingsUpdateResponse>(
+      `/plugins/installed/${uuid}/settings`,
+      payload
+    );
+    return { ...await this.getInstalledPluginDetails(uuid), settings: response.data.settings };
   }
 }
 

@@ -172,6 +172,7 @@ class PluginMarketplaceController extends Controller
                         'display_name' => $plugin->display_name,
                         'version' => $plugin->plugin_version,
                         'status' => $plugin->status,
+                        'manifest' => $plugin->manifest,
                         'requested_at' => $plugin->requested_at,
                         'requested_by' => $plugin->requester?->name,
                         'approved_at' => $plugin->approved_at,
@@ -273,5 +274,138 @@ class PluginMarketplaceController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function updateSettings(Request $request, string $uuid): JsonResponse
+    {
+        try {
+            // Get tenant UUID from middleware-set context (TenantContextMiddleware)
+            $tenant = $request->get('current_tenant');
+            $tenantId = $tenant ? $tenant->uuid : null;
+
+            $plugin = InstalledPlugin::where('uuid', $uuid)
+                ->where('tenant_id', $tenantId)
+                ->firstOrFail();
+
+            if (!$plugin->isActive()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Settings can only be updated for active plugins',
+                ], 400);
+            }
+
+            $newSettings = $request->input('settings', []);
+
+            // Validate settings against schema if defined in manifest
+            if (isset($plugin->manifest['settings_schema']['fields'])) {
+                $validationErrors = $this->validateSettings($newSettings, $plugin->manifest['settings_schema']['fields']);
+                if (!empty($validationErrors)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Settings validation failed',
+                        'errors' => $validationErrors,
+                    ], 422);
+                }
+            }
+
+            // Merge with existing settings to preserve unmodified values
+            $currentSettings = $plugin->settings ?? [];
+            $mergedSettings = array_merge($currentSettings, $newSettings);
+
+            $plugin->update(['settings' => $mergedSettings]);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'uuid' => $plugin->uuid,
+                    'settings' => $plugin->settings,
+                ],
+                'message' => 'Plugin settings updated successfully',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Plugin not found',
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update plugin settings',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    protected function validateSettings(array $settings, array $schema): array
+    {
+        $errors = [];
+
+        foreach ($schema as $field) {
+            $key = $field['key'];
+            $type = $field['type'] ?? 'text';
+            $required = $field['required'] ?? false;
+            $value = $settings[$key] ?? null;
+
+            // Check required
+            if ($required && ($value === null || $value === '')) {
+                $errors[$key][] = "The {$field['label']} field is required";
+                continue;
+            }
+
+            // Skip validation if value is null and not required
+            if ($value === null) {
+                continue;
+            }
+
+            // Type validation
+            switch ($type) {
+                case 'number':
+                    if (!is_numeric($value)) {
+                        $errors[$key][] = "The {$field['label']} must be a number";
+                    } else {
+                        if (isset($field['min']) && $value < $field['min']) {
+                            $errors[$key][] = "The {$field['label']} must be at least {$field['min']}";
+                        }
+                        if (isset($field['max']) && $value > $field['max']) {
+                            $errors[$key][] = "The {$field['label']} must not exceed {$field['max']}";
+                        }
+                    }
+                    break;
+
+                case 'boolean':
+                    if (!is_bool($value) && $value !== 0 && $value !== 1) {
+                        $errors[$key][] = "The {$field['label']} must be true or false";
+                    }
+                    break;
+
+                case 'select':
+                    if (isset($field['options']) && !in_array($value, array_column($field['options'], 'value'))) {
+                        $errors[$key][] = "The {$field['label']} contains an invalid value";
+                    }
+                    break;
+
+                case 'text':
+                case 'textarea':
+                    if (!is_string($value)) {
+                        $errors[$key][] = "The {$field['label']} must be a string";
+                    } else {
+                        if (isset($field['min_length']) && strlen($value) < $field['min_length']) {
+                            $errors[$key][] = "The {$field['label']} must be at least {$field['min_length']} characters";
+                        }
+                        if (isset($field['max_length']) && strlen($value) > $field['max_length']) {
+                            $errors[$key][] = "The {$field['label']} must not exceed {$field['max_length']} characters";
+                        }
+                    }
+                    break;
+
+                case 'color':
+                    if (!is_string($value) || !preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
+                        $errors[$key][] = "The {$field['label']} must be a valid hex color (e.g., #FF5733)";
+                    }
+                    break;
+            }
+        }
+
+        return $errors;
     }
 }

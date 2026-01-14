@@ -151,23 +151,62 @@ class PluginManager
             return;
         }
 
-        foreach ($seeders as $seederClass) {
-            // Plugins are in project root, not backend/plugins
-            $seederPath = dirname(base_path()) . "/plugins/{$pluginName}/database/seeders/{$seederClass}.php";
+        // Switch to tenant schema before seeding
+        $this->switchToTenantSchema($tenantId);
 
-            if (file_exists($seederPath)) {
-                require_once $seederPath;
-
-                $seederInstance = new $seederClass();
-                $seederInstance->run();
-
-                Log::info("Seeder executed", [
-                    'tenant_id' => $tenantId,
-                    'plugin_name' => $pluginName,
-                    'seeder' => $seederClass,
-                ]);
+        // Load ALL seeder files from plugin first
+        $seederDir = dirname(base_path()) . "/plugins/{$pluginName}/database/seeders";
+        if (is_dir($seederDir)) {
+            foreach (glob("{$seederDir}/*.php") as $seederFile) {
+                require_once $seederFile;
             }
         }
+
+        foreach ($seeders as $seederClass) {
+            // Seeder class with proper namespace
+            $fullClassName = "Database\\Seeders\\{$seederClass}";
+            
+            if (!class_exists($fullClassName)) {
+                Log::warning("Seeder class not found", [
+                    'tenant_id' => $tenantId,
+                    'plugin_name' => $pluginName,
+                    'class' => $fullClassName,
+                ]);
+                continue;
+            }
+
+            $seederInstance = new $fullClassName();
+            $seederInstance->run();
+
+            Log::info("Seeder executed", [
+                'tenant_id' => $tenantId,
+                'plugin_name' => $pluginName,
+                'seeder' => $seederClass,
+            ]);
+        }
+        
+        // Switch back to public schema
+        $this->switchToPublicSchema();
+    }
+    
+    protected function switchToTenantSchema(string $tenantId): void
+    {
+        DB::statement('SET search_path TO public');
+        
+        $tenant = DB::table('tenants')->where('uuid', $tenantId)->first();
+
+        if (!$tenant) {
+            throw new \RuntimeException("Tenant not found: {$tenantId}");
+        }
+
+        $schemaName = $tenant->schema_name ?? ('tenant_' . $tenant->uuid);
+        
+        DB::statement("SET search_path TO \"{$schemaName}\", public");
+    }
+
+    protected function switchToPublicSchema(): void
+    {
+        DB::statement('SET search_path TO public');
     }
 
     public function installApprovedPlugin($plugin): void

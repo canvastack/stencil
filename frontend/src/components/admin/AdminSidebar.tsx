@@ -21,7 +21,10 @@ import {
   LogOut,
   Activity,
   Store,
-  Layout
+  Layout,
+  FileType,
+  Folders,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -33,6 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useState, useEffect } from 'react';
+import { usePluginMenuItems } from '@/hooks/usePluginMenuItems';
 
 interface MenuItem {
   title: string;
@@ -47,6 +51,7 @@ interface MenuItem {
   }[];
   visibleFor?: 'platform' | 'tenant' | 'both';
   requiredRoles?: string[];
+  position?: number;
 }
 
 const menuItems: MenuItem[] = [
@@ -124,6 +129,19 @@ const menuItems: MenuItem[] = [
     requiredRoles: ['admin', 'manager'],
   },
   {
+    title: 'CMS Pages',
+    icon: FileType,
+    visibleFor: 'tenant',
+    requiredRoles: ['admin', 'manager'],
+    position: 3,
+    children: [
+      { title: 'Content Types', path: '/admin/cms/content-types' },
+      { title: 'Contents', path: '/admin/cms/contents' },
+      { title: 'Categories', path: '/admin/cms/categories' },
+      { title: 'Comments', path: '/admin/cms/comments', badge: 'New' },
+    ],
+  },
+  {
     title: 'Appearance',
     icon: Palette,
     visibleFor: 'tenant',
@@ -192,6 +210,8 @@ export const AdminSidebar = () => {
   const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
   const { userType, roles, tenantUser, platformAccount, logout } = useAuthState();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  
+  const allMenuItems = usePluginMenuItems(menuItems);
 
   // Load expanded menus from localStorage on mount
   useEffect(() => {
@@ -402,7 +422,7 @@ export const AdminSidebar = () => {
 
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-elegant">
-          {menuItems.filter(isMenuItemVisible).map(renderMenuItem)}
+          {allMenuItems.filter(isMenuItemVisible).map(renderMenuItem)}
         </nav>
 
         {/* User Profile */}

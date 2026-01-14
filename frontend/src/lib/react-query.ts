@@ -184,6 +184,69 @@ export const queryKeys = {
     revenueByCategory: (filters?: Record<string, any>) => 
       [...queryKeys.analytics.all, 'revenue-by-category', filters] as const,
   },
+
+  // CMS - Content Types
+  contentTypes: {
+    all: ['cms', 'content-types'] as const,
+    lists: () => [...queryKeys.contentTypes.all, 'list'] as const,
+    list: (filters?: Record<string, any>) => [...queryKeys.contentTypes.lists(), filters] as const,
+    details: () => [...queryKeys.contentTypes.all, 'detail'] as const,
+    detail: (uuid: string) => [...queryKeys.contentTypes.details(), uuid] as const,
+    contentsCount: (uuid: string) => [...queryKeys.contentTypes.detail(uuid), 'contents-count'] as const,
+  },
+
+  // CMS - Contents
+  contents: {
+    all: ['cms', 'contents'] as const,
+    lists: () => [...queryKeys.contents.all, 'list'] as const,
+    list: (filters?: Record<string, any>) => [...queryKeys.contents.lists(), filters] as const,
+    details: () => [...queryKeys.contents.all, 'detail'] as const,
+    detail: (uuid: string) => [...queryKeys.contents.details(), uuid] as const,
+    bySlug: (slug: string) => [...queryKeys.contents.all, 'slug', slug] as const,
+    byType: (typeUuid: string, filters?: Record<string, any>) => 
+      [...queryKeys.contents.all, 'by-type', typeUuid, filters] as const,
+    byCategory: (categoryUuid: string, filters?: Record<string, any>) => 
+      [...queryKeys.contents.all, 'by-category', categoryUuid, filters] as const,
+    byStatus: (status: string, filters?: Record<string, any>) => 
+      [...queryKeys.contents.all, 'by-status', status, filters] as const,
+    byAuthor: (authorUuid: string, filters?: Record<string, any>) => 
+      [...queryKeys.contents.all, 'by-author', authorUuid, filters] as const,
+  },
+
+  // CMS - Categories
+  categories: {
+    all: ['cms', 'categories'] as const,
+    lists: () => [...queryKeys.categories.all, 'list'] as const,
+    list: (filters?: Record<string, any>) => [...queryKeys.categories.lists(), filters] as const,
+    tree: () => [...queryKeys.categories.all, 'tree'] as const,
+    details: () => [...queryKeys.categories.all, 'detail'] as const,
+    detail: (uuid: string) => [...queryKeys.categories.details(), uuid] as const,
+    bySlug: (slug: string) => [...queryKeys.categories.all, 'slug', slug] as const,
+  },
+
+  // CMS - Comments
+  comments: {
+    all: ['cms', 'comments'] as const,
+    lists: () => [...queryKeys.comments.all, 'list'] as const,
+    list: (filters?: Record<string, any>) => [...queryKeys.comments.lists(), filters] as const,
+    forContent: (contentUuid: string) => [...queryKeys.comments.all, 'content', contentUuid] as const,
+    details: () => [...queryKeys.comments.all, 'detail'] as const,
+    detail: (uuid: string) => [...queryKeys.comments.details(), uuid] as const,
+  },
+
+  // CMS - Revisions
+  revisions: {
+    all: ['cms', 'revisions'] as const,
+    forContent: (contentUuid: string) => [...queryKeys.revisions.all, 'content', contentUuid] as const,
+    detail: (uuid: string) => [...queryKeys.revisions.all, 'detail', uuid] as const,
+  },
+
+  // CMS - Tags
+  tags: {
+    all: ['cms', 'tags'] as const,
+    lists: () => [...queryKeys.tags.all, 'list'] as const,
+    list: (filters?: Record<string, any>) => [...queryKeys.tags.lists(), filters] as const,
+  },
 } as const;
 
 // Real-time update configuration

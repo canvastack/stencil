@@ -20,7 +20,6 @@ import {
   BarChart3,
   Settings,
   Store,
-  FileText,
   Palette,
   Images,
   Building,
@@ -29,6 +28,7 @@ import {
   ChevronRight,
   LogOut,
   FileText as Quote,
+  FileText,
   Factory,
   Shield,
   Layout,
@@ -42,6 +42,7 @@ import {
   Menu as MenuIcon,
   Puzzle
 } from 'lucide-react';
+import { usePluginMenuItems } from '@/hooks/usePluginMenuItems';
 
 interface MenuItem {
   title: string;
@@ -259,6 +260,8 @@ export const TenantSidebar = () => {
   const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
   const { tenant, user, roles, logout } = useTenantAuth();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  
+  const allMenuItems = usePluginMenuItems(menuItems);
 
   // Load expanded menus from localStorage on mount
   useEffect(() => {
@@ -467,7 +470,7 @@ export const TenantSidebar = () => {
 
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-elegant">
-          {menuItems.map((item) => renderMenuItem(item, 0))}
+          {allMenuItems.map((item) => renderMenuItem(item, 0))}
         </nav>
 
         {/* User Profile */}

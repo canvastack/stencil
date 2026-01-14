@@ -435,6 +435,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/request', [PluginMarketplaceController::class, 'request'])->name('tenant.plugins.request');
             Route::get('/installed', [PluginMarketplaceController::class, 'installed'])->name('tenant.plugins.installed');
             Route::get('/installed/{uuid}', [PluginMarketplaceController::class, 'installedDetail'])->name('tenant.plugins.installed.detail');
+            Route::put('/installed/{uuid}/settings', [PluginMarketplaceController::class, 'updateSettings'])->name('tenant.plugins.update_settings');
             Route::delete('/uninstall/{uuid}', [PluginMarketplaceController::class, 'uninstall'])->name('tenant.plugins.uninstall');
         });
     });
