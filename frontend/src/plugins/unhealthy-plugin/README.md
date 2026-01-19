@@ -1,0 +1,3 @@
+# unhealthy-plugin
+
+Test plugin

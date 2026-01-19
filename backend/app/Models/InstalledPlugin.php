@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use App\Infrastructure\Persistence\Eloquent\UserEloquentModel as User;
@@ -10,6 +11,7 @@ use App\Infrastructure\Persistence\Eloquent\AccountEloquentModel as Account;
 
 class InstalledPlugin extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'tenant_id',
         'plugin_name',

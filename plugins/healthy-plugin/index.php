@@ -1,0 +1,1 @@
+<?php // Plugin entry point

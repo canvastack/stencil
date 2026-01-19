@@ -1,0 +1,16 @@
+{
+    "name": "healthy-plugin",
+    "version": "1.0.0",
+    "display_name": "Healthy Plugin",
+    "description": "A healthy test plugin",
+    "author": "Test Author",
+    "entry_point": "index.php",
+    "requires": {
+        "php": ">=8.2",
+        "laravel": ">=10.0"
+    },
+    "migrations": [],
+    "permissions": [],
+    "uninstall_behavior": "keep_data",
+    "table_prefix": "healthy_plugin"
+}

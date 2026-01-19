@@ -1,0 +1,3 @@
+# stats-plugin
+
+Test plugin

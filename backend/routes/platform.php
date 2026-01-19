@@ -120,6 +120,13 @@ Route::prefix('platform')
             Route::post('/enable', [PluginController::class, 'enable'])->name('platform.plugins.enable');
             Route::post('/disable', [PluginController::class, 'disable'])->name('platform.plugins.disable');
             
+            // Plugin Registry API (Phase 8.4)
+            Route::get('/registry', [PluginController::class, 'registry'])->name('platform.plugins.registry');
+            Route::get('/{pluginName}/details', [PluginController::class, 'details'])->name('platform.plugins.details');
+            Route::get('/{pluginName}/health', [PluginController::class, 'health'])->name('platform.plugins.health');
+            Route::get('/{pluginName}/statistics', [PluginController::class, 'statistics'])->name('platform.plugins.statistics');
+            Route::post('/cache/clear', [PluginController::class, 'clearCache'])->name('platform.plugins.cache.clear');
+            
             // Plugin Approval System
             Route::get('/requests', [PluginApprovalController::class, 'requests'])->name('platform.plugins.approval.requests');
             Route::get('/requests/{uuid}', [PluginApprovalController::class, 'show'])->name('platform.plugins.approval.show');

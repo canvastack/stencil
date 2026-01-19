@@ -1,0 +1,16 @@
+{
+    "name": "unhealthy-plugin",
+    "version": "1.0.0",
+    "display_name": "Unhealthy Plugin",
+    "description": "Plugin with missing entry point",
+    "author": "Test Author",
+    "entry_point": "missing.php",
+    "requires": {
+        "php": ">=8.2",
+        "laravel": ">=10.0"
+    },
+    "migrations": [],
+    "permissions": [],
+    "uninstall_behavior": "keep_data",
+    "table_prefix": "unhealthy_plugin"
+}

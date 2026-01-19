@@ -1,0 +1,7 @@
+{
+    "name": "unhealthy-plugin",
+    "version": "1.0.0",
+    "display_name": "Unhealthy Plugin",
+    "description": "Plugin with missing entry point",
+    "entry_point": "missing.php"
+}

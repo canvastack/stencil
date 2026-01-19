@@ -1,0 +1,7 @@
+{
+    "name": "new-plugin",
+    "version": "1.0.0",
+    "display_name": "New-plugin",
+    "description": "Test plugin",
+    "entry_point": "index.php"
+}
