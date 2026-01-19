@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { memo, useRef } from 'react';
-import { AdminSidebar } from './AdminSidebar';
+import { AdminSidebar } from './AdminSidebar.tsx.old.bak';
 import { AdminHeader } from './AdminHeader';
 import { AdminFooter } from './AdminFooter';
 import { ScrollToTop } from '@/components/ScrollToTop';
@@ -23,7 +23,7 @@ export const AdminLayout = memo(() => {
   return (
     <TooltipProvider>
       <div className="min-h-screen flex">
-        <AdminSidebar />
+        {/* <AdminSidebar /> */}
         
         <div
           className={cn(

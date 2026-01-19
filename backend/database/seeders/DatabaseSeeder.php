@@ -86,6 +86,14 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🔌 Seeding Plugin Installation Requests...');
         $this->call(InstalledPluginSeeder::class);
         
+        // Seed CMS Content Types (Blog, Portfolio, etc.)
+        $this->command->info('📰 Seeding CMS Content Types...');
+        $this->call(ContentTypeSeeder::class);
+        
+        // Seed CMS Categories
+        $this->command->info('🏷️ Seeding CMS Categories...');
+        $this->call(CategorySeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');

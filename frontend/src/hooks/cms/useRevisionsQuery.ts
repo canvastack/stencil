@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { revisionService } from '@/services/cms/revisionService';
 import type {
   Revision,
-  RevisionListItem,
   ApiResponse,
   ApiListResponse,
 } from '@/types/cms';
@@ -19,7 +18,7 @@ export const useRevisionsForContentQuery = (contentUuid?: string) => {
 
   return useQuery({
     queryKey: queryKeys.revisions.forContent(contentUuid || ''),
-    queryFn: async (): Promise<ApiListResponse<RevisionListItem>> => {
+    queryFn: async (): Promise<ApiListResponse<Revision>> => {
       if (!contentUuid) {
         throw new Error('Content UUID is required');
       }
@@ -31,7 +30,7 @@ export const useRevisionsForContentQuery = (contentUuid?: string) => {
       }
 
       logger.debug('[CMS] Fetching revisions for content', { contentUuid, tenantId: tenant.uuid });
-      return await revisionService.list(contentUuid);
+      return await revisionService.listForContent(contentUuid);
     },
     enabled: !!contentUuid && !!tenant?.uuid && !!user?.id && userType === 'tenant',
     staleTime: 5 * 60 * 1000,

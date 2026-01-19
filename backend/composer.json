@@ -32,8 +32,11 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
-            "Plugins\\PagesEngine\\": "../plugins/pages-engine/src/"
-        }
+            "Plugins\\PagesEngine\\": "../plugins/pages-engine/backend/src/"
+        },
+        "classmap": [
+            "../plugins/pages-engine/backend/database/seeders"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

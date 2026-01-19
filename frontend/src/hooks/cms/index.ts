@@ -4,3 +4,4 @@ export * from './useCategoriesQuery';
 export * from './useCommentsQuery';
 export * from './useRevisionsQuery';
 export * from './useTagsQuery';
+export * from './useUrlQuery';

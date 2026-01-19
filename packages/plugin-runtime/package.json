@@ -1,0 +1,42 @@
+{
+  "name": "@canvastencil/plugin-runtime",
+  "version": "1.0.0",
+  "description": "Plugin runtime helpers for CanvaStencil platform",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "dependencies": {
+    "@canvastencil/api-client": "workspace:*",
+    "@canvastencil/types": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-router-dom": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^7.3.1"
+  },
+  "keywords": [
+    "canvastencil",
+    "plugin-runtime",
+    "plugin-loader",
+    "typescript"
+  ],
+  "author": "CanvaStack Team",
+  "license": "MIT"
+}

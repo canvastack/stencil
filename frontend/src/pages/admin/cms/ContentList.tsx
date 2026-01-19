@@ -198,8 +198,8 @@ export default function ContentList() {
                         <TableCell>
                           <span className="text-sm text-muted-foreground">
                             {content.published_at 
-                              ? formatDistanceToNow(new Date(content.published_at), { addSuffix: true })
-                              : formatDistanceToNow(new Date(content.created_at), { addSuffix: true })
+                              ? formatDistanceToNow(parseISO(content.published_at), { addSuffix: true })
+                              : formatDistanceToNow(parseISO(content.created_at), { addSuffix: true })
                             }
                           </span>
                         </TableCell>

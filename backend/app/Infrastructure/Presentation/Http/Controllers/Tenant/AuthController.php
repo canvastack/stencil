@@ -310,6 +310,9 @@ class AuthController extends Controller
                 }
             }
             
+            // Set permissions team ID for multi-tenant role access
+            setPermissionsTeamId($user->tenant_id);
+            
             // Load roles if not already loaded
             if (!$user->relationLoaded('roles')) {
                 $user->load('roles');

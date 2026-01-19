@@ -7,7 +7,11 @@ export interface Content {
   };
   title: string;
   slug: string;
-  body: string;
+  content: {
+    wysiwyg?: string;
+    markdown?: string;
+    html?: string;
+  };
   excerpt: string | null;
   featured_image: string | null;
   status: 'draft' | 'published' | 'scheduled' | 'archived';
@@ -27,6 +31,14 @@ export interface Content {
     slug: string;
   }>;
   metadata: Record<string, any> | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_keywords?: string[] | null;
+  canonical_url?: string | null;
+  is_featured?: boolean;
+  is_pinned?: boolean;
+  is_commentable?: boolean;
+  custom_url?: string | null;
   view_count: number;
   comment_count: number;
   published_at: string | null;

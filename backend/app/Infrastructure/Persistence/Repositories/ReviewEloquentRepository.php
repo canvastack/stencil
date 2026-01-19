@@ -17,7 +17,7 @@ class ReviewEloquentRepository implements ReviewRepositoryInterface
 
     private function getTenantIdByUuid(string $uuid): ?int
     {
-        $tenant = \App\Infrastructure\Persistence\Eloquent\Models\TenantEloquentModel::where('uuid', $uuid)->first();
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $uuid)->first();
         return $tenant?->id;
     }
 
@@ -86,7 +86,7 @@ class ReviewEloquentRepository implements ReviewRepositoryInterface
 
     public function findByTenantAndProductUuid(UuidValueObject $tenantId, string $productUuid): array
     {
-        $tenant = \App\Infrastructure\Persistence\Eloquent\Models\TenantEloquentModel::where('uuid', $tenantId->getValue())->first();
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantId->getValue())->first();
         
         if (!$tenant) {
             return [];

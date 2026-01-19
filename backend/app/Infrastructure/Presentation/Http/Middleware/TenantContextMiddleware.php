@@ -87,6 +87,34 @@ class TenantContextMiddleware
         // 6. Set tenant context for the request
         $this->setTenantContext($tenant, $request);
 
+        // 7. Set permissions team ID for Spatie Permission multi-tenant feature
+        // Re-fetch user to ensure we have the latest authenticated instance
+        $currentUser = $this->getAuthenticatedUser($request);
+        
+        if ($currentUser && isset($currentUser->tenant_id)) {
+            setPermissionsTeamId($currentUser->tenant_id);
+            
+            // Clear permission cache to ensure fresh load with team context
+            app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+            
+            // Force reload user with fresh permissions
+            $currentUser = $currentUser->fresh();
+            
+            // TEMPORARY: Skip getAllPermissions() call due to UUID relationship issues
+            // TODO: Fix Spatie Permission to use UUID properly in permissions() relationship
+            \Log::info('[TenantContext] Set permissions team ID', [
+                'user_id' => $currentUser->id,
+                'user_email' => $currentUser->email,
+                'tenant_id' => $currentUser->tenant_id,
+                'team_id_set' => getPermissionsTeamId(),
+            ]);
+        } else {
+            \Log::warning('[TenantContext] Could not set permissions team ID', [
+                'user_exists' => $currentUser !== null,
+                'has_tenant_id' => $currentUser ? isset($currentUser->tenant_id) : false,
+            ]);
+        }
+
         return $next($request);
     }
     

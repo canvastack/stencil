@@ -93,7 +93,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'slug' => 'admin',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Full tenant access with all business permissions',
                 'is_system' => true,
                 'abilities' => [
@@ -110,7 +110,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Manager',
                 'slug' => 'manager',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Business operations management',
                 'is_system' => true,
                 'abilities' => [
@@ -124,7 +124,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Sales',
                 'slug' => 'sales',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Customer and order management',
                 'is_system' => true,
                 'abilities' => [
@@ -136,7 +136,7 @@ class MultiTenantBusinessSeeder extends Seeder
             [
                 'name' => 'Viewer',
                 'slug' => 'viewer',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Read-only access to business data',
                 'is_system' => true,
                 'abilities' => [
@@ -225,15 +225,15 @@ class MultiTenantBusinessSeeder extends Seeder
                 ])
             );
 
+            // Refresh to load database-generated UUID
+            $user->refresh();
+
             // Assign Role
             $userRole = RoleEloquentModel::where('slug', $role)
                 ->where('tenant_id', $tenant->id)
                 ->first();
-            if ($userRole && !$user->roles()->where('role_id', $userRole->id)->exists()) {
-                $user->roles()->attach($userRole->id, [
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+            if ($userRole && !$user->hasRole($userRole)) {
+                $user->assignRole($userRole);
             }
         }
 

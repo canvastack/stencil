@@ -9,10 +9,13 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Multitenancy\Models\Tenant;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+
+    protected $guard_name = 'api';
 
     /**
      * The attributes that are mass assignable.
@@ -31,6 +34,17 @@ class User extends Authenticatable
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class, 'tenant_id', 'id');
+    }
+
+    /**
+     * Get the team identifier for Spatie Permission's teams feature.
+     * This method is required for multi-tenant permission scoping.
+     *
+     * @return int|string|null
+     */
+    public function getPermissionTeamId()
+    {
+        return $this->tenant_id;
     }
 
     /**

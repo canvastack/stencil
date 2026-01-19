@@ -2,12 +2,12 @@
 
 namespace App\Infrastructure\Persistence\Eloquent;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-class RoleEloquentModel extends Model
-{
+use Spatie\Permission\Models\Role as SpatieRole;
 
+class RoleEloquentModel extends SpatieRole
+{
     protected $table = 'roles';
 
     protected $fillable = [
@@ -25,41 +25,70 @@ class RoleEloquentModel extends Model
         'is_system' => 'boolean',
     ];
 
+    public function __construct(array $attributes = [])
+    {
+        // Merge custom casts with parent casts
+        $this->casts = array_merge($this->casts, [
+            'abilities' => 'array',
+            'is_system' => 'boolean',
+        ]);
+        
+        parent::__construct($attributes);
+        
+        // Ensure our custom table name is used
+        $this->table = 'roles';
+    }
+
     // Relationships
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(TenantEloquentModel::class, 'tenant_id');
     }
 
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            UserEloquentModel::class,
-            'user_roles',
-            'role_id',
-            'user_id'
-        );
-    }
-
-    public function accounts(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            AccountEloquentModel::class,
-            'account_roles',
-            'role_id',
-            'account_id'
-        );
-    }
-
     // Global Scopes
     protected static function booted()
     {
-        // Automatically scope to current tenant for tenant roles
-        static::addGlobalScope('tenant_context', function ($query) {
-            if (app()->has('currentTenant')) {
-                $query->where('tenant_id', app('currentTenant')->id);
+        parent::booted();
+        
+        // Auto-generate UUID for new roles
+        static::creating(function ($role) {
+            if (empty($role->uuid)) {
+                $role->uuid = \Illuminate\Support\Str::uuid()->toString();
             }
         });
+        
+        // NOTE: We intentionally DO NOT add a global scope for tenant filtering here.
+        // Spatie Permission handles tenant scoping automatically via the teams feature
+        // (team_foreign_key config and getPermissionsTeamId()).
+        // 
+        // Adding a custom global scope here would interfere with Spatie's internal
+        // queries (e.g., hasRole, assignRole) and cause PostgreSQL transaction errors.
+        // 
+        // If you need to filter roles by tenant in your application code, use the
+        // tenantRoles() or platformRoles() scopes explicitly.
+    }
+
+    /**
+     * Override findByName to use slug field instead of name field.
+     * This allows hasRole('user') to work with slug='user' instead of name='User'.
+     *
+     * @param  string  $name
+     * @param  string|null  $guardName
+     * @return \Spatie\Permission\Contracts\Role
+     *
+     * @throws \Spatie\Permission\Exceptions\RoleDoesNotExist
+     */
+    public static function findByName(string $name, ?string $guardName = null): \Spatie\Permission\Contracts\Role
+    {
+        $guardName ??= \Spatie\Permission\Guard::getDefaultName(static::class);
+
+        $role = static::findByParam(['slug' => $name, 'guard_name' => $guardName]);
+
+        if (! $role) {
+            throw \Spatie\Permission\Exceptions\RoleDoesNotExist::named($name, $guardName);
+        }
+
+        return $role;
     }
 
     // Local Scopes

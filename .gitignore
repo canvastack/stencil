@@ -13,16 +13,18 @@ dist-ssr
 *.local
 backups*
 .zenco*
+.zenfl*
 .qod*
 *.bak*
 *.zip
 *.tar.gz
 -p
 *backup*
-*.bak*
 backend/tests/Debugs/results/*.txt
 *.tmp
 *temp_*
+*debug*.md
+test-*.md
 ROADMAPS/*
 roadmaps/
 
@@ -32,6 +34,7 @@ roadmaps/
 !.vscode/extensions.json
 .idea
 .DS_Store
+.vs/
 *.suo
 *.ntvs*
 *.njsproj
@@ -75,11 +78,29 @@ frontend/coverage
 frontend/test-results
 frontend/playwright-report
 
-# Backend artifacts
+# Backend artifacts (Laravel)
 backend/vendor
 backend/node_modules
 backend/public/hot
+backend/public/build
+backend/public/storage
 backend/storage/*.key
+backend/storage/logs/*
+!backend/storage/logs/.gitkeep
+backend/storage/framework/cache/*
+!backend/storage/framework/cache/.gitkeep
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitkeep
+backend/storage/framework/testing/*
+!backend/storage/framework/testing/.gitkeep
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitkeep
+backend/storage/app/*
+!backend/storage/app/.gitkeep
+!backend/storage/app/public/
+backend/.phpunit.result.cache
+backend/.phpunit.cache
+backend/uploads/
 
 # Vite cache (juga bisa ada di root jika run dari root)
 .vite/
@@ -92,3 +113,20 @@ dev-dist/
 # Build artifacts di root (jika ada)
 /dist
 /dist-ssr
+
+# Packages (workspace packages)
+packages/*/node_modules
+packages/*/dist
+packages/*/.vite
+packages/*/coverage
+packages/*/*.tsbuildinfo
+
+# Plugins
+plugins/*/node_modules
+plugins/*/dist
+plugins/*/.vite
+plugins/*/coverage
+
+# IDE & OS specific
+.fleet/
+.phpunit.cache

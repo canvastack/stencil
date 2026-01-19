@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "outDir": "dist",
+    "rootDir": "frontend",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./frontend/*"],
+      "@canvastencil/ui-components": ["../packages/ui-components/src"],
+      "@canvastencil/types": ["../packages/types/src"],
+      "@canvastencil/api-client": ["../packages/api-client/src"]
+    }
+  },
+  "include": ["frontend/**/*"],
+  "exclude": ["node_modules", "dist", "backend"]
+}

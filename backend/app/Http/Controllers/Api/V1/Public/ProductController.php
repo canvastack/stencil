@@ -498,7 +498,7 @@ class ProductController extends Controller
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
-                $tenant = \App\Infrastructure\Persistence\Eloquent\Models\TenantEloquentModel::where('slug', $tenantSlug)->first();
+                $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('slug', $tenantSlug)->first();
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }

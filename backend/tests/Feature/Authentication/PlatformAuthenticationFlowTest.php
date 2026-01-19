@@ -69,9 +69,9 @@ class PlatformAuthenticationFlowTest extends TestCase
             'status' => 'active'
         ]);
 
-        // Assign roles
-        $this->superAdmin->roles()->attach($superAdminRole->id);
-        $this->platformManager->roles()->attach($managerRole->id);
+        // Assign roles using Spatie Permission
+        $this->superAdmin->assignRole($superAdminRole);
+        $this->platformManager->assignRole($managerRole);
     }
 
     /** @test */

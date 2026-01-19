@@ -193,12 +193,15 @@ class TenantAuthController extends Controller
                 ], 401);
             }
 
+            // Set permissions team ID BEFORE loading roles for multi-tenant access
+            setPermissionsTeamId($user->tenant_id);  // ← Must be first!
+
             // Load tenant and roles relationships
             $user->load('tenant', 'roles');
 
             // Revoke existing tokens for security
             $user->tokens()->delete();
-
+            
             // Create new access token
             $token = $user->createToken('tenant-access-token', ['*'])->plainTextToken;
 

@@ -122,10 +122,10 @@ class TenantAuthenticationFlowTest extends TestCase
             'status' => 'active'
         ]);
 
-        // Assign roles
-        $this->adminUser->roles()->attach($this->adminRole->id);
-        $this->managerUser->roles()->attach($this->managerRole->id);
-        $this->salesUser->roles()->attach($this->salesRole->id);
+        // Assign roles using Spatie Permission
+        $this->adminUser->assignRole($this->adminRole);
+        $this->managerUser->assignRole($this->managerRole);
+        $this->salesUser->assignRole($this->salesRole);
     }
 
     /** @test */
@@ -179,6 +179,7 @@ class TenantAuthenticationFlowTest extends TestCase
 
         // 4. Verify permissions
         $permissions = $meResponse->json('permissions');
+        dump('Permissions received:', $permissions);
         $this->assertContains('products.create', $permissions);
         $this->assertContains('orders.delete', $permissions);
 

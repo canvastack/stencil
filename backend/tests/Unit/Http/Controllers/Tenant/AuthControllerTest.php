@@ -51,7 +51,7 @@ class AuthControllerTest extends TestCase
             'abilities' => ['read', 'write', 'delete']
         ]);
 
-        $this->user->roles()->attach($this->role->id);
+        $this->user->assignRole($this->role);
     }
 
     /** @test */

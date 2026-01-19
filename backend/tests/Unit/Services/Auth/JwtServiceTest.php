@@ -65,7 +65,7 @@ class JwtServiceTest extends TestCase
             'abilities' => ['read', 'write', 'delete']
         ]);
 
-        $this->tenantUser->roles()->attach($role->id);
+        $this->tenantUser->assignRole($role);
     }
 
     /** @test */

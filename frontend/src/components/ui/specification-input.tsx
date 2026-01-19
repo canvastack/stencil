@@ -40,8 +40,22 @@ export const SpecificationInput: React.FC<SpecificationInputProps> = ({
   const parseValue = (val: any): { type: 'text' | 'array' | 'keyvalue'; data: any } => {
     if (!val) return { type: 'text', data: '' };
     if (typeof val === 'string') return { type: 'text', data: val };
-    if (Array.isArray(val)) return { type: 'array', data: val };
-    if (typeof val === 'object') return { type: 'keyvalue', data: val };
+    if (Array.isArray(val)) {
+      const containsOnlyStrings = val.every(item => typeof item === 'string');
+      if (containsOnlyStrings) {
+        return { type: 'array', data: val };
+      }
+      return { type: 'text', data: '' };
+    }
+    if (typeof val === 'object') {
+      const isValidKeyValue = Object.values(val).every(v => 
+        Array.isArray(v) && v.every(item => typeof item === 'string')
+      );
+      if (isValidKeyValue) {
+        return { type: 'keyvalue', data: val };
+      }
+      return { type: 'text', data: '' };
+    }
     return { type: 'text', data: String(val) };
   };
 
@@ -175,7 +189,7 @@ export const SpecificationInput: React.FC<SpecificationInputProps> = ({
               <div className="space-y-2">
                 <Label>Values (Tag Input)</Label>
                 <TagInput
-                  value={Array.isArray(currentValue) ? currentValue : []}
+                  value={Array.isArray(currentValue) ? currentValue.filter(v => typeof v === 'string') : []}
                   onChange={handleSimpleArrayChange}
                   placeholder="Type and press Enter to add"
                 />
@@ -219,7 +233,7 @@ export const SpecificationInput: React.FC<SpecificationInputProps> = ({
                           </Button>
                         </div>
                         <TagInput
-                          value={Array.isArray(subValues) ? subValues : []}
+                          value={Array.isArray(subValues) ? subValues.filter(v => typeof v === 'string') : []}
                           onChange={(tags) => handleKeyValueArrayChange(subKey, tags)}
                           placeholder="Type values and press Enter"
                         />

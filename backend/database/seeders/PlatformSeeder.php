@@ -33,7 +33,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Super Administrator',
                 'slug' => 'super-admin',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Full platform access with all permissions',
                 'is_system' => true,
                 'abilities' => [
@@ -55,7 +55,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Platform Manager',
                 'slug' => 'platform-manager',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Platform management with limited system access',
                 'is_system' => true,
                 'abilities' => [
@@ -72,7 +72,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Support Agent',
                 'slug' => 'support-agent',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Customer support with read-only access',
                 'is_system' => true,
                 'abilities' => [
@@ -84,10 +84,27 @@ class PlatformSeeder extends Seeder
         ];
 
         foreach ($platformRoles as $roleData) {
-            RoleEloquentModel::firstOrCreate(
+            $role = RoleEloquentModel::firstOrCreate(
                 ['slug' => $roleData['slug'], 'tenant_id' => null],
                 $roleData
             );
+
+            // Create permissions and sync to role
+            if (isset($roleData['abilities']) && is_array($roleData['abilities'])) {
+                $permissions = [];
+                foreach ($roleData['abilities'] as $permissionName) {
+                    $permission = \Spatie\Permission\Models\Permission::firstOrCreate(
+                        [
+                            'name' => $permissionName,
+                            'guard_name' => 'api',
+                        ]
+                    );
+                    $permissions[] = $permission;
+                }
+                
+                // Sync permissions to role
+                $role->syncPermissions($permissions);
+            }
         }
 
         $this->command->info('✅ Platform roles created successfully');
@@ -113,15 +130,15 @@ class PlatformSeeder extends Seeder
             ]
         );
 
+        // Refresh to load database-generated UUID
+        $superAdmin->refresh();
+
         // Assign Super Admin Role
         $superAdminRole = RoleEloquentModel::where('slug', 'super-admin')
             ->whereNull('tenant_id')
             ->first();
-        if ($superAdminRole && !$superAdmin->roles()->where('role_id', $superAdminRole->id)->exists()) {
-            $superAdmin->roles()->attach($superAdminRole->id, [
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+        if ($superAdminRole && !$superAdmin->hasRole($superAdminRole)) {
+            $superAdmin->assignRole($superAdminRole);
         }
 
         // Platform Manager Account
@@ -142,15 +159,15 @@ class PlatformSeeder extends Seeder
             ]
         );
 
+        // Refresh to load database-generated UUID
+        $manager->refresh();
+
         // Assign Platform Manager Role
         $managerRole = RoleEloquentModel::where('slug', 'platform-manager')
             ->whereNull('tenant_id')
             ->first();
-        if ($managerRole && !$manager->roles()->where('role_id', $managerRole->id)->exists()) {
-            $manager->roles()->attach($managerRole->id, [
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+        if ($managerRole && !$manager->hasRole($managerRole)) {
+            $manager->assignRole($managerRole);
         }
 
         $this->command->info('✅ Platform accounts created successfully');
@@ -185,7 +202,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Admin',
                 'slug' => 'admin',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Full tenant access with all business permissions',
                 'is_system' => true,
                 'abilities' => [
@@ -201,13 +218,20 @@ class PlatformSeeder extends Seeder
                     'vendors:manage',
                     'vendors.view', 'vendors.create', 'vendors.edit', 'vendors.delete',
                     'analytics:view',
-                    'settings:manage'
+                    'settings:manage',
+                    // Pages Engine (CMS) Permissions
+                    'pages:content-types:view', 'pages:content-types:create', 'pages:content-types:update', 'pages:content-types:delete',
+                    'pages:contents:view', 'pages:contents:create', 'pages:contents:update', 'pages:contents:delete', 'pages:contents:publish', 'pages:contents:schedule',
+                    'pages:categories:view', 'pages:categories:create', 'pages:categories:update', 'pages:categories:delete', 'pages:categories:reorder',
+                    'pages:comments:view', 'pages:comments:approve', 'pages:comments:reject', 'pages:comments:spam', 'pages:comments:delete',
+                    'pages:urls:manage',
+                    'pages:revisions:view', 'pages:revisions:restore'
                 ]
             ],
             [
                 'name' => 'Manager',
                 'slug' => 'manager',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Business operations management',
                 'is_system' => true,
                 'abilities' => [
@@ -225,7 +249,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Sales',
                 'slug' => 'sales',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Customer and order management',
                 'is_system' => true,
                 'abilities' => [
@@ -240,7 +264,7 @@ class PlatformSeeder extends Seeder
             [
                 'name' => 'Viewer',
                 'slug' => 'viewer',
-                'guard_name' => 'web',
+                'guard_name' => 'api',
                 'description' => 'Read-only access to business data',
                 'is_system' => true,
                 'abilities' => [
@@ -257,10 +281,27 @@ class PlatformSeeder extends Seeder
         ];
 
         foreach ($tenantRoles as $roleData) {
-            RoleEloquentModel::firstOrCreate(
+            $role = RoleEloquentModel::firstOrCreate(
                 ['slug' => $roleData['slug'], 'tenant_id' => $demoTenant->id],
                 array_merge($roleData, ['tenant_id' => $demoTenant->id])
             );
+
+            // Create permissions and sync to role
+            if (isset($roleData['abilities']) && is_array($roleData['abilities'])) {
+                $permissions = [];
+                foreach ($roleData['abilities'] as $permissionName) {
+                    $permission = \Spatie\Permission\Models\Permission::firstOrCreate(
+                        [
+                            'name' => $permissionName,
+                            'guard_name' => 'api',
+                        ]
+                    );
+                    $permissions[] = $permission;
+                }
+                
+                // Sync permissions to role
+                $role->syncPermissions($permissions);
+            }
         }
 
         // Create Demo Tenant Users
@@ -309,15 +350,15 @@ class PlatformSeeder extends Seeder
                 ])
             );
 
+            // Refresh to load database-generated UUID
+            $user->refresh();
+
             // Assign Role
             $userRole = RoleEloquentModel::where('slug', $role)
                 ->where('tenant_id', $demoTenant->id)
                 ->first();
-            if ($userRole && !$user->roles()->where('role_id', $userRole->id)->exists()) {
-                $user->roles()->attach($userRole->id, [
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+            if ($userRole && !$user->hasRole($userRole)) {
+                $user->assignRole($userRole);
             }
         }
 

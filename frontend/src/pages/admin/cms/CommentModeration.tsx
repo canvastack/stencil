@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Check, X, AlertTriangle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Search, Check, X, AlertTriangle, Eye } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -20,6 +21,8 @@ import { formatDistanceToNow } from 'date-fns';
 
 export default function CommentModeration() {
   const { activeTab, setActiveTab, filters, setFilters } = useCommentStore();
+  const [selectedComment, setSelectedComment] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const { data, isLoading } = useCommentsQuery({ ...filters, status: activeTab === 'all' ? undefined : activeTab });
   const approveMutation = useApproveCommentMutation();
@@ -27,6 +30,7 @@ export default function CommentModeration() {
   const spamMutation = useMarkCommentAsSpamMutation();
 
   const comments = data?.data || [];
+  const counts = data?.counts || { pending: 0, approved: 0, rejected: 0, spam: 0, trash: 0, total: 0 };
 
   const handleSearch = (value: string) => {
     setFilters({ search: value });
@@ -42,6 +46,16 @@ export default function CommentModeration() {
 
   const handleMarkAsSpam = (uuid: string) => {
     spamMutation.mutate(uuid);
+  };
+
+  const handleViewComment = (comment: any) => {
+    setSelectedComment(comment);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedComment(null);
   };
 
   if (isLoading) {
@@ -66,16 +80,44 @@ export default function CommentModeration() {
         <TabsList>
           <TabsTrigger value="pending">
             Pending
-            {comments.filter(c => c.status === 'pending').length > 0 && (
+            {counts.pending > 0 && (
               <Badge variant="destructive" className="ml-2">
-                {comments.filter(c => c.status === 'pending').length}
+                {counts.pending}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected</TabsTrigger>
-          <TabsTrigger value="spam">Spam</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="approved">
+            Approved
+            {counts.approved > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {counts.approved}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="rejected">
+            Rejected
+            {counts.rejected > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {counts.rejected}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="spam">
+            Spam
+            {counts.spam > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {counts.spam}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="all">
+            All
+            {counts.total > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {counts.total}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <Card>
@@ -121,7 +163,7 @@ export default function CommentModeration() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-sm line-clamp-2">{comment.content}</p>
+                          <p className="text-sm line-clamp-2">{comment.comment_text}</p>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground line-clamp-1">
@@ -135,6 +177,14 @@ export default function CommentModeration() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleViewComment(comment)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             {comment.status === 'pending' && (
                               <>
                                 <Button
@@ -174,6 +224,109 @@ export default function CommentModeration() {
           </CardContent>
         </Card>
       </Tabs>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Comment Details</DialogTitle>
+            <DialogDescription>
+              Full comment information and moderation actions
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedComment && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Author Information</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Name:</span>
+                    <span className="font-medium">{selectedComment.author_name || 'Anonymous'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Email:</span>
+                    <span className="font-medium">{selectedComment.author_email || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Status:</span>
+                    <Badge variant={selectedComment.status === 'pending' ? 'destructive' : 'secondary'}>
+                      {selectedComment.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Comment Text</h3>
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm whitespace-pre-wrap">{selectedComment.comment_text}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Metadata</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Content:</span>
+                    <span>{selectedComment.content_title || 'Unknown'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">IP Address:</span>
+                    <span className="font-mono text-xs">{selectedComment.user_ip || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">User Agent:</span>
+                    <span className="font-mono text-xs truncate max-w-xs" title={selectedComment.user_agent}>
+                      {selectedComment.user_agent || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Created:</span>
+                    <span>{formatDistanceToNow(new Date(selectedComment.created_at), { addSuffix: true })}</span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedComment.status === 'pending' && (
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button
+                    onClick={() => {
+                      handleApprove(selectedComment.uuid);
+                      handleDialogClose();
+                    }}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      handleReject(selectedComment.uuid);
+                      handleDialogClose();
+                    }}
+                    variant="destructive"
+                    className="flex-1"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      handleMarkAsSpam(selectedComment.uuid);
+                      handleDialogClose();
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Spam
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

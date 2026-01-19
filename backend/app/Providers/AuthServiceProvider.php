@@ -21,10 +21,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::before(function ($user, $ability) {
-            if (str_starts_with($ability, 'pages:') || str_starts_with($ability, 'platform.content-types.')) {
-                return true;
-            }
-        });
+        //
     }
 }

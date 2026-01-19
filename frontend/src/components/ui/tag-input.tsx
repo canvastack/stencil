@@ -19,28 +19,29 @@ export const TagInput: React.FC<TagInputProps> = ({
   className,
   disabled = false,
 }) => {
+  const safeValue = Array.isArray(value) ? value.filter(v => typeof v === 'string') : [];
   const [inputValue, setInputValue] = useState('');
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue.trim()) {
       e.preventDefault();
       const newTag = inputValue.trim();
-      if (!value.includes(newTag)) {
-        onChange([...value, newTag]);
+      if (!safeValue.includes(newTag)) {
+        onChange([...safeValue, newTag]);
       }
       setInputValue('');
-    } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
-      onChange(value.slice(0, -1));
+    } else if (e.key === 'Backspace' && !inputValue && safeValue.length > 0) {
+      onChange(safeValue.slice(0, -1));
     }
   };
 
   const removeTag = (indexToRemove: number) => {
-    onChange(value.filter((_, index) => index !== indexToRemove));
+    onChange(safeValue.filter((_, index) => index !== indexToRemove));
   };
 
   return (
     <div className={cn('flex flex-wrap gap-2 p-2 border rounded-md bg-background', className)}>
-      {value.map((tag, index) => (
+      {safeValue.map((tag, index) => (
         <Badge key={index} variant="secondary" className="gap-1 pr-1">
           {tag}
           <button
@@ -58,7 +59,7 @@ export const TagInput: React.FC<TagInputProps> = ({
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={value.length === 0 ? placeholder : ''}
+        placeholder={safeValue.length === 0 ? placeholder : ''}
         disabled={disabled}
         className="flex-1 min-w-[120px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto"
       />

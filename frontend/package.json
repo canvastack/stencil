@@ -35,6 +35,10 @@
     "dev:both": "npm run dev:all"
   },
   "dependencies": {
+    "@canvastencil/ui-components": "workspace:*",
+    "@canvastencil/types": "workspace:*",
+    "@canvastencil/api-client": "workspace:*",
+    "@canvastencil/plugin-runtime": "workspace:*",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",

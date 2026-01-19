@@ -3,7 +3,7 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosE
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 const LOG_LEVEL = import.meta.env.VITE_APP_LOG_LEVEL || 'error';
 
-console.log('[TenantApiClient] Initializing with baseURL:', API_BASE_URL);
+console.log('[TenantApiClient v2.0 - URL FIX APPLIED] Initializing with baseURL:', API_BASE_URL);
 
 interface TenantApiClientOptions {
   timeout?: number;
@@ -76,11 +76,20 @@ class TenantApiClientManager {
         }
 
         // Ensure all requests go through tenant endpoints
-        if (config.url && !config.url.startsWith('/tenant/')) {
-          // Prefix non-absolute URLs with /tenant/ (but allow auth endpoints)
-          if (!config.url.startsWith('http') && !config.url.startsWith('/auth/')) {
-            config.url = `/tenant${config.url.startsWith('/') ? config.url : '/' + config.url}`;
+        if (config.url && !config.url.startsWith('http')) {
+          let url = config.url;
+          
+          // Remove /api/v1 prefix if present (baseURL already includes it)
+          if (url.startsWith('/api/v1/')) {
+            url = url.substring(7);
           }
+          
+          // Add /tenant/ prefix if not present and not auth endpoint
+          if (!url.startsWith('/tenant/') && !url.startsWith('/auth/')) {
+            url = `/tenant${url.startsWith('/') ? url : '/' + url}`;
+          }
+          
+          config.url = url;
         }
 
         this.log('debug', `${config.method?.toUpperCase()} ${config.url}`, {

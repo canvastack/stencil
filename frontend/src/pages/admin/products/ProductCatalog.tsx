@@ -125,15 +125,15 @@ export default function ProductCatalog() {
             <CardTitle>Unauthorized</CardTitle>
             <CardDescription>
               You do not have permission to view product catalog.
-              {import.meta.env.DEV && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                  <p className="font-semibold text-yellow-800">Development Info:</p>
-                  <p className="mt-1 text-yellow-700">Permissions: {JSON.stringify(permissions)}</p>
-                  <p className="text-yellow-700">Roles: {JSON.stringify(roles)}</p>
-                  <p className="mt-2 text-yellow-600">Set VITE_BYPASS_PERMISSIONS=true in .env to bypass</p>
-                </div>
-              )}
             </CardDescription>
+            {import.meta.env.DEV && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                <div className="font-semibold text-yellow-800">Development Info:</div>
+                <div className="mt-1 text-yellow-700">Permissions: {JSON.stringify(permissions)}</div>
+                <div className="text-yellow-700">Roles: {JSON.stringify(roles)}</div>
+                <div className="mt-2 text-yellow-600">Set VITE_BYPASS_PERMISSIONS=true in .env to bypass</div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <Button onClick={() => window.history.back()}>Go Back</Button>

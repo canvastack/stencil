@@ -81,6 +81,7 @@ export default function ContentForm() {
 
   const form = useForm<ContentFormData>({
     resolver: zodResolver(contentFormSchema),
+    mode: 'onChange',
     defaultValues: {
       content_type_uuid: '',
       title: '',
@@ -105,6 +106,37 @@ export default function ContentForm() {
       custom_url: '',
     },
   });
+
+  const { isValid, errors, isSubmitting } = form.formState;
+
+  // Debug on component mount
+  useEffect(() => {
+    console.log('🔵 [ContentForm] Component loaded!', new Date().toISOString());
+    return () => console.log('🔴 [ContentForm] Component unmounted');
+  }, []);
+
+  // Debug form state changes
+  useEffect(() => {
+    const values = form.getValues();
+    console.log('📋 [ContentForm] Form State Update:', { 
+      isValid, 
+      errorCount: Object.keys(errors).length,
+      errors: errors,
+      hasTitle: !!values.title,
+      hasSlug: !!values.slug,
+      hasContentType: !!values.content_type_uuid,
+      isSubmitting 
+    });
+  }, [isValid, errors, isSubmitting, form]);
+
+  useEffect(() => {
+    console.log('[ContentForm] Form State:', { 
+      isValid, 
+      errors, 
+      values: form.getValues(),
+      isSubmitting: form.formState.isSubmitting 
+    });
+  }, [isValid, errors, form]);
 
   useEffect(() => {
     if (contentData?.data) {
@@ -152,11 +184,13 @@ export default function ContentForm() {
 
   const onSubmit = async (data: ContentFormData) => {
     try {
+      console.log('[ContentForm] onSubmit called', { data, isEditing, uuid });
+      
       if (isEditing && uuid) {
         const updateInput: UpdateContentInput = {
           title: data.title,
           slug: data.slug,
-          content: data.content,
+          content: data.content || { wysiwyg: '', markdown: '' },
           excerpt: data.excerpt || undefined,
           featured_image: data.featured_image || undefined,
           categories: data.categories,
@@ -179,7 +213,7 @@ export default function ContentForm() {
           content_type_uuid: data.content_type_uuid,
           title: data.title,
           slug: data.slug,
-          content: data.content,
+          content: data.content || { wysiwyg: '', markdown: '' },
           excerpt: data.excerpt || undefined,
           featured_image: data.featured_image || undefined,
           categories: data.categories,
@@ -199,8 +233,16 @@ export default function ContentForm() {
         toast.success('Content created successfully');
         navigate('/admin/cms/contents');
       }
-    } catch (error) {
-      console.error('Failed to save content:', error);
+    } catch (error: any) {
+      console.error('[ContentForm] Failed to save content:', error);
+      console.error('[ContentForm] Error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+      });
+      toast.error('Failed to save content', {
+        description: error?.response?.data?.error?.message || error?.message || 'An unknown error occurred',
+      });
     }
   };
 
@@ -421,7 +463,15 @@ export default function ContentForm() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
-                    <Button type="submit" className="flex-1" disabled={createMutation.isPending || updateMutation.isPending}>
+                    <Button 
+                      type="submit" 
+                      className="flex-1" 
+                      disabled={createMutation.isPending || updateMutation.isPending}
+                      onClick={(e) => {
+                        alert(`Button CLICKED!\nValid: ${isValid}\nErrors: ${Object.keys(errors).length}`);
+                        console.log('[ContentForm] Save button clicked', { isValid, errors });
+                      }}
+                    >
                       <Save className="h-4 w-4 mr-2" />
                       {createMutation.isPending || updateMutation.isPending ? 'Saving...' : 'Save Draft'}
                     </Button>
@@ -429,6 +479,16 @@ export default function ContentForm() {
                       <Eye className="h-4 w-4" />
                     </Button>
                   </div>
+                  {!isValid && Object.keys(errors).length > 0 && (
+                    <div className="text-xs text-red-500">
+                      <p className="font-medium">Form validation errors:</p>
+                      <ul className="list-disc list-inside mt-1">
+                        {Object.entries(errors).map(([field, error]) => (
+                          <li key={field}>{field}: {error?.message as string}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

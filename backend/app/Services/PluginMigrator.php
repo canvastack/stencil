@@ -72,16 +72,54 @@ class PluginMigrator
             $migration = new $className();
         }
 
-        DB::transaction(function () use ($migration, $tenantId, $pluginName, $migrationPath) {
-            // Ensure we're in the correct tenant schema before running migration
-            $this->switchToTenantSchema($tenantId);
-            
-            $migration->up();
-            
-            // Switch to public schema to update installed_plugins table (landlord table)
-            $this->switchToPublicSchema();
-            $this->pluginRepository->recordMigration($tenantId, $pluginName, $migrationPath);
-        });
+        $isDuplicate = false;
+
+        try {
+            DB::transaction(function () use ($migration, $tenantId, $pluginName, $migrationPath, &$isDuplicate) {
+                // Ensure we're in the correct tenant schema before running migration
+                $this->switchToTenantSchema($tenantId);
+                
+                try {
+                    $migration->up();
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // Check if error is due to duplicate table/object
+                    if (str_contains($e->getMessage(), 'already exists') || 
+                        str_contains($e->getMessage(), 'sudah ada') ||
+                        $e->getCode() === '42P07') {
+                        // Table/object already exists - mark as duplicate and rollback transaction
+                        $isDuplicate = true;
+                        \Illuminate\Support\Facades\Log::warning("Migration skipped - object already exists", [
+                            'tenant_id' => $tenantId,
+                            'plugin_name' => $pluginName,
+                            'migration' => $migrationPath,
+                            'error' => $e->getMessage(),
+                        ]);
+                        // Throw to rollback this transaction cleanly
+                        throw $e;
+                    } else {
+                        // Re-throw other database errors
+                        throw $e;
+                    }
+                }
+                
+                // Switch to public schema to update installed_plugins table (landlord table)
+                $this->switchToPublicSchema();
+                $this->pluginRepository->recordMigration($tenantId, $pluginName, $migrationPath);
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            // If it's a duplicate error, ignore and record migration separately
+            if (!$isDuplicate) {
+                throw $e;
+            }
+        }
+
+        // If migration was duplicate, record it in a separate transaction
+        if ($isDuplicate) {
+            DB::transaction(function () use ($tenantId, $pluginName, $migrationPath) {
+                $this->switchToPublicSchema();
+                $this->pluginRepository->recordMigration($tenantId, $pluginName, $migrationPath);
+            });
+        }
     }
 
     protected function rollbackMigration(string $tenantId, string $pluginName, string $migrationPath): void

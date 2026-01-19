@@ -48,8 +48,11 @@ interface MenuItem {
   title: string;
   icon?: React.ElementType;
   path?: string;
+  badge?: string;
   children?: MenuItem[];
+  visibleFor?: 'platform' | 'tenant' | 'both';
   requiredRoles?: string[];
+  position?: number;
 }
 
 const menuItems: MenuItem[] = [
@@ -300,7 +303,41 @@ export const TenantSidebar = () => {
     });
   };
 
-  // Check if user has permission to access certain items
+  // Check visibility based on visibleFor property
+  const isMenuItemVisible = (item: MenuItem): boolean => {
+    console.log(`[TenantSidebar.isMenuItemVisible] Checking "${item.title}":`, {
+      visibleFor: item.visibleFor,
+      requiredRoles: item.requiredRoles,
+      userRoles: roles,
+    });
+    
+    // If no visibleFor specified, assume it's visible for tenant (backward compatibility)
+    if (!item.visibleFor) {
+      console.log(`[TenantSidebar.isMenuItemVisible] "${item.title}": No visibleFor, defaulting to tenant`);
+      // Still check roles
+      if (!item.requiredRoles) return true;
+      const hasRole = item.requiredRoles.some((role) => roles.includes(role));
+      console.log(`[TenantSidebar.isMenuItemVisible] "${item.title}": Role check result=${hasRole}`);
+      return hasRole;
+    }
+    
+    // Check visibleFor
+    if (item.visibleFor === 'both' || item.visibleFor === 'tenant') {
+      // Check roles if required
+      if (!item.requiredRoles) {
+        console.log(`[TenantSidebar.isMenuItemVisible] "${item.title}": Tenant visible, no role required`);
+        return true;
+      }
+      const hasRole = item.requiredRoles.some((role) => roles.includes(role));
+      console.log(`[TenantSidebar.isMenuItemVisible] "${item.title}": Tenant visible, role check result=${hasRole}`);
+      return hasRole;
+    }
+    
+    console.log(`[TenantSidebar.isMenuItemVisible] "${item.title}": Not visible for tenant (visibleFor=${item.visibleFor})`);
+    return false;
+  };
+
+  // Check if user has permission to access certain items (for nested children)
   const hasPermission = (item: MenuItem) => {
     if (!item.requiredRoles) return true;
     return item.requiredRoles.some((role) => roles.includes(role));
@@ -322,7 +359,9 @@ export const TenantSidebar = () => {
   };
 
   const renderMenuItem = (item: MenuItem, depth: number = 0) => {
-    if (!hasPermission(item)) return null;
+    // For top-level items, check visibility; for nested items, check permission
+    if (depth === 0 && !isMenuItemVisible(item)) return null;
+    if (depth > 0 && !hasPermission(item)) return null;
 
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedMenus.includes(item.title);
@@ -470,7 +509,12 @@ export const TenantSidebar = () => {
 
         {/* Menu Items */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-elegant">
-          {allMenuItems.map((item) => renderMenuItem(item, 0))}
+          {(() => {
+            console.log('[TenantSidebar] Total menu items:', allMenuItems.length);
+            console.log('[TenantSidebar] Menu item titles:', allMenuItems.map(m => m.title));
+            console.log('[TenantSidebar] User roles:', roles);
+            return allMenuItems.map((item) => renderMenuItem(item, 0));
+          })()}
         </nav>
 
         {/* User Profile */}

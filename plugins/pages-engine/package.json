@@ -1,0 +1,52 @@
+{
+  "name": "@canvastencil/pages-engine",
+  "version": "1.0.0",
+  "description": "WordPress-like CMS Pages Engine plugin for CanvaStencil",
+  "type": "module",
+  "main": "dist/pages-engine.js",
+  "types": "dist/pages-engine.d.ts",
+  "files": [
+    "dist",
+    "backend",
+    "plugin.json",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:check": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@canvastencil/ui-components": "workspace:*",
+    "@canvastencil/types": "workspace:*",
+    "@canvastencil/api-client": "workspace:*",
+    "@canvastencil/plugin-runtime": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "react-hook-form": "^7.0.0",
+    "zustand": "^4.0.0",
+    "date-fns": "^2.0.0 || ^3.0.0",
+    "lucide-react": "^0.263.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "vite": "^5.0.0",
+    "typescript": "^5.5.0"
+  },
+  "keywords": [
+    "canvastencil",
+    "plugin",
+    "cms",
+    "pages-engine",
+    "wordpress-like"
+  ],
+  "author": "CanvaStack Team",
+  "license": "MIT"
+}

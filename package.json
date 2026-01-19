@@ -1,0 +1,33 @@
+{
+  "name": "@canvastencil/monorepo",
+  "version": "1.0.0",
+  "description": "CanvaStencil Multi-Tenant CMS Platform - Monorepo Workspace (pnpm)",
+  "private": true,
+  "scripts": {
+    "build:packages": "npm run build --workspace=packages/types && npm run build --workspace=packages/api-client && npm run build --workspace=packages/ui-components && npm run build --workspace=packages/plugin-runtime",
+    "build:plugin": "npm run build --workspace=plugins/pages-engine",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:all": "npm run build:packages && npm run build:plugin && npm run build:frontend",
+    "dev:packages": "npm run dev --workspaces --if-present",
+    "clean": "rimraf packages/*/dist plugins/*/dist frontend/dist",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "rimraf": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "canvastencil",
+    "cms",
+    "multi-tenant",
+    "saas",
+    "wordpress-like",
+    "plugin-system"
+  ],
+  "author": "CanvaStack Team",
+  "license": "MIT"
+}

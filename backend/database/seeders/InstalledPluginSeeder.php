@@ -91,28 +91,29 @@ class InstalledPluginSeeder extends Seeder
                     ]
                 ]
             ],
-            [
-                'plugin_name' => 'customer-loyalty',
-                'display_name' => 'Customer Loyalty Program',
-                'version' => '1.0.5',
-                'manifest' => [
-                    'name' => 'customer-loyalty',
-                    'display_name' => 'Customer Loyalty Program',
-                    'version' => '1.0.5',
-                    'description' => 'Build customer loyalty with points, rewards, and membership tiers',
-                    'author' => 'Loyalty Plus',
-                    'license' => 'Commercial',
-                    'category' => 'Customer Engagement',
-                    'requires' => ['php' => '>=8.1'],
-                    'permissions' => ['loyalty:manage', 'rewards:create', 'points:adjust'],
-                    'features' => [
-                        'Points system',
-                        'Reward catalog',
-                        'Membership tiers',
-                        'Referral tracking'
-                    ]
-                ]
-            ],
+            // Disabled: Backend-only plugin (no frontend module)
+            // [
+            //     'plugin_name' => 'customer-loyalty',
+            //     'display_name' => 'Customer Loyalty Program',
+            //     'version' => '1.0.5',
+            //     'manifest' => [
+            //         'name' => 'customer-loyalty',
+            //         'display_name' => 'Customer Loyalty Program',
+            //         'version' => '1.0.5',
+            //         'description' => 'Build customer loyalty with points, rewards, and membership tiers',
+            //         'author' => 'Loyalty Plus',
+            //         'license' => 'Commercial',
+            //         'category' => 'Customer Engagement',
+            //         'requires' => ['php' => '>=8.1'],
+            //         'permissions' => ['loyalty:manage', 'rewards:create', 'points:adjust'],
+            //         'features' => [
+            //             'Points system',
+            //             'Reward catalog',
+            //             'Membership tiers',
+            //             'Referral tracking'
+            //         ]
+            //     ]
+            // ],
             [
                 'plugin_name' => 'sms-notifications',
                 'display_name' => 'SMS Notification Gateway',

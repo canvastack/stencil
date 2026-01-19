@@ -42,21 +42,28 @@ export function usePluginMenuItems(baseMenuItems: MenuItem[]): MenuItem[] {
 
   const allMenuItems = useMemo(() => {
     if (isLoading) {
+      console.log('[usePluginMenuItems] Still loading plugins...');
       return baseMenuItems.map((item, index) => ({
         ...item,
         position: item.position ?? index + 1,
       }));
     }
 
+    console.log('[usePluginMenuItems] Active plugins:', activePlugins);
+
     const pluginMenus: MenuItem[] = activePlugins
       ?.filter(plugin => {
         const hasMenu = plugin.manifest?.menu;
+        console.log(`[usePluginMenuItems] Plugin ${plugin.plugin_name}: hasMenu=${hasMenu}`, plugin.manifest?.menu);
         return hasMenu;
       })
       .map(plugin => {
         const menuItem = transformPluginMenuToMenuItem(plugin.manifest!.menu!);
+        console.log(`[usePluginMenuItems] Transformed menu for ${plugin.plugin_name}:`, menuItem);
         return menuItem;
       }) || [];
+
+    console.log('[usePluginMenuItems] Plugin menus:', pluginMenus);
 
     const baseItems = baseMenuItems.map((item, index) => ({
       ...item,
@@ -65,7 +72,11 @@ export function usePluginMenuItems(baseMenuItems: MenuItem[]): MenuItem[] {
 
     const combined = [...baseItems, ...pluginMenus];
     
-    return combined.sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+    console.log('[usePluginMenuItems] Combined menu items (before sort):', combined);
+    const sorted = combined.sort((a, b) => (a.position ?? 999) - (b.position ?? 999));
+    console.log('[usePluginMenuItems] Final sorted menu items:', sorted);
+    
+    return sorted;
   }, [activePlugins, baseMenuItems, isLoading]);
 
   return allMenuItems;

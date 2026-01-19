@@ -137,6 +137,9 @@ class AuthenticationService
         // Update last login
         $user->updateLastLogin();
         
+        // Set permissions team ID for multi-tenant role access
+        setPermissionsTeamId($user->tenant_id);
+        
         // Generate token with tenant permissions
         $token = $this->generateTenantToken($user, $tenant);
         
@@ -244,8 +247,15 @@ class AuthenticationService
         // Collect all abilities from all roles
         $permissions = collect();
         foreach ($account->roles as $role) {
-            if (is_array($role->abilities)) {
-                $permissions = $permissions->merge($role->abilities);
+            $abilities = $role->abilities ?? [];
+            
+            // Handle both array and JSON string cases (defensive)
+            if (is_string($abilities)) {
+                $abilities = json_decode($abilities, true) ?? [];
+            }
+            
+            if (is_array($abilities)) {
+                $permissions = $permissions->merge($abilities);
             }
         }
         

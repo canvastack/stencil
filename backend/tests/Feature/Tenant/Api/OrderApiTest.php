@@ -47,6 +47,10 @@ class OrderApiTest extends TestCase
         Order::factory()->count(5)->create(['tenant_id' => $this->tenant->id]);
 
         $response = $this->tenantGet('/api/orders');
+        
+        if ($response->status() !== 200) {
+            dd($response->json());
+        }
 
         $response->assertStatus(200);
         $response->assertJsonStructure([

@@ -15,6 +15,26 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// TEST: Debug permissions endpoint
+Route::middleware(['auth:sanctum', 'tenant.context'])->get('/test-permissions-debug', function() {
+    $user = auth()->user();
+    $allPerms = $user->getAllPermissions();
+    $samplePerms = is_array($allPerms) 
+        ? array_slice(array_column($allPerms, 'name'), 0, 5) 
+        : $allPerms->take(5)->pluck('name')->toArray();
+    
+    return response()->json([
+        'user_id' => $user->id,
+        'user_email' => $user->email,
+        'tenant_id' => $user->tenant_id ?? null,
+        'team_id_global' => getPermissionsTeamId(),
+        'permissions_count' => count($allPerms),
+        'sample_perms' => $samplePerms,
+        'can_pages_content_types_view' => $user->can('pages:content-types:view'),
+        'has_permission_to_method' => $user->hasPermissionTo('pages:content-types:view', 'api'),
+    ]);
+});
+
 // Authentication Routes (without tenant middleware)
 Route::prefix('auth')->group(function () {
     Route::post('/register', [App\Http\Controllers\Auth\TenantAuthController::class, 'register']);
