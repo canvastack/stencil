@@ -48,6 +48,7 @@ import { resolveImageUrl, getProductImage, DEFAULT_PRODUCT_IMAGE } from '@/utils
 import { reviewService } from "@/services/api/reviews";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { DynamicFormRenderer } from "@/components/public";
+import { usePublicFooterConfig } from "@/hooks/usePublicNavigation";
 
 const ProductDetail = () => {
   const { currentTheme } = useTheme();
@@ -73,6 +74,10 @@ const ProductDetail = () => {
   } catch (error) {
     console.log('ProductDetail: No tenant context available');
   }
+
+  // Get WhatsApp number from footer navigation settings
+  const { data: footerConfig } = usePublicFooterConfig();
+  const whatsappNumber = footerConfig?.contact_phone || '62812345678';
 
   const handleSubmitReview = async (review: { rating: number; comment: string; userName?: string }) => {
     if (!product) return;
@@ -514,7 +519,7 @@ const ProductDetail = () => {
               <DynamicFormRenderer
                 productUuid={product.uuid}
                 productName={product.name}
-                whatsappNumber="62812345678"
+                whatsappNumber={whatsappNumber}
                 onSubmitSuccess={async (result) => {
                   toast({
                     title: "Pesanan Berhasil Dibuat!",
