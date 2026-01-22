@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { logError, isNetworkError, isTimeoutError } from '@/lib/error-handler';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 const LOG_LEVEL = import.meta.env.VITE_APP_LOG_LEVEL || 'error';
@@ -87,6 +88,8 @@ class ApiClientManager {
       async (error: AxiosError) => {
         const config = error.config as InternalAxiosRequestConfig;
 
+        logError(error, `API Request: ${config?.method?.toUpperCase()} ${config?.url}`);
+
         if (error.response?.status === 401) {
           return this.handleUnauthorized(config, error);
         }
@@ -106,8 +109,12 @@ class ApiClientManager {
           this.log('error', 'Server error (500)', error.response?.data);
         }
 
-        if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
-          this.log('warn', 'Network error', error.message);
+        if (isNetworkError(error)) {
+          this.log('warn', 'Network error - no connection to server', error.message);
+        }
+
+        if (isTimeoutError(error)) {
+          this.log('warn', 'Request timeout', error.message);
         }
 
         return Promise.reject(this.formatError(error));

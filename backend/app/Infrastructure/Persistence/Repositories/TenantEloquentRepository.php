@@ -4,21 +4,48 @@ namespace App\Infrastructure\Persistence\Repositories;
 
 use App\Domain\Tenant\Entities\Tenant;
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
+use App\Domain\Tenant\ValueObjects\TenantSlug;
+use App\Domain\Tenant\ValueObjects\TenantName;
+use App\Domain\Tenant\Enums\TenantStatus;
+use App\Domain\Tenant\Enums\SubscriptionStatus;
+use App\Domain\Shared\ValueObjects\Uuid;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
-use App\Infrastructure\Shared\Repositories\BaseEloquentRepository;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
-class TenantEloquentRepository extends BaseEloquentRepository implements TenantRepositoryInterface
+class TenantEloquentRepository implements TenantRepositoryInterface
 {
-    public function __construct(TenantEloquentModel $model)
+    public function __construct(
+        private TenantEloquentModel $model
+    ) {}
+
+    public function save(Tenant $tenant): void
     {
-        parent::__construct($model);
+        $data = [
+            'uuid' => $tenant->getId()->toString(),
+            'slug' => $tenant->getSlug()->getValue(),
+            'name' => $tenant->getName()->getValue(),
+            'status' => $tenant->getStatus()->value,
+            'subscription_status' => $tenant->getSubscriptionStatus()->value,
+            'subscription_ends_at' => $tenant->getSubscriptionEndsAt()?->format('Y-m-d H:i:s'),
+        ];
+
+        $this->model->updateOrCreate(
+            ['uuid' => $data['uuid']],
+            $data
+        );
     }
 
-    public function findBySlug(string $slug): ?Tenant
+    public function findById(Uuid $id): ?Tenant
     {
-        $eloquentModel = $this->model->where('slug', $slug)->first();
+        $eloquentModel = $this->model->where('uuid', $id->toString())->first();
+        
+        return $eloquentModel ? $this->mapToEntity($eloquentModel) : null;
+    }
+
+    public function findBySlug(TenantSlug $slug): ?Tenant
+    {
+        $eloquentModel = $this->model->where('slug', $slug->getValue())->first();
         
         return $eloquentModel ? $this->mapToEntity($eloquentModel) : null;
     }
@@ -30,90 +57,77 @@ class TenantEloquentRepository extends BaseEloquentRepository implements TenantR
         return $eloquentModel ? $this->mapToEntity($eloquentModel) : null;
     }
 
-    public function getAllActive(): Collection
+    public function exists(TenantSlug $slug): bool
     {
-        return $this->model->where('status', 'active')->get()
-            ->map(fn($model) => $this->mapToEntity($model));
+        return $this->model->where('slug', $slug->getValue())->exists();
     }
 
-    public function createTenantWithSchema(array $data): Tenant
+    public function existsByDomain(string $domain): bool
     {
-        return DB::transaction(function () use ($data) {
-            // Create tenant record
-            $eloquentModel = $this->model->create($data);
-            
-            // Create tenant schema
-            $schemaName = 'tenant_' . $eloquentModel->uuid;
-            DB::statement("CREATE SCHEMA IF NOT EXISTS \"{$schemaName}\"");
-            
-            // Update tenant with schema name
-            $eloquentModel->update(['schema_name' => $schemaName]);
-            
-            return $this->mapToEntity($eloquentModel);
-        });
+        return $this->model->where('domain', $domain)->exists();
     }
 
-    public function deleteTenantWithSchema(string $uuid): bool
+    public function delete(Uuid $id): void
     {
-        return DB::transaction(function () use ($uuid) {
-            $eloquentModel = $this->model->where('uuid', $uuid)->first();
-            
-            if (!$eloquentModel) {
-                return false;
-            }
-            
-            // Drop tenant schema if exists
-            if ($eloquentModel->schema_name) {
-                DB::statement("DROP SCHEMA IF EXISTS {$eloquentModel->schema_name} CASCADE");
-            }
-            
-            // Delete tenant record
-            return $eloquentModel->delete();
-        });
+        $this->model->where('uuid', $id->toString())->delete();
     }
 
-    protected function mapToEntity($eloquentModel): Tenant
+    public function findActive(): array
     {
-        if (!$eloquentModel) {
-            return null;
+        $eloquentModels = $this->model->where('status', TenantStatus::ACTIVE->value)->get();
+        
+        return $eloquentModels->map(fn($model) => $this->mapToEntity($model))->toArray();
+    }
+
+    public function findExpiring(int $days = 7): array
+    {
+        $date = Carbon::now()->addDays($days);
+        
+        $eloquentModels = $this->model
+            ->where('subscription_status', SubscriptionStatus::ACTIVE->value)
+            ->where('subscription_ends_at', '<=', $date)
+            ->where('subscription_ends_at', '>=', Carbon::now())
+            ->get();
+        
+        return $eloquentModels->map(fn($model) => $this->mapToEntity($model))->toArray();
+    }
+
+    public function countByStatus(string $status): int
+    {
+        return $this->model->where('status', $status)->count();
+    }
+
+    public function findAll(
+        ?string $status = null,
+        ?string $subscriptionStatus = null,
+        int $limit = 50,
+        int $offset = 0
+    ): array {
+        $query = $this->model->query();
+
+        if ($status) {
+            $query->where('status', $status);
         }
 
+        if ($subscriptionStatus) {
+            $query->where('subscription_status', $subscriptionStatus);
+        }
+
+        $eloquentModels = $query->limit($limit)->offset($offset)->get();
+        
+        return $eloquentModels->map(fn($model) => $this->mapToEntity($model))->toArray();
+    }
+
+    private function mapToEntity(TenantEloquentModel $eloquentModel): Tenant
+    {
         return new Tenant(
-            uuid: $eloquentModel->uuid,
-            name: $eloquentModel->name,
-            slug: $eloquentModel->slug,
-            domain: $eloquentModel->domain,
-            schemaName: $eloquentModel->schema_name,
-            status: $eloquentModel->status,
-            settings: $eloquentModel->settings ? json_decode($eloquentModel->settings, true) : [],
-            subscriptionPlan: $eloquentModel->subscription_plan,
-            subscriptionStatus: $eloquentModel->subscription_status,
+            id: Uuid::fromString($eloquentModel->uuid),
+            slug: new TenantSlug($eloquentModel->slug),
+            name: new TenantName($eloquentModel->name),
+            status: TenantStatus::from($eloquentModel->status),
+            subscriptionStatus: SubscriptionStatus::from($eloquentModel->subscription_status),
             subscriptionEndsAt: $eloquentModel->subscription_ends_at ? 
-                new \DateTime($eloquentModel->subscription_ends_at) : null,
-            createdAt: new \DateTime($eloquentModel->created_at),
-            updatedAt: new \DateTime($eloquentModel->updated_at)
+                Carbon::parse($eloquentModel->subscription_ends_at) : null
         );
-    }
-
-    protected function mapToEloquent($entity, $eloquentModel = null)
-    {
-        $eloquentModel = $eloquentModel ?: new TenantEloquentModel();
-        
-        if ($entity instanceof Tenant) {
-            $eloquentModel->fill([
-                'uuid' => $entity->getUuid(),
-                'name' => $entity->getName(),
-                'slug' => $entity->getSlug(),
-                'domain' => $entity->getDomain(),
-                'schema_name' => $entity->getSchemaName(),
-                'status' => $entity->getStatus(),
-                'settings' => $entity->getSettings() ? json_encode($entity->getSettings()) : null,
-                'subscription_plan' => $entity->getSubscriptionPlan(),
-                'subscription_status' => $entity->getSubscriptionStatus(),
-                'subscription_ends_at' => $entity->getSubscriptionEndsAt()?->format('Y-m-d H:i:s'),
-            ]);
-        }
-        
-        return $eloquentModel;
     }
 }

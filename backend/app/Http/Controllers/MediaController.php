@@ -55,6 +55,51 @@ class MediaController extends Controller
         }
     }
 
+    public function uploadPublicFile(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|max:52428800',
+            'folder' => 'sometimes|string|max:255',
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $folder = $request->input('folder', 'public-uploads');
+            
+            $mediaFile = $this->mediaService->uploadFile($file, [
+                'folder_id' => null,
+                'alt_text' => $file->getClientOriginalName(),
+                'description' => 'Public upload',
+            ]);
+
+            Log::info('Public file uploaded', [
+                'media_file_id' => $mediaFile->id,
+                'folder' => $folder
+            ]);
+
+            return response()->json([
+                'message' => 'File uploaded successfully',
+                'data' => [
+                    'url' => $mediaFile->file_url,
+                    'path' => $mediaFile->file_path,
+                    'filename' => $mediaFile->original_name,
+                    'size' => $mediaFile->file_size,
+                    'mime_type' => $mediaFile->mime_type,
+                ]
+            ], 201);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to upload public file', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to upload file',
+                'error' => $e->getMessage()
+            ], 422);
+        }
+    }
+
     public function listFiles(Request $request): JsonResponse
     {
         $files = MediaFile::with(['folder', 'uploadedBy'])

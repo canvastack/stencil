@@ -179,6 +179,11 @@ const PlatformPluginAnalytics = lazy(() => import("./pages/platform/plugins/Plug
 // const ContentArchive = lazy(() => import("./pages/public/cms/ContentArchive"));
 // const ContentDetail = lazy(() => import("./pages/public/cms/ContentDetail"));
 
+// URL Tenant Configuration Pages
+const UrlConfiguration = lazy(() => import("./pages/admin/url-configuration/UrlConfiguration"));
+const CustomDomains = lazy(() => import("./pages/admin/url-configuration/CustomDomains"));
+const UrlAnalytics = lazy(() => import("./pages/admin/url-configuration/UrlAnalytics"));
+
 function LoadingFallback() {
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -355,6 +360,11 @@ function App() {
                   <Route path="performance" element={<Suspense fallback={<LoadingFallback />}><PerformanceMonitoring /></Suspense>} />
                   <Route path="refunds" element={<Suspense fallback={<LoadingFallback />}><RefundManagement /></Suspense>} />
                   <Route path="insurance-fund" element={<Suspense fallback={<LoadingFallback />}><InsuranceFundDashboard /></Suspense>} />
+                  
+                  {/* URL Tenant Configuration Pages */}
+                  <Route path="url-configuration" element={<Suspense fallback={<LoadingFallback />}><UrlConfiguration /></Suspense>} />
+                  <Route path="custom-domains" element={<Suspense fallback={<LoadingFallback />}><CustomDomains /></Suspense>} />
+                  <Route path="url-analytics" element={<Suspense fallback={<LoadingFallback />}><UrlAnalytics /></Suspense>} />
                   
                   {/* Track B Commerce Management Pages - Product Management */}
                   <Route path="products/catalog" element={<Suspense fallback={<LoadingFallback />}><ProductCatalog /></Suspense>} />

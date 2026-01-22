@@ -16,21 +16,22 @@ interface DynamicFormFieldProps {
   value: any;
   onChange: (value: any) => void;
   error?: string;
+  isPublic?: boolean;
 }
 
-export function DynamicFormField({ field, value, onChange, error }: DynamicFormFieldProps) {
+export function DynamicFormField({ field, value, onChange, error, isPublic = false }: DynamicFormFieldProps) {
   if (field.repeatable && field.type !== 'repeater') {
-    return <RepeatableField field={field} value={value} onChange={onChange} error={error} />;
+    return <RepeatableField field={field} value={value} onChange={onChange} error={error} isPublic={isPublic} />;
   }
 
   if (field.type === 'repeater') {
-    return <RepeaterGroup field={field} value={value} onChange={onChange} error={error} />;
+    return <RepeaterGroup field={field} value={value} onChange={onChange} error={error} isPublic={isPublic} />;
   }
 
-  return <SingleField field={field} value={value} onChange={onChange} error={error} />;
+  return <SingleField field={field} value={value} onChange={onChange} error={error} isPublic={isPublic} />;
 }
 
-function SingleField({ field, value, onChange, error }: DynamicFormFieldProps) {
+function SingleField({ field, value, onChange, error, isPublic = false }: DynamicFormFieldProps) {
   const renderInput = () => {
     switch (field.type) {
       case 'text':
@@ -199,6 +200,7 @@ function SingleField({ field, value, onChange, error }: DynamicFormFieldProps) {
             value={value}
             onChange={onChange}
             error={error}
+            isPublic={isPublic}
           />
         );
 
@@ -236,7 +238,7 @@ function SingleField({ field, value, onChange, error }: DynamicFormFieldProps) {
   );
 }
 
-function FileUploadInput({ field, value, onChange, error }: DynamicFormFieldProps) {
+function FileUploadInput({ field, value, onChange, error, isPublic = false }: DynamicFormFieldProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileUrl = value;
@@ -264,10 +266,15 @@ function FileUploadInput({ field, value, onChange, error }: DynamicFormFieldProp
       setUploading(true);
       setUploadProgress(0);
 
-      const response = await mediaService.uploadFile(file, {
-        folder: 'order-designs',
-        onProgress: (progress) => setUploadProgress(progress),
-      });
+      const response = isPublic 
+        ? await mediaService.uploadPublicFile(file, {
+            folder: 'order-designs',
+            onProgress: (progress) => setUploadProgress(progress),
+          })
+        : await mediaService.uploadFile(file, {
+            folder: 'order-designs',
+            onProgress: (progress) => setUploadProgress(progress),
+          });
 
       onChange(response.data.url);
       toast.success('File berhasil diupload');
@@ -371,7 +378,7 @@ function FileUploadInput({ field, value, onChange, error }: DynamicFormFieldProp
   );
 }
 
-function RepeatableField({ field, value, onChange, error }: DynamicFormFieldProps) {
+function RepeatableField({ field, value, onChange, error, isPublic = false }: DynamicFormFieldProps) {
   const values = Array.isArray(value) ? value : [];
   const minItems = field.minItems || 1;
   const maxItems = field.maxItems || 10;
@@ -429,6 +436,7 @@ function RepeatableField({ field, value, onChange, error }: DynamicFormFieldProp
                 field={{ ...field, label: '', helpText: '', required: false }}
                 value={val}
                 onChange={(newValue) => handleChange(index, newValue)}
+                isPublic={isPublic}
               />
             </div>
             {values.length > minItems && (
@@ -454,7 +462,7 @@ function RepeatableField({ field, value, onChange, error }: DynamicFormFieldProp
   );
 }
 
-function RepeaterGroup({ field, value, onChange, error }: DynamicFormFieldProps) {
+function RepeaterGroup({ field, value, onChange, error, isPublic = false }: DynamicFormFieldProps) {
   const values = Array.isArray(value) ? value : [];
   const minItems = field.minItems || 0;
   const maxItems = field.maxItems || 10;
@@ -547,6 +555,7 @@ function RepeaterGroup({ field, value, onChange, error }: DynamicFormFieldProps)
                 onChange={(newValue) =>
                   handleFieldChange(itemIndex, repeaterField.name, newValue)
                 }
+                isPublic={isPublic}
               />
             ))}
           </div>

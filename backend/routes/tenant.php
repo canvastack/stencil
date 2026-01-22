@@ -19,6 +19,9 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormConfigura
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormTemplateController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\MediaController;
 use App\Http\Controllers\Api\Tenant\PluginMarketplaceController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\TenantUrlConfigurationController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\CustomDomainController;
+use App\Infrastructure\Presentation\Http\Controllers\Tenant\UrlAnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -437,5 +440,39 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/installed/{uuid}', [PluginMarketplaceController::class, 'installedDetail'])->name('tenant.plugins.installed.detail');
             Route::put('/installed/{uuid}/settings', [PluginMarketplaceController::class, 'updateSettings'])->name('tenant.plugins.update_settings');
             Route::delete('/uninstall/{uuid}', [PluginMarketplaceController::class, 'uninstall'])->name('tenant.plugins.uninstall');
+        });
+        
+        // URL Configuration
+        Route::prefix('url-configuration')->group(function () {
+            Route::get('/', [TenantUrlConfigurationController::class, 'show'])->name('tenant.url_configuration.show');
+            Route::patch('/', [TenantUrlConfigurationController::class, 'update'])->name('tenant.url_configuration.update');
+            Route::post('/test', [TenantUrlConfigurationController::class, 'test'])->name('tenant.url_configuration.test');
+        });
+        
+        // Custom Domain Management
+        Route::prefix('custom-domains')->group(function () {
+            Route::get('/', [CustomDomainController::class, 'index'])->name('tenant.custom_domains.index');
+            Route::post('/', [CustomDomainController::class, 'store'])->name('tenant.custom_domains.store');
+            Route::get('/{domain}', [CustomDomainController::class, 'show'])->name('tenant.custom_domains.show');
+            Route::patch('/{domain}', [CustomDomainController::class, 'update'])->name('tenant.custom_domains.update');
+            Route::delete('/{domain}', [CustomDomainController::class, 'destroy'])->name('tenant.custom_domains.destroy');
+            Route::get('/{domain}/verification-instructions', [CustomDomainController::class, 'verificationInstructions'])->name('tenant.custom_domains.verification_instructions');
+            Route::get('/{domain}/dns-instructions', [CustomDomainController::class, 'verificationInstructions'])->name('tenant.custom_domains.dns_instructions');
+            Route::post('/{domain}/verify', [CustomDomainController::class, 'verify'])->name('tenant.custom_domains.verify');
+            Route::patch('/{domain}/set-primary', [CustomDomainController::class, 'setPrimary'])->name('tenant.custom_domains.set_primary');
+            Route::get('/{domain}/ssl-certificate', [CustomDomainController::class, 'sslCertificate'])->name('tenant.custom_domains.ssl_certificate');
+            Route::post('/{domain}/renew-ssl', [CustomDomainController::class, 'renewSsl'])->name('tenant.custom_domains.renew_ssl');
+            Route::get('/{domain}/verification-logs', [CustomDomainController::class, 'verificationLogs'])->name('tenant.custom_domains.verification_logs');
+        });
+
+        // URL Access Analytics
+        Route::prefix('url-analytics')->group(function () {
+            Route::get('/overview', [UrlAnalyticsController::class, 'overview'])->name('tenant.url_analytics.overview');
+            Route::get('/trends', [UrlAnalyticsController::class, 'trends'])->name('tenant.url_analytics.trends');
+            Route::get('/geographic', [UrlAnalyticsController::class, 'geographic'])->name('tenant.url_analytics.geographic');
+            Route::get('/performance', [UrlAnalyticsController::class, 'urlConfigPerformance'])->name('tenant.url_analytics.performance');
+            Route::get('/url-config-performance', [UrlAnalyticsController::class, 'urlConfigPerformance'])->name('tenant.url_analytics.url_config_performance');
+            Route::get('/referrers', [UrlAnalyticsController::class, 'referrers'])->name('tenant.url_analytics.referrers');
+            Route::get('/devices', [UrlAnalyticsController::class, 'devices'])->name('tenant.url_analytics.devices');
         });
     });

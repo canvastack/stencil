@@ -7,6 +7,8 @@ use Illuminate\Support\ServiceProvider;
 // Domain Repository Interfaces
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 use App\Domain\Tenant\Repositories\DomainMappingRepositoryInterface;
+use App\Domain\Tenant\Repositories\TenantUrlConfigRepositoryInterface;
+use App\Domain\Tenant\Repositories\CustomDomainRepositoryInterface;
 use App\Domain\Customer\Repositories\CustomerRepositoryInterface;
 use App\Domain\Product\Repositories\ProductRepositoryInterface;
 use App\Domain\Product\Repositories\ProductCategoryRepositoryInterface;
@@ -17,6 +19,8 @@ use App\Domain\Vendor\Repositories\VendorRepositoryInterface;
 // Infrastructure Repository Implementations
 use App\Infrastructure\Persistence\Repositories\TenantEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\DomainMappingEloquentRepository;
+use App\Infrastructure\Persistence\Repositories\TenantUrlConfigEloquentRepository;
+use App\Infrastructure\Persistence\Repositories\CustomDomainEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\CustomerEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\ProductEloquentRepository;
 use App\Infrastructure\Persistence\Repositories\ProductCategoryEloquentRepository;
@@ -27,14 +31,24 @@ use App\Infrastructure\Persistence\Repositories\VendorEloquentRepository;
 // Eloquent Models
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\DomainMappingEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\TenantUrlConfigurationEloquentModel;
+use App\Infrastructure\Persistence\Eloquent\CustomDomainEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
 use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
+
+// Domain Services
 use App\Domain\Shipping\Services\ShippingService;
 use App\Domain\Media\Services\MediaService;
+use App\Domain\Tenant\Services\UrlPatternMatcher;
+use App\Domain\Tenant\Services\TenantResolver;
+
+// Application Services
+use App\Application\TenantConfiguration\UseCases\ResolveTenantFromUrlUseCase;
+use App\Application\TenantConfiguration\Services\UrlResolverService;
 
 class DomainServiceProvider extends ServiceProvider
 {
@@ -71,6 +85,14 @@ class DomainServiceProvider extends ServiceProvider
 
         $this->app->bind(DomainMappingRepositoryInterface::class, function ($app) {
             return new DomainMappingEloquentRepository(new DomainMappingEloquentModel());
+        });
+
+        $this->app->bind(TenantUrlConfigRepositoryInterface::class, function ($app) {
+            return new TenantUrlConfigEloquentRepository(new TenantUrlConfigurationEloquentModel());
+        });
+
+        $this->app->bind(CustomDomainRepositoryInterface::class, function ($app) {
+            return new CustomDomainEloquentRepository(new CustomDomainEloquentModel());
         });
 
         // Customer Domain
@@ -135,6 +157,36 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->singleton(MediaService::class, function ($app) {
             return new MediaService();
         });
+
+        // URL Resolution Services
+        $this->app->singleton(UrlPatternMatcher::class, function ($app) {
+            return new UrlPatternMatcher(
+                baseDomain: config('tenant-url.detection.subdomain.base_domain', 'stencil.canvastack.com'),
+                excludedSubdomains: config('tenant-url.detection.subdomain.excluded_subdomains', ['www', 'api', 'admin', 'platform', 'mail']),
+                pathPrefix: config('tenant-url.detection.path.prefix', 't')
+            );
+        });
+
+        $this->app->singleton(TenantResolver::class, function ($app) {
+            return new TenantResolver(
+                $app->make(TenantRepositoryInterface::class),
+                $app->make(TenantUrlConfigRepositoryInterface::class),
+                $app->make(CustomDomainRepositoryInterface::class)
+            );
+        });
+
+        $this->app->singleton(ResolveTenantFromUrlUseCase::class, function ($app) {
+            return new ResolveTenantFromUrlUseCase(
+                $app->make(UrlPatternMatcher::class),
+                $app->make(TenantResolver::class)
+            );
+        });
+
+        $this->app->singleton(UrlResolverService::class, function ($app) {
+            return new UrlResolverService(
+                $app->make(ResolveTenantFromUrlUseCase::class)
+            );
+        });
     }
 
     /**
@@ -183,6 +235,8 @@ class DomainServiceProvider extends ServiceProvider
         return [
             TenantRepositoryInterface::class,
             DomainMappingRepositoryInterface::class,
+            TenantUrlConfigRepositoryInterface::class,
+            CustomDomainRepositoryInterface::class,
             CustomerRepositoryInterface::class,
             ProductRepositoryInterface::class,
             ProductCategoryRepositoryInterface::class,
@@ -194,6 +248,10 @@ class DomainServiceProvider extends ServiceProvider
             'uuid.generator',
             ShippingService::class,
             MediaService::class,
+            UrlPatternMatcher::class,
+            TenantResolver::class,
+            ResolveTenantFromUrlUseCase::class,
+            UrlResolverService::class,
         ];
     }
 }

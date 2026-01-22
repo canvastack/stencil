@@ -1,5 +1,6 @@
 import apiClient from './client';
 import { tenantApiClient } from './tenantApiClient';
+import { anonymousApiClient } from './anonymousApiClient';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 
 export interface MediaFile {
@@ -189,6 +190,51 @@ class MediaService {
     const response = await tenantApiClient.post<{ message: string }>('/media/delete', {
       path,
     });
+    return response;
+  }
+
+  async uploadPublicFile(
+    file: File,
+    options?: {
+      folder?: string;
+      onProgress?: (progress: number) => void;
+    }
+  ): Promise<{
+    data: {
+      url: string;
+      path: string;
+      filename: string;
+      size: number;
+      mime_type: string;
+    };
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (options?.folder) {
+      formData.append('folder', options.folder);
+    }
+
+    const response = await anonymousApiClient.post<{
+      message: string;
+      data: {
+        url: string;
+        path: string;
+        filename: string;
+        size: number;
+        mime_type: string;
+      };
+    }>('/public/media/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (options?.onProgress && progressEvent.total) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          options.onProgress(progress);
+        }
+      },
+    });
+
     return response;
   }
 }

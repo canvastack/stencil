@@ -31,6 +31,18 @@ class Kernel extends ConsoleKernel
         })->hourly();
 
         $schedule->job(new CheckPluginExpiry)->daily();
+
+        $schedule->command('ssl:renew')
+            ->daily()
+            ->at('02:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                \Illuminate\Support\Facades\Log::error('[SSL Renewal] Scheduled renewal failed');
+            })
+            ->onSuccess(function () {
+                \Illuminate\Support\Facades\Log::info('[SSL Renewal] Scheduled renewal completed successfully');
+            });
     }
 
     /**

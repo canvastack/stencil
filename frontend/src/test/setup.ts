@@ -1,5 +1,6 @@
 import { beforeAll, vi } from 'vitest';
 import { expect } from 'vitest';
+import '@testing-library/jest-dom';
 
 // Setup globals
 beforeAll(() => {

@@ -48,6 +48,14 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🚀 Seeding Phase 3 Core Business Logic...');
         $this->call(Phase3CoreBusinessSeeder::class);
         
+        // Seed PT CEX Products with Real Images (Override Dummy Data)
+        $this->command->info('🖼️ Seeding PT CEX Products with Real Images...');
+        $this->call(PtCexProductSeeder::class);
+        
+        // Seed PT CEX Product Reviews (High Quality 4-5 Star Reviews)
+        $this->command->info('⭐ Seeding PT CEX Product Reviews...');
+        $this->call(PtCexProductReviewSeeder::class);
+        
         // Seed Product Form Builder System
         $this->command->info('📋 Seeding Product Form Builder System...');
         $this->call(ProductFormFieldLibrarySeeder::class);
@@ -101,13 +109,13 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Total Tenants: 6+ tenants (Demo + Additional)');
         $this->command->info('- Total Users: 50+ users across all tenants');
         $this->command->info('- Total Customers: 200+ customers');
-        $this->command->info('- Total Products: 300+ products (Phase 3 enhanced)');
+        $this->command->info('- Total Products: 489+ products (25 PT CEX with real images, 464+ generic)');
         $this->command->info('- Product Categories: 20+ categories with hierarchy');
         $this->command->info('- Product Variants: 600+ variants (2-5 per product, multi-tenant)');
         $this->command->info('- Product Form Configurations: 240+ configurations (40 per tenant)');
         $this->command->info('- Product Form Templates: 8 system templates (plakat, trophy, award, etc.)');
         $this->command->info('- Product Form Fields: 15 field types in library');
-        $this->command->info('- Customer Reviews: Database-driven reviews (1-5 per product, realistic ratings)');
+        $this->command->info('- Customer Reviews: 250+ reviews total (PT CEX: 159 reviews with 4-5 stars, others: generic)'); 
         $this->command->info('- Total Orders: 400+ orders (with realistic workflows)');
         $this->command->info('- Total Vendors: 50+ vendors (5 enhanced for PT CEX)');
         $this->command->info('- Vendor Performance: 720+ vendor orders with metrics');

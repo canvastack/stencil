@@ -41,6 +41,14 @@ export default defineConfig(({ mode }) => {
           path.resolve(__dirname, '../plugins'),  // Plugins directory
         ],
       },
+      watch: {
+        // Exclude test-plugin directory with permission issues
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/src/plugins/test-plugin/**',
+        ],
+      },
     },
     
     plugins: [

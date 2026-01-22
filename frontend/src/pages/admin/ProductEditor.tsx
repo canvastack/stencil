@@ -1037,7 +1037,7 @@ export default function ProductEditor() {
                       </SelectItem>
                     ))}
                     {categories.length === 0 && !categoriesLoading && (
-                      <SelectItem value="" disabled>No categories available</SelectItem>
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">No categories available</div>
                     )}
                   </SelectContent>
                 </Select>

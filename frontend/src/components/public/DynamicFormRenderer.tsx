@@ -271,6 +271,7 @@ export function DynamicFormRenderer({
           value={formData[field.name]}
           onChange={(value) => handleFieldChange(field.name, value)}
           error={validationErrors[field.name]}
+          isPublic={true}
         />
       ))}
 

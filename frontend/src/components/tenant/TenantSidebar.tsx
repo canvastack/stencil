@@ -40,7 +40,8 @@ import {
   RotateCcw,
   DollarSign,
   Menu as MenuIcon,
-  Puzzle
+  Puzzle,
+  Globe
 } from 'lucide-react';
 import { usePluginMenuItems } from '@/hooks/usePluginMenuItems';
 
@@ -232,6 +233,15 @@ const menuItems: MenuItem[] = [
     children: [
       { title: 'Users', path: '/admin/users' },
       { title: 'Roles', path: '/admin/roles' }
+    ]
+  },
+  {
+    title: 'URL & Domain Management',
+    icon: Globe,
+    children: [
+      { title: 'URL Configuration', path: '/admin/url-configuration' },
+      { title: 'Custom Domains', path: '/admin/custom-domains' },
+      { title: 'URL Analytics', path: '/admin/url-analytics' }
     ]
   },
   {

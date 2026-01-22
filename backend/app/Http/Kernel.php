@@ -21,6 +21,9 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        
+        \App\Infrastructure\Presentation\Http\Middleware\ForceHttpsMiddleware::class,
+        \App\Infrastructure\Presentation\Http\Middleware\SecurityHeadersMiddleware::class,
     ];
 
     /**
@@ -69,6 +72,11 @@ class Kernel extends HttpKernel
         'platform.access' => \App\Http\Middleware\PlatformAccessMiddleware::class,
         'tenant.context' => \App\Infrastructure\Presentation\Http\Middleware\TenantContextMiddleware::class,
         'tenant.scoped' => \App\Infrastructure\Presentation\Http\Middleware\EnsureTenantScopedQueries::class,
+        'tenant.url' => \App\Infrastructure\Presentation\Http\Middleware\TenantUrlResolverMiddleware::class,
+        
+        // SSL & Security Middleware
+        'force.https' => \App\Infrastructure\Presentation\Http\Middleware\ForceHttpsMiddleware::class,
+        'security.headers' => \App\Infrastructure\Presentation\Http\Middleware\SecurityHeadersMiddleware::class,
         
         // Demo/Development Middleware
         'demo.auth' => \App\Http\Middleware\HandleDemoTokens::class,

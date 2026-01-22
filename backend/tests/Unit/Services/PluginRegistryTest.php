@@ -26,18 +26,22 @@ class PluginRegistryTest extends TestCase
     {
         parent::setUp();
 
+        // Use storage/framework/testing for test plugins to avoid permission issues
+        $this->pluginsPath = storage_path('framework/testing/plugins');
+        
+        if (!File::exists($this->pluginsPath)) {
+            File::makeDirectory($this->pluginsPath, 0755, true);
+        }
+        
+        // Override config to point to test plugins directory BEFORE creating PluginRegistry
+        config(['plugins.paths.base' => $this->pluginsPath]);
+
         $this->pluginRepository = app(PluginRepositoryInterface::class);
         $this->manifestValidator = app(ManifestValidator::class);
         $this->pluginRegistry = new PluginRegistry(
             $this->pluginRepository,
             $this->manifestValidator
         );
-
-        $this->pluginsPath = dirname(base_path()) . '/plugins';
-        
-        if (!File::exists($this->pluginsPath)) {
-            File::makeDirectory($this->pluginsPath, 0755, true);
-        }
         
         Cache::flush();
     }
@@ -280,7 +284,7 @@ class PluginRegistryTest extends TestCase
 
     protected function createTestPlugin(string $name, array $manifest = [], bool $createEntryPoint = true): void
     {
-        $pluginDir = dirname(base_path()) . '/plugins/' . $name;
+        $pluginDir = $this->pluginsPath . '/' . $name;
         
         if (!File::exists($pluginDir)) {
             File::makeDirectory($pluginDir, 0755, true);

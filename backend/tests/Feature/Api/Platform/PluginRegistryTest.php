@@ -25,6 +25,16 @@ class PluginRegistryTest extends TestCase
     {
         parent::setUp();
 
+        // Use storage/framework/testing for test plugins to avoid permission issues
+        $this->pluginsPath = storage_path('framework/testing/plugins');
+        
+        if (!File::exists($this->pluginsPath)) {
+            File::makeDirectory($this->pluginsPath, 0755, true);
+        }
+        
+        // Override config to point to test plugins directory BEFORE other setup
+        config(['plugins.paths.base' => $this->pluginsPath]);
+
         $this->platformAccount = AccountEloquentModel::factory()->create([
             'account_type' => 'platform_owner',
             'status' => 'active',
@@ -34,12 +44,6 @@ class PluginRegistryTest extends TestCase
             'status' => 'active',
             'subscription_status' => 'active',
         ]);
-
-        $this->pluginsPath = dirname(base_path()) . '/plugins';
-        
-        if (!File::exists($this->pluginsPath)) {
-            File::makeDirectory($this->pluginsPath, 0755, true);
-        }
 
         $token = $this->platformAccount->createToken('test-token', ['platform:read', 'platform:write', 'tenants:manage']);
         $this->withToken($token->plainTextToken);

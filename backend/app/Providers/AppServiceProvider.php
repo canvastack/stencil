@@ -7,10 +7,12 @@ use App\Domain\Content\Repositories\PlatformPageRepositoryInterface;
 use App\Domain\Content\Repositories\TenantPageRepositoryInterface;
 use App\Domain\Settings\Repositories\SettingsRepositoryInterface;
 use App\Domain\Review\Repositories\ReviewRepositoryInterface;
+use App\Domain\TenantConfiguration\Services\SSLProviderInterface;
 use App\Infrastructure\Repositories\PlatformPageRepository;
 use App\Infrastructure\Repositories\TenantPageRepository;
 use App\Infrastructure\Persistence\Repositories\SettingsRepository;
 use App\Infrastructure\Persistence\Repositories\ReviewEloquentRepository;
+use App\Infrastructure\Adapters\LetsEncryptAdapter;
 use App\Repositories\PluginRepository;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
         
         // Review Repository Binding
         $this->app->bind(ReviewRepositoryInterface::class, ReviewEloquentRepository::class);
+        
+        // SSL Provider Binding
+        $this->app->bind(SSLProviderInterface::class, LetsEncryptAdapter::class);
     }
 
     /**

@@ -13,6 +13,7 @@ class PluginRegistry
 {
     protected PluginRepositoryInterface $pluginRepository;
     protected ManifestValidator $manifestValidator;
+    protected string $pluginsPath;
 
     const CACHE_TTL = 3600;
     const CACHE_KEY_PREFIX = 'plugin_registry:';
@@ -23,6 +24,7 @@ class PluginRegistry
     ) {
         $this->pluginRepository = $pluginRepository;
         $this->manifestValidator = $manifestValidator;
+        $this->pluginsPath = config('plugins.paths.base', dirname(base_path()) . '/plugins');
     }
 
     public function getAllPlugins(): Collection
@@ -139,20 +141,18 @@ class PluginRegistry
 
     protected function scanPluginsDirectory(): Collection
     {
-        $pluginsPath = dirname(base_path()) . '/plugins';
-
-        if (!is_dir($pluginsPath)) {
+        if (!is_dir($this->pluginsPath)) {
             return collect([]);
         }
 
         $plugins = [];
 
-        foreach (scandir($pluginsPath) as $dir) {
+        foreach (scandir($this->pluginsPath) as $dir) {
             if ($dir === '.' || $dir === '..') {
                 continue;
             }
 
-            $manifestPath = "{$pluginsPath}/{$dir}/plugin.json";
+            $manifestPath = "{$this->pluginsPath}/{$dir}/plugin.json";
 
             if (file_exists($manifestPath)) {
                 try {
@@ -172,7 +172,7 @@ class PluginRegistry
 
     protected function loadPluginManifest(string $pluginName): ?array
     {
-        $manifestPath = dirname(base_path()) . "/plugins/{$pluginName}/plugin.json";
+        $manifestPath = "{$this->pluginsPath}/{$pluginName}/plugin.json";
 
         if (!file_exists($manifestPath)) {
             return null;
@@ -195,7 +195,7 @@ class PluginRegistry
             'plugin_name' => $pluginName,
             'total_installations' => $this->getTotalInstallations($pluginName),
             'active_installations' => $this->getActiveInstallations($pluginName),
-            'path' => dirname(base_path()) . "/plugins/{$pluginName}",
+            'path' => "{$this->pluginsPath}/{$pluginName}",
             'health_status' => 'unknown',
         ]);
     }
@@ -228,7 +228,7 @@ class PluginRegistry
     protected function validateManifest(string $pluginName): array
     {
         try {
-            $manifestPath = dirname(base_path()) . "/plugins/{$pluginName}/plugin.json";
+            $manifestPath = "{$this->pluginsPath}/{$pluginName}/plugin.json";
             $this->manifestValidator->parse($manifestPath);
             
             return [
@@ -245,7 +245,7 @@ class PluginRegistry
 
     protected function checkRequiredFiles(string $pluginName, array $manifest): array
     {
-        $pluginPath = dirname(base_path()) . "/plugins/{$pluginName}";
+        $pluginPath = "{$this->pluginsPath}/{$pluginName}";
         $requiredFiles = [
             'plugin.json',
             'README.md',
@@ -282,7 +282,7 @@ class PluginRegistry
             ];
         }
 
-        $migrationsPath = dirname(base_path()) . "/plugins/{$pluginName}/database/migrations";
+        $migrationsPath = "{$this->pluginsPath}/{$pluginName}/database/migrations";
         
         if (!is_dir($migrationsPath)) {
             return [

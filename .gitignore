@@ -27,6 +27,7 @@ backend/tests/Debugs/results/*.txt
 test-*.md
 ROADMAPS/*
 roadmaps/
+test*.txt
 
 
 # Editor directories and files
@@ -77,6 +78,7 @@ frontend/dev-dist
 frontend/coverage
 frontend/test-results
 frontend/playwright-report
+frontend/public/images/products
 
 # Backend artifacts (Laravel)
 backend/vendor

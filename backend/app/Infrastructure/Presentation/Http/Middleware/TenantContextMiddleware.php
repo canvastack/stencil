@@ -326,6 +326,10 @@ class TenantContextMiddleware
 
         // Store tenant in request attributes for middleware access
         $request->attributes->set('tenant', $tenant);
+        $request->attributes->set('tenant_id', $tenant->id);
+        $request->attributes->set('tenant_uuid', $tenant->uuid);
+        $request->attributes->set('tenant_slug', $tenant->slug);
+        $request->attributes->set('tenant_name', $tenant->name);
 
         // Store tenant in request for easy access
         $request->merge(['current_tenant' => $tenant]);
@@ -339,6 +343,8 @@ class TenantContextMiddleware
         });
 
         app()->instance('current_tenant', $tenant);
+        app()->instance('tenant.id', $tenant->id);
+        app()->instance('tenant.uuid', $tenant->uuid);
     }
 
     private function handleTenantNotFound(Request $request): Response|JsonResponse

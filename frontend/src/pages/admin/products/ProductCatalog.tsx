@@ -401,6 +401,8 @@ function ProductCatalogContent() {
   }, [state.filters]);
 
   const renderContent = useCallback(() => {
+    const isBulkDeleting = state.bulk.progress !== null;
+
     if (!isLoading && error) {
       return (
         <EmptyState
@@ -416,7 +418,7 @@ function ProductCatalogContent() {
       );
     }
 
-    if (!isLoading && !hasActiveFilters && products.length === 0) {
+    if (!isLoading && !isBulkDeleting && !hasActiveFilters && products.length === 0) {
       return (
         <EmptyState
           icon={Package}
@@ -431,7 +433,7 @@ function ProductCatalogContent() {
       );
     }
 
-    if (!isLoading && state.filters.search && products.length === 0) {
+    if (!isLoading && !isBulkDeleting && state.filters.search && products.length === 0) {
       return (
         <EmptyState
           icon={Search}
@@ -446,7 +448,7 @@ function ProductCatalogContent() {
       );
     }
 
-    if (!isLoading && hasActiveFilters && products.length === 0) {
+    if (!isLoading && !isBulkDeleting && hasActiveFilters && products.length === 0) {
       return (
         <EmptyState
           icon={Filter}
@@ -510,7 +512,7 @@ function ProductCatalogContent() {
           data={stats.productsData}
           searchKey="name"
           searchPlaceholder="Search products..."
-          loading={isLoading || state.ui.isRefreshing}
+          loading={isLoading || state.ui.isRefreshing || isBulkDeleting}
           datasetId="product-catalog"
           showPagination={false}
           onRowClick={(product) => {
@@ -530,6 +532,7 @@ function ProductCatalogContent() {
     state.modes.isReorderMode,
     state.reorder.products,
     state.ui.isRefreshing,
+    state.bulk.progress,
     canAccess,
     navigate,
     actions,

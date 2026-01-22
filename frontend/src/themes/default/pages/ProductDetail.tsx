@@ -60,6 +60,7 @@ const ProductDetail = () => {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [visibleReviewsCount, setVisibleReviewsCount] = useState(2);
   
   // Debug: Check if slug is extracted correctly
   console.log('ProductDetail: Extracted slug from URL:', slug);
@@ -73,15 +74,14 @@ const ProductDetail = () => {
     console.log('ProductDetail: No tenant context available');
   }
 
-  const handleSubmitReview = async (review: { rating: number; comment: string }) => {
+  const handleSubmitReview = async (review: { rating: number; comment: string; userName?: string }) => {
     if (!product) return;
     
     setReviewLoading(true);
     try {
-      // TODO: Review submission needs proper user identification (authentication or name field in form)
       await reviewService.createReview({
         productId: product.id,
-        userName: "Anonymous", // Previously used formData.name but that was never properly set
+        userName: review.userName || "Anonim",
         rating: review.rating,
         comment: review.comment,
         verified: true,
@@ -203,6 +203,10 @@ const ProductDetail = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [slug]);
 
+  useEffect(() => {
+    setVisibleReviewsCount(2);
+  }, [reviewSort]);
+
   // Theme components loading guard
   if (!Header || !Footer) {
     return (
@@ -285,9 +289,9 @@ const ProductDetail = () => {
       name: product.name,
       price: product.price,
       image: getProductImage(product.images, 0),
-      type: formData.productType,
-      size: formData.size,
-      material: formData.bahan,
+      type: product.category || 'default',
+      size: product.minOrder || 1,
+      material: product.material || 'default',
     });
   };
 
@@ -590,7 +594,7 @@ const ProductDetail = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {sortedReviews.map((review, index) => (
+                    {sortedReviews.slice(0, visibleReviewsCount).map((review, index) => (
                       <div
                         key={index}
                         className="p-6 border border-border rounded-lg bg-card/50 backdrop-blur hover:bg-card transition-all"
@@ -607,6 +611,18 @@ const ProductDetail = () => {
                         <p className="text-muted-foreground leading-relaxed">{review.comment}</p>
                       </div>
                     ))}
+                    
+                    {visibleReviewsCount < sortedReviews.length && (
+                      <div className="flex justify-center pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setVisibleReviewsCount(prev => prev + 2)}
+                          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                        >
+                          Muat Lebih Banyak ({sortedReviews.length - visibleReviewsCount} ulasan lagi)
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -676,9 +692,10 @@ const ProductDetail = () => {
       <ScrollToTop />
 
       <Modal
-        isOpen={reviewModalOpen}
-        onClose={() => setReviewModalOpen(false)}
+        open={reviewModalOpen}
+        onOpenChange={setReviewModalOpen}
         title="Tulis Ulasan"
+        hideFooter
       >
         <ReviewForm
           onSubmit={handleSubmitReview}

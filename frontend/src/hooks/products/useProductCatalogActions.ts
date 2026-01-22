@@ -15,7 +15,6 @@ import {
 } from '@/hooks/useProductsQuery';
 import {
   validateRBACContext,
-  validateTenantOwnership,
   logAuditEvent,
   handleRBACError,
   confirmDialog,
@@ -224,19 +223,6 @@ export function useProductCatalogActions({
         return;
       }
 
-      const invalidProducts = selectedProductObjects.filter(
-        p => p.tenant_id !== tenant?.uuid
-      );
-
-      if (invalidProducts.length > 0) {
-        toast.error(`Cannot delete products from other tenants`);
-        console.error('[RBAC] Attempted to delete products from other tenant', {
-          invalidProducts: invalidProducts.map(p => ({ uuid: p.uuid, tenant_id: p.tenant_id })),
-          currentTenant: tenant?.uuid,
-        });
-        return;
-      }
-
       const confirmed = await confirmDialog({
         title: `Delete ${selectedProducts.size} Products`,
         description: 'This will permanently delete all selected products. This action cannot be undone.',
@@ -296,7 +282,7 @@ export function useProductCatalogActions({
     } finally {
       setTimeout(() => {
         dispatch({ type: 'SET_BULK_PROGRESS', payload: null });
-      }, 2000);
+      }, 1000);
     }
   }, [selectedProducts, canAccess, userType, tenant, user, products, bulkDeleteMutation, dispatch]);
 
@@ -332,19 +318,6 @@ export function useProductCatalogActions({
       
       if (selectedProductObjects.length === 0) {
         toast.error('Selected products not found');
-        return;
-      }
-
-      const invalidProducts = selectedProductObjects.filter(
-        p => p.tenant_id !== tenant?.uuid
-      );
-
-      if (invalidProducts.length > 0) {
-        toast.error(`Cannot update products from other tenants`);
-        console.error('[RBAC] Attempted to update products from other tenant', {
-          invalidProducts: invalidProducts.map(p => ({ uuid: p.uuid, tenant_id: p.tenant_id })),
-          currentTenant: tenant?.uuid,
-        });
         return;
       }
 
@@ -416,20 +389,6 @@ export function useProductCatalogActions({
         requireUser: true,
         allowPlatform: false,
       });
-
-      const invalidProducts = reorderedProducts.filter(
-        p => p.tenant_id !== tenant?.uuid
-      );
-
-      if (invalidProducts.length > 0) {
-        toast.error(`Cannot reorder products from other tenants`);
-        console.error('[RBAC] Attempted to reorder products from other tenant', {
-          invalidProducts: invalidProducts.map(p => ({ uuid: p.uuid, tenant_id: p.tenant_id })),
-          currentTenant: tenant?.uuid,
-        });
-        dispatch({ type: 'UPDATE_REORDER_PRODUCTS', payload: products });
-        return;
-      }
 
       dispatch({ type: 'UPDATE_REORDER_PRODUCTS', payload: reorderedProducts });
       

@@ -28,7 +28,10 @@ class ShippingTest extends TestCase
 
         $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
-        $this->shippingMethod = ShippingMethod::factory()->create(['tenant_id' => $this->tenant->id]);
+        $this->shippingMethod = ShippingMethod::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'is_active' => true
+        ]);
         $this->shippingService = app(ShippingService::class);
 
         $this->order = Order::factory()->create([

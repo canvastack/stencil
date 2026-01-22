@@ -306,6 +306,11 @@ Route::prefix('public')->group(function () {
         Route::get('/{tenantSlug}/menus', [App\Http\Controllers\Api\V1\Public\NavigationController::class, 'getMenus']);
     });
 
+    // Public Media Upload (for public forms)
+    Route::prefix('media')->group(function () {
+        Route::post('/upload', [App\Http\Controllers\MediaController::class, 'uploadPublicFile']);
+    });
+
     // Platform statistics for anonymous users
     Route::get('/stats', function () {
         $tenantCount = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('status', 'active')->count();

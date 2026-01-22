@@ -37,8 +37,21 @@ export const reviewService = {
         });
       }
       
-      const response = await client.get<{success: boolean, data: Review[]}>(`${basePath}?${params.toString()}`);
-      return response.data || [];
+      const response = await client.get<{success: boolean, data: any[]}>(`${basePath}?${params.toString()}`);
+      
+      // Transform backend data to frontend Review format
+      const reviews = (response.data || []).map((item: any) => ({
+        id: item.id,
+        productId: item.product_id || item.product_uuid,
+        userName: item.customer_name || item.userName || 'Anonim',
+        userImage: item.user_image || item.userImage,
+        rating: item.rating,
+        date: item.created_at || item.date || new Date().toISOString(),
+        comment: item.comment || item.content,
+        verified: item.verified || item.is_verified_purchase || false
+      }));
+      
+      return reviews;
     } catch (error) {
       console.warn('Reviews API not available, falling back to mock data:', error);
       return mockReviews.getReviews(filters);
@@ -52,8 +65,22 @@ export const reviewService = {
     
     try {
       const { client, basePath } = getApiConfig(userType);
-      const response = await client.get<{success: boolean, data: Review}>(`${basePath}/${id}`);
-      return response.data || null;
+      const response = await client.get<{success: boolean, data: any}>(`${basePath}/${id}`);
+      
+      if (!response.data) return null;
+      
+      // Transform backend data to frontend Review format
+      const item = response.data;
+      return {
+        id: item.id,
+        productId: item.product_id || item.product_uuid,
+        userName: item.customer_name || item.userName || 'Anonim',
+        userImage: item.user_image || item.userImage,
+        rating: item.rating,
+        date: item.created_at || item.date || new Date().toISOString(),
+        comment: item.comment || item.content,
+        verified: item.verified || item.is_verified_purchase || false
+      };
     } catch (error) {
       console.warn('Review API not available, falling back to mock data:', error);
       return mockReviews.getReviewById(id);
@@ -69,8 +96,28 @@ export const reviewService = {
       const endpoint = tenantSlug 
         ? `/public/${tenantSlug}/reviews/product/${productId}`
         : `/public/reviews/product/${productId}`;
-      const response = await anonymousApiClient.get<{data: Review[]}>(endpoint);
-      return response.data || [];
+      const response = await anonymousApiClient.get<{data: any[]}>(endpoint);
+      
+      console.log('[reviewService] Raw backend response:', response);
+      
+      // Transform backend data to frontend Review format
+      const reviews = (response.data || []).map((item: any) => {
+        console.log('[reviewService] Transforming item:', item);
+        return {
+          id: item.id,
+          productId: item.product_id || item.product_uuid,
+          userName: item.customer_name || item.userName || 'Anonim',
+          userImage: item.user_image || item.userImage,
+          rating: item.rating,
+          date: item.created_at || item.date || new Date().toISOString(),
+          comment: item.comment || item.content,
+          verified: item.verified || item.is_verified_purchase || false
+        };
+      });
+      
+      console.log('[reviewService] Transformed reviews:', reviews);
+      
+      return reviews;
     } catch (error) {
       console.warn('Public Review API not available, falling back to mock data:', error);
       return mockReviews.getReviewsByProductId(productId);

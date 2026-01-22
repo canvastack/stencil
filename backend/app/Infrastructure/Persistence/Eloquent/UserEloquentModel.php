@@ -19,6 +19,8 @@ class UserEloquentModel extends Authenticatable
         assignRole as protected spatieAssignRole;
         hasRole as protected spatieHasRole;
         getAllPermissions as protected spatieGetAllPermissions;
+        givePermissionTo as protected spatieGivePermissionTo;
+        hasPermissionTo as protected spatieHasPermissionTo;
     }
 
     protected $table = 'users';
@@ -163,13 +165,9 @@ class UserEloquentModel extends Authenticatable
 
     /**
      * Override permissions relationship to use UUID as the parent key.
-     * We don't use direct model-permission relationships in this app,
-     * only role-based permissions, so this returns empty collection.
      */
     public function permissions(): BelongsToMany
     {
-        // Return empty relationship since we don't assign permissions directly to users
-        // All permissions come through roles
         $relation = $this->morphToMany(
             config('permission.models.permission'),
             'model',
@@ -178,9 +176,16 @@ class UserEloquentModel extends Authenticatable
             app(\Spatie\Permission\PermissionRegistrar::class)->pivotPermission,
             'uuid',  // Use UUID as parent key instead of default 'id'
             'id'     // Use id on Permission model
-        )->whereRaw('1 = 0');  // Always return empty - we only use role-based permissions
+        );
 
-        return $relation;
+        if (! app(\Spatie\Permission\PermissionRegistrar::class)->teams) {
+            return $relation;
+        }
+
+        $teamsKey = app(\Spatie\Permission\PermissionRegistrar::class)->teamsKey;
+        $relation->withPivot($teamsKey);
+
+        return $relation->wherePivot($teamsKey, getPermissionsTeamId());
     }
 
     /**
@@ -208,6 +213,39 @@ class UserEloquentModel extends Authenticatable
         
         // Call the original trait method via alias
         return $this->spatieAssignRole(...$roles);
+    }
+
+    /**
+     * Override givePermissionTo to automatically set the tenant_id as the team ID.
+     * This ensures multi-tenant permission assignment works correctly.
+     *
+     * @param  string|int|array|\Spatie\Permission\Contracts\Permission|\Illuminate\Support\Collection|\BackedEnum  ...$permissions
+     * @return $this
+     */
+    public function givePermissionTo(...$permissions)
+    {
+        // Set the tenant_id as the team ID before permission assignment
+        setPermissionsTeamId($this->tenant_id);
+        
+        // Call the original trait method via alias
+        return $this->spatieGivePermissionTo(...$permissions);
+    }
+
+    /**
+     * Override hasPermissionTo to automatically set the tenant_id as the team ID.
+     * This ensures multi-tenant permission checking works correctly during authorization.
+     *
+     * @param  string|int|\Spatie\Permission\Contracts\Permission|\BackedEnum  $permission
+     * @param  string|null  $guardName
+     * @return bool
+     */
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        // Set the tenant_id as the team ID before permission check
+        setPermissionsTeamId($this->tenant_id);
+        
+        // Call the original trait method via alias
+        return $this->spatieHasPermissionTo($permission, $guardName);
     }
 
     /**
