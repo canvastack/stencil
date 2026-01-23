@@ -587,9 +587,27 @@ const Products = () => {
                               />
                             </div>
                             <div className="min-h-[28px] mb-2">
-                              {product.price !== null && product.price !== undefined && Number(product.price) > 0 && (
-                                <p className="text-lg font-bold text-primary">{formatPrice(product.price, product.currency)}</p>
-                              )}
+                              {(() => {
+                                const shouldShowPrice = product.productionType === 'vendor' 
+                                  ? Number(product.vendorPrice || 0) > 0
+                                  : (product.price !== null && product.price !== undefined && Number(product.price) > 0);
+                                
+                                const displayPrice = product.productionType === 'vendor' && product.vendorPrice
+                                  ? product.vendorPrice + (product.vendorPrice * (product.markupPercentage || 0) / 100)
+                                  : product.price;
+                                
+                                console.log('[Products] Price visibility for', product.name, ':', {
+                                  price: product.price,
+                                  productionType: product.productionType,
+                                  vendorPrice: product.vendorPrice,
+                                  markupPercentage: product.markupPercentage,
+                                  displayPrice,
+                                  shouldShowPrice
+                                });
+                                return shouldShowPrice && (
+                                  <p className="text-lg font-bold text-primary">{formatPrice(displayPrice, product.currency)}</p>
+                                );
+                              })()}
                             </div>
                             <div className="mb-4">
                               <CursorTooltip 

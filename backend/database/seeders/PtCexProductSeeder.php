@@ -321,6 +321,7 @@ class PtCexProductSeeder extends Seeder
                 'currency' => 'IDR',
                 'status' => 'published',
                 'type' => $data['type'],
+                'production_type' => ['internal', 'vendor'][rand(0, 1)],
                 'stock_quantity' => $stock,
                 'low_stock_threshold' => 5,
                 'images' => $images,

@@ -78,6 +78,9 @@ const ProductDetail = () => {
   // Get WhatsApp number from footer navigation settings
   const { data: footerConfig } = usePublicFooterConfig();
   const whatsappNumber = footerConfig?.contact_phone || '62812345678';
+  
+  console.log('[ProductDetail] Footer config:', footerConfig);
+  console.log('[ProductDetail] WhatsApp number:', whatsappNumber);
 
   const handleSubmitReview = async (review: { rating: number; comment: string; userName?: string }) => {
     if (!product) return;
@@ -496,9 +499,27 @@ const ProductDetail = () => {
                 <RatingStars rating={averageRating} size="md" className="mb-3" />
 
                 <h1 className="text-4xl font-bold text-foreground mb-4">{product.name}</h1>
-                {product.price !== null && product.price !== undefined && Number(product.price) > 0 && (
-                  <p className="text-2xl font-bold text-primary mb-4">{formatPrice(product.price, product.currency)}</p>
-                )}
+                {(() => {
+                  const shouldShowPrice = product.productionType === 'vendor' 
+                    ? Number(product.vendorPrice || 0) > 0
+                    : (product.price !== null && product.price !== undefined && Number(product.price) > 0);
+                  
+                  const displayPrice = product.productionType === 'vendor' && product.vendorPrice
+                    ? product.vendorPrice + (product.vendorPrice * (product.markupPercentage || 0) / 100)
+                    : product.price;
+                  
+                  console.log('[ProductDetail] Price visibility check:', {
+                    price: product.price,
+                    productionType: product.productionType,
+                    vendorPrice: product.vendorPrice,
+                    markupPercentage: product.markupPercentage,
+                    displayPrice,
+                    shouldShowPrice
+                  });
+                  return shouldShowPrice && (
+                    <p className="text-2xl font-bold text-primary mb-4">{formatPrice(displayPrice, product.currency)}</p>
+                  );
+                })()}
                 <p className="text-muted-foreground leading-relaxed mb-6">{product.description}</p>
 
                 <div className="space-y-3 mb-6">

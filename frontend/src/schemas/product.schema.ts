@@ -26,7 +26,8 @@ const baseProductSchema = z.object({
           return val.startsWith('http://') || 
                  val.startsWith('https://') || 
                  val.startsWith('data:image/') ||
-                 val.startsWith('/uploads/');
+                 val.startsWith('/uploads/') ||
+                 val.startsWith('/images/');
         }, 'Invalid image URL or data format')
     )
     .min(1, 'At least one image is required')

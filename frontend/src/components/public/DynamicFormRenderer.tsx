@@ -215,6 +215,8 @@ export function DynamicFormRenderer({
         : `Halo, saya tertarik untuk memesan produk ini. Mohon informasi lebih lanjut.`;
       
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      console.log('[DynamicFormRenderer] WhatsApp URL:', whatsappUrl);
+      console.log('[DynamicFormRenderer] WhatsApp Number:', whatsappNumber);
       window.open(whatsappUrl, "_blank");
     };
 
