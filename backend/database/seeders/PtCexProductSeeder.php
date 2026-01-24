@@ -18,6 +18,9 @@ class PtCexProductSeeder extends Seeder
             'description' => 'Plakat akrilik premium dengan desain eksklusif untuk OMODA. Material akrilik berkualitas tinggi dengan proses etching presisi untuk hasil yang elegan dan tahan lama. Cocok untuk penghargaan partnership, dealer terbaik, atau achievement awards.',
             'price_range' => [500000, 1500000],
             'type' => 'physical',
+            'business_type' => 'award_plaque',
+            'size' => '30x20 cm',
+            'available_sizes' => ['20x15 cm', '30x20 cm', '40x30 cm', 'custom'],
             'customizable' => true,
             'material' => 'Acrylic',
             'images' => ['Omoda - 01.jpg', 'Omoda - 02.jpg', 'Omoda - 03.jpg', 'Omoda - 04.jpg', 'Omoda - 05.jpg'],
@@ -310,6 +313,12 @@ class PtCexProductSeeder extends Seeder
             $tenantPrefix = 'CEX';
             $sku = $tenantPrefix . '-' . strtoupper(substr($category->slug, 0, 3)) . '-' . str_pad($productIndex, 4, '0', STR_PAD_LEFT);
 
+            // Determine business_type based on category
+            $businessType = $this->determineBusinessType($data['category'], $data['name']);
+            
+            // Determine size based on category
+            $sizeData = $this->determineSizeData($data['category']);
+
             Product::create([
                 'tenant_id' => $tenant->id,
                 'name' => $data['name'],
@@ -321,6 +330,9 @@ class PtCexProductSeeder extends Seeder
                 'currency' => 'IDR',
                 'status' => 'published',
                 'type' => $data['type'],
+                'business_type' => $data['business_type'] ?? $businessType,
+                'size' => $data['size'] ?? $sizeData['size'],
+                'available_sizes' => $data['available_sizes'] ?? $sizeData['available_sizes'],
                 'production_type' => 'vendor', //['internal', 'vendor'][rand(0, 1)],
                 'stock_quantity' => $stock,
                 'low_stock_threshold' => 5,
@@ -382,5 +394,77 @@ class PtCexProductSeeder extends Seeder
             $total += count($data['images']);
         }
         return $total;
+    }
+
+    /**
+     * Determine business_type based on category name and product name
+     */
+    private function determineBusinessType(string $category, string $productName): string
+    {
+        $categoryLower = strtolower($category);
+        $productLower = strtolower($productName);
+        
+        // Award Plakat -> award_plaque
+        if (str_contains($categoryLower, 'plakat') || str_contains($categoryLower, 'award') || str_contains($productLower, 'plakat')) {
+            return 'award_plaque';
+        }
+        
+        // Trophy & Medal -> award_plaque (or could be trophy_medal)
+        if (str_contains($categoryLower, 'trophy') || str_contains($categoryLower, 'medal') || str_contains($productLower, 'trophy')) {
+            return 'award_plaque';
+        }
+        
+        // Custom Etching -> check material
+        if (str_contains($categoryLower, 'custom') || str_contains($categoryLower, 'etching')) {
+            if (str_contains($productLower, 'glass') || str_contains($productLower, 'kaca') || str_contains($productLower, 'akrilik') || str_contains($productLower, 'acrylic')) {
+                return 'glass_etching';
+            }
+            if (str_contains($productLower, 'metal') || str_contains($productLower, 'logam') || str_contains($productLower, 'brass') || str_contains($productLower, 'steel')) {
+                return 'metal_etching';
+            }
+            return 'custom_etching';
+        }
+        
+        // Signage
+        if (str_contains($categoryLower, 'signage') || str_contains($productLower, 'sign')) {
+            return 'signage';
+        }
+        
+        // Industrial
+        if (str_contains($categoryLower, 'industrial') || str_contains($productLower, 'industrial')) {
+            return 'industrial_etching';
+        }
+        
+        // Default to award_plaque for CEX tenant (mostly awards & plaques)
+        return 'award_plaque';
+    }
+
+    /**
+     * Determine size data based on category
+     */
+    private function determineSizeData(string $category): array
+    {
+        $categoryLower = strtolower($category);
+        
+        // Different size presets based on product category
+        if (str_contains($categoryLower, 'trophy') || str_contains($categoryLower, 'medal')) {
+            return [
+                'size' => '25x25x35 cm',
+                'available_sizes' => ['15x15x25 cm (Small)', '25x25x35 cm (Medium)', '35x35x45 cm (Large)', 'Custom Size']
+            ];
+        }
+        
+        if (str_contains($categoryLower, 'plakat') || str_contains($categoryLower, 'award')) {
+            return [
+                'size' => '30x20 cm',
+                'available_sizes' => ['20x15 cm (Small)', '30x20 cm (Medium)', '40x30 cm (Large)', '50x35 cm (Extra Large)', 'Custom Size']
+            ];
+        }
+        
+        // Default size for custom/other products
+        return [
+            'size' => '30x30 cm',
+            'available_sizes' => ['20x20 cm (Small)', '30x30 cm (Medium)', '40x40 cm (Large)', 'Custom Size']
+        ];
     }
 }

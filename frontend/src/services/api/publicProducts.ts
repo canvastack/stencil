@@ -188,6 +188,39 @@ class PublicProductsService {
     );
     return response.data?.map(transformApiProduct) || [];
   }
+
+  /**
+   * Get filter options (business_types, sizes, materials) from database
+   * Phase 1.4.1: Remove hardcoded frontend filter data
+   */
+  async getFilterOptions(tenantSlug?: string): Promise<{
+    business_types: Array<{ value: string; label: string }>;
+    sizes: Array<{ value: string; label: string }>;
+    materials: Array<{ value: string; label: string }>;
+  }> {
+    const baseUrl = tenantSlug ? `/public/${tenantSlug}/products/filter-options` : '/public/products/filter-options';
+    
+    try {
+      const response = await anonymousApiClient.get<{
+        data: {
+          business_types: Array<{ value: string; label: string }>;
+          sizes: Array<{ value: string; label: string }>;
+          materials: Array<{ value: string; label: string }>;
+        };
+      }>(baseUrl);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('[PublicProductsService] Failed to fetch filter options:', error);
+      
+      // Return empty arrays as fallback
+      return {
+        business_types: [],
+        sizes: [],
+        materials: [],
+      };
+    }
+  }
 }
 
 export const publicProductsService = new PublicProductsService();

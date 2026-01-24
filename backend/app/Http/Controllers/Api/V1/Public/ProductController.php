@@ -583,4 +583,108 @@ class ProductController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get filter options (business types, sizes, materials) from database
+     * Phase 1.4.1: Dynamic filter options to remove frontend hardcoded data
+     * 
+     * @param Request $request
+     * @param string|null $tenantSlug
+     * @return JsonResponse
+     */
+    public function getFilterOptions(Request $request, ?string $tenantSlug = null): JsonResponse
+    {
+        try {
+            $query = Product::where('status', 'published');
+            
+            // If tenant slug is provided, filter by tenant
+            if ($tenantSlug) {
+                $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
+                if (!$tenant) {
+                    return response()->json(['error' => 'Tenant not found'], 404);
+                }
+                $query->where('tenant_id', $tenant->id);
+            }
+            
+            // Get distinct business_types
+            $businessTypes = $query->clone()
+                ->whereNotNull('business_type')
+                ->distinct()
+                ->pluck('business_type')
+                ->filter()
+                ->map(function ($type) {
+                    return [
+                        'value' => $type,
+                        'label' => $this->formatBusinessTypeLabel($type)
+                    ];
+                })
+                ->values();
+            
+            // Get distinct sizes
+            $sizes = $query->clone()
+                ->whereNotNull('size')
+                ->distinct()
+                ->pluck('size')
+                ->filter()
+                ->map(function ($size) {
+                    return [
+                        'value' => $size,
+                        'label' => $size
+                    ];
+                })
+                ->values();
+            
+            // Get distinct materials
+            $materials = $query->clone()
+                ->whereNotNull('material')
+                ->distinct()
+                ->pluck('material')
+                ->filter()
+                ->map(function ($material) {
+                    return [
+                        'value' => $material,
+                        'label' => $material
+                    ];
+                })
+                ->values();
+            
+            return response()->json([
+                'data' => [
+                    'business_types' => $businessTypes,
+                    'sizes' => $sizes,
+                    'materials' => $materials
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch filter options', [
+                'tenantSlug' => $tenantSlug,
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to fetch filter options',
+                'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred'
+            ], 500);
+        }
+    }
+
+    /**
+     * Format business_type to user-friendly label
+     */
+    private function formatBusinessTypeLabel(string $type): string
+    {
+        $labels = [
+            'metal_etching' => 'Metal Etching',
+            'glass_etching' => 'Glass Etching',
+            'award_plaque' => 'Awards & Plaques',
+            'signage' => 'Signage Solutions',
+            'industrial_etching' => 'Industrial Etching',
+            'custom_etching' => 'Custom Etching',
+            'trophy_medal' => 'Trophy & Medal',
+        ];
+        
+        return $labels[$type] ?? ucwords(str_replace('_', ' ', $type));
+    }
 }

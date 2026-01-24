@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { getProductDetailPath } from "@/utils/routes";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePublicProductsQuery } from "@/hooks/usePublicProductsQuery";
+import { useProductFilterOptions } from "@/hooks/useProductFilterOptions";
 
 interface PageContent {
   hero: {
@@ -128,7 +129,6 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedType, setSelectedType] = useState("all");
-  const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedSize, setSelectedSize] = useState("all");
   const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState("name-asc");
@@ -147,16 +147,18 @@ const Products = () => {
     per_page: PRODUCTS_PER_PAGE,
     search: debouncedSearch || undefined,
     type: selectedType !== "all" ? selectedType : undefined,
-    category: selectedCategory !== "all" ? selectedCategory : undefined,
     size: selectedSize !== "all" ? selectedSize : undefined,
     min_rating: minRating > 0 ? minRating : undefined,
     sort: sortBy,
     status: 'published',
-  }), [currentPage, PRODUCTS_PER_PAGE, debouncedSearch, selectedType, selectedCategory, selectedSize, minRating, sortBy]);
+  }), [currentPage, PRODUCTS_PER_PAGE, debouncedSearch, selectedType, selectedSize, minRating, sortBy]);
   
   // Server-side data fetching with TanStack Query
   // Use isFetching to show skeleton during pagination/filter changes
   const { data: productsResponse, isFetching, isLoading, error } = usePublicProductsQuery(filters);
+  
+  // Fetch filter options from database (Phase 1.4.1: Remove hardcoded data)
+  const { data: filterOptions, isLoading: loadingFilters } = useProductFilterOptions();
   
   // Show skeleton: isLoading (initial) OR isFetching (pagination/filters)
   const loadingProducts = isLoading || isFetching;
@@ -203,7 +205,7 @@ const Products = () => {
   // Reset pagination when filters change (excluding page itself)
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, selectedType, selectedCategory, selectedSize, minRating, sortBy]);
+  }, [debouncedSearch, selectedType, selectedSize, minRating, sortBy]);
 
   // Extract products and pagination from API response (memoized) - MOVED BEFORE CONDITIONAL RETURNS
   const products = useMemo(() => productsResponse?.data || [], [productsResponse]);
@@ -344,17 +346,18 @@ const Products = () => {
             <div className="flex gap-3 flex-wrap items-center">
               <Select 
                 value={selectedType} 
-                onValueChange={(value: string) => setSelectedType(value)}>
-                <SelectTrigger className="w-[150px] bg-[#0f172a] border-slate-700 text-white">
-                  <SelectValue placeholder="Semua Produk" />
+                onValueChange={(value: string) => setSelectedType(value)}
+                disabled={loadingFilters}>
+                <SelectTrigger className="w-[180px] bg-[#0f172a] border-slate-700 text-white">
+                  <SelectValue placeholder="Semua Tipe Produk" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1e293b] border-slate-700">
-                  <SelectItem value="all">Semua Produk</SelectItem>
-                  <SelectItem value="metal_etching">Metal Etching</SelectItem>
-                  <SelectItem value="glass_etching">Glass Etching</SelectItem>
-                  <SelectItem value="award_plaque">Awards & Plaques</SelectItem>
-                  <SelectItem value="signage">Signage Solutions</SelectItem>
-                  <SelectItem value="industrial_etching">Industrial Etching</SelectItem>
+                  <SelectItem value="all">Semua Tipe Produk</SelectItem>
+                  {filterOptions?.business_types?.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
@@ -429,33 +432,17 @@ const Products = () => {
                 {/* Product Type Filter */}
                 <div className="mb-6">
                   <label className="text-sm font-medium text-slate-300 mb-2 block">Tipe Produk</label>
-                  <Select value={selectedType} onValueChange={setSelectedType}>
+                  <Select value={selectedType} onValueChange={setSelectedType} disabled={loadingFilters}>
                     <SelectTrigger className="w-full bg-[#0f172a] border-slate-600 text-white">
                       <SelectValue placeholder="Semua Tipe" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e293b] border-slate-700">
                       <SelectItem value="all">Semua Tipe</SelectItem>
-                      <SelectItem value="metal_etching">Metal Etching</SelectItem>
-                      <SelectItem value="glass_etching">Glass Etching</SelectItem>
-                      <SelectItem value="award_plaque">Awards & Plaques</SelectItem>
-                      <SelectItem value="signage">Signage Solutions</SelectItem>
-                      <SelectItem value="industrial_etching">Industrial Etching</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Category Filter */}
-                <div className="mb-6">
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">Kategori</label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-full bg-[#0f172a] border-slate-600 text-white">
-                      <SelectValue placeholder="Semua Kategori" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1e293b] border-slate-700">
-                      <SelectItem value="all">Semua Kategori</SelectItem>
-                      <SelectItem value="industrial">Industrial</SelectItem>
-                      <SelectItem value="decorative">Dekoratif</SelectItem>
-                      <SelectItem value="corporate">Korporat</SelectItem>
+                      {filterOptions?.business_types?.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -463,16 +450,17 @@ const Products = () => {
                 {/* Size Filter */}
                 <div className="mb-6">
                   <label className="text-sm font-medium text-slate-300 mb-2 block">Ukuran</label>
-                  <Select value={selectedSize} onValueChange={setSelectedSize}>
+                  <Select value={selectedSize} onValueChange={setSelectedSize} disabled={loadingFilters}>
                     <SelectTrigger className="w-full bg-[#0f172a] border-slate-600 text-white">
                       <SelectValue placeholder="Semua Ukuran" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1e293b] border-slate-700">
                       <SelectItem value="all">Semua Ukuran</SelectItem>
-                      <SelectItem value="small">Kecil</SelectItem>
-                      <SelectItem value="medium">Sedang</SelectItem>
-                      <SelectItem value="large">Besar</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
+                      {filterOptions?.sizes?.map((size) => (
+                        <SelectItem key={size.value} value={size.value}>
+                          {size.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -511,7 +499,6 @@ const Products = () => {
                   onClick={() => {
                     setSearchQuery("");
                     setSelectedType("all");
-                    setSelectedCategory("all");
                     setSelectedSize("all");
                     setMinRating(0);
                   }}
