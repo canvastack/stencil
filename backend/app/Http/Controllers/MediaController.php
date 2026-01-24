@@ -8,6 +8,7 @@ use App\Domain\Media\Services\MediaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class MediaController extends Controller
 {
@@ -58,7 +59,7 @@ class MediaController extends Controller
     public function uploadPublicFile(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => 'required|file|max:52428800',
+            'file' => 'required|file|max:10485760',
             'folder' => 'sometimes|string|max:255',
         ]);
 
@@ -66,37 +67,57 @@ class MediaController extends Controller
             $file = $request->file('file');
             $folder = $request->input('folder', 'public-uploads');
             
-            $mediaFile = $this->mediaService->uploadFile($file, [
-                'folder_id' => null,
-                'alt_text' => $file->getClientOriginalName(),
-                'description' => 'Public upload',
-            ]);
+            $allowedMimes = [
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                'application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/plain', 'text/csv',
+            ];
 
-            Log::info('Public file uploaded', [
-                'media_file_id' => $mediaFile->id,
-                'folder' => $folder
+            if (!in_array($file->getMimeType(), $allowedMimes)) {
+                return response()->json([
+                    'message' => 'File type not allowed',
+                    'error' => 'INVALID_FILE_TYPE'
+                ], 422);
+            }
+
+            $extension = strtolower($file->getClientOriginalExtension());
+            $filename = \Illuminate\Support\Str::uuid() . '.' . $extension;
+            $storagePath = "anonymous-uploads/{$folder}";
+            
+            $path = $file->storeAs($storagePath, $filename, 'public');
+            $url = Storage::disk('public')->url($path);
+
+            Log::info('Public file uploaded (anonymous)', [
+                'path' => $path,
+                'folder' => $folder,
+                'original_name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
             ]);
 
             return response()->json([
                 'message' => 'File uploaded successfully',
                 'data' => [
-                    'url' => $mediaFile->file_url,
-                    'path' => $mediaFile->file_path,
-                    'filename' => $mediaFile->original_name,
-                    'size' => $mediaFile->file_size,
-                    'mime_type' => $mediaFile->mime_type,
+                    'url' => $url,
+                    'path' => $path,
+                    'filename' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
                 ]
             ], 201);
 
         } catch (\Exception $e) {
             Log::error('Failed to upload public file', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'message' => 'Failed to upload file',
-                'error' => $e->getMessage()
-            ], 422);
+                'error' => config('app.debug') ? $e->getMessage() : 'An error occurred'
+            ], 500);
         }
     }
 

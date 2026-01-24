@@ -18,17 +18,17 @@ class UpdateAboutPage extends Command
         $content = [
             "hero" => [
                 "title" => "Tentang Kami",
-                "subtitle" => "Pionir teknologi laser etching di Indonesia dengan pengalaman lebih dari 15 tahun",
+                "subtitle" => "Layanan untuk solusi etching profesional dan berkualitas tinggi untuk memenuhi kebutuhan bisnis dan personal dalam berbagai sektor industri di Indonesia",
                 "image" => "/images/about/company-hero.jpg"
             ],
             "company" => [
                 "enabled" => true,
                 "title" => "Profil Perusahaan", 
-                "description" => "Kami adalah perusahaan yang berfokus pada layanan laser etching profesional untuk berbagai kebutuhan industri dan personal. Dengan teknologi terkini dan tim yang berpengalaman, kami berkomitmen memberikan hasil terbaik untuk setiap proyek.",
-                "founded" => "2008",
+                "description" => "Kami adalah perusahaan yang berfokus pada layanan etching profesional untuk berbagai kebutuhan industri dan personal. Dengan tim yang berpengalaman, kami berkomitmen memberikan hasil terbaik untuk setiap proyek.",
+                "founded" => "2018",
                 "location" => "Jakarta, Indonesia", 
-                "employees" => "50+",
-                "clients" => "300+"
+                "employees" => "20+",
+                "clients" => "30+"
             ],
             "mission" => [
                 "enabled" => true,
@@ -85,24 +85,19 @@ class UpdateAboutPage extends Command
                 "title" => "Perjalanan Kami",
                 "events" => [
                     [
-                        "year" => "2008",
-                        "title" => "Pendirian Perusahaan",
-                        "description" => "Memulai bisnis dengan 1 mesin laser etching"
+                        "year" => "2018",
+                        "title" => "Memulai Usaha",
+                        "description" => "Memulai bisnis dengan 1 mesin etching"
                     ],
                     [
-                        "year" => "2012",
-                        "title" => "Ekspansi Fasilitas",
+                        "year" => "2022",
+                        "title" => "Ekspansi Bisnis",
                         "description" => "Membuka fasilitas produksi baru dengan 5 mesin"
                     ],
                     [
-                        "year" => "2018",
-                        "title" => "Sertifikasi ISO",
-                        "description" => "Mendapatkan sertifikasi ISO 9001:2015"
-                    ],
-                    [
-                        "year" => "2023",
-                        "title" => "Teknologi Terkini",
-                        "description" => "Investasi mesin laser fiber generasi terbaru"
+                        "year" => "2025",
+                        "title" => "Pendirian Perusahaan",
+                        "description" => "Pendirian PT. Custom Etching Xenial"
                     ]
                 ]
             ],

@@ -548,13 +548,9 @@ const ProductDetail = () => {
                   });
                   console.log('[ProductDetail] Order created:', result);
                 }}
-                onWhatsApp={(formData) => {
-                  const message = `Halo, saya tertarik dengan produk *${product.name}*\n\n` +
-                    Object.entries(formData)
-                      .filter(([key]) => !key.startsWith('_'))
-                      .map(([key, value]) => `${key}: ${value}`)
-                      .join('\n');
-                  const whatsappUrl = `https://wa.me/62812345678?text=${encodeURIComponent(message)}`;
+                onWhatsApp={(formattedMessage) => {
+                  const message = `Halo, saya tertarik dengan produk *${product.name}*\n\n${formattedMessage}`;
+                  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
                   window.open(whatsappUrl, "_blank");
                 }}
                 showCard={true}

@@ -112,7 +112,8 @@ class AnonymousApiClient {
         '/newsletter/subscribe',
         '/product-inquiry',
         '/quote-request',
-        '/form-submission'
+        '/form-submission',
+        '/media/upload'
       ];
 
       if (!allowedAnonymousPosts.some(endpoint => url.includes(endpoint))) {

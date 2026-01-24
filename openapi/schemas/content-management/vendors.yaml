@@ -80,7 +80,7 @@ Vendor:
         address:
           type: string
           description: Complete address
-          example: "Jl. Industri Raya No. 123, Kawasan Industri"
+          example: "Salak II, Kawasan Industri"
         city:
           type: string
           maxLength: 100
@@ -1170,7 +1170,7 @@ VendorCreateInput:
       example: "https://www.etchingindo.com"
     address:
       type: string
-      example: "Jl. Industri Raya No. 123, Kawasan Industri"
+      example: "Salak II, Kawasan Industri"
     city:
       type: string
       maxLength: 100

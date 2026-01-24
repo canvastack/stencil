@@ -50,7 +50,7 @@ class PtCexProductReviewSeeder extends Seeder
         $totalReviews = 0;
 
         foreach ($products as $product) {
-            $reviewCount = rand(3, 10);
+            $reviewCount = rand(1, 5);
             
             for ($i = 0; $i < $reviewCount; $i++) {
                 $rating = $this->generateHighRating();

@@ -304,7 +304,7 @@ class PtCexProductSeeder extends Seeder
                 $data['images']
             );
 
-            $price = rand($data['price_range'][0], $data['price_range'][1]);
+            $price = 0;//rand($data['price_range'][0], $data['price_range'][1]);
             $stock = rand(5, 50);
             
             $tenantPrefix = 'CEX';
@@ -321,7 +321,7 @@ class PtCexProductSeeder extends Seeder
                 'currency' => 'IDR',
                 'status' => 'published',
                 'type' => $data['type'],
-                'production_type' => ['internal', 'vendor'][rand(0, 1)],
+                'production_type' => 'vendor', //['internal', 'vendor'][rand(0, 1)],
                 'stock_quantity' => $stock,
                 'low_stock_threshold' => 5,
                 'images' => $images,

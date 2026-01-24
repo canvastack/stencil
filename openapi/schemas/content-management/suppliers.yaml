@@ -90,7 +90,7 @@ Supplier:
           maxLength: 255
           nullable: true
           description: Primary address line
-          example: "Jl. Industri Raya No. 123"
+          example: "Salak II"
         address_line_2:
           type: string
           maxLength: 255
@@ -1227,7 +1227,7 @@ SupplierCreateInput:
       type: string
       maxLength: 255
       nullable: true
-      example: "Jl. Industri Raya No. 123"
+      example: "Salak II"
     address_line_2:
       type: string
       maxLength: 255
@@ -1437,7 +1437,7 @@ SupplierUpdateInput:
       type: string
       maxLength: 255
       nullable: true
-      example: "Jl. Industri Raya No. 123"
+      example: "Salak II"
     address_line_2:
       type: string
       maxLength: 255

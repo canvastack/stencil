@@ -19,7 +19,7 @@ interface DynamicFormRendererProps {
     customer_uuid: string;
     submitted_at: string;
   }) => void;
-  onWhatsApp?: (formData: Record<string, any>) => void;
+  onWhatsApp?: (formattedMessage: string) => void;
   className?: string;
   showCard?: boolean;
 }
@@ -178,13 +178,53 @@ export function DynamicFormRenderer({
     }
   };
 
+  const formatWhatsAppMessage = (): string => {
+    if (!formConfig?.form_schema?.fields) return '';
+
+    const lines: string[] = [];
+
+    formConfig.form_schema.fields.forEach((field) => {
+      const shouldShow = checkConditionalLogic(field);
+      if (!shouldShow) return;
+
+      const value = formData[field.name];
+      if (!value) return;
+
+      let displayValue = value;
+
+      // For fields with options (select, radio, multiselect, checkbox), lookup the label
+      if (field.options && Array.isArray(field.options)) {
+        if (Array.isArray(value)) {
+          // Multi-select or checkbox
+          displayValue = value
+            .map((v) => field.options?.find((opt) => opt.value === v)?.label || v)
+            .join(', ');
+        } else {
+          // Single select or radio
+          const option = field.options.find((opt) => opt.value === value);
+          displayValue = option?.label || value;
+        }
+      }
+
+      // Format file uploads
+      if (field.type === 'file' && typeof value === 'string') {
+        displayValue = value.includes('/') ? value.split('/').pop() || value : value;
+      }
+
+      lines.push(`*${field.label}*: ${displayValue}`);
+    });
+
+    return lines.join('\n');
+  };
+
   const handleWhatsAppClick = () => {
     if (!validateForm()) {
       return;
     }
 
     if (onWhatsApp) {
-      onWhatsApp(formData);
+      const formattedMessage = formatWhatsAppMessage();
+      onWhatsApp(formattedMessage);
     }
   };
 
