@@ -28,6 +28,7 @@ test-*.md
 ROADMAPS/*
 roadmaps/
 test*.txt
+.kiro
 
 
 # Editor directories and files

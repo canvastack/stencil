@@ -3,6 +3,7 @@ export interface Category {
   uuid: string;
   name: string;
   slug: string;
+  business_type?: string;
   description?: string;
   parent_id?: string;
   image?: string;
@@ -39,6 +40,7 @@ export interface CategoryFilters {
 export interface CreateCategoryRequest {
   name: string;
   slug: string;
+  business_type?: string;
   description?: string;
   parent_id?: string;
   image?: string;

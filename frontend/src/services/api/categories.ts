@@ -8,6 +8,7 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 export interface CreateCategoryRequest {
   name: string;
   slug?: string;
+  business_type?: string;
   description?: string;
   parent_id?: string;
   image?: string;

@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { useCategories } from '@/hooks/useCategories';
 import { Category, CategoryFilters } from '@/types/category';
 import { Skeleton } from '@/components/ui/skeleton';
+import { businessTypesService, BusinessType } from '@/services/api/businessTypes';
 
 export default function ProductCategories() {
   const {
@@ -49,9 +50,12 @@ export default function ProductCategories() {
     sort: 'sort_order',
     order: 'asc',
   });
+  const [businessTypes, setBusinessTypes] = useState<BusinessType[]>([]);
+  const [businessTypesLoading, setBusinessTypesLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
+    business_type: '',
     description: '',
     color: '#ff8000',
     is_active: true,
@@ -61,6 +65,22 @@ export default function ProductCategories() {
   useEffect(() => {
     fetchCategories(filters);
   }, [fetchCategories, filters]);
+
+  // Load business types on component mount
+  useEffect(() => {
+    const loadBusinessTypes = async () => {
+      setBusinessTypesLoading(true);
+      try {
+        const response = await businessTypesService.getBusinessTypes();
+        setBusinessTypes(response.data);
+      } catch (error) {
+        console.error('Failed to load business types:', error);
+      } finally {
+        setBusinessTypesLoading(false);
+      }
+    };
+    loadBusinessTypes();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +97,7 @@ export default function ProductCategories() {
       setFormData({ 
         name: '', 
         slug: '', 
+        business_type: '',
         description: '', 
         color: '#ff8000',
         is_active: true,
@@ -91,6 +112,7 @@ export default function ProductCategories() {
     setFormData({
       name: category.name,
       slug: category.slug,
+      business_type: category.business_type || '',
       description: category.description || '',
       color: category.color || '#ff8000',
       is_active: category.is_active,
@@ -190,6 +212,30 @@ export default function ProductCategories() {
                 />
                 <p className="text-xs text-muted-foreground">
                   This will be used in the URL: /products/{formData.slug || 'category-slug'}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="business_type">Business Type</Label>
+                <Select 
+                  value={formData.business_type} 
+                  onValueChange={(value) => setFormData({ ...formData, business_type: value })}
+                  disabled={businessTypesLoading}
+                >
+                  <SelectTrigger id="business_type">
+                    <SelectValue placeholder={businessTypesLoading ? "Loading..." : "Select business type (optional)"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {businessTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Business type classification for products in this category
                 </p>
               </div>
 

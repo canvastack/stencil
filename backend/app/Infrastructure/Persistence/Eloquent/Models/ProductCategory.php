@@ -20,6 +20,7 @@ class ProductCategory extends Model
         'tenant_id',
         'name',
         'slug',
+        'business_type',
         'description',
         'parent_id',
         'sort_order',
@@ -249,5 +250,21 @@ class ProductCategory extends Model
             $this->level = 0;
             $this->path = $this->slug;
         }
+    }
+
+    /**
+     * Get human-readable business type label
+     */
+    public function getBusinessTypeLabel(): string
+    {
+        return match($this->business_type) {
+            'metal_etching' => 'Metal Etching',
+            'glass_etching' => 'Glass Etching',
+            'award_plaque' => 'Awards & Plaques',
+            'signage' => 'Signage Solutions',
+            'industrial_etching' => 'Industrial Etching',
+            'custom_etching' => 'Custom Etching',
+            default => ucwords(str_replace('_', ' ', $this->business_type ?? 'General'))
+        };
     }
 }

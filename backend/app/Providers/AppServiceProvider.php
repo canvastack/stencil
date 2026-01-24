@@ -14,6 +14,8 @@ use App\Infrastructure\Persistence\Repositories\SettingsRepository;
 use App\Infrastructure\Persistence\Repositories\ReviewEloquentRepository;
 use App\Infrastructure\Adapters\LetsEncryptAdapter;
 use App\Repositories\PluginRepository;
+use App\Infrastructure\Persistence\Eloquent\Models\Product;
+use App\Observers\ProductObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -45,6 +47,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Product::observe(ProductObserver::class);
+        
         // Register plugin service providers and namespaces after database is ready
         $this->registerPluginServiceProviders();
         $this->registerPluginNamespaces();

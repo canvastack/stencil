@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useProducts, useProduct, useProductBySlug } from '@/hooks/useProducts';
 import { useCategoriesQuery } from '@/hooks/useCategoriesQuery';
 import { useFormConfiguration } from '@/hooks/useFormConfiguration';
+import { useProductFilterOptions } from '@/hooks/useProductFilterOptions';
 import { resolveImageUrl } from '@/utils/imageUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +62,9 @@ export default function ProductEditor() {
     subcategory: '',
     tags: [] as string[],
     material: '',
+    businessType: '',
+    size: '',
+    availableSizes: [] as string[],
     price: 1,
     currency: 'IDR',
     priceUnit: 'per pcs',
@@ -82,21 +86,6 @@ export default function ProductEditor() {
     quotationRequired: false,
     vendorPrice: null as number | null,
     markupPercentage: 0,
-    // Form order fields with default values
-    productType: '',
-    size: '',
-    bahan: '',
-    bahanOptions: [] as string[],
-    kualitas: 'standard', // Default to standard quality
-    kualitasOptions: [] as string[],
-    ketebalan: '1mm', // Default thickness
-    ketebalanOptions: [] as string[],
-    ukuran: '15x20', // Default to recommended size
-    ukuranOptions: [] as string[],
-    warnaBackground: '#FFFFFF', // Default to white background
-    designFileUrl: '',
-    customTexts: [] as Array<{ text: string; placement: string; position: string; color: string }>,
-    notesWysiwyg: '',
   };
   
   const [formData, setFormData] = useState(defaultFormData);
@@ -114,6 +103,8 @@ export default function ProductEditor() {
     isLoading: formConfigLoading,
     fetchConfiguration: refetchFormConfiguration
   } = useFormConfiguration(!isNew && product?.uuid ? product.uuid : undefined);
+
+  const { data: filterOptions, isLoading: filterOptionsLoading } = useProductFilterOptions();
 
   React.useEffect(() => {
     if (activeTab === 'customization' && !isNew && product?.uuid && refetchFormConfiguration) {
@@ -144,6 +135,11 @@ export default function ProductEditor() {
     subcategory: 'basic',
     tags: 'basic',
     material: 'basic',
+    businessType: 'basic',
+    business_type: 'basic',
+    size: 'basic',
+    availableSizes: 'basic',
+    available_sizes: 'basic',
     featured: 'basic',
     price: 'pricing',
     currency: 'pricing',
@@ -160,31 +156,6 @@ export default function ProductEditor() {
     specifications: 'specifications',
     customizable: 'customization',
     customOptions: 'customization',
-    productType: 'customization',
-    product_type: 'customization',
-    size: 'customization',
-    bahan: 'customization',
-    bahanOptions: 'customization',
-    bahan_options: 'customization',
-    kualitas: 'customization',
-    kualitasOptions: 'customization',
-    kualitas_options: 'customization',
-    ketebalan: 'customization',
-    ketebalanOptions: 'customization',
-    ketebalan_options: 'customization',
-    ukuran: 'customization',
-    ukuranOptions: 'customization',
-    ukuran_options: 'customization',
-    warnaBackground: 'customization',
-    warna_background: 'customization',
-    designFileUrl: 'customization',
-    design_file_url: 'customization',
-    customTexts: 'customization',
-    custom_texts: 'customization',
-    notesWysiwyg: 'customization',
-    notes_wysiwyg: 'customization',
-    availableSizes: 'customization',
-    available_sizes: 'customization',
     images: 'images',
     seoTitle: 'seo',
     seoDescription: 'seo',
@@ -210,28 +181,10 @@ export default function ProductEditor() {
       'categoryId': 'Category',
       'long_description': 'Long Description',
       'longDescription': 'Long Description',
-      'product_type': 'Product Type',
-      'productType': 'Product Type',
-      'bahan': 'Material (Bahan)',
-      'bahan_options': 'Material Options',
-      'bahanOptions': 'Material Options',
-      'kualitas': 'Quality (Kualitas)',
-      'kualitas_options': 'Quality Options',
-      'kualitasOptions': 'Quality Options',
-      'ketebalan': 'Thickness (Ketebalan)',
-      'ketebalan_options': 'Thickness Options',
-      'ketebalanOptions': 'Thickness Options',
-      'ukuran': 'Size (Ukuran)',
-      'ukuran_options': 'Size Options',
-      'ukuranOptions': 'Size Options',
-      'warna_background': 'Background Color',
-      'warnaBackground': 'Background Color',
-      'design_file_url': 'Design File URL',
-      'designFileUrl': 'Design File URL',
-      'custom_texts': 'Custom Texts',
-      'customTexts': 'Custom Texts',
-      'notes_wysiwyg': 'Product Notes',
-      'notesWysiwyg': 'Product Notes',
+      'business_type': 'Business Type',
+      'businessType': 'Business Type',
+      'available_sizes': 'Available Sizes',
+      'availableSizes': 'Available Sizes',
       'seo_title': 'SEO Title',
       'seoTitle': 'SEO Title',
       'seo_description': 'SEO Description',
@@ -340,6 +293,9 @@ export default function ProductEditor() {
         subcategory: product.subcategory ?? '',
         tags: product.tags ?? [],
         material: product.material ?? '',
+        businessType: product.businessType ?? '',
+        size: product.size ?? '',
+        availableSizes: product.availableSizes ?? [],
         price: product.price ?? 0,
         currency: product.currency ?? 'IDR',
         priceUnit: product.priceUnit ?? 'per pcs',
@@ -360,20 +316,6 @@ export default function ProductEditor() {
         quotationRequired: product.quotationRequired ?? false,
         vendorPrice: product.vendorPrice ?? null,
         markupPercentage: product.markupPercentage ?? 0,
-        productType: product.productType ?? '',
-        size: product.size ?? '',
-        bahan: product.bahan ?? '',
-        bahanOptions: product.bahanOptions ?? [],
-        kualitas: product.kualitas ?? 'standard',
-        kualitasOptions: product.kualitasOptions ?? [],
-        ketebalan: product.ketebalan ?? '1mm',
-        ketebalanOptions: product.ketebalanOptions ?? [],
-        ukuran: product.ukuran ?? '15x20',
-        ukuranOptions: product.ukuranOptions ?? [],
-        warnaBackground: product.warnaBackground ?? '#FFFFFF',
-        designFileUrl: product.designFileUrl ?? '',
-        customTexts: product.customTexts ?? [],
-        notesWysiwyg: product.notesWysiwyg ?? '',
       };
       
       setFormData(loadedFormData);
@@ -485,21 +427,9 @@ export default function ProductEditor() {
           quotationRequired: formData.quotationRequired,
           vendorPrice: formData.vendorPrice,
           markupPercentage: formData.markupPercentage,
-          productType: formData.productType,
-          bahan: formData.bahan,
-          bahanOptions: formData.bahanOptions,
-          kualitas: formData.kualitas,
-          kualitasOptions: formData.kualitasOptions,
-          ketebalan: formData.ketebalan,
-          ketebalanOptions: formData.ketebalanOptions,
-          ukuran: formData.ukuran,
-          ukuranOptions: formData.ukuranOptions,
-          warnaBackground: formData.warnaBackground,
-          designFileUrl: formData.designFileUrl,
-          customTexts: formData.customTexts,
-          notesWysiwyg: formData.notesWysiwyg,
-          availableSizes: formData.availableSizes,
+          businessType: formData.businessType,
           size: formData.size,
+          availableSizes: formData.availableSizes,
         });
       } else {
         await updateProduct(id || '', {
@@ -531,21 +461,9 @@ export default function ProductEditor() {
           quotationRequired: formData.quotationRequired,
           vendorPrice: formData.vendorPrice,
           markupPercentage: formData.markupPercentage,
-          productType: formData.productType,
-          bahan: formData.bahan,
-          bahanOptions: formData.bahanOptions,
-          kualitas: formData.kualitas,
-          kualitasOptions: formData.kualitasOptions,
-          ketebalan: formData.ketebalan,
-          ketebalanOptions: formData.ketebalanOptions,
-          ukuran: formData.ukuran,
-          ukuranOptions: formData.ukuranOptions,
-          warnaBackground: formData.warnaBackground,
-          designFileUrl: formData.designFileUrl,
-          customTexts: formData.customTexts,
-          notesWysiwyg: formData.notesWysiwyg,
-          availableSizes: formData.availableSizes,
+          businessType: formData.businessType,
           size: formData.size,
+          availableSizes: formData.availableSizes,
         });
       }
       setValidationErrors({});
@@ -1081,6 +999,50 @@ export default function ProductEditor() {
                 {validationErrors.material && (
                   <p className="text-xs text-destructive">{validationErrors.material}</p>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="businessType">Business Type</Label>
+                <Input
+                  id="businessType"
+                  value={(() => {
+                    const selectedCategory = categories.find(cat => String(cat.id) === formData.categoryId);
+                    if (selectedCategory?.business_type) {
+                      const labels: Record<string, string> = {
+                        'metal_etching': 'Metal Etching',
+                        'glass_etching': 'Glass Etching',
+                        'award_plaque': 'Awards & Plaques',
+                        'signage': 'Signage Solutions',
+                        'industrial_etching': 'Industrial Etching',
+                        'custom_etching': 'Custom Etching',
+                      };
+                      return labels[selectedCategory.business_type] || selectedCategory.business_type;
+                    }
+                    return 'Not set (select a category)';
+                  })()}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Automatically inherited from category. Edit in Category settings.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="size">Default Size</Label>
+                <Input
+                  id="size"
+                  value={formData.size}
+                  onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                  placeholder="e.g., 15x20cm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="availableSizes">Available Sizes (comma separated)</Label>
+                <Input
+                  id="availableSizes"
+                  value={formData.availableSizes.join(', ')}
+                  onChange={(e) => setFormData({ ...formData, availableSizes: e.target.value.split(',').map(s => s.trim()).filter(s => s) })}
+                  placeholder="e.g., 10x15cm, 15x20cm, 20x30cm"
+                />
               </div>
             </div>
 

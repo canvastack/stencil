@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\ProductSearch;
 use App\Infrastructure\Persistence\Eloquent\Models\Product;
+use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Presentation\Http\Resources\Product\ProductResource;
 use Illuminate\Http\Request;
@@ -587,6 +588,7 @@ class ProductController extends Controller
     /**
      * Get filter options (business types, sizes, materials) from database
      * Phase 1.4.1: Dynamic filter options to remove frontend hardcoded data
+     * Updated: Query business_types from product_categories table (category-based architecture)
      * 
      * @param Request $request
      * @param string|null $tenantSlug
@@ -596,6 +598,7 @@ class ProductController extends Controller
     {
         try {
             $query = Product::where('status', 'published');
+            $categoryQuery = ProductCategory::where('is_active', true);
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -604,10 +607,11 @@ class ProductController extends Controller
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
                 $query->where('tenant_id', $tenant->id);
+                $categoryQuery->where('tenant_id', $tenant->id);
             }
             
-            // Get distinct business_types
-            $businessTypes = $query->clone()
+            // Get distinct business_types from product_categories table
+            $businessTypes = $categoryQuery->clone()
                 ->whereNotNull('business_type')
                 ->distinct()
                 ->pluck('business_type')

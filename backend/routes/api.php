@@ -207,6 +207,9 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'index']);
         Route::get('/product/{productId}', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'byProduct'])->where('productId', '[0-9]+');
     });
+    
+    // Business Types API
+    Route::get('/business-types', [App\Http\Controllers\Api\V1\Admin\BusinessTypeController::class, 'index']);
 });
 
 // Tenant API (authenticated tenant users)
