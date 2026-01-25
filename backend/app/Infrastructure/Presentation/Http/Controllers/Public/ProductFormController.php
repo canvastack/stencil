@@ -267,15 +267,16 @@ class ProductFormController extends Controller
     /**
      * Find or create customer from form data
      */
-    private function findOrCreateCustomer(array $customerData, int $tenantId): ?Customer
+    private function findOrCreateCustomer(array $customerData, int $tenantId): Customer
     {
-        if (empty($customerData)) {
-            return null;
-        }
-
         $email = $this->sanitizeEmail($customerData['email'] ?? null);
         $phone = $this->sanitizePhone($customerData['phone'] ?? null);
-        $name = trim($customerData['name'] ?? 'Guest Customer');
+        $name = trim($customerData['name'] ?? '');
+        
+        // If no name provided, generate a guest customer name
+        if (empty($name)) {
+            $name = 'Guest Customer ' . time();
+        }
 
         // Validate email format
         if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -287,9 +288,8 @@ class ProductFormController extends Controller
             throw new \InvalidArgumentException('Invalid phone number format: ' . $phone);
         }
 
-        if (!$email && !$phone) {
-            return null;
-        }
+        // Note: We allow customers without email/phone as we generate dummy email if needed
+        // This supports orders via form where contact info might be in notes/customization
 
         // Try to find existing customer (fuzzy match)
         $customer = null;
@@ -317,12 +317,19 @@ class ProductFormController extends Controller
             return $customer;
         }
 
+        // Split name into first_name and last_name for backward compatibility
+        $nameParts = explode(' ', $name, 2);
+        $firstName = $nameParts[0] ?? 'Customer';
+        $lastName = $nameParts[1] ?? '';
+
         // Create new customer
         $customer = Customer::create([
             'uuid' => Str::uuid()->toString(),
             'tenant_id' => $tenantId,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'name' => $name,
-            'email' => $email,
+            'email' => $email ?: 'noemail_' . time() . '_' . rand(1000, 9999) . '@temporary.local',
             'phone' => $phone,
             'company' => trim($customerData['company'] ?? '') ?: null,
             'address' => trim($customerData['address'] ?? '') ?: null,
@@ -331,8 +338,6 @@ class ProductFormController extends Controller
             'postal_code' => trim($customerData['postal_code'] ?? '') ?: null,
             'customer_type' => 'individual',
             'status' => 'active',
-            'source' => 'website_form',
-            'first_order_at' => now(),
             'last_order_at' => now(),
             'metadata' => ['source' => 'website_form'],
         ]);

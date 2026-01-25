@@ -5,6 +5,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, ShoppingCart, MessageCircle } from 'lucide-react';
 import { DynamicFormField } from '@/components/form-builder/DynamicFormField';
 import { usePublicFormConfiguration } from '@/hooks/useFormConfiguration';
+import { CustomerDataModal } from '@/components/public/CustomerDataModal';
+import { useTenantAuth } from '@/contexts/TenantAuthContext';
 import type { FormField } from '@/types/form-builder';
 import { cn } from '@/lib/utils';
 
@@ -34,10 +36,13 @@ export function DynamicFormRenderer({
   showCard = true,
 }: DynamicFormRendererProps) {
   const { formConfig, isLoading, error, submitForm } = usePublicFormConfiguration(productUuid);
+  const { isAuthenticated, user } = useTenantAuth();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formStartTime] = useState<string>(new Date().toISOString());
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [pendingSubmissionData, setPendingSubmissionData] = useState<Record<string, any> | null>(null);
 
   console.log('[DynamicFormRenderer] Product UUID:', productUuid);
   console.log('[DynamicFormRenderer] State:', { isLoading, error, hasConfig: !!formConfig });
@@ -149,19 +154,66 @@ export function DynamicFormRenderer({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const hasCustomerFields = useMemo(() => {
+    if (!formConfig?.form_schema?.fields) return false;
+    
+    const customerFieldNames = [
+      'name', 'customer_name', 'nama', 'nama_lengkap',
+      'email', 'customer_email', 'email_customer',
+      'phone', 'customer_phone', 'telephone', 'tel', 'telepon', 'no_telepon', 'nomor_telepon'
+    ];
+    
+    const hasName = formConfig.form_schema.fields.some(field => 
+      customerFieldNames.slice(0, 4).some(name => field.name.toLowerCase().includes(name))
+    );
+    const hasEmail = formConfig.form_schema.fields.some(field => 
+      customerFieldNames.slice(4, 7).some(name => field.name.toLowerCase() === name)
+    );
+    const hasPhone = formConfig.form_schema.fields.some(field => 
+      customerFieldNames.slice(7).some(name => field.name.toLowerCase().includes(name))
+    );
+    
+    return hasName || hasEmail || hasPhone;
+  }, [formConfig?.form_schema?.fields]);
 
-    if (!validateForm()) {
-      return;
-    }
+  const getCustomerDataFromUser = () => {
+    if (!user) return null;
+    
+    return {
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+    };
+  };
 
+  const performSubmission = async (customerData?: { name: string; email: string; phone: string }) => {
     setIsSubmitting(true);
     try {
-      const submissionData = {
+      let submissionData: Record<string, any> = {
         ...formData,
         _form_started_at: formStartTime,
       };
+
+      if (customerData && !hasCustomerFields) {
+        submissionData = {
+          ...submissionData,
+          customer_name: customerData.name,
+          name: customerData.name,
+          email: customerData.email,
+          phone: customerData.phone,
+        };
+      } else if (isAuthenticated && !hasCustomerFields) {
+        const userData = getCustomerDataFromUser();
+        if (userData) {
+          submissionData = {
+            ...submissionData,
+            customer_name: userData.name,
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone,
+          };
+        }
+      }
 
       const result = await submitForm(submissionData);
 
@@ -171,11 +223,37 @@ export function DynamicFormRenderer({
 
       setFormData({});
       setValidationErrors({});
+      setShowCustomerModal(false);
+      setPendingSubmissionData(null);
     } catch (error) {
       console.error('Form submission error:', error);
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!isAuthenticated && !hasCustomerFields) {
+      setPendingSubmissionData({
+        ...formData,
+        _form_started_at: formStartTime,
+      });
+      setShowCustomerModal(true);
+      return;
+    }
+
+    await performSubmission();
+  };
+
+  const handleCustomerModalSubmit = async (customerData: { name: string; email: string; phone: string }) => {
+    await performSubmission(customerData);
   };
 
   const formatWhatsAppMessage = (): string => {
@@ -248,7 +326,7 @@ export function DynamicFormRenderer({
     );
   }
 
-  if (error || !formConfig) {
+  if (!formConfig) {
     const handleWhatsAppOrder = () => {
       const message = productName 
         ? `Halo, saya tertarik untuk memesan produk *${productName}*. Mohon informasi lebih lanjut.`
@@ -371,33 +449,57 @@ export function DynamicFormRenderer({
 
   if (showCard) {
     return (
-      <Card className={className}>
-        {(form_schema.title || form_schema.description) && (
-          <CardHeader>
-            {form_schema.title && <CardTitle>{form_schema.title}</CardTitle>}
-            {form_schema.description && (
-              <CardDescription>{form_schema.description}</CardDescription>
-            )}
-          </CardHeader>
-        )}
-        <CardContent>{renderForm()}</CardContent>
-      </Card>
+      <>
+        <Card className={className}>
+          {(form_schema.title || form_schema.description) && (
+            <CardHeader>
+              {form_schema.title && <CardTitle>{form_schema.title}</CardTitle>}
+              {form_schema.description && (
+                <CardDescription>{form_schema.description}</CardDescription>
+              )}
+            </CardHeader>
+          )}
+          <CardContent>{renderForm()}</CardContent>
+        </Card>
+        <CustomerDataModal
+          open={showCustomerModal}
+          onClose={() => {
+            setShowCustomerModal(false);
+            setPendingSubmissionData(null);
+            setIsSubmitting(false);
+          }}
+          onSubmit={handleCustomerModalSubmit}
+          isSubmitting={isSubmitting}
+        />
+      </>
     );
   }
 
   return (
-    <div className={className}>
-      {(form_schema.title || form_schema.description) && (
-        <div className="mb-6">
-          {form_schema.title && (
-            <h2 className="text-2xl font-bold text-foreground mb-2">{form_schema.title}</h2>
-          )}
-          {form_schema.description && (
-            <p className="text-muted-foreground">{form_schema.description}</p>
-          )}
-        </div>
-      )}
-      {renderForm()}
-    </div>
+    <>
+      <div className={className}>
+        {(form_schema.title || form_schema.description) && (
+          <div className="mb-6">
+            {form_schema.title && (
+              <h2 className="text-2xl font-bold text-foreground mb-2">{form_schema.title}</h2>
+            )}
+            {form_schema.description && (
+              <p className="text-muted-foreground">{form_schema.description}</p>
+            )}
+          </div>
+        )}
+        {renderForm()}
+      </div>
+      <CustomerDataModal
+        open={showCustomerModal}
+        onClose={() => {
+          setShowCustomerModal(false);
+          setPendingSubmissionData(null);
+          setIsSubmitting(false);
+        }}
+        onSubmit={handleCustomerModalSubmit}
+        isSubmitting={isSubmitting}
+      />
+    </>
   );
 }
