@@ -123,6 +123,7 @@ class ProductFormController extends Controller
 
             $product = Product::where('uuid', $productUuid)
                 ->where('status', 'published')
+                ->with('tenant')
                 ->first();
 
             if (!$product) {
@@ -153,23 +154,43 @@ class ProductFormController extends Controller
                 ], 422);
             }
 
-            return DB::transaction(function () use ($request, $product, $configuration, $validatedData) {
+            return DB::transaction(function () use ($request, $product, $configuration, $validatedData, $formData) {
                 $startedAt = $request->input('_form_started_at');
                 $completionTime = $startedAt ? now()->diffInSeconds($startedAt) : null;
-                $formData = $validatedData;
+                
+                // Merge validated data with customer fields that may not be in form schema
+                $customerFields = ['customer_name', 'name', 'email', 'phone', 'address', 'city', 'province', 'postal_code', 'company', 'company_name'];
+                $mergedData = $validatedData;
+                foreach ($customerFields as $field) {
+                    if (isset($formData[$field])) {
+                        $mergedData[$field] = $formData[$field];
+                    }
+                }
+                
+                $formData = $mergedData;
 
+                Log::info('[PublicFormSubmission] Step 1: Extracting customer data', ['formData' => $formData]);
                 $customerData = $this->extractCustomerData($formData);
+                
+                Log::info('[PublicFormSubmission] Step 2: Customer data extracted', ['customerData' => $customerData]);
                 $customer = $this->findOrCreateCustomer($customerData, $product->tenant_id);
 
                 if (!$customer) {
                     throw new \Exception('Failed to create or find customer record');
                 }
 
-                $order = $this->createOrder($product, $customer, $formData);
+                // Remove customer fields from form data before creating order
+                $orderFormData = $formData;
+                foreach ($customerFields as $field) {
+                    unset($orderFormData[$field]);
+                }
+
+                Log::info('[PublicFormSubmission] Step 3: Customer found/created', ['customer_uuid' => $customer->uuid]);
+                $order = $this->createOrder($product, $customer, $orderFormData);
 
                 $submission = ProductFormSubmission::create([
                     'uuid' => Str::uuid()->toString(),
-                    'tenant_id' => $product->tenant_id,
+                    'tenant_id' => $product->tenant->uuid,
                     'product_id' => $product->id,
                     'product_uuid' => $product->uuid,
                     'form_configuration_id' => $configuration->id,
@@ -178,7 +199,7 @@ class ProductFormController extends Controller
                     'order_uuid' => $order->uuid,
                     'customer_id' => $customer->id,
                     'customer_uuid' => $customer->uuid,
-                    'submission_data' => $formData,
+                    'submission_data' => $orderFormData,
                     'user_agent' => $request->header('User-Agent'),
                     'ip_address' => $request->ip(),
                     'referrer' => $request->header('Referer'),
@@ -196,7 +217,7 @@ class ProductFormController extends Controller
                         ->whereNotNull('completion_time')
                         ->avg('completion_time');
                     
-                    $configuration->update(['avg_completion_time' => $avgTime]);
+                    $configuration->update(['avg_completion_time' => (int) $avgTime]);
                 }
 
                 Log::info('[PublicFormSubmission] Order created successfully', [
@@ -222,12 +243,21 @@ class ProductFormController extends Controller
             Log::error('[PublicFormSubmission] Error submitting form', [
                 'product_uuid' => $productUuid,
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
+            $errorMessage = config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan saat mensubmit form';
+            
             return response()->json([
-                'message' => 'Terjadi kesalahan saat mensubmit form',
-                'error' => 'INTERNAL_SERVER_ERROR'
+                'message' => $errorMessage,
+                'error' => 'INTERNAL_SERVER_ERROR',
+                'debug' => config('app.debug') ? [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'message' => $e->getMessage()
+                ] : null
             ], 500);
         }
     }
