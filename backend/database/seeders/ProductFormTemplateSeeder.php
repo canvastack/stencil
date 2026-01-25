@@ -387,7 +387,7 @@ class ProductFormTemplateSeeder extends Seeder
                         'type' => 'file',
                         'name' => 'design_artwork',
                         'label' => 'Upload Design / Artwork',
-                        'required' => true,
+                        'required' => false,
                         'accept' => '.pdf,.ai,.cdr,.svg',
                         'maxSize' => 20971520,
                         'order' => 6,
