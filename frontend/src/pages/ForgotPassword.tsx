@@ -9,9 +9,11 @@ import { ArrowLeft } from 'lucide-react';
 import Header from '@/themes/default/components/Header';
 import Footer from '@/themes/default/components/Footer';
 import { useAuthState } from '@/hooks/useAuthState';
+import { useTenantAwareNavigation } from '@/hooks/useTenantAwareNavigation';
 
 const ForgotPassword = () => {
   const { forgotPassword, isLoading, error: authError } = useAuthState();
+  const { getUrl } = useTenantAwareNavigation();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -92,7 +94,7 @@ const ForgotPassword = () => {
 
               <div className="text-center">
                 <Link 
-                  to="/login" 
+                  to={getUrl('login')} 
                   className="inline-flex items-center text-sm text-primary hover:underline"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" />
@@ -110,7 +112,7 @@ const ForgotPassword = () => {
               </div>
 
               <Button asChild className="w-full" size="lg">
-                <Link to="/login">
+                <Link to={getUrl('login')}>
                   Kembali ke Login
                 </Link>
               </Button>

@@ -12,12 +12,14 @@ import { usePlatformAuth } from '@/contexts/PlatformAuthContext';
 import { useTenantAuth } from '@/contexts/TenantAuthContext';
 import { useGlobalContext } from '@/contexts/GlobalContext';
 import { authService, type AccountType } from '@/services/api/auth';
+import { useTenantAwareNavigation } from '@/hooks/useTenantAwareNavigation';
 
 const Login = () => {
   const navigate = useNavigate();
   const { isAuthenticated: isPlatformAuth, login: platformLogin } = usePlatformAuth();
   const { isAuthenticated: isTenantAuth, login: tenantLogin } = useTenantAuth();
   const { switchContext, detectContext } = useGlobalContext();
+  const { getUrl } = useTenantAwareNavigation();
   
   const [isPlatformMode, setIsPlatformMode] = useState(false);
   const [email, setEmail] = useState('');
@@ -147,7 +149,15 @@ const Login = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link 
+                    to={getUrl('forgot-password')} 
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Lupa Password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
@@ -205,7 +215,7 @@ const Login = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
                 Need help? Contact our support team or{' '}
-                <Link to="/register" className="text-primary font-medium hover:underline">
+                <Link to={getUrl('register')} className="text-primary font-medium hover:underline">
                   create a new account
                 </Link>
               </p>

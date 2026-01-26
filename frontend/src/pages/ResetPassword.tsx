@@ -9,11 +9,13 @@ import { Eye, EyeOff } from 'lucide-react';
 import Header from '@/themes/default/components/Header';
 import Footer from '@/themes/default/components/Footer';
 import { useAuthState } from '@/hooks/useAuthState';
+import { useTenantAwareNavigation } from '@/hooks/useTenantAwareNavigation';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { resetPassword, isLoading, error: authError } = useAuthState();
+  const { getUrl } = useTenantAwareNavigation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [token, setToken] = useState('');
@@ -27,11 +29,11 @@ const ResetPassword = () => {
     const resetToken = searchParams.get('token');
     if (!resetToken) {
       toast.error('Token reset password tidak ditemukan');
-      navigate('/forgot-password');
+      navigate(getUrl('forgot-password'));
     } else {
       setToken(resetToken);
     }
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, getUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +60,7 @@ const ResetPassword = () => {
         password: formData.password,
       });
       toast.success('Password berhasil direset! Silakan login dengan password baru.');
-      navigate('/login');
+      navigate(getUrl('login'));
     } catch (err) {
       toast.error(authError || 'Gagal mereset password');
     }

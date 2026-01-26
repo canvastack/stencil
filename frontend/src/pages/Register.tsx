@@ -10,10 +10,12 @@ import { Eye, EyeOff } from 'lucide-react';
 import Header from '@/themes/default/components/Header';
 import Footer from '@/themes/default/components/Footer';
 import { useAuthState } from '@/hooks/useAuthState';
+import { useTenantAwareNavigation } from '@/hooks/useTenantAwareNavigation';
 
 const Register = () => {
   const navigate = useNavigate();
   const { register, isLoading, error } = useAuthState();
+  const { getUrl } = useTenantAwareNavigation();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -83,7 +85,7 @@ const Register = () => {
         password: formData.password,
       });
       toast.success('Registrasi berhasil! Email verifikasi telah dikirim.');
-      navigate('/verify-email');
+      navigate(getUrl('verify-email'));
     } catch (err) {
       toast.error(error || 'Registrasi gagal. Silakan coba lagi.');
     }
@@ -238,7 +240,7 @@ const Register = () => {
                   className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Saya setuju dengan{' '}
-                  <Link to="/terms" className="text-primary hover:underline">
+                  <Link to={getUrl('terms')} className="text-primary hover:underline">
                     syarat dan ketentuan
                   </Link>{' '}
                   yang berlaku
@@ -257,7 +259,7 @@ const Register = () => {
           <div className="mt-6 text-center text-sm">
             <p className="text-muted-foreground">
               Sudah punya akun?{' '}
-              <Link to="/login" className="text-primary font-medium hover:underline">
+              <Link to={getUrl('login')} className="text-primary font-medium hover:underline">
                 Login di sini
               </Link>
             </p>

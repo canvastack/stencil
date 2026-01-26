@@ -7,11 +7,13 @@ import { Loader2, CheckCircle2 } from 'lucide-react';
 import Header from '@/themes/default/components/Header';
 import Footer from '@/themes/default/components/Footer';
 import { useAuthState } from '@/hooks/useAuthState';
+import { useTenantAwareNavigation } from '@/hooks/useTenantAwareNavigation';
 
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { verifyEmail, resendVerification, isLoading, error: authError } = useAuthState();
+  const { getUrl } = useTenantAwareNavigation();
   const [email, setEmail] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [verificationToken, setVerificationToken] = useState('');
@@ -37,7 +39,7 @@ const VerifyEmail = () => {
       setIsVerified(true);
       toast.success('Email berhasil diverifikasi!');
       setTimeout(() => {
-        navigate('/login');
+        navigate(getUrl('login'));
       }, 2000);
     } catch (err) {
       toast.error(authError || 'Gagal memverifikasi email');
