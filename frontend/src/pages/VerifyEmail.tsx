@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2 } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import Header from '@/themes/default/components/Header';
+import Footer from '@/themes/default/components/Footer';
 import { useAuthState } from '@/hooks/useAuthState';
 
 const VerifyEmail = () => {

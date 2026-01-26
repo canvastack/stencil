@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import Header from '@/themes/default/components/Header';
+import Footer from '@/themes/default/components/Footer';
 import { useAuthState } from '@/hooks/useAuthState';
 
 const ForgotPassword = () => {

@@ -7,8 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import Header from '@/themes/default/components/Header';
+import Footer from '@/themes/default/components/Footer';
 import { useAuthState } from '@/hooks/useAuthState';
 
 const Register = () => {
