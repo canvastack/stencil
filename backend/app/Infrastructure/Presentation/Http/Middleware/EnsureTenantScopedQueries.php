@@ -27,6 +27,9 @@ class EnsureTenantScopedQueries
             if (method_exists($tenant, 'makeCurrent')) {
                 $tenant->makeCurrent();
             }
+            
+            // Register tenant scopes for all models
+            $this->registerTenantScopes();
         }
 
         return $next($request);

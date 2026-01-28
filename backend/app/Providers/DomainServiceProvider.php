@@ -3,255 +3,101 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-
-// Domain Repository Interfaces
-use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
-use App\Domain\Tenant\Repositories\DomainMappingRepositoryInterface;
-use App\Domain\Tenant\Repositories\TenantUrlConfigRepositoryInterface;
-use App\Domain\Tenant\Repositories\CustomDomainRepositoryInterface;
-use App\Domain\Customer\Repositories\CustomerRepositoryInterface;
-use App\Domain\Product\Repositories\ProductRepositoryInterface;
-use App\Domain\Product\Repositories\ProductCategoryRepositoryInterface;
-use App\Domain\Product\Repositories\ProductVariantRepositoryInterface;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
+use App\Domain\Customer\Repositories\CustomerRepositoryInterface;
 use App\Domain\Vendor\Repositories\VendorRepositoryInterface;
+use App\Domain\Shared\Rules\Repositories\RuleConfigurationRepositoryInterface;
+use App\Domain\Shared\Rules\Repositories\RuleExecutionLogRepositoryInterface;
+use App\Infrastructure\Persistence\Eloquent\Repositories\PurchaseOrderRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\CustomerRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\VendorRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\RuleConfigurationRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\RuleExecutionLogRepository;
+use App\Domain\Shared\Rules\BusinessRuleRegistry;
+use App\Domain\Shared\Rules\BusinessRuleEngine;
 
-// Infrastructure Repository Implementations
-use App\Infrastructure\Persistence\Repositories\TenantEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\DomainMappingEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\TenantUrlConfigEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\CustomDomainEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\CustomerEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\ProductEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\ProductCategoryEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\ProductVariantEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\OrderEloquentRepository;
-use App\Infrastructure\Persistence\Repositories\VendorEloquentRepository;
-
-// Eloquent Models
-use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\DomainMappingEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\TenantUrlConfigurationEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\CustomDomainEloquentModel;
-use App\Infrastructure\Persistence\Eloquent\Models\Customer;
-use App\Infrastructure\Persistence\Eloquent\Models\Product;
-use App\Infrastructure\Persistence\Eloquent\Models\ProductCategory;
-use App\Infrastructure\Persistence\Eloquent\Models\ProductVariant;
-use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-
-// Domain Services
-use App\Domain\Shipping\Services\ShippingService;
-use App\Domain\Media\Services\MediaService;
-use App\Domain\Tenant\Services\UrlPatternMatcher;
-use App\Domain\Tenant\Services\TenantResolver;
-
-// Application Services
-use App\Application\TenantConfiguration\UseCases\ResolveTenantFromUrlUseCase;
-use App\Application\TenantConfiguration\Services\UrlResolverService;
-
+/**
+ * Domain Service Provider
+ * 
+ * Binds domain interfaces to their infrastructure implementations.
+ * Part of the dependency injection configuration for hexagonal architecture.
+ * 
+ * Responsibilities:
+ * - Repository interface bindings
+ * - Domain service registrations
+ * - Event listener registrations
+ * - Business rules system registration
+ */
 class DomainServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Register services.
      */
     public function register(): void
     {
-        // Bind Repository Interfaces to Eloquent Implementations
-        $this->bindRepositories();
+        // Repository bindings
+        $this->app->bind(OrderRepositoryInterface::class, PurchaseOrderRepository::class);
+        $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
+        $this->app->bind(VendorRepositoryInterface::class, VendorRepository::class);
+        $this->app->bind(\App\Domain\Product\Repositories\ProductRepositoryInterface::class, \App\Infrastructure\Persistence\Repositories\ProductEloquentRepository::class);
         
-        // Register Domain Services
-        $this->registerDomainServices();
+        // Business Rules System bindings
+        $this->app->bind(RuleConfigurationRepositoryInterface::class, RuleConfigurationRepository::class);
+        $this->app->bind(RuleExecutionLogRepositoryInterface::class, RuleExecutionLogRepository::class);
+        
+        // Event Dispatcher binding
+        $this->app->bind(\App\Domain\Shared\Events\EventDispatcher::class, function ($app) {
+            return new \App\Domain\Shared\Events\EventDispatcher($app['events']);
+        });
+        
+        // Register Business Rule Registry as singleton
+        $this->app->singleton(BusinessRuleRegistry::class, function ($app) {
+            return new BusinessRuleRegistry();
+        });
+        
+        // Register Business Rule Engine
+        $this->app->bind(BusinessRuleEngine::class, function ($app) {
+            return new BusinessRuleEngine(
+                $app->make(BusinessRuleRegistry::class),
+                $app->make(RuleConfigurationRepositoryInterface::class),
+                $app->make(RuleExecutionLogRepositoryInterface::class)
+            );
+        });
+        
+        // Advanced Pricing Services
+        $this->app->bind(\App\Domain\Pricing\Services\TaxCalculatorService::class);
+        $this->app->bind(\App\Domain\Pricing\Services\DiscountEngine::class);
+        $this->app->bind(\App\Domain\Pricing\Strategies\MarkupStrategyFactory::class);
+        
+        $this->app->bind(\App\Domain\Pricing\Services\PricingCalculatorService::class, function ($app) {
+            return new \App\Domain\Pricing\Services\PricingCalculatorService(
+                $app->make(\App\Domain\Pricing\Services\TaxCalculatorService::class),
+                $app->make(\App\Domain\Pricing\Services\DiscountEngine::class),
+                $app->make(\App\Domain\Pricing\Strategies\MarkupStrategyFactory::class)
+            );
+        });
+        
+        // Vendor Matching Services
+        $this->app->bind(\App\Domain\Vendor\Services\VendorScoringEngine::class);
+        $this->app->bind(\App\Domain\Vendor\Services\VendorCapabilityAnalyzer::class, function ($app) {
+            return new \App\Domain\Vendor\Services\VendorCapabilityAnalyzer(
+                $app->make(VendorRepositoryInterface::class)
+            );
+        });
+        
+        $this->app->bind(\App\Domain\Vendor\Services\VendorMatchingService::class, function ($app) {
+            return new \App\Domain\Vendor\Services\VendorMatchingService(
+                $app->make(\App\Domain\Vendor\Services\VendorScoringEngine::class),
+                $app->make(\App\Domain\Vendor\Services\VendorCapabilityAnalyzer::class)
+            );
+        });
     }
 
     /**
-     * Bootstrap any application services.
+     * Bootstrap services.
      */
     public function boot(): void
     {
-        // Configure multi-tenancy
-        $this->configureTenantIsolation();
-    }
-
-    /**
-     * Bind all repository interfaces to their Eloquent implementations
-     */
-    private function bindRepositories(): void
-    {
-        // Tenant Domain
-        $this->app->bind(TenantRepositoryInterface::class, function ($app) {
-            return new \App\Infrastructure\Persistence\Repositories\TenantEloquentRepository(new TenantEloquentModel());
-        });
-
-        $this->app->bind(DomainMappingRepositoryInterface::class, function ($app) {
-            return new DomainMappingEloquentRepository(new DomainMappingEloquentModel());
-        });
-
-        $this->app->bind(TenantUrlConfigRepositoryInterface::class, function ($app) {
-            return new TenantUrlConfigEloquentRepository(new TenantUrlConfigurationEloquentModel());
-        });
-
-        $this->app->bind(CustomDomainRepositoryInterface::class, function ($app) {
-            return new CustomDomainEloquentRepository(new CustomDomainEloquentModel());
-        });
-
-        // Customer Domain
-        $this->app->bind(CustomerRepositoryInterface::class, function ($app) {
-            return new CustomerEloquentRepository(new CustomerEloquentModel());
-        });
-
-        // Product Domain
-        $this->app->bind(ProductRepositoryInterface::class, function ($app) {
-            return new ProductEloquentRepository(new ProductEloquentModel());
-        });
-
-        $this->app->bind(ProductCategoryRepositoryInterface::class, function ($app) {
-            return new ProductCategoryEloquentRepository(new \App\Infrastructure\Persistence\Eloquent\Models\ProductCategory());
-        });
-
-        $this->app->bind(ProductVariantRepositoryInterface::class, function ($app) {
-            return new ProductVariantEloquentRepository(new \App\Infrastructure\Persistence\Eloquent\Models\ProductVariant());
-        });
-
-        // Order Domain
-        $this->app->bind(OrderRepositoryInterface::class, function ($app) {
-            return new OrderEloquentRepository(new Order());
-        });
-
-        // Vendor Domain
-        $this->app->bind(VendorRepositoryInterface::class, function ($app) {
-            return new VendorEloquentRepository(new Vendor());
-        });
-    }
-
-    /**
-     * Register domain services
-     */
-    private function registerDomainServices(): void
-    {
-        // Tenant Services
-        $this->app->singleton('tenant.context', function ($app) {
-            return new \stdClass(); // Placeholder for tenant context service
-        });
-
-        // Domain Event Dispatcher
-        $this->app->singleton('domain.events', function ($app) {
-            return $app['events']; // Use Laravel's event dispatcher
-        });
-
-        // UUID Generator Service
-        $this->app->bind('uuid.generator', function ($app) {
-            return new class {
-                public function generate(): string {
-                    return \Illuminate\Support\Str::uuid()->toString();
-                }
-            };
-        });
-
-        // Shipping Services
-        $this->app->singleton(ShippingService::class, function ($app) {
-            return new ShippingService();
-        });
-
-        // Media Services
-        $this->app->singleton(MediaService::class, function ($app) {
-            return new MediaService();
-        });
-
-        // URL Resolution Services
-        $this->app->singleton(UrlPatternMatcher::class, function ($app) {
-            return new UrlPatternMatcher(
-                baseDomain: config('tenant-url.detection.subdomain.base_domain', 'stencil.canvastack.com'),
-                excludedSubdomains: config('tenant-url.detection.subdomain.excluded_subdomains', ['www', 'api', 'admin', 'platform', 'mail']),
-                pathPrefix: config('tenant-url.detection.path.prefix', 't')
-            );
-        });
-
-        $this->app->singleton(TenantResolver::class, function ($app) {
-            return new TenantResolver(
-                $app->make(TenantRepositoryInterface::class),
-                $app->make(TenantUrlConfigRepositoryInterface::class),
-                $app->make(CustomDomainRepositoryInterface::class)
-            );
-        });
-
-        $this->app->singleton(ResolveTenantFromUrlUseCase::class, function ($app) {
-            return new ResolveTenantFromUrlUseCase(
-                $app->make(UrlPatternMatcher::class),
-                $app->make(TenantResolver::class)
-            );
-        });
-
-        $this->app->singleton(UrlResolverService::class, function ($app) {
-            return new UrlResolverService(
-                $app->make(ResolveTenantFromUrlUseCase::class)
-            );
-        });
-    }
-
-    /**
-     * Configure tenant isolation for multi-tenancy
-     */
-    private function configureTenantIsolation(): void
-    {
-        // Register global scopes for tenant isolation
-        if ($this->app->runningInConsole()) {
-            return; // Skip for console commands
-        }
-
-        // Apply tenant context when available
-        $this->app->resolving(function ($object, $app) {
-            if ($object instanceof \Illuminate\Database\Eloquent\Model) {
-                $this->applyTenantScope($object);
-            }
-        });
-    }
-
-    /**
-     * Apply tenant scope to models
-     */
-    private function applyTenantScope($model): void
-    {
-        $tenantAwareModels = [
-            Customer::class,
-            Product::class,
-            Order::class,
-            Vendor::class,
-        ];
-
-        if (in_array(get_class($model), $tenantAwareModels)) {
-            // Tenant scope will be applied via global scopes in models
-            // This is handled in the model's booted() method
-        }
-    }
-
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array<int, string>
-     */
-    public function provides(): array
-    {
-        return [
-            TenantRepositoryInterface::class,
-            DomainMappingRepositoryInterface::class,
-            TenantUrlConfigRepositoryInterface::class,
-            CustomDomainRepositoryInterface::class,
-            CustomerRepositoryInterface::class,
-            ProductRepositoryInterface::class,
-            ProductCategoryRepositoryInterface::class,
-            ProductVariantRepositoryInterface::class,
-            OrderRepositoryInterface::class,
-            VendorRepositoryInterface::class,
-            'tenant.context',
-            'domain.events',
-            'uuid.generator',
-            ShippingService::class,
-            MediaService::class,
-            UrlPatternMatcher::class,
-            TenantResolver::class,
-            ResolveTenantFromUrlUseCase::class,
-            UrlResolverService::class,
-        ];
+        // Register domain event listeners here if needed
     }
 }

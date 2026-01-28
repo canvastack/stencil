@@ -11,33 +11,21 @@ class SendQuoteRequestToVendor
     public function handle(QuoteRequested $event): void
     {
         try {
-            $vendor = $event->order->vendor;
+            $order = $event->getOrder();
+            $vendorId = $event->getVendorId();
+            $quotedPrice = $event->getQuotedPrice();
+            $leadTimeDays = $event->getLeadTimeDays();
             
-            if (!$vendor || !$vendor->email) {
-                Log::warning("Cannot send quote request: vendor not found or missing email", [
-                    'order_id' => $event->order->id,
-                    'vendor_id' => $event->order->vendor_id,
-                ]);
-                return;
-            }
-
-            Mail::to($vendor->email)->send(new \App\Domain\Order\Mails\QuoteRequestMail(
-                $event->order,
-                $event->vendorId,
-                $event->quotedPrice,
-                $event->leadTimeDays
-            ));
-
-            Log::info("Quote request email sent to vendor", [
-                'order_id' => $event->order->id,
-                'vendor_id' => $event->vendorId,
-                'vendor_email' => $vendor->email,
-                'quoted_price' => $event->quotedPrice,
-                'lead_time_days' => $event->leadTimeDays,
+            // For now, just log the event since we don't have mail infrastructure set up
+            Log::info("Quote request would be sent to vendor", [
+                'order_id' => $order->getId()->getValue(),
+                'vendor_id' => $vendorId,
+                'quoted_price' => $quotedPrice,
+                'lead_time_days' => $leadTimeDays,
             ]);
         } catch (\Exception $e) {
-            Log::error("Failed to send quote request email", [
-                'order_id' => $event->order->id,
+            Log::error("Failed to process quote request", [
+                'order_id' => $event->getOrder()->getId()->getValue(),
                 'error' => $e->getMessage(),
             ]);
         }

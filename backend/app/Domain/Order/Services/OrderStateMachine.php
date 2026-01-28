@@ -827,7 +827,14 @@ class OrderStateMachine
 
     protected function dispatchEvents(Order $order, string $oldStatus, string $newStatus, array $metadata): void
     {
-        event(new OrderStatusChanged($order, $oldStatus, $newStatus, $metadata));
+        // Convert string statuses to OrderStatus enums for proper type handling
+        $oldStatusEnum = OrderStatus::fromString($oldStatus);
+        $newStatusEnum = OrderStatus::fromString($newStatus);
+        
+        // Extract reason from metadata if available, otherwise use null
+        $reason = isset($metadata['reason']) ? (string) $metadata['reason'] : null;
+        
+        event(new OrderStatusChanged($order, $oldStatusEnum, $newStatusEnum, $reason));
 
         $recentAmount = $this->recentPaymentTransaction?->amount ?? 0;
         if ($recentAmount <= 0 && isset($metadata['payment']) && is_array($metadata['payment'])) {
@@ -841,8 +848,9 @@ class OrderStateMachine
         match ($newStatus) {
             'payment_received' => event(new PaymentReceived(
                 $order,
+                \App\Domain\Shared\ValueObjects\Money::fromCents($recentAmount),
                 $metadata['payment_method'] ?? $order->payment_method ?? 'unknown',
-                $recentAmount
+                $metadata['payment_reference'] ?? 'REF-' . time()
             )),
             'shipped' => event(new OrderShipped(
                 $order, 

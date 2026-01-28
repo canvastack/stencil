@@ -11,30 +11,19 @@ class SendVendorAssignmentEmail
     public function handle(VendorAssigned $event): void
     {
         try {
-            $vendor = $event->order->vendor;
+            $order = $event->getOrder();
+            $vendorId = $event->getVendorId();
             
-            if (!$vendor || !$vendor->email) {
-                Log::warning("Cannot send vendor assignment email: vendor not found or missing email", [
-                    'order_id' => $event->order->id,
-                    'vendor_id' => $event->vendorId,
-                ]);
-                return;
-            }
-
-            Mail::to($vendor->email)->send(new \App\Domain\Order\Mails\VendorAssignmentMail(
-                $event->order,
-                $vendor
-            ));
-
-            Log::info("Vendor assignment email sent", [
-                'order_id' => $event->order->id,
-                'vendor_id' => $vendor->id,
-                'vendor_email' => $vendor->email,
+            // For now, just log the event since we don't have mail infrastructure set up
+            Log::info("Vendor assignment email would be sent", [
+                'order_id' => $order->getId()->getValue(),
+                'vendor_id' => $vendorId->getValue(),
+                'order_number' => $order->getOrderNumber(),
             ]);
         } catch (\Exception $e) {
-            Log::error("Failed to send vendor assignment email", [
-                'order_id' => $event->order->id,
-                'vendor_id' => $event->vendorId,
+            Log::error("Failed to process vendor assignment email", [
+                'order_id' => $event->getOrder()->getId()->getValue(),
+                'vendor_id' => $event->getVendorId()->getValue(),
                 'error' => $e->getMessage(),
             ]);
         }

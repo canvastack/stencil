@@ -144,6 +144,11 @@ class Order extends Model implements TenantAwareModel
         return $this->hasMany(Shipment::class);
     }
 
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     public function scopeByStatus($query, $status)
     {
         return $query->where('status', $status);
@@ -164,6 +169,17 @@ class Order extends Model implements TenantAwareModel
         return 'uuid';
     }
 
+    /**
+     * Get the UUID as ID for domain compatibility
+     * This method provides compatibility with domain events that expect getId()
+     *
+     * @return \App\Domain\Shared\ValueObjects\UuidValueObject
+     */
+    public function getId(): \App\Domain\Shared\ValueObjects\UuidValueObject
+    {
+        return new \App\Domain\Shared\ValueObjects\UuidValueObject($this->uuid);
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -174,7 +190,9 @@ class Order extends Model implements TenantAwareModel
             }
             
             if (empty($model->order_number)) {
-                $model->order_number = 'ORD-' . strtoupper(uniqid());
+                // Generate truly unique order number using UUID suffix
+                $uuidSuffix = strtoupper(substr(str_replace('-', '', $model->uuid), -8));
+                $model->order_number = 'ORD-' . date('Ymd') . '-' . $uuidSuffix;
             }
             
             // Validate cross-tenant relationships (skip in testing environment unless explicitly enabled)

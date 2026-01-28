@@ -68,6 +68,7 @@ class Product extends Model implements TenantAwareModel
         'review_count',
         'published_at',
         'last_viewed_at',
+        'sort_order',
     ];
 
     protected $casts = [
@@ -106,6 +107,7 @@ class Product extends Model implements TenantAwareModel
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
+        'sort_order' => 'integer',
     ];
 
     protected $dates = [
