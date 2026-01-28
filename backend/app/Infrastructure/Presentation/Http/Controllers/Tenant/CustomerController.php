@@ -801,9 +801,16 @@ class CustomerController extends Controller
                 ->firstOrFail();
 
             // Calculate customer segment based on business logic
-            $totalOrders = $customer->orders()->count();
-            $totalSpent = $customer->orders()->sum('total_amount');
-            $lastOrderDate = $customer->orders()->latest()->first()?->created_at;
+            $totalOrders = Order::where('tenant_id', $tenant->id)
+                ->where('customer_id', $customer->id)
+                ->count();
+            $totalSpent = Order::where('tenant_id', $tenant->id)
+                ->where('customer_id', $customer->id)
+                ->sum('total_amount');
+            $lastOrderDate = Order::where('tenant_id', $tenant->id)
+                ->where('customer_id', $customer->id)
+                ->latest()
+                ->first()?->created_at;
             $daysSinceLastOrder = $lastOrderDate ? now()->diffInDays($lastOrderDate) : 999;
 
             // Determine segment based on RFM analysis
