@@ -693,11 +693,26 @@ class CustomerController extends Controller
                 
             $perPage = $request->get('per_page', 20);
 
+            // Debug logging
+            \Log::info('[CustomerController] Orders query debug:', [
+                'customer_id' => $customer->id,
+                'customer_uuid' => $customer->uuid,
+                'tenant_id' => $tenant->id,
+                'per_page' => $perPage
+            ]);
+
             $orders = Order::with(['vendor', 'tenant'])
                 ->where('tenant_id', $tenant->id)
                 ->where('customer_id', $customer->id)
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
+
+            \Log::info('[CustomerController] Orders query result:', [
+                'orders_count' => $orders->count(),
+                'total_orders' => $orders->total(),
+                'current_page' => $orders->currentPage(),
+                'per_page' => $orders->perPage()
+            ]);
 
             return OrderResource::collection($orders)
                 ->additional([
@@ -714,9 +729,58 @@ class CustomerController extends Controller
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Customer tidak ditemukan'], 404);
         } catch (\Exception $e) {
+            \Log::error('[CustomerController] Orders error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'message' => 'Gagal mengambil pesanan customer',
                 'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function ordersDebug(Request $request, string $customerId): JsonResponse
+    {
+        try {
+            $tenant = $this->resolveTenant($request);
+            $isUuid = is_string($customerId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $customerId);
+            
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $customerId)
+                ->firstOrFail();
+                
+            $orders = Order::where('tenant_id', $tenant->id)
+                ->where('customer_id', $customer->id)
+                ->get(['id', 'order_number', 'total_amount', 'items', 'created_at']);
+
+            $debug = [
+                'customer' => [
+                    'id' => $customer->id,
+                    'uuid' => $customer->uuid,
+                    'name' => $customer->name,
+                    'tenant_id' => $customer->tenant_id,
+                ],
+                'tenant' => [
+                    'id' => $tenant->id,
+                    'name' => $tenant->name ?? 'Unknown',
+                ],
+                'orders_raw' => $orders->toArray(),
+                'orders_count' => $orders->count(),
+                'query_info' => [
+                    'tenant_id' => $tenant->id,
+                    'customer_id' => $customer->id,
+                    'is_uuid' => $isUuid,
+                    'customer_param' => $customerId,
+                ]
+            ];
+
+            return response()->json($debug, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }

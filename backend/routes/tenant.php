@@ -79,6 +79,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::put('/{customer}', [CustomerController::class, 'update'])->name('tenant.customers.update');
             Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('tenant.customers.destroy');
             Route::get('/{customer}/orders', [CustomerController::class, 'orders'])->name('tenant.customers.orders');
+            Route::get('/{customer}/orders/debug', [CustomerController::class, 'ordersDebug'])->name('tenant.customers.orders.debug');
             Route::get('/{customer}/segment', [CustomerController::class, 'getSegment'])->name('tenant.customers.segment');
             Route::get('/{customer}/payment-history', [CustomerController::class, 'paymentHistory'])->name('tenant.customers.payment_history');
             
