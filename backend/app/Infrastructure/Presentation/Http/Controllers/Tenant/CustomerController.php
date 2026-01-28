@@ -21,7 +21,9 @@ class CustomerController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Customer::query();
+            // Ensure tenant scoping
+            $tenant = $this->resolveTenant($request);
+            $query = Customer::where('tenant_id', $tenant->id);
 
             if ($request->filled('search')) {
                 $query->where(function ($q) use ($request) {
@@ -39,18 +41,172 @@ class CustomerController extends Controller
                 $query->where('status', $request->status);
             }
 
+            if ($request->filled('city')) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('city', 'ILIKE', '%' . $request->city . '%')
+                      ->orWhere('phone', 'ILIKE', '%' . $request->city . '%');
+                });
+            }
+
             $sortBy = $request->get('sort_by', 'created_at');
             $sortOrder = $request->get('sort_order', 'desc');
             $perPage = $request->get('per_page', 20);
 
+            // Calculate filtered statistics BEFORE pagination
+            $filteredQuery = clone $query;
+            $filteredStats = [
+                'total' => $filteredQuery->count(),
+                'active' => (clone $filteredQuery)->where('status', 'active')->count(),
+                'inactive' => (clone $filteredQuery)->where('status', 'inactive')->count(),
+                'blocked' => (clone $filteredQuery)->where('status', 'blocked')->count(),
+                'individual' => (clone $filteredQuery)->where('customer_type', 'individual')->count(),
+                'business' => (clone $filteredQuery)->where('customer_type', 'business')->count(),
+            ];
+
+            // Calculate filtered revenue
+            // First try using total_spent field for consistency
+            $filteredRevenue = (clone $filteredQuery)->sum('total_spent') ?? 0;
+            
+            // If total_spent is 0 but we have customers with orders, calculate from orders
+            $customersWithOrdersFiltered = (clone $filteredQuery)->has('orders')->count();
+            if ($filteredRevenue == 0 && $customersWithOrdersFiltered > 0) {
+                $filteredRevenue = (clone $filteredQuery)
+                    ->whereHas('orders', function($orderQuery) use ($tenant) {
+                        $orderQuery->where('tenant_id', $tenant->id);
+                    })
+                    ->withSum(['orders' => function($orderQuery) use ($tenant) {
+                        $orderQuery->where('tenant_id', $tenant->id);
+                    }], 'total_amount')
+                    ->get()
+                    ->sum('orders_sum_total_amount') ?? 0;
+            }
+
+            $filteredStats['totalRevenue'] = $filteredRevenue;
+
+            // Debug logging
+            \Log::info('[CustomerController] Pagination params:', [
+                'tenant_id' => $tenant->id,
+                'per_page' => $perPage,
+                'page' => $request->get('page', 1),
+                'total_customers' => $query->count(),
+                'filtered_stats' => $filteredStats
+            ]);
+
             $customers = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
-            return CustomerResource::collection($customers)
-                ->response()
-                ->setStatusCode(200);
+            // Debug pagination response
+            \Log::info('[CustomerController] Pagination response:', [
+                'tenant_id' => $tenant->id,
+                'current_page' => $customers->currentPage(),
+                'last_page' => $customers->lastPage(),
+                'per_page' => $customers->perPage(),
+                'total' => $customers->total(),
+                'count' => $customers->count()
+            ]);
+
+            $response = CustomerResource::collection($customers)->additional([
+                'filtered_stats' => $filteredStats,
+                'message' => 'Customer list retrieved successfully'
+            ]);
+            
+            // Debug the actual response structure
+            \Log::info('[CustomerController] Response structure:', [
+                'tenant_id' => $tenant->id,
+                'response_keys' => array_keys($response->response()->getData(true)),
+                'meta_keys' => array_keys($response->response()->getData(true)['meta'] ?? []),
+                'links_keys' => array_keys($response->response()->getData(true)['links'] ?? []),
+                'filtered_stats' => $filteredStats
+            ]);
+
+            return $response->response()->setStatusCode(200);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal mengambil daftar customer',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function stats(Request $request): JsonResponse
+    {
+        try {
+            // CRITICAL: Ensure tenant scoping for security
+            $tenant = $this->resolveTenant($request);
+            
+            // Get overall tenant statistics (ONLY for current tenant)
+            $totalCustomers = Customer::where('tenant_id', $tenant->id)->count();
+            $activeCustomers = Customer::where('tenant_id', $tenant->id)->where('status', 'active')->count();
+            $inactiveCustomers = Customer::where('tenant_id', $tenant->id)->where('status', 'inactive')->count();
+            $blockedCustomers = Customer::where('tenant_id', $tenant->id)->where('status', 'blocked')->count();
+            $individualCustomers = Customer::where('tenant_id', $tenant->id)->where('customer_type', 'individual')->count();
+            $businessCustomers = Customer::where('tenant_id', $tenant->id)->where('customer_type', 'business')->count();
+            
+            // Calculate revenue from customers who have orders (ONLY for current tenant)
+            $customersWithOrders = Customer::where('tenant_id', $tenant->id)->has('orders')->count();
+            
+            // Use total_spent field from customers table for consistency
+            $totalRevenue = Customer::where('tenant_id', $tenant->id)->sum('total_spent') ?? 0;
+            
+            // If total_spent is 0 but we have orders, calculate from orders table
+            if ($totalRevenue == 0 && $customersWithOrders > 0) {
+                $totalRevenue = Customer::where('tenant_id', $tenant->id)
+                    ->whereHas('orders', function($query) use ($tenant) {
+                        $query->where('tenant_id', $tenant->id);
+                    })
+                    ->withSum(['orders' => function($query) use ($tenant) {
+                        $query->where('tenant_id', $tenant->id);
+                    }], 'total_amount')
+                    ->get()
+                    ->sum('orders_sum_total_amount') ?? 0;
+            }
+            
+            // Calculate average order value and customer metrics (ONLY for current tenant)
+            $totalOrders = Order::where('tenant_id', $tenant->id)->whereNotNull('customer_id')->count();
+            $averageOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
+            $averageRevenuePerCustomer = $customersWithOrders > 0 ? $totalRevenue / $customersWithOrders : 0;
+
+            \Log::info('[CustomerController] Stats calculated for tenant:', [
+                'tenant_id' => $tenant->id,
+                'tenant_name' => $tenant->name,
+                'totalCustomers' => $totalCustomers,
+                'activeCustomers' => $activeCustomers,
+                'businessCustomers' => $businessCustomers,
+                'customersWithOrders' => $customersWithOrders,
+                'totalRevenue' => $totalRevenue,
+                'totalOrders' => $totalOrders,
+                'averageOrderValue' => $averageOrderValue,
+                'averageRevenuePerCustomer' => $averageRevenuePerCustomer
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer statistics retrieved successfully',
+                'data' => [
+                    'total' => $totalCustomers,
+                    'active' => $activeCustomers,
+                    'inactive' => $inactiveCustomers,
+                    'blocked' => $blockedCustomers,
+                    'individual' => $individualCustomers,
+                    'business' => $businessCustomers,
+                    'totalRevenue' => $totalRevenue,
+                    'averageOrderValue' => $averageOrderValue,
+                    'customersWithOrders' => $customersWithOrders,
+                    'averageRevenuePerCustomer' => $averageRevenuePerCustomer,
+                ],
+                'tenant' => [
+                    'id' => $tenant->id,
+                    'name' => $tenant->name,
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('[CustomerController] Stats error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil statistik customer',
                 'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }

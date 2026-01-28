@@ -102,6 +102,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🏷️ Seeding CMS Categories...');
         $this->call(CategorySeeder::class);
         
+        // Synchronize Customer Statistics (Final Step)
+        $this->command->info('📊 Synchronizing Customer Statistics...');
+        $this->call(CustomerStatsSeeder::class);
+        
         $this->command->info('✅ Multi-Tenant Database Seeding Completed!');
         $this->command->info('');
         $this->command->info('📊 Final Summary:');

@@ -49,6 +49,9 @@ class AppServiceProvider extends ServiceProvider
     {
         Product::observe(ProductObserver::class);
         
+        // Register Order Observer for automatic customer stats updates
+        \App\Infrastructure\Persistence\Eloquent\Models\Order::observe(\App\Observers\OrderObserver::class);
+        
         // Register plugin service providers and namespaces after database is ready
         $this->registerPluginServiceProviders();
         $this->registerPluginNamespaces();

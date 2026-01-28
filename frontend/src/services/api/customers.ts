@@ -16,16 +16,56 @@ export interface Customer {
   segment?: string;
   lifetime_value?: number;
   total_orders?: number;
+  total_spent?: number;
   created_at: string;
   updated_at: string;
+  // Backend response structure from CustomerResource
+  customerType?: 'individual' | 'business';
+  address?: {
+    address?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    location?: string;
+  };
+  business?: {
+    taxId?: string;
+    businessLicense?: string;
+  };
+  stats?: {
+    totalOrders?: number;
+    totalSpent?: number;
+    lastOrderDate?: string;
+  };
+  notes?: string;
+  timestamps?: {
+    createdAt?: string;
+    updatedAt?: string;
+  };
 }
 
 export interface CustomerFilters extends ListRequestParams {
   status?: string;
   type?: string;
+  city?: string;
   segment?: string;
   date_from?: string;
   date_to?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface CustomerStats {
+  total: number;
+  active: number;
+  inactive: number;
+  blocked: number;
+  individual: number;
+  business: number;
+  totalRevenue: number;
+  averageOrderValue: number;
+  customersWithOrders: number;
+  averageRevenuePerCustomer: number;
 }
 
 export interface CreateCustomerRequest {
@@ -59,16 +99,37 @@ class CustomersService {
       if (filters.sort) params.append('sort', filters.sort);
       if (filters.order) params.append('order', filters.order);
       if (filters.status) params.append('status', filters.status);
-      if (filters.type) params.append('type', filters.type);
+      // Map 'type' to 'customer_type' for backend compatibility
+      if (filters.type) params.append('customer_type', filters.type);
+      if (filters.city) params.append('city', filters.city);
       if (filters.segment) params.append('segment', filters.segment);
       if (filters.date_from) params.append('date_from', filters.date_from);
       if (filters.date_to) params.append('date_to', filters.date_to);
     }
 
-    const response = await tenantApiClient.get<PaginatedResponse<Customer>>(
-      `/customers?${params.toString()}`
-    );
-    return response;
+    const url = `/customers?${params.toString()}`;
+    console.log('[CustomersService] Making API request:', {
+      url,
+      filters,
+      fullUrl: `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'}${url}`
+    });
+
+    try {
+      const response = await tenantApiClient.get<PaginatedResponse<Customer>>(url);
+      
+      console.log('[CustomersService] API Response received:', {
+        responseType: typeof response,
+        isArray: Array.isArray(response),
+        hasData: response && 'data' in response,
+        dataLength: response && 'data' in response ? (response as any).data?.length : 'no data',
+        response: response
+      });
+      
+      return response;
+    } catch (error) {
+      console.error('[CustomersService] API Error:', error);
+      throw error;
+    }
   }
 
   async getCustomerById(id: string): Promise<Customer> {
@@ -99,6 +160,18 @@ class CustomersService {
   async getCustomerSegment(id: string): Promise<any> {
     const response = await tenantApiClient.get<any>(`/customers/${id}/segment`);
     return response;
+  }
+
+  async getCustomerStats(): Promise<CustomerStats> {
+    console.log('[CustomersService] Fetching customer stats...');
+    try {
+      const response = await tenantApiClient.get<CustomerStats>('/customers/stats');
+      console.log('[CustomersService] Stats response:', response);
+      return response;
+    } catch (error) {
+      console.error('[CustomersService] Stats error:', error);
+      throw error;
+    }
   }
 }
 

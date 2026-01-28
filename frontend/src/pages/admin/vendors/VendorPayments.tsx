@@ -475,9 +475,13 @@ export default function VendorPayments() {
             <DataTable
               columns={columns}
               data={filteredPayments}
+              searchKey="vendorName"
               searchPlaceholder="Search payments..."
-              enableSorting
-              enableFiltering
+              onSearchChange={(value) => setSearchTerm(value)}
+              onPageSizeChange={(pageSize) => {
+                // Handle page size change - could integrate with API pagination here
+                console.log('Page size changed to:', pageSize);
+              }}
             />
           </CardContent>
         </Card>

@@ -55,4 +55,6 @@ export interface CustomerFilters {
   dateTo?: string;
   limit?: number;
   offset?: number;
+  page?: number;
+  per_page?: number;
 }

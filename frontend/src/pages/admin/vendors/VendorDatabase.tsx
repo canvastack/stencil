@@ -61,7 +61,7 @@ import { announceToScreenReader } from '@/lib/utils/accessibility';
 import { useVendors } from '@/hooks/useVendors';
 import { vendorsService } from '@/services/api/vendors';
 import { ColumnDef } from '@tanstack/react-table';
-import type { Vendor } from '@/types/vendor';
+import type { Vendor, VendorFilters } from '@/types/vendor/index';
 import { VendorListSkeleton } from '@/components/vendor/VendorListSkeleton';
 import { useDebounce } from '@/hooks/useDebounce';
 import { VendorFormDialog } from '@/components/vendor/VendorFormDialog';
@@ -71,8 +71,16 @@ import VendorComparison from '@/components/vendor/VendorComparison';
 
 
 function VendorDatabase() {
+  const [filters, setFilters] = useState<VendorFilters>({
+    page: 1,
+    per_page: 20,
+    search: '',
+    status: undefined,
+  });
+
   const {
     vendors,
+    pagination,
     isLoading,
     isSaving,
     error,
@@ -81,7 +89,6 @@ function VendorDatabase() {
     updateVendor,
     deleteVendor,
   } = useVendors();
-  
 
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -102,32 +109,36 @@ function VendorDatabase() {
   const [isComparisonMode, setIsComparisonMode] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
 
-  const filteredVendors = useMemo(() => {
-    let filtered = [...vendors];
+  // Handle filter changes and fetch data from API
+  const handleFilterChange = useCallback((key: keyof VendorFilters, value: any) => {
+    setFilters(prev => {
+      const newFilters = { ...prev, [key]: value };
+      // Reset to page 1 when filters change (except for page changes)
+      if (key !== 'page') {
+        newFilters.page = 1;
+      }
+      return newFilters;
+    });
+  }, []);
 
-    if (debouncedSearchTerm) {
-      filtered = filtered.filter(vendor => 
-        vendor.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        vendor.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        (vendor.company && vendor.company.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
-      );
-    }
+  // Fetch vendors when filters change
+  useEffect(() => {
+    fetchVendors(filters);
+  }, [filters, fetchVendors]);
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(vendor => vendor.status === statusFilter);
-    }
+  // Update search filter when debounced search term changes
+  useEffect(() => {
+    handleFilterChange('search', debouncedSearchTerm);
+  }, [debouncedSearchTerm, handleFilterChange]);
 
-    if (ratingFilter !== 'all') {
-      const rating = parseFloat(ratingFilter);
-      filtered = filtered.filter(vendor => (vendor.rating || 0) >= rating);
-    }
+  // Update status filter
+  useEffect(() => {
+    const status = statusFilter === 'all' ? undefined : statusFilter as any;
+    handleFilterChange('status', status);
+  }, [statusFilter, handleFilterChange]);
 
-    if (companySizeFilter !== 'all') {
-      filtered = filtered.filter(vendor => vendor.company_size === companySizeFilter);
-    }
-
-    return filtered;
-  }, [vendors, debouncedSearchTerm, statusFilter, ratingFilter, companySizeFilter]);
+  // Remove the old filteredVendors logic since we're using API filtering
+  // const filteredVendors = useMemo(() => { ... }, [vendors, debouncedSearchTerm, statusFilter, ratingFilter, companySizeFilter]);
 
   const getStatusVariant = useCallback((status: string) => {
     switch (status) {
@@ -179,10 +190,10 @@ function VendorDatabase() {
   ), []);
 
   const handleRefresh = useCallback(() => {
-    fetchVendors();
+    fetchVendors(filters);
     toast.success('Vendor data refreshed');
     announceToScreenReader('Vendor data refreshed');
-  }, [fetchVendors]);
+  }, [fetchVendors, filters]);
 
   const handleDelete = useCallback(async (vendorId: string) => {
     const vendor = vendors.find(v => v.id === vendorId);
@@ -228,7 +239,7 @@ function VendorDatabase() {
 
   const handleExportToCSV = useCallback(() => {
     try {
-      const csvData = filteredVendors.map(vendor => ({
+      const csvData = vendors.map(vendor => ({
         Name: vendor.name,
         Code: vendor.code,
         Company: vendor.company,
@@ -263,19 +274,19 @@ function VendorDatabase() {
       link.click();
       document.body.removeChild(link);
       
-      toast.success(`Exported ${filteredVendors.length} vendors to CSV`);
-      announceToScreenReader(`Exported ${filteredVendors.length} vendors to CSV successfully`);
+      toast.success(`Exported ${vendors.length} vendors to CSV`);
+      announceToScreenReader(`Exported ${vendors.length} vendors to CSV successfully`);
     } catch (error) {
       toast.error('Failed to export vendor data to CSV');
       announceToScreenReader('Failed to export vendor data. Please try again.');
     }
-  }, [filteredVendors]);
+  }, [vendors]);
 
   const handleExportToExcel = useCallback(async () => {
     try {
       const XLSX = await import('xlsx');
       
-      const excelData = filteredVendors.map(vendor => ({
+      const excelData = vendors.map(vendor => ({
         'Vendor Name': vendor.name,
         'Vendor Code': vendor.code,
         'Company': vendor.company || '',
@@ -325,14 +336,14 @@ function VendorDatabase() {
       
       XLSX.writeFile(workbook, `vendors-export-${new Date().toISOString().split('T')[0]}.xlsx`);
       
-      toast.success(`Exported ${filteredVendors.length} vendors to Excel`);
-      announceToScreenReader(`Exported ${filteredVendors.length} vendors to Excel successfully`);
+      toast.success(`Exported ${vendors.length} vendors to Excel`);
+      announceToScreenReader(`Exported ${vendors.length} vendors to Excel successfully`);
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export vendor data to Excel');
       announceToScreenReader('Failed to export vendor data. Please try again.');
     }
-  }, [filteredVendors]);
+  }, [vendors]);
 
   const handleImportVendors = useCallback(() => {
     const input = document.createElement('input');
@@ -384,9 +395,9 @@ function VendorDatabase() {
   }, []);
 
   const selectAllVendors = useCallback(() => {
-    setSelectedVendorIds(new Set(filteredVendors.map((v) => v.id)));
-    announceToScreenReader(`${filteredVendors.length} vendors selected`);
-  }, [filteredVendors]);
+    setSelectedVendorIds(new Set(vendors.map((v) => v.id)));
+    announceToScreenReader(`${vendors.length} vendors selected`);
+  }, [vendors]);
 
   const deselectAllVendors = useCallback(() => {
     setSelectedVendorIds(new Set());
@@ -426,7 +437,7 @@ function VendorDatabase() {
           break;
         }
         case 'export': {
-          const selectedVendors = filteredVendors.filter(v => vendorIds.includes(v.id));
+          const selectedVendors = vendors.filter(v => vendorIds.includes(v.id));
           const csvData = selectedVendors.map(vendor => ({
             Name: vendor.name,
             Code: vendor.code,
@@ -470,17 +481,18 @@ function VendorDatabase() {
       toast.error('Failed to perform bulk action');
       announceToScreenReader('Failed to perform bulk action. Please try again.');
     }
-  }, [bulkAction, selectedVendorIds, filteredVendors, fetchVendors, deselectAllVendors]);
+  }, [bulkAction, selectedVendorIds, vendors, fetchVendors, deselectAllVendors]);
 
   useEffect(() => {
-    fetchVendors();
-  }, [fetchVendors]);
+    // Initial fetch with default filters
+    fetchVendors(filters);
+  }, []);
 
   useEffect(() => {
     if (debouncedSearchTerm) {
-      announceToScreenReader(`${filteredVendors.length} vendor${filteredVendors.length !== 1 ? 's' : ''} found`);
+      announceToScreenReader(`${vendors.length} vendor${vendors.length !== 1 ? 's' : ''} found`);
     }
-  }, [filteredVendors.length, debouncedSearchTerm]);
+  }, [vendors.length, debouncedSearchTerm]);
 
   const shortcuts: KeyboardShortcut[] = useMemo(() => [
     {
@@ -823,9 +835,9 @@ function VendorDatabase() {
                   variant="outline"
                   size="sm"
                   onClick={selectAllVendors}
-                  aria-label={`Select all ${filteredVendors.length} vendors`}
+                  aria-label={`Select all ${vendors.length} vendors`}
                 >
-                  Select All ({filteredVendors.length})
+                  Select All ({vendors.length})
                 </Button>
                 <Button
                   variant="outline"
@@ -892,9 +904,9 @@ function VendorDatabase() {
                   variant="outline"
                   size="sm"
                   onClick={selectAllVendors}
-                  aria-label={`Select all ${filteredVendors.length} vendors for comparison`}
+                  aria-label={`Select all ${vendors.length} vendors for comparison`}
                 >
-                  Select All ({filteredVendors.length})
+                  Select All ({vendors.length})
                 </Button>
                 <Button
                   variant="outline"
@@ -972,7 +984,7 @@ function VendorDatabase() {
                   aria-atomic="true"
                   className="sr-only"
                 >
-                  {debouncedSearchTerm ? `${filteredVendors.length} vendors found` : ''}
+                  {debouncedSearchTerm ? `${vendors.length} vendors found` : ''}
                 </div>
               </div>
 
@@ -1057,7 +1069,7 @@ function VendorDatabase() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Vendors</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`${filteredVendors.length} total vendors`}>{filteredVendors.length}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`${vendors.length} total vendors`}>{vendors.length}</p>
                 </div>
                 <Building className="w-8 h-8 text-blue-600 dark:text-blue-400" aria-hidden="true" />
               </div>
@@ -1069,8 +1081,8 @@ function VendorDatabase() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Vendors</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`${filteredVendors.filter(v => v.status === 'active').length} active vendors`}>
-                    {filteredVendors.filter(v => v.status === 'active').length}
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`${vendors.filter(v => v.status === 'active').length} active vendors`}>
+                    {vendors.filter(v => v.status === 'active').length}
                   </p>
                 </div>
                 <Star className="w-8 h-8 text-green-600 dark:text-green-400" aria-hidden="true" />
@@ -1083,8 +1095,8 @@ function VendorDatabase() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`${filteredVendors.reduce((sum, v) => sum + (v.total_orders || 0), 0)} total orders`}>
-                    {filteredVendors.reduce((sum, v) => sum + (v.total_orders || 0), 0)}
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`${vendors.reduce((sum, v) => sum + (v.total_orders || 0), 0)} total orders`}>
+                    {vendors.reduce((sum, v) => sum + (v.total_orders || 0), 0)}
                   </p>
                 </div>
                 <Package className="w-8 h-8 text-purple-600 dark:text-purple-400" aria-hidden="true" />
@@ -1097,8 +1109,8 @@ function VendorDatabase() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Value</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`Total value ${formatCurrency(filteredVendors.reduce((sum, v) => sum + (v.total_value || 0), 0))}`}>
-                    {formatCurrency(filteredVendors.reduce((sum, v) => sum + (v.total_value || 0), 0))}
+                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100" aria-label={`Total value ${formatCurrency(vendors.reduce((sum, v) => sum + (v.total_value || 0), 0))}`}>
+                    {formatCurrency(vendors.reduce((sum, v) => sum + (v.total_value || 0), 0))}
                   </p>
                 </div>
                 <DollarSign className="w-8 h-8 text-orange-600 dark:text-orange-400" aria-hidden="true" />
@@ -1120,17 +1132,26 @@ function VendorDatabase() {
             <Card hover={false} className="p-6">
               <DataTable
                 columns={columns}
-                data={filteredVendors}
+                data={vendors}
                 searchKey="name"
                 searchPlaceholder="Search vendors..."
-                loading={false}
+                loading={isLoading}
                 datasetId="vendor-database"
+                onSearchChange={(value) => setSearchTerm(value)}
+                onPageSizeChange={(pageSize) => handleFilterChange('per_page', pageSize)}
+                externalPagination={{
+                  pageIndex: (pagination?.page || 1) - 1, // Convert to 0-based index
+                  pageSize: pagination?.per_page || 20,
+                  pageCount: pagination?.last_page || 1,
+                  total: pagination?.total || 0,
+                  onPageChange: (page) => handleFilterChange('page', page + 1), // Convert back to 1-based
+                }}
               />
             </Card>
           </div>
         )}
 
-        {filteredVendors.length === 0 && !isLoading && (
+        {vendors.length === 0 && !isLoading && (
           <Card hover={false} className="p-12">
             <div className="text-center space-y-4">
               <Building className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto" />

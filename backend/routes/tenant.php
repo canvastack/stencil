@@ -67,6 +67,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/', [CustomerController::class, 'store'])->name('tenant.customers.store');
             
             // Customer Actions (must come before /{customer})
+            Route::get('/stats', [CustomerController::class, 'stats'])->name('tenant.customers.stats');
             Route::get('/search', [CustomerController::class, 'search'])->name('tenant.customers.search');
             Route::get('/export', [CustomerController::class, 'export'])->name('tenant.customers.export');
             Route::get('/inactive', [CustomerController::class, 'inactive'])->name('tenant.customers.inactive');

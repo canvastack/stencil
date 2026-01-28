@@ -33,6 +33,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -67,6 +74,18 @@ interface DataTableProps<TData> {
   datasetId?: string;
   // Row click handler
   onRowClick?: (row: TData) => void;
+  // Search change handler for external API calls
+  onSearchChange?: (value: string) => void;
+  // Page size change handler for external API calls
+  onPageSizeChange?: (pageSize: number) => void;
+  // External pagination data for server-side pagination
+  externalPagination?: {
+    pageIndex: number;
+    pageSize: number;
+    pageCount: number;
+    total: number;
+    onPageChange?: (page: number) => void;
+  };
 }
 
 export function DataTable<TData>({
@@ -80,12 +99,41 @@ export function DataTable<TData>({
   loading = false,
   datasetId = 'datatable',
   onRowClick,
+  onSearchChange,
+  onPageSizeChange,
+  externalPagination,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  
+  // Debounced search ref
+  const debouncedSearchRef = React.useRef<NodeJS.Timeout | null>(null);
+  
+  // Enhanced search handler with warnings
+  const handleDebouncedSearch = React.useCallback((value: string) => {
+    if (debouncedSearchRef.current) {
+      clearTimeout(debouncedSearchRef.current);
+    }
+    debouncedSearchRef.current = setTimeout(() => {
+      if (onSearchChange) {
+        onSearchChange(value);
+      } else {
+        console.warn('[DataTable] Search functionality used but no onSearchChange handler provided. Search will only work locally. To enable API search, provide onSearchChange prop.');
+      }
+    }, 300); // 300ms debounce
+  }, [onSearchChange]);
+
+  // Enhanced page size change handler with warnings
+  const handleAutoPageSizeChange = React.useCallback((pageSize: number) => {
+    if (onPageSizeChange) {
+      onPageSizeChange(pageSize);
+    } else {
+      console.warn('[DataTable] Page size change functionality used but no onPageSizeChange handler provided. Pagination will only work locally. To enable API pagination, provide onPageSizeChange prop.');
+    }
+  }, [onPageSizeChange]);
   
   // Performance monitoring
   const performanceMonitor = useDatasetPerformanceMonitor(datasetId);
@@ -121,11 +169,23 @@ export function DataTable<TData>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    // Configure pagination based on external or internal
+    ...(externalPagination ? {
+      manualPagination: true,
+      pageCount: externalPagination.pageCount,
+    } : {}),
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      // Set pagination state from external data if available
+      ...(externalPagination ? {
+        pagination: {
+          pageIndex: externalPagination.pageIndex,
+          pageSize: externalPagination.pageSize,
+        }
+      } : {}),
     },
   });
 
@@ -343,27 +403,39 @@ export function DataTable<TData>({
           <div className={`flex items-center py-4 space-x-2 ${isFullscreen ? "" : "px-2"} flex-wrap`}> 
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Rows per page</p>
-            <select
-              value={table.getState().pagination.pageSize}
-              onChange={(e) => {
-                table.setPageSize(Number(e.target.value));
+            <Select
+              value={String(externalPagination ? externalPagination.pageSize : table.getState().pagination.pageSize)}
+              onValueChange={(value) => {
+                const newPageSize = Number(value);
+                if (!externalPagination) {
+                  table.setPageSize(newPageSize);
+                }
+                // Call handler (either provided or auto)
+                handleAutoPageSizeChange(newPageSize);
               }}
-              className="h-8 w-[70px] rounded border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 flex-shrink-0"
             >
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-[70px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={String(pageSize)}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {searchKey && (
             <Input
               placeholder={searchPlaceholder}
               value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
-              }
+              onChange={(event) => {
+                const value = event.target.value;
+                table.getColumn(searchKey)?.setFilterValue(value);
+                // Call external handler with debounce
+                handleDebouncedSearch(value);
+              }}
               className="flex-1 min-w-[150px] max-w-sm"
             />
           )}
@@ -622,35 +694,52 @@ export function DataTable<TData>({
             </div>
             <div className="flex items-center space-x-6 lg:space-x-8">
               <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                Page {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()}
+                Page {(externalPagination ? externalPagination.pageIndex : table.getState().pagination.pageIndex) + 1} of{" "}
+                {externalPagination ? externalPagination.pageCount : table.getPageCount()}
               </div>
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      onClick={() => table.previousPage()}
+                      onClick={() => {
+                        if (externalPagination && externalPagination.onPageChange) {
+                          externalPagination.onPageChange(externalPagination.pageIndex - 1);
+                        } else if (externalPagination) {
+                          console.warn('[DataTable] External pagination configured but no onPageChange handler provided. Page navigation will not work.');
+                        } else {
+                          table.previousPage();
+                        }
+                      }}
                       className={
-                        !table.getCanPreviousPage()
+                        (externalPagination ? externalPagination.pageIndex === 0 : !table.getCanPreviousPage())
                           ? "pointer-events-none opacity-50"
                           : "cursor-pointer"
                       }
                     />
                   </PaginationItem>
-                  {Array.from({ length: table.getPageCount() }, (_, i) => {
+                  {Array.from({ length: externalPagination ? externalPagination.pageCount : table.getPageCount() }, (_, i) => {
                     const pageNumber = i + 1;
-                    const isCurrentPage = table.getState().pagination.pageIndex === i;
+                    const currentPageIndex = externalPagination ? externalPagination.pageIndex : table.getState().pagination.pageIndex;
+                    const isCurrentPage = currentPageIndex === i;
 
                     if (
                       pageNumber === 1 ||
-                      pageNumber === table.getPageCount() ||
-                      (pageNumber >= table.getState().pagination.pageIndex - 1 &&
-                        pageNumber <= table.getState().pagination.pageIndex + 1)
+                      pageNumber === (externalPagination ? externalPagination.pageCount : table.getPageCount()) ||
+                      (pageNumber >= currentPageIndex - 1 &&
+                        pageNumber <= currentPageIndex + 1)
                     ) {
                       return (
                         <PaginationItem key={i}>
                           <PaginationLink
-                            onClick={() => table.setPageIndex(i)}
+                            onClick={() => {
+                              if (externalPagination && externalPagination.onPageChange) {
+                                externalPagination.onPageChange(i);
+                              } else if (externalPagination) {
+                                console.warn('[DataTable] External pagination configured but no onPageChange handler provided. Page navigation will not work.');
+                              } else {
+                                table.setPageIndex(i);
+                              }
+                            }}
                             isActive={isCurrentPage}
                             className="cursor-pointer"
                           >
@@ -659,8 +748,8 @@ export function DataTable<TData>({
                         </PaginationItem>
                       );
                     } else if (
-                      pageNumber === table.getState().pagination.pageIndex - 2 ||
-                      pageNumber === table.getState().pagination.pageIndex + 2
+                      pageNumber === currentPageIndex - 2 ||
+                      pageNumber === currentPageIndex + 2
                     ) {
                       return (
                         <PaginationItem key={i}>
@@ -672,9 +761,17 @@ export function DataTable<TData>({
                   })}
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => table.nextPage()}
+                      onClick={() => {
+                        if (externalPagination && externalPagination.onPageChange) {
+                          externalPagination.onPageChange(externalPagination.pageIndex + 1);
+                        } else if (externalPagination) {
+                          console.warn('[DataTable] External pagination configured but no onPageChange handler provided. Page navigation will not work.');
+                        } else {
+                          table.nextPage();
+                        }
+                      }}
                       className={
-                        !table.getCanNextPage()
+                        (externalPagination ? externalPagination.pageIndex >= externalPagination.pageCount - 1 : !table.getCanNextPage())
                           ? "pointer-events-none opacity-50"
                           : "cursor-pointer"
                       }
