@@ -693,7 +693,7 @@ class CustomerController extends Controller
                 
             $perPage = $request->get('per_page', 20);
 
-            $orders = Order::with(['items', 'vendor', 'tenant'])
+            $orders = Order::with(['vendor', 'tenant'])
                 ->where('tenant_id', $tenant->id)
                 ->where('customer_id', $customer->id)
                 ->orderBy('created_at', 'desc')

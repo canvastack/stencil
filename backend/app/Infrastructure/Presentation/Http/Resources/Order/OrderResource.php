@@ -31,6 +31,11 @@ class OrderResource extends JsonResource
             
             // Items (ensure it's always an array)
             'items' => is_array($this->items) ? $this->items : (is_string($this->items) ? json_decode($this->items, true) : []),
+            'items_count' => is_array($this->items) ? count($this->items) : (is_string($this->items) ? count(json_decode($this->items, true) ?? []) : 0),
+            
+            // Frontend compatibility fields
+            'total' => $this->total_amount ?? 0,
+            'created_at' => $this->created_at?->toIso8601String(),
             
             // Financial info (flattened)
             'subtotal' => $this->subtotal ?? 0,
