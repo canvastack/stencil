@@ -91,20 +91,21 @@ class CompleteOrderLifecycleTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
         $this->assertEquals('pending', $order->getStatus()->value);
 
-        Order::where('uuid', $order->getId())->update(['status' => 'vendor_sourcing']);
+        Order::where('uuid', $order->getId()->getValue())->update(['status' => 'vendor_sourcing']);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor->uuid,
+            quotedPrice: 9500000, // 95000.00 in cents
+            leadTimeDays: 5
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand);
         $this->assertEquals('vendor_negotiation', $order->getStatus()->value);
 
         $negotiateCommand = new NegotiateWithVendorCommand(
-            orderId: $order->getId(),
             tenantId: $this->tenant->uuid,
+            orderId: $order->getId()->getValue(),
             vendorId: $this->vendor->uuid,
             quotedPrice: 95000.00,
             leadTimeInDays: 5
@@ -113,10 +114,10 @@ class CompleteOrderLifecycleTest extends TestCase
         $order = $this->negotiateWithVendorUseCase->execute($negotiateCommand);
         $this->assertEquals('vendor_negotiation', $order->getStatus()->value);
 
-        Order::where('uuid', $order->getId())->update(['status' => 'customer_quote']);
+        Order::where('uuid', $order->getId()->getValue())->update(['status' => 'customer_quote']);
 
         $approvalCommand = new HandleCustomerApprovalCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
             approved: true
         );
@@ -125,7 +126,7 @@ class CompleteOrderLifecycleTest extends TestCase
         $this->assertEquals('awaiting_payment', $order->getStatus()->value);
 
         $paymentCommand = new VerifyCustomerPaymentCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
             paidAmount: 100000.00,
             paymentMethod: 'bank_transfer'
@@ -134,12 +135,12 @@ class CompleteOrderLifecycleTest extends TestCase
         $order = $this->verifyCustomerPaymentUseCase->execute($paymentCommand);
         $this->assertEquals('full_payment', $order->getStatus()->value);
 
-        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::IN_PRODUCTION);
+        $order->changeStatus(\App\Domain\Order\Enums\OrderStatus::IN_PRODUCTION);
         $orderRepository = app(\App\Domain\Order\Repositories\OrderRepositoryInterface::class);
         $order = $orderRepository->save($order);
 
         $productionCommand = new UpdateProductionProgressCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
             progressPercentage: 100,
             status: 'completed'
@@ -148,12 +149,12 @@ class CompleteOrderLifecycleTest extends TestCase
         $order = $this->updateProductionProgressUseCase->execute($productionCommand);
         $this->assertEquals('quality_control', $order->getStatus()->value);
 
-        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::SHIPPING);
+        $order->changeStatus(\App\Domain\Order\Enums\OrderStatus::SHIPPING);
         $orderRepository = app(\App\Domain\Order\Repositories\OrderRepositoryInterface::class);
         $order = $orderRepository->save($order);
 
         $shipCommand = new ShipOrderCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
             trackingNumber: 'TRK-2025-001',
             shippingProvider: 'DHL'
@@ -163,14 +164,14 @@ class CompleteOrderLifecycleTest extends TestCase
         $this->assertEquals('shipping', $order->getStatus()->value);
 
         $completeCommand = new CompleteOrderCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid
         );
 
         $order = $this->completeOrderUseCase->execute($completeCommand);
         $this->assertEquals('completed', $order->getStatus()->value);
 
-        $finalOrder = Order::where('uuid', $order->getId())->first();
+        $finalOrder = Order::where('uuid', $order->getId()->getValue())->first();
         $this->assertNotNull($finalOrder->completed_at);
         $this->assertEquals('completed', $finalOrder->status);
     }
@@ -195,7 +196,7 @@ class CompleteOrderLifecycleTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
 
         $cancelCommand = new CancelOrderCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
             cancellationReason: 'Customer requested cancellation'
         );
@@ -223,19 +224,20 @@ class CompleteOrderLifecycleTest extends TestCase
 
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
 
-        Order::where('uuid', $order->getId())->update(['status' => 'vendor_sourcing']);
+        Order::where('uuid', $order->getId()->getValue())->update(['status' => 'vendor_sourcing']);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor->uuid,
+            quotedPrice: 9500000, // 95000.00 in cents
+            leadTimeDays: 5
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand);
 
         $negotiateCommand = new NegotiateWithVendorCommand(
-            orderId: $order->getId(),
             tenantId: $this->tenant->uuid,
+            orderId: $order->getId()->getValue(),
             vendorId: $this->vendor->uuid,
             quotedPrice: 95000.00,
             leadTimeInDays: 5
@@ -243,10 +245,10 @@ class CompleteOrderLifecycleTest extends TestCase
 
         $order = $this->negotiateWithVendorUseCase->execute($negotiateCommand);
 
-        Order::where('uuid', $order->getId())->update(['status' => 'customer_quote']);
+        Order::where('uuid', $order->getId()->getValue())->update(['status' => 'customer_quote']);
 
         $approvalCommand = new HandleCustomerApprovalCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
             approved: true
         );
@@ -254,7 +256,7 @@ class CompleteOrderLifecycleTest extends TestCase
         $order = $this->handleCustomerApprovalUseCase->execute($approvalCommand);
 
         $cancelCommand = new CancelOrderCommand(
-            orderId: $order->getId(),
+            orderId: $order->getId()->getValue(),
             tenantId: $this->tenant->uuid,
             cancellationReason: 'Production not started yet'
         );

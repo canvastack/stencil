@@ -7,8 +7,12 @@ use App\Application\Order\Handlers\Commands\CreatePurchaseOrderHandler;
 use App\Application\Order\UseCases\CreatePurchaseOrderUseCase;
 use App\Application\Order\Commands\CreatePurchaseOrderCommand;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Customer\Repositories\CustomerRepositoryInterface;
+use App\Domain\Order\Entities\PurchaseOrder;
+use App\Domain\Customer\Entities\Customer;
 use App\Domain\Order\Enums\OrderStatus;
+use App\Domain\Shared\ValueObjects\UuidValueObject;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Mockery;
 use Illuminate\Support\Facades\Event;
 
@@ -17,6 +21,8 @@ class CreatePurchaseOrderHandlerTest extends TestCase
     private CreatePurchaseOrderHandler $handler;
     private CreatePurchaseOrderUseCase $useCase;
     private OrderRepositoryInterface $orderRepository;
+    private CustomerRepositoryInterface $customerRepository;
+    private EventDispatcher $eventDispatcher;
 
     protected function setUp(): void
     {
@@ -24,7 +30,14 @@ class CreatePurchaseOrderHandlerTest extends TestCase
         Event::fake();
         
         $this->orderRepository = Mockery::mock(OrderRepositoryInterface::class);
-        $this->useCase = new CreatePurchaseOrderUseCase($this->orderRepository);
+        $this->customerRepository = Mockery::mock(CustomerRepositoryInterface::class);
+        $this->eventDispatcher = Mockery::mock(EventDispatcher::class);
+        
+        $this->useCase = new CreatePurchaseOrderUseCase(
+            $this->orderRepository,
+            $this->customerRepository,
+            $this->eventDispatcher
+        );
         $this->handler = new CreatePurchaseOrderHandler($this->useCase);
     }
 
@@ -37,19 +50,47 @@ class CreatePurchaseOrderHandlerTest extends TestCase
     /** @test */
     public function it_handles_create_purchase_order_command(): void
     {
+        $tenantId = UuidValueObject::generate();
+        $customerId = UuidValueObject::generate();
+        
         $command = new CreatePurchaseOrderCommand(
-            tenantId: '550e8400-e29b-41d4-a716-446655440000',
-            customerId: '660e8400-e29b-41d4-a716-446655440001',
-            totalAmount: 100000.00,
+            tenantId: $tenantId->getValue(),
+            customerId: $customerId->getValue(),
+            totalAmount: 100000.0,
             currency: 'IDR',
             items: [
                 [
-                    'product_id' => '770e8400-e29b-41d4-a716-446655440002',
+                    'product_id' => 'prod-123',
                     'quantity' => 2,
-                    'unit_price' => 50000.00,
+                    'price' => 50000
                 ]
-            ]
+            ],
+            specifications: [],
+            deliveryAddress: json_encode([
+                'street' => 'Jl. Sudirman No. 123',
+                'city' => 'Jakarta Pusat',
+                'state' => 'DKI Jakarta',
+                'postal_code' => '10220',
+                'country' => 'ID'
+            ]),
+            requiredDeliveryDate: (new \DateTime('+30 days'))->format('Y-m-d H:i:s')
         );
+
+        // Mock customer
+        $customer = Customer::create(
+            tenantId: $tenantId,
+            name: 'John Doe',
+            email: 'john@example.com',
+            phone: '+62812345678'
+        );
+
+        $this->customerRepository
+            ->shouldReceive('findById')
+            ->once()
+            ->with(Mockery::on(function ($id) use ($customerId) {
+                return $id->equals($customerId);
+            }))
+            ->andReturn($customer);
 
         $this->orderRepository
             ->shouldReceive('existsByOrderNumber')
@@ -59,33 +100,66 @@ class CreatePurchaseOrderHandlerTest extends TestCase
         $this->orderRepository
             ->shouldReceive('save')
             ->once()
-            ->andReturnUsing(function (Order $order) {
+            ->andReturnUsing(function (PurchaseOrder $order) {
                 return $order;
             });
 
+        $this->eventDispatcher
+            ->shouldReceive('dispatch')
+            ->once();
+
         $result = $this->handler->handle($command);
 
-        $this->assertInstanceOf(Order::class, $result);
+        $this->assertInstanceOf(PurchaseOrder::class, $result);
         $this->assertEquals(OrderStatus::PENDING, $result->getStatus());
-        $this->assertEquals(100000.00, $result->getTotal()->getAmount());
+        $this->assertEquals($tenantId, $result->getTenantId());
+        $this->assertEquals($customerId, $result->getCustomerId());
     }
 
     /** @test */
     public function it_returns_order_from_use_case(): void
     {
+        $tenantId = UuidValueObject::generate();
+        $customerId = UuidValueObject::generate();
+        
         $command = new CreatePurchaseOrderCommand(
-            tenantId: '550e8400-e29b-41d4-a716-446655440000',
-            customerId: '660e8400-e29b-41d4-a716-446655440001',
-            totalAmount: 50000.00,
-            currency: 'USD',
+            tenantId: $tenantId->getValue(),
+            customerId: $customerId->getValue(),
+            totalAmount: 75000.0,
+            currency: 'IDR',
             items: [
                 [
-                    'product_id' => '770e8400-e29b-41d4-a716-446655440002',
+                    'product_id' => 'prod-456',
                     'quantity' => 1,
-                    'unit_price' => 50000.00,
+                    'price' => 75000
                 ]
-            ]
+            ],
+            specifications: [],
+            deliveryAddress: json_encode([
+                'street' => 'Jl. Thamrin No. 456',
+                'city' => 'Jakarta Selatan',
+                'state' => 'DKI Jakarta',
+                'postal_code' => '12190',
+                'country' => 'ID'
+            ]),
+            requiredDeliveryDate: (new \DateTime('+45 days'))->format('Y-m-d H:i:s')
         );
+
+        // Mock customer
+        $customer = Customer::create(
+            tenantId: $tenantId,
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+            phone: '+62812345679'
+        );
+
+        $this->customerRepository
+            ->shouldReceive('findById')
+            ->once()
+            ->with(Mockery::on(function ($id) use ($customerId) {
+                return $id->equals($customerId);
+            }))
+            ->andReturn($customer);
 
         $this->orderRepository
             ->shouldReceive('existsByOrderNumber')
@@ -95,12 +169,17 @@ class CreatePurchaseOrderHandlerTest extends TestCase
         $this->orderRepository
             ->shouldReceive('save')
             ->once()
-            ->andReturnUsing(function (Order $order) {
+            ->andReturnUsing(function (PurchaseOrder $order) {
                 return $order;
             });
 
+        $this->eventDispatcher
+            ->shouldReceive('dispatch')
+            ->once();
+
         $result = $this->handler->handle($command);
 
-        $this->assertEquals('USD', $result->getTotal()->getCurrency());
+        $this->assertEquals($tenantId, $result->getTenantId());
+        $this->assertEquals($customerId, $result->getCustomerId());
     }
 }

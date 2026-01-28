@@ -144,6 +144,7 @@ class OrderApiTest extends TestCase
                 'postal_code' => '12345',
             ],
             'notes' => 'Test order',
+            'current_tenant' => $this->tenant,
         ];
 
         $response = $this->tenantPost('/api/orders', $orderData);

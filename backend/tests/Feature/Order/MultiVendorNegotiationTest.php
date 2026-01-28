@@ -95,14 +95,15 @@ class MultiVendorNegotiationTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
         
         // Transition order to VENDOR_SOURCING status first
-        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
+        $order->changeStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
         $orderRepository = app(\App\Domain\Order\Repositories\OrderRepositoryInterface::class);
         $orderRepository->save($order);
 
         $assignCommand1 = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor1->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor1->uuid,
+            quotedPrice: 10000000,
+            leadTimeDays: 7
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand1);
@@ -120,9 +121,10 @@ class MultiVendorNegotiationTest extends TestCase
         $this->assertEquals('vendor_negotiation', $order->getStatus()->value);
 
         $assignCommand2 = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor2->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor2->uuid,
+            quotedPrice: 9500000,
+            leadTimeDays: 5
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand2);
@@ -139,9 +141,10 @@ class MultiVendorNegotiationTest extends TestCase
         $order = $this->negotiateWithVendorUseCase->execute($negotiateCommand2);
 
         $assignCommand3 = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor3->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor3->uuid,
+            quotedPrice: 9200000,
+            leadTimeDays: 6
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand3);
@@ -286,14 +289,15 @@ class MultiVendorNegotiationTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
         
         // Transition order to VENDOR_SOURCING status first
-        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
+        $order->changeStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
         $orderRepository = app(\App\Domain\Order\Repositories\OrderRepositoryInterface::class);
         $orderRepository->save($order);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor1->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor1->uuid,
+            quotedPrice: 10000000,
+            leadTimeDays: 5
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand);

@@ -14,10 +14,12 @@ use App\Application\Order\Commands\NegotiateWithVendorCommand;
 use App\Application\Order\Commands\CompleteOrderCommand;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Vendor\Repositories\VendorRepositoryInterface;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Vendor\Entities\Vendor;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Mockery;
 use Illuminate\Support\Facades\Event;
 
@@ -44,23 +46,29 @@ class CommandHandlersTest extends TestCase
     /** @test */
     public function assign_vendor_handler_delegates_to_use_case(): void
     {
+        $eventDispatcher = Mockery::mock(\Illuminate\Contracts\Events\Dispatcher::class);
+        $eventDispatcher->shouldReceive('dispatch')->once();
+        
         $useCase = new AssignVendorUseCase(
             $this->orderRepository,
-            $this->vendorRepository
+            $this->vendorRepository,
+            $eventDispatcher
         );
         $handler = new AssignVendorHandler($useCase);
 
         $command = new AssignVendorCommand(
-            tenantId: '550e8400-e29b-41d4-a716-446655440000',
-            orderId: '660e8400-e29b-41d4-a716-446655440001',
-            vendorId: '770e8400-e29b-41d4-a716-446655440002',
+            orderUuid: '660e8400-e29b-41d4-a716-446655440001',
+            vendorUuid: '770e8400-e29b-41d4-a716-446655440002',
+            quotedPrice: 10000000,
+            leadTimeDays: 14
         );
 
-        $mockOrder = Mockery::mock(Order::class);
-        $mockOrder->shouldReceive('getTenantId->equals')->andReturn(true);
+        $mockOrder = Mockery::mock(PurchaseOrder::class);
+        $mockOrderTenantId = new UuidValueObject('550e8400-e29b-41d4-a716-446655440000');
+        $mockOrder->shouldReceive('getTenantId')->andReturn($mockOrderTenantId);
         $mockOrder->shouldReceive('getStatus')->andReturn(OrderStatus::VENDOR_SOURCING);
-        $mockOrder->shouldReceive('setVendorId')->once()->andReturn($mockOrder);
-        $mockOrder->shouldReceive('updateStatus')->andReturn($mockOrder);
+        $mockOrder->shouldReceive('canAssignVendor')->andReturn(true);
+        $mockOrder->shouldReceive('assignVendor')->once();
 
         $this->orderRepository
             ->shouldReceive('findById')
@@ -68,8 +76,12 @@ class CommandHandlersTest extends TestCase
             ->andReturn($mockOrder);
 
         $mockVendor = Mockery::mock(Vendor::class);
-        $mockVendor->shouldReceive('getTenantId')->andReturn(new UuidValueObject('550e8400-e29b-41d4-a716-446655440000'));
-        $mockVendor->shouldReceive('isAvailable')->andReturn(true);
+        $mockVendorTenantId = new UuidValueObject('550e8400-e29b-41d4-a716-446655440000');
+        $mockVendor->shouldReceive('getTenantId')->andReturn($mockVendorTenantId);
+        $mockVendor->shouldReceive('isActive')->andReturn(true);
+        $mockVendor->shouldReceive('getName')->andReturn('Test Vendor');
+        $mockVendor->shouldReceive('getRating')->andReturn(4.5);
+        $mockVendor->shouldReceive('getSpecializations')->andReturn(['etching']);
 
         $this->vendorRepository
             ->shouldReceive('findById')
@@ -83,7 +95,7 @@ class CommandHandlersTest extends TestCase
 
         $result = $handler->handle($command);
 
-        $this->assertInstanceOf(Order::class, $result);
+        $this->assertInstanceOf(PurchaseOrder::class, $result);
     }
 
     /** @test */
@@ -103,10 +115,11 @@ class CommandHandlersTest extends TestCase
             leadTimeInDays: 5,
         );
 
-        $mockOrder = Mockery::mock(Order::class);
-        $mockOrder->shouldReceive('getTenantId->equals')->andReturn(true);
+        $mockOrder = Mockery::mock(PurchaseOrder::class);
+        $mockOrderTenantId = new UuidValueObject('550e8400-e29b-41d4-a716-446655440000');
+        $mockOrder->shouldReceive('getTenantId')->andReturn($mockOrderTenantId);
         $mockOrder->shouldReceive('getStatus')->andReturn(OrderStatus::VENDOR_NEGOTIATION);
-        $mockOrder->shouldReceive('updateStatus')->andReturn($mockOrder);
+        $mockOrder->shouldReceive('changeStatus')->andReturn($mockOrder);
 
         $this->orderRepository
             ->shouldReceive('findById')
@@ -114,8 +127,9 @@ class CommandHandlersTest extends TestCase
             ->andReturn($mockOrder);
 
         $mockVendor = Mockery::mock(Vendor::class);
-        $mockVendor->shouldReceive('getTenantId')->andReturn(new UuidValueObject('550e8400-e29b-41d4-a716-446655440000'));
-        $mockVendor->shouldReceive('isAvailable')->andReturn(true);
+        $mockVendorTenantId = new UuidValueObject('550e8400-e29b-41d4-a716-446655440000');
+        $mockVendor->shouldReceive('getTenantId')->andReturn($mockVendorTenantId);
+        $mockVendor->shouldReceive('isActive')->andReturn(true);
 
         $this->vendorRepository
             ->shouldReceive('findById')
@@ -129,7 +143,7 @@ class CommandHandlersTest extends TestCase
 
         $result = $handler->handle($command);
 
-        $this->assertInstanceOf(Order::class, $result);
+        $this->assertInstanceOf(PurchaseOrder::class, $result);
     }
 
     /** @test */
@@ -143,10 +157,11 @@ class CommandHandlersTest extends TestCase
             orderId: '660e8400-e29b-41d4-a716-446655440001',
         );
 
-        $mockOrder = Mockery::mock(Order::class);
-        $mockOrder->shouldReceive('getTenantId->equals')->andReturn(true);
+        $mockOrder = Mockery::mock(PurchaseOrder::class);
+        $mockOrderTenantId = new UuidValueObject('550e8400-e29b-41d4-a716-446655440000');
+        $mockOrder->shouldReceive('getTenantId')->andReturn($mockOrderTenantId);
         $mockOrder->shouldReceive('getStatus')->andReturn(OrderStatus::SHIPPING);
-        $mockOrder->shouldReceive('updateStatus')->andReturn($mockOrder);
+        $mockOrder->shouldReceive('changeStatus')->andReturn($mockOrder);
 
         $this->orderRepository
             ->shouldReceive('findById')
@@ -160,6 +175,6 @@ class CommandHandlersTest extends TestCase
 
         $result = $handler->handle($command);
 
-        $this->assertInstanceOf(Order::class, $result);
+        $this->assertInstanceOf(PurchaseOrder::class, $result);
     }
 }

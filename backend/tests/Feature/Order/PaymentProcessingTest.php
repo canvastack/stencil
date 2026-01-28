@@ -149,6 +149,19 @@ class PaymentProcessingTest extends TestCase
         $eloquentOrder->refresh();
         $this->assertEquals('partial_payment', $eloquentOrder->status);
 
+        // Pay remaining amount to transition to full_payment status
+        $finalPaymentCommand = new VerifyCustomerPaymentCommand(
+            orderId: $order->getId()->getValue(),
+            tenantId: $this->tenant->uuid,
+            paidAmount: 70000.00,
+            paymentMethod: 'bank_transfer'
+        );
+
+        $this->verifyCustomerPaymentUseCase->execute($finalPaymentCommand);
+        $eloquentOrder->refresh();
+        $this->assertEquals('full_payment', $eloquentOrder->status);
+
+        // Now can transition to production
         $stateMachine->transitionTo($eloquentOrder, OrderStatus::IN_PRODUCTION);
         $eloquentOrder->refresh();
         $stateMachine->transitionTo($eloquentOrder, OrderStatus::QUALITY_CONTROL);
@@ -157,7 +170,7 @@ class PaymentProcessingTest extends TestCase
         $finalPaymentRequest = $this->requestFinalPaymentUseCase->execute(new RequestFinalPaymentCommand(
             orderId: $verifiedOrder->getId()->getValue(),
             tenantId: $this->tenant->uuid,
-            finalAmount: 70000.00
+            finalAmount: 0.00
         ));
 
         $this->assertNotNull($finalPaymentRequest);

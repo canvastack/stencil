@@ -40,6 +40,7 @@ class ProductCategoryModelTest extends TestCase
             'tenant_id',
             'name',
             'slug',
+            'business_type',
             'description',
             'parent_id',
             'sort_order',

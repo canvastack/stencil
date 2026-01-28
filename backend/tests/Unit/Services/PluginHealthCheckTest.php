@@ -23,12 +23,21 @@ class PluginHealthCheckTest extends TestCase
     {
         parent::setUp();
 
-        $this->pluginRegistry = app(PluginRegistry::class);
-        $this->pluginsPath = dirname(base_path()) . '/plugins';
+        // Use a temporary directory for tests to avoid permission issues
+        $this->pluginsPath = sys_get_temp_dir() . '/canvastencil_test_plugins_' . uniqid();
         
         if (!File::exists($this->pluginsPath)) {
             File::makeDirectory($this->pluginsPath, 0755, true);
         }
+        
+        // Override the config for testing
+        config(['plugins.paths.base' => $this->pluginsPath]);
+        
+        // Create a fresh instance with the test configuration
+        $this->pluginRegistry = new PluginRegistry(
+            app(PluginRepositoryInterface::class),
+            app(ManifestValidator::class)
+        );
         
         Cache::flush();
     }
@@ -298,25 +307,9 @@ class PluginHealthCheckTest extends TestCase
 
     protected function cleanupTestPlugins(): void
     {
-        $testPlugins = [
-            'fully-healthy-plugin',
-            'no-manifest-plugin',
-            'invalid-manifest-plugin',
-            'missing-entry-plugin',
-            'bad-migration-plugin',
-            'dependent-plugin',
-            'timestamp-test-plugin',
-            'version-test-plugin',
-            'multiple-failures-plugin',
-            'corrupted-manifest-plugin',
-            'incomplete-manifest-plugin',
-        ];
-
-        foreach ($testPlugins as $plugin) {
-            $pluginDir = $this->pluginsPath . '/' . $plugin;
-            if (File::exists($pluginDir)) {
-                File::deleteDirectory($pluginDir);
-            }
+        // Clean up the entire temporary directory
+        if (File::exists($this->pluginsPath)) {
+            File::deleteDirectory($this->pluginsPath);
         }
     }
 }

@@ -305,9 +305,10 @@ class ErrorHandlingAndRecoveryTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $vendorB->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $vendorB->uuid,
+            quotedPrice: 9500000, // 95000.00 in cents
+            leadTimeDays: 5
         );
 
         $this->assignVendorUseCase->execute($assignCommand);
@@ -334,13 +335,14 @@ class ErrorHandlingAndRecoveryTest extends TestCase
         $this->assertEquals('pending', $order->getStatus()->value);
         
         // Transition order to VENDOR_SOURCING status first
-        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
+        $order->changeStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
         $this->orderRepository->save($order);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor->uuid,
+            quotedPrice: 9500000, // 95000.00 in cents
+            leadTimeDays: 5
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand);
@@ -463,13 +465,14 @@ class ErrorHandlingAndRecoveryTest extends TestCase
 
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
 
-        $order->updateStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
+        $order->changeStatus(\App\Domain\Order\Enums\OrderStatus::VENDOR_SOURCING);
         $this->orderRepository->save($order);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor->uuid,
+            quotedPrice: 9500000, // 95000.00 in cents
+            leadTimeDays: 5
         );
 
         $order = $this->assignVendorUseCase->execute($assignCommand);

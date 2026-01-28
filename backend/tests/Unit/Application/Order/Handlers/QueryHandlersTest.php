@@ -14,7 +14,7 @@ use App\Application\Order\Queries\GetOrdersByCustomerQuery;
 use App\Application\Order\Queries\GetOrderAnalyticsQuery;
 use App\Application\Order\Queries\GetOrderHistoryQuery;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
 use Mockery;
@@ -41,11 +41,11 @@ class QueryHandlersTest extends TestCase
         $handler = new GetOrderQueryHandler($this->orderRepository);
         
         $query = new GetOrderQuery(
-            tenantId: '550e8400-e29b-41d4-a716-446655440000',
-            orderId: '660e8400-e29b-41d4-a716-446655440001',
+            orderUuid: '660e8400-e29b-41d4-a716-446655440001',
+            tenantId: '550e8400-e29b-41d4-a716-446655440000'
         );
 
-        $mockOrder = Mockery::mock(Order::class);
+        $mockOrder = Mockery::mock(PurchaseOrder::class);
         $this->orderRepository
             ->shouldReceive('findById')
             ->once()
@@ -54,7 +54,7 @@ class QueryHandlersTest extends TestCase
 
         $result = $handler->handle($query);
 
-        $this->assertInstanceOf(Order::class, $result);
+        $this->assertInstanceOf(PurchaseOrder::class, $result);
     }
 
     /** @test */
@@ -69,7 +69,7 @@ class QueryHandlersTest extends TestCase
             perPage: 15,
         );
 
-        $mockOrders = array_fill(0, 20, Mockery::mock(Order::class));
+        $mockOrders = array_fill(0, 20, Mockery::mock(PurchaseOrder::class));
         
         $this->orderRepository
             ->shouldReceive('findByStatus')
@@ -94,7 +94,7 @@ class QueryHandlersTest extends TestCase
             perPage: 10,
         );
 
-        $mockOrders = array_fill(0, 25, Mockery::mock(Order::class));
+        $mockOrders = array_fill(0, 25, Mockery::mock(PurchaseOrder::class));
         
         $this->orderRepository
             ->shouldReceive('findByStatus')
@@ -119,7 +119,7 @@ class QueryHandlersTest extends TestCase
             perPage: 15,
         );
 
-        $mockOrders = array_fill(0, 5, Mockery::mock(Order::class));
+        $mockOrders = array_fill(0, 5, Mockery::mock(PurchaseOrder::class));
         
         $this->orderRepository
             ->shouldReceive('findByCustomerId')
@@ -173,22 +173,22 @@ class QueryHandlersTest extends TestCase
             limit: 10,
         );
 
-        $mockOrder = Mockery::mock(Order::class);
+        $mockOrder = Mockery::mock(PurchaseOrder::class);
         $mockOrder->shouldReceive('getId->getValue')->andReturn('test-id');
-        $mockOrder->shouldReceive('getOrderNumber->getValue')->andReturn('ORD-123');
+        $mockOrder->shouldReceive('getOrderNumber')->andReturn('ORD-123');
         
         $mockStatus = OrderStatus::COMPLETED;
         $mockOrder->shouldReceive('getStatus')->andReturn($mockStatus);
         
-        $mockOrder->shouldReceive('getTotal->getAmount')->andReturn(100000.00);
-        $mockOrder->shouldReceive('getTotal->getCurrency')->andReturn('IDR');
+        $mockOrder->shouldReceive('getTotalAmount->getAmountInCents')->andReturn(10000000);
+        $mockOrder->shouldReceive('getTotalAmount->getCurrency')->andReturn('IDR');
         $mockOrder->shouldReceive('getCreatedAt->format')->andReturn('2024-12-03 10:00:00');
         $mockOrder->shouldReceive('getUpdatedAt->format')->andReturn('2024-12-03 11:00:00');
 
         $mockOrders = array_fill(0, 5, $mockOrder);
         
         $this->orderRepository
-            ->shouldReceive('findRecentOrders')
+            ->shouldReceive('getRecent')
             ->once()
             ->with(Mockery::type(UuidValueObject::class), 10)
             ->andReturn($mockOrders);
