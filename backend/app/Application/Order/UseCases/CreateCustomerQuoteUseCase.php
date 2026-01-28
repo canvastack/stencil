@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\CreateCustomerQuoteCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class CreateCustomerQuoteUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(CreateCustomerQuoteCommand $command): Order
+    public function execute(CreateCustomerQuoteCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -37,7 +37,7 @@ class CreateCustomerQuoteUseCase
             );
         }
 
-        $order->updateStatus(OrderStatus::CUSTOMER_QUOTE);
+        $order->changeStatus(OrderStatus::CUSTOMER_QUOTE);
 
         $savedOrder = $this->orderRepository->save($order);
 

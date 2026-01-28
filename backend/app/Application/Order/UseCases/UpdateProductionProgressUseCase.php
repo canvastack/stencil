@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\UpdateProductionProgressCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class UpdateProductionProgressUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(UpdateProductionProgressCommand $command): Order
+    public function execute(UpdateProductionProgressCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -39,7 +39,7 @@ class UpdateProductionProgressUseCase
         }
 
         if ($command->progressPercentage >= 100) {
-            $order->updateStatus(OrderStatus::QUALITY_CONTROL);
+            $order->changeStatus(OrderStatus::QUALITY_CONTROL);
         }
 
         $savedOrder = $this->orderRepository->save($order);

@@ -4,7 +4,7 @@ namespace App\Application\Order\Handlers\Queries;
 
 use App\Application\Order\Queries\GetOrderQuery;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
 
 class GetOrderQueryHandler
@@ -13,8 +13,8 @@ class GetOrderQueryHandler
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function handle(GetOrderQuery $query): ?Order
+    public function handle(GetOrderQuery $query): ?PurchaseOrder
     {
-        return $this->orderRepository->findById(new UuidValueObject($query->orderId));
+        return $this->orderRepository->findById(new UuidValueObject($query->orderUuid));
     }
 }

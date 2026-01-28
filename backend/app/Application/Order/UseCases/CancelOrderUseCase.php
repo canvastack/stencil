@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\CancelOrderCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class CancelOrderUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(CancelOrderCommand $command): Order
+    public function execute(CancelOrderCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -37,7 +37,7 @@ class CancelOrderUseCase
             );
         }
 
-        $order->updateStatus(OrderStatus::CANCELLED);
+        $order->changeStatus(OrderStatus::CANCELLED);
 
         $savedOrder = $this->orderRepository->save($order);
 

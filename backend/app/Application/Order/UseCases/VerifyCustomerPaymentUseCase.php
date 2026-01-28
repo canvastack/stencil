@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\VerifyCustomerPaymentCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class VerifyCustomerPaymentUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(VerifyCustomerPaymentCommand $command): Order
+    public function execute(VerifyCustomerPaymentCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -31,7 +31,7 @@ class VerifyCustomerPaymentUseCase
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        if ($order->getStatus() !== OrderStatus::AWAITING_PAYMENT) {
+        if ($order->getStatus() !== OrderStatus::AWAITING_PAYMENT && $order->getStatus() !== OrderStatus::PARTIAL_PAYMENT) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow payment verification"
             );
@@ -41,18 +41,19 @@ class VerifyCustomerPaymentUseCase
             throw new InvalidArgumentException('Paid amount must be non-negative');
         }
 
+        $paymentAmount = \App\Domain\Shared\ValueObjects\Money::fromDecimal($command->paidAmount);
         $totalAmount = $order->getTotal()->getAmount();
         $downPaymentThreshold = $totalAmount * 0.3;
 
-        if ($command->paidAmount >= $totalAmount) {
-            $order->updateStatus(OrderStatus::FULL_PAYMENT);
-        } elseif ($command->paidAmount >= $downPaymentThreshold) {
-            $order->updateStatus(OrderStatus::PARTIAL_PAYMENT);
-        } else {
+        // Validate minimum payment amount for initial payment
+        if ($order->getStatus() === OrderStatus::AWAITING_PAYMENT && $command->paidAmount < $downPaymentThreshold) {
             throw new InvalidArgumentException(
                 "Payment amount must be at least 30% of total amount (minimum: {$downPaymentThreshold})"
             );
         }
+
+        // Record payment using domain entity method
+        $order->recordPayment($paymentAmount, $command->paymentMethod, 'payment-' . uniqid(), 'customer_payment');
 
         $savedOrder = $this->orderRepository->save($order);
 

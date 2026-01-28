@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\CompleteOrderCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class CompleteOrderUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(CompleteOrderCommand $command): Order
+    public function execute(CompleteOrderCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -37,7 +37,7 @@ class CompleteOrderUseCase
             );
         }
 
-        $order->updateStatus(OrderStatus::COMPLETED);
+        $order->changeStatus(OrderStatus::COMPLETED);
 
         $savedOrder = $this->orderRepository->save($order);
 

@@ -4,7 +4,7 @@ namespace App\Application\Order\Handlers\Commands;
 
 use App\Application\Order\UseCases\AssignVendorUseCase;
 use App\Application\Order\Commands\AssignVendorCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 
 class AssignVendorHandler
 {
@@ -12,7 +12,7 @@ class AssignVendorHandler
         private AssignVendorUseCase $useCase
     ) {}
 
-    public function handle(AssignVendorCommand $command): Order
+    public function handle(AssignVendorCommand $command): PurchaseOrder
     {
         return $this->useCase->execute($command);
     }

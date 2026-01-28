@@ -3,93 +3,152 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\CreatePurchaseOrderCommand;
-use App\Domain\Order\Entities\Order;
-use App\Domain\Order\Enums\OrderStatus;
-use App\Domain\Order\Events\OrderCreated;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
-use App\Domain\Order\ValueObjects\OrderNumber;
-use App\Domain\Order\ValueObjects\OrderTotal;
+use App\Domain\Customer\Repositories\CustomerRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
+use App\Domain\Shared\ValueObjects\Money;
+use App\Domain\Shared\ValueObjects\Address;
+use App\Domain\Shared\ValueObjects\Timeline;
+use App\Domain\Order\Events\OrderCreated;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use InvalidArgumentException;
 
+/**
+ * Create Purchase Order Use Case
+ * 
+ * Handles the business logic for creating new purchase orders.
+ * Validates business rules and coordinates domain entities.
+ * 
+ * Database Integration:
+ * - Creates record in orders table
+ * - Validates customer exists
+ * - Generates unique order number
+ * - Dispatches domain events
+ */
 class CreatePurchaseOrderUseCase
 {
     public function __construct(
-        private OrderRepositoryInterface $orderRepository
+        private OrderRepositoryInterface $orderRepository,
+        private CustomerRepositoryInterface $customerRepository,
+        private EventDispatcher $eventDispatcher
     ) {}
 
-    public function execute(CreatePurchaseOrderCommand $command): Order
+    /**
+     * Execute the use case
+     */
+    public function execute(CreatePurchaseOrderCommand $command): PurchaseOrder
     {
-        $this->validateInput($command);
-        
-        $tenantId = new UuidValueObject($command->tenantId);
-        $customerId = new UuidValueObject($command->customerId);
-
-        $orderNumber = new OrderNumber($command->orderNumber);
-
-        if ($this->orderRepository->existsByOrderNumber($tenantId, $orderNumber)) {
-            throw new InvalidArgumentException("Order number '{$command->orderNumber}' already exists");
+        // 1. Validate command
+        $errors = $command->validate();
+        if (!empty($errors)) {
+            throw new InvalidArgumentException('Validation failed: ' . implode(', ', $errors));
         }
 
-        $orderTotal = new OrderTotal($command->totalAmount, $command->currency);
+        // 2. Validate tenant and customer exist
+        $tenantId = new UuidValueObject($command->tenantId);
+        $customerId = new UuidValueObject($command->customerId);
+        
+        $customer = $this->customerRepository->findById($customerId);
+        if (!$customer) {
+            throw new InvalidArgumentException('Customer not found');
+        }
 
-        $order = new Order(
-            id: new UuidValueObject($command->id),
+        // 3. Validate customer belongs to tenant
+        if (!$customer->getTenantId()->equals($tenantId)) {
+            throw new InvalidArgumentException('Customer does not belong to this tenant');
+        }
+
+        // 4. Generate unique order number
+        $orderNumber = $this->generateOrderNumber($tenantId);
+
+        // 5. Create value objects
+        $totalAmount = Money::fromCents($command->getTotalAmountInCents());
+        $deliveryAddress = Address::fromArray(json_decode($command->getDeliveryAddress(), true));
+        $billingAddress = $command->billingAddress 
+            ? Address::fromArray(json_decode($command->billingAddress, true))
+            : $deliveryAddress;
+
+        // 6. Create timeline for order
+        $requiredDeliveryDate = new \DateTimeImmutable($command->getRequiredDeliveryDate());
+        $estimatedDays = $this->calculateEstimatedDays($command->items);
+        $timeline = Timeline::forOrderProduction(
+            new \DateTimeImmutable(),
+            $estimatedDays
+        );
+
+        // 7. Create order entity
+        $order = PurchaseOrder::create(
             tenantId: $tenantId,
             customerId: $customerId,
             orderNumber: $orderNumber,
-            total: $orderTotal,
-            status: OrderStatus::PENDING,
-            items: $command->items,
-            shippingAddress: $command->shippingAddress,
-            billingAddress: $command->billingAddress,
-            notes: $command->notes,
+            items: $command->getValidatedItems(),
+            totalAmount: $totalAmount,
+            deliveryAddress: $deliveryAddress,
+            billingAddress: $billingAddress,
+            requiredDeliveryDate: $requiredDeliveryDate,
+            customerNotes: $command->customerNotes,
+            specifications: $command->specifications,
+            timeline: $timeline,
+            metadata: $command->metadata
         );
 
+        // 8. Save order
         $savedOrder = $this->orderRepository->save($order);
 
-        $eloquentOrder = new \App\Infrastructure\Persistence\Eloquent\Models\Order($savedOrder->toArray());
-        $eloquentOrder->exists = true;
-        
-        OrderCreated::dispatch($eloquentOrder);
+        // 9. Dispatch domain events
+        $this->eventDispatcher->dispatch(new OrderCreated($savedOrder));
 
         return $savedOrder;
     }
 
-    private function validateInput(CreatePurchaseOrderCommand $command): void
+    /**
+     * Generate unique order number for tenant
+     */
+    private function generateOrderNumber(UuidValueObject $tenantId): string
     {
-        if (empty($command->tenantId)) {
-            throw new InvalidArgumentException('Tenant ID is required');
+        $prefix = 'ORD';
+        $date = date('Ymd');
+        
+        // Use microseconds and random suffix for uniqueness
+        $microtime = substr(microtime(), 2, 6);
+        $randomSuffix = strtoupper(substr(uniqid(), -4));
+        
+        $orderNumber = sprintf('%s-%s-%s-%s', $prefix, $date, $microtime, $randomSuffix);
+        
+        // Double-check uniqueness (very unlikely to collide with this format)
+        $exists = $this->orderRepository->existsByOrderNumber($tenantId, $orderNumber);
+        if ($exists) {
+            // Fallback to UUID-based if somehow collision occurs
+            $uuidSuffix = strtoupper(substr(str_replace('-', '', UuidValueObject::generate()->getValue()), -8));
+            $orderNumber = sprintf('%s-%s-%s', $prefix, $date, $uuidSuffix);
         }
 
-        if (empty($command->customerId)) {
-            throw new InvalidArgumentException('Customer ID is required');
-        }
+        return $orderNumber;
+    }
 
-        if ($command->totalAmount < 0) {
-            throw new InvalidArgumentException('Total amount must be non-negative');
-        }
+    /**
+     * Calculate estimated production days based on items
+     */
+    private function calculateEstimatedDays(array $items): int
+    {
+        $baseDays = 7; // Base production time
+        $complexityDays = 0;
 
-        if (empty($command->currency)) {
-            throw new InvalidArgumentException('Currency is required');
-        }
-
-        if (!is_array($command->items) || empty($command->items)) {
-            throw new InvalidArgumentException('Order must contain at least one item');
-        }
-
-        foreach ($command->items as $item) {
-            if (!isset($item['product_id'], $item['quantity'], $item['unit_price'])) {
-                throw new InvalidArgumentException('Each item must have product_id, quantity, and unit_price');
+        foreach ($items as $item) {
+            // Add complexity based on customization
+            if (!empty($item['customization'])) {
+                $complexityDays += 2;
             }
 
-            if ($item['quantity'] <= 0) {
-                throw new InvalidArgumentException('Item quantity must be greater than zero');
-            }
-
-            if ($item['unit_price'] < 0) {
-                throw new InvalidArgumentException('Item unit price must be non-negative');
+            // Add time based on quantity
+            $quantity = $item['quantity'] ?? 1;
+            if ($quantity > 10) {
+                $complexityDays += ceil($quantity / 10);
             }
         }
+
+        // PT CEX business rule: minimum 5 days, maximum 30 days
+        return min(max($baseDays + $complexityDays, 5), 30);
     }
 }

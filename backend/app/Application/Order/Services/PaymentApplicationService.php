@@ -27,7 +27,7 @@ class PaymentApplicationService
                 throw new InvalidArgumentException('Order belongs to different tenant');
             }
 
-            $totalAmount = $order->getTotal()->getAmount();
+            $totalAmount = $order->getTotalAmount()->getAmountInCents() / 100; // Convert from cents to decimal
             
             if ($amountPaid < 0) {
                 throw new InvalidArgumentException('Payment amount must be non-negative');
@@ -43,7 +43,7 @@ class PaymentApplicationService
                 'paid_amount' => $amountPaid,
                 'pending_amount' => $totalAmount - $amountPaid,
                 'payment_status' => $amountPaid == $totalAmount ? 'full_payment' : 'partial_payment',
-                'currency' => $order->getTotal()->getCurrency(),
+                'currency' => $order->getTotalAmount()->getCurrency(),
             ];
         });
     }
@@ -64,7 +64,7 @@ class PaymentApplicationService
             throw new InvalidArgumentException('Percentage must be between 0 and 100');
         }
 
-        $totalAmount = $order->getTotal()->getAmount();
+        $totalAmount = $order->getTotalAmount()->getAmountInCents() / 100; // Convert from cents to decimal
         $downPaymentAmount = ($totalAmount * $percentage) / 100;
         $remainingAmount = $totalAmount - $downPaymentAmount;
 
@@ -73,7 +73,7 @@ class PaymentApplicationService
             'down_payment_percentage' => $percentage,
             'down_payment_amount' => $downPaymentAmount,
             'remaining_amount' => $remainingAmount,
-            'currency' => $order->getTotal()->getCurrency(),
+            'currency' => $order->getTotalAmount()->getCurrency(),
         ];
     }
 
@@ -89,7 +89,7 @@ class PaymentApplicationService
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        $orderNumber = $order->getOrderNumber()->getValue();
+        $orderNumber = $order->getOrderNumber(); // getOrderNumber() returns string directly
         $timestamp = date('YmdHis');
         return 'INV-' . $orderNumber . '-' . $timestamp;
     }

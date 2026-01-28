@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\NegotiateWithVendorCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Vendor\Repositories\VendorRepositoryInterface;
@@ -17,7 +17,7 @@ class NegotiateWithVendorUseCase
         private VendorRepositoryInterface $vendorRepository
     ) {}
 
-    public function execute(NegotiateWithVendorCommand $command): Order
+    public function execute(NegotiateWithVendorCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
         
@@ -29,7 +29,7 @@ class NegotiateWithVendorUseCase
 
         $order = $this->orderRepository->findById($orderId);
         if (!$order) {
-            throw new InvalidArgumentException("Order not found with ID: {$command->orderId}");
+            throw new InvalidArgumentException('Order not found');
         }
 
         if (!$order->getTenantId()->equals($tenantId)) {
@@ -39,20 +39,23 @@ class NegotiateWithVendorUseCase
         if ($order->getStatus() !== OrderStatus::VENDOR_NEGOTIATION && 
             $order->getStatus() !== OrderStatus::VENDOR_SOURCING) {
             throw new InvalidArgumentException(
-                "Order status '{$order->getStatus()->value}' does not allow vendor negotiation"
+                "Order status '{$order->getStatus()->value}' does not allow negotiation"
             );
         }
 
         $vendor = $this->vendorRepository->findById($vendorId);
         if (!$vendor) {
-            throw new InvalidArgumentException("Vendor not found with ID: {$command->vendorId}");
+            throw new InvalidArgumentException('Vendor not found');
         }
 
         if ($vendor->getTenantId() && !$vendor->getTenantId()->equals($tenantId)) {
             throw new InvalidArgumentException('Vendor belongs to different tenant');
         }
 
-        $order->updateStatus(OrderStatus::VENDOR_NEGOTIATION);
+        // Only change status if not already in vendor negotiation
+        if ($order->getStatus() !== OrderStatus::VENDOR_NEGOTIATION) {
+            $order->changeStatus(OrderStatus::VENDOR_NEGOTIATION);
+        }
 
         $savedOrder = $this->orderRepository->save($order);
 
@@ -77,11 +80,11 @@ class NegotiateWithVendorUseCase
     private function validatePricingAndLeadTime(NegotiateWithVendorCommand $command): void
     {
         if ($command->quotedPrice < 0) {
-            throw new InvalidArgumentException('Quoted price must be non-negative');
+            throw new InvalidArgumentException('Quoted price cannot be negative');
         }
 
         if ($command->leadTimeInDays <= 0) {
-            throw new InvalidArgumentException('Lead time must be greater than zero');
+            throw new InvalidArgumentException('Lead time must be greater than 0');
         }
     }
 }

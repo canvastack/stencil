@@ -14,17 +14,17 @@ class GetOrderHistoryQueryHandler
 
     public function handle(GetOrderHistoryQuery $query): array
     {
-        $orders = $this->orderRepository->findRecentOrders(
+        $orders = $this->orderRepository->getRecent(
             new UuidValueObject($query->tenantId),
             $query->limit
         );
 
         return array_map(fn($order) => [
             'id' => $order->getId()->getValue(),
-            'order_number' => $order->getOrderNumber()->getValue(),
+            'order_number' => $order->getOrderNumber(),
             'status' => $order->getStatus()->value,
-            'total_amount' => $order->getTotal()->getAmount(),
-            'currency' => $order->getTotal()->getCurrency(),
+            'total_amount' => $order->getTotalAmount()->getAmountInCents(),
+            'currency' => $order->getTotalAmount()->getCurrency(),
             'created_at' => $order->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $order->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ], $orders);

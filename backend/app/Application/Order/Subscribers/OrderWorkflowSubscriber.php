@@ -49,7 +49,10 @@ class OrderWorkflowSubscriber
     public function handleOrderCompleted(ProductionCompleted $event): void
     {
         $this->updateInventoryOnOrderComplete->handle($event);
-        $this->processOrderCompletion->handle($event);
+        // ProcessOrderCompletion should handle OrderDelivered, not ProductionCompleted
+        // We'll create an OrderDelivered event from ProductionCompleted
+        $orderDeliveredEvent = new \App\Domain\Order\Events\OrderDelivered($event->getOrder());
+        $this->processOrderCompletion->handle($orderDeliveredEvent);
     }
 
     public function subscribe($events): array

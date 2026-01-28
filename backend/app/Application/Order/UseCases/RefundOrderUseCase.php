@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\RefundOrderCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class RefundOrderUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(RefundOrderCommand $command): Order
+    public function execute(RefundOrderCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -41,7 +41,7 @@ class RefundOrderUseCase
             throw new InvalidArgumentException('Refund amount must be non-negative');
         }
 
-        $order->updateStatus(OrderStatus::REFUNDED);
+        $order->changeStatus(OrderStatus::REFUNDED);
 
         $savedOrder = $this->orderRepository->save($order);
 

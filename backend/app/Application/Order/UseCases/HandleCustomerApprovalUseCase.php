@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\HandleCustomerApprovalCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class HandleCustomerApprovalUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(HandleCustomerApprovalCommand $command): Order
+    public function execute(HandleCustomerApprovalCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -38,7 +38,7 @@ class HandleCustomerApprovalUseCase
         }
 
         $newStatus = $command->approved ? OrderStatus::AWAITING_PAYMENT : OrderStatus::VENDOR_NEGOTIATION;
-        $order->updateStatus($newStatus);
+        $order->changeStatus($newStatus);
 
         $savedOrder = $this->orderRepository->save($order);
 

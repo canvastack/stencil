@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\ShipOrderCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class ShipOrderUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(ShipOrderCommand $command): Order
+    public function execute(ShipOrderCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -31,13 +31,17 @@ class ShipOrderUseCase
             throw new InvalidArgumentException('Order belongs to different tenant');
         }
 
-        if ($order->getStatus() !== OrderStatus::SHIPPING) {
+        if ($order->getStatus() !== OrderStatus::QUALITY_CONTROL && 
+            $order->getStatus() !== OrderStatus::SHIPPING) {
             throw new InvalidArgumentException(
                 "Order status '{$order->getStatus()->value}' does not allow shipping"
             );
         }
 
-        $order->updateStatus(OrderStatus::SHIPPING);
+        // Only change status if not already shipping
+        if ($order->getStatus() !== OrderStatus::SHIPPING) {
+            $order->changeStatus(OrderStatus::SHIPPING);
+        }
 
         $savedOrder = $this->orderRepository->save($order);
 

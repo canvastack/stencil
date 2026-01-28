@@ -3,7 +3,7 @@
 namespace App\Application\Order\UseCases;
 
 use App\Application\Order\Commands\RequestFinalPaymentCommand;
-use App\Domain\Order\Entities\Order;
+use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
@@ -15,7 +15,7 @@ class RequestFinalPaymentUseCase
         private OrderRepositoryInterface $orderRepository
     ) {}
 
-    public function execute(RequestFinalPaymentCommand $command): Order
+    public function execute(RequestFinalPaymentCommand $command): PurchaseOrder
     {
         $this->validateInput($command);
 
@@ -42,7 +42,7 @@ class RequestFinalPaymentUseCase
             throw new InvalidArgumentException('Final amount must be non-negative');
         }
 
-        $order->updateStatus(OrderStatus::SHIPPING);
+        $order->changeStatus(OrderStatus::SHIPPING);
 
         $savedOrder = $this->orderRepository->save($order);
 
