@@ -2,9 +2,20 @@
 
 namespace App\Domain\Order\Enums;
 
+/**
+ * Order Status Enum
+ * 
+ * Defines all possible order statuses and their transitions.
+ * Matches existing database enum values.
+ * 
+ * Database Integration:
+ * - Maps to orders.status field
+ * - Validates status transitions
+ * - Provides business logic for status changes
+ */
 enum OrderStatus: string
 {
-    // PT CEX Business Workflow - 12 Status System
+    case NEW = 'new';
     case DRAFT = 'draft';
     case PENDING = 'pending';
     case VENDOR_SOURCING = 'vendor_sourcing';
@@ -20,184 +31,227 @@ enum OrderStatus: string
     case CANCELLED = 'cancelled';
     case REFUNDED = 'refunded';
 
+    /**
+     * Get human-readable label
+     */
+    public function getLabel(): string
+    {
+        return match ($this) {
+            self::NEW => 'New Order',
+            self::DRAFT => 'Draft',
+            self::PENDING => 'Pending Review',
+            self::VENDOR_SOURCING => 'Sourcing Vendor',
+            self::VENDOR_NEGOTIATION => 'Vendor Negotiation',
+            self::CUSTOMER_QUOTE => 'Customer Quote',
+            self::AWAITING_PAYMENT => 'Awaiting Payment',
+            self::PARTIAL_PAYMENT => 'Partial Payment',
+            self::FULL_PAYMENT => 'Payment Complete',
+            self::IN_PRODUCTION => 'In Production',
+            self::QUALITY_CONTROL => 'Quality Control',
+            self::SHIPPING => 'Shipping',
+            self::COMPLETED => 'Completed',
+            self::CANCELLED => 'Cancelled',
+            self::REFUNDED => 'Refunded',
+        };
+    }
+
+    /**
+     * Alias for getLabel() for backward compatibility
+     */
     public function label(): string
     {
+        return $this->getLabel();
+    }
+
+    /**
+     * Create from string value (alias for from() method)
+     */
+    public static function fromString(string $value): self
+    {
+        return self::from($value);
+    }
+
+    /**
+     * Get status description
+     */
+    public function getDescription(): string
+    {
         return match ($this) {
-            self::DRAFT => 'Draft Order',
-            self::PENDING => 'Pending Review',
-            self::VENDOR_SOURCING => 'Mencari Vendor',
-            self::VENDOR_NEGOTIATION => 'Negosiasi Vendor',
-            self::CUSTOMER_QUOTE => 'Penawaran Harga',
-            self::AWAITING_PAYMENT => 'Menunggu Pembayaran',
-            self::PARTIAL_PAYMENT => 'DP Diterima (50%)',
-            self::FULL_PAYMENT => 'Full Payment (100%)',
-            self::IN_PRODUCTION => 'Dalam Produksi',
-            self::QUALITY_CONTROL => 'Quality Control',
-            self::SHIPPING => 'Sedang Dikirim',
-            self::COMPLETED => 'Selesai',
-            self::CANCELLED => 'Dibatalkan',
-            self::REFUNDED => 'Dikembalikan',
+            self::NEW => 'New order received, awaiting initial review',
+            self::DRAFT => 'Order is being prepared',
+            self::PENDING => 'Order is pending review and approval',
+            self::VENDOR_SOURCING => 'Finding suitable vendor for production',
+            self::VENDOR_NEGOTIATION => 'Negotiating terms with vendor',
+            self::CUSTOMER_QUOTE => 'Waiting for customer quote approval',
+            self::AWAITING_PAYMENT => 'Waiting for customer payment',
+            self::PARTIAL_PAYMENT => 'Partial payment received',
+            self::FULL_PAYMENT => 'Full payment received, ready for production',
+            self::IN_PRODUCTION => 'Order is being produced by vendor',
+            self::QUALITY_CONTROL => 'Order is undergoing quality inspection',
+            self::SHIPPING => 'Order is being shipped to customer',
+            self::COMPLETED => 'Order has been completed and delivered',
+            self::CANCELLED => 'Order has been cancelled',
+            self::REFUNDED => 'Order has been refunded',
         };
     }
 
+    /**
+     * Alias for getDescription() for backward compatibility
+     */
     public function description(): string
     {
-        return match ($this) {
-            self::DRAFT => 'Pesanan dalam bentuk draft',
-            self::PENDING => 'Pesanan baru masuk ke sistem',
-            self::VENDOR_SOURCING => 'Tim sedang mencari vendor yang sesuai',
-            self::VENDOR_NEGOTIATION => 'Negosiasi harga dan timeline dengan vendor',
-            self::CUSTOMER_QUOTE => 'Menunggu konfirmasi penawaran harga dari customer',
-            self::AWAITING_PAYMENT => 'Menunggu pembayaran dari customer',
-            self::PARTIAL_PAYMENT => 'DP 50% telah diterima',
-            self::FULL_PAYMENT => 'Pembayaran telah diterima 100%',
-            self::IN_PRODUCTION => 'Pesanan sedang dalam proses produksi',
-            self::QUALITY_CONTROL => 'Produk sedang dalam pengecekan kualitas',
-            self::SHIPPING => 'Pesanan sudah dikirim ke customer',
-            self::COMPLETED => 'Pesanan selesai',
-            self::CANCELLED => 'Pesanan dibatalkan',
-            self::REFUNDED => 'Dana telah dikembalikan ke customer',
-        };
+        return $this->getDescription();
     }
 
-    public function canBeUpdated(): bool
-    {
-        return !in_array($this, [
-            self::COMPLETED,
-            self::CANCELLED,
-            self::REFUNDED,
-        ]);
-    }
-
-    public function canBeCancelled(): bool
-    {
-        return in_array($this, [
-            self::DRAFT,
-            self::PENDING,
-            self::VENDOR_SOURCING,
-            self::VENDOR_NEGOTIATION,
-            self::CUSTOMER_QUOTE,
-            self::AWAITING_PAYMENT,
-        ]);
-    }
-
-    public function canBeRefunded(): bool
-    {
-        return in_array($this, [
-            self::PARTIAL_PAYMENT,
-            self::FULL_PAYMENT,
-            self::IN_PRODUCTION,
-            self::QUALITY_CONTROL,
-            self::CANCELLED,
-        ]);
-    }
-
-    public function isActive(): bool
-    {
-        return !in_array($this, [
-            self::COMPLETED,
-            self::CANCELLED,
-            self::REFUNDED,
-        ]);
-    }
-
-    public function requiresPayment(): bool
-    {
-        return in_array($this, [
-            self::CUSTOMER_QUOTE,
-            self::AWAITING_PAYMENT,
-        ]);
-    }
-
-    public function requiresVendor(): bool
-    {
-        return in_array($this, [
-            self::VENDOR_SOURCING,
-            self::VENDOR_NEGOTIATION,
-            self::IN_PRODUCTION,
-        ]);
-    }
-
-    public function getAllowedTransitions(): array
+    /**
+     * Get valid next statuses
+     */
+    public function getValidTransitions(): array
     {
         return match ($this) {
-            self::DRAFT => [
-                self::PENDING,
-            ],
-            self::PENDING => [
-                self::VENDOR_SOURCING,
-                self::CUSTOMER_QUOTE,
-                self::CANCELLED,
-            ],
-            self::VENDOR_SOURCING => [
-                self::VENDOR_NEGOTIATION,
-                self::CANCELLED,
-            ],
-            self::VENDOR_NEGOTIATION => [
-                self::CUSTOMER_QUOTE,
-                self::VENDOR_SOURCING,
-                self::CANCELLED,
-            ],
-            self::CUSTOMER_QUOTE => [
-                self::AWAITING_PAYMENT,
-                self::VENDOR_NEGOTIATION,
-                self::CANCELLED,
-            ],
-            self::AWAITING_PAYMENT => [
-                self::PARTIAL_PAYMENT,
-                self::FULL_PAYMENT,
-                self::CANCELLED,
-            ],
-            self::PARTIAL_PAYMENT => [
-                self::IN_PRODUCTION,
-                self::CANCELLED,
-            ],
-            self::FULL_PAYMENT => [
-                self::IN_PRODUCTION,
-            ],
-            self::IN_PRODUCTION => [
-                self::QUALITY_CONTROL,
-            ],
-            self::QUALITY_CONTROL => [
-                self::SHIPPING,
-                self::IN_PRODUCTION,
-            ],
-            self::SHIPPING => [
-                self::COMPLETED,
-            ],
-            self::COMPLETED => [
-                self::REFUNDED,
-            ],
-            self::CANCELLED => [
-                self::REFUNDED,
-            ],
+            self::NEW => [self::DRAFT, self::PENDING, self::VENDOR_SOURCING, self::CANCELLED],
+            self::DRAFT => [self::PENDING, self::VENDOR_SOURCING, self::CANCELLED],
+            self::PENDING => [self::VENDOR_SOURCING, self::CUSTOMER_QUOTE, self::CANCELLED],
+            self::VENDOR_SOURCING => [self::VENDOR_NEGOTIATION, self::CUSTOMER_QUOTE, self::CANCELLED],
+            self::VENDOR_NEGOTIATION => [self::CUSTOMER_QUOTE, self::VENDOR_SOURCING, self::CANCELLED],
+            self::CUSTOMER_QUOTE => [self::AWAITING_PAYMENT, self::VENDOR_NEGOTIATION, self::CANCELLED],
+            self::AWAITING_PAYMENT => [self::PARTIAL_PAYMENT, self::FULL_PAYMENT, self::CANCELLED],
+            self::PARTIAL_PAYMENT => [self::FULL_PAYMENT, self::CANCELLED],
+            self::FULL_PAYMENT => [self::IN_PRODUCTION, self::CANCELLED],
+            self::IN_PRODUCTION => [self::QUALITY_CONTROL, self::CANCELLED],
+            self::QUALITY_CONTROL => [self::SHIPPING, self::IN_PRODUCTION, self::CANCELLED],
+            self::SHIPPING => [self::COMPLETED, self::CANCELLED],
+            self::COMPLETED => [self::REFUNDED],
+            self::CANCELLED => [],
             self::REFUNDED => [],
         };
     }
 
-    public function canTransitionTo(OrderStatus $newStatus): bool
+    /**
+     * Get valid next statuses (alias for getValidTransitions)
+     */
+    public function getAllowedTransitions(): array
     {
-        return in_array($newStatus, $this->getAllowedTransitions());
+        return $this->getValidTransitions();
     }
 
-    public static function fromString(string $status): self
+    /**
+     * Check if can transition to another status
+     */
+    public function canTransitionTo(OrderStatus $newStatus): bool
     {
-        return match (strtolower($status)) {
-            'draft' => self::DRAFT,
-            'pending', 'new' => self::PENDING,
-            'vendor_sourcing', 'sourcing_vendor' => self::VENDOR_SOURCING,
-            'vendor_negotiation' => self::VENDOR_NEGOTIATION,
-            'customer_quote', 'customer_quotation' => self::CUSTOMER_QUOTE,
-            'awaiting_payment', 'waiting_payment' => self::AWAITING_PAYMENT,
-            'partial_payment' => self::PARTIAL_PAYMENT,
-            'full_payment', 'payment_received' => self::FULL_PAYMENT,
-            'in_production' => self::IN_PRODUCTION,
-            'quality_control', 'quality_check' => self::QUALITY_CONTROL,
-            'shipping', 'ready_to_ship', 'shipped' => self::SHIPPING,
-            'completed', 'delivered' => self::COMPLETED,
-            'cancelled' => self::CANCELLED,
-            'refunded' => self::REFUNDED,
-            default => throw new \ValueError("Status pesanan tidak valid: {$status}"),
+        return in_array($newStatus, $this->getValidTransitions());
+    }
+
+    /**
+     * Check if status is terminal (no further transitions)
+     */
+    public function isTerminal(): bool
+    {
+        return in_array($this, [self::COMPLETED, self::CANCELLED, self::REFUNDED]);
+    }
+
+    /**
+     * Check if status allows vendor assignment
+     */
+    public function allowsVendorAssignment(): bool
+    {
+        return in_array($this, [
+            self::PENDING,
+            self::VENDOR_SOURCING,
+            self::VENDOR_NEGOTIATION
+        ]);
+    }
+
+    /**
+     * Check if status allows payment processing
+     */
+    public function allowsPayment(): bool
+    {
+        return in_array($this, [
+            self::AWAITING_PAYMENT,
+            self::PARTIAL_PAYMENT
+        ]);
+    }
+
+    /**
+     * Check if order can be cancelled from this status
+     */
+    public function canBeCancelled(): bool
+    {
+        return !in_array($this, [
+            self::COMPLETED,
+            self::CANCELLED,
+            self::REFUNDED,
+            self::SHIPPING // Cannot cancel once shipped
+        ]);
+    }
+
+    /**
+     * Check if status indicates production phase
+     */
+    public function isProductionPhase(): bool
+    {
+        return in_array($this, [
+            self::IN_PRODUCTION,
+            self::QUALITY_CONTROL,
+            self::SHIPPING
+        ]);
+    }
+
+    /**
+     * Check if status indicates payment phase
+     */
+    public function isPaymentPhase(): bool
+    {
+        return in_array($this, [
+            self::AWAITING_PAYMENT,
+            self::PARTIAL_PAYMENT,
+            self::FULL_PAYMENT
+        ]);
+    }
+
+    /**
+     * Get status color for UI
+     */
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::NEW => 'blue',
+            self::DRAFT => 'gray',
+            self::PENDING => 'yellow',
+            self::VENDOR_SOURCING => 'blue',
+            self::VENDOR_NEGOTIATION => 'indigo',
+            self::CUSTOMER_QUOTE => 'purple',
+            self::AWAITING_PAYMENT => 'orange',
+            self::PARTIAL_PAYMENT => 'amber',
+            self::FULL_PAYMENT => 'green',
+            self::IN_PRODUCTION => 'blue',
+            self::QUALITY_CONTROL => 'indigo',
+            self::SHIPPING => 'cyan',
+            self::COMPLETED => 'green',
+            self::CANCELLED => 'red',
+            self::REFUNDED => 'pink',
         };
+    }
+
+    /**
+     * Get all statuses as array
+     */
+    public static function toArray(): array
+    {
+        return array_map(fn($case) => $case->value, self::cases());
+    }
+
+    /**
+     * Get statuses with labels
+     */
+    public static function getOptions(): array
+    {
+        $options = [];
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->getLabel();
+        }
+        return $options;
     }
 }

@@ -2,36 +2,125 @@
 
 namespace App\Domain\Order\Enums;
 
+/**
+ * Payment Status Enum
+ * 
+ * Defines all possible payment statuses for orders.
+ * Matches existing database enum values.
+ * 
+ * Database Integration:
+ * - Maps to orders.payment_status field
+ * - Provides business logic for payment validation
+ * - Supports payment workflow transitions
+ */
 enum PaymentStatus: string
 {
-    case Pending = 'pending';
-    case PartiallyPaid = 'partially_paid';
-    case Paid = 'paid';
-    case Failed = 'failed';
-    case Refunded = 'refunded';
-    case Cancelled = 'cancelled';
+    case UNPAID = 'unpaid';
+    case PARTIALLY_PAID = 'partially_paid';
+    case PAID = 'paid';
+    case REFUNDED = 'refunded';
 
-    public function label(): string
+    /**
+     * Get human-readable label
+     */
+    public function getLabel(): string
     {
         return match ($this) {
-            self::Pending => 'Menunggu Pembayaran',
-            self::PartiallyPaid => 'Sebagian Terbayar',
-            self::Paid => 'Lunas',
-            self::Failed => 'Gagal',
-            self::Refunded => 'Dikembalikan',
-            self::Cancelled => 'Dibatalkan',
+            self::UNPAID => 'Unpaid',
+            self::PARTIALLY_PAID => 'Partially Paid',
+            self::PAID => 'Paid',
+            self::REFUNDED => 'Refunded',
         };
     }
 
-    public function color(): string
+    /**
+     * Get status description
+     */
+    public function getDescription(): string
     {
         return match ($this) {
-            self::Pending => 'bg-yellow-100 text-yellow-800',
-            self::PartiallyPaid => 'bg-blue-100 text-blue-800',
-            self::Paid => 'bg-green-100 text-green-800',
-            self::Failed => 'bg-red-100 text-red-800',
-            self::Refunded => 'bg-gray-100 text-gray-800',
-            self::Cancelled => 'bg-red-100 text-red-800',
+            self::UNPAID => 'No payment received',
+            self::PARTIALLY_PAID => 'Partial payment received',
+            self::PAID => 'Full payment received',
+            self::REFUNDED => 'Payment has been refunded',
         };
+    }
+
+    /**
+     * Get valid next payment statuses
+     */
+    public function getValidTransitions(): array
+    {
+        return match ($this) {
+            self::UNPAID => [self::PARTIALLY_PAID, self::PAID],
+            self::PARTIALLY_PAID => [self::PAID, self::REFUNDED],
+            self::PAID => [self::REFUNDED],
+            self::REFUNDED => [],
+        };
+    }
+
+    /**
+     * Check if can transition to another payment status
+     */
+    public function canTransitionTo(PaymentStatus $newStatus): bool
+    {
+        return in_array($newStatus, $this->getValidTransitions());
+    }
+
+    /**
+     * Check if payment is complete
+     */
+    public function isComplete(): bool
+    {
+        return $this === self::PAID;
+    }
+
+    /**
+     * Check if payment allows refunds
+     */
+    public function allowsRefund(): bool
+    {
+        return in_array($this, [self::PARTIALLY_PAID, self::PAID]);
+    }
+
+    /**
+     * Check if payment allows additional payments
+     */
+    public function allowsAdditionalPayment(): bool
+    {
+        return in_array($this, [self::UNPAID, self::PARTIALLY_PAID]);
+    }
+
+    /**
+     * Get status color for UI
+     */
+    public function getColor(): string
+    {
+        return match ($this) {
+            self::UNPAID => 'red',
+            self::PARTIALLY_PAID => 'yellow',
+            self::PAID => 'green',
+            self::REFUNDED => 'gray',
+        };
+    }
+
+    /**
+     * Get all statuses as array
+     */
+    public static function toArray(): array
+    {
+        return array_map(fn($case) => $case->value, self::cases());
+    }
+
+    /**
+     * Get statuses with labels
+     */
+    public static function getOptions(): array
+    {
+        $options = [];
+        foreach (self::cases() as $case) {
+            $options[$case->value] = $case->getLabel();
+        }
+        return $options;
     }
 }
