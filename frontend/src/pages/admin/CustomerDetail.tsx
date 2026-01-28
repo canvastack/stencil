@@ -124,6 +124,7 @@ export default function CustomerDetail() {
         setOrdersLoading(true);
         try {
           const ordersData = await customersService.getCustomerOrders(uuid);
+          console.log('[CustomerDetail] Orders data received:', ordersData);
           setOrders(Array.isArray(ordersData) ? ordersData : []);
         } catch (ordersError) {
           console.error('Failed to fetch customer orders:', ordersError);

@@ -155,8 +155,9 @@ class CustomersService {
   }
 
   async getCustomerOrders(id: string): Promise<any[]> {
-    const response = await tenantApiClient.get<any[]>(`/customers/${id}/orders`);
-    return response;
+    const response = await tenantApiClient.get<{data: any[]}>(`/customers/${id}/orders`);
+    // Backend returns paginated response, extract data array
+    return response.data || [];
   }
 
   async getCustomerSegment(id: string): Promise<any> {
