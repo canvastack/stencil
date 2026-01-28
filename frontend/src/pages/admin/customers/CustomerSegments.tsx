@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useCustomers } from '@/hooks/useCustomers';
 import type { Customer, CustomerSegment, CustomerFilters } from '@/types/customer';
 import { Link } from 'react-router-dom';

@@ -13,7 +13,7 @@ export interface BusinessTypesResponse {
 class BusinessTypesService {
   async getBusinessTypes(): Promise<BusinessTypesResponse> {
     try {
-      const response = await tenantApiClient.get<BusinessTypesResponse>('/admin/business-types');
+      const response = await tenantApiClient.get<BusinessTypesResponse>('/business-types');
       return response;
     } catch (error) {
       console.error('Failed to fetch business types:', error);

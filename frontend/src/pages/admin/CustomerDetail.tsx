@@ -104,7 +104,13 @@ export default function CustomerDetail() {
 
   useEffect(() => {
     const fetchCustomer = async () => {
-      if (!id) return;
+      if (!id || id === 'new') {
+        // Redirect to the proper create route if someone accesses /customers/new
+        if (id === 'new') {
+          navigate('/admin/customers/new');
+        }
+        return;
+      }
       
       try {
         setLoading(true);
@@ -144,7 +150,7 @@ export default function CustomerDetail() {
     };
 
     fetchCustomer();
-  }, [id]);
+  }, [id, navigate]);
 
   if (loading) {
     return (
@@ -210,7 +216,7 @@ export default function CustomerDetail() {
               }
               className="text-lg"
             >
-              {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
+              {customer.status ? customer.status.charAt(0).toUpperCase() + customer.status.slice(1) : 'Unknown'}
             </Badge>
           </CardContent>
         </Card>

@@ -1,4 +1,4 @@
-import { tenantApiClient } from '@/services/api/tenantApiClient';
+import { tenantApiClient } from '@/services/tenant/tenantApiClient';
 
 export interface CustomerCreditData {
   id: string;
@@ -41,7 +41,7 @@ export const customerCreditService = {
   /**
    * Get customers with credit information
    */
-  getCustomersCredit: async (filters: CustomerCreditFilters = {}): Promise<CustomerCreditResponse> => {
+  getCustomersCredit: async (filters: CustomerCreditFilters = {}): Promise<any> => {
     try {
       const params = new URLSearchParams();
       
@@ -66,15 +66,22 @@ export const customerCreditService = {
 
       const response = await tenantApiClient.get(`/customers/credit?${params.toString()}`);
       
-      // Handle wrapped responses: { data: {...} } or direct object
-      const data = response?.data || response;
-      
-      if (!data) {
-        throw new Error('Customer credit data not found');
+      // Handle the actual API response structure
+      if (response?.success && response?.data) {
+        return {
+          data: response.data, // This contains credit_analysis array and summary
+          current_page: 1,
+          per_page: response.data.credit_analysis?.length || 0,
+          total: response.data.credit_analysis?.length || 0,
+          last_page: 1
+        };
       }
       
+      // Fallback for other response structures
+      const data = response?.data || response;
+      
       return {
-        data: data.data || data.customers || [],
+        data: data.data || data.customers || data,
         current_page: data.current_page || 1,
         per_page: data.per_page || 10,
         total: data.total || 0,
@@ -237,6 +244,103 @@ export const customerCreditService = {
     } catch (error) {
       console.error(`Failed to update customer status for ${id}:`, error);
       throw new Error(`Failed to update customer status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  /**
+   * Get customer payment history
+   */
+  getCustomerPaymentHistory: async (customerId: string, filters: {
+    limit?: number;
+    type?: 'all' | 'incoming' | 'outgoing';
+    status?: 'all' | 'pending' | 'completed' | 'failed' | 'refunded';
+  } = {}): Promise<any> => {
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.limit) {
+        params.append('limit', filters.limit.toString());
+      }
+      if (filters.type && filters.type !== 'all') {
+        params.append('type', filters.type);
+      }
+      if (filters.status && filters.status !== 'all') {
+        params.append('status', filters.status);
+      }
+
+      const response = await tenantApiClient.get(`/customers/${customerId}/payment-history?${params.toString()}`);
+      
+      if (response?.success && response?.data) {
+        return response.data;
+      }
+      
+      // Fallback for other response structures
+      return response?.data || response;
+    } catch (error) {
+      console.error(`Failed to load payment history for customer ${customerId}:`, error);
+      
+      if (import.meta.env.MODE === 'development') {
+        console.warn('API failed, using mock payment history data for development:', error);
+        
+        // Fallback payment history data for development
+        return {
+          customer: {
+            id: customerId,
+            name: 'Test Customer',
+            email: 'test@customer.com'
+          },
+          payment_history: [
+            {
+              id: 'pay-001',
+              order_number: 'ORD-2024-001',
+              order_uuid: 'order-uuid-001',
+              direction: 'incoming',
+              type: 'payment',
+              status: 'completed',
+              amount: 5000000,
+              currency: 'IDR',
+              method: 'bank_transfer',
+              reference: 'TXN-001',
+              paid_at: '2024-01-15T10:30:00Z',
+              created_at: '2024-01-15T10:00:00Z',
+              formatted_amount: 'Rp 5.000.000',
+              status_label: 'Completed',
+              type_label: 'Payment'
+            },
+            {
+              id: 'pay-002',
+              order_number: 'ORD-2024-002',
+              order_uuid: 'order-uuid-002',
+              direction: 'incoming',
+              type: 'payment',
+              status: 'completed',
+              amount: 3000000,
+              currency: 'IDR',
+              method: 'credit_card',
+              reference: 'TXN-002',
+              paid_at: '2024-01-10T14:20:00Z',
+              created_at: '2024-01-10T14:00:00Z',
+              formatted_amount: 'Rp 3.000.000',
+              status_label: 'Completed',
+              type_label: 'Payment'
+            }
+          ],
+          summary: {
+            total_transactions: 2,
+            total_incoming: 8000000,
+            total_outgoing: 0,
+            net_amount: 8000000,
+            pending_amount: 0,
+            last_payment_date: '2024-01-15T10:30:00Z',
+            formatted_total_incoming: 'Rp 8.000.000',
+            formatted_total_outgoing: 'Rp 0',
+            formatted_net_amount: 'Rp 8.000.000',
+            formatted_pending_amount: 'Rp 0'
+          }
+        };
+      } else {
+        throw new Error(`Failed to load payment history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 };
