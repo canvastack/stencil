@@ -292,7 +292,7 @@ export function useProductCatalogActions({
       return;
     }
 
-    if (!canAccess('products.update')) {
+    if (!canAccess('products.edit')) {
       toast.error('You do not have permission to edit products');
       return;
     }
@@ -302,7 +302,7 @@ export function useProductCatalogActions({
 
   const handleBulkEditSave = useCallback(async (productIds: string[], updateData: Partial<Product>) => {
     try {
-      if (!canAccess('products.update')) {
+      if (!canAccess('products.edit')) {
         toast.error('You do not have permission to update products');
         announceToScreenReader('Permission denied: Cannot update products');
         return;
@@ -378,7 +378,7 @@ export function useProductCatalogActions({
 
   const handleReorder = useCallback(async (reorderedProducts: Product[]) => {
     try {
-      if (!canAccess('products.update')) {
+      if (!canAccess('products.edit')) {
         toast.error('You do not have permission to reorder products');
         announceToScreenReader('Permission denied: Cannot reorder products');
         return;

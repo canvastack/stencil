@@ -34,9 +34,35 @@ export const useCategories = () => {
   });
 
   const fetchCategories = useCallback(async (filters?: CategoryFilters) => {
+    console.log('[useCategories] fetchCategories called with filters:', filters);
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const response: PaginatedResponse<Category> = await categoriesService.getCategories(filters);
+      
+      console.log('[useCategories] Service response received:', {
+        type: typeof response,
+        hasData: response && 'data' in response,
+        dataIsArray: response && 'data' in response && Array.isArray(response.data),
+        dataLength: response && 'data' in response ? response.data?.length : 'N/A',
+        currentPage: response?.current_page,
+        total: response?.total,
+        response: response
+      });
+      
+      if (!response || typeof response !== 'object') {
+        throw new Error('Invalid response from service: response is not an object');
+      }
+      
+      if (!('data' in response)) {
+        throw new Error('Invalid response from service: missing data field');
+      }
+      
+      if (!Array.isArray(response.data)) {
+        throw new Error('Invalid response from service: data is not an array');
+      }
+      
+      console.log('[useCategories] Setting categories state with', response.data.length, 'items');
+      
       setState((prev) => ({
         ...prev,
         categories: response.data,
@@ -48,11 +74,20 @@ export const useCategories = () => {
         },
         isLoading: false,
       }));
+      
+      console.log('[useCategories] State updated successfully');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to fetch categories';
+      console.error('[useCategories] Error fetching categories:', {
+        error,
+        message,
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
       setState((prev) => ({ 
         ...prev, 
-        categories: [], // Reset to empty array on error
+        // Don't reset categories if we already have data
+        categories: prev.categories.length > 0 ? prev.categories : [],
         error: message, 
         isLoading: false 
       }));

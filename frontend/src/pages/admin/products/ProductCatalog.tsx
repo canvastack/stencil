@@ -1,13 +1,11 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
-import { useProductsQuery, type BulkDeleteProgress } from '@/hooks/useProductsQuery';
+import { useProductsQuery } from '@/hooks/useProductsQuery';
 import { useCategoriesQuery } from '@/hooks/useCategoriesQuery';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { useProductWebSocket } from '@/hooks/useProductWebSocket';
 import type { Product, ProductFilters } from '@/types/product';
 import { productCatalogReducer, initialProductCatalogState } from '@/reducers/productCatalogReducer';
-import { envConfig } from '@/config/env.config';
 import { Progress } from '@/components/ui/progress';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -59,7 +57,6 @@ import {
   X,
   GitCompare,
   BarChart3,
-  Loader2,
   AlertCircle,
   RefreshCw,
   CheckSquare,
@@ -69,7 +66,6 @@ import { toast } from 'sonner';
 import { announceToScreenReader, announceLoading } from '@/lib/utils/accessibility';
 import { ProductComparisonProvider } from '@/contexts/ProductComparisonContext';
 import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
-import { useResponsive } from '@/hooks/useResponsive';
 import { ComparisonBar } from '@/components/products/ComparisonBar';
 import { FileSpreadsheet, FileText, FileJson } from 'lucide-react';
 import { APP_CONFIG } from '@/lib/constants';
@@ -191,7 +187,6 @@ export default function ProductCatalog() {
 function ProductCatalogContent() {
   const navigate = useNavigate();
   const { canAccess } = usePermissions();
-  const { isMobile } = useResponsive();
   
   const [state, dispatch] = React.useReducer(
     productCatalogReducer,
@@ -219,10 +214,7 @@ function ProductCatalogContent() {
     announceLoading(isLoading, 'products');
   }, [isLoading]);
 
-  const { isConnected: wsConnected } = useProductWebSocket({
-    enabled: envConfig.features.enableWebSocket,
-    showToasts: true,
-  });
+  const { isConnected: wsConnected } = { isConnected: false };
 
   const products = data?.data || [];
   const pagination = {
@@ -243,10 +235,7 @@ function ProductCatalogContent() {
     dispatch,
   });
 
-  const {
-    selectedIndex,
-    setContainerRef,
-  } = useKeyboardNavigation(products, {
+  useKeyboardNavigation(products, {
     onEnter: (index) => {
       if (products[index]) {
         actions.handleQuickView(products[index]);
@@ -268,7 +257,7 @@ function ProductCatalogContent() {
       totalProducts: pagination?.total || 0,
       featuredCount: productsData.filter((p) => p.featured).length,
       activeCount: productsData.filter((p) => p.status === 'published').length,
-      totalValue: productsData.reduce((sum, p) => sum + (p.price * (p.stock_quantity || 0)), 0),
+      totalValue: productsData.reduce((sum, p) => sum + ((p.price || 0) * (p.stockQuantity || 0)), 0),
     };
   }, [products, pagination?.total]);
 
@@ -478,24 +467,26 @@ function ProductCatalogContent() {
               <div className="flex items-center gap-4">
                 <div className="flex-shrink-0">
                   <ProductImage
-                    src={product.images?.[0] || product.image_url}
+                    src={product.images?.[0] || '/placeholder.svg'}
                     alt={product.name}
                     className="h-16 w-16 rounded-lg object-cover"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <TruncatedText text={product.name} className="font-semibold" maxLines={1} />
+                  <div className="font-semibold truncate">{product.name}</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline">{product.category?.name || 'Uncategorized'}</Badge>
+                    <Badge variant="outline">
+                      {typeof product.category === 'string' ? product.category : product.category?.name || 'Uncategorized'}
+                    </Badge>
                     <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
                       {product.status}
                     </Badge>
                   </div>
                 </div>
                 <div className="flex-shrink-0 text-right">
-                  <p className="font-semibold">{formatPrice(product.price, product.currency)}</p>
+                  <p className="font-semibold">{formatPrice(product.price || 0, product.currency)}</p>
                   <p className="text-sm text-muted-foreground">
-                    Stock: {product.stock_quantity || 0}
+                    Stock: {product.stockQuantity || 0}
                   </p>
                 </div>
               </div>
@@ -624,7 +615,7 @@ function ProductCatalogContent() {
                   Export as CSV
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={() => { dispatch({ type: 'SET_EXPORT_FORMAT', payload: 'excel' }); dispatch({ type: 'OPEN_EXPORT_DIALOG' }); }}
+                  onClick={() => { dispatch({ type: 'SET_EXPORT_FORMAT', payload: 'xlsx' as any }); dispatch({ type: 'OPEN_EXPORT_DIALOG' }); }}
                   role="menuitem"
                   aria-label="Export products as Excel file"
                 >
@@ -1010,7 +1001,7 @@ function ProductCatalogContent() {
                     Delete {state.selection.selectedProducts.size}
                   </Button>
                 )}
-                {canAccess('products.update') && (
+                {canAccess('products.edit') && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1100,14 +1091,18 @@ function ProductCatalogContent() {
       )}
 
       <BulkEditDialog
-        products={products.filter(p => state.selection.selectedProducts.has(p.uuid))}
+        productIds={Array.from(state.selection.selectedProducts)}
         open={state.ui.showBulkEditDialog}
         onOpenChange={(open) => {
           if (open) dispatch({ type: 'OPEN_BULK_EDIT_DIALOG' });
           else dispatch({ type: 'CLOSE_BULK_EDIT_DIALOG' });
         }}
-        onSave={actions.handleBulkEditSave}
-        onCancel={() => dispatch({ type: 'CLOSE_BULK_EDIT_DIALOG' })}
+        action="update_status"
+        onSuccess={(jobId: string) => {
+          console.log('Bulk edit job started:', jobId);
+          dispatch({ type: 'CLOSE_BULK_EDIT_DIALOG' });
+          toast.success('Bulk edit operation started');
+        }}
       />
 
       <ComparisonBar />

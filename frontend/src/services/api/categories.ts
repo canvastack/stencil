@@ -84,6 +84,7 @@ const mockCategories: Category[] = [
 class CategoriesService {
   async getCategories(filters?: CategoryFilters): Promise<PaginatedResponse<Category>> {
     if (USE_MOCK) {
+      console.log('[CategoriesService] Using MOCK data mode');
       let filteredCategories = [...mockCategories];
       
       // Apply filters
@@ -152,39 +153,73 @@ class CategoriesService {
         if (filters.is_active !== undefined) params.append('is_active', String(filters.is_active));
       }
 
-      // Try public API first for public pages
-      try {
-        const publicResponse = await anonymousApiClient.get<PaginatedResponse<Category>>(
-          `/public/categories?${params.toString()}`
-        );
-        return publicResponse;
-      } catch (publicError) {
-        // Fall back to tenant API if public API fails
-        const response = await tenantApiClient.get<PaginatedResponse<Category>>(
-          `/categories?${params.toString()}`
-        );
-        return response;
-      }
-    } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
-      // Return mock data on API failure
-      let filteredCategories = [...mockCategories];
+      console.log('[CategoriesService] Fetching categories from API:', {
+        endpoint: `/product-categories?${params.toString()}`,
+        filters
+      });
+
+      // Always use tenant API for admin operations to ensure proper tenant filtering
+      const response = await tenantApiClient.get<PaginatedResponse<Category>>(
+        `/product-categories?${params.toString()}`
+      );
       
-      if (filters?.search) {
-        const search = filters.search.toLowerCase();
-        filteredCategories = filteredCategories.filter(cat =>
-          cat.name.toLowerCase().includes(search) ||
-          cat.description?.toLowerCase().includes(search)
-        );
+      console.log('[CategoriesService] Raw API Response:', {
+        type: typeof response,
+        isArray: Array.isArray(response),
+        hasData: 'data' in (response || {}),
+        keys: response ? Object.keys(response) : [],
+        dataLength: response && 'data' in response ? (response as any).data?.length : 'N/A',
+        response: response
+      });
+      
+      // CRITICAL FIX: Handle response format properly
+      // API returns {data: [...], current_page: ..., etc}
+      // But tenantApiClient interceptor already unwraps it
+      // Check if response is already in correct format
+      if (response && typeof response === 'object') {
+        // If response has 'data' field, it's already properly formatted
+        if ('data' in response && Array.isArray((response as any).data)) {
+          console.log('[CategoriesService] Response is properly formatted, returning as-is');
+          return response as PaginatedResponse<Category>;
+        }
+        
+        // If response is directly an array, wrap it
+        if (Array.isArray(response)) {
+          console.log('[CategoriesService] Response is array, wrapping in pagination structure');
+          return {
+            data: response,
+            current_page: 1,
+            per_page: response.length,
+            total: response.length,
+            last_page: 1,
+          };
+        }
       }
       
-      return {
-        data: filteredCategories,
-        current_page: filters?.page || 1,
-        per_page: filters?.per_page || 50,
-        total: filteredCategories.length,
-        last_page: 1,
-      };
+      console.error('[CategoriesService] Unexpected response format:', response);
+      throw new Error('Unexpected response format from API');
+    } catch (error: any) {
+      console.error('[CategoriesService] API call failed - Full error object:', error);
+      console.error('[CategoriesService] Error details:', {
+        type: typeof error,
+        isError: error instanceof Error,
+        message: error?.message,
+        response: error?.response,
+        responseData: error?.response?.data,
+        responseStatus: error?.response?.status,
+        responseHeaders: error?.response?.headers,
+        config: error?.config ? {
+          url: error.config.url,
+          method: error.config.method,
+          baseURL: error.config.baseURL,
+          headers: error.config.headers
+        } : undefined,
+        stack: error?.stack
+      });
+      
+      // CRITICAL: Re-throw the error instead of falling back to mock data
+      // This ensures proper error handling in the hook
+      throw error;
     }
   }
 
@@ -196,15 +231,9 @@ class CategoriesService {
     }
 
     try {
-      // Try public API first
-      try {
-        const publicResponse = await anonymousApiClient.get<Category>(`/public/categories/${id}`);
-        return publicResponse;
-      } catch (publicError) {
-        // Fall back to tenant API
-        const response = await tenantApiClient.get<Category>(`/categories/${id}`);
-        return response;
-      }
+      // Always use tenant API for admin operations to ensure proper tenant filtering
+      const response = await tenantApiClient.get<Category>(`/product-categories/${id}`);
+      return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       const category = mockCategories.find(cat => cat.id === id);
@@ -221,15 +250,9 @@ class CategoriesService {
     }
 
     try {
-      // Try public API first
-      try {
-        const publicResponse = await anonymousApiClient.get<Category>(`/public/categories/slug/${slug}`);
-        return publicResponse;
-      } catch (publicError) {
-        // Fall back to tenant API
-        const response = await tenantApiClient.get<Category>(`/categories/slug/${slug}`);
-        return response;
-      }
+      // Always use tenant API for admin operations to ensure proper tenant filtering
+      const response = await tenantApiClient.get<Category>(`/product-categories/slug/${slug}`);
+      return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
       const category = mockCategories.find(cat => cat.slug === slug);
@@ -263,7 +286,7 @@ class CategoriesService {
     }
 
     try {
-      const response = await tenantApiClient.post<Category>('/categories', data);
+      const response = await tenantApiClient.post<Category>('/product-categories', data);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -301,7 +324,7 @@ class CategoriesService {
     }
 
     try {
-      const response = await tenantApiClient.put<Category>(`/categories/${id}`, data);
+      const response = await tenantApiClient.put<Category>(`/product-categories/${id}`, data);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -329,7 +352,7 @@ class CategoriesService {
     }
 
     try {
-      const response = await tenantApiClient.delete<{ message: string }>(`/categories/${id}`);
+      const response = await tenantApiClient.delete<{ message: string }>(`/product-categories/${id}`);
       return response;
     } catch (error) {
       console.error('API call failed, falling back to mock data:', error);
@@ -344,7 +367,7 @@ class CategoriesService {
 
   async getCategoryTree(): Promise<Category[]> {
     try {
-      const response = await tenantApiClient.get<Category[]>('/categories/tree');
+      const response = await tenantApiClient.get<Category[]>('/product-categories/tree/hierarchy');
       return response;
     } catch (error) {
       console.error('Failed to fetch category tree:', error);
@@ -353,15 +376,15 @@ class CategoriesService {
     }
   }
 
-  async reorderCategories(categoryIds: string[]): Promise<{ message: string }> {
+  async reorderCategories(categories: Array<{ id: string | number; sort_order: number }>): Promise<{ message: string }> {
     try {
-      const response = await tenantApiClient.post<{ message: string }>('/categories/reorder', {
-        category_ids: categoryIds
+      const response = await tenantApiClient.post<{ message: string }>('/product-categories/reorder', {
+        categories
       });
       return response;
     } catch (error) {
       console.error('Failed to reorder categories:', error);
-      return { message: 'Categories reordered' };
+      throw error;
     }
   }
 }

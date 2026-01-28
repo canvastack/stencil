@@ -397,9 +397,65 @@ export const createContextAwareProductsService = (userType: UserType) => {
     async reorderProducts(productIds: string[]): Promise<{ success: boolean; message: string }> {
       try {
         const endpoint = getContextAwareEndpoint(userType, 'products/reorder');
-        const response = await apiClient.post<{ success: boolean; message: string }>(endpoint, { product_ids: productIds });
-        return response.data;
-      } catch (error) {
+        
+        // Validate UUIDs
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const invalidIds = productIds.filter(id => !uuidRegex.test(id));
+        
+        if (invalidIds.length > 0) {
+          throw new ApiError(`Invalid UUID format: ${invalidIds.join(', ')}`);
+        }
+        
+        // Convert productIds array to order format expected by backend
+        const orderData = productIds.map((id, index) => ({
+          id: id,
+          position: index + 1
+        }));
+        
+        console.log('Reorder request:', {
+          endpoint,
+          orderData,
+          productCount: productIds.length
+        });
+        
+        const response = await apiClient.post<{ message: string; updated: number }>(endpoint, { 
+          order: orderData 
+        });
+        
+        console.log('Reorder response:', response);
+        
+        // Handle the actual backend response format
+        if (response && (response.message || response.data?.message)) {
+          return {
+            success: true,
+            message: response.message || response.data?.message || 'Products reordered successfully'
+          };
+        }
+        
+        // Fallback for unexpected response format
+        return {
+          success: true,
+          message: 'Products reordered successfully'
+        };
+      } catch (error: any) {
+        console.error('Reorder error details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+          url: error.config?.url
+        });
+        
+        if (error.response?.status === 422) {
+          const validationErrors = error.response.data?.errors || {};
+          const errorMessages = Object.values(validationErrors).flat();
+          throw new ApiError(`Validation failed: ${errorMessages.join(', ')}`, error);
+        }
+        
+        if (error.response?.status === 404) {
+          throw new ApiError('Reorder endpoint not found. Please check if the feature is enabled.', error);
+        }
+        
         handleError(error, 'reorder products');
       }
     },
