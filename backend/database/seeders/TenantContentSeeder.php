@@ -258,12 +258,13 @@ class TenantContentSeeder extends Seeder
             "cta" => [
                 [
                     "type" => "primary",
-                    "title" => "Siap Mewujudkan Proyek Anda?",
-                    "subtitle" => "Diskusikan kebutuhan Anda dengan tim kami dan dapatkan penawaran gratis hari ini",
+                    "enabled" => true,
+                    "title" => "Siap Mewujudkan Proyek Etching Anda?",
+                    "subtitle" => "Hubungi kami sekarang dan dapatkan konsultasi gratis untuk proyek etching Anda. Tim ahli kami siap membantu mewujudkan ide kreatif Anda.",
                     "stats" => [
                         [
-                            "value" => "1000+",
-                            "label" => "Products"
+                            "value" => "2000+",
+                            "label" => "Produk Selesai"
                         ],
                         [
                             "value" => "15+",
@@ -272,22 +273,26 @@ class TenantContentSeeder extends Seeder
                         [
                             "value" => "98%",
                             "label" => "Tingkat Kepuasan"
+                        ],
+                        [
+                            "value" => "500+",
+                            "label" => "Klien Setia"
                         ]
                     ],
                     "buttons" => [
                         [
-                            "text" => "Hubungi Kami",
-                            "icon" => "MessageSquare",
+                            "text" => "Konsultasi Gratis",
+                            "icon" => "Phone",
                             "link" => "/contact",
                             "variant" => "default",
                             "className" => "bg-[#475569] hover:bg-[#334155]"
                         ],
                         [
-                            "text" => "Lihat Produk Kami",
+                            "text" => "Lihat Portfolio",
                             "icon" => "Target",
-                            "link" => "/products",
+                            "link" => "/portfolio",
                             "variant" => "outline",
-                            "className" => "border-2 border-[#fbbf24] bg-transparent text-white hover:bg-white/10"
+                            "className" => "border-2 border-white bg-transparent text-white hover:bg-white/10"
                         ]
                     ],
                     "background" => "bg-gradient-to-r from-[#f59e0b] to-[#f97316]"

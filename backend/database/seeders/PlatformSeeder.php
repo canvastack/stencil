@@ -219,6 +219,7 @@ class PlatformSeeder extends Seeder
                     'vendors.view', 'vendors.create', 'vendors.edit', 'vendors.delete',
                     'analytics:view',
                     'settings:manage',
+                    'manage-business-rules',
                     // Pages Engine (CMS) Permissions
                     'pages:content-types:view', 'pages:content-types:create', 'pages:content-types:update', 'pages:content-types:delete',
                     'pages:contents:view', 'pages:contents:create', 'pages:contents:update', 'pages:contents:delete', 'pages:contents:publish', 'pages:contents:schedule',
