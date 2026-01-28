@@ -165,7 +165,7 @@ export default function CustomerDetail() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <AlertCircle className="h-12 w-12 text-destructive" />
         <p className="text-lg font-semibold">Customer not found</p>
-        <Button variant="outline" onClick={() => navigate('/admin/customers')}>
+        <Button variant="outline" onClick={() => navigate('/admin/customers/database')}>
           Back to Customers
         </Button>
       </div>
@@ -180,7 +180,7 @@ export default function CustomerDetail() {
           <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => navigate('/admin/customers')}
+            onClick={() => navigate('/admin/customers/database')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
