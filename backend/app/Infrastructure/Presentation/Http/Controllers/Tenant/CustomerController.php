@@ -13,6 +13,7 @@ use App\Domain\Customer\Services\CustomerSegmentationService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomerController extends Controller
@@ -413,6 +414,117 @@ class CustomerController extends Controller
         }
     }
 
+    public function create(Request $request): JsonResponse
+    {
+        try {
+            // Return form data for creating a new customer
+            return response()->json([
+                'success' => true,
+                'message' => 'Form data untuk customer baru',
+                'data' => [
+                    'customer_types' => ['individual', 'company'],
+                    'statuses' => ['active', 'inactive', 'pending'],
+                    'default_values' => [
+                        'status' => 'active',
+                        'customer_type' => 'individual'
+                    ]
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data form customer',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function creditAnalysis(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'customer_id' => 'nullable|integer|exists:customers,id',
+                'limit' => 'nullable|integer|min:1|max:100'
+            ]);
+
+            $limit = $validated['limit'] ?? 20;
+            $query = Customer::with(['orders' => function($q) {
+                $q->select('customer_id', 'total_amount', 'status', 'created_at')
+                  ->orderBy('created_at', 'desc');
+            }]);
+
+            if (!empty($validated['customer_id'])) {
+                $query->where('id', $validated['customer_id']);
+            }
+
+            $customers = $query->limit($limit)->get();
+
+            $creditAnalysis = $customers->map(function ($customer) {
+                $orders = $customer->orders;
+                $totalSpent = $orders->sum('total_amount');
+                $avgOrderValue = $orders->count() > 0 ? $totalSpent / $orders->count() : 0;
+                $lastOrderDate = $orders->first()?->created_at;
+                
+                return [
+                    'customer_id' => $customer->id,
+                    'customer_uuid' => $customer->uuid,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'total_orders' => $orders->count(),
+                    'total_spent' => $totalSpent,
+                    'average_order_value' => $avgOrderValue,
+                    'last_order_date' => $lastOrderDate?->toDateString(),
+                    'credit_score' => min(100, max(0, ($totalSpent / 1000000) * 10 + ($orders->count() * 5))),
+                    'risk_level' => $this->calculateRiskLevel($customer, $orders)
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Analisis kredit customer berhasil',
+                'data' => [
+                    'credit_analysis' => $creditAnalysis,
+                    'summary' => [
+                        'total_customers' => $customers->count(),
+                        'average_credit_score' => $creditAnalysis->avg('credit_score'),
+                        'high_risk_customers' => $creditAnalysis->where('risk_level', 'high')->count()
+                    ]
+                ]
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi analisis kredit gagal',
+                'error' => $e->validator->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal melakukan analisis kredit',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    private function calculateRiskLevel($customer, $orders): string
+    {
+        $totalSpent = $orders->sum('total_amount');
+        $orderCount = $orders->count();
+        $lastOrderDate = $orders->first()?->created_at;
+        
+        // Calculate days since last order
+        $daysSinceLastOrder = $lastOrderDate ? now()->diffInDays($lastOrderDate) : 999;
+        
+        // Risk calculation logic
+        if ($totalSpent < 500000 || $orderCount < 2 || $daysSinceLastOrder > 180) {
+            return 'high';
+        } elseif ($totalSpent < 2000000 || $orderCount < 5 || $daysSinceLastOrder > 90) {
+            return 'medium';
+        } else {
+            return 'low';
+        }
+    }
+
     public function orders(Request $request, string $customerId): JsonResponse
     {
         try {
@@ -516,6 +628,228 @@ class CustomerController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal menghapus tag customer',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function getSegment(Request $request, string $customerId): JsonResponse
+    {
+        try {
+            $tenant = $this->resolveTenant($request);
+            $isUuid = is_string($customerId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $customerId);
+            
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $customerId)
+                ->firstOrFail();
+
+            // Calculate customer segment based on business logic
+            $totalOrders = $customer->orders()->count();
+            $totalSpent = $customer->orders()->sum('total_amount');
+            $lastOrderDate = $customer->orders()->latest()->first()?->created_at;
+            $daysSinceLastOrder = $lastOrderDate ? now()->diffInDays($lastOrderDate) : 999;
+
+            // Determine segment based on RFM analysis
+            $segment = $this->calculateCustomerSegment($totalOrders, $totalSpent, $daysSinceLastOrder);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer segment berhasil diambil',
+                'data' => [
+                    'customer_id' => $customer->uuid,
+                    'segment' => $segment,
+                    'metrics' => [
+                        'total_orders' => $totalOrders,
+                        'total_spent' => $totalSpent,
+                        'days_since_last_order' => $daysSinceLastOrder,
+                        'last_order_date' => $lastOrderDate?->toDateString()
+                    ]
+                ]
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Customer tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil segment customer',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    private function calculateCustomerSegment(int $totalOrders, int $totalSpent, int $daysSinceLastOrder): array
+    {
+        // Define segment thresholds
+        $highValueThreshold = 5000000; // 5 million IDR
+        $mediumValueThreshold = 1000000; // 1 million IDR
+        $frequentOrdersThreshold = 5;
+        $recentActivityThreshold = 90; // days
+
+        // Calculate segment
+        if ($totalSpent >= $highValueThreshold && $totalOrders >= $frequentOrdersThreshold && $daysSinceLastOrder <= $recentActivityThreshold) {
+            $segmentName = 'VIP Customer';
+            $segmentDescription = 'High-value, frequent, and active customer';
+            $segmentColor = '#gold';
+        } elseif ($totalSpent >= $mediumValueThreshold && $totalOrders >= 3 && $daysSinceLastOrder <= 180) {
+            $segmentName = 'Premium Customer';
+            $segmentDescription = 'Valuable customer with regular activity';
+            $segmentColor = '#silver';
+        } elseif ($totalOrders >= $frequentOrdersThreshold) {
+            $segmentName = 'Loyal Customer';
+            $segmentDescription = 'Frequent customer with good engagement';
+            $segmentColor = '#bronze';
+        } elseif ($daysSinceLastOrder <= $recentActivityThreshold) {
+            $segmentName = 'Active Customer';
+            $segmentDescription = 'Recently active customer';
+            $segmentColor = '#green';
+        } elseif ($daysSinceLastOrder > 365) {
+            $segmentName = 'Inactive Customer';
+            $segmentDescription = 'Customer needs re-engagement';
+            $segmentColor = '#red';
+        } else {
+            $segmentName = 'Standard Customer';
+            $segmentDescription = 'Regular customer with moderate activity';
+            $segmentColor = '#blue';
+        }
+
+        return [
+            'name' => $segmentName,
+            'description' => $segmentDescription,
+            'color' => $segmentColor,
+            'priority' => $this->getSegmentPriority($segmentName)
+        ];
+    }
+
+    private function getSegmentPriority(string $segmentName): int
+    {
+        return match($segmentName) {
+            'VIP Customer' => 1,
+            'Premium Customer' => 2,
+            'Loyal Customer' => 3,
+            'Active Customer' => 4,
+            'Standard Customer' => 5,
+            'Inactive Customer' => 6,
+            default => 5
+        };
+    }
+
+    /**
+     * Get customer payment history
+     */
+    public function paymentHistory(Request $request, string $customerId): JsonResponse
+    {
+        try {
+            $tenant = $this->resolveTenant($request);
+            $isUuid = is_string($customerId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $customerId);
+            
+            $customer = Customer::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $customerId)
+                ->firstOrFail();
+
+            $validated = $request->validate([
+                'limit' => 'nullable|integer|min:1|max:100',
+                'type' => 'nullable|string|in:all,incoming,outgoing',
+                'status' => 'nullable|string|in:all,pending,completed,failed,refunded'
+            ]);
+
+            $limit = $validated['limit'] ?? 50;
+            $typeFilter = $validated['type'] ?? 'all';
+            $statusFilter = $validated['status'] ?? 'all';
+
+            // Query payment transactions for this customer
+            $query = DB::table('order_payment_transactions')
+                ->join('orders', 'order_payment_transactions.order_id', '=', 'orders.id')
+                ->where('order_payment_transactions.tenant_id', $tenant->id)
+                ->where('order_payment_transactions.customer_id', $customer->id)
+                ->select([
+                    'order_payment_transactions.uuid',
+                    'order_payment_transactions.direction',
+                    'order_payment_transactions.type',
+                    'order_payment_transactions.status',
+                    'order_payment_transactions.amount',
+                    'order_payment_transactions.currency',
+                    'order_payment_transactions.method',
+                    'order_payment_transactions.reference',
+                    'order_payment_transactions.paid_at',
+                    'order_payment_transactions.created_at',
+                    'orders.order_number',
+                    'orders.uuid as order_uuid'
+                ])
+                ->orderBy('order_payment_transactions.created_at', 'desc');
+
+            // Apply filters
+            if ($typeFilter !== 'all') {
+                $query->where('order_payment_transactions.direction', $typeFilter);
+            }
+
+            if ($statusFilter !== 'all') {
+                $query->where('order_payment_transactions.status', $statusFilter);
+            }
+
+            $transactions = $query->limit($limit)->get();
+
+            // Format the response
+            $paymentHistory = $transactions->map(function ($transaction) {
+                return [
+                    'id' => $transaction->uuid,
+                    'order_number' => $transaction->order_number,
+                    'order_uuid' => $transaction->order_uuid,
+                    'direction' => $transaction->direction,
+                    'type' => $transaction->type,
+                    'status' => $transaction->status,
+                    'amount' => $transaction->amount,
+                    'currency' => $transaction->currency,
+                    'method' => $transaction->method,
+                    'reference' => $transaction->reference,
+                    'paid_at' => $transaction->paid_at,
+                    'created_at' => $transaction->created_at,
+                    'formatted_amount' => 'Rp ' . number_format($transaction->amount, 0, ',', '.'),
+                    'status_label' => ucfirst($transaction->status),
+                    'type_label' => ucfirst(str_replace('_', ' ', $transaction->type))
+                ];
+            });
+
+            // Calculate summary statistics
+            $totalIncoming = $transactions->where('direction', 'incoming')->where('status', 'completed')->sum('amount');
+            $totalOutgoing = $transactions->where('direction', 'outgoing')->where('status', 'completed')->sum('amount');
+            $pendingAmount = $transactions->where('status', 'pending')->sum('amount');
+            $lastPaymentDate = $transactions->where('status', 'completed')->first()?->paid_at;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment history berhasil diambil',
+                'data' => [
+                    'customer' => [
+                        'id' => $customer->uuid,
+                        'name' => $customer->name,
+                        'email' => $customer->email
+                    ],
+                    'payment_history' => $paymentHistory,
+                    'summary' => [
+                        'total_transactions' => $transactions->count(),
+                        'total_incoming' => $totalIncoming,
+                        'total_outgoing' => $totalOutgoing,
+                        'net_amount' => $totalIncoming - $totalOutgoing,
+                        'pending_amount' => $pendingAmount,
+                        'last_payment_date' => $lastPaymentDate,
+                        'formatted_total_incoming' => 'Rp ' . number_format($totalIncoming, 0, ',', '.'),
+                        'formatted_total_outgoing' => 'Rp ' . number_format($totalOutgoing, 0, ',', '.'),
+                        'formatted_net_amount' => 'Rp ' . number_format($totalIncoming - $totalOutgoing, 0, ',', '.'),
+                        'formatted_pending_amount' => 'Rp ' . number_format($pendingAmount, 0, ',', '.')
+                    ]
+                ]
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Customer tidak ditemukan'], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi parameter gagal',
+                'error' => $e->validator->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil payment history',
                 'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
             ], 500);
         }

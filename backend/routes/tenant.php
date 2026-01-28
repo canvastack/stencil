@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\Tenant\PluginMarketplaceController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\TenantUrlConfigurationController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\CustomDomainController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\UrlAnalyticsController;
+use App\Http\Controllers\Api\V1\Admin\BusinessTypeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,12 +70,16 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/search', [CustomerController::class, 'search'])->name('tenant.customers.search');
             Route::get('/export', [CustomerController::class, 'export'])->name('tenant.customers.export');
             Route::get('/inactive', [CustomerController::class, 'inactive'])->name('tenant.customers.inactive');
+            Route::get('/new', [CustomerController::class, 'create'])->name('tenant.customers.create');
+            Route::get('/credit', [CustomerController::class, 'creditAnalysis'])->name('tenant.customers.credit');
             
             // Customer by ID (catch-all - must come last)
             Route::get('/{customer}', [CustomerController::class, 'show'])->name('tenant.customers.show');
             Route::put('/{customer}', [CustomerController::class, 'update'])->name('tenant.customers.update');
             Route::delete('/{customer}', [CustomerController::class, 'destroy'])->name('tenant.customers.destroy');
             Route::get('/{customer}/orders', [CustomerController::class, 'orders'])->name('tenant.customers.orders');
+            Route::get('/{customer}/segment', [CustomerController::class, 'getSegment'])->name('tenant.customers.segment');
+            Route::get('/{customer}/payment-history', [CustomerController::class, 'paymentHistory'])->name('tenant.customers.payment_history');
             
             // Customer Tags
             Route::post('/{customer}/tags', [CustomerController::class, 'addTag'])->name('tenant.customers.add_tag');
@@ -148,6 +153,11 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::put('/{category}', [ProductCategoryController::class, 'update'])->name('tenant.product_categories.update');
             Route::delete('/{category}', [ProductCategoryController::class, 'destroy'])->name('tenant.product_categories.destroy');
             Route::get('/{category}/products', [ProductCategoryController::class, 'products'])->name('tenant.product_categories.products');
+        });
+        
+        // Business Types Management
+        Route::prefix('business-types')->group(function () {
+            Route::get('/', [BusinessTypeController::class, 'index'])->name('tenant.business_types.index');
         });
         
         // Inventory Management

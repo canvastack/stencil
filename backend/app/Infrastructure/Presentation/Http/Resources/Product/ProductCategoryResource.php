@@ -16,6 +16,7 @@ class ProductCategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'description' => $this->description,
+            'business_type' => $this->business_type,
             
             // Flat fields for frontend compatibility
             'parent_id' => $this->parent_id,
@@ -34,7 +35,7 @@ class ProductCategoryResource extends JsonResource
                 'path' => $this->path,
                 'fullPath' => $this->getFullPath(),
                 'breadcrumb' => $this->getBreadcrumb(),
-                'hasChildren' => $this->hasChildren(),
+                'hasChildren' => ($this->children_count ?? 0) > 0,
             ],
             
             'sortOrder' => $this->sort_order,
@@ -66,8 +67,8 @@ class ProductCategoryResource extends JsonResource
             ],
             
             'stats' => [
-                'productCount' => $this->products()->count(),
-                'hasProducts' => $this->hasProducts(),
+                'productCount' => $this->products_count ?? 0,
+                'hasProducts' => ($this->products_count ?? 0) > 0,
             ],
             
             'timestamps' => [

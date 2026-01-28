@@ -17,10 +17,10 @@ class UrlAnalyticsController extends Controller
     public function overview(Request $request): JsonResponse
     {
         try {
-            // Optional permission check - commented out for now
-            // if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
-            //     throw new \Illuminate\Auth\Access\AuthorizationException();
-            // }
+            // Permission check
+            if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
+                throw new \Illuminate\Auth\Access\AuthorizationException();
+            }
 
             $tenantUuid = $request->attributes->get('tenant_uuid');
             
@@ -73,10 +73,10 @@ class UrlAnalyticsController extends Controller
     public function trends(Request $request): JsonResponse
     {
         try {
-            // Optional permission check - commented out for now
-            // if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
-            //     throw new \Illuminate\Auth\Access\AuthorizationException();
-            // }
+            // Permission check
+            if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
+                throw new \Illuminate\Auth\Access\AuthorizationException();
+            }
 
             $tenantUuid = $request->attributes->get('tenant_uuid');
             
@@ -135,10 +135,10 @@ class UrlAnalyticsController extends Controller
     public function geographic(Request $request): JsonResponse
     {
         try {
-            // Optional permission check - commented out for now
-            // if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
-            //     throw new \Illuminate\Auth\Access\AuthorizationException();
-            // }
+            // Permission check
+            if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
+                throw new \Illuminate\Auth\Access\AuthorizationException();
+            }
 
             $tenantUuid = $request->attributes->get('tenant_uuid');
             
@@ -194,10 +194,10 @@ class UrlAnalyticsController extends Controller
     public function urlConfigPerformance(Request $request): JsonResponse
     {
         try {
-            // Optional permission check - commented out for now
-            // if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
-            //     throw new \Illuminate\Auth\Access\AuthorizationException();
-            // }
+            // Permission check
+            if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
+                throw new \Illuminate\Auth\Access\AuthorizationException();
+            }
 
             $tenantUuid = $request->attributes->get('tenant_uuid');
             
@@ -253,10 +253,10 @@ class UrlAnalyticsController extends Controller
     public function referrers(Request $request): JsonResponse
     {
         try {
-            // Optional permission check - commented out for now
-            // if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
-            //     throw new \Illuminate\Auth\Access\AuthorizationException();
-            // }
+            // Permission check
+            if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
+                throw new \Illuminate\Auth\Access\AuthorizationException();
+            }
 
             $tenantUuid = $request->attributes->get('tenant_uuid');
             
@@ -315,10 +315,10 @@ class UrlAnalyticsController extends Controller
     public function devices(Request $request): JsonResponse
     {
         try {
-            // Optional permission check - commented out for now
-            // if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
-            //     throw new \Illuminate\Auth\Access\AuthorizationException();
-            // }
+            // Permission check
+            if (auth()->user() && !auth()->user()->can('settings.analytics.view')) {
+                throw new \Illuminate\Auth\Access\AuthorizationException();
+            }
 
             $tenantUuid = $request->attributes->get('tenant_uuid');
             

@@ -23,10 +23,21 @@ class ProductCategoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = ProductCategory::with('children');
+            // Start with tenant-scoped query (removed 'children' eager load to prevent N+1)
+            // Add withCount to optimize product counting and children checking
+            $query = ProductCategory::withCount(['products', 'children']);
+            
+            // EXPLICIT TENANT FILTERING - Always filter by authenticated user's tenant
+            if (auth()->user() && auth()->user()->tenant_id) {
+                $query->where('product_categories.tenant_id', auth()->user()->tenant_id);
+            }
 
-            if ($request->filled('parent_id')) {
-                $query->where('parent_id', $request->parent_id);
+            if ($request->has('parent_id')) {
+                if ($request->parent_id === null || $request->parent_id === 'null') {
+                    $query->whereNull('parent_id');
+                } else {
+                    $query->where('parent_id', $request->parent_id);
+                }
             }
 
             if ($request->boolean('active_only', false)) {
@@ -41,8 +52,20 @@ class ProductCategoryController extends Controller
                 $query->where('is_featured', $request->boolean('is_featured'));
             }
 
-            $sortBy = $request->get('sort_by', 'sort_order');
-            $sortOrder = $request->get('sort_order', 'asc');
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'ILIKE', "%{$search}%")
+                      ->orWhere('description', 'ILIKE', "%{$search}%");
+                });
+            }
+
+            if ($request->filled('is_active')) {
+                $query->where('is_active', $request->boolean('is_active'));
+            }
+
+            $sortBy = $request->get('sort', 'sort_order');
+            $sortOrder = $request->get('order', 'asc');
             $query->orderBy($sortBy, $sortOrder);
 
             if ($request->has('per_page')) {
@@ -161,9 +184,14 @@ class ProductCategoryController extends Controller
             }
 
             $category->update($categoryData);
-            $category->load(['children', 'parent']);
+            
+            // Only load relationships if not a simple sort_order update
+            $isSortOrderOnlyUpdate = count($categoryData) === 1 && isset($categoryData['sort_order']);
+            if (!$isSortOrderOnlyUpdate) {
+                $category->load(['children', 'parent']);
+            }
 
-            return (new ProductCategoryResource($category))
+            return (new ProductCategoryResource($category->loadCount(['products', 'children'])))
                 ->response()
                 ->setStatusCode(200);
 

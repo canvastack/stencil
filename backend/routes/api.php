@@ -210,6 +210,99 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     
     // Business Types API
     Route::get('/business-types', [App\Http\Controllers\Api\V1\Admin\BusinessTypeController::class, 'index']);
+    
+    // Business Rules Management API
+    Route::prefix('business-rules')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\BusinessRulesController::class, 'index']);
+        Route::get('/stats', [App\Http\Controllers\Admin\BusinessRulesController::class, 'stats']);
+        Route::get('/logs', [App\Http\Controllers\Admin\BusinessRulesController::class, 'logs']);
+        Route::get('/configurations', [App\Http\Controllers\Admin\BusinessRulesController::class, 'configurations']);
+        Route::post('/validate', [App\Http\Controllers\Admin\BusinessRulesController::class, 'validateContext']);
+        
+        Route::get('/{ruleCode}', [App\Http\Controllers\Admin\BusinessRulesController::class, 'show']);
+        Route::post('/{ruleCode}/test', [App\Http\Controllers\Admin\BusinessRulesController::class, 'testRule']);
+        
+        Route::get('/configurations/{ruleCode}', [App\Http\Controllers\Admin\BusinessRulesController::class, 'getConfiguration']);
+        Route::put('/configurations/{ruleCode}', [App\Http\Controllers\Admin\BusinessRulesController::class, 'updateConfiguration']);
+        Route::post('/configurations/{ruleCode}/reset', [App\Http\Controllers\Admin\BusinessRulesController::class, 'resetConfiguration']);
+    });
+    
+    // Advanced Pricing Engine API
+    Route::prefix('pricing')->group(function () {
+        Route::post('/calculate', [App\Http\Controllers\Api\PricingController::class, 'calculatePricing']);
+        Route::post('/breakdown', [App\Http\Controllers\Api\PricingController::class, 'getPricingBreakdown']);
+        Route::post('/compare', [App\Http\Controllers\Api\PricingController::class, 'comparePricing']);
+    });
+    
+    // Intelligent Vendor Matching API
+    Route::prefix('vendor-matching')->group(function () {
+        Route::post('/find-vendors', [App\Http\Controllers\Api\VendorMatchingController::class, 'findBestVendors']);
+        Route::post('/recommend', [App\Http\Controllers\Api\VendorMatchingController::class, 'getRecommendation']);
+        Route::get('/by-material', [App\Http\Controllers\Api\VendorMatchingController::class, 'findByMaterial']);
+        Route::get('/by-equipment', [App\Http\Controllers\Api\VendorMatchingController::class, 'findByEquipment']);
+        Route::post('/compatibility-score', [App\Http\Controllers\Api\VendorMatchingController::class, 'getCompatibilityScore']);
+        Route::post('/analyze-capabilities', [App\Http\Controllers\Api\VendorMatchingController::class, 'analyzeCapabilities']);
+    });
+    
+    // Production Management API
+    Route::prefix('production')->group(function () {
+        Route::get('/plans', [App\Http\Controllers\Api\ProductionController::class, 'getProductionPlans']);
+        Route::post('/plans', [App\Http\Controllers\Api\ProductionController::class, 'createProductionPlan']);
+        Route::get('/plans/{planId}', [App\Http\Controllers\Api\ProductionController::class, 'getProductionPlan']);
+        Route::put('/plans/{planId}', [App\Http\Controllers\Api\ProductionController::class, 'updateProductionPlan']);
+        
+        Route::get('/progress/{orderId}', [App\Http\Controllers\Api\ProductionController::class, 'getProductionProgress']);
+        Route::post('/progress/{orderId}', [App\Http\Controllers\Api\ProductionController::class, 'updateProductionProgress']);
+        Route::get('/progress/{orderId}/report', [App\Http\Controllers\Api\ProductionController::class, 'getProgressReport']);
+        
+        Route::get('/schedule', [App\Http\Controllers\Api\ProductionController::class, 'getResourceSchedule']);
+        Route::post('/schedule/optimize', [App\Http\Controllers\Api\ProductionController::class, 'optimizeResourceSchedule']);
+        
+        Route::get('/capacity', [App\Http\Controllers\Api\ProductionController::class, 'getCapacityAnalysis']);
+        Route::get('/risks', [App\Http\Controllers\Api\ProductionController::class, 'getRiskAnalysis']);
+        
+        Route::get('/milestones/{orderId}', [App\Http\Controllers\Api\ProductionController::class, 'getMilestones']);
+        Route::post('/milestones/{orderId}/complete', [App\Http\Controllers\Api\ProductionController::class, 'completeMilestone']);
+        
+        Route::get('/quality-checkpoints/{orderId}', [App\Http\Controllers\Api\ProductionController::class, 'getQualityCheckpoints']);
+        Route::post('/quality-checkpoints/{checkpointId}/complete', [App\Http\Controllers\Api\ProductionController::class, 'completeQualityCheckpoint']);
+    });
+    
+    // Business Analytics API
+    Route::prefix('analytics')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Api\AnalyticsController::class, 'getExecutiveDashboard']);
+        Route::get('/orders', [App\Http\Controllers\Api\AnalyticsController::class, 'getOrderAnalytics']);
+        Route::get('/revenue', [App\Http\Controllers\Api\AnalyticsController::class, 'getRevenueAnalytics']);
+        Route::get('/vendors', [App\Http\Controllers\Api\AnalyticsController::class, 'getVendorAnalytics']);
+        Route::get('/customers', [App\Http\Controllers\Api\AnalyticsController::class, 'getCustomerAnalytics']);
+        Route::get('/production', [App\Http\Controllers\Api\AnalyticsController::class, 'getProductionAnalytics']);
+    });
+    
+    // AI Intelligence API
+    Route::prefix('intelligence')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\Api\IntelligenceController::class, 'getAIDashboard']);
+        Route::get('/recommendations/customer/{customerId}', [App\Http\Controllers\Api\IntelligenceController::class, 'generateOrderRecommendations']);
+        Route::get('/predictions/order-success/{orderId}', [App\Http\Controllers\Api\IntelligenceController::class, 'predictOrderSuccess']);
+        Route::get('/market-trends', [App\Http\Controllers\Api\IntelligenceController::class, 'getMarketTrends']);
+        Route::get('/inventory-optimization', [App\Http\Controllers\Api\IntelligenceController::class, 'getInventoryOptimization']);
+        Route::get('/demand-forecast', [App\Http\Controllers\Api\IntelligenceController::class, 'getDemandForecast']);
+        Route::get('/customer-churn', [App\Http\Controllers\Api\IntelligenceController::class, 'getCustomerChurnPredictions']);
+        Route::get('/revenue-predictions', [App\Http\Controllers\Api\IntelligenceController::class, 'getRevenuePredictions']);
+        Route::get('/data-insights', [App\Http\Controllers\Api\IntelligenceController::class, 'generateDataInsights']);
+    });
+
+    // Voice Command API
+    Route::prefix('voice-commands')->group(function () {
+        Route::post('/', [App\Http\Controllers\Api\VoiceCommandController::class, 'processCommand']);
+        Route::get('/available', [App\Http\Controllers\Api\VoiceCommandController::class, 'getAvailableCommands']);
+        Route::post('/train', [App\Http\Controllers\Api\VoiceCommandController::class, 'trainVoicePattern']);
+    });
+
+    // Smart Search API
+    Route::get('/smart-search', [App\Http\Controllers\Api\SmartSearchController::class, 'search']);
+    Route::get('/search-suggestions', [App\Http\Controllers\Api\SmartSearchController::class, 'suggestions']);
+    Route::post('/search-analytics', [App\Http\Controllers\Api\SmartSearchController::class, 'recordSearchAnalytics']);
+    Route::get('/search-analytics', [App\Http\Controllers\Api\SmartSearchController::class, 'getSearchAnalytics']);
 });
 
 // Tenant API (authenticated tenant users)

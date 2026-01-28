@@ -4,7 +4,6 @@ namespace App\Infrastructure\Presentation\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Domain\Order\Enums\OrderStatus;
-use App\Domain\Order\Events\OrderCreated;
 use App\Domain\Order\Services\OrderStateMachine;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Presentation\Http\Requests\Order\StoreOrderRequest;
@@ -177,9 +176,6 @@ class OrderController extends Controller
             // Create order using Eloquent (simplified approach)
             $order = Order::create($payload);
             $order->load(['customer', 'vendor', 'tenant']);
-            
-            // Dispatch event
-            OrderCreated::dispatch($order);
             
             return (new OrderResource($order))->response()->setStatusCode(201);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {

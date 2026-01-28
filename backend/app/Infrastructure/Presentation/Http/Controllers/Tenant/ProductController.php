@@ -153,8 +153,8 @@ class ProductController extends Controller
                 }
             }
 
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
+            $sortBy = $request->get('sort_by', 'sort_order');
+            $sortOrder = $request->get('sort_order', 'asc');
             $query->orderBy($sortBy, $sortOrder);
 
             $products = $query->paginate($perPage);
@@ -1216,6 +1216,14 @@ class ProductController extends Controller
      */
     public function reorder(Request $request): JsonResponse
     {
+        // Check permission for reordering products
+        if (!$request->user()->can('products.edit')) {
+            return response()->json([
+                'message' => 'You do not have permission to reorder products',
+                'error' => 'Insufficient permissions'
+            ], 403);
+        }
+
         $request->validate([
             'order' => 'required|array',
             'order.*.id' => 'required|uuid',
