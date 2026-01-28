@@ -1,0 +1,37 @@
+{
+  "title": "订单管理",
+  "create_order": "创建订单",
+  "order_details": "订单详情",
+  "order_number": "订单号",
+  "customer": "客户",
+  "vendor": "供应商",
+  "total_amount": "总金额",
+  "due_date": "截止日期",
+  "progress": "进度",
+  "status": {
+    "pending": "待处理",
+    "confirmed": "已确认",
+    "in_production": "生产中",
+    "quality_check": "质量检查",
+    "ready_for_delivery": "准备交付",
+    "delivered": "已交付",
+    "completed": "已完成",
+    "cancelled": "已取消"
+  },
+  "actions": {
+    "view_details": "查看详情",
+    "update_status": "更新状态",
+    "edit_order": "编辑订单",
+    "cancel_order": "取消订单",
+    "duplicate_order": "复制订单"
+  },
+  "filters": {
+    "all_orders": "所有订单",
+    "my_orders": "我的订单",
+    "urgent_orders": "紧急订单",
+    "overdue_orders": "逾期订单"
+  },
+  "search_placeholder": "搜索订单号、客户名称...",
+  "no_orders": "未找到订单",
+  "loading": "加载订单中..."
+}

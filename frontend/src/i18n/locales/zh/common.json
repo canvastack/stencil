@@ -1,0 +1,51 @@
+{
+  "navigation": {
+    "dashboard": "仪表板",
+    "orders": "订单",
+    "vendors": "供应商",
+    "customers": "客户",
+    "analytics": "分析"
+  },
+  "orders": {
+    "title": "订单管理",
+    "create": "创建新订单",
+    "status": {
+      "pending": "待处理",
+      "in_progress": "进行中",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    }
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "view": "查看",
+    "loading": "加载中...",
+    "error": "发生错误",
+    "success": "成功"
+  },
+  "search": {
+    "placeholder": "搜索订单、客户、供应商...",
+    "filters": {
+      "all": "全部",
+      "orders": "订单",
+      "customers": "客户",
+      "vendors": "供应商",
+      "products": "产品"
+    }
+  },
+  "voice": {
+    "listening": "正在听取...",
+    "processing": "处理中...",
+    "not_supported": "此浏览器不支持语音识别",
+    "permission_denied": "麦克风权限被拒绝",
+    "commands": {
+      "dashboard": "显示仪表板",
+      "orders": "显示订单",
+      "search": "搜索客户",
+      "create": "创建新订单"
+    }
+  }
+}

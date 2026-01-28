@@ -1,0 +1,43 @@
+{
+  "main": {
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "products": "Products",
+    "customers": "Customers",
+    "vendors": "Vendors",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "userManagement": "User Management",
+    "roleManagement": "Role Management",
+    "systemSettings": "System Settings",
+    "auditLog": "Audit Log",
+    "backups": "Backups",
+    "maintenance": "Maintenance"
+  },
+  "sections": {
+    "ecommerce": "E-Commerce",
+    "inventory": "Inventory",
+    "production": "Production",
+    "quality": "Quality",
+    "shipping": "Shipping",
+    "payments": "Payments",
+    "reports": "Reports",
+    "tools": "Tools",
+    "integrations": "Integrations"
+  },
+  "breadcrumbs": {
+    "home": "Home",
+    "admin": "Admin",
+    "dashboard": "Dashboard"
+  },
+  "mobile": {
+    "menu": "Menu",
+    "close": "Close",
+    "more": "More"
+  }
+}

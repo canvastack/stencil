@@ -25,7 +25,8 @@ import {
   TrendingUp,
   ClipboardCheck,
   Star,
-  Quote
+  Quote,
+  Phone
 } from "lucide-react";
 import { useTheme } from '@/core/engine/ThemeContext';
 import type { PageProps } from '@/core/engine/types';
@@ -50,7 +51,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   FileCheck,
   Cpu,
   Truck,
-  TrendingUp
+  TrendingUp,
+  Phone
 };
 
 const Home: React.FC<PageProps> = ({ className }) => {
@@ -416,8 +418,8 @@ const Home: React.FC<PageProps> = ({ className }) => {
                   </p>
                 </div>
 
-                {ctaSection.stats && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                {ctaSection.stats && ctaSection.stats.length > 0 && (
+                  <div className={`grid grid-cols-1 sm:grid-cols-2 ${ctaSection.stats.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-6 mb-12`}>
                     {ctaSection.stats.map((stat: any, i: number) => (
                       <Card key={i} className="bg-white/10 backdrop-blur-md border-white/20 p-6 text-center">
                         <div className="text-4xl font-bold mb-2 text-white">{stat.value}</div>

@@ -1,0 +1,43 @@
+{
+  "main": {
+    "dashboard": "Dasbor",
+    "orders": "Pesanan",
+    "products": "Produk",
+    "customers": "Pelanggan",
+    "vendors": "Vendor",
+    "analytics": "Analitik",
+    "settings": "Pengaturan",
+    "profile": "Profil",
+    "logout": "Keluar"
+  },
+  "admin": {
+    "dashboard": "Dasbor Admin",
+    "userManagement": "Manajemen Pengguna",
+    "roleManagement": "Manajemen Peran",
+    "systemSettings": "Pengaturan Sistem",
+    "auditLog": "Log Audit",
+    "backups": "Backup",
+    "maintenance": "Pemeliharaan"
+  },
+  "sections": {
+    "ecommerce": "E-Commerce",
+    "inventory": "Inventori",
+    "production": "Produksi",
+    "quality": "Kualitas",
+    "shipping": "Pengiriman",
+    "payments": "Pembayaran",
+    "reports": "Laporan",
+    "tools": "Alat",
+    "integrations": "Integrasi"
+  },
+  "breadcrumbs": {
+    "home": "Beranda",
+    "admin": "Admin",
+    "dashboard": "Dasbor"
+  },
+  "mobile": {
+    "menu": "Menu",
+    "close": "Tutup",
+    "more": "Lainnya"
+  }
+}

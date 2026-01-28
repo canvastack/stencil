@@ -1,0 +1,69 @@
+{
+  "title": "Manajemen Pesanan",
+  "create": "Buat Pesanan Baru",
+  "edit": "Edit Pesanan",
+  "view": "Lihat Pesanan",
+  "list": "Daftar Pesanan",
+  "details": "Detail Pesanan",
+  "status": {
+    "pending": "Menunggu",
+    "confirmed": "Dikonfirmasi",
+    "in_progress": "Dalam Proses",
+    "production": "Dalam Produksi",
+    "quality_check": "Pemeriksaan Kualitas",
+    "completed": "Selesai",
+    "shipped": "Dikirim",
+    "delivered": "Terkirim",
+    "cancelled": "Dibatalkan",
+    "refunded": "Dikembalikan"
+  },
+  "fields": {
+    "orderNumber": "Nomor Pesanan",
+    "customer": "Pelanggan",
+    "vendor": "Vendor",
+    "items": "Item",
+    "subtotal": "Subtotal",
+    "tax": "Pajak",
+    "shipping": "Pengiriman",
+    "total": "Total",
+    "dueDate": "Tanggal Jatuh Tempo",
+    "createdDate": "Tanggal Dibuat",
+    "notes": "Catatan",
+    "specifications": "Spesifikasi",
+    "attachments": "Lampiran",
+    "progress": "Progres",
+    "priority": "Prioritas"
+  },
+  "actions": {
+    "assignVendor": "Tetapkan Vendor",
+    "updateStatus": "Perbarui Status",
+    "addItem": "Tambah Item",
+    "removeItem": "Hapus Item",
+    "processPayment": "Proses Pembayaran",
+    "generateInvoice": "Buat Invoice",
+    "trackShipment": "Lacak Pengiriman",
+    "cancelOrder": "Batalkan Pesanan",
+    "refundOrder": "Kembalikan Pesanan",
+    "duplicateOrder": "Duplikasi Pesanan",
+    "exportOrder": "Ekspor Pesanan"
+  },
+  "messages": {
+    "orderCreated": "Pesanan berhasil dibuat",
+    "orderUpdated": "Pesanan berhasil diperbarui",
+    "orderCancelled": "Pesanan berhasil dibatalkan",
+    "vendorAssigned": "Vendor berhasil ditetapkan",
+    "statusUpdated": "Status pesanan diperbarui",
+    "paymentProcessed": "Pembayaran berhasil diproses",
+    "invoiceGenerated": "Invoice berhasil dibuat",
+    "confirmCancel": "Apakah Anda yakin ingin membatalkan pesanan ini?",
+    "confirmRefund": "Apakah Anda yakin ingin mengembalikan pesanan ini?"
+  },
+  "filters": {
+    "all": "Semua Pesanan",
+    "byStatus": "Filter berdasarkan Status",
+    "byCustomer": "Filter berdasarkan Pelanggan",
+    "byVendor": "Filter berdasarkan Vendor",
+    "byDateRange": "Filter berdasarkan Rentang Tanggal",
+    "byAmount": "Filter berdasarkan Jumlah"
+  }
+}

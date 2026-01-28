@@ -1,0 +1,69 @@
+{
+  "title": "Order Management",
+  "create": "Create New Order",
+  "edit": "Edit Order",
+  "view": "View Order",
+  "list": "Order List",
+  "details": "Order Details",
+  "status": {
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "in_progress": "In Progress",
+    "production": "In Production",
+    "quality_check": "Quality Check",
+    "completed": "Completed",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded"
+  },
+  "fields": {
+    "orderNumber": "Order Number",
+    "customer": "Customer",
+    "vendor": "Vendor",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "shipping": "Shipping",
+    "total": "Total",
+    "dueDate": "Due Date",
+    "createdDate": "Created Date",
+    "notes": "Notes",
+    "specifications": "Specifications",
+    "attachments": "Attachments",
+    "progress": "Progress",
+    "priority": "Priority"
+  },
+  "actions": {
+    "assignVendor": "Assign Vendor",
+    "updateStatus": "Update Status",
+    "addItem": "Add Item",
+    "removeItem": "Remove Item",
+    "processPayment": "Process Payment",
+    "generateInvoice": "Generate Invoice",
+    "trackShipment": "Track Shipment",
+    "cancelOrder": "Cancel Order",
+    "refundOrder": "Refund Order",
+    "duplicateOrder": "Duplicate Order",
+    "exportOrder": "Export Order"
+  },
+  "messages": {
+    "orderCreated": "Order created successfully",
+    "orderUpdated": "Order updated successfully",
+    "orderCancelled": "Order cancelled successfully",
+    "vendorAssigned": "Vendor assigned successfully",
+    "statusUpdated": "Order status updated",
+    "paymentProcessed": "Payment processed successfully",
+    "invoiceGenerated": "Invoice generated successfully",
+    "confirmCancel": "Are you sure you want to cancel this order?",
+    "confirmRefund": "Are you sure you want to refund this order?"
+  },
+  "filters": {
+    "all": "All Orders",
+    "byStatus": "Filter by Status",
+    "byCustomer": "Filter by Customer",
+    "byVendor": "Filter by Vendor",
+    "byDateRange": "Filter by Date Range",
+    "byAmount": "Filter by Amount"
+  }
+}
