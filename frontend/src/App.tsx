@@ -84,6 +84,7 @@ const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
 const CustomerManagement = lazy(() => import("./pages/admin/CustomerManagement"));
 const CustomerDetail = lazy(() => import("./pages/admin/CustomerDetail"));
+const CustomerEdit = lazy(() => import("./pages/admin/CustomerEdit"));
 const CustomerCreate = lazy(() => import("./pages/admin/customers/CustomerCreate"));
 const VendorManagement = lazy(() => import("./pages/admin/VendorManagement"));
 const VendorDetail = lazy(() => import("./pages/admin/VendorDetail"));
@@ -327,7 +328,8 @@ function App() {
                   <Route path="roles" element={<Suspense fallback={<LoadingFallback />}><RoleManagement /></Suspense>} />
                   <Route path="customers" element={<Suspense fallback={<LoadingFallback />}><CustomerManagement /></Suspense>} />
                   <Route path="customers/new" element={<Suspense fallback={<LoadingFallback />}><CustomerCreate /></Suspense>} />
-                  <Route path="customers/:id" element={<Suspense fallback={<LoadingFallback />}><CustomerDetail /></Suspense>} />
+                  <Route path="customers/:uuid" element={<Suspense fallback={<LoadingFallback />}><CustomerDetail /></Suspense>} />
+                  <Route path="customers/:uuid/edit" element={<Suspense fallback={<LoadingFallback />}><CustomerEdit /></Suspense>} />
                   <Route path="vendors" element={<Suspense fallback={<LoadingFallback />}><VendorManagement /></Suspense>} />
                   <Route path="vendors/:id" element={<Suspense fallback={<LoadingFallback />}><VendorDetail /></Suspense>} />
                   <Route path="vendors/performance" element={<Suspense fallback={<LoadingFallback />}><VendorPerformance /></Suspense>} />

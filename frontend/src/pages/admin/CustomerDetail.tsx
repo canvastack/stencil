@@ -92,7 +92,7 @@ const orderColumns: ColumnDef<CustomerOrder>[] = [
 ];
 
 export default function CustomerDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
   
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -104,9 +104,9 @@ export default function CustomerDetail() {
 
   useEffect(() => {
     const fetchCustomer = async () => {
-      if (!id || id === 'new') {
+      if (!uuid || uuid === 'new') {
         // Redirect to the proper create route if someone accesses /customers/new
-        if (id === 'new') {
+        if (uuid === 'new') {
           navigate('/admin/customers/new');
         }
         return;
@@ -117,13 +117,13 @@ export default function CustomerDetail() {
         setError(null);
         
         // Fetch customer details
-        const customerData = await customersService.getCustomerById(id);
+        const customerData = await customersService.getCustomerById(uuid);
         setCustomer(customerData);
         
         // Fetch customer orders
         setOrdersLoading(true);
         try {
-          const ordersData = await customersService.getCustomerOrders(id);
+          const ordersData = await customersService.getCustomerOrders(uuid);
           setOrders(Array.isArray(ordersData) ? ordersData : []);
         } catch (ordersError) {
           console.error('Failed to fetch customer orders:', ordersError);
@@ -132,7 +132,7 @@ export default function CustomerDetail() {
         
         // Fetch customer segment
         try {
-          const segmentData = await customersService.getCustomerSegment(id);
+          const segmentData = await customersService.getCustomerSegment(uuid);
           setSegment(segmentData);
         } catch (segmentError) {
           console.error('Failed to fetch customer segment:', segmentError);
@@ -150,7 +150,7 @@ export default function CustomerDetail() {
     };
 
     fetchCustomer();
-  }, [id, navigate]);
+  }, [uuid, navigate]);
 
   if (loading) {
     return (
@@ -191,7 +191,7 @@ export default function CustomerDetail() {
             </p>
           </div>
         </div>
-        <Link to={`/admin/customers/${customer.id}/edit`}>
+        <Link to={`/admin/customers/${customer.uuid}/edit`}>
           <Button>
             <Edit className="mr-2 h-4 w-4" />
             Edit Customer

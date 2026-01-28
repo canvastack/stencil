@@ -83,9 +83,11 @@ export interface UpdateCustomerRequest {
   email?: string;
   phone?: string;
   city?: string;
-  country?: string;
+  address?: string;
   company?: string;
+  customer_type?: 'individual' | 'business';
   status?: string;
+  notes?: string;
 }
 
 class CustomersService {
