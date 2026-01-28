@@ -3,340 +3,391 @@
 namespace App\Domain\Customer\Entities;
 
 use App\Domain\Shared\ValueObjects\UuidValueObject;
-use App\Domain\Customer\ValueObjects\CustomerName;
-use App\Domain\Customer\ValueObjects\CustomerEmail;
-use App\Domain\Customer\ValueObjects\CustomerPhone;
-use App\Domain\Customer\ValueObjects\CustomerAddress;
-use App\Domain\Customer\Enums\CustomerStatus;
-use App\Domain\Customer\Enums\CustomerType;
-use DateTime;
+use App\Domain\Shared\ValueObjects\ContactInfo;
+use App\Domain\Shared\ValueObjects\Address;
+use App\Domain\Customer\Events\CustomerCreated;
+use App\Domain\Customer\Events\CustomerUpdated;
+use DateTimeImmutable;
+use InvalidArgumentException;
 
+/**
+ * Customer Entity
+ * 
+ * Core domain entity representing a customer.
+ * Encapsulates customer business rules and maintains data consistency.
+ * 
+ * Database Integration:
+ * - Maps to customers table
+ * - Uses existing field names and structures
+ * - Maintains UUID for public identification
+ */
 class Customer
 {
-    private UuidValueObject $id;
-    private UuidValueObject $tenantId;
-    private CustomerName $name;
-    private CustomerEmail $email;
-    private ?CustomerPhone $phone;
-    private ?CustomerAddress $address;
-    private CustomerStatus $status;
-    private CustomerType $type;
-    private ?string $company;
-    private ?string $taxNumber;
-    private ?string $notes;
-    private array $tags;
-    private ?DateTime $lastOrderAt;
-    private DateTime $createdAt;
-    private DateTime $updatedAt;
+    private array $domainEvents = [];
 
-    public function __construct(
+    private function __construct(
+        private UuidValueObject $id,
+        private UuidValueObject $tenantId,
+        private string $name,
+        private string $email,
+        private ?string $phone,
+        private ?string $company,
+        private ?Address $address,
+        private ContactInfo $contactInfo,
+        private string $status,
+        private array $metadata,
+        private ?DateTimeImmutable $lastOrderAt,
+        private DateTimeImmutable $createdAt,
+        private DateTimeImmutable $updatedAt
+    ) {}
+
+    /**
+     * Create new customer
+     */
+    public static function create(
+        UuidValueObject $tenantId,
+        string $name,
+        string $email,
+        ?string $phone = null,
+        ?string $company = null,
+        ?Address $address = null,
+        array $metadata = []
+    ): self {
+        $id = UuidValueObject::generate();
+        $now = new DateTimeImmutable();
+        
+        // Validate email format
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Invalid email format');
+        }
+
+        // Create contact info
+        $contactInfo = new ContactInfo($email, $phone);
+
+        $customer = new self(
+            id: $id,
+            tenantId: $tenantId,
+            name: $name,
+            email: $email,
+            phone: $phone,
+            company: $company,
+            address: $address,
+            contactInfo: $contactInfo,
+            status: 'active',
+            metadata: $metadata,
+            lastOrderAt: null,
+            createdAt: $now,
+            updatedAt: $now
+        );
+
+        $customer->addDomainEvent(new CustomerCreated($customer));
+        
+        return $customer;
+    }
+
+    /**
+     * Reconstitute customer from persistence data
+     */
+    public static function reconstitute(
         UuidValueObject $id,
         UuidValueObject $tenantId,
-        CustomerName $name,
-        CustomerEmail $email,
-        ?CustomerPhone $phone = null,
-        ?CustomerAddress $address = null,
-        CustomerStatus $status = CustomerStatus::ACTIVE,
-        CustomerType $type = CustomerType::INDIVIDUAL,
+        string $name,
+        string $email,
+        ?string $phone,
+        ?string $company,
+        ?array $address,
+        ?array $contactInfo,
+        array $preferences,
+        array $metadata,
+        string $status,
+        DateTimeImmutable $createdAt,
+        DateTimeImmutable $updatedAt
+    ): self {
+        $addressObj = null;
+        if ($address) {
+            $addressObj = new Address(
+                street: $address['street'],
+                city: $address['city'],
+                state: $address['state'],
+                postalCode: $address['postal_code'],
+                country: $address['country']
+            );
+        }
+
+        $contactInfoObj = new ContactInfo(
+            email: $contactInfo['email'] ?? $email,
+            phone: $contactInfo['phone'] ?? $phone,
+            whatsapp: $contactInfo['whatsapp'] ?? null,
+            alternativeEmail: $contactInfo['alternative_email'] ?? null,
+            additionalContacts: $contactInfo['additional_contacts'] ?? []
+        );
+
+        return new self(
+            id: $id,
+            tenantId: $tenantId,
+            name: $name,
+            email: $email,
+            phone: $phone,
+            company: $company,
+            address: $addressObj,
+            contactInfo: $contactInfoObj,
+            status: $status,
+            metadata: $metadata,
+            lastOrderAt: null, // This would need to be passed if available
+            createdAt: $createdAt,
+            updatedAt: $updatedAt
+        );
+    }
+
+    /**
+     * Update customer information
+     */
+    public function update(
+        string $name,
+        string $email,
+        ?string $phone = null,
         ?string $company = null,
-        ?string $taxNumber = null,
-        ?string $notes = null,
-        array $tags = [],
-        ?DateTime $lastOrderAt = null,
-        ?DateTime $createdAt = null,
-        ?DateTime $updatedAt = null
-    ) {
-        $this->id = $id;
-        $this->tenantId = $tenantId;
+        ?Address $address = null,
+        array $metadata = []
+    ): void {
+        // Validate email format
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Invalid email format');
+        }
+
         $this->name = $name;
         $this->email = $email;
         $this->phone = $phone;
-        $this->address = $address;
-        $this->status = $status;
-        $this->type = $type;
         $this->company = $company;
-        $this->taxNumber = $taxNumber;
-        $this->notes = $notes;
-        $this->tags = $tags;
-        $this->lastOrderAt = $lastOrderAt;
-        $this->createdAt = $createdAt ?? new DateTime();
-        $this->updatedAt = $updatedAt ?? new DateTime();
-
-        $this->validateBusinessRules();
-    }
-
-    public function getId(): UuidValueObject
-    {
-        return $this->id;
-    }
-
-    public function getTenantId(): UuidValueObject
-    {
-        return $this->tenantId;
-    }
-
-    public function getName(): CustomerName
-    {
-        return $this->name;
-    }
-
-    public function getEmail(): CustomerEmail
-    {
-        return $this->email;
-    }
-
-    public function getPhone(): ?CustomerPhone
-    {
-        return $this->phone;
-    }
-
-    public function getAddress(): ?CustomerAddress
-    {
-        return $this->address;
-    }
-
-    public function getStatus(): CustomerStatus
-    {
-        return $this->status;
-    }
-
-    public function getType(): CustomerType
-    {
-        return $this->type;
-    }
-
-    public function getCompany(): ?string
-    {
-        return $this->company;
-    }
-
-    public function getTaxNumber(): ?string
-    {
-        return $this->taxNumber;
-    }
-
-    public function getNotes(): ?string
-    {
-        return $this->notes;
-    }
-
-    public function getTags(): array
-    {
-        return $this->tags;
-    }
-
-    public function getLastOrderAt(): ?DateTime
-    {
-        return $this->lastOrderAt;
-    }
-
-    public function getCreatedAt(): DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function getUpdatedAt(): DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function updateName(CustomerName $name): self
-    {
-        $this->name = $name;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
-    public function updateEmail(CustomerEmail $email): self
-    {
-        $this->email = $email;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
-    public function updatePhone(?CustomerPhone $phone): self
-    {
-        $this->phone = $phone;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
-    public function updateAddress(?CustomerAddress $address): self
-    {
         $this->address = $address;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
+        $this->contactInfo = new ContactInfo($email, $phone);
+        $this->metadata = $metadata;
+        $this->updatedAt = new DateTimeImmutable();
+
+        $this->addDomainEvent(new CustomerUpdated($this));
     }
 
-    public function updateStatus(CustomerStatus $status): self
+    /**
+     * Deactivate customer
+     */
+    public function deactivate(): void
     {
-        $this->status = $status;
-        $this->updatedAt = new DateTime();
+        $this->guardAgainstAlreadyInactive();
         
-        return $this;
+        $this->status = 'inactive';
+        $this->updatedAt = new DateTimeImmutable();
     }
 
-    public function updateType(CustomerType $type): self
+    /**
+     * Activate customer
+     */
+    public function activate(): void
     {
-        $this->type = $type;
-        $this->updatedAt = new DateTime();
+        $this->guardAgainstAlreadyActive();
         
-        if ($type === CustomerType::INDIVIDUAL) {
-            $this->company = null;
-        }
-        
-        return $this;
+        $this->status = 'active';
+        $this->updatedAt = new DateTimeImmutable();
     }
 
-    public function updateCompany(?string $company): self
+    /**
+     * Record last order date
+     */
+    public function recordLastOrder(): void
     {
-        $this->company = $company;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
+        $this->lastOrderAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable();
     }
 
-    public function updateTaxNumber(?string $taxNumber): self
-    {
-        $this->taxNumber = $taxNumber;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
-    public function updateNotes(?string $notes): self
-    {
-        $this->notes = $notes;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
-    public function addTag(string $tag): self
-    {
-        $tag = trim($tag);
-        
-        if (!empty($tag) && !in_array($tag, $this->tags)) {
-            $this->tags[] = $tag;
-            $this->updatedAt = new DateTime();
-        }
-        
-        return $this;
-    }
-
-    public function removeTag(string $tag): self
-    {
-        $index = array_search($tag, $this->tags);
-        
-        if ($index !== false) {
-            array_splice($this->tags, $index, 1);
-            $this->updatedAt = new DateTime();
-        }
-        
-        return $this;
-    }
-
-    public function updateLastOrderAt(?DateTime $lastOrderAt = null): self
-    {
-        $this->lastOrderAt = $lastOrderAt ?? new DateTime();
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
-    public function activate(): self
-    {
-        $this->status = CustomerStatus::ACTIVE;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
-    public function suspend(): self
-    {
-        $this->status = CustomerStatus::SUSPENDED;
-        $this->updatedAt = new DateTime();
-        
-        return $this;
-    }
-
+    /**
+     * Check if customer is active
+     */
     public function isActive(): bool
     {
-        return $this->status === CustomerStatus::ACTIVE;
+        return $this->status === 'active';
     }
 
-    public function isSuspended(): bool
-    {
-        return $this->status === CustomerStatus::SUSPENDED;
-    }
-
-    public function isBusiness(): bool
-    {
-        return $this->type === CustomerType::BUSINESS;
-    }
-
-    public function isIndividual(): bool
-    {
-        return $this->type === CustomerType::INDIVIDUAL;
-    }
-
-    public function hasOrdered(): bool
+    /**
+     * Check if customer has placed orders
+     */
+    public function hasOrders(): bool
     {
         return $this->lastOrderAt !== null;
     }
 
-    public function getDisplayName(): string
+    /**
+     * Get customer tier based on business rules
+     */
+    public function getTier(): string
     {
-        if ($this->isBusiness() && !empty($this->company)) {
-            return $this->company . ' (' . $this->name->getFullName() . ')';
-        }
-        
-        return $this->name->getFullName();
+        // This would typically be calculated based on order history, spending, etc.
+        // For now, return from metadata or default
+        return $this->metadata['tier'] ?? 'standard';
     }
 
-    public function getDaysSinceLastOrder(): ?int
+    /**
+     * Get total orders count
+     */
+    public function getTotalOrders(): int
     {
-        if ($this->lastOrderAt === null) {
-            return null;
-        }
-        
-        $now = new DateTime();
-        $diff = $now->diff($this->lastOrderAt);
-        
-        return $diff->days;
+        return $this->metadata['total_orders'] ?? 0;
     }
 
-    private function validateBusinessRules(): void
+    /**
+     * Get total spent amount
+     */
+    public function getTotalSpent(): \App\Domain\Shared\ValueObjects\Money
     {
-        if ($this->type === CustomerType::BUSINESS && empty($this->company)) {
-            throw new \InvalidArgumentException('Business customers must have a company name');
+        $totalSpent = $this->metadata['total_spent'] ?? 0;
+        return \App\Domain\Shared\ValueObjects\Money::fromCents($totalSpent);
+    }
+
+    /**
+     * Get customer age in months
+     */
+    public function getCustomerAgeInMonths(): int
+    {
+        $now = new DateTimeImmutable();
+        $interval = $this->createdAt->diff($now);
+        return ($interval->y * 12) + $interval->m;
+    }
+
+    /**
+     * Get customer region
+     */
+    public function getRegion(): string
+    {
+        return $this->metadata['region'] ?? 'UNKNOWN';
+    }
+
+    /**
+     * Check if customer is international
+     */
+    public function isInternational(): bool
+    {
+        return $this->metadata['is_international'] ?? false;
+    }
+
+    /**
+     * Check if customer is government entity
+     */
+    public function isGovernment(): bool
+    {
+        return $this->metadata['is_government'] ?? false;
+    }
+
+    /**
+     * Check if customer is export customer
+     */
+    public function isExportCustomer(): bool
+    {
+        return $this->metadata['is_export_customer'] ?? false;
+    }
+
+    /**
+     * Check if customer is in free trade zone
+     */
+    public function isFreeTradeZone(): bool
+    {
+        return $this->metadata['is_free_trade_zone'] ?? false;
+    }
+
+    /**
+     * Check if customer has special exemption
+     */
+    public function hasSpecialExemption(string $exemptionType): bool
+    {
+        $exemptions = $this->metadata['tax_exemptions'] ?? [];
+        return in_array($exemptionType, $exemptions);
+    }
+
+    /**
+     * Check if customer is corporate
+     */
+    public function isCorporate(): bool
+    {
+        return !empty($this->company) || ($this->metadata['customer_type'] ?? 'individual') === 'corporate';
+    }
+
+    /**
+     * Get customer country
+     */
+    public function getCountry(): string
+    {
+        return $this->address?->getCountry() ?? $this->metadata['country'] ?? 'INDONESIA';
+    }
+
+    /**
+     * Check if customer requires PPh Article 23
+     */
+    public function requiresPPhArticle23(): bool
+    {
+        return $this->metadata['requires_pph_article_23'] ?? false;
+    }
+
+    /**
+     * Check if customer requires PPh Article 22
+     */
+    public function requiresPPhArticle22(): bool
+    {
+        return $this->metadata['requires_pph_article_22'] ?? false;
+    }
+
+    // Getters
+    public function getId(): UuidValueObject { return $this->id; }
+    public function getTenantId(): UuidValueObject { return $this->tenantId; }
+    public function getName(): string { return $this->name; }
+    public function getEmail(): string { return $this->email; }
+    public function getPhone(): ?string { return $this->phone; }
+    public function getCompany(): ?string { return $this->company; }
+    public function getAddress(): ?Address { return $this->address; }
+    public function getContactInfo(): ContactInfo { return $this->contactInfo; }
+    public function getStatus(): string { return $this->status; }
+    public function getMetadata(): array { return $this->metadata; }
+    public function getLastOrderAt(): ?DateTimeImmutable { return $this->lastOrderAt; }
+    public function getCreatedAt(): DateTimeImmutable { return $this->createdAt; }
+    public function getUpdatedAt(): DateTimeImmutable { return $this->updatedAt; }
+
+    /**
+     * Get domain events
+     */
+    public function getDomainEvents(): array
+    {
+        return $this->domainEvents;
+    }
+
+    /**
+     * Clear domain events
+     */
+    public function clearDomainEvents(): void
+    {
+        $this->domainEvents = [];
+    }
+
+    /**
+     * Add domain event
+     */
+    private function addDomainEvent($event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+
+    /**
+     * Guard against already inactive customer
+     */
+    private function guardAgainstAlreadyInactive(): void
+    {
+        if ($this->status === 'inactive') {
+            throw new InvalidArgumentException('Customer is already inactive');
         }
     }
 
-    public function toArray(): array
+    /**
+     * Guard against already active customer
+     */
+    private function guardAgainstAlreadyActive(): void
     {
-        return [
-            'id' => $this->id->getValue(),
-            'tenant_id' => $this->tenantId->getValue(),
-            'name' => $this->name->getFullName(),
-            'first_name' => $this->name->getFirstName(),
-            'last_name' => $this->name->getLastName(),
-            'email' => $this->email->getValue(),
-            'phone' => $this->phone?->getValue(),
-            'address' => $this->address?->toArray(),
-            'status' => $this->status->value,
-            'type' => $this->type->value,
-            'company' => $this->company,
-            'tax_number' => $this->taxNumber,
-            'notes' => $this->notes,
-            'tags' => $this->tags,
-            'last_order_at' => $this->lastOrderAt?->format('Y-m-d H:i:s'),
-            'created_at' => $this->createdAt->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updatedAt->format('Y-m-d H:i:s'),
-        ];
+        if ($this->status === 'active') {
+            throw new InvalidArgumentException('Customer is already active');
+        }
     }
 }

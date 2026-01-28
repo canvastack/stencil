@@ -4,47 +4,99 @@ namespace App\Domain\Customer\Repositories;
 
 use App\Domain\Customer\Entities\Customer;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
-use App\Domain\Customer\ValueObjects\CustomerEmail;
-use App\Domain\Customer\Enums\CustomerStatus;
-use App\Domain\Customer\Enums\CustomerType;
 
+/**
+ * Customer Repository Interface (Port)
+ * 
+ * Defines the contract for customer data persistence.
+ * Part of the Domain layer - framework agnostic.
+ * 
+ * Database Integration:
+ * - Abstracts access to customers table
+ * - Handles UUID-based lookups
+ * - Maintains tenant isolation
+ */
 interface CustomerRepositoryInterface
 {
-    public function findById(UuidValueObject $id): ?Customer;
-
-    public function findByEmail(UuidValueObject $tenantId, CustomerEmail $email): ?Customer;
-
-    public function findByTenantId(UuidValueObject $tenantId): array;
-
-    public function findByStatus(UuidValueObject $tenantId, CustomerStatus $status): array;
-
-    public function findByType(UuidValueObject $tenantId, CustomerType $type): array;
-
-    public function findByTag(UuidValueObject $tenantId, string $tag): array;
-
-    public function findRecentCustomers(UuidValueObject $tenantId, int $limit = 10): array;
-
-    public function findInactiveCustomers(UuidValueObject $tenantId, int $daysSinceLastOrder = 90): array;
-
+    /**
+     * Save customer (create or update)
+     */
     public function save(Customer $customer): Customer;
 
+    /**
+     * Find customer by UUID
+     */
+    public function findById(UuidValueObject $id): ?Customer;
+
+    /**
+     * Find customer by email within tenant
+     */
+    public function findByEmail(UuidValueObject $tenantId, string $email): ?Customer;
+
+    /**
+     * Find customers by status within tenant
+     */
+    public function findByStatus(UuidValueObject $tenantId, string $status): array;
+
+    /**
+     * Find customers by type within tenant
+     */
+    public function findByType(UuidValueObject $tenantId, string $type): array;
+
+    /**
+     * Check if email exists within tenant
+     */
+    public function existsByEmail(UuidValueObject $tenantId, string $email): bool;
+
+    /**
+     * Get paginated customers with filters
+     */
+    public function findWithFilters(
+        UuidValueObject $tenantId,
+        array $filters = [],
+        int $page = 1,
+        int $perPage = 15,
+        string $sortBy = 'created_at',
+        string $sortDirection = 'desc'
+    ): array;
+
+    /**
+     * Count customers with filters
+     */
+    public function countWithFilters(UuidValueObject $tenantId, array $filters = []): int;
+
+    /**
+     * Delete customer (soft delete)
+     */
     public function delete(UuidValueObject $id): bool;
 
-    public function existsByEmail(UuidValueObject $tenantId, CustomerEmail $email): bool;
+    /**
+     * Search customers by term (name, email, company)
+     */
+    public function search(UuidValueObject $tenantId, string $searchTerm): array;
 
-    public function countByTenantId(UuidValueObject $tenantId): int;
+    /**
+     * Get customer statistics for tenant
+     */
+    public function getStatistics(UuidValueObject $tenantId): array;
 
-    public function countByStatus(UuidValueObject $tenantId, CustomerStatus $status): int;
+    /**
+     * Get recent customers for tenant
+     */
+    public function getRecent(UuidValueObject $tenantId, int $limit = 10): array;
 
-    public function countByType(UuidValueObject $tenantId, CustomerType $type): int;
+    /**
+     * Find customers with recent orders
+     */
+    public function findWithRecentOrders(UuidValueObject $tenantId, int $days = 30): array;
 
-    public function searchByName(UuidValueObject $tenantId, string $searchTerm): array;
+    /**
+     * Find inactive customers
+     */
+    public function findInactive(UuidValueObject $tenantId, int $days = 90): array;
 
-    public function findActiveBusinessCustomers(UuidValueObject $tenantId): array;
-
-    public function findCustomersWithoutOrders(UuidValueObject $tenantId): array;
-
-    public function findTopCustomers(UuidValueObject $tenantId, int $limit = 10): array;
-
-    public function updateLastOrderAt(UuidValueObject $customerId): bool;
+    /**
+     * Get customer order statistics
+     */
+    public function getOrderStatistics(UuidValueObject $customerId): array;
 }

@@ -2,289 +2,233 @@
 
 namespace App\Domain\Vendor\Services;
 
-use App\Infrastructure\Persistence\Eloquent\Models\Order;
-use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
-use App\Infrastructure\Persistence\Eloquent\Models\VendorOrder;
-use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
-use App\Domain\Order\Services\VendorNegotiationService;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Domain\Vendor\ValueObjects\OrderRequirements;
+use App\Domain\Vendor\ValueObjects\VendorMatchCollection;
+use App\Domain\Vendor\ValueObjects\VendorRecommendation;
+use App\Domain\Vendor\ValueObjects\ScoredVendor;
+use App\Domain\Vendor\Entities\Vendor;
 
+/**
+ * Vendor Matching Service
+ * 
+ * Intelligent vendor matching system with scoring algorithm
+ * Finds and ranks the best vendors for specific order requirements
+ */
 class VendorMatchingService
 {
     public function __construct(
-        private VendorNegotiationService $negotiationService
+        private VendorScoringEngine $scoringEngine,
+        private VendorCapabilityAnalyzer $capabilityAnalyzer
     ) {}
-
+    
     /**
-     * Find matching vendors for an order
+     * Find best vendors for order requirements
      */
-    public function findMatches(Order $order, array $criteria = []): array
-    {
-        $query = Vendor::where('status', 'active');
-
-        // Apply quality tier filter
-        if (!empty($criteria['quality_tier'])) {
-            $query->where('quality_tier', $criteria['quality_tier']);
-        }
-
-        // Apply lead time filter
-        if (!empty($criteria['max_lead_time'])) {
-            $query->where('average_lead_time_days', '<=', $criteria['max_lead_time']);
-        }
-
-        // Apply specialization filter
-        if (!empty($criteria['specializations'])) {
-            $query->where(function ($q) use ($criteria) {
-                foreach ($criteria['specializations'] as $specialization) {
-                    $q->orWhereJsonContains('specializations', $specialization);
-                }
-            });
-        }
-
-        $vendors = $query->get();
-
-        // Calculate compatibility scores and matches
-        $matches = [];
-        foreach ($vendors as $vendor) {
-            $match = $this->calculateVendorMatch($vendor, $order, $criteria);
-            if ($match['compatibility_score'] > 0) {
-                $matches[] = $match;
+    public function findBestVendorsForOrder(
+        OrderRequirements $requirements,
+        int $maxVendors = 5
+    ): VendorMatchCollection {
+        
+        // 1. Filter vendors by basic capabilities (from vendors table)
+        $capableVendors = $this->capabilityAnalyzer->filterCapableVendors($requirements);
+        
+        // 2. Score each vendor using vendors.rating, vendors.total_orders, vendors.specializations
+        $scoredVendors = [];
+        foreach ($capableVendors as $vendor) {
+            $score = $this->scoringEngine->scoreVendor($vendor, $requirements);
+            if ($score->getTotalScore() >= 70) { // Minimum threshold
+                $scoredVendors[] = new ScoredVendor($vendor, $score);
             }
         }
-
-        // Sort by compatibility score (highest first)
-        usort($matches, function ($a, $b) {
-            return $b['compatibility_score'] <=> $a['compatibility_score'];
-        });
-
-        return $matches;
+        
+        // 3. Sort by score and return top vendors
+        usort($scoredVendors, fn($a, $b) => $b->getScore()->getTotalScore() <=> $a->getScore()->getTotalScore());
+        
+        return new VendorMatchCollection(
+            array_slice($scoredVendors, 0, $maxVendors),
+            $requirements
+        );
     }
-
+    
     /**
-     * Calculate vendor compatibility for order
+     * Recommend optimal vendor from matches
      */
-    private function calculateVendorMatch(Vendor $vendor, Order $order, array $criteria = []): array
+    public function recommendOptimalVendor(VendorMatchCollection $matches): VendorRecommendation
     {
-        $score = 0;
-        $maxScore = 100;
-
-        // Quality tier match (25 points)
-        $qualityScore = $this->calculateQualityScore($vendor, $order, $criteria);
-        $score += $qualityScore;
-
-        // Specialization match (30 points)
-        $specializationScore = $this->calculateSpecializationScore($vendor, $order);
-        $score += $specializationScore['score'];
-
-        // Performance history (25 points)
-        $performanceScore = $this->calculatePerformanceScore($vendor);
-        $score += $performanceScore['score'];
-
-        // Capacity and availability (20 points)
-        $capacityScore = $this->calculateCapacityScore($vendor, $order);
-        $score += $capacityScore;
-
-        // Calculate estimated price and lead time
-        $estimatedPrice = $this->estimatePrice($vendor, $order);
-        $estimatedLeadTime = $this->estimateLeadTime($vendor, $order);
-
-        return [
-            'vendor' => $vendor,
-            'compatibility_score' => min($score, $maxScore),
-            'estimated_price' => $estimatedPrice,
-            'estimated_lead_time' => $estimatedLeadTime,
-            'specialization_match' => $specializationScore['matches'],
-            'past_performance' => $performanceScore['details'],
-            'availability_status' => $this->getAvailabilityStatus($vendor),
+        $topVendor = $matches->getTopVendor();
+        
+        if (!$topVendor) {
+            throw new \InvalidArgumentException('No qualified vendors found in matches');
+        }
+        
+        $alternatives = $matches->getAlternatives(3);
+        
+        return new VendorRecommendation(
+            primaryVendor: $topVendor,
+            alternatives: $alternatives,
+            reasoning: $this->generateRecommendationReasoning($topVendor),
+            riskAssessment: $this->assessVendorRisk($topVendor->getVendor())
+        );
+    }
+    
+    /**
+     * Find vendors by material specialization
+     */
+    public function findVendorsByMaterial(string $material, int $limit = 10): array
+    {
+        return $this->capabilityAnalyzer->findVendorsByMaterial($material, $limit);
+    }
+    
+    /**
+     * Find vendors by equipment capability
+     */
+    public function findVendorsByEquipment(array $equipment, int $limit = 10): array
+    {
+        return $this->capabilityAnalyzer->findVendorsByEquipment($equipment, $limit);
+    }
+    
+    /**
+     * Get vendor compatibility score for specific requirements
+     */
+    public function getCompatibilityScore(Vendor $vendor, OrderRequirements $requirements): float
+    {
+        $score = $this->scoringEngine->scoreVendor($vendor, $requirements);
+        return $score->getTotalScore();
+    }
+    
+    /**
+     * Generate recommendation reasoning
+     */
+    private function generateRecommendationReasoning(ScoredVendor $scoredVendor): string
+    {
+        $vendor = $scoredVendor->getVendor();
+        $score = $scoredVendor->getScore();
+        $breakdown = $score->getBreakdown();
+        
+        $reasons = [];
+        
+        // Technical capability
+        if (($breakdown['technical_capability'] ?? 0) >= 35) {
+            $reasons[] = "excellent technical capabilities";
+        }
+        
+        // Cost effectiveness
+        if (($breakdown['cost_effectiveness'] ?? 0) >= 20) {
+            $reasons[] = "competitive pricing";
+        }
+        
+        // Quality track record
+        if (($breakdown['quality_track_record'] ?? 0) >= 18) {
+            $reasons[] = "proven quality track record";
+        }
+        
+        // Delivery performance
+        if (($breakdown['delivery_performance'] ?? 0) >= 9) {
+            $reasons[] = "reliable delivery performance";
+        }
+        
+        // Overall rating
+        if ($vendor->getRating() >= 4.5) {
+            $reasons[] = "high customer satisfaction rating ({$vendor->getRating()}/5.0)";
+        }
+        
+        if (empty($reasons)) {
+            return "Selected based on overall compatibility score of {$score->getTotalScore()}%";
+        }
+        
+        return "Recommended for " . implode(', ', $reasons) . 
+               " with an overall compatibility score of {$score->getTotalScore()}%";
+    }
+    
+    /**
+     * Assess vendor risk (simplified implementation)
+     */
+    private function assessVendorRisk(Vendor $vendor): object
+    {
+        $riskLevel = 'low';
+        $riskFactors = [];
+        
+        // Check vendor rating
+        if ($vendor->getRating() < 3.5) {
+            $riskLevel = 'high';
+            $riskFactors[] = 'Low customer rating';
+        } elseif ($vendor->getRating() < 4.0) {
+            $riskLevel = 'medium';
+            $riskFactors[] = 'Moderate customer rating';
+        }
+        
+        // Check total orders (experience)
+        $totalOrders = $vendor->getTotalOrders();
+        if ($totalOrders < 10) {
+            $riskLevel = $riskLevel === 'low' ? 'medium' : 'high';
+            $riskFactors[] = 'Limited order history';
+        }
+        
+        // Check capacity utilization
+        $capacityUtilization = $vendor->getCurrentCapacityUtilization();
+        if ($capacityUtilization > 0.95) {
+            $riskLevel = $riskLevel === 'low' ? 'medium' : 'high';
+            $riskFactors[] = 'High capacity utilization';
+        }
+        
+        return (object) [
+            'risk_level' => $riskLevel,
+            'risk_factors' => $riskFactors,
+            'mitigation_strategies' => $this->generateMitigationStrategies($riskFactors),
+            'monitoring_recommendations' => $this->generateMonitoringRecommendations($riskLevel)
         ];
     }
-
+    
     /**
-     * Calculate quality tier compatibility score
+     * Generate mitigation strategies
      */
-    private function calculateQualityScore(Vendor $vendor, Order $order, array $criteria): float
+    private function generateMitigationStrategies(array $riskFactors): array
     {
-        $requiredTier = $criteria['quality_tier'] ?? 'standard';
-        $vendorTier = $vendor->quality_tier ?? 'standard';
-
-        $tierLevels = ['standard' => 1, 'premium' => 2, 'exclusive' => 3];
+        $strategies = [];
         
-        $requiredLevel = $tierLevels[$requiredTier] ?? 1;
-        $vendorLevel = $tierLevels[$vendorTier] ?? 1;
-
-        if ($vendorLevel >= $requiredLevel) {
-            return 25; // Full score for meeting requirements
-        } elseif ($vendorLevel + 1 >= $requiredLevel) {
-            return 15; // Partial score for close match
-        }
-
-        return 0; // No score for insufficient quality tier
-    }
-
-    /**
-     * Calculate specialization match score
-     */
-    private function calculateSpecializationScore(Vendor $vendor, Order $order): array
-    {
-        $vendorSpecs = $vendor->specializations ?? [];
-        $orderItems = $order->items ?? [];
-
-        // Extract material types from order items
-        $requiredSpecs = [];
-        foreach ($orderItems as $item) {
-            if (isset($item['material_type'])) {
-                $requiredSpecs[] = $item['material_type'];
+        foreach ($riskFactors as $factor) {
+            switch ($factor) {
+                case 'Low customer rating':
+                    $strategies[] = 'Request additional quality samples before production';
+                    $strategies[] = 'Implement stricter quality checkpoints';
+                    break;
+                case 'Limited order history':
+                    $strategies[] = 'Start with smaller test order';
+                    $strategies[] = 'Require additional references';
+                    break;
+                case 'High capacity utilization':
+                    $strategies[] = 'Negotiate flexible delivery timeline';
+                    $strategies[] = 'Identify backup vendor options';
+                    break;
             }
-            if (isset($item['process_type'])) {
-                $requiredSpecs[] = $item['process_type'];
-            }
         }
-
-        $matches = array_intersect($vendorSpecs, $requiredSpecs);
-        $matchPercentage = count($requiredSpecs) > 0 
-            ? (count($matches) / count($requiredSpecs)) 
-            : 0;
-
-        return [
-            'score' => $matchPercentage * 30,
-            'matches' => $matches,
-            'total_required' => count($requiredSpecs),
-            'total_matched' => count($matches),
-        ];
-    }
-
-    /**
-     * Calculate vendor performance score based on history
-     */
-    private function calculatePerformanceScore(Vendor $vendor): array
-    {
-        // Get recent vendor orders
-        $recentOrders = VendorOrder::where('vendor_id', $vendor->id)
-            ->where('status', 'completed')
-            ->where('created_at', '>=', now()->subMonths(6))
-            ->get();
-
-        if ($recentOrders->isEmpty()) {
-            return [
-                'score' => 12.5, // Default neutral score
-                'details' => [
-                    'orders_completed' => 0,
-                    'average_rating' => 0,
-                    'on_time_rate' => 0,
-                    'completion_rate' => 0,
-                ]
-            ];
-        }
-
-        $totalOrders = $recentOrders->count();
-        $onTimeOrders = $recentOrders->where('delivery_status', 'on_time')->count();
-        $avgRating = $recentOrders->where('quality_rating', '>', 0)->avg('quality_rating') ?? 0;
-
-        $onTimeRate = $totalOrders > 0 ? ($onTimeOrders / $totalOrders) : 0;
-        $performanceScore = ($onTimeRate * 15) + (($avgRating / 5) * 10);
-
-        return [
-            'score' => min($performanceScore, 25),
-            'details' => [
-                'orders_completed' => $totalOrders,
-                'average_rating' => round($avgRating, 2),
-                'on_time_rate' => round($onTimeRate * 100, 1),
-                'completion_rate' => 100, // Assuming completed orders
-            ]
-        ];
-    }
-
-    /**
-     * Calculate vendor capacity score
-     */
-    private function calculateCapacityScore(Vendor $vendor, Order $order): float
-    {
-        // Get active orders for vendor
-        $activeOrders = VendorOrder::where('vendor_id', $vendor->id)
-            ->whereIn('status', ['pending', 'accepted', 'in_progress'])
-            ->count();
-
-        // Simplified capacity calculation
-        $maxCapacity = 10; // Assume max 10 concurrent orders
-        $currentUtilization = $activeOrders / $maxCapacity;
-
-        if ($currentUtilization <= 0.5) {
-            return 20; // High availability
-        } elseif ($currentUtilization <= 0.8) {
-            return 12; // Medium availability
-        }
-
-        return 5; // Low availability
-    }
-
-    /**
-     * Estimate price based on vendor and order
-     */
-    private function estimatePrice(Vendor $vendor, Order $order): float
-    {
-        $basePrice = $order->total_amount ?? 0;
         
-        // Quality tier multiplier
-        $qualityMultipliers = [
-            'standard' => 1.0,
-            'premium' => 1.2,
-            'exclusive' => 1.5,
-        ];
-
-        $multiplier = $qualityMultipliers[$vendor->quality_tier ?? 'standard'] ?? 1.0;
-        
-        // Add some variance based on vendor performance
-        $performanceAdjustment = ($vendor->performance_score ?? 3.0) / 5.0; // 0.6 to 1.0
-        $finalMultiplier = $multiplier * $performanceAdjustment;
-
-        return round($basePrice * $finalMultiplier, 2);
+        return array_unique($strategies);
     }
-
+    
     /**
-     * Estimate lead time based on vendor capabilities
+     * Generate monitoring recommendations
      */
-    private function estimateLeadTime(Vendor $vendor, Order $order): int
+    private function generateMonitoringRecommendations(string $riskLevel): array
     {
-        $baseDays = $vendor->average_lead_time_days ?? 14;
-        
-        // Adjust based on order complexity (simplified)
-        $itemCount = is_array($order->items) ? count($order->items) : 1;
-        $complexityMultiplier = 1 + ($itemCount - 1) * 0.1; // Add 10% per additional item
-        
-        return (int) ceil($baseDays * $complexityMultiplier);
-    }
-
-    /**
-     * Get vendor availability status
-     */
-    private function getAvailabilityStatus(Vendor $vendor): string
-    {
-        $activeOrders = VendorOrder::where('vendor_id', $vendor->id)
-            ->whereIn('status', ['pending', 'accepted', 'in_progress'])
-            ->count();
-
-        if ($activeOrders <= 3) {
-            return 'available';
-        } elseif ($activeOrders <= 7) {
-            return 'busy';
-        }
-
-        return 'full';
-    }
-
-    /**
-     * Start negotiation with vendor
-     */
-    public function startNegotiation(Order $order, Vendor $vendor, array $options = []): OrderVendorNegotiation
-    {
-        return $this->negotiationService->startNegotiation($order, [
-            'vendor_id' => $vendor->id,
-            'initial_offer' => $options['initial_offer'] ?? $order->total_amount,
-            'currency' => $order->currency ?? 'IDR',
-            'notes' => $options['notes'] ?? 'Negotiation started via vendor matching',
-            'expires_at' => $options['expires_at'] ?? now()->addDays(7),
-        ]);
+        return match($riskLevel) {
+            'high' => [
+                'Daily progress check-ins',
+                'Weekly quality reviews',
+                'Milestone-based payments only',
+                'Backup vendor on standby'
+            ],
+            'medium' => [
+                'Bi-weekly progress updates',
+                'Mid-production quality check',
+                'Standard payment terms with milestones'
+            ],
+            'low' => [
+                'Standard progress reporting',
+                'Final quality inspection',
+                'Normal payment terms'
+            ],
+            default => ['Standard monitoring']
+        };
     }
 }
