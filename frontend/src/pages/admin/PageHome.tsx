@@ -1772,6 +1772,58 @@ export default function PageHome() {
                   }}
                 />
               </div>
+
+              {/* Stats Section */}
+              <div className="space-y-4 border-t pt-4 mt-4">
+                <div>
+                  <Label className="text-base font-semibold">Statistics</Label>
+                  <p className="text-xs text-muted-foreground mt-1">Add up to 4 statistics to display</p>
+                </div>
+
+                {[0, 1, 2, 3].map((statIndex) => (
+                  <div key={statIndex} className="grid md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="space-y-2">
+                      <Label>Stat {statIndex + 1} - Value</Label>
+                      <Input
+                        placeholder="e.g., 2000+, 99%"
+                        value={formData.cta?.[0]?.stats?.[statIndex]?.value || ""}
+                        onChange={(e) => {
+                          const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                          if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                          const stats = ctaArray[0].stats || [{}, {}, {}, {}];
+                          stats[statIndex] = { ...stats[statIndex], value: e.target.value };
+                          ctaArray[0] = { ...ctaArray[0], stats };
+                          setFormData({
+                            ...formData,
+                            cta: ctaArray
+                          });
+                          setHasChanges(true);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Stat {statIndex + 1} - Label</Label>
+                      <Input
+                        placeholder="e.g., Produk Selesai, Klien Setia"
+                        value={formData.cta?.[0]?.stats?.[statIndex]?.label || ""}
+                        onChange={(e) => {
+                          const ctaArray = Array.isArray(formData.cta) ? [...formData.cta] : [];
+                          if (!ctaArray[0]) ctaArray[0] = { type: 'primary' };
+                          const stats = ctaArray[0].stats || [{}, {}, {}, {}];
+                          stats[statIndex] = { ...stats[statIndex], label: e.target.value };
+                          ctaArray[0] = { ...ctaArray[0], stats };
+                          setFormData({
+                            ...formData,
+                            cta: ctaArray
+                          });
+                          setHasChanges(true);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Button 1 Text</Label>
