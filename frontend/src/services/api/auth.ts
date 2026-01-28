@@ -394,7 +394,8 @@ class AuthService {
   }
 
   private setCurrentTenant(tenant: AuthTenant) {
-    localStorage.setItem('tenant_id', tenant.id);
+    // Store integer ID for backend compatibility (tenant scoping uses integer ID)
+    localStorage.setItem('tenant_id', String(tenant.id));
     localStorage.setItem('tenant', JSON.stringify(tenant));
   }
 

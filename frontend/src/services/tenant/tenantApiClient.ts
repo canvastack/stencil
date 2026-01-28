@@ -73,6 +73,9 @@ class TenantApiClientManager {
 
         if (tenantId && config.headers) {
           config.headers['X-Tenant-ID'] = tenantId;
+          console.log('[TenantApiClient] Setting X-Tenant-ID header:', tenantId);
+        } else {
+          console.log('[TenantApiClient] No tenant ID available for header');
         }
 
         // Ensure all requests go through tenant endpoints
@@ -109,16 +112,22 @@ class TenantApiClientManager {
   private setupResponseInterceptor() {
     this.instance.interceptors.response.use(
       (response: AxiosResponse) => {
-        this.log('debug', `Tenant API response received: ${response.status}`, {
+        console.log('[TenantApiClient] Response interceptor - RAW response:', {
+          status: response.status,
           url: response.config.url,
-          data: response.data,
+          dataType: typeof response.data,
+          isObject: response.data && typeof response.data === 'object',
+          hasData: response.data && 'data' in response.data,
+          hasCurrentPage: response.data && 'current_page' in response.data,
+          dataKeys: response.data && typeof response.data === 'object' ? Object.keys(response.data) : [],
+          data: response.data
         });
         
         // Unwrap nested data structure from Laravel pagination/responses
         if (response.data && typeof response.data === 'object') {
           // Handle paginated responses (Laravel standard)
           if ('data' in response.data && 'current_page' in response.data) {
-            return {
+            const result = {
               data: response.data.data,
               current_page: response.data.current_page,
               last_page: response.data.last_page,
@@ -128,14 +137,23 @@ class TenantApiClientManager {
               to: response.data.to,
               links: response.data.links,
             };
+            console.log('[TenantApiClient] Returning paginated response:', {
+              dataLength: Array.isArray(result.data) ? result.data.length : 'not array',
+              currentPage: result.current_page,
+              total: result.total,
+              result: result
+            });
+            return result;
           }
           
           // Handle single resource responses wrapped in { data: {...} }
           if ('data' in response.data && !Array.isArray(response.data) && Object.keys(response.data).length === 1) {
+            console.log('[TenantApiClient] Unwrapping single resource response');
             return response.data.data;
           }
         }
         
+        console.log('[TenantApiClient] Returning response.data as-is:', response.data);
         return response.data;
       },
       async (error: AxiosError) => {
@@ -277,7 +295,13 @@ class TenantApiClientManager {
   }
 
   private getTenantId(): string | null {
-    return localStorage.getItem('tenant_id');
+    const tenantId = localStorage.getItem('tenant_id');
+    console.log('[TenantApiClient] getTenantId called:', { 
+      tenantId, 
+      type: typeof tenantId,
+      localStorage_keys: Object.keys(localStorage)
+    });
+    return tenantId;
   }
 
   private getAccountType(): string | null {

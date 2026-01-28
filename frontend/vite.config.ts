@@ -1,7 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
-// import { VitePWA } from 'vite-plugin-pwa'; // Disabled - not needed for production
+import { VitePWA } from 'vite-plugin-pwa';
 import path from "path";
 import fs from 'fs-extra';
 
@@ -47,6 +47,7 @@ export default defineConfig(({ mode }) => {
           '**/node_modules/**',
           '**/.git/**',
           '**/src/plugins/test-plugin/**',
+          '**/src/plugins/bad-migration-plugin/**',
         ],
       },
     },
@@ -110,36 +111,126 @@ export default defineConfig(({ mode }) => {
       },
       
       
-      // PWA Plugin completely disabled for production
-      // ...(mode === 'production' ? [VitePWA({
-      //   registerType: 'autoUpdate',
-      //   workbox: {
-      //     globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,gif,svg,woff,woff2}']
-      //   },
-      //   manifest: {
-      //     name: 'CanvaStack Stencil CMS',
-      //     short_name: 'Stencil CMS',
-      //     description: 'Multi-tenant CMS platform for custom engraving and personalization businesses',
-      //     theme_color: '#1f2937',
-      //     background_color: '#ffffff',
-      //     display: 'standalone',
-      //     orientation: 'portrait',
-      //     scope: '/',
-      //     start_url: '/',
-      //     icons: [
-      //       {
-      //         src: 'icons/icon-192x192.png',
-      //         sizes: '192x192',
-      //         type: 'image/png',
-      //       },
-      //       {
-      //         src: 'icons/icon-512x512.png',
-      //         sizes: '512x512',
-      //         type: 'image/png',
-      //       },
-      //     ],
-      //   }
-      // })] : []),
+      // PWA Plugin for Progressive Web App features
+      ...(mode === 'production' ? [VitePWA({
+        registerType: 'autoUpdate',
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,jpg,jpeg,gif,svg,woff,woff2}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/api\./,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-cache',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 60 * 60 * 24 // 24 hours
+                }
+              }
+            },
+            {
+              urlPattern: /\.(?:png|jpg|jpeg|svg|gif)$/,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'images-cache',
+                expiration: {
+                  maxEntries: 300,
+                  maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                }
+              }
+            }
+          ]
+        },
+        manifest: {
+          name: 'CanvaStencil - Multi-Tenant CMS Platform',
+          short_name: 'CanvaStencil',
+          description: 'Enterprise-grade multi-tenant CMS platform for custom engraving and personalization businesses',
+          theme_color: '#1f2937',
+          background_color: '#ffffff',
+          display: 'standalone',
+          orientation: 'portrait-primary',
+          scope: '/',
+          start_url: '/',
+          categories: ['business', 'productivity', 'utilities'],
+          lang: 'en',
+          icons: [
+            {
+              src: '/icons/icon-72x72.png',
+              sizes: '72x72',
+              type: 'image/png',
+              purpose: 'maskable any'
+            },
+            {
+              src: '/icons/icon-96x96.png',
+              sizes: '96x96',
+              type: 'image/png',
+              purpose: 'maskable any'
+            },
+            {
+              src: '/icons/icon-128x128.png',
+              sizes: '128x128',
+              type: 'image/png',
+              purpose: 'maskable any'
+            },
+            {
+              src: '/icons/icon-144x144.png',
+              sizes: '144x144',
+              type: 'image/png',
+              purpose: 'maskable any'
+            },
+            {
+              src: '/icons/icon-152x152.png',
+              sizes: '152x152',
+              type: 'image/png',
+              purpose: 'maskable any'
+            },
+            {
+              src: '/icons/icon-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'maskable any'
+            },
+            {
+              src: '/icons/icon-384x384.png',
+              sizes: '384x384',
+              type: 'image/png',
+              purpose: 'maskable any'
+            },
+            {
+              src: '/icons/icon-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable any'
+            }
+          ],
+          shortcuts: [
+            {
+              name: 'Admin Dashboard',
+              short_name: 'Dashboard',
+              description: 'Access the admin dashboard',
+              url: '/admin',
+              icons: [{ src: '/icons/shortcut-dashboard.png', sizes: '96x96' }]
+            },
+            {
+              name: 'Orders',
+              short_name: 'Orders',
+              description: 'Manage orders',
+              url: '/admin/orders',
+              icons: [{ src: '/icons/shortcut-orders.png', sizes: '96x96' }]
+            },
+            {
+              name: 'Products',
+              short_name: 'Products',
+              description: 'Manage products',
+              url: '/admin/products',
+              icons: [{ src: '/icons/shortcut-products.png', sizes: '96x96' }]
+            }
+          ]
+        },
+        devOptions: {
+          enabled: false // Disable in development for faster builds
+        }
+      })] : []),
       
       // Asset copy plugin
       {

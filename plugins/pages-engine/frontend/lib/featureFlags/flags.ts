@@ -109,7 +109,7 @@ export const featureFlagConfigs: Record<FeatureFlag, FeatureFlagConfig> = {
     rolloutPercentage: 0,
     targetAudience: 'beta',
     dependencies: [],
-    requiredPermissions: ['products.update'],
+    requiredPermissions: ['products.edit'],
     category: 'feature',
   },
   [FeatureFlag.ANALYTICS_DASHBOARD]: {
