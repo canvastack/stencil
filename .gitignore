@@ -134,3 +134,8 @@ plugins/*/docs/fixing
 # IDE & OS specific
 .fleet/
 .phpunit.cache
+
+
+test-*.html
+PHASE_*.md
+*report*.md
