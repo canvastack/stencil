@@ -144,11 +144,10 @@ class Order extends Model implements TenantAwareModel
         return $this->hasMany(Shipment::class);
     }
 
-    public function items(): HasMany
-    {
-        return $this->hasMany(OrderItem::class);
-    }
-
+    // ❌ REMOVED: items() relationship for dynamic form data
+    // This relationship conflicts with JSON-based items storage
+    // Use direct JSON field access instead: $order->items
+    
     public function scopeByStatus($query, $status)
     {
         return $query->where('status', $status);
@@ -178,6 +177,24 @@ class Order extends Model implements TenantAwareModel
     public function getId(): \App\Domain\Shared\ValueObjects\UuidValueObject
     {
         return new \App\Domain\Shared\ValueObjects\UuidValueObject($this->uuid);
+    }
+
+    /**
+     * Get items count from JSON field
+     * Used for frontend compatibility and API responses
+     */
+    public function getItemsCountAttribute(): int
+    {
+        if (is_array($this->items)) {
+            return count($this->items);
+        }
+        
+        if (is_string($this->items)) {
+            $decoded = json_decode($this->items, true);
+            return is_array($decoded) ? count($decoded) : 0;
+        }
+        
+        return 0;
     }
 
     protected static function boot()
