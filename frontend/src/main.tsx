@@ -6,6 +6,8 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import App from "./App.tsx";
 import "./index.css";
 import { initMonitoring } from './lib/monitoring';
+import './utils/dialogAccessibilityMonitor';
+import './utils/suppressRadixWarnings';
 
 initMonitoring();
 

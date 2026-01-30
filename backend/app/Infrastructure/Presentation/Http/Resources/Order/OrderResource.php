@@ -60,6 +60,36 @@ class OrderResource extends JsonResource
             'markupAmount' => $this->markup_amount ?? 0,
             'markupPercentage' => $this->markup_percentage ?? 0,
             
+            // Vendor Negotiation Fields (converted from cents to decimal)
+            'vendorQuotedPrice' => $this->vendor_quoted_price ? $this->vendor_quoted_price / 100 : null,
+            'vendor_quoted_price' => $this->vendor_quoted_price ? $this->vendor_quoted_price / 100 : null,
+            'vendorLeadTimeDays' => $this->vendor_lead_time_days,
+            'vendor_lead_time_days' => $this->vendor_lead_time_days,
+            'negotiationNotes' => $this->negotiation_notes,
+            'negotiation_notes' => $this->negotiation_notes,
+            'vendorTerms' => $this->vendor_terms,
+            'vendor_terms' => $this->vendor_terms,
+            'quotationAmount' => $this->quotation_amount ? $this->quotation_amount / 100 : null,
+            'quotation_amount' => $this->quotation_amount ? $this->quotation_amount / 100 : null,
+            
+            // Quote Status Information
+            'activeQuotes' => $this->vendorNegotiations()
+                ->whereIn('status', ['open', 'countered'])
+                ->count(),
+            'active_quotes' => $this->vendorNegotiations()
+                ->whereIn('status', ['open', 'countered'])
+                ->count(),
+            'acceptedQuote' => $this->vendorNegotiations()
+                ->where('status', 'accepted')
+                ->latest()
+                ->first()
+                ?->uuid,
+            'accepted_quote' => $this->vendorNegotiations()
+                ->where('status', 'accepted')
+                ->latest()
+                ->first()
+                ?->uuid,
+            
             'production' => [
                 'productionType' => $this->production_type,
                 'paymentMethod' => $this->payment_method,

@@ -134,6 +134,8 @@ class OrderStateMachineTest extends TestCase
 
     public function test_transition_updates_order_status_successfully(): void
     {
+        Bus::fake();
+        
         $order = Order::factory()->create(['status' => 'new']);
 
         $result = $this->stateMachine->transitionTo(
@@ -222,6 +224,8 @@ class OrderStateMachineTest extends TestCase
 
     public function test_additional_payment_during_production_completes_balance(): void
     {
+        Bus::fake();
+        
         $tenant = TenantEloquentModel::factory()->create();
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
 
@@ -271,6 +275,8 @@ class OrderStateMachineTest extends TestCase
 
     public function test_vendor_disbursement_is_recorded_during_production_transition(): void
     {
+        Bus::fake();
+        
         $tenant = TenantEloquentModel::factory()->create();
         $customer = Customer::factory()->for($tenant, 'tenant')->create();
         $vendor = Vendor::factory()->for($tenant, 'tenant')->create();
@@ -311,6 +317,8 @@ class OrderStateMachineTest extends TestCase
 
     public function test_transition_to_shipped_records_tracking_number(): void
     {
+        Bus::fake();
+        
         $order = Order::factory()->create(['status' => 'quality_control']);
 
         $this->stateMachine->transitionTo(
@@ -346,6 +354,7 @@ class OrderStateMachineTest extends TestCase
 
     public function test_transition_to_vendor_negotiation_creates_negotiation_record(): void
     {
+        Bus::fake();
         Carbon::setTestNow(Carbon::parse('2025-01-01 09:00:00'));
 
         $tenant = TenantEloquentModel::factory()->create();
@@ -397,6 +406,7 @@ class OrderStateMachineTest extends TestCase
 
     public function test_transition_initializes_sla_timer_for_status_with_policy(): void
     {
+        Bus::fake();
         Carbon::setTestNow(Carbon::parse('2025-01-01 08:00:00'));
 
         $order = Order::factory()->create(['status' => 'new']);
@@ -429,6 +439,7 @@ class OrderStateMachineTest extends TestCase
 
     public function test_transition_records_sla_history_and_triggers_escalation_on_breach(): void
     {
+        Bus::fake();
         Carbon::setTestNow(Carbon::parse('2025-01-01 14:30:00'));
 
         $tenant = TenantEloquentModel::factory()->create();
@@ -586,7 +597,7 @@ class OrderStateMachineTest extends TestCase
             ],
         ]);
 
-        $job = new OrderSlaMonitorJob($order->id, 'vendor_sourcing', 0);
+        $job = new OrderSlaMonitorJob($order->id, $order->tenant_id, 'vendor_sourcing', 0);
 
         $job->handle($this->stateMachine);
 
@@ -632,7 +643,7 @@ class OrderStateMachineTest extends TestCase
             ],
         ]);
 
-        $job = new OrderSlaMonitorJob($order->id, 'vendor_sourcing', null, true);
+        $job = new OrderSlaMonitorJob($order->id, $order->tenant_id, 'vendor_sourcing', null, true);
 
         $job->handle($this->stateMachine);
 

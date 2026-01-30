@@ -220,7 +220,14 @@ class PurchaseOrder
         // Update timeline based on status
         $this->updateTimelineForStatus($newStatus);
         
-        $this->addDomainEvent(new OrderStatusChanged($this, $previousStatus, $newStatus, $reason));
+        $this->addDomainEvent(new OrderStatusChanged(
+            $this->id, 
+            $this->tenantId, 
+            $previousStatus->value, 
+            $newStatus->value, 
+            null, 
+            $reason
+        ));
     }
 
     /**

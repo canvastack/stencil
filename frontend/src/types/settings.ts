@@ -35,6 +35,8 @@ export interface SMTPSettings {
   encryption: 'tls' | 'ssl';
   username: string;
   password: string;
+  fromEmail: string;
+  fromName: string;
 }
 
 export interface SendGridSettings {

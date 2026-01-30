@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import order workflow interaction styles */
+@import './styles/order-workflow-interactions.css';
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
@@ -200,6 +203,268 @@ All colors MUST be HSL.
     *:focus-visible {
       outline-width: 3px;
       outline-offset: 3px;
+    }
+
+    /* Enhanced contrast for status elements */
+    [role="status"],
+    .status-badge,
+    .stage-indicator {
+      border: 2px solid currentColor !important;
+      font-weight: 600 !important;
+    }
+
+    /* High contrast backgrounds */
+    .bg-gray-50 { background-color: #f9fafb !important; }
+    .bg-blue-50 { background-color: #eff6ff !important; }
+    .bg-green-50 { background-color: #f0fdf4 !important; }
+    .bg-yellow-50 { background-color: #fefce8 !important; }
+    .bg-red-50 { background-color: #fef2f2 !important; }
+    .bg-orange-50 { background-color: #fff7ed !important; }
+    .bg-purple-50 { background-color: #f5f3ff !important; }
+    .bg-pink-50 { background-color: #fdf2f8 !important; }
+    .bg-indigo-50 { background-color: #eef2ff !important; }
+    .bg-teal-50 { background-color: #f0fdfa !important; }
+    .bg-cyan-50 { background-color: #ecfeff !important; }
+    .bg-emerald-50 { background-color: #ecfdf5 !important; }
+    .bg-amber-50 { background-color: #fffbeb !important; }
+    .bg-lime-50 { background-color: #f7fee7 !important; }
+
+    /* High contrast text */
+    .text-gray-700 { color: #000000 !important; }
+    .text-blue-700 { color: #1d4ed8 !important; }
+    .text-green-700 { color: #15803d !important; }
+    .text-yellow-700 { color: #a16207 !important; }
+    .text-red-700 { color: #b91c1c !important; }
+    .text-orange-700 { color: #c2410c !important; }
+    .text-purple-700 { color: #7c3aed !important; }
+    .text-pink-700 { color: #be185d !important; }
+    .text-indigo-700 { color: #4338ca !important; }
+    .text-teal-700 { color: #0f766e !important; }
+    .text-cyan-700 { color: #0891b2 !important; }
+    .text-emerald-700 { color: #047857 !important; }
+    .text-amber-700 { color: #92400e !important; }
+    .text-lime-700 { color: #4d7c0f !important; }
+  }
+
+  /* =====================================
+     Color-Blind Friendly Patterns
+     Visual patterns for non-color identification
+  ===================================== */
+
+  /* Base pattern styles */
+  .pattern-diagonal-lines {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      currentColor 2px,
+      currentColor 4px
+    );
+    background-size: 8px 8px;
+  }
+
+  .pattern-horizontal-lines {
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      currentColor 2px,
+      currentColor 4px
+    );
+    background-size: 8px 8px;
+  }
+
+  .pattern-vertical-lines {
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      currentColor 2px,
+      currentColor 4px
+    );
+    background-size: 8px 8px;
+  }
+
+  .pattern-dots {
+    background-image: radial-gradient(
+      circle at 2px 2px,
+      currentColor 1px,
+      transparent 1px
+    );
+    background-size: 8px 8px;
+  }
+
+  .pattern-cross-hatch {
+    background-image: 
+      repeating-linear-gradient(45deg, transparent, transparent 2px, currentColor 2px, currentColor 4px),
+      repeating-linear-gradient(-45deg, transparent, transparent 2px, currentColor 2px, currentColor 4px);
+    background-size: 8px 8px;
+  }
+
+  .pattern-solid-thick-border {
+    border: 3px solid currentColor !important;
+    background-color: transparent !important;
+  }
+
+  .pattern-diagonal-right {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 3px,
+      currentColor 3px,
+      currentColor 6px
+    );
+    background-size: 12px 12px;
+  }
+
+  .pattern-diagonal-left {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 3px,
+      currentColor 3px,
+      currentColor 6px
+    );
+    background-size: 12px 12px;
+  }
+
+  .pattern-zigzag {
+    background-image: linear-gradient(
+      135deg,
+      currentColor 25%,
+      transparent 25%,
+      transparent 50%,
+      currentColor 50%,
+      currentColor 75%,
+      transparent 75%
+    );
+    background-size: 8px 8px;
+  }
+
+  .pattern-waves {
+    background-image: radial-gradient(
+      ellipse at center,
+      transparent 20%,
+      currentColor 21%,
+      currentColor 25%,
+      transparent 26%
+    );
+    background-size: 12px 6px;
+  }
+
+  .pattern-checkered {
+    background-image: 
+      linear-gradient(45deg, currentColor 25%, transparent 25%),
+      linear-gradient(-45deg, currentColor 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, currentColor 75%),
+      linear-gradient(-45deg, transparent 75%, currentColor 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  }
+
+  .pattern-solid-double-border {
+    border: 2px double currentColor !important;
+    background-color: transparent !important;
+  }
+
+  .pattern-grid {
+    background-image: 
+      linear-gradient(currentColor 1px, transparent 1px),
+      linear-gradient(90deg, currentColor 1px, transparent 1px);
+    background-size: 8px 8px;
+  }
+
+  .pattern-bubbles {
+    background-image: 
+      radial-gradient(circle at 25% 25%, currentColor 2px, transparent 2px),
+      radial-gradient(circle at 75% 75%, currentColor 2px, transparent 2px);
+    background-size: 12px 12px;
+  }
+
+  /* Pattern overlay for status badges */
+  .status-badge-with-pattern {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .status-badge-with-pattern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  /* Apply patterns to specific pattern classes */
+  .status-badge-with-pattern.pattern-diagonal-lines::before {
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      currentColor 2px,
+      currentColor 4px
+    );
+    background-size: 8px 8px;
+  }
+
+  .status-badge-with-pattern.pattern-horizontal-lines::before {
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      currentColor 2px,
+      currentColor 4px
+    );
+    background-size: 8px 8px;
+  }
+
+  .status-badge-with-pattern.pattern-dots::before {
+    background-image: radial-gradient(
+      circle at 2px 2px,
+      currentColor 1px,
+      transparent 1px
+    );
+    background-size: 6px 6px;
+  }
+
+  /* Status symbol indicators for color-blind users */
+  .status-symbol {
+    display: inline-block;
+    margin-right: 0.25rem;
+    font-weight: bold;
+    font-size: 0.875em;
+  }
+
+  .status-symbol::before {
+    content: attr(data-symbol);
+  }
+
+  /* Reduced motion support for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    /* Remove pattern animations */
+    .pattern-diagonal-lines,
+    .pattern-horizontal-lines,
+    .pattern-vertical-lines,
+    .pattern-dots,
+    .pattern-cross-hatch,
+    .pattern-zigzag,
+    .pattern-waves,
+    .pattern-checkered,
+    .pattern-grid,
+    .pattern-bubbles {
+      animation: none !important;
     }
   }
 

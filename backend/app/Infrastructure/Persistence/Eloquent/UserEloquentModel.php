@@ -59,6 +59,15 @@ class UserEloquentModel extends Authenticatable
         'password' => 'hashed',
     ];
 
+    /**
+     * Get the entity's notifications.
+     */
+    public function notifications()
+    {
+        return $this->morphMany(\App\Models\DatabaseNotification::class, 'notifiable')
+                    ->orderBy('created_at', 'desc');
+    }
+
     // Relationships
     public function tenant(): BelongsTo
     {

@@ -2,7 +2,7 @@ import { Product, ProductFilters } from '@/types/product';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import { getContextAwareClient, getContextAwareEndpoint, UserType } from './contextAwareClients';
 import { ApiError, AuthError, PermissionError, NotFoundError } from '@/lib/errors';
-import { authService } from './auth';
+import { authService } from '@/services/api/auth'; // Import from main frontend auth service
 
 /**
  * Get authenticated context for API calls

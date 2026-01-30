@@ -66,6 +66,7 @@ export interface QuoteItem {
 }
 
 export interface CreateQuoteRequest {
+  order_id?: string;
   customer_id: string;
   vendor_id: string;
   title: string;

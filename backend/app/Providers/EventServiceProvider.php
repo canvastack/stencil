@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Domain\Order\Events\OrderStatusChanged;
+use App\Domain\Order\Listeners\BroadcastOrderStatusChanged;
+use App\Domain\Order\Listeners\OrderStatusChangedListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -17,6 +20,12 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        
+        // Order Status Change Events
+        OrderStatusChanged::class => [
+            OrderStatusChangedListener::class,
+            BroadcastOrderStatusChanged::class,
         ],
     ];
 

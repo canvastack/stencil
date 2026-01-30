@@ -14,6 +14,7 @@ export interface Customer {
   type: 'individual' | 'business';
   status: 'active' | 'inactive' | 'suspended';
   segment?: string;
+  // Legacy fields (may not be present in newer API responses)
   lifetime_value?: number;
   total_orders?: number;
   total_spent?: number;
@@ -32,6 +33,7 @@ export interface Customer {
     taxId?: string;
     businessLicense?: string;
   };
+  // Primary stats object (current backend structure)
   stats?: {
     totalOrders?: number;
     totalSpent?: number;

@@ -3,7 +3,7 @@ import { DashboardStats, DashboardStat, Activity, ContentOverviewItem } from '@/
 import { customersService } from './customers';
 import { vendorsService } from './vendors';
 import { ordersService } from './orders';
-import { authService } from './auth';
+import { authService } from '@/services/api/auth'; // Import from main frontend auth service
 
 class DashboardService {
   private cache: { data: DashboardStats | null; timestamp: number } = { data: null, timestamp: 0 };

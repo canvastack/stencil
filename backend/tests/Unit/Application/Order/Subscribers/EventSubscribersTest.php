@@ -219,9 +219,11 @@ class EventSubscribersTest extends TestCase
 
         $subscriber = app(NotificationSubscriber::class);
         $event = new OrderStatusChanged(
-            $this->order,
-            OrderStatus::NEW,
-            OrderStatus::VENDOR_SOURCING,
+            $this->order->getId(),
+            $this->tenantId,
+            OrderStatus::NEW->value,
+            OrderStatus::VENDOR_SOURCING->value,
+            null,
             'Moving to vendor sourcing phase'
         );
 

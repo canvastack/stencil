@@ -1,0 +1,448 @@
+/**
+ * Order Workflow UX - Hover and Focus States
+ * 
+ * Comprehensive hover and focus states for order status workflow components
+ * Ensures consistent interactive element feedback across all components
+ * 
+ * COMPLIANCE:
+ * - ✅ WCAG 2.1 AA: Proper focus indicators and contrast ratios
+ * - ✅ CONSISTENT DESIGN: Unified hover and focus patterns
+ * - ✅ SMOOTH TRANSITIONS: All interactions have smooth animations
+ */
+
+/* ==========================================================================
+   Base Interactive Element States
+   ========================================================================== */
+
+/* Interactive Cards */
+.order-workflow-card {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.order-workflow-card:hover {
+  @apply shadow-lg -translate-y-1 border-primary/30;
+}
+
+.order-workflow-card:focus-within {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Interactive Buttons */
+.order-workflow-button {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.order-workflow-button:hover {
+  @apply scale-105 shadow-md;
+}
+
+.order-workflow-button:focus {
+  @apply scale-105 ring-2 ring-ring ring-offset-2;
+}
+
+.order-workflow-button:active {
+  @apply scale-95;
+}
+
+/* Interactive List Items */
+.order-workflow-list-item {
+  @apply transition-all duration-200 ease-in-out cursor-pointer;
+}
+
+.order-workflow-list-item:hover {
+  @apply bg-muted/50 shadow-sm border-primary/30;
+}
+
+.order-workflow-list-item:focus-within {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* ==========================================================================
+   Status-Specific Interactive States
+   ========================================================================== */
+
+/* Status Badges */
+.status-badge {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.status-badge:hover {
+  @apply brightness-110 scale-105;
+}
+
+.status-badge:focus {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Progress Indicators */
+.progress-indicator {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.progress-indicator:hover {
+  @apply scale-110 brightness-110;
+}
+
+.progress-indicator:focus {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Timeline Events */
+.timeline-event {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.timeline-event:hover {
+  @apply shadow-md border-primary/30 bg-muted/20;
+}
+
+.timeline-event:focus-within {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Timeline Icons */
+.timeline-icon {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.timeline-icon:hover {
+  @apply scale-110 brightness-110;
+}
+
+.timeline-icon:focus {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* ==========================================================================
+   Action-Specific Interactive States
+   ========================================================================== */
+
+/* Quick Action Buttons */
+.quick-action-button {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.quick-action-button:hover {
+  @apply scale-105 shadow-md brightness-110;
+}
+
+.quick-action-button:focus {
+  @apply scale-105 ring-2 ring-ring ring-offset-2;
+}
+
+.quick-action-button:active {
+  @apply scale-95;
+}
+
+/* Stage Action Items */
+.stage-action-item {
+  @apply transition-all duration-200 ease-in-out cursor-pointer;
+}
+
+.stage-action-item:hover {
+  @apply bg-muted/50 shadow-sm border-primary/30 scale-[1.02];
+}
+
+.stage-action-item:focus-within {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Transition Buttons */
+.transition-button {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.transition-button:hover {
+  @apply shadow-md brightness-110 scale-105;
+}
+
+.transition-button:focus {
+  @apply ring-2 ring-ring ring-offset-2 scale-105;
+}
+
+.transition-button:active {
+  @apply scale-95;
+}
+
+/* ==========================================================================
+   Modal and Dialog Interactive States
+   ========================================================================== */
+
+/* Modal Content */
+.modal-content {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.modal-content:focus-within {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Dialog Actions */
+.dialog-action {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.dialog-action:hover {
+  @apply scale-105 shadow-md;
+}
+
+.dialog-action:focus {
+  @apply scale-105 ring-2 ring-ring ring-offset-2;
+}
+
+.dialog-action:active {
+  @apply scale-95;
+}
+
+/* ==========================================================================
+   Form Interactive States
+   ========================================================================== */
+
+/* Form Fields */
+.form-field {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.form-field:hover {
+  @apply border-primary/50;
+}
+
+.form-field:focus {
+  @apply border-primary ring-2 ring-ring ring-offset-2;
+}
+
+/* Checkboxes and Radio Buttons */
+.form-checkbox,
+.form-radio {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.form-checkbox:hover,
+.form-radio:hover {
+  @apply scale-110 brightness-110;
+}
+
+.form-checkbox:focus,
+.form-radio:focus {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* ==========================================================================
+   Navigation Interactive States
+   ========================================================================== */
+
+/* Navigation Links */
+.nav-link {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.nav-link:hover {
+  @apply text-primary bg-primary/10 scale-105;
+}
+
+.nav-link:focus {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Breadcrumb Links */
+.breadcrumb-link {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.breadcrumb-link:hover {
+  @apply text-primary underline;
+}
+
+.breadcrumb-link:focus {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* ==========================================================================
+   Accessibility Enhancements
+   ========================================================================== */
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .order-workflow-card:hover,
+  .order-workflow-button:hover,
+  .order-workflow-list-item:hover {
+    @apply border-2 border-primary;
+  }
+  
+  .order-workflow-card:focus-within,
+  .order-workflow-button:focus,
+  .order-workflow-list-item:focus-within {
+    @apply ring-4 ring-primary;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .order-workflow-card,
+  .order-workflow-button,
+  .order-workflow-list-item,
+  .status-badge,
+  .progress-indicator,
+  .timeline-event,
+  .timeline-icon,
+  .quick-action-button,
+  .stage-action-item,
+  .transition-button,
+  .modal-content,
+  .dialog-action,
+  .form-field,
+  .form-checkbox,
+  .form-radio,
+  .nav-link,
+  .breadcrumb-link {
+    @apply transition-none;
+  }
+  
+  .order-workflow-button:hover,
+  .quick-action-button:hover,
+  .transition-button:hover,
+  .dialog-action:hover {
+    @apply scale-100;
+  }
+  
+  .timeline-icon:hover,
+  .progress-indicator:hover {
+    @apply scale-100;
+  }
+}
+
+/* Focus Visible Support */
+.order-workflow-button:focus:not(:focus-visible),
+.quick-action-button:focus:not(:focus-visible),
+.transition-button:focus:not(:focus-visible),
+.dialog-action:focus:not(:focus-visible) {
+  @apply ring-0;
+}
+
+.order-workflow-button:focus-visible,
+.quick-action-button:focus-visible,
+.transition-button:focus-visible,
+.dialog-action:focus-visible {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* ==========================================================================
+   Loading and Disabled States
+   ========================================================================== */
+
+/* Loading States */
+.loading-button {
+  @apply cursor-not-allowed opacity-75;
+}
+
+.loading-button:hover {
+  @apply scale-100 shadow-none;
+}
+
+/* Disabled States */
+.disabled-element {
+  @apply cursor-not-allowed opacity-50;
+}
+
+.disabled-element:hover {
+  @apply scale-100 shadow-none bg-transparent border-current;
+}
+
+.disabled-element:focus {
+  @apply ring-0;
+}
+
+/* ==========================================================================
+   Animation Keyframes
+   ========================================================================== */
+
+@keyframes gentle-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes gentle-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes gentle-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* Animation Classes */
+.animate-gentle-bounce {
+  animation: gentle-bounce 0.3s ease-in-out;
+}
+
+.animate-gentle-pulse {
+  animation: gentle-pulse 1s ease-in-out infinite;
+}
+
+.animate-gentle-glow {
+  animation: gentle-glow 2s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+/* Interactive Element Base */
+.interactive-element {
+  @apply transition-all duration-200 ease-in-out cursor-pointer;
+}
+
+.interactive-element:hover {
+  @apply brightness-110 scale-105;
+}
+
+.interactive-element:focus {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+.interactive-element:active {
+  @apply scale-95;
+}
+
+/* Subtle Interactive Element */
+.interactive-subtle {
+  @apply transition-all duration-200 ease-in-out cursor-pointer;
+}
+
+.interactive-subtle:hover {
+  @apply bg-muted/30 border-primary/30;
+}
+
+.interactive-subtle:focus-within {
+  @apply ring-2 ring-ring ring-offset-2;
+}
+
+/* Critical Interactive Element */
+.interactive-critical {
+  @apply transition-all duration-200 ease-in-out cursor-pointer;
+}
+
+.interactive-critical:hover {
+  @apply shadow-lg scale-105 brightness-110;
+}
+
+.interactive-critical:focus {
+  @apply ring-2 ring-destructive ring-offset-2 scale-105;
+}
+
+.interactive-critical:active {
+  @apply scale-95;
+}

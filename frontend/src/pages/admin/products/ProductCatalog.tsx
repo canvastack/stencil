@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
+import { useDeleteLoading } from '@/hooks/useDeleteLoading';
 import { useProductsQuery } from '@/hooks/useProductsQuery';
 import { useCategoriesQuery } from '@/hooks/useCategoriesQuery';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -224,10 +225,25 @@ function ProductCatalogContent() {
     last_page: data?.last_page || 1,
   };
 
+  // Delete loading functionality for individual product deletes - MOVED BEFORE USAGE
+  const deleteLoading = useDeleteLoading({
+    onDelete: async (productId: string) => {
+      // Placeholder - actual delete will be handled by actions.handleDeleteProduct
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    },
+    onSuccess: (productId: string) => {
+      // Success handling is done in handleDeleteProduct
+    },
+    onError: (productId: string, error: any) => {
+      // Error handling is done in handleDeleteProduct
+    },
+  });
+
   const actions = useProductCatalogActions({
     products,
     dispatch,
     selectedProducts: state.selection.selectedProducts,
+    deleteLoading,
   });
 
   const exportImport = useProductExportImport({
@@ -506,6 +522,8 @@ function ProductCatalogContent() {
           loading={isLoading || state.ui.isRefreshing || isBulkDeleting}
           datasetId="product-catalog"
           showPagination={false}
+          deletingIds={deleteLoading.deletingIds}
+          getRowId={(product) => product.uuid}
           onRowClick={(product) => {
             if (canAccess('products.edit')) {
               navigate(`/admin/products/${product.uuid}/edit`);

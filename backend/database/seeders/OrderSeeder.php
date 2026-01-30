@@ -42,11 +42,43 @@ class OrderSeeder extends Seeder
         // Create sample orders with PT CEX business model data
         $sampleOrders = [
             [
+                'order_number' => 'ETC-251229-0015',
+                'customer_name' => 'PT Etching Solutions',
+                'customer_email' => 'procurement@etching-solutions.co.id',
+                'customer_phone' => '021-55667788',
+                'status' => OrderStatus::COMPLETED->value,
+                'payment_status' => PaymentStatus::PAID->value,
+                'payment_type' => PaymentType::DP50->value,
+                'total_amount' => 850000000, // 8.5 juta
+                'vendor_cost' => 600000000, // 6 juta
+                'customer_price' => 850000000, // 8.5 juta
+                'markup_amount' => 250000000, // 2.5 juta
+                'markup_percentage' => 41.67,
+                'paid_amount' => 850000000, // Full payment
+                'remaining_amount' => 0,
+                'items' => json_encode([
+                    [
+                        'name' => 'Premium Etching Service Package',
+                        'quantity' => 150,
+                        'unit_price' => 56667,
+                        'total_price' => 8500000,
+                        'specifications' => 'High-grade stainless steel etching with precision finishing'
+                    ]
+                ]),
+                'notes' => 'Premium etching project completed with excellent quality',
+                'dp_received_at' => now()->subDays(15),
+                'final_payment_at' => now()->subDays(7),
+                'production_start' => now()->subDays(12),
+                'production_end' => now()->subDays(5),
+                'quality_check_at' => now()->subDays(4),
+                'shipped_at' => now()->subDays(2),
+            ],
+            [
                 'customer_name' => 'PT Manufaktur Jaya',
                 'customer_email' => 'order@manufaktur-jaya.com',
                 'customer_phone' => '021-12345678',
                 'status' => OrderStatus::PENDING->value,
-                'payment_status' => PaymentStatus::Pending->value,
+                'payment_status' => PaymentStatus::UNPAID->value,
                 'payment_type' => PaymentType::DP50->value,
                 'total_amount' => 500000000, // 5 juta
                 'vendor_cost' => 350000000, // 3.5 juta
@@ -71,7 +103,7 @@ class OrderSeeder extends Seeder
                 'customer_email' => 'procurement@teknik-presisi.co.id',
                 'customer_phone' => '021-87654321',
                 'status' => OrderStatus::VENDOR_SOURCING->value,
-                'payment_status' => PaymentStatus::Pending->value,
+                'payment_status' => PaymentStatus::UNPAID->value,
                 'payment_type' => PaymentType::FULL100->value,
                 'total_amount' => 750000000, // 7.5 juta
                 'vendor_cost' => 600000000, // 6 juta
@@ -96,7 +128,7 @@ class OrderSeeder extends Seeder
                 'customer_email' => 'orders@indoetching.com',
                 'customer_phone' => '021-11223344',
                 'status' => OrderStatus::PARTIAL_PAYMENT->value,
-                'payment_status' => PaymentStatus::PartiallyPaid->value,
+                'payment_status' => PaymentStatus::PARTIALLY_PAID->value,
                 'payment_type' => PaymentType::DP50->value,
                 'total_amount' => 300000000, // 3 juta
                 'vendor_cost' => 220000000, // 2.2 juta
@@ -122,7 +154,7 @@ class OrderSeeder extends Seeder
                 'customer_email' => 'info@berkah-metal.com',
                 'customer_phone' => '021-99887766',
                 'status' => OrderStatus::IN_PRODUCTION->value,
-                'payment_status' => PaymentStatus::Paid->value,
+                'payment_status' => PaymentStatus::PAID->value,
                 'payment_type' => PaymentType::FULL100->value,
                 'total_amount' => 125000000, // 1.25 juta
                 'vendor_cost' => 90000000, // 900k
@@ -149,7 +181,7 @@ class OrderSeeder extends Seeder
                 'customer_email' => 'order@precision-tools.id',
                 'customer_phone' => '021-55443322',
                 'status' => OrderStatus::COMPLETED->value,
-                'payment_status' => PaymentStatus::Paid->value,
+                'payment_status' => PaymentStatus::PAID->value,
                 'payment_type' => PaymentType::DP50->value,
                 'total_amount' => 200000000, // 2 juta
                 'vendor_cost' => 145000000, // 1.45 juta
@@ -181,7 +213,7 @@ class OrderSeeder extends Seeder
             Order::create([
                 'tenant_id' => $tenant->id,
                 'customer_id' => $customer->id,
-                'order_number' => 'ORD-' . strtoupper(uniqid()),
+                'order_number' => $orderData['order_number'] ?? 'ORD-' . strtoupper(uniqid()),
                 'status' => $orderData['status'],
                 'payment_status' => $orderData['payment_status'],
                 'total_amount' => $orderData['total_amount'],
@@ -204,6 +236,6 @@ class OrderSeeder extends Seeder
             ]);
         }
 
-        $this->command->info('OrderSeeder completed! Created ' . count($sampleOrders) . ' sample orders.');
+        $this->command->info('OrderSeeder completed! Created ' . count($sampleOrders) . ' sample orders including ETC-251229-0015.');
     }
 }

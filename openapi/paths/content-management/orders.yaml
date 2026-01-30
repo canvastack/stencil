@@ -2178,3 +2178,616 @@
         $ref: '../../components/schemas.yaml#/Unauthorized'
       '403':
         $ref: '../../components/schemas.yaml#/Forbidden'
+# Order Status Workflow - Enhanced Endpoints
+
+# Advance Order Stage
+/tenant/orders/{id}/advance-stage:
+  post:
+    tags:
+    - Order Status Workflow
+    summary: Advance Order Stage
+    description: |
+      Advances an order to a specific business stage with validation and requirement checking.
+      
+      **Business Workflow:**
+      - Validates stage transition rules
+      - Checks requirement completion
+      - Updates order status and stage
+      - Creates timeline entry
+      - Sends notifications to stakeholders
+      
+      **Stage Progression:**
+      - draft → pending → vendor_sourcing → vendor_negotiation → customer_quote → awaiting_payment → in_production → quality_control → shipping → delivered
+      
+      **Validation Rules:**
+      - Cannot skip required stages
+      - Must meet stage requirements
+      - User must have advancement permissions
+      - Order must be in valid state for transition
+    operationId: advanceOrderStage
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - action
+            - target_stage
+            - notes
+            properties:
+              action:
+                type: string
+                enum:
+                - advance_stage
+                description: Action type (always 'advance_stage')
+              target_stage:
+                type: string
+                enum:
+                - pending
+                - vendor_sourcing
+                - vendor_negotiation
+                - customer_quote
+                - awaiting_payment
+                - partial_payment
+                - full_payment
+                - in_production
+                - quality_control
+                - shipping
+                - delivered
+                - cancelled
+                - on_hold
+                description: Target business stage
+              notes:
+                type: string
+                minLength: 10
+                maxLength: 500
+                description: Notes explaining the stage advancement
+              requirements:
+                type: object
+                additionalProperties:
+                  type: boolean
+                description: Requirements completion status
+              metadata:
+                type: object
+                additionalProperties: true
+                description: Additional metadata for the advancement
+          examples:
+            vendor_negotiation:
+              summary: Advance to vendor negotiation
+              value:
+                action: advance_stage
+                target_stage: vendor_negotiation
+                notes: Vendor identified and initial contact made
+                requirements:
+                  vendor_identified: true
+                  initial_quote_received: true
+                metadata:
+                  vendor_id: vendor-uuid
+                  expected_completion: "2024-01-20"
+    responses:
+      '200':
+        description: Order stage advanced successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    $ref: '../../components/schemas.yaml#/PurchaseOrder'
+                  next_steps:
+                    type: array
+                    items:
+                      type: string
+                    description: Suggested next actions
+                  requirements_met:
+                    type: object
+                    additionalProperties:
+                      type: boolean
+                    description: Requirements completion status
+      '400':
+        description: Invalid stage transition
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: INVALID_STAGE_TRANSITION
+                      message:
+                        type: string
+                        example: Cannot advance from vendor_sourcing to completed
+                      details:
+                        type: object
+                        properties:
+                          current_stage:
+                            type: string
+                          requested_stage:
+                            type: string
+                          missing_requirements:
+                            type: array
+                            items:
+                              type: string
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                    description: Suggestions to resolve the issue
+      '403':
+        $ref: '../../components/schemas.yaml#/Forbidden'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Get Order Timeline (Enhanced)
+/tenant/orders/{id}/timeline:
+  get:
+    tags:
+    - Order Status Workflow
+    summary: Get Order Timeline
+    description: |
+      Retrieves comprehensive timeline of order status changes and business events.
+      
+      **Timeline Events Include:**
+      - Order creation and status changes
+      - Stage advancements and completions
+      - User notes and comments
+      - System-generated events
+      - Business milestone achievements
+      - Stakeholder interactions
+      
+      **Event Categories:**
+      - system: Automated system events
+      - admin: Administrative actions
+      - customer: Customer interactions
+      - vendor: Vendor-related events
+      - payment: Payment-related events
+    operationId: getOrderTimeline
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order UUID
+    - name: include_synthetic
+      in: query
+      schema:
+        type: boolean
+        default: true
+      description: Include calculated timeline events
+    - name: language
+      in: query
+      schema:
+        type: string
+        enum: [id, en]
+        default: id
+      description: Response language
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+      description: Number of events to return
+    - name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Pagination offset
+    responses:
+      '200':
+        description: Order timeline retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      timeline:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            stage:
+                              type: string
+                            status:
+                              type: string
+                            timestamp:
+                              type: string
+                              format: date-time
+                            actor:
+                              type: string
+                            actor_name:
+                              type: string
+                            notes:
+                              type: string
+                            metadata:
+                              type: object
+                              properties:
+                                synthetic:
+                                  type: boolean
+                                category:
+                                  type: string
+                                  enum: [system, admin, customer, vendor, payment]
+                                is_business_critical:
+                                  type: boolean
+                                event_type:
+                                  type: string
+                      pagination:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          limit:
+                            type: integer
+                          offset:
+                            type: integer
+                          has_more:
+                            type: boolean
+                      summary:
+                        type: object
+                        properties:
+                          total_events:
+                            type: integer
+                          business_critical_events:
+                            type: integer
+                          last_update:
+                            type: string
+                            format: date-time
+                          current_stage:
+                            type: string
+                          days_in_current_stage:
+                            type: integer
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Add Timeline Note
+/tenant/orders/{id}/timeline/notes:
+  post:
+    tags:
+    - Order Status Workflow
+    summary: Add Timeline Note
+    description: |
+      Adds a note to the order timeline for a specific stage.
+      
+      **Use Cases:**
+      - Document progress updates
+      - Record communication with stakeholders
+      - Note important decisions or changes
+      - Track vendor interactions
+      - Record quality control observations
+    operationId: addTimelineNote
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - stage
+            - notes
+            properties:
+              stage:
+                type: string
+                description: Business stage for the note
+              notes:
+                type: string
+                minLength: 10
+                maxLength: 1000
+                description: Note content
+              metadata:
+                type: object
+                additionalProperties: true
+                description: Additional metadata for the note
+          examples:
+            vendor_contact:
+              summary: Vendor contact note
+              value:
+                stage: vendor_sourcing
+                notes: Contacted 3 vendors, waiting for quotes
+                metadata:
+                  vendors_contacted: ["vendor1", "vendor2", "vendor3"]
+                  expected_response: "2024-01-16"
+                  priority: high
+    responses:
+      '201':
+        description: Timeline note added successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      stage:
+                        type: string
+                      notes:
+                        type: string
+                      timestamp:
+                        type: string
+                        format: date-time
+                      actor:
+                        type: string
+                      actor_name:
+                        type: string
+                      metadata:
+                        type: object
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Get Stage Requirements
+/tenant/orders/{id}/stages/{stage}/requirements:
+  get:
+    tags:
+    - Order Status Workflow
+    summary: Get Stage Requirements
+    description: |
+      Retrieves requirements and validation status for advancing to a specific stage.
+      
+      **Requirements Types:**
+      - Business rule requirements
+      - Data completion requirements
+      - Permission requirements
+      - External dependency requirements
+      
+      **Validation Status:**
+      - completed: Requirement is satisfied
+      - pending: Requirement needs attention
+      - blocked: Requirement cannot be completed yet
+    operationId: getStageRequirements
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order UUID
+    - name: stage
+      in: path
+      required: true
+      schema:
+        type: string
+        enum:
+        - pending
+        - vendor_sourcing
+        - vendor_negotiation
+        - customer_quote
+        - awaiting_payment
+        - in_production
+        - quality_control
+        - shipping
+        - delivered
+      description: Target business stage
+    responses:
+      '200':
+        description: Stage requirements retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      stage:
+                        type: string
+                      requirements:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            label:
+                              type: string
+                            description:
+                              type: string
+                            completed:
+                              type: boolean
+                            required:
+                              type: boolean
+                            metadata:
+                              type: object
+                      can_advance:
+                        type: boolean
+                      next_stage:
+                        type: string
+                      estimated_completion_days:
+                        type: integer
+                      completion_percentage:
+                        type: integer
+                      blocking_requirements:
+                        type: array
+                        items:
+                          type: string
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Validate Stage Transition
+/tenant/orders/{id}/validate-transition:
+  post:
+    tags:
+    - Order Status Workflow
+    summary: Validate Stage Transition
+    description: |
+      Validates whether a stage transition is allowed and provides detailed feedback.
+      
+      **Validation Checks:**
+      - Business rule compliance
+      - Requirement completion
+      - User permissions
+      - Order state validity
+      - Dependency satisfaction
+      
+      **Response Information:**
+      - Transition validity
+      - Missing requirements
+      - Warnings and suggestions
+      - Impact assessment
+    operationId: validateStageTransition
+    security:
+    - bearerAuth: []
+    parameters:
+    - $ref: '../../components/schemas.yaml#/TenantHeader'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Order UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - from_stage
+            - to_stage
+            properties:
+              from_stage:
+                type: string
+                description: Current stage
+              to_stage:
+                type: string
+                description: Target stage
+              user_permissions:
+                type: array
+                items:
+                  type: string
+                description: User permissions for validation
+    responses:
+      '200':
+        description: Transition validation completed
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      valid:
+                        type: boolean
+                      can_advance:
+                        type: boolean
+                      missing_requirements:
+                        type: array
+                        items:
+                          type: string
+                      warnings:
+                        type: array
+                        items:
+                          type: string
+                      confirmation_required:
+                        type: boolean
+                      estimated_impact:
+                        type: object
+                        properties:
+                          timeline_change:
+                            type: string
+                          cost_impact:
+                            type: string
+                          stakeholders_affected:
+                            type: array
+                            items:
+                              type: string
+                      next_actions:
+                        type: array
+                        items:
+                          type: string
+      '400':
+        description: Invalid transition request
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      valid:
+                        type: boolean
+                        example: false
+                      can_advance:
+                        type: boolean
+                        example: false
+                      missing_requirements:
+                        type: array
+                        items:
+                          type: string
+                      errors:
+                        type: array
+                        items:
+                          type: string
+                      suggestions:
+                        type: array
+                        items:
+                          type: string
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'

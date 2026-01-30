@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useDeleteLoading } from '@/hooks/useDeleteLoading';
 import { useCustomerExportImport } from '@/hooks/customers/useCustomerExportImport';
 import type { Customer, CustomerFilters as BaseCustomerFilters, CustomerType, CustomerStatus } from '@/types/customer';
 
@@ -124,6 +125,20 @@ export default function CustomerDatabase() {
     deleteCustomer 
   } = useCustomers();
 
+  // Delete loading functionality
+  const deleteLoading = useDeleteLoading({
+    onDelete: async (customerId: string) => {
+      await deleteCustomer(customerId);
+    },
+    onSuccess: (customerId: string) => {
+      toast.success('Customer deleted successfully');
+    },
+    onError: (customerId: string, error: any) => {
+      console.error('Delete failed:', error);
+      toast.error('Failed to delete customer');
+    },
+  });
+
   // Export/Import functionality
   const exportImport = useCustomerExportImport({
     customers,
@@ -195,15 +210,31 @@ export default function CustomerDatabase() {
   }, [fetchCustomers, filters]);
 
   const handleViewCustomer = useCallback((customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsDetailDialogOpen(true);
-  }, []);
+    // Navigate to customer detail page instead of opening modal
+    navigate(`/admin/customers/${customer.id}`);
+  }, [navigate]);
+
+  const handleSendEmail = useCallback((customer: Customer) => {
+    // Check if email is configured first
+    // For now, redirect to email settings with a helpful message
+    toast.info(`To send emails to ${customer.name}, please configure email settings first.`, {
+      action: {
+        label: 'Configure Email',
+        onClick: () => navigate('/admin/settings/general?tab=email')
+      }
+    });
+  }, [navigate]);
+
+  const handleViewOrders = useCallback((customer: Customer) => {
+    // Navigate to customer detail page with orders tab active
+    navigate(`/admin/customers/${customer.id}?tab=orders`);
+  }, [navigate]);
 
   const handleDeleteCustomer = useCallback(async (customerId: string) => {
     if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
-      await deleteCustomer(customerId);
+      await deleteLoading.handleDelete(customerId);
     }
-  }, [deleteCustomer]);
+  }, [deleteLoading]);
 
   const handleSelectCustomer = useCallback((customerId: string) => {
     setSelectedCustomers(prev => {
@@ -233,16 +264,31 @@ export default function CustomerDatabase() {
     
     if (window.confirm(`Are you sure you want to delete ${selectedCustomers.size} customers? This action cannot be undone.`)) {
       try {
+        // Start delete loading for all selected customers
         for (const customerId of selectedCustomers) {
-          await deleteCustomer(customerId);
+          deleteLoading.startDelete(customerId);
         }
+        
+        // Delete customers sequentially to avoid overwhelming the server
+        for (const customerId of selectedCustomers) {
+          try {
+            await deleteCustomer(customerId);
+            deleteLoading.endDelete(customerId);
+          } catch (error) {
+            deleteLoading.endDelete(customerId);
+            console.error(`Failed to delete customer ${customerId}:`, error);
+          }
+        }
+        
         setSelectedCustomers(new Set());
         toast.success(`${selectedCustomers.size} customers deleted successfully`);
       } catch (error) {
+        // Clear all delete loading states on general error
+        deleteLoading.clearAll();
         toast.error('Failed to delete some customers');
       }
     }
-  }, [selectedCustomers, deleteCustomer]);
+  }, [selectedCustomers, deleteCustomer, deleteLoading]);
 
   const handleExport = useCallback((format: ExportFormat) => {
     exportImport.handleExport(format, false);
@@ -510,16 +556,16 @@ export default function CustomerDatabase() {
                 View Details
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to={`/admin/customers/${customer.id}`}>
+                <Link to={`/admin/customers/${customer.id}/edit`}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Customer
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleSendEmail(customer)}>
                 <Mail className="mr-2 h-4 w-4" />
                 Send Email
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleViewOrders(customer)}>
                 <ShoppingBag className="mr-2 h-4 w-4" />
                 View Orders
               </DropdownMenuItem>
@@ -947,6 +993,8 @@ export default function CustomerDatabase() {
               loading={isLoading || isRefreshing}
               datasetId="customer-database"
               showPagination={true}
+              deletingIds={deleteLoading.deletingIds}
+              getRowId={(customer) => customer.id}
               onRowClick={(customer) => {
                 navigate(`/admin/customers/${customer.id}`);
               }}

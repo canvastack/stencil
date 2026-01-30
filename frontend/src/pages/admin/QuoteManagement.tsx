@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
 import {
   Card,
@@ -13,7 +13,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/lazy-components';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Search,
   Plus,
@@ -26,23 +35,34 @@ import {
   Filter,
   Download,
   Send,
-  ArrowUpDown
+  ArrowUpDown,
+  Info,
+  ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import { quotesService } from '@/services/api/quotes';
+import { ordersService } from '@/services/api/orders';
 import type { OrderQuote, QuoteFilters, QuoteStatus, QuoteType } from '@/types/quote';
+import type { Order } from '@/types/order';
+import { QuoteForm } from '@/components/tenant/quotes/QuoteForm';
+import type { CreateQuoteRequest, UpdateQuoteRequest } from '@/services/tenant/quoteService';
 
 interface QuoteManagementProps {}
 
 const QuoteManagement: React.FC<QuoteManagementProps> = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState<OrderQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQuote, setSelectedQuote] = useState<OrderQuote | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
+  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+  const [quoteToAccept, setQuoteToAccept] = useState<OrderQuote | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [orderContext, setOrderContext] = useState<Order | null>(null);
   const [filters, setFilters] = useState<QuoteFilters>({
     page: 1,
     per_page: 10,
@@ -50,13 +70,27 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
     sort_order: 'desc'
   });
 
-  // Initialize filters from URL parameters
+  // Initialize filters from URL parameters and fetch order context
   useEffect(() => {
     const orderId = searchParams.get('order_id');
     if (orderId) {
+      // Apply order_id filter
       setFilters(prev => ({ ...prev, order_id: orderId }));
+      
+      // Fetch order details for context
+      fetchOrderContext(orderId);
     }
   }, [searchParams]);
+
+  const fetchOrderContext = async (orderId: string) => {
+    try {
+      const order = await ordersService.getOrderById(orderId);
+      setOrderContext(order);
+    } catch (error) {
+      console.error('Error fetching order context:', error);
+      toast.error('Failed to load order context');
+    }
+  };
 
   // Fetch quotes on component mount and filter changes
   useEffect(() => {
@@ -87,13 +121,46 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
   };
 
   const handleAcceptQuote = async (quote: OrderQuote) => {
+    // Open confirmation dialog instead of accepting immediately
+    setQuoteToAccept(quote);
+    setIsAcceptDialogOpen(true);
+  };
+
+  const confirmAcceptQuote = async () => {
+    if (!quoteToAccept) return;
+    
     try {
-      await quotesService.acceptQuote(quote.id);
+      await quotesService.acceptQuote(quoteToAccept.id);
       toast.success('Quote accepted successfully');
+      setIsAcceptDialogOpen(false);
+      setQuoteToAccept(null);
       fetchQuotes();
+      
+      // If in order context, refresh order details
+      if (orderContext) {
+        fetchOrderContext(orderContext.uuid);
+      }
     } catch (error) {
       toast.error('Failed to accept quote');
     }
+  };
+
+  const handleCreateQuote = async (data: CreateQuoteRequest) => {
+    try {
+      await quotesService.createQuote(data);
+      toast.success('Quote created successfully');
+      setIsFormDialogOpen(false);
+      fetchQuotes();
+    } catch (error) {
+      console.error('Error creating quote:', error);
+      toast.error('Failed to create quote');
+      throw error;
+    }
+  };
+
+  const calculateQuotationAmount = (vendorPrice: number): number => {
+    // Apply 35% markup (30% markup + 5% operational cost)
+    return vendorPrice * 1.35;
   };
 
   const handleRejectQuote = async (quote: OrderQuote, reason: string) => {
@@ -287,6 +354,28 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
   return (
     <LazyWrapper>
       <div className="space-y-6">
+        {/* Order Context Banner */}
+        {orderContext && (
+          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertTitle className="text-blue-900 dark:text-blue-100">Order Context</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-blue-800 dark:text-blue-200">
+                Managing quotes for Order <span className="font-semibold">#{orderContext.orderNumber}</span>
+                {orderContext.customerName && ` - ${orderContext.customerName}`}
+              </span>
+              <Button 
+                variant="link" 
+                onClick={() => navigate(`/admin/orders/${orderContext.uuid}`)}
+                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Order
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -300,7 +389,7 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
-            <Button>
+            <Button onClick={() => setIsFormDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               New Quote
             </Button>
@@ -513,6 +602,163 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
                 </Button>
               </div>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Quote Acceptance Confirmation Dialog */}
+        <AlertDialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
+          <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Quote Acceptance</AlertDialogTitle>
+              <AlertDialogDescription>
+                Please review the quote details before accepting. This action will sync the vendor pricing to the order.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            {quoteToAccept && (
+              <div className="space-y-4 py-4">
+                {/* Vendor Information */}
+                {quoteToAccept.type === 'vendor_to_company' && quoteToAccept.vendor && (
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <h4 className="font-semibold mb-2">Vendor Information</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Vendor Name:</span>
+                        <span className="font-medium">{quoteToAccept.vendor.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Contact:</span>
+                        <span className="font-medium">{quoteToAccept.vendor.email}</span>
+                      </div>
+                      {quoteToAccept.vendor.contact_person && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Contact Person:</span>
+                          <span className="font-medium">{quoteToAccept.vendor.contact_person}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Order Information */}
+                {quoteToAccept.order && (
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <h4 className="font-semibold mb-2">Order Information</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Order Number:</span>
+                        <span className="font-medium">{quoteToAccept.order.order_number}</span>
+                      </div>
+                      {quoteToAccept.order.customer_name && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Customer:</span>
+                          <span className="font-medium">{quoteToAccept.order.customer_name}</span>
+                        </div>
+                      )}
+                      {quoteToAccept.order.product_name && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Product:</span>
+                          <span className="font-medium">{quoteToAccept.order.product_name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pricing Information */}
+                <div className="rounded-lg border p-4 bg-primary/5">
+                  <h4 className="font-semibold mb-3">Pricing Details</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Vendor Quoted Price:</span>
+                      <span className="text-xl font-bold text-primary">
+                        {formatCurrency(quoteToAccept.quoted_price)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Quantity:</span>
+                      <span className="font-medium">{quoteToAccept.quantity}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Unit Price:</span>
+                      <span className="font-medium">{formatCurrency(quoteToAccept.unit_price)}</span>
+                    </div>
+                    
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Markup (35%):</span>
+                        <span className="font-medium text-green-600">
+                          {formatCurrency(calculateQuotationAmount(quoteToAccept.quoted_price) - quoteToAccept.quoted_price)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="font-semibold">Customer Quotation Amount:</span>
+                        <span className="text-2xl font-bold text-green-600">
+                          {formatCurrency(calculateQuotationAmount(quoteToAccept.quoted_price))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Terms and Conditions */}
+                {quoteToAccept.terms_conditions && (
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <h4 className="font-semibold mb-2">Terms & Conditions</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {quoteToAccept.terms_conditions}
+                    </p>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {quoteToAccept.notes && (
+                  <div className="rounded-lg border p-4 bg-muted/50">
+                    <h4 className="font-semibold mb-2">Notes</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {quoteToAccept.notes}
+                    </p>
+                  </div>
+                )}
+
+                {/* Validity Information */}
+                {quoteToAccept.valid_until && (
+                  <div className="rounded-lg border p-4 bg-yellow-50 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <div className="text-sm">
+                        <span className="font-medium text-yellow-900 dark:text-yellow-100">Valid Until: </span>
+                        <span className="text-yellow-800 dark:text-yellow-200">{formatDate(quoteToAccept.valid_until)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmAcceptQuote} className="bg-green-600 hover:bg-green-700">
+                <Check className="h-4 w-4 mr-2" />
+                Accept Quote
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Quote Form Dialog */}
+        <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {orderContext ? `Create Quote for Order #${orderContext.orderNumber}` : 'Create New Quote'}
+              </DialogTitle>
+            </DialogHeader>
+            <QuoteForm
+              onSubmit={handleCreateQuote}
+              onCancel={() => setIsFormDialogOpen(false)}
+              loading={false}
+            />
           </DialogContent>
         </Dialog>
       </div>

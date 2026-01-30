@@ -55,6 +55,31 @@ class UpdateOrderRequest extends FormRequest
         return Rule::exists($table, $column)->where(fn($query) => $query->where('tenant_id', $tenantId));
     }
 
+    /**
+     * Prepare the data for validation.
+     * Convert vendor UUID to internal ID before validation
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('vendor_id') && $this->vendor_id) {
+            // Check if it's a UUID (string with dashes)
+            if (is_string($this->vendor_id) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $this->vendor_id)) {
+                $tenantId = $this->resolveTenantId();
+                
+                // Find vendor by UUID and get internal ID
+                $vendor = \App\Infrastructure\Persistence\Eloquent\Models\Vendor::where('uuid', $this->vendor_id)
+                    ->where('tenant_id', $tenantId)
+                    ->first();
+                
+                if ($vendor) {
+                    $this->merge([
+                        'vendor_id' => $vendor->id
+                    ]);
+                }
+            }
+        }
+    }
+
     protected function resolveTenantId(): ?string
     {
         if (function_exists('tenant')) {

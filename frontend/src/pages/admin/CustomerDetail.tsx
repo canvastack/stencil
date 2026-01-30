@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { customersService } from '@/services/api/customers';
 import type { Customer } from '@/services/api/customers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,6 +94,10 @@ const orderColumns: ColumnDef<CustomerOrder>[] = [
 export default function CustomerDetail() {
   const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get active tab from URL parameter, default to 'info'
+  const activeTab = searchParams.get('tab') || 'info';
   
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
@@ -124,7 +128,6 @@ export default function CustomerDetail() {
         setOrdersLoading(true);
         try {
           const ordersData = await customersService.getCustomerOrders(uuid);
-          console.log('[CustomerDetail] Orders data received:', ordersData);
           setOrders(Array.isArray(ordersData) ? ordersData : []);
         } catch (ordersError) {
           console.error('Failed to fetch customer orders:', ordersError);
@@ -232,7 +235,7 @@ export default function CustomerDetail() {
             <div className="flex items-center gap-2">
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
               <span className="text-2xl font-bold">
-                {customer.total_orders || 0}
+                {customer.stats?.totalOrders || customer.total_orders || 0}
               </span>
             </div>
           </CardContent>
@@ -248,7 +251,7 @@ export default function CustomerDetail() {
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <span className="text-2xl font-bold">
-                {formatCurrency(customer.lifetime_value || 0)}
+                {formatCurrency(customer.stats?.totalSpent || customer.lifetime_value || customer.total_spent || 0)}
               </span>
             </div>
           </CardContent>
@@ -272,7 +275,13 @@ export default function CustomerDetail() {
       </div>
 
       {/* Detailed Information */}
-      <Tabs defaultValue="info" className="space-y-4">
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(value) => {
+          setSearchParams(value === 'info' ? {} : { tab: value });
+        }}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="info">Contact Information</TabsTrigger>
           <TabsTrigger value="orders">Order History</TabsTrigger>
@@ -392,21 +401,22 @@ export default function CustomerDetail() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Average Order Value:</span>
                     <span className="font-semibold">
-                      {customer.total_orders && customer.lifetime_value ? 
-                        formatCurrency(customer.lifetime_value / customer.total_orders) : 
-                        formatCurrency(0)
-                      }
+                      {(() => {
+                        const totalOrders = customer.stats?.totalOrders || customer.total_orders || 0;
+                        const totalSpent = customer.stats?.totalSpent || customer.lifetime_value || customer.total_spent || 0;
+                        return totalOrders > 0 ? formatCurrency(totalSpent / totalOrders) : formatCurrency(0);
+                      })()}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total Spent:</span>
                     <span className="font-semibold">
-                      {formatCurrency(customer.lifetime_value || 0)}
+                      {formatCurrency(customer.stats?.totalSpent || customer.lifetime_value || customer.total_spent || 0)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total Orders:</span>
-                    <span className="font-semibold">{customer.total_orders || 0}</span>
+                    <span className="font-semibold">{customer.stats?.totalOrders || customer.total_orders || 0}</span>
                   </div>
                 </div>
               </CardContent>

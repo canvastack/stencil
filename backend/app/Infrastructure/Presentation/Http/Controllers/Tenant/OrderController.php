@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Services\OrderStateMachine;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
+use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
 use App\Infrastructure\Presentation\Http\Requests\Order\StoreOrderRequest;
 use App\Infrastructure\Presentation\Http\Requests\Order\UpdateOrderRequest;
 use App\Infrastructure\Presentation\Http\Requests\Order\UpdateOrderStatusRequest;
@@ -672,6 +673,365 @@ class OrderController extends Controller
         }
     }
 
+    public function payments(Request $request, string $id): JsonResponse
+    {
+        try {
+            $tenant = $this->resolveTenant($request);
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $order = Order::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+
+            // For now, return mock payment data structure that matches frontend expectations
+            // In a real implementation, this would query a payments table
+            $payments = [];
+            
+            // If order has payment information in metadata, extract it
+            if ($order->metadata && isset($order->metadata['payments'])) {
+                $payments = $order->metadata['payments'];
+            } else {
+                // Generate basic payment info based on order status
+                if (in_array($order->status, ['paid', 'completed', 'shipped'])) {
+                    $payments = [
+                        [
+                            'id' => 'payment-' . $order->id,
+                            'order_id' => $order->uuid,
+                            'amount' => $order->total_amount,
+                            'currency' => $order->currency ?? 'IDR',
+                            'status' => 'completed',
+                            'payment_method' => 'bank_transfer',
+                            'paid_at' => $order->updated_at->toIso8601String(),
+                            'created_at' => $order->created_at->toIso8601String(),
+                        ]
+                    ];
+                }
+            }
+
+            return response()->json($payments, 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil data pembayaran',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function shipments(Request $request, string $id): JsonResponse
+    {
+        try {
+            $tenant = $this->resolveTenant($request);
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $order = Order::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+
+            // For now, return shipment data structure that matches frontend expectations
+            $shipments = [];
+            
+            // If order has shipment information, extract it
+            if ($order->metadata && isset($order->metadata['shipments'])) {
+                $shipments = $order->metadata['shipments'];
+            } else {
+                // Generate basic shipment info based on order status and fields
+                if (in_array($order->status, ['shipping', 'shipped', 'completed']) && $order->tracking_number) {
+                    $shipments = [
+                        [
+                            'id' => 'shipment-' . $order->id,
+                            'order_id' => $order->uuid,
+                            'tracking_number' => $order->tracking_number,
+                            'carrier' => $order->shipping_carrier ?? 'Unknown Carrier',
+                            'status' => $order->status === 'completed' ? 'delivered' : 'in_transit',
+                            'shipped_at' => $order->shipped_at?->toIso8601String() ?? $order->updated_at->toIso8601String(),
+                            'estimated_delivery' => null,
+                            'delivered_at' => $order->status === 'completed' ? $order->updated_at->toIso8601String() : null,
+                            'created_at' => $order->created_at->toIso8601String(),
+                        ]
+                    ];
+                }
+            }
+
+            return response()->json($shipments, 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil data pengiriman',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    public function history(Request $request, string $id): JsonResponse
+    {
+        try {
+            $tenant = $this->resolveTenant($request);
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $order = Order::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+
+            // For now, return history data structure that matches frontend expectations
+            $history = [];
+            
+            // If order has history information in metadata, extract it
+            if ($order->metadata && isset($order->metadata['history'])) {
+                $history = $order->metadata['history'];
+            } else {
+                // Generate basic history based on order lifecycle
+                $history = [
+                    [
+                        'id' => 'history-created-' . $order->id,
+                        'order_id' => $order->uuid,
+                        'action' => 'created',
+                        'status' => 'new',
+                        'description' => 'Pesanan dibuat',
+                        'user_id' => null,
+                        'user_name' => 'System',
+                        'created_at' => $order->created_at->toIso8601String(),
+                    ]
+                ];
+
+                // Add status change history if order has been updated
+                if ($order->status !== 'new') {
+                    $history[] = [
+                        'id' => 'history-status-' . $order->id,
+                        'order_id' => $order->uuid,
+                        'action' => 'status_changed',
+                        'status' => $order->status,
+                        'description' => 'Status pesanan diubah ke ' . ucfirst($order->status),
+                        'user_id' => null,
+                        'user_name' => 'System',
+                        'created_at' => $order->updated_at->toIso8601String(),
+                    ];
+                }
+
+                // Add vendor assignment if exists
+                if ($order->vendor_id) {
+                    $history[] = [
+                        'id' => 'history-vendor-' . $order->id,
+                        'order_id' => $order->uuid,
+                        'action' => 'vendor_assigned',
+                        'status' => $order->status,
+                        'description' => 'Vendor ditugaskan untuk pesanan ini',
+                        'user_id' => null,
+                        'user_name' => 'System',
+                        'created_at' => $order->updated_at->toIso8601String(),
+                    ];
+                }
+            }
+
+            return response()->json($history, 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal mengambil riwayat pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Transition order state - handles state transitions with validation
+     */
+    public function transitionState(Request $request, string $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'action' => 'required|string',
+                'target_status' => 'sometimes|string',
+                'notes' => 'sometimes|string|max:1000',
+                'data' => 'sometimes|array',
+            ]);
+
+            $tenant = $this->resolveTenant($request);
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $order = Order::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+
+            // Load tenant relationship before transition (needed for event dispatching)
+            $order->load('tenant');
+
+            $action = $request->input('action');
+            $targetStatus = $request->input('target_status');
+            $notes = $request->input('notes');
+            $data = $request->input('data', []);
+
+            // Handle different transition actions
+            switch ($action) {
+                case 'approve':
+                    $targetStatus = 'pending';
+                    break;
+                case 'start_production':
+                    $targetStatus = 'in_production';
+                    break;
+                case 'complete_production':
+                    $targetStatus = 'ready_for_shipping';
+                    break;
+                case 'ship':
+                    $targetStatus = 'shipping';
+                    break;
+                case 'complete':
+                    $targetStatus = 'completed';
+                    break;
+                case 'cancel':
+                    $targetStatus = 'cancelled';
+                    break;
+                default:
+                    if (!$targetStatus) {
+                        return response()->json([
+                            'message' => 'Target status is required for unknown action'
+                        ], 422);
+                    }
+            }
+
+            // Validate transition using state machine
+            if ($targetStatus) {
+                $newStatus = OrderStatus::fromString($targetStatus);
+                $validationErrors = $this->stateMachine->validateTransition($order, $newStatus, $data);
+                
+                if (!empty($validationErrors)) {
+                    return response()->json([
+                        'message' => 'Validasi transisi status gagal',
+                        'errors' => $validationErrors
+                    ], 422);
+                }
+
+                // Perform the transition
+                $this->stateMachine->transitionTo($order, $newStatus, array_merge($data, [
+                    'action' => $action,
+                    'notes' => $notes,
+                    'transitioned_by' => auth()->id(),
+                    'transitioned_at' => now()->toIso8601String(),
+                ]));
+            }
+
+            $order->load(['customer', 'vendor']);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            \Log::error('Failed to transition order state', [
+                'order_id' => $id,
+                'action' => $request->input('action'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'Gagal melakukan transisi status pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
+    /**
+     * Advance order to specific business stage
+     */
+    public function advanceStage(Request $request, string $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'action' => 'required|string',
+                'target_stage' => 'required|string',
+                'notes' => 'sometimes|string|max:1000',
+                'requirements' => 'sometimes|array',
+                'metadata' => 'sometimes|array',
+            ]);
+
+            $tenant = $this->resolveTenant($request);
+            $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id);
+            
+            $order = Order::where('tenant_id', $tenant->id)
+                ->where($isUuid ? 'uuid' : 'id', $id)
+                ->firstOrFail();
+
+            $targetStage = $request->input('target_stage');
+            $notes = $request->input('notes');
+            $requirements = $request->input('requirements', []);
+            $metadata = $request->input('metadata', []);
+
+            // Map stage to status
+            // Note: In most cases, stage name matches status name directly
+            // This mapping handles special cases where frontend stage names differ from backend status
+            $statusMapping = [
+                'review_admin' => 'pending',
+                'production' => 'in_production',
+                'quality_check' => 'quality_control',
+            ];
+
+            // Use direct mapping if exists, otherwise use stage name as status
+            $targetStatus = $statusMapping[$targetStage] ?? $targetStage;
+
+            // Load tenant relationship before transition (needed for event dispatching)
+            $order->load('tenant');
+            
+            // Validate vendor_negotiation → customer_quote transition
+            if ($order->status === 'vendor_negotiation' && $targetStage === 'customer_quote') {
+                $this->validateVendorNegotiationComplete($order);
+            }
+            
+            // Validate transition
+            $newStatus = OrderStatus::fromString($targetStatus);
+            $validationErrors = $this->stateMachine->validateTransition($order, $newStatus, $requirements);
+            
+            if (!empty($validationErrors)) {
+                return response()->json([
+                    'message' => 'Validasi tahapan gagal',
+                    'errors' => $validationErrors
+                ], 422);
+            }
+
+            // Perform stage advancement
+            $advancementData = array_merge($metadata, [
+                'action' => 'advance_stage',
+                'target_stage' => $targetStage,
+                'notes' => $notes,
+                'requirements' => $requirements,
+                'advanced_by' => auth()->id(),
+                'advanced_at' => now()->toIso8601String(),
+                'previous_status' => $order->status,
+            ]);
+
+            $this->stateMachine->transitionTo($order, $newStatus, $advancementData);
+
+            $order->load(['customer', 'vendor']);
+            return (new OrderResource($order))->response()->setStatusCode(200);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            \Log::error('Failed to advance order stage', [
+                'order_id' => $id,
+                'target_stage' => $request->input('target_stage'),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'Gagal memajukan tahapan pesanan',
+                'error' => config('app.debug') ? $e->getMessage() : 'Terjadi kesalahan tidak terduga'
+            ], 500);
+        }
+    }
+
     private function applyOrderFilters(Request $request, Builder $query): void
     {
         if ($request->filled('search')) {
@@ -738,5 +1098,54 @@ class OrderController extends Controller
         }
 
         throw new \RuntimeException('Tenant context tidak ditemukan');
+    }
+
+    /**
+     * Validate that vendor negotiation is complete before advancing to customer_quote stage
+     * 
+     * @param Order $order
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    private function validateVendorNegotiationComplete(Order $order): void
+    {
+        // Check for accepted quote
+        $acceptedQuote = OrderVendorNegotiation::where('order_id', $order->id)
+            ->where('status', 'accepted')
+            ->latest()
+            ->first();
+        
+        if (!$acceptedQuote) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'vendor_negotiation' => [
+                    'No accepted vendor quote found. Please accept a quote before proceeding to customer quote stage.'
+                ]
+            ]);
+        }
+        
+        // Verify order has required pricing data
+        if (!$order->vendor_quoted_price) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'vendor_negotiation' => [
+                    'Order is missing vendor quoted price. Please ensure quote data is properly synced.'
+                ]
+            ]);
+        }
+        
+        if (!$order->quotation_amount) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'vendor_negotiation' => [
+                    'Order is missing quotation amount. Please ensure quote data is properly synced.'
+                ]
+            ]);
+        }
+        
+        // Verify vendor is assigned
+        if (!$order->vendor_id) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'vendor_negotiation' => [
+                    'Order is missing vendor assignment. Please ensure quote data is properly synced.'
+                ]
+            ]);
+        }
     }
 }

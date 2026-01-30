@@ -2,7 +2,9 @@ import { CheckCircle2, Circle, Clock, XCircle } from 'lucide-react';
 import { OrderStatus } from '@/types/order';
 import { cn } from '@/lib/utils';
 
+// ✅ PT CEX Business Workflow - Aligned with Backend OrderStatus Enum
 const STATUS_STEPS = [
+  { status: OrderStatus.New, label: 'New Order', description: 'Pesanan baru diterima' },
   { status: OrderStatus.Draft, label: 'Draft', description: 'Menunggu review admin' },
   { status: OrderStatus.Pending, label: 'Pending', description: 'Siap diproses' },
   { status: OrderStatus.VendorSourcing, label: 'Vendor Sourcing', description: 'Mencari vendor' },
@@ -10,6 +12,7 @@ const STATUS_STEPS = [
   { status: OrderStatus.CustomerQuote, label: 'Quotation', description: 'Quote dikirim ke customer' },
   { status: OrderStatus.AwaitingPayment, label: 'Menunggu Pembayaran', description: 'Menunggu payment' },
   { status: OrderStatus.PartialPayment, label: 'DP Dibayar', description: 'DP 50% diterima' },
+  { status: OrderStatus.FullPayment, label: 'Lunas', description: '100% payment diterima' },
   { status: OrderStatus.InProduction, label: 'Produksi', description: 'Dalam produksi' },
   { status: OrderStatus.QualityControl, label: 'Quality Check', description: 'Pemeriksaan kualitas' },
   { status: OrderStatus.Shipping, label: 'Pengiriman', description: 'Dalam pengiriman' },

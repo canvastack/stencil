@@ -1,5 +1,5 @@
 import { tenantApiClient } from '../tenant/tenantApiClient';
-import { Order } from '@/types/order';
+import { Order, OrderStatus, PaymentStatus, PaymentType, PaymentMethod, ProductionType } from '@/types/order';
 import { PaginatedResponse, ListRequestParams } from '@/types/api';
 import { orderNotificationService } from '../notifications/orderNotificationService';
 import { anonymousApiClient } from './anonymousApiClient';
@@ -35,143 +35,109 @@ export interface OrderStateTransitionRequest {
   data?: Record<string, any>;
 }
 
+export interface StageAdvancementRequest {
+  target_stage: string;
+  notes: string;
+  requirements?: Record<string, boolean>;
+  metadata?: Record<string, any>;
+}
+
 class OrdersService {
 
-
-  private getMockOrders(filters?: OrderFilters): PaginatedResponse<Order> {
-    const mockOrders: Order[] = [
-      {
-        id: 'order-demo-001',
-        uuid: 'demo-uuid-001',
-        order_number: 'ORD-2024-001',
-        customer: {
-          id: 'customer-001',
-          name: 'PT Demo Manufaktur',
-          email: 'demo@customer.com',
-          phone: '+62812-3456-7890'
-        },
-        vendor: {
-          id: 'vendor-001',
-          name: 'CV Etching Solutions',
-          email: 'vendor@etching.com',
-          contact_person: 'John Doe'
-        },
-        status: 'processing',
-        total_amount: 15750000,
-        subtotal_amount: 15000000,
-        tax_amount: 750000,
-        discount_amount: 0,
-        paid_amount: 7500000,
-        remaining_amount: 8250000,
-        payment_status: 'partial',
-        delivery_date: '2024-01-15',
-        notes: 'Custom etching project - precision components',
-        created_at: '2024-01-01T10:00:00Z',
-        updated_at: '2024-01-08T15:30:00Z'
-      },
-      {
-        id: 'order-demo-002', 
-        uuid: 'demo-uuid-002',
-        order_number: 'ORD-2024-002',
-        customer: {
-          id: 'customer-002',
-          name: 'CV Metalworks Indo',
-          email: 'orders@metalworks.co.id',
-          phone: '+62821-9876-5432'
-        },
-        vendor: {
-          id: 'vendor-002',
-          name: 'UD Precision Tools',
-          email: 'info@precision.tools',
-          contact_person: 'Jane Smith'
-        },
-        status: 'completed',
-        total_amount: 23500000,
-        subtotal_amount: 22500000,
-        tax_amount: 1000000,
-        discount_amount: 0,
-        paid_amount: 23500000,
-        remaining_amount: 0,
-        payment_status: 'paid',
-        delivery_date: '2024-01-10',
-        notes: 'Industrial etching components delivered on time',
-        created_at: '2023-12-15T09:00:00Z',
-        updated_at: '2024-01-10T16:45:00Z'
-      }
-    ];
-
-    // Apply basic filtering for demo
-    let filteredOrders = mockOrders;
-    if (filters?.status) {
-      filteredOrders = mockOrders.filter(order => order.status === filters.status);
-    }
-    if (filters?.search) {
-      const search = filters.search.toLowerCase();
-      filteredOrders = filteredOrders.filter(order => 
-        order.order_number.toLowerCase().includes(search) ||
-        order.customer.name.toLowerCase().includes(search)
-      );
-    }
-
-    const page = filters?.page || 1;
-    const perPage = filters?.per_page || 10;
-    const total = filteredOrders.length;
-
-    return {
-      data: filteredOrders,
-      meta: {
-        current_page: page,
-        per_page: perPage,
-        total,
-        last_page: Math.ceil(total / perPage),
-        from: (page - 1) * perPage + 1,
-        to: Math.min(page * perPage, total)
-      }
-    };
-  }
-
   async getOrders(filters?: OrderFilters): Promise<PaginatedResponse<Order>> {
-    try {
-      const params = new URLSearchParams();
-
-      if (filters) {
-        if (filters.page) params.append('page', filters.page.toString());
-        if (filters.per_page) params.append('per_page', filters.per_page.toString());
-        if (filters.search) params.append('search', filters.search);
-        if (filters.sort) params.append('sort', filters.sort);
-        if (filters.order) params.append('order', filters.order);
-        if (filters.status) params.append('status', filters.status);
-        if (filters.customer_id) params.append('customer_id', filters.customer_id);
-        if (filters.vendor_id) params.append('vendor_id', filters.vendor_id);
-        if (filters.date_from) params.append('date_from', filters.date_from);
-        if (filters.date_to) params.append('date_to', filters.date_to);
+    // Debug authentication and tenant context
+    const token = localStorage.getItem('auth_token');
+    const tenantId = localStorage.getItem('tenant_id');
+    const accountType = localStorage.getItem('account_type');
+    
+    console.log('🔍 [OrdersService] Debug authentication:', {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      tenantId,
+      accountType,
+      localStorage: {
+        auth_token: localStorage.getItem('auth_token'),
+        tenant_id: localStorage.getItem('tenant_id'),
+        account_type: localStorage.getItem('account_type')
       }
+    });
 
+    // CRITICAL: Check if user is authenticated
+    if (!token) {
+      console.error('❌ [OrdersService] No authentication token found');
+      throw new Error('Authentication required. Please log in.');
+    }
+
+    if (accountType !== 'tenant') {
+      console.error('❌ [OrdersService] Invalid account type for tenant API:', accountType);
+      throw new Error('Tenant account required for this operation.');
+    }
+
+    if (!tenantId) {
+      console.error('❌ [OrdersService] No tenant ID found');
+      throw new Error('Tenant context required. Please log in again.');
+    }
+
+    const params = new URLSearchParams();
+
+    if (filters) {
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.per_page) params.append('per_page', filters.per_page.toString());
+      if (filters.search) params.append('search', filters.search);
+      if (filters.sort) params.append('sort', filters.sort);
+      if (filters.order) params.append('order', filters.order);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.customer_id) params.append('customer_id', filters.customer_id);
+      if (filters.vendor_id) params.append('vendor_id', filters.vendor_id);
+      if (filters.date_from) params.append('date_from', filters.date_from);
+      if (filters.date_to) params.append('date_to', filters.date_to);
+    }
+
+    console.log('🚀 [OrdersService] Making API call to:', `/orders?${params.toString()}`);
+
+    try {
       const response = await tenantApiClient.get<PaginatedResponse<Order>>(
         `/orders?${params.toString()}`
       );
+      
+      console.log('✅ [OrdersService] API response received:', {
+        dataLength: response.data?.length,
+        total: response.total,
+        currentPage: response.current_page,
+        response
+      });
+      
       return response;
-    } catch (error) {
-      console.warn('Orders API failed, falling back to demo data', error);
-      return this.getMockOrders(filters);
+    } catch (error: any) {
+      console.error('❌ [OrdersService] API call failed:', {
+        error: error.message,
+        status: error.status,
+        details: error.details,
+        originalError: error
+      });
+      
+      // If authentication error, clear invalid tokens
+      if (error.status === 401) {
+        console.warn('🔄 [OrdersService] Authentication failed, clearing tokens');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('tenant_id');
+        localStorage.removeItem('account_type');
+        localStorage.removeItem('user');
+        localStorage.removeItem('tenant');
+        
+        // Redirect to login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+      
+      throw error;
     }
   }
 
   async getOrderById(id: string): Promise<Order> {
-
-
-    try {
-      const response = await tenantApiClient.get<Order>(`/orders/${id}`);
-      return response;
-    } catch (error) {
-      console.warn('Get order by ID API failed, trying demo fallback', error);
-      const mockData = this.getMockOrders();
-      const order = mockData.data.find(o => o.id === id || o.uuid === id);
-      if (order) {
-        return order;
-      }
-      throw error;
-    }
+    const response = await tenantApiClient.get<Order>(`/orders/${id}`);
+    return response;
   }
 
   async createOrder(data: CreateOrderRequest): Promise<Order> {
@@ -251,6 +217,100 @@ class OrdersService {
     }
 
     return response;
+  }
+
+  /**
+   * Advance order to specific business stage
+   * Enhanced API integration for stage advancement workflow
+   */
+  async advanceOrderStage(
+    id: string,
+    targetStage: string,
+    notes: string,
+    requirements?: Record<string, boolean>
+  ): Promise<Order> {
+    // Get current order to track status change
+    const currentOrder = await this.getOrderById(id);
+    const previousStatus = currentOrder.status;
+
+    // Prepare advancement data
+    const advancementData = {
+      action: 'advance_stage',
+      target_stage: targetStage,
+      notes: notes,
+      requirements: requirements || {},
+      metadata: {
+        advanced_by: localStorage.getItem('user_id') || 'system',
+        advanced_at: new Date().toISOString(),
+        previous_status: previousStatus,
+      }
+    };
+
+    console.log('🚀 [OrdersService] Advancing order stage:', {
+      orderId: id,
+      targetStage,
+      notes,
+      requirements,
+      advancementData
+    });
+
+    try {
+      const response = await tenantApiClient.post<Order>(`/orders/${id}/advance-stage`, advancementData);
+      const updatedOrder = response;
+
+      console.log('✅ [OrdersService] Stage advancement successful:', {
+        orderId: id,
+        previousStatus,
+        newStatus: updatedOrder.status,
+        targetStage
+      });
+
+      // Send notification for stage advancement
+      try {
+        await orderNotificationService.sendOrderStatusNotification({
+          orderId: id,
+          previousStatus: previousStatus,
+          newStatus: updatedOrder.status,
+          customerName: updatedOrder.customer?.name || 'Unknown Customer',
+          orderTotal: updatedOrder.total,
+          notificationChannels: ['inApp', 'email'],
+          metadata: {
+            action: 'stage_advancement',
+            targetStage,
+            updatedBy: localStorage.getItem('user_id') || 'system',
+            timestamp: new Date().toISOString(),
+            notes,
+            requirements,
+          },
+        });
+      } catch (notificationError) {
+        console.warn('Failed to send stage advancement notification:', notificationError);
+        // Don't fail the advancement if notification fails
+      }
+
+      return response;
+    } catch (error: any) {
+      console.error('❌ [OrdersService] Stage advancement failed:', {
+        orderId: id,
+        targetStage,
+        error: error.message,
+        status: error.status,
+        details: error.details
+      });
+
+      // Enhanced error handling with specific error messages
+      if (error.status === 422) {
+        throw new Error(`Stage advancement validation failed: ${error.details?.message || 'Invalid stage transition'}`);
+      } else if (error.status === 403) {
+        throw new Error('You do not have permission to advance this order stage');
+      } else if (error.status === 404) {
+        throw new Error('Order not found or stage advancement endpoint not available');
+      } else if (error.status === 409) {
+        throw new Error('Stage advancement conflict: Order may have been updated by another user');
+      } else {
+        throw new Error(`Stage advancement failed: ${error.message || 'An unexpected error occurred'}`);
+      }
+    }
   }
 
   async getOrderHistory(id: string): Promise<any[]> {

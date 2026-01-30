@@ -1,5 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
+import { useDeleteLoading } from '@/hooks/useDeleteLoading';
 import {
   Card,
   CardContent,
@@ -44,6 +45,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  PortalTooltip,
+  PortalTooltipContent,
+  PortalTooltipProvider,
+  PortalTooltipTrigger,
+} from '@/components/ui/portal-tooltip';
+import {
   Eye,
   Package,
   ShoppingCart,
@@ -54,7 +67,6 @@ import {
   MapPin,
   ArrowUpDown,
   Trash2,
-  Loader2,
   X,
   MessageSquare,
   RefreshCw,
@@ -68,6 +80,7 @@ import {
   FileSpreadsheet,
   FileJson,
   Plus,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -80,9 +93,31 @@ import { VendorSourcing } from '@/components/orders/VendorSourcing';
 import { PaymentProcessing } from '@/components/orders/PaymentProcessing';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { logAuthDebugInfo, validateTenantAuth } from '@/utils/authDebug';
 
 export default function OrderManagement() {
   const navigate = useNavigate();
+  
+  // Authentication validation on component mount
+  useEffect(() => {
+    const authValidation = validateTenantAuth();
+    if (!authValidation.isValid) {
+      console.error('❌ [OrderManagement] Authentication validation failed:', authValidation.error);
+      logAuthDebugInfo();
+      
+      toast.error(`Authentication Error: ${authValidation.error}`);
+      
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      
+      return;
+    }
+    
+    console.log('✅ [OrderManagement] Authentication validation passed');
+    console.log('🔧 [OrderManagement] Tooltip debugging - Component mounted');
+  }, [navigate]);
   
   // State management
   const [state, setState] = useState({
@@ -90,6 +125,8 @@ export default function OrderManagement() {
       showAnalytics: false,
       isRefreshing: false,
       showFilters: false,
+      isChangingPageSize: false, // Add loading state for page size changes
+      isChangingPage: false, // Add loading state for page changes
     },
     modes: {
       isSelectMode: false,
@@ -97,6 +134,10 @@ export default function OrderManagement() {
     },
     selection: {
       selectedOrders: new Set<string>(),
+    },
+    pagination: {
+      page: 1,
+      perPage: 15,
     },
   });
 
@@ -115,42 +156,138 @@ export default function OrderManagement() {
     paymentStatus: filters.paymentStatus !== 'all' ? filters.paymentStatus : undefined,
     dateFrom: filters.dateFrom || undefined,
     dateTo: filters.dateTo || undefined,
+    page: state.pagination.page,
+    per_page: state.pagination.perPage,
   };
 
   const ordersQuery = useOrders(apiFilters);
   const orders = ordersQuery.data?.data || [];
-  const pagination = ordersQuery.data || { page: 1, per_page: 15, total: 0, last_page: 1 };
-  const isLoading = ordersQuery.isLoading;
+  const pagination = {
+    page: ordersQuery.data?.current_page || 1,
+    per_page: ordersQuery.data?.per_page || state.pagination.perPage, // Use state value as fallback
+    total: ordersQuery.data?.total || 0,
+    last_page: ordersQuery.data?.last_page || 1
+  };
+  
+  // Debug pagination values
+  console.log('🔧 [OrderManagement] Pagination values:', {
+    statePerPage: state.pagination.perPage,
+    apiPerPage: ordersQuery.data?.per_page,
+    finalPerPage: pagination.per_page,
+    externalPaginationPageSize: state.pagination.perPage
+  });
+  const isLoading = ordersQuery.isLoading || state.ui.isChangingPageSize || state.ui.isChangingPage;
   const error = ordersQuery.error?.message;
+  
+  // Check for authentication errors
+  const authValidation = validateTenantAuth();
+  const hasAuthError = !authValidation.isValid;
+  
+  // Effect to clear page size loading state when API call completes
+  useEffect(() => {
+    if (!ordersQuery.isLoading && (state.ui.isChangingPageSize || state.ui.isChangingPage)) {
+      // Clear the loading states when API call completes
+      setState(prev => ({
+        ...prev,
+        ui: { 
+          ...prev.ui, 
+          isChangingPageSize: false,
+          isChangingPage: false
+        }
+      }));
+    }
+  }, [ordersQuery.isLoading, state.ui.isChangingPageSize, state.ui.isChangingPage]);
+  
+  // Authentication Error Component
+  const AuthErrorDisplay = () => {
+    if (!hasAuthError) return null;
+    
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-red-700">
+            <AlertTriangle className="w-5 h-5" />
+            Authentication Error
+          </CardTitle>
+          <CardDescription className="text-red-600">
+            {authValidation.error}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-sm text-red-600">
+              Unable to load orders due to authentication issues. Please log in again.
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => navigate('/login')}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Go to Login
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  logAuthDebugInfo();
+                  toast.info('Authentication debug info logged to console');
+                }}
+              >
+                Debug Info
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
   
   // Add mutation hooks
   const updateOrderMutation = useUpdateOrder();
-  const [isSaving, setIsSaving] = useState(false);
+  
+  // Delete loading functionality
+  const deleteLoading = useDeleteLoading({
+    onDelete: async (orderId: string) => {
+      // Simulate API call - replace with actual delete API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      // TODO: Replace with actual API call
+      // await ordersService.deleteOrder(orderId);
+    },
+    onSuccess: (orderId: string) => {
+      toast.success('Order deleted successfully');
+      ordersQuery.refetch();
+    },
+    onError: (orderId: string, error: any) => {
+      console.error('Delete failed:', error);
+      toast.error('Failed to delete order');
+    },
+  });
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isStatusTransitionOpen, setIsStatusTransitionOpen] = useState(false);
   const [isVendorSourcingOpen, setIsVendorSourcingOpen] = useState(false);
   const [isPaymentProcessingOpen, setIsPaymentProcessingOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
   // Enhanced Card with hover effects (matching ProductCatalog)
   const EnhancedCard = ({ 
     children, 
     className = "",
+    allowTooltipOverflow = false,
     ...props 
   }: { 
     children: React.ReactNode; 
     className?: string;
+    allowTooltipOverflow?: boolean;
     [key: string]: any;
   }) => (
     <Card 
-      className={`relative overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${className}`}
+      className={`relative ${allowTooltipOverflow ? '' : 'overflow-hidden'} group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${className}`}
       {...props}
     >
-      {/* Shine effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+      {/* Shine effect - only show if overflow is hidden */}
+      {!allowTooltipOverflow && (
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+      )}
       {children}
     </Card>
   );
@@ -164,6 +301,7 @@ export default function OrderManagement() {
   }, []);
 
   const handleClearFilters = useCallback(() => {
+    setState(prev => ({ ...prev, ui: { ...prev.ui, isChangingPage: true } }));
     setFilters({
       search: '',
       status: 'all',
@@ -177,32 +315,96 @@ export default function OrderManagement() {
   // Enhanced statistics with animations
   const stats = useMemo(() => {
     const ordersData = orders || [];
-    const totalRevenue = ordersData
-      .filter((o) => o.paymentStatus === PaymentStatus.Paid)
-      .reduce((sum, o) => sum + o.totalAmount, 0);
     
+    console.log('📊 [OrderManagement] Calculating stats from orders:', {
+      ordersCount: ordersData.length,
+      sampleOrder: ordersData[0],
+      allStatuses: ordersData.map(o => o.status),
+      allPaymentStatuses: ordersData.map(o => o.paymentStatus),
+      markupAmounts: ordersData.map(o => ({ orderNumber: o.orderNumber, markupAmount: o.markupAmount, status: o.status }))
+    });
+    
+    // Calculate total revenue from all paid orders
+    const totalRevenue = ordersData
+      .filter((o) => o.paymentStatus === 'paid')
+      .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    
+    // Calculate total profit from ALL orders with markup (not just completed)
+    // PT CEX business model: profit exists when markup_amount is available
     const totalProfit = ordersData
-      .filter((o) => o.status === OrderStatus.Completed && o.markupAmount)
+      .filter((o) => o.markupAmount && o.markupAmount > 0)
       .reduce((sum, o) => sum + (o.markupAmount || 0), 0);
 
+    // Count orders awaiting payment - include multiple status types
+    const awaitingPayment = ordersData.filter((o) => 
+      // Payment status based
+      o.paymentStatus === 'unpaid' || 
+      o.paymentStatus === 'partially_paid' ||
+      // Order status based (using correct enum values)
+      o.status === 'pending' ||
+      o.status === 'awaiting_payment' ||
+      // Vendor sourcing stage (still awaiting customer decision)
+      o.status === 'vendor_sourcing' ||
+      o.status === 'vendor_negotiation' ||
+      o.status === 'customer_quote'
+    ).length;
+    
+    const inProduction = ordersData.filter((o) => 
+      o.status === 'in_production' || 
+      o.status === 'quality_control' ||
+      o.status === 'shipping'
+    ).length;
+    
+    // Count completed orders - only use correct enum value
+    const completed = ordersData.filter((o) => 
+      o.status === 'completed'
+    ).length;
+
+    // Status breakdown for analytics
     const statsByStatus = {
-      [OrderStatus.Pending]: ordersData.filter((o) => o.status === OrderStatus.Pending).length,
-      [OrderStatus.VendorNegotiation]: ordersData.filter((o) => o.status === OrderStatus.VendorNegotiation).length,
-      [OrderStatus.AwaitingPayment]: ordersData.filter((o) => o.status === OrderStatus.AwaitingPayment).length,
-      [OrderStatus.InProduction]: ordersData.filter((o) => o.status === OrderStatus.InProduction).length,
-      [OrderStatus.Completed]: ordersData.filter((o) => o.status === OrderStatus.Completed).length,
+      pending: ordersData.filter((o) => o.status === 'pending').length,
+      vendor_sourcing: ordersData.filter((o) => o.status === 'vendor_sourcing').length,
+      vendor_negotiation: ordersData.filter((o) => o.status === 'vendor_negotiation').length,
+      customer_quote: ordersData.filter((o) => o.status === 'customer_quote').length,
+      awaiting_payment: ordersData.filter((o) => o.status === 'awaiting_payment').length,
+      partial_payment: ordersData.filter((o) => o.status === 'partial_payment').length,
+      full_payment: ordersData.filter((o) => o.status === 'full_payment').length,
+      in_production: ordersData.filter((o) => o.status === 'in_production').length,
+      quality_control: ordersData.filter((o) => o.status === 'quality_control').length,
+      shipping: ordersData.filter((o) => o.status === 'shipping').length,
+      completed: ordersData.filter((o) => o.status === 'completed').length,
+      cancelled: ordersData.filter((o) => o.status === 'cancelled').length,
     };
 
-    return {
+    const calculatedStats = {
       ordersData,
-      totalOrders: pagination?.total || 0,
+      totalOrders: ordersData.length, // Use actual data length instead of pagination
       totalRevenue,
       totalProfit,
-      awaitingPayment: statsByStatus[OrderStatus.AwaitingPayment] || 0,
-      inProduction: statsByStatus[OrderStatus.InProduction] || 0,
-      completed: statsByStatus[OrderStatus.Completed] || 0,
+      awaitingPayment,
+      inProduction,
+      completed,
+      statsByStatus,
     };
-  }, [orders, pagination?.total]);
+    
+    console.log('📊 [OrderManagement] Calculated stats:', calculatedStats);
+    console.log('💰 [OrderManagement] Profit calculation details:', {
+      ordersWithMarkup: ordersData.filter(o => o.markupAmount && o.markupAmount > 0).length,
+      totalProfitCalculated: totalProfit,
+      profitBreakdown: ordersData
+        .filter(o => o.markupAmount && o.markupAmount > 0)
+        .map(o => ({ orderNumber: o.orderNumber, markup: o.markupAmount, status: o.status }))
+    });
+    console.log('💵 [OrderManagement] Revenue calculation details:', {
+      paidOrders: ordersData.filter(o => o.paymentStatus === 'paid').length,
+      totalRevenueCalculated: totalRevenue,
+      revenueBreakdown: ordersData
+        .filter(o => o.paymentStatus === 'paid')
+        .map(o => ({ orderNumber: o.orderNumber, amount: o.totalAmount, status: o.status, paymentStatus: o.paymentStatus }))
+    });
+    
+    return calculatedStats;
+  }, [orders]);
 
   const hasActiveFilters = useMemo(() => {
     return Boolean(
@@ -215,13 +417,14 @@ export default function OrderManagement() {
   }, [filters]);
 
   const handleViewOrder = async (order: Order) => {
-    setSelectedOrder(order);
-    setIsDetailDialogOpen(true);
+    // Navigate to order detail page
+    navigate(`/admin/orders/${order.uuid || order.id}`);
   };
 
-  const handleDeleteOrder = (orderId: string) => {
-    setOrderToDelete(orderId);
-    setIsDeleteDialogOpen(true);
+  const handleDeleteOrder = async (orderId: string) => {
+    if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      await deleteLoading.handleDelete(orderId);
+    }
   };
 
   const handleViewQuotes = (order: Order) => {
@@ -340,7 +543,7 @@ export default function OrderManagement() {
   }, [ordersQuery]);
 
   // Bulk operations
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDelete = useCallback(async () => {
     if (state.selection.selectedOrders.size === 0) {
       toast.error('No orders selected for deletion');
       return;
@@ -350,16 +553,39 @@ export default function OrderManagement() {
     
     // Show confirmation
     if (window.confirm(`Are you sure you want to delete ${selectedCount} selected orders? This action cannot be undone.`)) {
-      // Simulate bulk delete
-      setState(prev => ({ 
-        ...prev, 
-        selection: { ...prev.selection, selectedOrders: new Set() }
-      }));
-      
-      toast.success(`${selectedCount} orders deleted successfully`);
-      ordersQuery.refetch();
+      try {
+        // Start delete loading for all selected orders
+        for (const orderId of state.selection.selectedOrders) {
+          deleteLoading.startDelete(orderId);
+        }
+        
+        // Delete orders sequentially to avoid overwhelming the server
+        for (const orderId of state.selection.selectedOrders) {
+          try {
+            // Simulate API call - replace with actual delete API
+            await new Promise(resolve => setTimeout(resolve, 800));
+            deleteLoading.endDelete(orderId);
+          } catch (error) {
+            deleteLoading.endDelete(orderId);
+            console.error(`Failed to delete order ${orderId}:`, error);
+          }
+        }
+        
+        // Clear selection and refresh
+        setState(prev => ({ 
+          ...prev, 
+          selection: { ...prev.selection, selectedOrders: new Set() }
+        }));
+        
+        toast.success(`${selectedCount} orders deleted successfully`);
+        ordersQuery.refetch();
+      } catch (error) {
+        // Clear all delete loading states on general error
+        deleteLoading.clearAll();
+        toast.error('Failed to delete some orders');
+      }
     }
-  }, [state.selection.selectedOrders, ordersQuery]);
+  }, [state.selection.selectedOrders, deleteLoading, ordersQuery]);
 
   const handleBulkEdit = useCallback(() => {
     if (state.selection.selectedOrders.size === 0) {
@@ -520,26 +746,8 @@ export default function OrderManagement() {
   };
 
   const handleSearch = (value: string) => {
+    setState(prev => ({ ...prev, ui: { ...prev.ui, isChangingPage: true } }));
     setFilters((prev) => ({ ...prev, search: value }));
-  };
-
-  const confirmDelete = async () => {
-    if (orderToDelete) {
-      try {
-        setIsSaving(true);
-        // Note: This would need to be implemented with proper mutation hooks
-        // For now, just simulate delay and refresh
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsDeleteDialogOpen(false);
-        setOrderToDelete(null);
-        ordersQuery.refetch();
-        toast.success('Order berhasil dihapus');
-      } catch (error) {
-        toast.error('Gagal menghapus order');
-      } finally {
-        setIsSaving(false);
-      }
-    }
   };
 
   const getStatusVariant = (status: string) => {
@@ -605,6 +813,18 @@ export default function OrderManagement() {
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
+      cell: ({ row }) => {
+        const order = row.original;
+        return (
+          <Button
+            variant="link"
+            className="p-0 h-auto font-medium text-blue-600 hover:text-blue-800"
+            onClick={() => navigate(`/admin/orders/${order.uuid || order.id}`)}
+          >
+            {order.orderNumber}
+          </Button>
+        );
+      },
     },
     {
       accessorKey: 'customerName',
@@ -621,7 +841,13 @@ export default function OrderManagement() {
         const order = row.original;
         return (
           <div>
-            <p className="font-medium">{order.customerName}</p>
+            <Button
+              variant="link"
+              className="p-0 h-auto font-medium text-blue-600 hover:text-blue-800"
+              onClick={() => navigate(`/admin/customers/${order.customerId}`)}
+            >
+              {order.customerName}
+            </Button>
             <p className="text-xs text-muted-foreground">{order.customerEmail}</p>
           </div>
         );
@@ -741,7 +967,32 @@ export default function OrderManagement() {
     },
     {
       accessorKey: 'markupAmount',
-      header: 'Profit Margin',
+      header: ({ column }) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="p-0 h-auto font-medium hover:bg-transparent"
+          >
+            Profit Margin
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center cursor-help">
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-bold">i</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <div className="space-y-1">
+                <div className="font-semibold">Rumus Profit Margin:</div>
+                <div>Markup Amount = Customer Price - Vendor Cost</div>
+                <div>Profit % = (Markup Amount / Vendor Cost) × 100%</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      ),
       size: 160,
       minSize: 140,
       cell: ({ row }) => {
@@ -754,8 +1005,33 @@ export default function OrderManagement() {
         
         return (
           <div className="min-w-0 w-full">
-            <div className="font-semibold text-green-600 truncate" title={`+Rp ${(order.markupAmount || 0).toLocaleString('id-ID')}`}>
-              +Rp {(order.markupAmount || 0).toLocaleString('id-ID')}
+            <div className="flex items-center gap-2">
+              <div className="font-semibold text-green-600 truncate" title={`+Rp ${(order.markupAmount || 0).toLocaleString('id-ID')}`}>
+                +Rp {(order.markupAmount || 0).toLocaleString('id-ID')}
+              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-3 h-3 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center cursor-help">
+                    <span className="text-xs text-green-600 dark:text-green-400 font-bold">i</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <div className="space-y-2">
+                    <div className="font-semibold">Detail Profit Calculation:</div>
+                    <div className="space-y-1 text-sm">
+                      <div>Customer Price: Rp {(order.customerPrice || 0).toLocaleString('id-ID')}</div>
+                      <div>Vendor Cost: Rp {(order.vendorCost || 0).toLocaleString('id-ID')}</div>
+                      <div className="border-t pt-1 mt-1">
+                        <div className="font-semibold">Markup: Rp {(order.markupAmount || 0).toLocaleString('id-ID')}</div>
+                        <div>Profit Margin: {profitPercentage.toFixed(1)}%</div>
+                      </div>
+                      <div className="text-xs opacity-75 mt-2">
+                        Formula: (Customer Price - Vendor Cost) / Vendor Cost × 100%
+                      </div>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <p className="text-xs text-muted-foreground whitespace-nowrap">
               {profitPercentage.toFixed(1)}% margin
@@ -834,7 +1110,6 @@ export default function OrderManagement() {
               variant="ghost"
               size="icon"
               onClick={() => handleDeleteOrder(order.uuid || order.id)}
-              disabled={isSaving}
               title="Delete Order"
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
@@ -871,21 +1146,7 @@ export default function OrderManagement() {
     .filter((o) => o.paymentStatus === PaymentStatus.Paid)
     .reduce((sum, o) => sum + o.totalAmount, 0);
 
-  const statsByStatus = {
-    [OrderStatus.Pending]: ordersData.filter((o) => o.status === OrderStatus.Pending).length,
-    [OrderStatus.VendorNegotiation]: ordersData.filter((o) => o.status === OrderStatus.VendorNegotiation).length,
-    [OrderStatus.AwaitingPayment]: ordersData.filter((o) => o.status === OrderStatus.AwaitingPayment).length,
-    [OrderStatus.InProduction]: ordersData.filter((o) => o.status === OrderStatus.InProduction).length,
-    [OrderStatus.Completed]: ordersData.filter((o) => o.status === OrderStatus.Completed).length,
-  };
 
-  const pendingPayments = ordersData.filter((o) => 
-    o.status === OrderStatus.PartialPayment && o.remainingAmount > 0
-  ).reduce((sum, o) => sum + (o.remainingAmount || 0), 0);
-  
-  const totalProfit = ordersData
-    .filter((o) => o.status === OrderStatus.Completed && o.markupAmount)
-    .reduce((sum, o) => sum + (o.markupAmount || 0), 0);
 
   if (error) {
     return (
@@ -901,9 +1162,21 @@ export default function OrderManagement() {
     );
   }
 
+  // Show authentication error if present
+  if (hasAuthError) {
+    return (
+      <div className="p-6 space-y-6">
+        <AuthErrorDisplay />
+      </div>
+    );
+  }
+
   return (
-    <LazyWrapper>
+    <TooltipProvider>
+      <LazyWrapper>
       <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+
+        
         {/* Header Section - Matching ProductCatalog */}
         <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
           <div>
@@ -1060,7 +1333,8 @@ export default function OrderManagement() {
         {isLoading ? (
           <StatsCardsSkeleton />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <PortalTooltipProvider delayDuration={300}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-8 mb-16">
             <EnhancedCard className={cn(state.ui.isRefreshing && "animate-pulse")}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -1097,9 +1371,71 @@ export default function OrderManagement() {
 
             <EnhancedCard className={cn(state.ui.isRefreshing && "animate-pulse")}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Revenue
-                </CardTitle>
+                <div className="flex items-center gap-1">
+                  <PortalTooltip>
+                    <PortalTooltipTrigger asChild>
+                      <div 
+                        className="cursor-help"
+                        title="Total Revenue Formula: Sum of all PAID orders' total amounts. Filter: paymentStatus === 'paid'. Business Logic: Only confirmed revenue from completed payments."
+                        onClick={() => console.log('Tooltip clicked - Total Revenue')}
+                      >
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                          Total Revenue
+                          <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+                        </CardTitle>
+                      </div>
+                    </PortalTooltipTrigger>
+                    <PortalTooltipContent 
+                      side="bottom" 
+                      className="max-w-md p-4 bg-white dark:bg-gray-800 border shadow-xl z-[9999] rounded-lg"
+                      sideOffset={10}
+                      avoidCollisions={true}
+                      collisionPadding={20}
+                    >
+                      <div className="space-y-3">
+                        <p className="font-semibold text-sm">Total Revenue Calculation:</p>
+                        <p className="text-xs text-muted-foreground">Sum of all PAID orders' total amounts</p>
+                        
+                        {/* Real Calculation Breakdown */}
+                        <div className="text-xs bg-blue-50 dark:bg-blue-900/20 p-3 rounded border">
+                          <p className="font-semibold text-blue-800 dark:text-blue-200 mb-2">📊 Real Data Breakdown:</p>
+                          <div className="space-y-1">
+                            <p><strong>Total Orders:</strong> {stats.ordersData.length} orders</p>
+                            <p><strong>Paid Orders:</strong> {stats.ordersData.filter(o => o.paymentStatus === 'paid').length} orders</p>
+                            <p><strong>Revenue Calculation:</strong></p>
+                            <div className="ml-2 space-y-0.5 text-xs">
+                              {stats.ordersData
+                                .filter(o => o.paymentStatus === 'paid')
+                                .slice(0, 5) // Show first 5 paid orders
+                                .map((order, index) => (
+                                  <div key={index} className="flex justify-between">
+                                    <span>{order.orderNumber}:</span>
+                                    <span>Rp {(order.totalAmount || 0).toLocaleString('id-ID')}</span>
+                                  </div>
+                                ))}
+                              {stats.ordersData.filter(o => o.paymentStatus === 'paid').length > 5 && (
+                                <div className="text-gray-500">
+                                  ... +{stats.ordersData.filter(o => o.paymentStatus === 'paid').length - 5} more paid orders
+                                </div>
+                              )}
+                            </div>
+                            <div className="border-t pt-1 mt-2">
+                              <p className="font-semibold text-green-600 dark:text-green-400">
+                                <strong>Total Revenue: Rp {stats.totalRevenue.toLocaleString('id-ID')}</strong>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded border">
+                          <p><strong>Filter:</strong> paymentStatus === 'paid'</p>
+                          <p><strong>Formula:</strong> Sum of totalAmount from each paid order</p>
+                          <p><strong>Business Logic:</strong> Only confirmed revenue from completed payments</p>
+                        </div>
+                      </div>
+                    </PortalTooltipContent>
+                  </PortalTooltip>
+                </div>
                 <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
                   <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
@@ -1116,9 +1452,80 @@ export default function OrderManagement() {
 
             <EnhancedCard className={cn(state.ui.isRefreshing && "animate-pulse")}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Profit
-                </CardTitle>
+                <div className="flex items-center gap-1">
+                  <PortalTooltip>
+                    <PortalTooltipTrigger asChild>
+                      <div 
+                        className="cursor-help"
+                        title="Total Profit Formula: Sum of all orders' markup amounts. Filter: markupAmount > 0. PT CEX Model: Profit = Customer Price - Vendor Cost."
+                        onClick={() => console.log('Tooltip clicked - Total Profit')}
+                      >
+                        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                          Total Profit
+                          <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+                        </CardTitle>
+                      </div>
+                    </PortalTooltipTrigger>
+                    <PortalTooltipContent 
+                      side="bottom" 
+                      className="max-w-md p-4 bg-white dark:bg-gray-800 border shadow-xl z-[9999] rounded-lg"
+                      sideOffset={10}
+                      avoidCollisions={true}
+                      collisionPadding={20}
+                    >
+                      <div className="space-y-3">
+                        <p className="font-semibold text-sm">Total Profit Calculation:</p>
+                        <p className="text-xs text-muted-foreground">Sum of all orders' markup amounts</p>
+                        
+                        {/* Real Calculation Breakdown */}
+                        <div className="text-xs bg-purple-50 dark:bg-purple-900/20 p-3 rounded border">
+                          <p className="font-semibold text-purple-800 dark:text-purple-200 mb-2">💰 Real Data Breakdown:</p>
+                          <div className="space-y-1">
+                            <p><strong>Total Orders:</strong> {stats.ordersData.length} orders</p>
+                            <p><strong>Orders with Profit:</strong> {stats.ordersData.filter(o => o.markupAmount && o.markupAmount > 0).length} orders</p>
+                            <p><strong>Profit Calculation:</strong></p>
+                            <div className="ml-2 space-y-0.5 text-xs">
+                              {stats.ordersData
+                                .filter(o => o.markupAmount && o.markupAmount > 0)
+                                .slice(0, 5) // Show first 5 profitable orders
+                                .map((order, index) => {
+                                  const profitMargin = order.vendorCost > 0 ? ((order.markupAmount / order.vendorCost) * 100).toFixed(1) : '0';
+                                  return (
+                                    <div key={index} className="space-y-0.5">
+                                      <div className="flex justify-between font-medium">
+                                        <span>{order.orderNumber}:</span>
+                                        <span className="text-green-600">+Rp {(order.markupAmount || 0).toLocaleString('id-ID')}</span>
+                                      </div>
+                                      <div className="text-xs text-gray-500 ml-2">
+                                        Customer: Rp {(order.customerPrice || 0).toLocaleString('id-ID')} - Vendor: Rp {(order.vendorCost || 0).toLocaleString('id-ID')} = {profitMargin}% margin
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              {stats.ordersData.filter(o => o.markupAmount && o.markupAmount > 0).length > 5 && (
+                                <div className="text-gray-500">
+                                  ... +{stats.ordersData.filter(o => o.markupAmount && o.markupAmount > 0).length - 5} more profitable orders
+                                </div>
+                              )}
+                            </div>
+                            <div className="border-t pt-1 mt-2">
+                              <p className="font-semibold text-green-600 dark:text-green-400">
+                                <strong>Total Profit: Rp {stats.totalProfit.toLocaleString('id-ID')}</strong>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded border">
+                          <p><strong>Filter:</strong> markupAmount &gt; 0</p>
+                          <p><strong>PT CEX Model:</strong> Profit = Customer Price - Vendor Cost</p>
+                          <p><strong>Formula:</strong> Sum of markupAmount from each order</p>
+                          <p><strong>Business Logic:</strong> Profit exists when markup is calculated</p>
+                        </div>
+                      </div>
+                    </PortalTooltipContent>
+                  </PortalTooltip>
+                </div>
                 <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900">
                   <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
@@ -1133,6 +1540,7 @@ export default function OrderManagement() {
               </CardContent>
             </EnhancedCard>
           </div>
+          </PortalTooltipProvider>
         )}
 
         {/* Analytics Dashboard - Conditional */}
@@ -1149,15 +1557,15 @@ export default function OrderManagement() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span>Pending</span>
-                      <span className="font-medium">{statsByStatus[OrderStatus.Pending] || 0}</span>
+                      <span className="font-medium">{stats.statsByStatus?.pending || 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>In Production</span>
-                      <span className="font-medium">{statsByStatus[OrderStatus.InProduction] || 0}</span>
+                      <span className="font-medium">{stats.statsByStatus?.in_production || 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Completed</span>
-                      <span className="font-medium">{statsByStatus[OrderStatus.Completed] || 0}</span>
+                      <span className="font-medium">{stats.statsByStatus?.completed || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -1213,7 +1621,10 @@ export default function OrderManagement() {
             <div className="flex gap-2 flex-wrap">
               <Select
                 value={filters.status}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                onValueChange={(value) => {
+                  setState(prev => ({ ...prev, ui: { ...prev.ui, isChangingPage: true } }));
+                  setFilters(prev => ({ ...prev, status: value }));
+                }}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Statuses" />
@@ -1238,7 +1649,10 @@ export default function OrderManagement() {
 
               <Select
                 value={filters.paymentStatus}
-                onValueChange={(value) => setFilters(prev => ({ ...prev, paymentStatus: value }))}
+                onValueChange={(value) => {
+                  setState(prev => ({ ...prev, ui: { ...prev.ui, isChangingPage: true } }));
+                  setFilters(prev => ({ ...prev, paymentStatus: value }));
+                }}
               >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Payments" />
@@ -1273,6 +1687,42 @@ export default function OrderManagement() {
             searchPlaceholder="Search by order number..."
             loading={isLoading || state.ui.isRefreshing}
             datasetId="order-management"
+            deletingIds={deleteLoading.deletingIds}
+            getRowId={(row: unknown) => {
+              const order = row as Order;
+              return order.uuid || order.id;
+            }}
+            externalPagination={{
+              pageIndex: pagination.page - 1, // DataTable uses 0-based indexing
+              pageSize: state.pagination.perPage, // Use state value for consistency
+              pageCount: pagination.last_page,
+              total: pagination.total,
+              onPageChange: (page: number) => {
+                setState(prev => ({
+                  ...prev,
+                  ui: { ...prev.ui, isChangingPage: true },
+                  pagination: { ...prev.pagination, page: page + 1 } // Convert back to 1-based
+                }));
+              }
+            }}
+            onPageSizeChange={(pageSize: number) => {
+              console.log('🔧 [OrderManagement] Page size change requested:', {
+                newPageSize: pageSize,
+                currentStatePerPage: state.pagination.perPage,
+                currentPaginationPerPage: pagination.per_page
+              });
+              
+              // Set loading state for page size change
+              setState(prev => ({
+                ...prev,
+                ui: { ...prev.ui, isChangingPageSize: true },
+                pagination: {
+                  ...prev.pagination,
+                  perPage: pageSize,
+                  page: 1 // Reset to first page when changing per page
+                }
+              }));
+            }}
           />
         </Card>
 
@@ -1578,33 +2028,6 @@ export default function OrderManagement() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogTitle>Delete Order</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this order? This action cannot be undone.
-            </AlertDialogDescription>
-            <div className="flex gap-3 justify-end">
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmDelete}
-                disabled={isSaving}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete'
-                )}
-              </AlertDialogAction>
-            </div>
-          </AlertDialogContent>
-        </AlertDialog>
-
         {/* Order Status Transition Dialog */}
         {selectedOrder && (
           <OrderStatusTransition
@@ -1615,7 +2038,7 @@ export default function OrderManagement() {
               setSelectedOrder(null);
             }}
             onTransition={handleStatusTransition}
-            isLoading={isSaving}
+            isLoading={updateOrderMutation.isPending}
           />
         )}
 
@@ -1629,7 +2052,7 @@ export default function OrderManagement() {
               setSelectedOrder(null);
             }}
             onVendorAssigned={handleVendorAssigned}
-            isLoading={isSaving}
+            isLoading={updateOrderMutation.isPending}
           />
         )}
 
@@ -1643,10 +2066,11 @@ export default function OrderManagement() {
               setSelectedOrder(null);
             }}
             onPaymentProcessed={handlePaymentProcessed}
-            isLoading={isSaving}
+            isLoading={updateOrderMutation.isPending}
           />
         )}
       </div>
     </LazyWrapper>
+    </TooltipProvider>
   );
 }

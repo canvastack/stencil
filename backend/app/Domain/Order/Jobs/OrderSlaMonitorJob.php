@@ -10,14 +10,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Spatie\Multitenancy\Jobs\NotTenantAware;
+use Spatie\Multitenancy\Jobs\TenantAware;
 
-class OrderSlaMonitorJob implements ShouldQueue, NotTenantAware
+class OrderSlaMonitorJob implements ShouldQueue, TenantAware
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
         public int $orderId,
+        public int $tenantId,
         public string $status,
         public ?int $escalationIndex = null,
         public bool $thresholdCheck = false
@@ -25,7 +26,7 @@ class OrderSlaMonitorJob implements ShouldQueue, NotTenantAware
 
     public function handle(OrderStateMachine $stateMachine): void
     {
-        $order = Order::find($this->orderId);
+        $order = Order::where('tenant_id', $this->tenantId)->find($this->orderId);
 
         if (!$order) {
             return;

@@ -2,8 +2,8 @@
 
 namespace App\Application\Vendor\Services;
 
-use App\Models\Vendor;
-use App\Models\Order;
+use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;

@@ -185,18 +185,76 @@ class QuoteController extends Controller
         $tenantId = $this->getCurrentTenantId($request);
         $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
             ->where('uuid', $id)
+            ->with(['order', 'vendor'])
             ->firstOrFail();
 
-        $quote->update([
-            'status' => 'accepted',
-            'closed_at' => now(),
-        ]);
+        // Validate quote can be accepted
+        if ($quote->status === 'accepted') {
+            return response()->json([
+                'message' => 'Quote has already been accepted'
+            ], 422);
+        }
 
-        $quote->load(['order.customer', 'vendor']);
+        if ($quote->status === 'expired') {
+            return response()->json([
+                'message' => 'Cannot accept expired quote'
+            ], 422);
+        }
 
-        return response()->json([
-            'data' => $this->transformQuoteToFrontend($quote)
-        ]);
+        if ($quote->expires_at && $quote->expires_at < now()) {
+            return response()->json([
+                'message' => 'Quote has expired'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update quote status to accepted
+            $quote->update([
+                'status' => 'accepted',
+                'closed_at' => now(),
+            ]);
+
+            // Sync data to order if order is in vendor_negotiation stage
+            if ($quote->order && $quote->order->status === 'vendor_negotiation') {
+                $this->syncQuoteToOrder($quote);
+            }
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'message' => 'Quote accepted and order data synchronized'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Sync accepted quote data to order.
+     * 
+     * @param OrderVendorNegotiation $quote
+     * @return void
+     */
+    private function syncQuoteToOrder(OrderVendorNegotiation $quote): void
+    {
+        $order = $quote->order;
+
+        // Sync vendor pricing
+        $order->vendor_quoted_price = $quote->latest_offer;
+        $order->vendor_id = $quote->vendor_id;
+        $order->vendor_terms = $quote->terms;
+
+        // Calculate quotation amount (30% markup + 5% operational cost = 1.35 multiplier)
+        $markup = 0.30;
+        $operationalCost = 0.05;
+        $order->quotation_amount = (int) ($quote->latest_offer * (1 + $markup + $operationalCost));
+
+        $order->save();
     }
 
     /**

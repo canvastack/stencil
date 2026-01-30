@@ -41,21 +41,23 @@ class SendOrderNotifications
     public function handleOrderStatusChanged(OrderStatusChanged $event): void
     {
         try {
-            $order = $event->getOrder();
+            // Our new OrderStatusChanged event doesn't have getOrder() method
+            // Instead, it has getAggregateId() and other methods
+            $orderId = $event->getAggregateId();
             $newStatus = $event->getNewStatus();
-            $oldStatus = $event->getPreviousStatus();
+            $oldStatus = $event->getOldStatus();
             
             // Note: For domain events, we'll log the notification but skip actual sending
             // since we're working with domain entities, not Eloquent models with notification capability
             
             Log::info("Order status changed notification sent", [
-                'order_id' => $order->getId()->getValue(),
-                'old_status' => $oldStatus->value,
-                'new_status' => $newStatus->value,
+                'order_id' => $orderId,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
             ]);
         } catch (\Exception $e) {
             Log::error("Failed to send order status changed notification", [
-                'order_id' => $event->getOrder()->getId()->getValue(),
+                'order_id' => $event->getAggregateId(),
                 'error' => $e->getMessage(),
             ]);
         }

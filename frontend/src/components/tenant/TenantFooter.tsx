@@ -12,7 +12,7 @@ export const TenantFooter = () => {
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <span>© {currentYear} Etching Xenial. Made with</span>
             <Heart className="w-4 h-4 text-destructive fill-destructive" />
-            <span>by Development Team</span>
+            <span>by <a href="https://github.com/canvastack" target="_blank">CanvaStack</a></span>
           </div>
 
           {/* Right Side */}

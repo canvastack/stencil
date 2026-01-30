@@ -3,7 +3,7 @@
 namespace App\Infrastructure\Persistence\Eloquent\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,7 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
 use App\Infrastructure\Persistence\Eloquent\Contracts\TenantAwareModel;
 
-class Customer extends Model implements TenantAwareModel
+class Customer extends Authenticatable implements TenantAwareModel
 {
     use HasFactory, SoftDeletes, Notifiable, BelongsToTenant;
 
@@ -103,6 +103,15 @@ class Customer extends Model implements TenantAwareModel
         $this->total_spent = $this->orders()->sum('total_paid_amount');
         $this->last_order_date = $this->orders()->latest()->first()?->created_at;
         $this->save();
+    }
+
+    /**
+     * Get the entity's notifications.
+     */
+    public function notifications()
+    {
+        return $this->morphMany(\App\Models\DatabaseNotification::class, 'notifiable')
+                    ->orderBy('created_at', 'desc');
     }
 
     protected static function boot()

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { NotificationToast } from '@/components/ui/notification-toast';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { usePageTracking } from '@/hooks/useActivity';
 
 export const AdminHeader = () => {
@@ -70,6 +71,8 @@ export const AdminHeader = () => {
 
         {/* Right Side */}
         <div className="flex items-center gap-2">
+          <NotificationCenter className="rounded-lg" />
+          
           <NotificationToast className="rounded-lg" />
 
           <Button

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,6 +28,9 @@ import {
 } from 'lucide-react';
 import { Quote, CreateQuoteRequest, UpdateQuoteRequest, QuoteItem } from '@/services/tenant/quoteService';
 import { quoteService } from '@/services/tenant/quoteService';
+import { tenantApiClient } from '@/services/tenant/tenantApiClient';
+import { ordersService } from '@/services/api/orders';
+import { Order } from '@/types/order';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -65,14 +69,18 @@ interface QuoteFormProps {
 
 export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: QuoteFormProps) => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get('order_id');
   
   // State for search/select options
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; company?: string }>>([]);
   const [vendors, setVendors] = useState<Array<{ id: string; name: string; company: string }>>([]);
-  const [products, setProducts] = useState<Array<{ id: string; name: string; sku: string; unit: string }>>([]);
+  const [products, setProducts] = useState<Array<{ id: string; intId?: number; name: string; sku: string; unit: string }>>([]);
   const [customersLoading, setCustomersLoading] = useState(false);
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const [productsLoading, setProductsLoading] = useState(false);
+  const [orderContext, setOrderContext] = useState<Order | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
 
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
@@ -108,18 +116,157 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
 
   // Load initial data
   useEffect(() => {
-    loadCustomers();
+    // Load vendors and products immediately
     loadVendors();
     loadProducts();
   }, []);
 
+  // Ensure customer is selected after customers list is loaded
+  useEffect(() => {
+    if (orderContext && customers.length > 0) {
+      const currentCustomerId = form.getValues('customer_id');
+      console.log('🔄 Customers loaded, checking selection...');
+      console.log('🔄 Current customer_id in form:', currentCustomerId);
+      console.log('🔄 Order customer_id:', orderContext.customerId);
+      console.log('🔄 Customers list:', customers);
+      
+      // If customer_id is set but not matching, reset it
+      if (currentCustomerId !== orderContext.customerId) {
+        console.log('🔄 Re-setting customer_id to:', orderContext.customerId);
+        form.setValue('customer_id', orderContext.customerId, { shouldValidate: true });
+      }
+    }
+  }, [customers, orderContext, form]);
+
+  // Load customers after order context is loaded (if applicable)
+  useEffect(() => {
+    if (orderContext || !orderId) {
+      // Load customers after we have order context, or if there's no order context
+      loadCustomers();
+    }
+  }, [orderContext, orderId]);
+
+  // Load order context when order_id is present
+  useEffect(() => {
+    const loadOrderContext = async () => {
+      if (orderId && !quote) {
+        try {
+          setOrderLoading(true);
+          const order = await ordersService.getOrderById(orderId);
+          console.log('📦 Order loaded:', order);
+          console.log('📦 Order items:', order.items);
+          console.log('📦 Customer ID:', order.customerId);
+          setOrderContext(order);
+          
+          // Pre-fill customer_id from order
+          if (order.customerId) {
+            console.log('✅ Setting customer_id:', order.customerId);
+            form.setValue('customer_id', order.customerId);
+          }
+          
+          // Pre-populate order items into quote items
+          if (order.items && order.items.length > 0) {
+            console.log('📋 Transforming order items to quote items...');
+            const quoteItems = order.items.map(item => {
+              console.log('  - Item:', item);
+              return {
+                product_id: item.product_id?.toString() || '',
+                description: item.product_name,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total_price: item.subtotal,
+                specifications: {},
+                notes: '',
+              };
+            });
+            
+            console.log('✅ Quote items prepared:', quoteItems);
+            
+            // Set both customer_id and items together to prevent form reset
+            console.log('🔄 Setting form values (customer + items)...');
+            form.reset({
+              ...form.getValues(),
+              customer_id: order.customerId,
+              items: quoteItems,
+            });
+            console.log('✅ Form values set (customer + items)');
+          } else if (order.customerId) {
+            // If no items, just set customer
+            form.setValue('customer_id', order.customerId);
+          }
+          
+          toast({
+            title: 'Order Context Loaded',
+            description: `Creating quote for Order #${order.orderNumber} with ${order.items.length} items`,
+          });
+        } catch (error) {
+          console.error('❌ Failed to load order context:', error);
+          toast({
+            title: 'Warning',
+            description: 'Failed to load order details. You can still create the quote manually.',
+            variant: 'destructive',
+          });
+        } finally {
+          setOrderLoading(false);
+        }
+      }
+    };
+
+    loadOrderContext();
+  }, [orderId, quote, form, toast]);
+
   const loadCustomers = async (search?: string) => {
     try {
       setCustomersLoading(true);
-      const data = await quoteService.getAvailableCustomers(search);
-      setCustomers(data);
+      console.log('👥 Loading customers...');
+      // Use existing customers endpoint instead of /for-quotes
+      const response = await tenantApiClient.get('/customers', {
+        params: { search, per_page: 50, status: 'active' }
+      });
+      // Transform response to match expected format
+      const customersData = response.data?.data || response.data || [];
+      console.log('👥 Raw customers data:', customersData);
+      
+      const transformedCustomers = customersData.map((c: any) => ({
+        id: c.uuid || c.id,
+        name: c.name,
+        company: c.company_name || c.company
+      }));
+      console.log('👥 Transformed customers:', transformedCustomers);
+      setCustomers(transformedCustomers);
+      
+      // If we have an order context with customer_id, ensure that customer is in the list
+      if (orderContext && orderContext.customerId) {
+        console.log('👥 Checking if order customer exists in list...');
+        console.log('👥 Looking for customer ID:', orderContext.customerId);
+        const customerExists = transformedCustomers.some((c: any) => c.id === orderContext.customerId);
+        console.log('👥 Customer exists in list:', customerExists);
+        
+        if (!customerExists && orderContext.customerName) {
+          console.log('👥 Adding order customer to list:', {
+            id: orderContext.customerId,
+            name: orderContext.customerName,
+            company: orderContext.customerEmail
+          });
+          // Add the order's customer to the list
+          setCustomers(prev => [{
+            id: orderContext.customerId,
+            name: orderContext.customerName,
+            company: orderContext.customerEmail
+          }, ...prev]);
+        }
+      }
+      
+      // After customers are loaded, check form value
+      const currentCustomerId = form.getValues('customer_id');
+      console.log('👥 Current form customer_id:', currentCustomerId);
     } catch (error) {
-      console.error('Failed to load customers:', error);
+      console.error('❌ Failed to load customers:', error);
+      toast({
+        title: 'Warning',
+        description: 'Failed to load customers list',
+        variant: 'destructive',
+      });
     } finally {
       setCustomersLoading(false);
     }
@@ -128,10 +275,24 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
   const loadVendors = async (search?: string) => {
     try {
       setVendorsLoading(true);
-      const data = await quoteService.getAvailableVendors(search);
-      setVendors(data);
+      // Use existing vendors endpoint instead of /for-quotes
+      const response = await tenantApiClient.get('/vendors', {
+        params: { search, per_page: 50, status: 'active' }
+      });
+      // Transform response to match expected format
+      const vendorsData = response.data?.data || response.data || [];
+      setVendors(vendorsData.map((v: any) => ({
+        id: v.uuid || v.id,
+        name: v.name,
+        company: v.company_name || v.company || v.name
+      })));
     } catch (error) {
       console.error('Failed to load vendors:', error);
+      toast({
+        title: 'Warning',
+        description: 'Failed to load vendors list',
+        variant: 'destructive',
+      });
     } finally {
       setVendorsLoading(false);
     }
@@ -140,10 +301,31 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
   const loadProducts = async (search?: string) => {
     try {
       setProductsLoading(true);
-      const data = await quoteService.getAvailableProducts(search);
-      setProducts(data);
+      console.log('📦 Loading products...');
+      // Use existing products endpoint instead of /for-quotes
+      const response = await tenantApiClient.get('/products', {
+        params: { search, per_page: 100, status: 'active' }
+      });
+      // Transform response to match expected format
+      const productsData = response.data?.data || response.data || [];
+      console.log('📦 Raw products data:', productsData);
+      
+      const transformedProducts = productsData.map((p: any) => ({
+        id: p.uuid || p.id?.toString() || '',
+        intId: p.id, // Keep integer ID for matching with order items
+        name: p.name,
+        sku: p.sku || '',
+        unit: p.unit || 'pcs'
+      }));
+      console.log('📦 Transformed products:', transformedProducts);
+      setProducts(transformedProducts);
     } catch (error) {
-      console.error('Failed to load products:', error);
+      console.error('❌ Failed to load products:', error);
+      toast({
+        title: 'Warning',
+        description: 'Failed to load products list',
+        variant: 'destructive',
+      });
     } finally {
       setProductsLoading(false);
     }
@@ -151,7 +333,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
 
   const handleSubmit = async (data: QuoteFormData) => {
     try {
-      const submitData = {
+      const submitData: CreateQuoteRequest | UpdateQuoteRequest = {
         ...data,
         valid_until: data.valid_until.toISOString(),
         items: data.items.map(item => ({
@@ -159,6 +341,11 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
           total_price: item.quantity * item.unit_price,
         })),
       };
+
+      // Include order_id if coming from order context
+      if (orderId && !quote) {
+        (submitData as CreateQuoteRequest).order_id = orderId;
+      }
 
       await onSubmit(submitData);
     } catch (error) {
@@ -195,11 +382,42 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
   };
 
   const calculateItemTotal = (quantity: number, unitPrice: number) => {
-    return quantity * unitPrice;
+    const total = quantity * unitPrice;
+    return isNaN(total) ? 0 : total;
+  };
+
+  // Currency conversion rate (IDR to USD)
+  const USD_TO_IDR_RATE = 15750; // Update this rate as needed
+  
+  const formatCurrency = (amount: number, currency: 'IDR' | 'USD' = 'IDR') => {
+    if (isNaN(amount)) return currency === 'IDR' ? 'Rp 0' : '$0.00';
+    
+    if (currency === 'IDR') {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } else {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    }
+  };
+
+  const convertToUSD = (idrAmount: number) => {
+    return idrAmount / USD_TO_IDR_RATE;
   };
 
   const watchedItems = form.watch('items');
-  const totalAmount = watchedItems.reduce((sum, item) => sum + calculateItemTotal(item.quantity, item.unit_price), 0);
+  const totalAmount = watchedItems.reduce((sum, item) => {
+    const itemTotal = calculateItemTotal(item.quantity || 0, item.unit_price || 0);
+    return sum + itemTotal;
+  }, 0);
 
   return (
     <Form {...form}>
@@ -230,34 +448,58 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
               <FormField
                 control={form.control}
                 name="customer_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Customer</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a customer" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            <div className="flex items-center gap-2">
-                              <User className="w-4 h-4" />
-                              <div>
-                                <div className="font-medium">{customer.name}</div>
-                                {customer.company && (
-                                  <div className="text-sm text-muted-foreground">{customer.company}</div>
-                                )}
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const selectedCustomer = customers.find(c => c.id === field.value);
+                  console.log('🎨 Rendering customer field:', {
+                    fieldValue: field.value,
+                    selectedCustomer,
+                    customersCount: customers.length
+                  });
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Customer</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={!!orderId && !!orderContext}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a customer">
+                              {selectedCustomer ? selectedCustomer.name : 'Select a customer'}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {customers.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground">Loading customers...</div>
+                          ) : (
+                            customers.map((customer) => (
+                              <SelectItem key={customer.id} value={customer.id}>
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4" />
+                                  <div>
+                                    <div className="font-medium">{customer.name}</div>
+                                    {customer.company && (
+                                      <div className="text-sm text-muted-foreground">{customer.company}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {orderId && orderContext && (
+                        <FormDescription>
+                          Pre-filled from Order #{orderContext.orderNumber} - Field is locked
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               {/* Vendor Selection */}
@@ -374,7 +616,14 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Quote Items</CardTitle>
+              <div>
+                <CardTitle>Quote Items</CardTitle>
+                {orderId && orderContext && orderContext.items && orderContext.items.length > 0 && (
+                  <CardDescription className="mt-1">
+                    {orderContext.items.length} item(s) pre-populated from Order #{orderContext.orderNumber}
+                  </CardDescription>
+                )}
+              </div>
               <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Item
@@ -402,9 +651,32 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                       {/* Product Selection */}
                       <div className="md:col-span-3">
                         <Label>Product (Optional)</Label>
-                        <Select onValueChange={(value) => handleProductSelect(index, value)}>
+                        <Select 
+                          onValueChange={(value) => handleProductSelect(index, value)}
+                          value={watchedItems[index]?.product_id || ''}
+                        >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select product" />
+                            <SelectValue placeholder="Select product">
+                              {(() => {
+                                const productId = watchedItems[index]?.product_id;
+                                if (productId) {
+                                  // Try to find product by UUID first
+                                  let product = products.find(p => p.id === productId);
+                                  
+                                  // If not found and productId is numeric, try matching by integer ID
+                                  if (!product && !isNaN(Number(productId))) {
+                                    product = products.find(p => p.intId === Number(productId));
+                                  }
+                                  
+                                  if (product) {
+                                    return product.name;
+                                  }
+                                  // If not found in list, use description as fallback
+                                  return watchedItems[index]?.description || 'Select product';
+                                }
+                                return 'Select product';
+                              })()}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {products.map((product) => (
@@ -473,15 +745,18 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                           name={`items.${index}.unit_price`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Unit Price</FormLabel>
+                              <FormLabel>Unit Price (IDR)</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
+                                    Rp
+                                  </span>
                                   <Input
                                     type="number"
                                     min="0"
-                                    step="0.01"
+                                    step="1000"
                                     className="pl-9"
+                                    placeholder="0"
                                     {...field}
                                     onChange={(e) => {
                                       const value = parseFloat(e.target.value) || 0;
@@ -502,9 +777,9 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                       {/* Total */}
                       <div className="md:col-span-1">
                         <Label>Total</Label>
-                        <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center">
+                        <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center justify-end">
                           <span className="text-sm font-medium">
-                            ${calculateItemTotal(watchedItems[index]?.quantity || 0, watchedItems[index]?.unit_price || 0).toFixed(2)}
+                            {formatCurrency(calculateItemTotal(watchedItems[index]?.quantity || 0, watchedItems[index]?.unit_price || 0), 'IDR')}
                           </span>
                         </div>
                       </div>
@@ -536,12 +811,20 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
             {/* Total Summary */}
             <div className="border-t pt-4">
               <div className="flex justify-end">
-                <div className="text-right">
-                  <div className="text-2xl font-bold">
-                    Total: ${totalAmount.toFixed(2)}
+                <div className="text-right space-y-2">
+                  <div>
+                    <div className="text-2xl font-bold text-primary">
+                      {formatCurrency(totalAmount, 'IDR')}
+                    </div>
+                    <div className="text-lg text-muted-foreground">
+                      ≈ {formatCurrency(convertToUSD(totalAmount), 'USD')}
+                    </div>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Excluding taxes and fees
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Exchange rate: 1 USD = Rp {USD_TO_IDR_RATE.toLocaleString('id-ID')}
                   </div>
                 </div>
               </div>

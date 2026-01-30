@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { LazyWrapper } from '@/components/ui/lazy-wrapper';
+import { useDeleteLoading } from '@/hooks/useDeleteLoading';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +90,22 @@ function VendorDatabase() {
     updateVendor,
     deleteVendor,
   } = useVendors();
+
+  // Delete loading functionality
+  const deleteLoading = useDeleteLoading({
+    onDelete: async (vendorId: string) => {
+      await deleteVendor(vendorId);
+    },
+    onSuccess: (vendorId: string) => {
+      const vendor = vendors.find(v => v.id === vendorId);
+      toast.success('Vendor deleted successfully');
+      announceToScreenReader(`Vendor ${vendor?.name || ''} deleted successfully`);
+    },
+    onError: (vendorId: string, error: any) => {
+      toast.error('Failed to delete vendor');
+      announceToScreenReader('Failed to delete vendor. Please try again.');
+    },
+  });
 
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -198,16 +215,9 @@ function VendorDatabase() {
   const handleDelete = useCallback(async (vendorId: string) => {
     const vendor = vendors.find(v => v.id === vendorId);
     if (window.confirm(`Are you sure you want to delete ${vendor?.name || 'this vendor'}?`)) {
-      try {
-        await deleteVendor(vendorId);
-        toast.success('Vendor deleted successfully');
-        announceToScreenReader(`Vendor ${vendor?.name || ''} deleted successfully`);
-      } catch (error) {
-        toast.error('Failed to delete vendor');
-        announceToScreenReader('Failed to delete vendor. Please try again.');
-      }
+      await deleteLoading.handleDelete(vendorId);
     }
-  }, [deleteVendor, vendors]);
+  }, [deleteLoading, vendors]);
 
   const handleEdit = useCallback((vendor: Vendor) => {
     setEditingVendor(vendor);
@@ -430,10 +440,32 @@ function VendorDatabase() {
           );
           if (!confirmed) return;
 
-          await vendorsService.bulkDelete(vendorIds);
-          toast.success(`Deleted ${vendorIds.length} vendor${vendorIds.length > 1 ? 's' : ''}`);
-          announceToScreenReader(`Deleted ${vendorIds.length} vendors successfully`);
-          fetchVendors();
+          // Use delete loading system for visual feedback
+          for (const vendorId of vendorIds) {
+            deleteLoading.startDelete(vendorId);
+          }
+          
+          try {
+            // Delete vendors sequentially to avoid overwhelming the server
+            for (const vendorId of vendorIds) {
+              try {
+                await deleteVendor(vendorId);
+                deleteLoading.endDelete(vendorId);
+              } catch (error) {
+                deleteLoading.endDelete(vendorId);
+                console.error(`Failed to delete vendor ${vendorId}:`, error);
+              }
+            }
+            
+            toast.success(`Deleted ${vendorIds.length} vendor${vendorIds.length > 1 ? 's' : ''}`);
+            announceToScreenReader(`Deleted ${vendorIds.length} vendors successfully`);
+          } catch (error) {
+            // Clear all delete loading states on general error
+            for (const vendorId of vendorIds) {
+              deleteLoading.endDelete(vendorId);
+            }
+            throw error;
+          }
           break;
         }
         case 'export': {
@@ -1137,6 +1169,8 @@ function VendorDatabase() {
                 searchPlaceholder="Search vendors..."
                 loading={isLoading}
                 datasetId="vendor-database"
+                deletingIds={deleteLoading.deletingIds}
+                getRowId={(vendor) => vendor.id}
                 onSearchChange={(value) => setSearchTerm(value)}
                 onPageSizeChange={(pageSize) => handleFilterChange('per_page', pageSize)}
                 externalPagination={{

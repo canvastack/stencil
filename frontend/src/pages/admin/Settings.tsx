@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,9 @@ import { settingsService } from '@/services/api/settings';
 import { Settings as SettingsType } from '@/types/settings';
 
 export default function Settings() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'general';
+  
   const [settings, setSettings] = useState<SettingsType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,11 +82,21 @@ export default function Settings() {
         </Button>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(value) => {
+          setSearchParams(value === 'general' ? {} : { tab: value });
+        }}
+        className="space-y-4"
+      >
         <TabsList>
           <TabsTrigger value="general">
             <Globe className="mr-2 h-4 w-4" />
             General
+          </TabsTrigger>
+          <TabsTrigger value="email">
+            <Mail className="mr-2 h-4 w-4" />
+            Email
           </TabsTrigger>
           <TabsTrigger value="notifications">
             <Bell className="mr-2 h-4 w-4" />
@@ -160,6 +174,349 @@ export default function Settings() {
                   })
                 }
               />
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="email" className="space-y-4">
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Mail className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Email Configuration</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              Configure email settings for customer communications, notifications, and system emails.
+            </p>
+            
+            <div className="space-y-4">
+              <Label>Email Provider</Label>
+              <Tabs defaultValue="smtp" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="smtp">SMTP</TabsTrigger>
+                  <TabsTrigger value="sendgrid">SendGrid</TabsTrigger>
+                  <TabsTrigger value="mailgun">Mailgun</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="smtp" className="space-y-4 mt-4">
+                  <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">SMTP Configuration</h4>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Use your existing email provider's SMTP settings. Common providers: Gmail, Outlook, Yahoo, or your hosting provider.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="smtpHost">SMTP Host *</Label>
+                    <Input 
+                      id="smtpHost" 
+                      placeholder="smtp.gmail.com" 
+                      value={settings.emailService?.smtp?.host || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        emailService: { 
+                          ...settings.emailService, 
+                          smtp: { ...settings.emailService?.smtp, host: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpPort">Port *</Label>
+                      <Input 
+                        id="smtpPort" 
+                        placeholder="587" 
+                        value={settings.emailService?.smtp?.port || ''}
+                        onChange={(e) => setSettings({ 
+                          ...settings, 
+                          emailService: { 
+                            ...settings.emailService, 
+                            smtp: { ...settings.emailService?.smtp, port: e.target.value } 
+                          } 
+                        })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="smtpEncryption">Encryption *</Label>
+                      <select 
+                        id="smtpEncryption"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={settings.emailService?.smtp?.encryption || 'tls'}
+                        onChange={(e) => setSettings({ 
+                          ...settings, 
+                          emailService: { 
+                            ...settings.emailService, 
+                            smtp: { ...settings.emailService?.smtp, encryption: e.target.value as 'tls' | 'ssl' } 
+                          } 
+                        })}
+                      >
+                        <option value="tls">TLS (Recommended)</option>
+                        <option value="ssl">SSL</option>
+                        <option value="none">None</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="smtpUsername">Username *</Label>
+                    <Input 
+                      id="smtpUsername" 
+                      placeholder="your-email@gmail.com" 
+                      value={settings.email?.smtp?.username || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          smtp: { ...settings.email?.smtp, username: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="smtpPassword">Password *</Label>
+                    <Input 
+                      id="smtpPassword" 
+                      type="password" 
+                      placeholder="••••••••" 
+                      value={settings.email?.smtp?.password || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          smtp: { ...settings.email?.smtp, password: e.target.value } 
+                        } 
+                      })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      For Gmail, use an App Password instead of your regular password.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="smtpFromEmail">From Email *</Label>
+                    <Input 
+                      id="smtpFromEmail" 
+                      placeholder="noreply@yourdomain.com" 
+                      value={settings.email?.smtp?.fromEmail || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          smtp: { ...settings.email?.smtp, fromEmail: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="smtpFromName">From Name</Label>
+                    <Input 
+                      id="smtpFromName" 
+                      placeholder="Your Company Name" 
+                      value={settings.email?.smtp?.fromName || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          smtp: { ...settings.email?.smtp, fromName: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button variant="outline" className="flex-1">
+                      Test Email Configuration
+                    </Button>
+                    <Button className="flex-1">
+                      Save SMTP Settings
+                    </Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="sendgrid" className="space-y-4 mt-4">
+                  <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                    <h4 className="font-medium text-green-900 dark:text-green-100 mb-2">SendGrid API</h4>
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Professional email delivery service with high deliverability rates and detailed analytics.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="sendgridApiKey">SendGrid API Key *</Label>
+                    <Input 
+                      id="sendgridApiKey" 
+                      type="password" 
+                      placeholder="SG.xxxxxxxxxxxxxxxx" 
+                      value={settings.email?.sendgrid?.apiKey || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          sendgrid: { ...settings.email?.sendgrid, apiKey: e.target.value } 
+                        } 
+                      })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Get your API key from SendGrid dashboard → Settings → API Keys
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="sendgridFromEmail">From Email *</Label>
+                    <Input 
+                      id="sendgridFromEmail" 
+                      placeholder="noreply@yourdomain.com" 
+                      value={settings.email?.sendgrid?.fromEmail || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          sendgrid: { ...settings.email?.sendgrid, fromEmail: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="sendgridFromName">From Name</Label>
+                    <Input 
+                      id="sendgridFromName" 
+                      placeholder="Your Company Name" 
+                      value={settings.email?.sendgrid?.fromName || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          sendgrid: { ...settings.email?.sendgrid, fromName: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button variant="outline" className="flex-1">
+                      Test SendGrid Configuration
+                    </Button>
+                    <Button className="flex-1">
+                      Save SendGrid Settings
+                    </Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="mailgun" className="space-y-4 mt-4">
+                  <div className="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg">
+                    <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-2">Mailgun API</h4>
+                    <p className="text-sm text-purple-700 dark:text-purple-300">
+                      Powerful email service for developers with advanced routing and analytics capabilities.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="mailgunDomain">Mailgun Domain *</Label>
+                    <Input 
+                      id="mailgunDomain" 
+                      placeholder="mg.yourdomain.com" 
+                      value={settings.email?.mailgun?.domain || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          mailgun: { ...settings.email?.mailgun, domain: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="mailgunApiKey">Mailgun API Key *</Label>
+                    <Input 
+                      id="mailgunApiKey" 
+                      type="password" 
+                      placeholder="key-xxxxxxxxxxxxxxxx" 
+                      value={settings.email?.mailgun?.apiKey || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          mailgun: { ...settings.email?.mailgun, apiKey: e.target.value } 
+                        } 
+                      })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Get your API key from Mailgun dashboard → Settings → API Keys
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="mailgunFromEmail">From Email *</Label>
+                    <Input 
+                      id="mailgunFromEmail" 
+                      placeholder="noreply@yourdomain.com" 
+                      value={settings.email?.mailgun?.fromEmail || ''}
+                      onChange={(e) => setSettings({ 
+                        ...settings, 
+                        email: { 
+                          ...settings.email, 
+                          mailgun: { ...settings.email?.mailgun, fromEmail: e.target.value } 
+                        } 
+                      })}
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2 pt-4">
+                    <Button variant="outline" className="flex-1">
+                      Test Mailgun Configuration
+                    </Button>
+                    <Button className="flex-1">
+                      Save Mailgun Settings
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </Card>
+          
+          <Card className="p-6 space-y-4">
+            <h3 className="text-lg font-semibold">Email Templates</h3>
+            <p className="text-sm text-muted-foreground">
+              Customize email templates for customer communications.
+            </p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Welcome Email</h4>
+                  <p className="text-sm text-muted-foreground">Sent to new customers after registration</p>
+                </div>
+                <Button variant="outline" size="sm">Edit Template</Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Order Confirmation</h4>
+                  <p className="text-sm text-muted-foreground">Sent when customer places an order</p>
+                </div>
+                <Button variant="outline" size="sm">Edit Template</Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Order Status Update</h4>
+                  <p className="text-sm text-muted-foreground">Sent when order status changes</p>
+                </div>
+                <Button variant="outline" size="sm">Edit Template</Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <h4 className="font-medium">Password Reset</h4>
+                  <p className="text-sm text-muted-foreground">Sent when customer requests password reset</p>
+                </div>
+                <Button variant="outline" size="sm">Edit Template</Button>
+              </div>
             </div>
           </Card>
         </TabsContent>

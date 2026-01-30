@@ -49,6 +49,7 @@ class OrderSlaMonitorJobTest extends TestCase
         $order = $this->createTestOrder('sourcing_vendor');
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             thresholdCheck: true
         );
@@ -76,6 +77,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             thresholdCheck: true
         );
@@ -115,6 +117,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             escalationIndex: 0
         );
@@ -156,6 +159,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             escalationIndex: 1
         );
@@ -191,6 +195,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             escalationIndex: 0
         );
@@ -219,6 +224,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             thresholdCheck: true
         );
@@ -246,6 +252,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_negotiation',
             thresholdCheck: true
         );
@@ -279,6 +286,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             escalationIndex: 0
         );
@@ -292,6 +300,7 @@ class OrderSlaMonitorJobTest extends TestCase
     {
         $job = new OrderSlaMonitorJob(
             orderId: 99999,
+            tenantId: 1, // Use a valid tenant ID even though order won't be found
             status: 'vendor_sourcing',
             thresholdCheck: true
         );
@@ -320,6 +329,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             escalationIndex: 0
         );
@@ -346,6 +356,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             escalationIndex: null,
             thresholdCheck: true
@@ -386,6 +397,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             escalationIndex: 1
         );
@@ -412,6 +424,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             thresholdCheck: true
         );
@@ -445,6 +458,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'in_production',
             thresholdCheck: true
         );
@@ -472,6 +486,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'quality_control',
             thresholdCheck: true
         );
@@ -498,6 +513,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             thresholdCheck: true
         );
@@ -535,6 +551,7 @@ class OrderSlaMonitorJobTest extends TestCase
 
         $job = new OrderSlaMonitorJob(
             orderId: $order->id,
+            tenantId: $order->tenant_id,
             status: 'vendor_sourcing',
             thresholdCheck: true
         );

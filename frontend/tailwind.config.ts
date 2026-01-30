@@ -106,6 +106,37 @@ export default {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
         },
+        "shake": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "10%, 30%, 50%, 70%, 90%": { transform: "translateX(-2px)" },
+          "20%, 40%, 60%, 80%": { transform: "translateX(2px)" },
+        },
+        "fade-out": {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(0.95)" },
+        },
+        "stage-complete": {
+          "0%": { transform: "scale(1)", backgroundColor: "transparent" },
+          "50%": { transform: "scale(1.05)", backgroundColor: "rgb(240 253 244)" },
+          "100%": { transform: "scale(1)", backgroundColor: "rgb(240 253 244)" },
+        },
+        "modal-enter": {
+          "0%": { opacity: "0", transform: "scale(0.95) translateY(10px)" },
+          "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        "modal-exit": {
+          "0%": { opacity: "1", transform: "scale(1) translateY(0)" },
+          "100%": { opacity: "0", transform: "scale(0.95) translateY(10px)" },
+        },
+        "status-success": {
+          "0%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(34, 197, 94, 0.4)" },
+          "50%": { transform: "scale(1.02)", boxShadow: "0 0 0 8px rgba(34, 197, 94, 0.1)" },
+          "100%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(34, 197, 94, 0)" },
+        },
+        "progress-fill": {
+          "0%": { transform: "scaleX(0)", transformOrigin: "left" },
+          "100%": { transform: "scaleX(1)", transformOrigin: "left" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -116,6 +147,13 @@ export default {
         "float": "float 3s ease-in-out infinite",
         "glow": "glow 2s ease-in-out infinite",
         "shine": "shine 0.8s ease-in-out",
+        "shake": "shake 0.4s ease-in-out",
+        "fade-out": "fade-out 0.2s ease-out",
+        "stage-complete": "stage-complete 0.6s ease-out",
+        "modal-enter": "modal-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        "modal-exit": "modal-exit 0.2s cubic-bezier(0.4, 0, 1, 1)",
+        "status-success": "status-success 0.6s ease-out",
+        "progress-fill": "progress-fill 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
       },
     },
   },

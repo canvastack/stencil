@@ -10,6 +10,7 @@ use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class EdgeCaseTest extends TestCase
@@ -25,6 +26,7 @@ class EdgeCaseTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Bus::fake(); // Fake bus to prevent job dispatch issues in tests
         $this->stateMachine = app(OrderStateMachine::class);
         $this->tenant = TenantEloquentModel::factory()->create();
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);

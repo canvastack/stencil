@@ -27,6 +27,12 @@ export interface UseProductCatalogActionsProps {
   products: Product[];
   dispatch: React.Dispatch<any>;
   selectedProducts: Set<string>;
+  deleteLoading?: {
+    handleDelete: (id: string) => Promise<void>;
+    isDeleting: (id: string) => boolean;
+    startDelete: (id: string) => void;
+    endDelete: (id: string) => void;
+  };
 }
 
 export interface UseProductCatalogActionsReturn {
@@ -54,6 +60,7 @@ export function useProductCatalogActions({
   products,
   dispatch,
   selectedProducts,
+  deleteLoading,
 }: UseProductCatalogActionsProps): UseProductCatalogActionsReturn {
   const { userType, tenant } = useGlobalContext();
   const { user } = useTenantAuth();
@@ -245,17 +252,45 @@ export function useProductCatalogActions({
         return;
       }
 
-      dispatch({
-        type: 'SET_BULK_PROGRESS',
-        payload: {
-          total: selectedProducts.size,
-          completed: 0,
-          failed: 0,
-          failedIds: [],
+      // Use delete loading system for visual feedback
+      if (deleteLoading) {
+        // Start delete loading for all selected products
+        for (const productId of selectedProducts) {
+          deleteLoading.startDelete(productId);
         }
-      });
+        
+        try {
+          // Delete products sequentially to avoid overwhelming the server
+          for (const productId of selectedProducts) {
+            try {
+              await deleteProductMutation.mutateAsync(productId);
+              deleteLoading.endDelete(productId);
+            } catch (error) {
+              deleteLoading.endDelete(productId);
+              console.error(`Failed to delete product ${productId}:`, error);
+            }
+          }
+        } catch (error) {
+          // Clear all delete loading states on general error
+          for (const productId of selectedProducts) {
+            deleteLoading.endDelete(productId);
+          }
+          throw error;
+        }
+      } else {
+        // Fallback to original bulk delete mutation
+        dispatch({
+          type: 'SET_BULK_PROGRESS',
+          payload: {
+            total: selectedProducts.size,
+            completed: 0,
+            failed: 0,
+            failedIds: [],
+          }
+        });
 
-      await bulkDeleteMutation.mutateAsync(Array.from(selectedProducts));
+        await bulkDeleteMutation.mutateAsync(Array.from(selectedProducts));
+      }
 
       toast.success(`${selectedProducts.size} products deleted successfully`);
       announceToScreenReader(`${selectedProducts.size} products deleted`);
@@ -284,7 +319,7 @@ export function useProductCatalogActions({
         dispatch({ type: 'SET_BULK_PROGRESS', payload: null });
       }, 1000);
     }
-  }, [selectedProducts, canAccess, userType, tenant, user, products, bulkDeleteMutation, dispatch]);
+  }, [selectedProducts, canAccess, userType, tenant, user, products, bulkDeleteMutation, deleteProductMutation, dispatch, deleteLoading]);
 
   const handleBulkEdit = useCallback(() => {
     if (selectedProducts.size === 0) {

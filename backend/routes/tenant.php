@@ -206,8 +206,17 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{order}/assign-vendor', [OrderController::class, 'assignVendor'])->name('tenant.orders.assign_vendor');
             Route::post('/{order}/negotiate-vendor', [OrderController::class, 'negotiateVendor'])->name('tenant.orders.negotiate_vendor');
             
+            // Order Status Workflow API Endpoints
+            Route::post('/{order}/transition-state', [OrderController::class, 'transitionState'])->name('tenant.orders.transition_state');
+            Route::post('/{order}/advance-stage', [OrderController::class, 'advanceStage'])->name('tenant.orders.advance_stage');
+            
             Route::get('/{order}/available-transitions', [OrderController::class, 'availableTransitions'])->name('tenant.orders.available_transitions');
             Route::get('/{order}/quotations', [OrderController::class, 'quotations'])->name('tenant.orders.quotations');
+            
+            // Order Detail Sub-resources
+            Route::get('/{order}/payments', [OrderController::class, 'payments'])->name('tenant.orders.payments');
+            Route::get('/{order}/shipments', [OrderController::class, 'shipments'])->name('tenant.orders.shipments');
+            Route::get('/{order}/history', [OrderController::class, 'history'])->name('tenant.orders.history');
         });
         
         // Vendor Management
@@ -435,6 +444,8 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('tenant.notifications.unread_count');
             Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('tenant.notifications.mark_all_read');
             Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('tenant.notifications.mark_read');
+            Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('tenant.notifications.destroy');
+            Route::get('/orders/{orderUuid}', [NotificationController::class, 'orderNotifications'])->name('tenant.notifications.order');
         });
         
         // Platform Interaction (Limited)

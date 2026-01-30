@@ -61,6 +61,11 @@ class Order extends Model implements TenantAwareModel
         'refund_amount',
         'refund_status',
         'refunded_at',
+        'vendor_quoted_price',
+        'vendor_lead_time_days',
+        'negotiation_notes',
+        'vendor_terms',
+        'quotation_amount',
     ];
 
     protected $casts = [
@@ -69,6 +74,7 @@ class Order extends Model implements TenantAwareModel
         'billing_address' => 'json',
         'metadata' => 'json',
         'payment_schedule' => 'json',
+        'vendor_terms' => 'json',
         'subtotal' => 'integer',
         'tax' => 'integer',
         'shipping_cost' => 'integer',
@@ -78,6 +84,9 @@ class Order extends Model implements TenantAwareModel
         'total_paid_amount' => 'integer',
         'total_disbursed_amount' => 'integer',
         'refund_amount' => 'integer',
+        'vendor_quoted_price' => 'integer',
+        'quotation_amount' => 'integer',
+        'vendor_lead_time_days' => 'integer',
         'payment_date' => 'datetime',
         'down_payment_due_at' => 'datetime',
         'down_payment_paid_at' => 'datetime',
@@ -229,6 +238,36 @@ class Order extends Model implements TenantAwareModel
                 $customer = Customer::find($model->customer_id);
                 if ($customer && $customer->tenant_id !== $model->tenant_id) {
                     throw new \Exception('Cross-tenant relationships are not allowed. Customer must belong to the same tenant.');
+                }
+            }
+        });
+
+        static::updated(function ($model) {
+            // Dispatch status change event if status has changed
+            if ($model->wasChanged('status')) {
+                $oldStatus = $model->getOriginal('status');
+                $newStatus = $model->status;
+                
+                if ($oldStatus !== $newStatus) {
+                    // Get current user for audit trail
+                    $changedBy = auth()->user()?->uuid ?? null;
+                    
+                    // Get tenant UUID
+                    $tenant = $model->tenant;
+                    $tenantUuid = $tenant ? $tenant->uuid : $model->tenant_id;
+                    
+                    // Dispatch domain event
+                    $event = new \App\Domain\Order\Events\OrderStatusChanged(
+                        new \App\Domain\Shared\ValueObjects\UuidValueObject($model->uuid),
+                        new \App\Domain\Shared\ValueObjects\UuidValueObject($tenantUuid),
+                        $oldStatus ?? 'unknown',
+                        $newStatus,
+                        $changedBy,
+                        null // reason can be added later if needed
+                    );
+                    
+                    // Dispatch the event
+                    app(\App\Domain\Shared\Events\EventDispatcher::class)->dispatch($event);
                 }
             }
         });

@@ -1,9 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ordersService, OrderFilters, CreateOrderRequest, UpdateOrderRequest, OrderStateTransitionRequest } from '../services/api/orders';
+import { ordersService, OrderFilters, CreateOrderRequest, UpdateOrderRequest, OrderStateTransitionRequest, StageAdvancementRequest } from '../services/api/orders';
 import { queryKeys, realtimeConfig, cacheUtils } from '../lib/react-query';
-import { Order } from '../types/order';
+import { Order, OrderStatus } from '../types/order';
 import { PaginatedResponse } from '../types/api';
+import { BusinessStage, OrderProgressCalculator } from '../utils/OrderProgressCalculator';
+import { OrderStatusMessaging } from '../utils/OrderStatusMessaging';
+import OptimisticUpdateManager from '../utils/OptimisticUpdateManager';
 
 // Get orders list with real-time updates
 export const useOrders = (filters?: OrderFilters) => {
@@ -115,96 +118,271 @@ export const useCreateOrder = () => {
   });
 };
 
-// Update order mutation
+// Update order mutation with enhanced optimistic updates
 export const useUpdateOrder = () => {
   const queryClient = useQueryClient();
+  // Get a fresh instance for each hook usage to avoid singleton issues in tests
+  const optimisticManager = new OptimisticUpdateManager(queryClient);
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateOrderRequest }) => 
       ordersService.updateOrder(id, data),
     onMutate: async ({ id, data }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.orders.detail(id) });
+      try {
+        // Cancel any outgoing refetches
+        await queryClient.cancelQueries({ queryKey: queryKeys.orders.detail(id) });
 
-      // Snapshot the previous value
-      const previousOrder = queryClient.getQueryData<Order>(queryKeys.orders.detail(id));
+        // Get current order
+        const currentOrder = queryClient.getQueryData<Order>(queryKeys.orders.detail(id));
+        if (!currentOrder) {
+          throw new Error('Order not found for optimistic update');
+        }
 
-      // Optimistically update the order
-      if (previousOrder) {
-        const updatedOrder = { ...previousOrder, ...data, updated_at: new Date().toISOString() };
-        queryClient.setQueryData(queryKeys.orders.detail(id), updatedOrder);
+        // Check if this is a status change that needs optimistic handling
+        if (data.status && data.status !== currentOrder.status) {
+          const currentProgress = OrderProgressCalculator.calculateProgress(currentOrder.status as OrderStatus);
+          const targetStatus = data.status as OrderStatus;
+          const targetStage = OrderProgressCalculator.mapStatusToStage(targetStatus);
+
+          // Apply optimistic update for status changes
+          const optimisticResult = await optimisticManager.applyOptimisticStatusUpdate({
+            orderId: id,
+            operation: 'status_change',
+            fromState: {
+              status: currentOrder.status as OrderStatus,
+              stage: currentProgress.currentStage,
+              updatedAt: currentOrder.updated_at,
+            },
+            toState: {
+              status: targetStatus,
+              stage: targetStage,
+              metadata: data,
+            },
+            userFeedback: {
+              showProgress: true,
+              progressMessage: 'Updating Order',
+              successMessage: 'Order updated successfully',
+            },
+          });
+
+          return { optimisticResult, isStatusChange: true };
+        } else {
+          // For non-status changes, use simple optimistic update
+          const updatedOrder = { 
+            ...currentOrder, 
+            ...data, 
+            updated_at: new Date().toISOString() 
+          };
+          queryClient.setQueryData(queryKeys.orders.detail(id), updatedOrder);
+
+          return { previousOrder: currentOrder, isStatusChange: false };
+        }
+
+      } catch (error) {
+        console.error('Failed to apply optimistic update:', error);
+        
+        // Fallback to basic optimistic update
+        const previousOrder = queryClient.getQueryData<Order>(queryKeys.orders.detail(id));
+        if (previousOrder) {
+          const updatedOrder = { ...previousOrder, ...data, updated_at: new Date().toISOString() };
+          queryClient.setQueryData(queryKeys.orders.detail(id), updatedOrder);
+        }
+
+        return { previousOrder, fallback: true };
       }
-
-      return { previousOrder };
     },
     onSuccess: (data, variables, context) => {
-      // Update the order in cache
-      queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
-      
-      // Invalidate all order list queries (including filtered ones)
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
-      
-      // Also invalidate the broader orders.all to catch any filtered queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
-      
-      // Show success toast
-      toast.success('Order updated successfully', {
-        description: `Order #${data.id} has been updated`,
-      });
+      try {
+        if (context?.optimisticResult && context.isStatusChange) {
+          // Confirm optimistic update with server response
+          optimisticManager.confirmUpdate(context.optimisticResult.updateId, data);
+        } else {
+          // Handle non-status changes or fallback
+          queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
+          
+          if (!context?.fallback) {
+            toast.success('Order updated successfully', {
+              description: `Order #${data.id} has been updated`,
+            });
+          }
+        }
+
+        // Invalidate all order list queries (including filtered ones)
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+
+      } catch (error) {
+        console.error('Error in update success handler:', error);
+        
+        // Fallback to basic cache update
+        queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
+      }
     },
     onError: (error, variables, context) => {
-      // Rollback optimistic update
-      if (context?.previousOrder) {
-        queryClient.setQueryData(queryKeys.orders.detail(variables.id), context.previousOrder);
+      try {
+        if (context?.optimisticResult && context.isStatusChange) {
+          // Handle optimistic update error
+          optimisticManager.handleUpdateError(
+            context.optimisticResult.updateId,
+            error instanceof Error ? error : new Error(String(error)),
+            context.optimisticResult.context
+          );
+        } else if (context?.previousOrder) {
+          // Rollback simple optimistic update
+          queryClient.setQueryData(queryKeys.orders.detail(variables.id), context.previousOrder);
+          
+          toast.error('Failed to update order', {
+            description: error instanceof Error ? error.message : 'An unexpected error occurred',
+          });
+        }
+
+      } catch (handlingError) {
+        console.error('Error in update error handler:', handlingError);
+        
+        // Ultimate fallback
+        toast.error('Failed to update order', {
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        });
       }
-      
-      // Show error toast
-      toast.error('Failed to update order', {
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-      });
     },
   });
 };
 
-// Transition order state mutation
+// Transition order state mutation with enhanced optimistic updates
 export const useTransitionOrderState = () => {
   const queryClient = useQueryClient();
+  // Get a fresh instance for each hook usage to avoid singleton issues in tests
+  const optimisticManager = new OptimisticUpdateManager(queryClient);
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: OrderStateTransitionRequest }) => 
       ordersService.transitionOrderState(id, data),
     onMutate: async ({ id, data }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.orders.detail(id) });
+      try {
+        // Get current order
+        const currentOrder = queryClient.getQueryData<Order>(queryKeys.orders.detail(id));
+        if (!currentOrder) {
+          throw new Error('Order not found for optimistic update');
+        }
 
-      // Snapshot the previous value
-      const previousOrder = queryClient.getQueryData<Order>(queryKeys.orders.detail(id));
+        const currentProgress = OrderProgressCalculator.calculateProgress(currentOrder.status as OrderStatus);
+        
+        // Determine target stage from action
+        let targetStage: BusinessStage;
+        let targetStatus: OrderStatus;
 
-      return { previousOrder };
+        // Parse action to determine target stage
+        if (data.action.startsWith('advance_to_')) {
+          const stageString = data.action.replace('advance_to_', '');
+          targetStage = stageString as BusinessStage;
+          targetStatus = OrderProgressCalculator.mapStageToStatus(targetStage);
+        } else {
+          // Fallback to next stage
+          targetStage = currentProgress.nextStage || currentProgress.currentStage;
+          targetStatus = OrderProgressCalculator.mapStageToStatus(targetStage);
+        }
+
+        // Apply optimistic update
+        const optimisticResult = await optimisticManager.applyOptimisticStatusUpdate({
+          orderId: id,
+          operation: 'status_change',
+          fromState: {
+            status: currentOrder.status as OrderStatus,
+            stage: currentProgress.currentStage,
+            updatedAt: currentOrder.updated_at,
+          },
+          toState: {
+            status: targetStatus,
+            stage: targetStage,
+            notes: data.notes,
+          },
+          userFeedback: {
+            showProgress: true,
+            progressMessage: 'Transitioning Order State',
+            successMessage: `Order transitioned to ${OrderProgressCalculator.getStageInfo(targetStage).indonesianLabel}`,
+          },
+        });
+
+        // Create optimistic timeline entry
+        const optimisticTimelineEntry = optimisticManager.createOptimisticTimelineEntry(
+          id,
+          targetStage,
+          data.notes
+        );
+
+        // Update timeline cache
+        const timelineRollback = optimisticManager.updateTimelineCache(id, optimisticTimelineEntry);
+
+        return { optimisticResult, timelineRollback, targetStage };
+
+      } catch (error) {
+        console.error('Failed to apply optimistic update:', error);
+        
+        // Fallback to basic optimistic update
+        await queryClient.cancelQueries({ queryKey: queryKeys.orders.detail(id) });
+        const previousOrder = queryClient.getQueryData<Order>(queryKeys.orders.detail(id));
+
+        return { previousOrder, fallback: true };
+      }
     },
     onSuccess: (data, variables, context) => {
-      // Update the order in cache
-      queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
-      
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.orders.history(variables.id) });
-      
-      // Show success toast
-      toast.success('Order status updated', {
-        description: `Order #${data.id} status changed to ${data.status}`,
-      });
+      try {
+        if (context?.optimisticResult) {
+          // Confirm optimistic update with server response
+          optimisticManager.confirmUpdate(context.optimisticResult.updateId, data);
+        } else {
+          // Handle fallback case
+          queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
+          
+          toast.success('Order status updated', {
+            description: `Order #${data.id} status changed to ${data.status}`,
+          });
+        }
+
+        // Invalidate related queries
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.history(variables.id) });
+
+      } catch (error) {
+        console.error('Error in transition success handler:', error);
+        
+        // Fallback to basic cache update
+        queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
+      }
     },
     onError: (error, variables, context) => {
-      // Rollback optimistic update
-      if (context?.previousOrder) {
-        queryClient.setQueryData(queryKeys.orders.detail(variables.id), context.previousOrder);
+      try {
+        if (context?.optimisticResult) {
+          // Handle optimistic update error
+          optimisticManager.handleUpdateError(
+            context.optimisticResult.updateId,
+            error instanceof Error ? error : new Error(String(error)),
+            context.optimisticResult.context
+          );
+
+          // Rollback timeline changes
+          if (context.timelineRollback) {
+            context.timelineRollback();
+          }
+        } else if (context?.previousOrder) {
+          // Rollback simple optimistic update
+          queryClient.setQueryData(queryKeys.orders.detail(variables.id), context.previousOrder);
+          
+          toast.error('Failed to update order status', {
+            description: error instanceof Error ? error.message : 'An unexpected error occurred',
+          });
+        }
+
+      } catch (handlingError) {
+        console.error('Error in transition error handler:', handlingError);
+        
+        // Ultimate fallback
+        toast.error('Failed to update order status', {
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        });
       }
-      
-      // Show error toast
-      toast.error('Failed to update order status', {
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-      });
     },
   });
 };
@@ -278,6 +456,170 @@ export const useRecordPayment = () => {
       // Show error toast
       toast.error('Failed to record payment', {
         description: error instanceof Error ? error.message : 'An unexpected error occurred',
+      });
+    },
+  });
+};
+
+// Advance order stage mutation with enhanced optimistic updates
+export const useAdvanceOrderStage = () => {
+  const queryClient = useQueryClient();
+  // Get a fresh instance for each hook usage to avoid singleton issues in tests
+  const optimisticManager = new OptimisticUpdateManager(queryClient);
+
+  return useMutation({
+    mutationFn: ({ 
+      id, 
+      targetStage, 
+      notes, 
+      requirements 
+    }: { 
+      id: string; 
+      targetStage: string; 
+      notes: string; 
+      requirements?: Record<string, boolean> 
+    }) => ordersService.advanceOrderStage(id, targetStage, notes, requirements),
+    
+    onMutate: async ({ id, targetStage, notes }) => {
+      try {
+        // Get current order to determine from state
+        const currentOrder = queryClient.getQueryData<Order>(queryKeys.orders.detail(id));
+        if (!currentOrder) {
+          throw new Error('Order not found for optimistic update');
+        }
+
+        const currentProgress = OrderProgressCalculator.calculateProgress(currentOrder.status as OrderStatus);
+        const targetStageEnum = targetStage as BusinessStage;
+        const targetStatus = OrderProgressCalculator.mapStageToStatus(targetStageEnum);
+
+        // Apply optimistic update with enhanced feedback
+        const optimisticResult = await optimisticManager.applyOptimisticStatusUpdate({
+          orderId: id,
+          operation: 'stage_advance',
+          fromState: {
+            status: currentOrder.status as OrderStatus,
+            stage: currentProgress.currentStage,
+            updatedAt: currentOrder.updated_at,
+          },
+          toState: {
+            status: targetStatus,
+            stage: targetStageEnum,
+            notes,
+          },
+          userFeedback: {
+            showProgress: true,
+            progressMessage: 'Advancing Order Stage',
+            successMessage: `Advanced to ${OrderProgressCalculator.getStageInfo(targetStageEnum).indonesianLabel}`,
+          },
+        });
+
+        // Create optimistic timeline entry
+        const optimisticTimelineEntry = optimisticManager.createOptimisticTimelineEntry(
+          id,
+          targetStageEnum,
+          notes
+        );
+
+        // Update timeline cache
+        const timelineRollback = optimisticManager.updateTimelineCache(id, optimisticTimelineEntry);
+
+        return {
+          optimisticResult,
+          timelineRollback,
+          targetStage: targetStageEnum,
+        };
+
+      } catch (error) {
+        console.error('Failed to apply optimistic update:', error);
+        
+        // Fallback to basic progress indicator
+        OrderStatusMessaging.showProgressIndicator(`advance-${id}`, {
+          title: 'Advancing Order Stage',
+          description: `Updating order to ${OrderProgressCalculator.getStageInfo(targetStage as BusinessStage)?.indonesianLabel || targetStage}...`,
+          estimatedDuration: 3000,
+        });
+
+        return { fallbackProgressId: `advance-${id}` };
+      }
+    },
+    
+    onSuccess: (data, variables, context) => {
+      try {
+        if (context?.optimisticResult) {
+          // Confirm optimistic update with server response
+          optimisticManager.confirmUpdate(context.optimisticResult.updateId, data);
+        } else if (context?.fallbackProgressId) {
+          // Handle fallback case
+          OrderStatusMessaging.dismissProgressIndicator(context.fallbackProgressId);
+          
+          // Update cache with server response
+          queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
+          
+          // Show success message
+          OrderStatusMessaging.showStageAdvancementSuccess(
+            variables.targetStage as BusinessStage,
+            variables.notes,
+            { important: true }
+          );
+        }
+
+        // Invalidate related queries to ensure consistency
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.history(variables.id) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
+
+      } catch (error) {
+        console.error('Error in onSuccess handler:', error);
+        
+        // Fallback to basic cache update
+        queryClient.setQueryData(queryKeys.orders.detail(variables.id), data);
+        queryClient.invalidateQueries({ queryKey: queryKeys.orders.lists() });
+      }
+    },
+    
+    onError: (error, variables, context) => {
+      try {
+        if (context?.optimisticResult) {
+          // Handle optimistic update error
+          optimisticManager.handleUpdateError(
+            context.optimisticResult.updateId,
+            error instanceof Error ? error : new Error(String(error)),
+            context.optimisticResult.context
+          );
+
+          // Rollback timeline changes
+          if (context.timelineRollback) {
+            context.timelineRollback();
+          }
+        } else if (context?.fallbackProgressId) {
+          // Handle fallback error
+          OrderStatusMessaging.dismissProgressIndicator(context.fallbackProgressId);
+          
+          OrderStatusMessaging.showStageAdvancementError(
+            error instanceof Error ? error : new Error(String(error)),
+            variables.targetStage as BusinessStage,
+            {
+              orderId: variables.id,
+              notes: variables.notes,
+              requirements: variables.requirements
+            }
+          );
+        }
+
+      } catch (handlingError) {
+        console.error('Error in error handler:', handlingError);
+        
+        // Ultimate fallback
+        toast.error('Failed to advance order stage', {
+          description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        });
+      }
+      
+      console.error('Stage advancement error:', {
+        orderId: variables.id,
+        targetStage: variables.targetStage,
+        error: error instanceof Error ? error.message : error,
+        fullError: error
       });
     },
   });

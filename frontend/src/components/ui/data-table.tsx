@@ -15,6 +15,7 @@ import {
 import { ChevronDown, Maximize2, Minimize2, CheckCircle, AlertTriangle, XCircle, Download, Printer, Info } from "lucide-react";
 import { useDatasetPerformanceMonitor } from '@/services/performance/datasetPerformanceMonitor';
 import { Skeleton } from "@/components/ui/skeleton";
+import { DeleteSkeleton } from "@/components/ui/delete-skeleton";
 import {
   Tooltip,
   TooltipContent,
@@ -86,6 +87,10 @@ interface DataTableProps<TData> {
     total: number;
     onPageChange?: (page: number) => void;
   };
+  // Delete loading state - set of IDs that are currently being deleted
+  deletingIds?: Set<string>;
+  // Function to get the ID of a row for delete loading state
+  getRowId?: (row: TData) => string;
 }
 
 export function DataTable<TData>({
@@ -102,6 +107,8 @@ export function DataTable<TData>({
   onSearchChange,
   onPageSizeChange,
   externalPagination,
+  deletingIds = new Set(),
+  getRowId = (row: any) => row.id || row.uuid || String(row),
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -634,42 +641,53 @@ export function DataTable<TData>({
               {loading ? (
                 <TableSkeleton />
               ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    onClick={(e) => {
-                      // Don't trigger row click if clicking on action buttons or checkboxes
-                      const target = e.target as HTMLElement;
-                      const isActionClick = target.closest('button') || 
-                                           target.closest('a') || 
-                                           target.closest('[role="checkbox"]') ||
-                                           target.closest('[data-radix-collection-item]');
-                      
-                      if (!isActionClick && onRowClick) {
-                        onRowClick(row.original);
-                      }
-                    }}
-                    className={onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="max-w-[280px] break-words">
-                        {/* If this is a status column render an icon with tooltip */}
-                        {cell.column.id === 'status' ? (
-                          flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )
-                        ) : (
-                          flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map((row) => {
+                  const rowId = getRowId(row.original);
+                  const isDeleting = deletingIds.has(rowId);
+                  
+                  return (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      onClick={(e) => {
+                        // Don't trigger row click if row is being deleted or clicking on action buttons
+                        if (isDeleting) return;
+                        
+                        const target = e.target as HTMLElement;
+                        const isActionClick = target.closest('button') || 
+                                             target.closest('a') || 
+                                             target.closest('[role="checkbox"]') ||
+                                             target.closest('[data-radix-collection-item]');
+                        
+                        if (!isActionClick && onRowClick) {
+                          onRowClick(row.original);
+                        }
+                      }}
+                      className={`
+                        ${onRowClick && !isDeleting ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
+                        ${isDeleting ? "opacity-60 pointer-events-none" : ""}
+                      `}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="max-w-[280px] break-words">
+                          {isDeleting ? (
+                            <DeleteSkeleton 
+                              height="1.5rem" 
+                              width="100%" 
+                              redIntensity={25}
+                              className="rounded"
+                            />
+                          ) : (
+                            flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell

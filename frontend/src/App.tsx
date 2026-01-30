@@ -32,6 +32,7 @@ import { DebugAuth } from "@/components/DebugAuth";
 import { TenantRedirectWrapper } from "@/components/TenantRedirectWrapper";
 import DevDebugger from "@/components/debug/DevDebugger";
 import { PluginRoutes } from "@/components/PluginRoutes";
+import { HelpSystemProvider } from "@/components/help/HelpSystemProvider";
 
 const Home = lazy(() => import("@/themes/default/pages/Home"));
 const About = lazy(() => import("@/themes/default/pages/About"));
@@ -92,6 +93,7 @@ const VendorPerformance = lazy(() => import("./pages/admin/VendorPerformance"));
 const VendorContracts = lazy(() => import("./pages/admin/VendorContracts"));
 const VendorCommunications = lazy(() => import("./pages/admin/VendorCommunications"));
 const OrderManagement = lazy(() => import("./pages/admin/OrderManagement"));
+const OrderDetail = lazy(() => import("./pages/admin/OrderDetail"));
 const OrderComparison = lazy(() => import("./pages/admin/orders/OrderComparison"));
 const OrderTracking = lazy(() => import("./pages/admin/OrderTracking"));
 const BulkOrders = lazy(() => import("./pages/admin/BulkOrders"));
@@ -101,6 +103,7 @@ const InvoiceManagement = lazy(() => import("./pages/tenant/InvoiceManagement"))
 const PaymentManagement = lazy(() => import("./pages/tenant/PaymentManagement"));
 const TenantProductComparison = lazy(() => import("./pages/tenant/ProductComparison"));
 const ProductionManagement = lazy(() => import("./pages/tenant/ProductionManagement"));
+const TooltipTestPage = lazy(() => import("./pages/test/TooltipTestPage"));
 const QualityManagement = lazy(() => import("./pages/tenant/QualityManagement"));
 const ShippingManagement = lazy(() => import("./pages/tenant/ShippingManagement"));
 const TenantManagement = lazy(() => import("./pages/platform/TenantManagement"));
@@ -214,8 +217,9 @@ function App() {
                       <ContentProvider>
                         <CartProvider>
                           <ProductComparisonProvider>
-                            <Toaster />
-                            <Sonner />
+                            <HelpSystemProvider>
+                              <Toaster />
+                              <Sonner />
                             {/* Use Vite's BASE_URL so builds with different bases (e.g. /stencil/) work correctly.
                                 import.meta.env.BASE_URL includes a trailing slash (e.g. '/stencil/'), so strip it.
                                 Fallback to '/' when empty. */}
@@ -336,6 +340,7 @@ function App() {
                   <Route path="vendors/contracts" element={<Suspense fallback={<LoadingFallback />}><VendorContracts /></Suspense>} />
                   <Route path="vendors/communications" element={<Suspense fallback={<LoadingFallback />}><VendorCommunications /></Suspense>} />
                   <Route path="orders" element={<Suspense fallback={<LoadingFallback />}><OrderManagement /></Suspense>} />
+                  <Route path="orders/:id" element={<Suspense fallback={<LoadingFallback />}><OrderDetail /></Suspense>} />
                   <Route path="orders/compare" element={<Suspense fallback={<LoadingFallback />}><OrderComparison /></Suspense>} />
                   <Route path="orders/tracking" element={<Suspense fallback={<LoadingFallback />}><OrderTracking /></Suspense>} />
                   <Route path="orders/bulk" element={<Suspense fallback={<LoadingFallback />}><BulkOrders /></Suspense>} />
@@ -396,6 +401,9 @@ function App() {
                   <Route path="shipping/methods" element={<Suspense fallback={<LoadingFallback />}><ShippingMethods /></Suspense>} />
                   <Route path="shipping/carriers" element={<Suspense fallback={<LoadingFallback />}><ShippingCarriers /></Suspense>} />
                   <Route path="shipping/tracking" element={<Suspense fallback={<LoadingFallback />}><ShippingTracking /></Suspense>} />
+                  
+                  {/* Test Routes */}
+                  <Route path="test/tooltips" element={<Suspense fallback={<LoadingFallback />}><TooltipTestPage /></Suspense>} />
                   <Route path="shipping/reports" element={<Suspense fallback={<LoadingFallback />}><ShippingReports /></Suspense>} />
                   
                   {/* Plugin Marketplace Routes */}
@@ -419,6 +427,7 @@ function App() {
                         <DebugAuth />
                       </PublicTenantProvider>
                             </BrowserRouter>
+                            </HelpSystemProvider>
                           </ProductComparisonProvider>
                         </CartProvider>
                       </ContentProvider>

@@ -19,7 +19,7 @@ class ApiClientManager {
   constructor(options: ApiClientOptions = {}) {
     this.instance = axios.create({
       baseURL: options.baseURL || API_BASE_URL,
-      timeout: options.timeout || 10000,
+      timeout: options.timeout || 30000, // Increased from 10000 to 30000 to match other clients
       withCredentials: options.withCredentials !== false,
       headers: {
         'Content-Type': 'application/json',

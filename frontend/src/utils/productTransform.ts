@@ -22,6 +22,11 @@ export function transformProduct(backendProduct: any): Product {
     subcategory: backendProduct.subcategory,
     tags: backendProduct.tags || [],
     material: backendProduct.material,
+    type: backendProduct.type,
+    business_type: backendProduct.business_type,
+    type_display: backendProduct.type_display,
+    size: backendProduct.size,
+    available_sizes: backendProduct.available_sizes,
     price: backendProduct.price,
     currency: backendProduct.currency,
     priceUnit: backendProduct.price_unit,
@@ -42,7 +47,6 @@ export function transformProduct(backendProduct: any): Product {
     
     // Form-related fields
     productType: backendProduct.product_type,
-    size: backendProduct.size,
     bahan: backendProduct.bahan,
     bahanOptions: backendProduct.bahan_options,
     kualitas: backendProduct.kualitas,
@@ -55,6 +59,12 @@ export function transformProduct(backendProduct: any): Product {
     designFileUrl: backendProduct.design_file_url,
     customTexts: backendProduct.custom_texts,
     notesWysiwyg: backendProduct.notes_wysiwyg,
+    
+    // Business logic fields
+    productionType: backendProduct.production_type,
+    quotationRequired: backendProduct.quotation_required,
+    vendorPrice: backendProduct.vendor_price,
+    markupPercentage: backendProduct.markup_percentage,
   };
 }
 

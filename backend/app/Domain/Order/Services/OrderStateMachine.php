@@ -524,7 +524,7 @@ class OrderStateMachine
 
         if ($thresholdMinutes !== null) {
             $this->dispatchSlaJob(
-                $order->id,
+                $order,
                 $status->value,
                 null,
                 true,
@@ -540,7 +540,7 @@ class OrderStateMachine
             }
 
             $this->dispatchSlaJob(
-                $order->id,
+                $order,
                 $status->value,
                 $index,
                 false,
@@ -550,15 +550,16 @@ class OrderStateMachine
     }
 
     protected function dispatchSlaJob(
-        int $orderId,
+        Order $order,
         string $status,
         ?int $escalationIndex,
         bool $thresholdCheck,
         Carbon $runAt,
         bool $afterCommit = true
     ): void {
-        $pending = OrderSlaMonitorJob::dispatch($orderId, $status, $escalationIndex, $thresholdCheck)
-            ->delay($runAt);
+        $job = new OrderSlaMonitorJob($order->id, $order->tenant_id, $status, $escalationIndex, $thresholdCheck);
+        
+        $pending = dispatch($job)->delay($runAt);
 
         if ($afterCommit) {
             $pending->afterCommit();
@@ -777,9 +778,11 @@ class OrderStateMachine
                 break;
 
             case OrderStatus::CUSTOMER_QUOTE:
-                if (!isset($metadata['quotation_amount'])) {
+                if (!isset($metadata['quotation_amount']) && !$order->quotation_amount) {
                     $errors[] = 'Jumlah penawaran harus diisi';
-                } elseif ((int) $metadata['quotation_amount'] <= 0) {
+                } elseif (isset($metadata['quotation_amount']) && (int) $metadata['quotation_amount'] <= 0) {
+                    $errors[] = 'Jumlah penawaran harus lebih besar dari 0';
+                } elseif (!isset($metadata['quotation_amount']) && $order->quotation_amount && (int) $order->quotation_amount <= 0) {
                     $errors[] = 'Jumlah penawaran harus lebih besar dari 0';
                 }
                 break;
@@ -834,7 +837,27 @@ class OrderStateMachine
         // Extract reason from metadata if available, otherwise use null
         $reason = isset($metadata['reason']) ? (string) $metadata['reason'] : null;
         
-        event(new OrderStatusChanged($order, $oldStatusEnum, $newStatusEnum, $reason));
+        // Create UuidValueObject instances for the event
+        $orderIdVO = \App\Domain\Shared\ValueObjects\UuidValueObject::fromString($order->uuid);
+        
+        // Get tenant UUID from the tenant relationship
+        $tenantUuid = $order->tenant->uuid ?? null;
+        if (!$tenantUuid) {
+            throw new \RuntimeException('Tenant UUID not found for order ' . $order->uuid);
+        }
+        $tenantIdVO = \App\Domain\Shared\ValueObjects\UuidValueObject::fromString($tenantUuid);
+        
+        // Get the user who made the change (if available)
+        $changedBy = auth()->id() ? (string) auth()->id() : null;
+        
+        event(new OrderStatusChanged(
+            $orderIdVO,
+            $tenantIdVO,
+            $oldStatusEnum->value,
+            $newStatusEnum->value,
+            $changedBy,
+            $reason
+        ));
 
         $recentAmount = $this->recentPaymentTransaction?->amount ?? 0;
         if ($recentAmount <= 0 && isset($metadata['payment']) && is_array($metadata['payment'])) {

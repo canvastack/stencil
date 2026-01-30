@@ -486,12 +486,30 @@ class TenantDataSeeder extends Seeder
                 'email' => $customer->email
             ];
             
+            // Calculate profit margin data for PT CEX business model (etchinx tenant)
+            $vendorCost = null;
+            $customerPrice = null;
+            $markupAmount = null;
+            $markupPercentage = null;
+            
+            if ($tenant->slug === 'etchinx') {
+                // PT CEX operates as intermediary (makelar) - add profit margin data
+                $vendorCost = (int) ($totalAmount * (rand(60, 80) / 100)); // 60-80% of customer price
+                $customerPrice = $totalAmount;
+                $markupAmount = $customerPrice - $vendorCost;
+                $markupPercentage = round(($markupAmount / $vendorCost) * 100, 2);
+            }
+
             OrderEloquentModel::create([
                 'tenant_id' => $tenant->id,
                 'customer_id' => $customer->id,
                 'order_number' => $orderNumber,
                 'status' => $status,
                 'total_amount' => $totalAmount,
+                'vendor_cost' => $vendorCost,
+                'customer_price' => $customerPrice,
+                'markup_amount' => $markupAmount,
+                'markup_percentage' => $markupPercentage,
                 'shipping_cost' => $shippingCost,
                 'currency' => 'IDR',
                 'items' => $items,

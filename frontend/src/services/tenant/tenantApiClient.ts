@@ -20,7 +20,7 @@ class TenantApiClientManager {
   constructor(options: TenantApiClientOptions = {}) {
     this.instance = axios.create({
       baseURL: options.baseURL || API_BASE_URL,
-      timeout: options.timeout || 10000,
+      timeout: options.timeout || 30000, // Increased from 10s to 30s for complex queries
       withCredentials: options.withCredentials !== false,
       headers: {
         'Content-Type': 'application/json',
@@ -59,16 +59,43 @@ class TenantApiClientManager {
 
         // Validate that this is a tenant account
         if (accountType !== 'tenant') {
-          throw new Error('Tenant API client can only be used with tenant accounts');
+          const error = new Error('Tenant API client can only be used with tenant accounts');
+          console.error('[TenantApiClient] Account type validation failed:', {
+            accountType,
+            expected: 'tenant',
+            hasToken: !!token,
+            hasTenantId: !!tenantId
+          });
+          throw error;
         }
 
         // Validate tenant context
         if (!tenantId) {
-          throw new Error('Tenant context is required for tenant API calls');
+          const error = new Error('Tenant context is required for tenant API calls');
+          console.error('[TenantApiClient] Tenant context validation failed:', {
+            tenantId,
+            accountType,
+            hasToken: !!token,
+            localStorage: {
+              tenant_id: localStorage.getItem('tenant_id'),
+              account_type: localStorage.getItem('account_type'),
+              auth_token: localStorage.getItem('auth_token') ? '[PRESENT]' : '[MISSING]'
+            }
+          });
+          throw error;
         }
 
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
+        } else {
+          const error = new Error('Authentication token is required for tenant API calls');
+          console.error('[TenantApiClient] Token validation failed:', {
+            hasToken: !!token,
+            hasHeaders: !!config.headers,
+            accountType,
+            tenantId
+          });
+          throw error;
         }
 
         if (tenantId && config.headers) {
