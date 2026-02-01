@@ -1,0 +1,419 @@
+# TENANT ENDPOINTS - Vendor Quote Management
+# Vendor Negotiation Integration Feature
+# These endpoints manage vendor quotes for orders in vendor_negotiation stage
+
+# List Quotes
+/tenant/quotes:
+  get:
+    tags:
+      - Quote Management
+    summary: List All Quotes
+    description: |
+      Retrieve paginated list of vendor quotes with filtering options.
+      
+      **Features:**
+      - Filter by order_id to show quotes for specific order
+      - Filter by status (open, countered, accepted, rejected, expired, cancelled)
+      - Filter by vendor
+      - Search by quote details
+      - Sort by created date, price, status
+      
+      **Use Case:** When managing quotes from order context, pass order_id parameter
+      to filter quotes for that specific order.
+    operationId: listQuotes
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+      - in: query
+        name: order_id
+        schema:
+          type: string
+          format: uuid
+        description: Filter quotes by order UUID
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [open, countered, accepted, rejected, expired, cancelled]
+        description: Filter by quote status
+      - in: query
+        name: vendor_id
+        schema:
+          type: string
+          format: uuid
+        description: Filter by vendor UUID
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+        description: Page number
+      - in: query
+        name: per_page
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        description: Items per page
+    responses:
+      '200':
+        description: Quotes retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '../../components/schemas.yaml#/VendorQuote'
+                    meta:
+                      $ref: '../../components/schemas.yaml#/PaginationMeta'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+
+  post:
+    tags:
+      - Quote Management
+    summary: Create New Quote
+    description: |
+      Create a new vendor quote for an order.
+      
+      **Business Logic:**
+      - Validates order exists and is in vendor_negotiation stage
+      - Validates vendor exists and is active
+      - Creates quote with status 'open'
+      - Associates quote with order and customer
+      - Tenant-scoped for data isolation
+      
+      **Use Case:** When creating from order context, order_id and customer_id
+      are pre-populated from the order.
+    operationId: createQuote
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/CreateQuoteRequest'
+          examples:
+            basic_quote:
+              summary: Basic vendor quote
+              value:
+                order_id: "550e8400-e29b-41d4-a716-446655440000"
+                vendor_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                customer_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                initial_offer: 10000000
+                currency: "IDR"
+                terms:
+                  payment_terms: "50% upfront, 50% on delivery"
+                  warranty: "1 year"
+                  delivery_method: "courier"
+                expires_at: "2024-02-15T23:59:59Z"
+    responses:
+      '201':
+        description: Quote created successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/VendorQuote'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+# Get Quote Details
+/tenant/quotes/{id}:
+  get:
+    tags:
+      - Quote Management
+    summary: Get Quote Details
+    description: |
+      Retrieve detailed information for a specific quote.
+      
+      **Includes:**
+      - Quote pricing and terms
+      - Vendor information
+      - Order information
+      - Negotiation history
+      - Status and timestamps
+    operationId: getQuote
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Quote UUID
+    responses:
+      '200':
+        description: Quote retrieved successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/VendorQuote'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+
+  put:
+    tags:
+      - Quote Management
+    summary: Update Quote
+    description: |
+      Update an existing quote (for open quotes only).
+      
+      **Business Logic:**
+      - Only open or countered quotes can be updated
+      - Updates increment negotiation round counter
+      - Changes are logged in history
+      - Accepted/rejected/expired quotes cannot be modified
+    operationId: updateQuote
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Quote UUID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../../components/schemas.yaml#/UpdateQuoteRequest'
+    responses:
+      '200':
+        description: Quote updated successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/VendorQuote'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '422':
+        $ref: '../../components/schemas.yaml#/ValidationError'
+
+  delete:
+    tags:
+      - Quote Management
+    summary: Delete Quote
+    description: |
+      Delete a quote (soft delete - marks as cancelled).
+      
+      **Business Logic:**
+      - Only open quotes can be deleted
+      - Accepted quotes cannot be deleted
+      - Soft delete preserves data for audit trail
+    operationId: deleteQuote
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Quote UUID
+    responses:
+      '200':
+        description: Quote deleted successfully
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/schemas.yaml#/BaseResponse'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+
+# Accept Quote
+/tenant/quotes/{id}/accept:
+  post:
+    tags:
+      - Quote Management
+    summary: Accept Vendor Quote
+    description: |
+      Accept a vendor quote and sync data to the associated order.
+      
+      **Business Logic:**
+      - Validates quote is in 'open' or 'countered' status
+      - Validates quote has not expired
+      - Updates quote status to 'accepted'
+      - Sets closed_at timestamp
+      - **Syncs data to order** (if order is in vendor_negotiation stage):
+        - order.vendor_quoted_price = quote.latest_offer
+        - order.vendor_id = quote.vendor_id
+        - order.vendor_terms = quote.terms
+        - order.quotation_amount = quote.latest_offer × 1.35
+      - Rejects all other open quotes for the same order
+      - All operations wrapped in database transaction
+      - Triggers QuoteAccepted domain event
+      
+      **Quotation Calculation:**
+      ```
+      quotation_amount = vendor_quoted_price × 1.35
+      
+      Where:
+      - 30% = PT CEX markup
+      - 5% = Operational cost
+      - Total = 35% markup
+      ```
+      
+      **Use Case:** This is the key integration point that connects quotes
+      with the order workflow.
+    operationId: acceptQuote
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Quote UUID
+    responses:
+      '200':
+        description: Quote accepted and order data synchronized
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/VendorQuote'
+                    message:
+                      type: string
+                      example: "Quote accepted and order data synchronized"
+      '400':
+        description: Bad request - Quote cannot be accepted
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Quote has already been accepted"
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Quote has expired"
+                    errors:
+                      type: object
+                      properties:
+                        quote:
+                          type: array
+                          items:
+                            type: string
+                          example: ["This quote has expired and cannot be accepted"]
+
+# Reject Quote
+/tenant/quotes/{id}/reject:
+  post:
+    tags:
+      - Quote Management
+    summary: Reject Vendor Quote
+    description: |
+      Reject a vendor quote.
+      
+      **Business Logic:**
+      - Updates quote status to 'rejected'
+      - Sets closed_at timestamp
+      - Preserves quote data for historical reference
+      - Does not affect order data
+    operationId: rejectQuote
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Quote UUID
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reason:
+                type: string
+                description: Reason for rejection
+                example: "Price too high"
+    responses:
+      '200':
+        description: Quote rejected successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '../../components/schemas.yaml#/VendorQuote'
+      '400':
+        $ref: '../../components/schemas.yaml#/BadRequest'
+      '404':
+        $ref: '../../components/schemas.yaml#/NotFound'

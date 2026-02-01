@@ -11,6 +11,7 @@ use App\Domain\Shared\ValueObjects\Money;
 use App\Domain\Shared\ValueObjects\Address;
 use App\Domain\Shared\ValueObjects\Timeline;
 use App\Domain\Order\Events\OrderCreated;
+use App\Application\ExchangeRate\Services\ExchangeRateApplicationService;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use InvalidArgumentException;
 
@@ -31,7 +32,8 @@ class CreatePurchaseOrderUseCase
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
         private CustomerRepositoryInterface $customerRepository,
-        private EventDispatcher $eventDispatcher
+        private EventDispatcher $eventDispatcher,
+        private ExchangeRateApplicationService $exchangeRateService
     ) {}
 
     /**
@@ -77,7 +79,31 @@ class CreatePurchaseOrderUseCase
             $estimatedDays
         );
 
-        // 7. Create order entity
+        // 7. Fetch current exchange rate
+        $exchangeRate = null;
+        $originalAmountUsd = null;
+        $convertedAmountIdr = null;
+        
+        try {
+            $exchangeRate = $this->exchangeRateService->getCurrentRate($tenantId->getValue());
+            
+            if ($exchangeRate !== null) {
+                // Assuming total_amount is in IDR cents, calculate USD equivalent
+                $originalAmountUsd = $this->exchangeRateService->convertIdrToUsd(
+                    $command->getTotalAmountInCents(),
+                    $exchangeRate
+                );
+                $convertedAmountIdr = $command->getTotalAmountInCents();
+            }
+        } catch (\Exception $e) {
+            // Log error but don't fail order creation
+            \Log::warning('Failed to fetch exchange rate for order', [
+                'tenant_id' => $tenantId->getValue(),
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // 8. Create order entity
         $order = PurchaseOrder::create(
             tenantId: $tenantId,
             customerId: $customerId,
@@ -90,13 +116,17 @@ class CreatePurchaseOrderUseCase
             customerNotes: $command->customerNotes,
             specifications: $command->specifications,
             timeline: $timeline,
-            metadata: $command->metadata
+            metadata: array_merge($command->metadata ?? [], [
+                'exchange_rate' => $exchangeRate,
+                'original_amount_usd' => $originalAmountUsd,
+                'converted_amount_idr' => $convertedAmountIdr,
+            ])
         );
 
-        // 8. Save order
+        // 9. Save order
         $savedOrder = $this->orderRepository->save($order);
 
-        // 9. Dispatch domain events
+        // 10. Dispatch domain events
         $this->eventDispatcher->dispatch(new OrderCreated($savedOrder));
 
         return $savedOrder;

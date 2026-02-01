@@ -44,6 +44,8 @@ export interface Product {
   currency?: string;
   priceUnit?: string;
   minOrder?: number;
+  convertedPriceIdr?: number | null;
+  exchangeRate?: number | null;
   specifications?: ProductSpecification[];
   customizable?: boolean;
   customOptions?: ProductCustomOption[];

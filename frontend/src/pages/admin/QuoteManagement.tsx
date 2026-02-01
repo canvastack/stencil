@@ -73,14 +73,37 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
   // Initialize filters from URL parameters and fetch order context
   useEffect(() => {
     const orderId = searchParams.get('order_id');
+    console.log('🔍 QuoteManagement useEffect triggered, order_id:', orderId);
+    
     if (orderId) {
+      console.log('✅ Order ID detected in URL:', orderId);
+      
       // Apply order_id filter
       setFilters(prev => ({ ...prev, order_id: orderId }));
       
       // Fetch order details for context
       fetchOrderContext(orderId);
+      
+      // Auto-open quote form modal when coming from order page
+      // Use setTimeout to ensure component is fully mounted and LazyWrapper is ready
+      console.log('⏰ Scheduling auto-open of quote form modal in 300ms');
+      const timer = setTimeout(() => {
+        console.log('🚀 Opening quote form modal now');
+        setIsFormDialogOpen(true);
+      }, 300);
+      
+      // Cleanup timeout on unmount
+      return () => {
+        console.log('🧹 Cleaning up auto-open timer');
+        clearTimeout(timer);
+      };
     }
   }, [searchParams]);
+
+  // Debug: Log when isFormDialogOpen changes
+  useEffect(() => {
+    console.log('📊 isFormDialogOpen state changed to:', isFormDialogOpen);
+  }, [isFormDialogOpen]);
 
   const fetchOrderContext = async (orderId: string) => {
     try {
@@ -747,7 +770,13 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
         </AlertDialog>
 
         {/* Quote Form Dialog */}
-        <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+        <Dialog 
+          open={isFormDialogOpen} 
+          onOpenChange={(open) => {
+            console.log('📋 Quote Form Dialog onOpenChange:', open);
+            setIsFormDialogOpen(open);
+          }}
+        >
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -756,7 +785,10 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
             </DialogHeader>
             <QuoteForm
               onSubmit={handleCreateQuote}
-              onCancel={() => setIsFormDialogOpen(false)}
+              onCancel={() => {
+                console.log('❌ Quote Form cancelled');
+                setIsFormDialogOpen(false);
+              }}
               loading={false}
             />
           </DialogContent>

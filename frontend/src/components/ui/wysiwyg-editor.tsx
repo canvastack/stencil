@@ -1165,12 +1165,6 @@ export const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
           </div>
         </DialogContent>
       </Dialog>
-
-      {!isFullscreen && (
-        <p className="text-xs text-muted-foreground">
-          💡 Gunakan toolbar untuk memformat teks, menambahkan gambar, tabel, dan lainnya
-        </p>
-      )}
     </div>
   );
 };

@@ -589,10 +589,20 @@ const Products = () => {
                                   vendorPrice: product.vendorPrice,
                                   markupPercentage: product.markupPercentage,
                                   displayPrice,
-                                  shouldShowPrice
+                                  shouldShowPrice,
+                                  convertedPriceIdr: product.convertedPriceIdr,
+                                  exchangeRate: product.exchangeRate
                                 });
                                 return shouldShowPrice && (
-                                  <p className="text-lg font-bold text-primary">{formatPrice(displayPrice, product.currency)}</p>
+                                  <div>
+                                    <p className="text-lg font-bold text-primary">{formatPrice(displayPrice, product.currency)}</p>
+                                    {product.convertedPriceIdr && product.exchangeRate && product.currency === 'USD' && (
+                                      <div className="mt-1 text-xs text-muted-foreground">
+                                        <p>≈ {formatPrice(product.convertedPriceIdr, 'IDR')}</p>
+                                        <p className="text-[10px]">Rate: 1 USD = Rp {(product.exchangeRate / 100).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })()}
                             </div>

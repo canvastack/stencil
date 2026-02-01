@@ -166,7 +166,15 @@ const ProductComparison = () => {
     { 
       key: 'price', 
       label: 'Harga', 
-      format: (p: Product) => formatPrice(p.price, p.currency) 
+      format: (p: Product) => {
+        const priceStr = formatPrice(p.price, p.currency);
+        if (p.convertedPriceIdr && p.exchangeRate && p.currency === 'USD') {
+          const idrPrice = formatPrice(p.convertedPriceIdr, 'IDR');
+          const rate = (p.exchangeRate / 100).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          return `${priceStr} (≈ ${idrPrice}) | Rate: 1 USD = Rp ${rate}`;
+        }
+        return priceStr;
+      }
     },
     { 
       key: 'category', 

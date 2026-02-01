@@ -7,6 +7,7 @@ import { ScrollToTop } from '@/components/ScrollToTop';
 import { useAdminStore } from '@/stores/adminStore';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ExchangeRateNotificationMonitor } from './ExchangeRateNotificationMonitor';
 
 // Development-only overflow debug helper. Dynamically imported so it doesn't ship in production builds.
 if (process.env.NODE_ENV === 'development') {
@@ -22,6 +23,9 @@ export const AdminLayout = memo(() => {
 
   return (
     <TooltipProvider>
+      {/* Exchange Rate Notification Monitor - monitors quota and displays notifications */}
+      <ExchangeRateNotificationMonitor />
+      
       <div className="min-h-screen flex">
         {/* <AdminSidebar /> */}
         

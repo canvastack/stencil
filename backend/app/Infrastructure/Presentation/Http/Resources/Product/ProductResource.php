@@ -4,11 +4,29 @@ namespace App\Infrastructure\Presentation\Http\Resources\Product;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Models\ExchangeRateSetting;
 
 class ProductResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        // Get current exchange rate for price conversion
+        $exchangeRate = null;
+        $convertedPriceIdr = null;
+        
+        if ($this->tenant_id) {
+            $exchangeRateSetting = ExchangeRateSetting::where('tenant_id', $this->tenant_id)->first();
+            if ($exchangeRateSetting) {
+                $exchangeRate = $exchangeRateSetting->getCurrentRate();
+                
+                // Convert USD price (in cents) to IDR (in cents)
+                // Price is stored in cents, rate converts USD to IDR
+                if ($exchangeRate && $this->price) {
+                    $convertedPriceIdr = (int) round($this->price * $exchangeRate);
+                }
+            }
+        }
+        
         $data = [
             'id' => $this->uuid,
             'uuid' => $this->uuid,
@@ -30,6 +48,8 @@ class ProductResource extends JsonResource
             'currency' => $this->currency,
             'priceUnit' => $this->price_unit,
             'minOrder' => $this->min_order_quantity,
+            'convertedPriceIdr' => $convertedPriceIdr,
+            'exchangeRate' => $exchangeRate,
             
             'status' => $this->status,
             'type' => $this->type,
@@ -68,6 +88,8 @@ class ProductResource extends JsonResource
                 'profitMargin' => $this->getProfitMargin(),
                 'minPrice' => $this->min_price,
                 'maxPrice' => $this->max_price,
+                'convertedPriceIdr' => $convertedPriceIdr,
+                'exchangeRate' => $exchangeRate,
             ],
             
             'inventory' => [

@@ -2204,6 +2204,16 @@
       - Must meet stage requirements
       - User must have advancement permissions
       - Order must be in valid state for transition
+      
+      **Vendor Negotiation → Customer Quote Validation:**
+      When advancing from vendor_negotiation to customer_quote, the system validates:
+      - At least one accepted vendor quote must exist
+      - order.vendor_quoted_price must not be null
+      - order.quotation_amount must not be null
+      - order.vendor_id must not be null
+      
+      If validation fails, returns 422 error with message:
+      "No accepted vendor quote found. Please accept a quote before proceeding to customer quote stage."
     operationId: advanceOrderStage
     security:
     - bearerAuth: []
@@ -2276,6 +2286,15 @@
                 metadata:
                   vendor_id: vendor-uuid
                   expected_completion: "2024-01-20"
+            customer_quote:
+              summary: Advance to customer quote (requires accepted vendor quote)
+              value:
+                action: advance_stage
+                target_stage: customer_quote
+                notes: Vendor quote accepted, ready to present to customer
+                requirements:
+                  vendor_quote_accepted: true
+                  pricing_finalized: true
     responses:
       '200':
         description: Order stage advanced successfully
@@ -2337,7 +2356,40 @@
       '404':
         $ref: '../../components/schemas.yaml#/NotFound'
       '422':
-        $ref: '../../components/schemas.yaml#/ValidationError'
+        description: Validation error - Stage advancement requirements not met
+        content:
+          application/json:
+            schema:
+              allOf:
+              - $ref: '../../components/schemas.yaml#/BaseResponse'
+              - type: object
+                properties:
+                  message:
+                    type: string
+                    example: "The given data was invalid."
+                  errors:
+                    type: object
+                    properties:
+                      vendor_negotiation:
+                        type: array
+                        items:
+                          type: string
+                        example: ["No accepted vendor quote found. Please accept a quote before proceeding to customer quote stage."]
+            examples:
+              vendor_quote_required:
+                summary: Vendor quote not accepted
+                value:
+                  message: "The given data was invalid."
+                  errors:
+                    vendor_negotiation:
+                      - "No accepted vendor quote found. Please accept a quote before proceeding to customer quote stage."
+              missing_vendor_price:
+                summary: Missing vendor pricing data
+                value:
+                  message: "The given data was invalid."
+                  errors:
+                    vendor_negotiation:
+                      - "Order is missing vendor quoted price. Please ensure quote data is properly synced."
 
 # Get Order Timeline (Enhanced)
 /tenant/orders/{id}/timeline:

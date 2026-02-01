@@ -361,6 +361,26 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             
             Route::get('/vendor', [SettingsController::class, 'getVendorSettings'])->name('tenant.settings.vendor');
             Route::put('/vendor', [SettingsController::class, 'updateVendorSettings'])->name('tenant.settings.update_vendor');
+            
+            // Exchange Rate Settings
+            Route::prefix('exchange-rate-settings')->group(function () {
+                Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateSettingsController::class, 'index'])->name('tenant.settings.exchange_rate_settings.index');
+                Route::put('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateSettingsController::class, 'update'])->name('tenant.settings.exchange_rate_settings.update');
+            });
+
+            // Exchange Rate Providers
+            Route::prefix('exchange-rate-providers')->group(function () {
+                Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'index'])->name('tenant.settings.exchange_rate_providers.index');
+                Route::post('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'store'])->name('tenant.settings.exchange_rate_providers.store');
+                Route::put('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'update'])->name('tenant.settings.exchange_rate_providers.update');
+                Route::delete('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'destroy'])->name('tenant.settings.exchange_rate_providers.destroy');
+                Route::get('/quota-status', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'quotaStatus'])->name('tenant.settings.exchange_rate_providers.quota_status');
+            });
+
+            // Exchange Rate History
+            Route::prefix('exchange-rate-history')->group(function () {
+                Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateHistoryController::class, 'index'])->name('tenant.settings.exchange_rate_history.index');
+            });
         });
 
         // Media Management
@@ -497,5 +517,23 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/url-config-performance', [UrlAnalyticsController::class, 'urlConfigPerformance'])->name('tenant.url_analytics.url_config_performance');
             Route::get('/referrers', [UrlAnalyticsController::class, 'referrers'])->name('tenant.url_analytics.referrers');
             Route::get('/devices', [UrlAnalyticsController::class, 'devices'])->name('tenant.url_analytics.devices');
+        });
+
+        // Exchange Rate Management (Dynamic Exchange Rate System)
+        Route::prefix('exchange-rate-settings')->group(function () {
+            Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateSettingsController::class, 'index'])->name('tenant.exchange_rate_settings.index');
+            Route::put('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateSettingsController::class, 'update'])->name('tenant.exchange_rate_settings.update');
+        });
+
+        Route::prefix('exchange-rate-providers')->group(function () {
+            Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'index'])->name('tenant.exchange_rate_providers.index');
+            Route::post('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'store'])->name('tenant.exchange_rate_providers.store');
+            Route::put('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'update'])->name('tenant.exchange_rate_providers.update');
+            Route::delete('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'destroy'])->name('tenant.exchange_rate_providers.destroy');
+            Route::get('/quota-status', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'quotaStatus'])->name('tenant.exchange_rate_providers.quota_status');
+        });
+
+        Route::prefix('exchange-rate-history')->group(function () {
+            Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateHistoryController::class, 'index'])->name('tenant.exchange_rate_history.index');
         });
     });

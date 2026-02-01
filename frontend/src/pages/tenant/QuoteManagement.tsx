@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuoteStore } from '@/stores/quoteStore';
 import { QuoteList } from '@/components/tenant/quotes/QuoteList';
 import { QuoteForm } from '@/components/tenant/quotes/QuoteForm';
@@ -29,9 +29,14 @@ import {
   Plus,
   Download,
   Filter,
+  Info,
+  ArrowLeft,
 } from 'lucide-react';
 import { CreateQuoteRequest, UpdateQuoteRequest } from '@/services/tenant/quoteService';
 import { formatCurrency } from '@/utils/currency';
+import { ordersService } from '@/services/api/orders';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { Order } from '@/types/order';
 
 const StatCard = ({ 
   title, 
@@ -78,6 +83,7 @@ const StatCard = ({
 const QuoteManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   
   const {
     quotes,
@@ -93,6 +99,39 @@ const QuoteManagement = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [formLoading, setFormLoading] = useState(false);
+  const [orderContext, setOrderContext] = useState<Order | null>(null);
+
+  // Auto-open quote form when navigating from order detail page
+  useEffect(() => {
+    const orderId = searchParams.get('order_id');
+    console.log('🔍 QuoteManagement useEffect triggered, order_id:', orderId);
+    
+    if (orderId) {
+      console.log('✅ Order ID detected in URL:', orderId);
+      
+      // Fetch order details for context
+      fetchOrderContext(orderId);
+      
+      // Auto-open quote form modal when coming from order page
+      // Use setTimeout to ensure component is fully mounted
+      console.log('⏰ Scheduling auto-open of quote form modal in 300ms');
+      const timer = setTimeout(() => {
+        console.log('🚀 Opening quote form modal now');
+        setShowCreateDialog(true);
+      }, 300);
+      
+      // Cleanup timeout on unmount
+      return () => {
+        console.log('🧹 Cleaning up auto-open timer');
+        clearTimeout(timer);
+      };
+    }
+  }, [searchParams]);
+
+  // Debug: Log when showCreateDialog changes
+  useEffect(() => {
+    console.log('📊 showCreateDialog state changed to:', showCreateDialog);
+  }, [showCreateDialog]);
 
   // Load data on mount
   useEffect(() => {
@@ -100,10 +139,32 @@ const QuoteManagement = () => {
     fetchQuoteStats();
   }, [fetchQuotes, fetchQuoteStats]);
 
-  const handleCreateQuote = async (data: CreateQuoteRequest) => {
+  const fetchOrderContext = async (orderId: string) => {
+    try {
+      console.log('📥 Fetching order context for:', orderId);
+      const order = await ordersService.getOrderById(orderId);
+      console.log('✅ Order context loaded:', order);
+      setOrderContext(order);
+    } catch (error) {
+      console.error('❌ Error fetching order context:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load order context',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCreateQuote = async (data: CreateQuoteRequest | UpdateQuoteRequest) => {
     try {
       setFormLoading(true);
-      await createQuote(data);
+      
+      // Type guard: ensure we have customer_id and vendor_id for create
+      if ('customer_id' in data && 'vendor_id' in data) {
+        await createQuote(data as CreateQuoteRequest);
+      } else {
+        throw new Error('Invalid quote data: missing customer_id or vendor_id');
+      }
       
       toast({
         title: 'Success',
@@ -152,6 +213,28 @@ const QuoteManagement = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Order Context Banner */}
+      {orderContext && (
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertTitle className="text-blue-900 dark:text-blue-100">Order Context</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-blue-800 dark:text-blue-200">
+              Managing quotes for Order <span className="font-semibold">#{orderContext.orderNumber}</span>
+              {orderContext.customerName && ` - ${orderContext.customerName}`}
+            </span>
+            <Button 
+              variant="link" 
+              onClick={() => navigate(`/admin/orders/${orderContext.uuid}`)}
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Order
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -174,9 +257,14 @@ const QuoteManagement = () => {
             </DialogTrigger>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Create New Quote</DialogTitle>
+                <DialogTitle>
+                  {orderContext ? `Create Quote for Order #${orderContext.orderNumber}` : 'Create New Quote'}
+                </DialogTitle>
                 <DialogDescription>
-                  Create a new quote request for vendor pricing
+                  {orderContext 
+                    ? `Create a new quote for order #${orderContext.orderNumber}`
+                    : 'Create a new quote request for vendor pricing'
+                  }
                 </DialogDescription>
               </DialogHeader>
               <QuoteForm

@@ -49,6 +49,14 @@ class OrderResource extends JsonResource
             'disbursedAmount' => $this->total_disbursed_amount ?? 0,
             'currency' => $this->currency ?? 'IDR',
             
+            // Exchange Rate Info (flattened)
+            'exchangeRate' => $this->exchange_rate ? (float) $this->exchange_rate : null,
+            'exchange_rate' => $this->exchange_rate ? (float) $this->exchange_rate : null,
+            'originalAmountUsd' => $this->original_amount_usd ?? null,
+            'original_amount_usd' => $this->original_amount_usd ?? null,
+            'convertedAmountIdr' => $this->converted_amount_idr ?? null,
+            'converted_amount_idr' => $this->converted_amount_idr ?? null,
+            
             // Status info (flattened)
             'status' => $this->status,
             'paymentStatus' => $this->payment_status,
@@ -139,6 +147,9 @@ class OrderResource extends JsonResource
                 'paidAmount' => $this->total_paid_amount ?? 0,
                 'remainingAmount' => max(0, ($this->total_amount ?? 0) - ($this->total_paid_amount ?? 0)),
                 'currency' => $this->currency ?? 'IDR',
+                'exchangeRate' => $this->exchange_rate ? (float) $this->exchange_rate : null,
+                'originalAmountUsd' => $this->original_amount_usd ?? null,
+                'convertedAmountIdr' => $this->converted_amount_idr ?? null,
             ],
         ];
         

@@ -15,6 +15,16 @@ use App\Infrastructure\Persistence\Eloquent\Repositories\RuleConfigurationReposi
 use App\Infrastructure\Persistence\Eloquent\Repositories\RuleExecutionLogRepository;
 use App\Domain\Shared\Rules\BusinessRuleRegistry;
 use App\Domain\Shared\Rules\BusinessRuleEngine;
+use App\Domain\ExchangeRate\Repositories\ExchangeRateSettingRepositoryInterface;
+use App\Domain\ExchangeRate\Repositories\ExchangeRateProviderRepositoryInterface;
+use App\Domain\ExchangeRate\Repositories\ApiQuotaTrackingRepositoryInterface;
+use App\Domain\ExchangeRate\Repositories\ExchangeRateHistoryRepositoryInterface;
+use App\Domain\ExchangeRate\Repositories\ProviderSwitchEventRepositoryInterface;
+use App\Infrastructure\ExchangeRate\Repositories\ExchangeRateSettingRepository;
+use App\Infrastructure\ExchangeRate\Repositories\ExchangeRateProviderRepository;
+use App\Infrastructure\ExchangeRate\Repositories\ApiQuotaTrackingRepository;
+use App\Infrastructure\ExchangeRate\Repositories\ExchangeRateHistoryRepository;
+use App\Infrastructure\ExchangeRate\Repositories\ProviderSwitchEventRepository;
 
 /**
  * Domain Service Provider
@@ -40,6 +50,13 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
         $this->app->bind(VendorRepositoryInterface::class, VendorRepository::class);
         $this->app->bind(\App\Domain\Product\Repositories\ProductRepositoryInterface::class, \App\Infrastructure\Persistence\Repositories\ProductEloquentRepository::class);
+        
+        // Exchange Rate System bindings
+        $this->app->bind(ExchangeRateSettingRepositoryInterface::class, ExchangeRateSettingRepository::class);
+        $this->app->bind(ExchangeRateProviderRepositoryInterface::class, ExchangeRateProviderRepository::class);
+        $this->app->bind(ApiQuotaTrackingRepositoryInterface::class, ApiQuotaTrackingRepository::class);
+        $this->app->bind(ExchangeRateHistoryRepositoryInterface::class, ExchangeRateHistoryRepository::class);
+        $this->app->bind(ProviderSwitchEventRepositoryInterface::class, ProviderSwitchEventRepository::class);
         
         // Business Rules System bindings
         $this->app->bind(RuleConfigurationRepositoryInterface::class, RuleConfigurationRepository::class);

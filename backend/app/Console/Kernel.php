@@ -8,6 +8,8 @@ use App\Domain\Inventory\Jobs\InventoryReconciliationJob;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
 use App\Jobs\CheckPluginExpiry;
+use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
+use App\Models\ExchangeRateSetting;
 
 class Kernel extends ConsoleKernel
 {
@@ -43,6 +45,36 @@ class Kernel extends ConsoleKernel
             ->onSuccess(function () {
                 \Illuminate\Support\Facades\Log::info('[SSL Renewal] Scheduled renewal completed successfully');
             });
+
+        // Exchange Rate Update - Daily execution for each tenant with auto-update enabled
+        // This runs daily and processes all tenants that have auto-update enabled
+        $schedule->call(function () {
+            Tenant::where('status', 'active')->chunk(50, function ($tenants) {
+                foreach ($tenants as $tenant) {
+                    $setting = ExchangeRateSetting::where('tenant_id', $tenant->id)->first();
+                    
+                    // Only run if auto_update_enabled is true
+                    if ($setting && $setting->auto_update_enabled) {
+                        try {
+                            \Artisan::call('exchange-rate:update', [
+                                '--tenant' => $tenant->id
+                            ]);
+                            \Illuminate\Support\Facades\Log::info(
+                                "[Exchange Rate] Updated rate for tenant {$tenant->id}"
+                            );
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::error(
+                                "[Exchange Rate] Failed to update rate for tenant {$tenant->id}: {$e->getMessage()}"
+                            );
+                        }
+                    }
+                }
+            });
+        })
+        ->daily()
+        ->at('00:00') // Default time, can be customized per tenant in the command
+        ->name('exchange-rate-update')
+        ->withoutOverlapping();
     }
 
     /**

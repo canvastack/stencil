@@ -52,6 +52,7 @@ export interface QuoteItem {
   description: string;
   quantity: number;
   unit_price: number;
+  vendor_cost?: number;
   total_price: number;
   specifications?: Record<string, any>;
   notes?: string;

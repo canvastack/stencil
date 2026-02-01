@@ -80,6 +80,7 @@ const Documentation = lazy(() => import("./pages/admin/Documentation"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const BusinessRulesManagement = lazy(() => import("./pages/admin/BusinessRulesManagement"));
 const VendorSettings = lazy(() => import("./pages/admin/settings/VendorSettings"));
+const ExchangeRateSettings = lazy(() => import("./pages/admin/settings/ExchangeRateSettings"));
 const ProductCategories = lazy(() => import("./pages/admin/ProductCategories"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
@@ -367,6 +368,7 @@ function App() {
                   <Route path="documentation" element={<Suspense fallback={<LoadingFallback />}><Documentation /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
                   <Route path="settings/general" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
+                  <Route path="settings/exchange-rate" element={<Suspense fallback={<LoadingFallback />}><ExchangeRateSettings /></Suspense>} />
                   <Route path="business-rules" element={<Suspense fallback={<LoadingFallback />}><BusinessRulesManagement /></Suspense>} />
                   <Route path="settings/vendor" element={<Suspense fallback={<LoadingFallback />}><VendorSettings /></Suspense>} />
                   <Route path="activity-log" element={<Suspense fallback={<LoadingFallback />}><ActivityLog /></Suspense>} />

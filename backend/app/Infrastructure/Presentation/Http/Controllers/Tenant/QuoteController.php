@@ -102,8 +102,8 @@ class QuoteController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'order_id' => 'required|exists:orders,id',
-            'vendor_id' => 'required|exists:vendors,id',
+            'order_id' => 'required|string|uuid',
+            'vendor_id' => 'required|string|uuid',
             'initial_offer' => 'required|numeric|min:0',
             'currency' => 'sometimes|string|size:3',
             'terms' => 'sometimes|array',
@@ -111,10 +111,20 @@ class QuoteController extends Controller
         ]);
 
         $tenantId = $this->getCurrentTenantId($request);
+        
+        // Convert UUIDs to internal IDs
+        $order = Order::where('tenant_id', $tenantId)
+            ->where('uuid', $request->input('order_id'))
+            ->firstOrFail();
+            
+        $vendor = Vendor::where('tenant_id', $tenantId)
+            ->where('uuid', $request->input('vendor_id'))
+            ->firstOrFail();
+        
         $quote = OrderVendorNegotiation::create([
             'tenant_id' => $tenantId,
-            'order_id' => $request->input('order_id'),
-            'vendor_id' => $request->input('vendor_id'),
+            'order_id' => $order->id,
+            'vendor_id' => $vendor->id,
             'initial_offer' => $request->input('initial_offer') * 100, // Convert to cents
             'latest_offer' => $request->input('initial_offer') * 100,
             'currency' => $request->input('currency', 'IDR'),
@@ -215,6 +225,16 @@ class QuoteController extends Controller
                 'closed_at' => now(),
             ]);
 
+            // Reject all other open quotes for the same order
+            OrderVendorNegotiation::where('tenant_id', $tenantId)
+                ->where('order_id', $quote->order_id)
+                ->where('id', '!=', $quote->id)
+                ->whereIn('status', ['open', 'countered'])
+                ->update([
+                    'status' => 'rejected',
+                    'closed_at' => now(),
+                ]);
+
             // Sync data to order if order is in vendor_negotiation stage
             if ($quote->order && $quote->order->status === 'vendor_negotiation') {
                 $this->syncQuoteToOrder($quote);
@@ -239,10 +259,30 @@ class QuoteController extends Controller
      * 
      * @param OrderVendorNegotiation $quote
      * @return void
+     * @throws \RuntimeException if tenant_id mismatch detected
      */
     private function syncQuoteToOrder(OrderVendorNegotiation $quote): void
     {
         $order = $quote->order;
+
+        // Validate tenant isolation - critical security check
+        if ($quote->tenant_id !== $order->tenant_id) {
+            // Log security warning for investigation
+            \Log::warning('Cross-tenant sync attempt detected', [
+                'quote_id' => $quote->id,
+                'quote_uuid' => $quote->uuid,
+                'quote_tenant_id' => $quote->tenant_id,
+                'order_id' => $order->id,
+                'order_uuid' => $order->uuid,
+                'order_tenant_id' => $order->tenant_id,
+                'user_id' => auth()->id(),
+                'timestamp' => now()->toISOString(),
+            ]);
+
+            throw new \RuntimeException(
+                'Cross-tenant data synchronization is not allowed. Quote and order must belong to the same tenant.'
+            );
+        }
 
         // Sync vendor pricing
         $order->vendor_quoted_price = $quote->latest_offer;

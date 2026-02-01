@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useState, useEffect, useMemo } from 'react';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSearchParams } from 'react-router-dom';
@@ -14,31 +14,40 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Plus,
-  Minus,
   CalendarIcon,
-  Search,
   DollarSign,
   Package,
   User,
   Building,
   Save,
-  Send,
   X,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react';
-import { Quote, CreateQuoteRequest, UpdateQuoteRequest, QuoteItem } from '@/services/tenant/quoteService';
-import { quoteService } from '@/services/tenant/quoteService';
+import { Quote, CreateQuoteRequest, UpdateQuoteRequest } from '@/services/tenant/quoteService';
 import { tenantApiClient } from '@/services/tenant/tenantApiClient';
 import { ordersService } from '@/services/api/orders';
 import { Order } from '@/types/order';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { WysiwygEditor } from '@/components/ui/wysiwyg-editor';
+import { RoundingButtonGroup, RoundingMode } from './RoundingButtonGroup';
+import { TermsTemplateDialog } from './TermsTemplateDialog';
+import { InternalNotesTemplateDialog } from './InternalNotesTemplateDialog';
+import { QuoteFormSkeleton } from './QuoteFormSkeleton';
 
 const quoteItemSchema = z.object({
   product_id: z.string().optional(),
   description: z.string().min(1, 'Description is required'),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   unit_price: z.number().min(0, 'Unit price must be non-negative'),
+  vendor_cost: z.number().min(0, 'Vendor cost must be non-negative').optional(),
   total_price: z.number().min(0),
   specifications: z.record(z.any()).optional(),
   notes: z.string().optional(),
@@ -76,11 +85,12 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; company?: string }>>([]);
   const [vendors, setVendors] = useState<Array<{ id: string; name: string; company: string }>>([]);
   const [products, setProducts] = useState<Array<{ id: string; intId?: number; name: string; sku: string; unit: string }>>([]);
-  const [customersLoading, setCustomersLoading] = useState(false);
-  const [vendorsLoading, setVendorsLoading] = useState(false);
-  const [productsLoading, setProductsLoading] = useState(false);
   const [orderContext, setOrderContext] = useState<Order | null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [roundingModes, setRoundingModes] = useState<Record<number, RoundingMode>>({});
+  const [termsEditorKey, setTermsEditorKey] = useState(0);
+  const [notesEditorKey, setNotesEditorKey] = useState(0);
 
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
@@ -97,6 +107,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
+        vendor_cost: item.vendor_cost || 0,
         total_price: item.total_price,
         specifications: item.specifications,
         notes: item.notes,
@@ -104,6 +115,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
         description: '',
         quantity: 1,
         unit_price: 0,
+        vendor_cost: 0,
         total_price: 0,
       }],
     },
@@ -114,11 +126,28 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
     name: 'items',
   });
 
-  // Load initial data
+  // Load initial data with loading state - OPTIMIZED
   useEffect(() => {
-    // Load vendors and products immediately
-    loadVendors();
-    loadProducts();
+    const loadInitialData = async () => {
+      setIsInitialLoading(true);
+      try {
+        // Load all data in parallel for faster loading
+        await Promise.all([
+          loadCustomers(),
+          loadVendors(),
+          loadProducts(),
+        ]);
+      } catch (error) {
+        console.error('❌ Failed to load initial data:', error);
+      } finally {
+        // Don't set loading to false yet if we're waiting for order context
+        if (!orderId) {
+          setIsInitialLoading(false);
+        }
+      }
+    };
+    
+    loadInitialData();
   }, []);
 
   // Ensure customer is selected after customers list is loaded
@@ -138,13 +167,38 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
     }
   }, [customers, orderContext, form]);
 
+  // Ensure vendor is selected after vendors list is loaded
+  useEffect(() => {
+    if (orderContext && orderContext.vendorId && vendors.length > 0) {
+      const currentVendorId = form.getValues('vendor_id');
+      console.log('🔄 Vendors loaded, checking selection...');
+      console.log('🔄 Current vendor_id in form:', currentVendorId);
+      console.log('🔄 Order vendor_id:', orderContext.vendorId);
+      console.log('🔄 Vendors list:', vendors);
+      
+      // If vendor_id is set but not matching, reset it
+      if (currentVendorId !== orderContext.vendorId) {
+        console.log('🔄 Re-setting vendor_id to:', orderContext.vendorId);
+        form.setValue('vendor_id', orderContext.vendorId, { shouldValidate: true });
+      }
+    }
+  }, [vendors, orderContext, form]);
+
   // Load customers after order context is loaded (if applicable)
   useEffect(() => {
-    if (orderContext || !orderId) {
-      // Load customers after we have order context, or if there's no order context
-      loadCustomers();
+    // Only reload customers if we have order context and need to ensure customer is in list
+    if (orderContext && orderContext.customerId && customers.length > 0) {
+      const customerExists = customers.some(c => c.id === orderContext.customerId);
+      if (!customerExists && orderContext.customerName) {
+        // Add the order's customer to the list
+        setCustomers(prev => [{
+          id: orderContext.customerId,
+          name: orderContext.customerName,
+          company: orderContext.customerEmail
+        }, ...prev]);
+      }
     }
-  }, [orderContext, orderId]);
+  }, [orderContext, customers]);
 
   // Load order context when order_id is present
   useEffect(() => {
@@ -156,6 +210,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
           console.log('📦 Order loaded:', order);
           console.log('📦 Order items:', order.items);
           console.log('📦 Customer ID:', order.customerId);
+          console.log('📦 Vendor ID:', order.vendorId);
           setOrderContext(order);
           
           // Pre-fill customer_id from order
@@ -164,17 +219,25 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
             form.setValue('customer_id', order.customerId);
           }
           
+          // Pre-fill vendor_id from order if available
+          if (order.vendorId) {
+            console.log('✅ Setting vendor_id:', order.vendorId);
+            form.setValue('vendor_id', order.vendorId);
+          }
+          
           // Pre-populate order items into quote items
           if (order.items && order.items.length > 0) {
             console.log('📋 Transforming order items to quote items...');
-            const quoteItems = order.items.map(item => {
+            const quoteItems = order.items.map((item: any) => {
               console.log('  - Item:', item);
+              // Backend sends snake_case, not camelCase
               return {
-                product_id: item.product_id?.toString() || '',
-                description: item.product_name,
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                total_price: item.subtotal,
+                product_id: (item.product_id || item.productId)?.toString() || '',
+                description: item.product_name || item.productName || '',
+                quantity: item.quantity || 1,
+                unit_price: item.unit_price || item.unitPrice || item.final_price || 0,
+                vendor_cost: item.vendor_cost || item.vendorCost || 0,
+                total_price: item.subtotal || 0,
                 specifications: {},
                 notes: '',
               };
@@ -182,22 +245,29 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
             
             console.log('✅ Quote items prepared:', quoteItems);
             
-            // Set both customer_id and items together to prevent form reset
-            console.log('🔄 Setting form values (customer + items)...');
+            // Set customer_id, vendor_id, and items together to prevent form reset
+            console.log('🔄 Setting form values (customer + vendor + items)...');
             form.reset({
               ...form.getValues(),
               customer_id: order.customerId,
+              vendor_id: order.vendorId || form.getValues('vendor_id'),
               items: quoteItems,
             });
-            console.log('✅ Form values set (customer + items)');
-          } else if (order.customerId) {
-            // If no items, just set customer
-            form.setValue('customer_id', order.customerId);
+            console.log('✅ Form values set (customer + vendor + items)');
+          } else {
+            // If no items, set customer and vendor
+            if (order.customerId) {
+              form.setValue('customer_id', order.customerId);
+            }
+            if (order.vendorId) {
+              form.setValue('vendor_id', order.vendorId);
+            }
           }
           
+          const vendorInfo = order.vendorId ? ' with pre-selected vendor' : '';
           toast({
             title: 'Order Context Loaded',
-            description: `Creating quote for Order #${order.orderNumber} with ${order.items.length} items`,
+            description: `Creating quote for Order #${order.orderNumber} with ${order.items.length} items${vendorInfo}`,
           });
         } catch (error) {
           console.error('❌ Failed to load order context:', error);
@@ -208,6 +278,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
           });
         } finally {
           setOrderLoading(false);
+          setIsInitialLoading(false); // Set loading to false after order context loaded
         }
       }
     };
@@ -217,7 +288,6 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
 
   const loadCustomers = async (search?: string) => {
     try {
-      setCustomersLoading(true);
       console.log('👥 Loading customers...');
       // Use existing customers endpoint instead of /for-quotes
       const response = await tenantApiClient.get('/customers', {
@@ -267,40 +337,65 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
         description: 'Failed to load customers list',
         variant: 'destructive',
       });
-    } finally {
-      setCustomersLoading(false);
     }
   };
 
   const loadVendors = async (search?: string) => {
     try {
-      setVendorsLoading(true);
+      console.log('🏢 Loading vendors...');
       // Use existing vendors endpoint instead of /for-quotes
       const response = await tenantApiClient.get('/vendors', {
         params: { search, per_page: 50, status: 'active' }
       });
       // Transform response to match expected format
       const vendorsData = response.data?.data || response.data || [];
-      setVendors(vendorsData.map((v: any) => ({
+      console.log('🏢 Raw vendors data:', vendorsData);
+      
+      const transformedVendors = vendorsData.map((v: any) => ({
         id: v.uuid || v.id,
         name: v.name,
         company: v.company_name || v.company || v.name
-      })));
+      }));
+      console.log('🏢 Transformed vendors:', transformedVendors);
+      setVendors(transformedVendors);
+      
+      // If we have an order context with vendor_id, ensure that vendor is in the list
+      if (orderContext && orderContext.vendorId) {
+        console.log('🏢 Checking if order vendor exists in list...');
+        console.log('🏢 Looking for vendor ID:', orderContext.vendorId);
+        const vendorExists = transformedVendors.some((v: any) => v.id === orderContext.vendorId);
+        console.log('🏢 Vendor exists in list:', vendorExists);
+        
+        if (!vendorExists && orderContext.vendorName) {
+          console.log('🏢 Adding order vendor to list:', {
+            id: orderContext.vendorId,
+            name: orderContext.vendorName,
+            company: orderContext.vendorName
+          });
+          // Add the order's vendor to the list
+          setVendors(prev => [{
+            id: orderContext.vendorId!,
+            name: orderContext.vendorName!,
+            company: orderContext.vendorName!
+          }, ...prev]);
+        }
+      }
+      
+      // After vendors are loaded, check form value
+      const currentVendorId = form.getValues('vendor_id');
+      console.log('🏢 Current form vendor_id:', currentVendorId);
     } catch (error) {
-      console.error('Failed to load vendors:', error);
+      console.error('❌ Failed to load vendors:', error);
       toast({
         title: 'Warning',
         description: 'Failed to load vendors list',
         variant: 'destructive',
       });
-    } finally {
-      setVendorsLoading(false);
     }
   };
 
   const loadProducts = async (search?: string) => {
     try {
-      setProductsLoading(true);
       console.log('📦 Loading products...');
       // Use existing products endpoint instead of /for-quotes
       const response = await tenantApiClient.get('/products', {
@@ -326,8 +421,6 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
         description: 'Failed to load products list',
         variant: 'destructive',
       });
-    } finally {
-      setProductsLoading(false);
     }
   };
 
@@ -363,6 +456,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
       description: '',
       quantity: 1,
       unit_price: 0,
+      vendor_cost: 0,
       total_price: 0,
     });
   };
@@ -413,11 +507,72 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
     return idrAmount / USD_TO_IDR_RATE;
   };
 
-  const watchedItems = form.watch('items');
+  // Profit margin calculation
+  const calculateProfitMargin = (customerPrice: number, vendorCost: number) => {
+    if (!vendorCost || vendorCost === 0) return null;
+    const markupAmount = customerPrice - vendorCost;
+    const profitPercentage = (markupAmount / vendorCost) * 100;
+    return { markupAmount, profitPercentage };
+  };
+
+  // Use useWatch for proper nested field watching
+  const watchedItems = useWatch({
+    control: form.control,
+    name: 'items',
+  }) || [];
+  
   const totalAmount = watchedItems.reduce((sum, item) => {
-    const itemTotal = calculateItemTotal(item.quantity || 0, item.unit_price || 0);
+    const itemTotal = calculateItemTotal(item?.quantity || 0, item?.unit_price || 0);
     return sum + itemTotal;
   }, 0);
+
+  // Total profit calculation - now properly reactive to vendor_cost changes
+  const totalProfit = useMemo(() => {
+    let totalMarkup = 0;
+    let totalVendorCost = 0;
+    let totalCustomerPrice = 0;
+    
+    console.log('💰 Calculating total profit from items:', watchedItems);
+    
+    watchedItems.forEach((item: any) => {
+      const quantity = item?.quantity || 0;
+      const unitPrice = item?.unit_price || 0;
+      const vendorCost = item?.vendor_cost || 0;
+      
+      console.log(`  - Item: qty=${quantity}, price=${unitPrice}, cost=${vendorCost}`);
+      
+      if (vendorCost > 0) {
+        const itemCustomerTotal = quantity * unitPrice;
+        const itemVendorTotal = quantity * vendorCost;
+        const itemMarkup = itemCustomerTotal - itemVendorTotal;
+        
+        totalMarkup += itemMarkup;
+        totalVendorCost += itemVendorTotal;
+        totalCustomerPrice += itemCustomerTotal;
+        
+        console.log(`    ✅ Included: markup=${itemMarkup}`);
+      } else {
+        console.log(`    ❌ Skipped: no vendor cost`);
+      }
+    });
+    
+    console.log('💰 Total calculation:', { totalMarkup, totalVendorCost, totalCustomerPrice });
+    
+    if (totalVendorCost === 0) {
+      console.log('💰 Result: null (no vendor cost)');
+      return null;
+    }
+    
+    const profitPercentage = (totalMarkup / totalVendorCost) * 100;
+    const result = { totalMarkup, profitPercentage };
+    console.log('💰 Result:', result);
+    return result;
+  }, [watchedItems]);
+
+    // Show loading skeleton while data is loading
+  if (isInitialLoading || orderLoading) {
+    return <QuoteFormSkeleton />;
+  }
 
   return (
     <Form {...form}>
@@ -506,32 +661,52 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
               <FormField
                 control={form.control}
                 name="vendor_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vendor</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a vendor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {vendors.map((vendor) => (
-                          <SelectItem key={vendor.id} value={vendor.id}>
-                            <div className="flex items-center gap-2">
-                              <Building className="w-4 h-4" />
-                              <div>
-                                <div className="font-medium">{vendor.name}</div>
-                                <div className="text-sm text-muted-foreground">{vendor.company}</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const selectedVendor = vendors.find(v => v.id === field.value);
+                  const isVendorFromOrder = !!orderId && !!orderContext && !!orderContext.vendorId;
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Vendor</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={isVendorFromOrder}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a vendor">
+                              {selectedVendor ? selectedVendor.name : 'Select a vendor'}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {vendors.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground">Loading vendors...</div>
+                          ) : (
+                            vendors.map((vendor) => (
+                              <SelectItem key={vendor.id} value={vendor.id}>
+                                <div className="flex items-center gap-2">
+                                  <Building className="w-4 h-4" />
+                                  <div>
+                                    <div className="font-medium">{vendor.name}</div>
+                                    <div className="text-sm text-muted-foreground">{vendor.company}</div>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {isVendorFromOrder && (
+                        <FormDescription>
+                          Pre-filled from Order #{orderContext.orderNumber} - Field is locked
+                        </FormDescription>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
 
@@ -647,54 +822,52 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                       </Button>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                      {/* Product Selection */}
-                      <div className="md:col-span-3">
-                        <Label>Product (Optional)</Label>
-                        <Select 
-                          onValueChange={(value) => handleProductSelect(index, value)}
-                          value={watchedItems[index]?.product_id || ''}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select product">
-                              {(() => {
-                                const productId = watchedItems[index]?.product_id;
-                                if (productId) {
-                                  // Try to find product by UUID first
-                                  let product = products.find(p => p.id === productId);
-                                  
-                                  // If not found and productId is numeric, try matching by integer ID
-                                  if (!product && !isNaN(Number(productId))) {
-                                    product = products.find(p => p.intId === Number(productId));
+                    {/* ENHANCED: Two-Column Layout */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* LEFT COLUMN */}
+                      <div className="space-y-4">
+                        {/* Product Selection */}
+                        <div className="space-y-2">
+                          <Label>Product (Optional)</Label>
+                          <Select 
+                            onValueChange={(value) => handleProductSelect(index, value)}
+                            value={watchedItems[index]?.product_id || ''}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select product">
+                                {(() => {
+                                  const productId = watchedItems[index]?.product_id;
+                                  if (productId) {
+                                    let product = products.find(p => p.id === productId);
+                                    if (!product && !isNaN(Number(productId))) {
+                                      product = products.find(p => p.intId === Number(productId));
+                                    }
+                                    if (product) {
+                                      return product.name;
+                                    }
+                                    return watchedItems[index]?.description || 'Select product';
                                   }
-                                  
-                                  if (product) {
-                                    return product.name;
-                                  }
-                                  // If not found in list, use description as fallback
-                                  return watchedItems[index]?.description || 'Select product';
-                                }
-                                return 'Select product';
-                              })()}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((product) => (
-                              <SelectItem key={product.id} value={product.id}>
-                                <div>
-                                  <div className="font-medium">{product.name}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    SKU: {product.sku}
+                                  return 'Select product';
+                                })()}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {products.map((product) => (
+                                <SelectItem key={product.id} value={product.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Package className="w-4 h-4" />
+                                    <div>
+                                      <div className="font-medium">{product.name}</div>
+                                      <div className="text-sm text-muted-foreground">SKU: {product.sku}</div>
+                                    </div>
                                   </div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      {/* Description */}
-                      <div className="md:col-span-4">
+                        {/* Description */}
                         <FormField
                           control={form.control}
                           name={`items.${index}.description`}
@@ -710,8 +883,9 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                         />
                       </div>
 
-                      {/* Quantity */}
-                      <div className="md:col-span-2">
+                      {/* RIGHT COLUMN */}
+                      <div className="space-y-4">
+                        {/* Quantity */}
                         <FormField
                           control={form.control}
                           name={`items.${index}.quantity`}
@@ -722,11 +896,11 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                                 <Input
                                   type="number"
                                   min="1"
+                                  placeholder="0"
                                   {...field}
                                   onChange={(e) => {
                                     const value = parseInt(e.target.value) || 0;
                                     field.onChange(value);
-                                    
                                     const unitPrice = form.getValues(`items.${index}.unit_price`);
                                     form.setValue(`items.${index}.total_price`, calculateItemTotal(value, unitPrice));
                                   }}
@@ -736,73 +910,189 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                             </FormItem>
                           )}
                         />
-                      </div>
 
-                      {/* Unit Price */}
-                      <div className="md:col-span-2">
+                        {/* Vendor Cost */}
                         <FormField
                           control={form.control}
-                          name={`items.${index}.unit_price`}
+                          name={`items.${index}.vendor_cost`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Unit Price (IDR)</FormLabel>
+                              <FormLabel>Vendor Cost (IDR)</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
-                                    Rp
-                                  </span>
+                                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                   <Input
                                     type="number"
                                     min="0"
-                                    step="1000"
                                     className="pl-9"
                                     placeholder="0"
                                     {...field}
                                     onChange={(e) => {
                                       const value = parseFloat(e.target.value) || 0;
                                       field.onChange(value);
-                                      
-                                      const quantity = form.getValues(`items.${index}.quantity`);
-                                      form.setValue(`items.${index}.total_price`, calculateItemTotal(quantity, value));
                                     }}
                                   />
                                 </div>
+                              </FormControl>
+                              <FormDescription className="text-xs">
+                                Cost from vendor (for profit calculation)
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Unit Price with Rounding Buttons */}
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.unit_price`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Unit Price (IDR)</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <FormControl>
+                                  <div className="relative flex-1">
+                                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      className="pl-9"
+                                      placeholder="0"
+                                      {...field}
+                                      onChange={(e) => {
+                                        const value = parseFloat(e.target.value) || 0;
+                                        field.onChange(value);
+                                        const quantity = form.getValues(`items.${index}.quantity`);
+                                        form.setValue(`items.${index}.total_price`, calculateItemTotal(quantity, value));
+                                      }}
+                                    />
+                                  </div>
+                                </FormControl>
+                                <RoundingButtonGroup
+                                  value={field.value || 0}
+                                  onChange={(roundedValue, mode) => {
+                                    field.onChange(roundedValue);
+                                    setRoundingModes(prev => ({ ...prev, [index]: mode }));
+                                    const quantity = form.getValues(`items.${index}.quantity`);
+                                    form.setValue(`items.${index}.total_price`, calculateItemTotal(quantity, roundedValue));
+                                  }}
+                                  activeMode={roundingModes[index] || 'none'}
+                                />
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Profit Margin Display */}
+                        {(() => {
+                          const vendorCost = watchedItems[index]?.vendor_cost || 0;
+                          const unitPrice = watchedItems[index]?.unit_price || 0;
+                          const profit = calculateProfitMargin(unitPrice, vendorCost);
+                          
+                          if (!profit) {
+                            return (
+                              <div className="text-xs text-muted-foreground italic">
+                                Enter vendor cost to see profit margin
+                              </div>
+                            );
+                          }
+                          
+                          // Determine if loss (vendor cost > unit price)
+                          const isLoss = vendorCost > unitPrice;
+                          const profitColor = isLoss ? 'text-red-600' : 'text-green-600';
+                          const profitBgColor = isLoss ? 'bg-red-100 dark:bg-red-900' : 'bg-green-100 dark:bg-green-900';
+                          const profitIconColor = isLoss ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400';
+                          const ProfitIcon = isLoss ? TrendingDown : TrendingUp;
+                          
+                          return (
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Profit Margin</Label>
+                              <div className="flex items-center gap-2">
+                                <div className={`font-bold ${profitColor} ${isLoss ? 'font-extrabold' : ''}`}>
+                                  {isLoss ? '-' : '+'}{formatCurrency(Math.abs(profit.markupAmount), 'IDR')}
+                                </div>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className={`w-3 h-3 rounded-full ${profitBgColor} flex items-center justify-center cursor-help`}>
+                                      <span className={`text-xs ${profitIconColor} font-bold`}>i</span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left" className="max-w-xs">
+                                    <div className="space-y-2">
+                                      <div className="font-semibold">Detail Profit Calculation:</div>
+                                      <div className="space-y-1 text-sm">
+                                        <div>Customer Price: {formatCurrency(unitPrice, 'IDR')}</div>
+                                        <div>Vendor Cost: {formatCurrency(vendorCost, 'IDR')}</div>
+                                        <div className="border-t pt-1 mt-1">
+                                          <div className={`font-semibold ${profitColor}`}>
+                                            {isLoss ? 'Loss' : 'Markup'}: {formatCurrency(Math.abs(profit.markupAmount), 'IDR')}
+                                          </div>
+                                          <div>{isLoss ? 'Loss' : 'Profit'} Margin: {Math.abs(profit.profitPercentage).toFixed(1)}%</div>
+                                        </div>
+                                        <div className="text-xs opacity-75 mt-2">
+                                          Formula: (Customer Price - Vendor Cost) / Vendor Cost × 100%
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <ProfitIcon className={`w-3 h-3 ${profitColor}`} />
+                                <p className={`text-xs italic ${profitColor}`}>
+                                  {Math.abs(profit.profitPercentage).toFixed(1)}% margin
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Total (Read-only) */}
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.total_price`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Total</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  value={formatCurrency(field.value || 0)}
+                                  disabled
+                                  className="font-semibold"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
-
-                      {/* Total */}
-                      <div className="md:col-span-1">
-                        <Label>Total</Label>
-                        <div className="h-10 px-3 py-2 bg-muted rounded-md flex items-center justify-end">
-                          <span className="text-sm font-medium">
-                            {formatCurrency(calculateItemTotal(watchedItems[index]?.quantity || 0, watchedItems[index]?.unit_price || 0), 'IDR')}
-                          </span>
-                        </div>
-                      </div>
                     </div>
 
-                    {/* Item Notes */}
-                    <FormField
-                      control={form.control}
-                      name={`items.${index}.notes`}
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Notes (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Additional notes for this item"
-                              className="min-h-[60px]"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {/* Notes - WYSIWYG - Full Width */}
+                    <div className="mt-6">
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.notes`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Notes (Optional)</FormLabel>
+                            <FormControl>
+                              <WysiwygEditor
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                label=""
+                                placeholder="Additional notes for this item..."
+                                height={200}
+                                required={false}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -810,22 +1100,65 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
 
             {/* Total Summary */}
             <div className="border-t pt-4">
-              <div className="flex justify-end">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* LEFT: Total Profit */}
+                {totalProfit && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
+                      Total Profit
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className={`w-3 h-3 rounded-full ${totalProfit.totalMarkup < 0 ? 'bg-red-100 dark:bg-red-900' : 'bg-green-100 dark:bg-green-900'} flex items-center justify-center cursor-help`}>
+                            <span className={`text-xs ${totalProfit.totalMarkup < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} font-bold`}>i</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-xs">
+                          <div className="space-y-1">
+                            <div className="font-semibold">Total Profit Calculation:</div>
+                            <div className="text-sm">
+                              Sum of all items' markup amounts
+                            </div>
+                            <div className="text-xs opacity-75 mt-2">
+                              Formula: Σ(Customer Price - Vendor Cost)
+                            </div>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className={`text-2xl font-bold ${totalProfit.totalMarkup < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      {totalProfit.totalMarkup < 0 ? '-' : '+'}{formatCurrency(Math.abs(totalProfit.totalMarkup), 'IDR')}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {totalProfit.totalMarkup < 0 ? (
+                        <TrendingDown className="w-4 h-4 text-red-600" />
+                      ) : (
+                        <TrendingUp className="w-4 h-4 text-green-600" />
+                      )}
+                      <span className={`text-sm italic ${totalProfit.totalMarkup < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        {Math.abs(totalProfit.profitPercentage).toFixed(1)}% margin
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* RIGHT: Total Amount */}
                 <div className="text-right space-y-2">
-                  <div>
-                    <div className="text-2xl font-bold text-primary">
-                      {formatCurrency(totalAmount, 'IDR')}
-                    </div>
-                    <div className="text-lg text-muted-foreground">
-                      ≈ {formatCurrency(convertToUSD(totalAmount), 'USD')}
-                    </div>
+                  <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {formatCurrency(totalAmount, 'IDR')}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Excluding taxes and fees
+                  <div className="text-lg text-muted-foreground">
+                    ≈ {formatCurrency(convertToUSD(totalAmount), 'USD')}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Exchange rate: 1 USD = Rp {USD_TO_IDR_RATE.toLocaleString('id-ID')}
-                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 text-center space-y-1">
+                <div className="text-sm text-muted-foreground">
+                  Excluding taxes and fees
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Exchange rate: 1 USD = Rp {USD_TO_IDR_RATE.toLocaleString('id-ID')}
                 </div>
               </div>
             </div>
@@ -843,12 +1176,27 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
               name="terms_and_conditions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Terms and Conditions</FormLabel>
+                  <FormLabel className="flex items-center">
+                    Terms and Conditions
+                    <TermsTemplateDialog 
+                      onInsert={(content) => {
+                        field.onChange(content);
+                        // Force re-render of WYSIWYG editor
+                        setTermsEditorKey(prev => prev + 1);
+                        toast({
+                          title: 'Template Inserted',
+                          description: 'Terms and conditions template has been added to the form',
+                        });
+                      }}
+                    />
+                  </FormLabel>
                   <FormControl>
-                    <Textarea
+                    <WysiwygEditor
+                      key={`terms-editor-${termsEditorKey}`}
+                      value={field.value || ''}
+                      onChange={field.onChange}
                       placeholder="Enter terms and conditions"
-                      className="min-h-[120px]"
-                      {...field}
+                      height={300}
                     />
                   </FormControl>
                   <FormDescription>
@@ -864,12 +1212,27 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Internal Notes</FormLabel>
+                  <FormLabel className="flex items-center">
+                    Internal Notes
+                    <InternalNotesTemplateDialog 
+                      onInsert={(content) => {
+                        field.onChange(content);
+                        // Force re-render of WYSIWYG editor
+                        setNotesEditorKey(prev => prev + 1);
+                        toast({
+                          title: 'Template Inserted',
+                          description: 'Internal notes template has been added to the form',
+                        });
+                      }}
+                    />
+                  </FormLabel>
                   <FormControl>
-                    <Textarea
+                    <WysiwygEditor
+                      key={`notes-editor-${notesEditorKey}`}
+                      value={field.value || ''}
+                      onChange={field.onChange}
                       placeholder="Internal notes (not visible to vendor)"
-                      className="min-h-[100px]"
-                      {...field}
+                      height={300}
                     />
                   </FormControl>
                   <FormDescription>

@@ -72,6 +72,8 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   price: number;
+  unitPrice: number; // Alias for price (customer price per unit)
+  vendorCost?: number; // Cost from vendor per unit
   subtotal: number;
   customization?: OrderItemCustomization;
 }

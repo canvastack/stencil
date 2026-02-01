@@ -1839,6 +1839,61 @@ PurchaseOrder:
       type: string
       nullable: true
       description: Order notes
+    vendor_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Assigned vendor identifier (set when quote is accepted)
+    vendor_quoted_price:
+      type: number
+      format: double
+      nullable: true
+      description: |
+        Vendor's quoted price in decimal format (converted from cents).
+        Synced from accepted quote.
+      example: 10000000.00
+    vendor_lead_time_days:
+      type: integer
+      nullable: true
+      description: Vendor's lead time in days
+      example: 14
+    negotiation_notes:
+      type: string
+      nullable: true
+      description: Internal notes about vendor negotiation
+    vendor_terms:
+      type: object
+      nullable: true
+      description: Vendor terms and conditions (JSON)
+      additionalProperties: true
+      example:
+        payment_terms: "50% upfront, 50% on delivery"
+        warranty: "1 year"
+        delivery_method: "courier"
+    quotation_amount:
+      type: number
+      format: double
+      nullable: true
+      description: |
+        Final price to customer (vendor_quoted_price × 1.35).
+        Calculated automatically when quote is accepted.
+        
+        Formula: quotation_amount = vendor_quoted_price × 1.35
+        Where:
+        - 30% = PT CEX markup
+        - 5% = Operational cost
+        - Total = 35% markup
+      example: 13500000.00
+    active_quotes:
+      type: integer
+      description: Count of active quotes (status 'open' or 'countered')
+      example: 2
+    accepted_quote:
+      type: string
+      format: uuid
+      nullable: true
+      description: UUID of the accepted quote (if any)
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
     created_at:
       type: string
       format: date-time
@@ -2519,3 +2574,303 @@ ThemeInstallationInput:
       description: Automatically activate after installation
   required:
     - theme_id
+
+
+# ============================================================================
+# VENDOR QUOTE MANAGEMENT SCHEMAS
+# Vendor Negotiation Integration Feature
+# ============================================================================
+
+VendorQuote:
+  type: object
+  description: Vendor quote for order pricing
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Quote unique identifier (UUID)
+      example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    order_id:
+      type: string
+      format: uuid
+      description: Associated order UUID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    vendor_id:
+      type: string
+      format: uuid
+      description: Vendor UUID
+      example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+    customer_id:
+      type: string
+      format: uuid
+      description: Customer UUID
+      example: "8d7e8790-8536-52ef-a55c-f18fd541b9b8"
+    initial_offer:
+      type: number
+      format: double
+      description: Initial price offer from vendor (in decimal format)
+      example: 10000000.00
+    latest_offer:
+      type: number
+      format: double
+      description: Latest price offer (updated during negotiation rounds)
+      example: 9500000.00
+    currency:
+      type: string
+      maxLength: 3
+      description: Currency code (ISO 4217)
+      example: "IDR"
+      default: "IDR"
+    status:
+      type: string
+      enum: [open, countered, accepted, rejected, expired, cancelled]
+      description: Quote status
+      example: "open"
+    round:
+      type: integer
+      description: Negotiation round counter
+      example: 1
+      default: 1
+    terms:
+      type: object
+      nullable: true
+      description: Terms and conditions (JSON)
+      additionalProperties: true
+      example:
+        payment_terms: "50% upfront, 50% on delivery"
+        warranty: "1 year"
+        delivery_method: "courier"
+    history:
+      type: array
+      description: Negotiation history
+      items:
+        type: object
+        properties:
+          round:
+            type: integer
+          offer:
+            type: number
+            format: double
+          timestamp:
+            type: string
+            format: date-time
+          notes:
+            type: string
+      example:
+        - round: 1
+          offer: 10000000.00
+          timestamp: "2024-01-15T10:00:00Z"
+          notes: "Initial offer"
+        - round: 2
+          offer: 9500000.00
+          timestamp: "2024-01-16T14:30:00Z"
+          notes: "Counter offer after negotiation"
+    expires_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Quote expiration date
+      example: "2024-02-15T23:59:59Z"
+    closed_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Quote closure timestamp (when accepted/rejected)
+      example: "2024-01-20T15:45:00Z"
+    created_at:
+      type: string
+      format: date-time
+      description: Creation timestamp
+    updated_at:
+      type: string
+      format: date-time
+      description: Last update timestamp
+    order:
+      type: object
+      nullable: true
+      description: Associated order details (when included)
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_number:
+          type: string
+        customer_name:
+          type: string
+    vendor:
+      type: object
+      nullable: true
+      description: Vendor details (when included)
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        contact_person:
+          type: string
+  required:
+    - id
+    - order_id
+    - vendor_id
+    - customer_id
+    - initial_offer
+    - latest_offer
+    - currency
+    - status
+    - round
+
+CreateQuoteRequest:
+  type: object
+  description: Request to create a new vendor quote
+  properties:
+    order_id:
+      type: string
+      format: uuid
+      description: Order UUID (pre-populated when creating from order context)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    vendor_id:
+      type: string
+      format: uuid
+      description: Vendor UUID
+      example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+    customer_id:
+      type: string
+      format: uuid
+      description: Customer UUID (pre-populated from order)
+      example: "8d7e8790-8536-52ef-a55c-f18fd541b9b8"
+    initial_offer:
+      type: number
+      format: double
+      minimum: 0
+      exclusiveMinimum: true
+      description: Vendor's initial price offer
+      example: 10000000.00
+    currency:
+      type: string
+      maxLength: 3
+      description: Currency code
+      example: "IDR"
+      default: "IDR"
+    terms:
+      type: object
+      nullable: true
+      description: Terms and conditions
+      additionalProperties: true
+      example:
+        payment_terms: "50% upfront, 50% on delivery"
+        warranty: "1 year"
+        delivery_method: "courier"
+    expires_at:
+      type: string
+      format: date-time
+      description: Quote expiration date (must be future date)
+      example: "2024-02-15T23:59:59Z"
+  required:
+    - order_id
+    - vendor_id
+    - customer_id
+    - initial_offer
+    - expires_at
+
+UpdateQuoteRequest:
+  type: object
+  description: Request to update an existing quote
+  properties:
+    latest_offer:
+      type: number
+      format: double
+      minimum: 0
+      exclusiveMinimum: true
+      description: Updated price offer (creates new negotiation round)
+      example: 9500000.00
+    terms:
+      type: object
+      nullable: true
+      description: Updated terms and conditions
+      additionalProperties: true
+    expires_at:
+      type: string
+      format: date-time
+      description: Updated expiration date
+      example: "2024-02-20T23:59:59Z"
+    notes:
+      type: string
+      nullable: true
+      description: Notes for this update/round
+      example: "Counter offer after discussion"
+
+VendorNegotiationResponse:
+  type: object
+  description: Response for vendor negotiation operations (legacy compatibility)
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Negotiation/Quote UUID
+    order_id:
+      type: string
+      format: uuid
+      description: Associated order UUID
+    vendor_id:
+      type: string
+      format: uuid
+      description: Vendor UUID
+    status:
+      type: string
+      enum: [open, countered, accepted, rejected, expired]
+      description: Negotiation status
+    latest_offer:
+      type: number
+      format: double
+      description: Latest price offer
+    created_at:
+      type: string
+      format: date-time
+  required:
+    - id
+    - order_id
+    - vendor_id
+    - status
+    - latest_offer
+
+VendorNegotiationView:
+  type: object
+  description: View model for vendor negotiation queries (CQRS read model)
+  properties:
+    order_id:
+      type: string
+      format: uuid
+      description: Order UUID
+    order_number:
+      type: string
+      description: Order reference number
+    vendor_name:
+      type: string
+      description: Vendor name
+    status:
+      type: string
+      enum: [open, countered, accepted, rejected, expired]
+      description: Negotiation status
+    latest_offer:
+      type: number
+      format: double
+      description: Latest price offer
+    round:
+      type: integer
+      description: Current negotiation round
+    created_at:
+      type: string
+      format: date-time
+    updated_at:
+      type: string
+      format: date-time
+  required:
+    - order_id
+    - order_number
+    - vendor_name
+    - status
+    - latest_offer
+    - round

@@ -484,6 +484,12 @@ class PurchaseOrderRepository implements OrderRepositoryInterface
         $customerIntegerId = $this->resolveCustomerId($order->getCustomerId());
         $vendorIntegerId = $order->getVendorId() ? $this->resolveVendorId($order->getVendorId()) : null;
         
+        // Extract exchange rate data from metadata
+        $metadata = $order->getMetadata();
+        $exchangeRate = $metadata['exchange_rate'] ?? null;
+        $originalAmountUsd = $metadata['original_amount_usd'] ?? null;
+        $convertedAmountIdr = $metadata['converted_amount_idr'] ?? null;
+        
         $data = [
             'uuid' => $order->getId()->getValue(),
             'tenant_id' => $tenantIntegerId,
@@ -495,6 +501,9 @@ class PurchaseOrderRepository implements OrderRepositoryInterface
             'total_amount' => $order->getTotalAmount()->getAmountInCents(),
             'down_payment_amount' => $order->getDownPaymentAmount()->getAmountInCents(),
             'total_paid_amount' => $order->getTotalPaidAmount()->getAmountInCents(),
+            'exchange_rate' => $exchangeRate,
+            'original_amount_usd' => $originalAmountUsd,
+            'converted_amount_idr' => $convertedAmountIdr,
             'items' => json_encode($order->getItems()),
             'shipping_address' => json_encode([
                 'street' => $order->getShippingAddress()->getStreet(),
