@@ -140,7 +140,8 @@ class QuoteService {
    */
   async createQuote(data: CreateQuoteRequest): Promise<Quote> {
     const response = await tenantApiClient.post(this.baseUrl, data);
-    return response.data;
+    // Backend returns { data: quote }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 
   /**

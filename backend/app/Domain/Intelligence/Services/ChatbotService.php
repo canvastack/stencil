@@ -182,16 +182,18 @@ class ChatbotService
             }
         }
         
-        // Use ML-based entity extraction for better accuracy
-        $mlEntities = $this->mlService->extractEntities($query);
-        foreach ($mlEntities as $entity) {
-            $entities[] = new ChatbotEntity(
-                type: $entity['type'],
-                value: $entity['value'],
-                confidence: $entity['confidence'],
-                startPos: $entity['start'] ?? 0,
-                endPos: $entity['end'] ?? strlen($entity['value'])
-            );
+        // Use ML service for intent recognition which includes entities
+        $mlResult = $this->mlService->recognizeIntent($query, []);
+        if (isset($mlResult['entities']) && is_array($mlResult['entities'])) {
+            foreach ($mlResult['entities'] as $entity) {
+                $entities[] = new ChatbotEntity(
+                    type: $entity['type'],
+                    value: $entity['value'],
+                    confidence: $entity['confidence'],
+                    startPos: $entity['start'] ?? 0,
+                    endPos: $entity['end'] ?? strlen($entity['value'])
+                );
+            }
         }
         
         return $entities;

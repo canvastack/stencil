@@ -51,6 +51,12 @@ class PaymentProcessingTest extends TestCase
         Event::fake();
 
         $this->tenant = TenantEloquentModel::factory()->create();
+        
+        // Create ExchangeRateSetting for tenant (required by CreatePurchaseOrderUseCase)
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $this->tenant->id,
+        ]);
+        
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->product = Product::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -415,6 +421,12 @@ class PaymentProcessingTest extends TestCase
     public function payment_processing_multi_tenant_isolation(): void
     {
         $tenantB = TenantEloquentModel::factory()->create();
+        
+        // Create ExchangeRateSetting for tenantB
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $tenantB->id,
+        ]);
+        
         $customerB = Customer::factory()->create(['tenant_id' => $tenantB->id]);
         $productB = Product::factory()->create(['tenant_id' => $tenantB->id]);
 

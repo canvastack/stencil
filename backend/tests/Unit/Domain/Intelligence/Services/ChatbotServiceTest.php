@@ -45,14 +45,14 @@ class ChatbotServiceTest extends TestCase
         $customer = null;
         $context = [];
 
-        // Mock ML service methods
+        // Mock ML service methods - recognizeIntent returns entities too
         $this->mockMlService->shouldReceive('recognizeIntent')
-            ->once()
-            ->andReturn(['intent' => 'general_inquiry', 'confidence' => 0.7]);
-
-        $this->mockMlService->shouldReceive('extractEntities')
-            ->once()
-            ->andReturn([]);
+            ->twice() // Called in both analyzeIntent and extractEntities
+            ->andReturn([
+                'intent' => 'general_inquiry',
+                'confidence' => 0.7,
+                'entities' => [] // Empty entities for greeting
+            ]);
 
         // Act
         $response = $this->chatbotService->processCustomerQuery($message, $customer, $context);

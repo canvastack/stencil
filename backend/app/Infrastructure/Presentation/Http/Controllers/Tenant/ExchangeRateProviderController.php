@@ -34,6 +34,14 @@ class ExchangeRateProviderController extends Controller
                 ->orderedByPriority()
                 ->get()
                 ->map(function ($provider) {
+                    $remainingQuota = $provider->getRemainingQuota();
+                    $quotaPercentage = 0;
+                    
+                    if (!$provider->is_unlimited && $provider->monthly_quota > 0) {
+                        $usedQuota = $provider->monthly_quota - ($remainingQuota ?? $provider->monthly_quota);
+                        $quotaPercentage = ($usedQuota / $provider->monthly_quota) * 100;
+                    }
+                    
                     return [
                         'uuid' => $provider->uuid,
                         'name' => $provider->name,
@@ -47,7 +55,9 @@ class ExchangeRateProviderController extends Controller
                         'is_enabled' => $provider->is_enabled,
                         'warning_threshold' => $provider->warning_threshold,
                         'critical_threshold' => $provider->critical_threshold,
-                        'remaining_quota' => $provider->getRemainingQuota(),
+                        'remaining_quota' => $remainingQuota,
+                        'quota_percentage' => round($quotaPercentage, 2),
+                        'next_reset_date' => now()->endOfMonth()->toIso8601String(),
                         'created_at' => $provider->created_at?->toIso8601String(),
                         'updated_at' => $provider->updated_at?->toIso8601String(),
                     ];
@@ -439,6 +449,85 @@ class ExchangeRateProviderController extends Controller
 
             return response()->json([
                 'message' => 'Failed to delete exchange rate provider',
+                'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred',
+            ], 500);
+        }
+    }
+
+    /**
+     * Test an exchange rate provider connection.
+     *
+     * @param string $uuid
+     * @return JsonResponse
+     */
+    public function test(string $uuid): JsonResponse
+    {
+        try {
+            $tenantId = auth()->user()->tenant_id;
+
+            // Validate UUID format
+            if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $uuid)) {
+                return response()->json([
+                    'message' => 'Provider not found',
+                ], 404);
+            }
+
+            // Find provider
+            $provider = ExchangeRateProvider::where('uuid', $uuid)
+                ->where('tenant_id', $tenantId)
+                ->first();
+
+            if (!$provider) {
+                return response()->json([
+                    'message' => 'Provider not found',
+                ], 404);
+            }
+
+            // Test the provider connection
+            try {
+                $testResult = $this->providerManagementService->testProvider($provider);
+
+                Log::info('Exchange rate provider test completed', [
+                    'tenant_id' => $tenantId,
+                    'provider_uuid' => $provider->uuid,
+                    'provider_name' => $provider->name,
+                    'test_success' => $testResult['success'],
+                ]);
+
+                return response()->json([
+                    'message' => $testResult['success'] ? 'Provider test successful' : 'Provider test failed',
+                    'data' => $testResult,
+                ], $testResult['success'] ? 200 : 422);
+
+            } catch (\Exception $e) {
+                Log::warning('Exchange rate provider test failed', [
+                    'tenant_id' => $tenantId,
+                    'provider_uuid' => $provider->uuid,
+                    'provider_name' => $provider->name,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return response()->json([
+                    'message' => 'Provider test failed',
+                    'data' => [
+                        'success' => false,
+                        'error' => $e->getMessage(),
+                        'response_time' => null,
+                        'rate' => null,
+                    ],
+                ], 422);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to test exchange rate provider', [
+                'tenant_id' => auth()->user()->tenant_id ?? null,
+                'provider_uuid' => $uuid ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to test exchange rate provider',
                 'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred',
             ], 500);
         }

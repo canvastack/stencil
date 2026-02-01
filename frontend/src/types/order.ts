@@ -19,6 +19,7 @@ export enum OrderStatus {
   FullPayment = 'full_payment',               // 100% payment - Account Receivable
   
   // Production and quality phase
+  Processing = 'processing',                  // Legacy status - maps to InProduction
   InProduction = 'in_production',             // Being produced by vendor
   QualityControl = 'quality_control',         // Quality inspection
   

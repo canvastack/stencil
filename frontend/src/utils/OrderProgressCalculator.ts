@@ -235,6 +235,7 @@ export class OrderProgressCalculator {
     [OrderStatus.AwaitingPayment]: BusinessStage.AWAITING_PAYMENT,
     [OrderStatus.PartialPayment]: BusinessStage.PARTIAL_PAYMENT,
     [OrderStatus.FullPayment]: BusinessStage.FULL_PAYMENT,
+    [OrderStatus.Processing]: BusinessStage.IN_PRODUCTION, // Legacy status - maps to IN_PRODUCTION
     [OrderStatus.InProduction]: BusinessStage.IN_PRODUCTION,
     [OrderStatus.QualityControl]: BusinessStage.QUALITY_CONTROL,
     [OrderStatus.Shipping]: BusinessStage.SHIPPING,

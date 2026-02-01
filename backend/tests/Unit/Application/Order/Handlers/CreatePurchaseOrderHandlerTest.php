@@ -12,6 +12,7 @@ use App\Domain\Order\Entities\PurchaseOrder;
 use App\Domain\Customer\Entities\Customer;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Shared\ValueObjects\UuidValueObject;
+use App\Application\ExchangeRate\Services\ExchangeRateApplicationService;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use Mockery;
 use Illuminate\Support\Facades\Event;
@@ -23,6 +24,7 @@ class CreatePurchaseOrderHandlerTest extends TestCase
     private OrderRepositoryInterface $orderRepository;
     private CustomerRepositoryInterface $customerRepository;
     private EventDispatcher $eventDispatcher;
+    private ExchangeRateApplicationService $exchangeRateService;
 
     protected function setUp(): void
     {
@@ -32,11 +34,13 @@ class CreatePurchaseOrderHandlerTest extends TestCase
         $this->orderRepository = Mockery::mock(OrderRepositoryInterface::class);
         $this->customerRepository = Mockery::mock(CustomerRepositoryInterface::class);
         $this->eventDispatcher = Mockery::mock(EventDispatcher::class);
+        $this->exchangeRateService = Mockery::mock(ExchangeRateApplicationService::class);
         
         $this->useCase = new CreatePurchaseOrderUseCase(
             $this->orderRepository,
             $this->customerRepository,
-            $this->eventDispatcher
+            $this->eventDispatcher,
+            $this->exchangeRateService
         );
         $this->handler = new CreatePurchaseOrderHandler($this->useCase);
     }

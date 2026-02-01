@@ -48,6 +48,11 @@ class MultiVendorNegotiationTest extends TestCase
 
         $this->tenant = TenantEloquentModel::factory()->create();
         
+        // Create ExchangeRateSetting for tenant (required by CreatePurchaseOrderUseCase)
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $this->tenant->id,
+        ]);
+        
         // Ensure Customer and Vendor have uuid fields
         $this->customer = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
@@ -389,6 +394,12 @@ class MultiVendorNegotiationTest extends TestCase
     public function multi_tenant_vendor_negotiation_isolation(): void
     {
         $tenantB = TenantEloquentModel::factory()->create();
+        
+        // Create ExchangeRateSetting for tenantB
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $tenantB->id,
+        ]);
+        
         $vendorB1 = Vendor::factory()->create(['tenant_id' => $tenantB->id]);
         $vendorB2 = Vendor::factory()->create(['tenant_id' => $tenantB->id]);
 

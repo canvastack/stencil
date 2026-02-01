@@ -107,7 +107,7 @@ class ProviderClientFactoryTest extends TestCase
         );
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown provider: unknown-provider');
+        $this->expectExceptionMessage('Unknown provider code: unknown');
 
         $this->factory->create($provider);
     }

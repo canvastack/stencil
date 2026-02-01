@@ -9,7 +9,46 @@ import {
   ProviderTestResult,
 } from '@/types/exchangeRate';
 
+// Cache for config values
+let configCache: {
+  default_exchange_rate?: number;
+  default_currency?: string;
+  secondary_currency?: string;
+} | null = null;
+
 export const exchangeRateService = {
+  // Get configuration from backend
+  async getConfig(): Promise<{
+    default_exchange_rate: number;
+    default_currency: string;
+    secondary_currency: string;
+  }> {
+    if (configCache) {
+      return configCache;
+    }
+    
+    try {
+      const response = await tenantApiClient.get<{
+        data: {
+          default_exchange_rate: number;
+          default_currency: string;
+          secondary_currency: string;
+        }
+      }>('/config/exchange-rate');
+      
+      configCache = response.data;
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch exchange rate config from backend:', error);
+      // Fallback to hardcoded defaults
+      return {
+        default_exchange_rate: 15750,
+        default_currency: 'IDR',
+        secondary_currency: 'USD',
+      };
+    }
+  },
+
   // Settings endpoints
   async getSettings(): Promise<ExchangeRateSetting> {
     const response = await tenantApiClient.get<{ data: ExchangeRateSetting }>('/settings/exchange-rate-settings');
@@ -19,6 +58,33 @@ export const exchangeRateService = {
   async updateSettings(data: ExchangeRateSettingsFormData): Promise<ExchangeRateSetting> {
     const response = await tenantApiClient.put<{ data: ExchangeRateSetting }>('/settings/exchange-rate-settings', data);
     return response.data || response;
+  },
+
+  // Get current exchange rate
+  async getCurrentRate(): Promise<number> {
+    try {
+      const settings = await this.getSettings();
+      
+      // If manual mode, use manual_rate
+      if (settings.mode === 'manual' && settings.manual_rate) {
+        return settings.manual_rate;
+      }
+      
+      // Otherwise, get latest rate from history
+      const history = await this.getHistory({ per_page: 1 });
+      if (history.data && history.data.length > 0) {
+        return history.data[0].rate;
+      }
+      
+      // Fallback to backend config default rate
+      const config = await this.getConfig();
+      return config.default_exchange_rate;
+    } catch (error) {
+      console.error('Failed to get current exchange rate:', error);
+      // Final fallback to backend config
+      const config = await this.getConfig();
+      return config.default_exchange_rate;
+    }
   },
 
   // Provider endpoints

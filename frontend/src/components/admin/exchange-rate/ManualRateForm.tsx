@@ -1,136 +1,141 @@
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Loader2, Save, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { exchangeRateService } from '@/services/api/exchangeRate';
-import { ExchangeRateSetting } from '@/types/exchangeRate';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Save } from 'lucide-react';
 
 interface ManualRateFormProps {
-  settings: ExchangeRateSetting;
-  onUpdate: (settings: ExchangeRateSetting) => void;
+  currentRate: number | null;
+  onUpdate: (rate: number) => Promise<void>;
+  loading?: boolean;
 }
 
-export default function ManualRateForm({ settings, onUpdate }: ManualRateFormProps) {
-  const [manualRate, setManualRate] = useState<string>(
-    settings.manual_rate?.toString() || ''
-  );
+export function ManualRateForm({ currentRate, onUpdate, loading = false }: ManualRateFormProps) {
+  const [rate, setRate] = useState(currentRate?.toString() || '');
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string>('');
 
-  const validateRate = (value: string): boolean => {
-    setError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-    if (!value.trim()) {
-      setError('Exchange rate is required');
-      return false;
+    const numericRate = parseFloat(rate);
+    
+    // Validation
+    if (isNaN(numericRate) || numericRate <= 0) {
+      setError('Please enter a valid positive number');
+      return;
     }
 
-    const numValue = parseFloat(value);
-
-    if (isNaN(numValue)) {
-      setError('Please enter a valid number');
-      return false;
+    if (numericRate < 1000) {
+      setError('Exchange rate seems too low. Please verify the rate.');
+      return;
     }
 
-    if (numValue <= 0) {
-      setError('Exchange rate must be greater than 0');
-      return false;
-    }
-
-    // Reasonable range for USD to IDR (10,000 - 20,000)
-    if (numValue < 10000 || numValue > 20000) {
-      setError('Exchange rate should be between 10,000 and 20,000 for USD to IDR');
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSave = async () => {
-    if (!validateRate(manualRate)) {
+    if (numericRate > 50000) {
+      setError('Exchange rate seems too high. Please verify the rate.');
       return;
     }
 
     try {
       setSaving(true);
-      const updatedSettings = await exchangeRateService.updateSettings({
-        mode: 'manual',
-        manual_rate: parseFloat(manualRate),
-        auto_update_enabled: settings.auto_update_enabled,
-        update_time: settings.update_time,
-      });
-      onUpdate(updatedSettings);
-      toast.success('Manual exchange rate saved successfully');
-    } catch (error: any) {
-      console.error('Failed to save manual rate:', error);
-      const errorMessage = error?.errors?.manual_rate?.[0] || 'Failed to save exchange rate';
-      toast.error(errorMessage);
-      setError(errorMessage);
+      await onUpdate(numericRate);
+    } catch (error) {
+      setError('Failed to update exchange rate');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleInputChange = (value: string) => {
-    setManualRate(value);
-    setError('');
+  const formatRate = (value: string) => {
+    // Remove non-numeric characters except decimal point
+    const cleaned = value.replace(/[^\d.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      return parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    return cleaned;
+  };
+
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatRate(e.target.value);
+    setRate(formatted);
+    setError(null);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="bg-yellow-50 dark:bg-yellow-950 p-4 rounded-lg">
-        <div className="flex items-start gap-2">
-          <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-yellow-900 dark:text-yellow-100 mb-1">
-              Manual Rate Entry
-            </h4>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              You are responsible for keeping the exchange rate up to date. The rate will be
-              used for all currency conversions until you update it again.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="manualRate">
-          Exchange Rate (1 USD = ? IDR) <span className="text-destructive">*</span>
-        </Label>
-        <Input
-          id="manualRate"
-          type="number"
-          step="0.01"
-          placeholder="15000.00"
-          value={manualRate}
-          onChange={(e) => handleInputChange(e.target.value)}
-          className={error ? 'border-destructive' : ''}
-        />
-        {error && (
-          <p className="text-sm text-destructive flex items-center gap-1">
-            <AlertCircle className="h-4 w-4" />
-            {error}
-          </p>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Enter the current exchange rate from USD to IDR. Example: 15000 means 1 USD = 15,000 IDR
+    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+      <div>
+        <h3 className="font-medium">Manual Exchange Rate</h3>
+        <p className="text-sm text-muted-foreground">
+          Set a fixed USD to IDR exchange rate
         </p>
       </div>
 
-      {settings.last_updated_at && (
-        <div className="text-sm text-muted-foreground">
-          Last updated: {new Date(settings.last_updated_at).toLocaleString()}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="manual-rate">Exchange Rate (USD to IDR)</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">
+              IDR
+            </span>
+            <Input
+              id="manual-rate"
+              type="text"
+              value={rate}
+              onChange={handleRateChange}
+              placeholder="15000"
+              className="pl-12"
+              disabled={loading || saving}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Current rate: {currentRate ? `IDR ${currentRate.toLocaleString()}` : 'Not set'}
+          </p>
         </div>
-      )}
 
-      <Button onClick={handleSave} disabled={saving || !manualRate.trim()}>
-        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        <Save className="mr-2 h-4 w-4" />
-        {saving ? 'Saving...' : 'Save Exchange Rate'}
-      </Button>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="flex items-center gap-2">
+          <Button 
+            type="submit" 
+            disabled={loading || saving || !rate}
+            size="sm"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Update Rate
+              </>
+            )}
+          </Button>
+          
+          {rate && parseFloat(rate) > 0 && (
+            <div className="text-sm text-muted-foreground">
+              $1 USD = IDR {parseFloat(rate).toLocaleString()}
+            </div>
+          )}
+        </div>
+      </form>
+
+      <div className="text-xs text-muted-foreground space-y-1">
+        <p>• Rate should be between IDR 1,000 - 50,000 per USD</p>
+        <p>• This rate will be used for all currency conversions</p>
+        <p>• You can update this rate anytime</p>
+      </div>
     </div>
   );
 }

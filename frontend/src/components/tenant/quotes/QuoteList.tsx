@@ -424,7 +424,7 @@ export const QuoteList = ({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  quotes.map((quote) => (
+                  quotes.filter(q => q && q.id).map((quote) => (
                     <TableRow key={quote.id}>
                       <TableCell>
                         <Checkbox

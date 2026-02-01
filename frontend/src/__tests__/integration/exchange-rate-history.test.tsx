@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, test, expect, vi, beforeEach } from 'vitest';
-import ExchangeRateHistory from '@/components/admin/exchange-rate/ExchangeRateHistory';
+import { ExchangeRateHistory } from '@/components/admin/exchange-rate/ExchangeRateHistory';
 import { exchangeRateService } from '@/services/api/exchangeRate';
 
 // Mock the exchange rate service

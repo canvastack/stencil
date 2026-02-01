@@ -90,8 +90,8 @@ class ExchangeRateProviderSeeder extends Seeder
                     'monthly_quota' => 0, // 0 indicates unlimited
                     'priority' => 3,
                     'is_enabled' => true,
-                    'warning_threshold' => 0,
-                    'critical_threshold' => 0,
+                    'warning_threshold' => 100, // Set to 100 for unlimited providers
+                    'critical_threshold' => 50, // Set to 50 for unlimited providers
                     'created_at' => now(),
                     'updated_at' => now(),
                 ],
@@ -107,8 +107,8 @@ class ExchangeRateProviderSeeder extends Seeder
                     'monthly_quota' => 0, // 0 indicates unlimited
                     'priority' => 4,
                     'is_enabled' => true,
-                    'warning_threshold' => 0,
-                    'critical_threshold' => 0,
+                    'warning_threshold' => 100, // Set to 100 for unlimited providers
+                    'critical_threshold' => 50, // Set to 50 for unlimited providers
                     'created_at' => now(),
                     'updated_at' => now(),
                 ],

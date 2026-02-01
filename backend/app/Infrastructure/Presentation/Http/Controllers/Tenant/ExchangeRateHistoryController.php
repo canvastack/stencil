@@ -28,14 +28,14 @@ class ExchangeRateHistoryController extends Controller
             $validator = Validator::make($request->all(), [
                 'page' => 'sometimes|integer|min:1',
                 'per_page' => 'sometimes|integer|min:1|max:100',
-                'date_from' => 'sometimes|date',
-                'start_date' => 'sometimes|date',
-                'date_to' => 'sometimes|date|after_or_equal:date_from',
-                'end_date' => 'sometimes|date',
-                'provider_id' => 'sometimes|uuid|exists:exchange_rate_providers,uuid',
-                'provider' => 'sometimes|uuid|exists:exchange_rate_providers,uuid',
-                'event_type' => 'sometimes|string|in:rate_change,provider_switch,api_request,manual_update',
-                'source' => 'sometimes|string|in:manual,api',
+                'date_from' => 'sometimes|nullable|date',
+                'start_date' => 'sometimes|nullable|date',
+                'date_to' => 'sometimes|nullable|date|after_or_equal:date_from',
+                'end_date' => 'sometimes|nullable|date',
+                'provider_id' => 'sometimes|nullable|uuid|exists:exchange_rate_providers,uuid',
+                'provider' => 'sometimes|nullable|uuid|exists:exchange_rate_providers,uuid',
+                'event_type' => 'sometimes|nullable|string|in:rate_change,provider_switch,api_request,manual_update',
+                'source' => 'sometimes|nullable|string|in:manual,api,cached',
             ]);
 
             if ($validator->fails()) {
@@ -53,17 +53,17 @@ class ExchangeRateHistoryController extends Controller
             $dateFrom = $request->input('date_from') ?? $request->input('start_date');
             $dateTo = $request->input('date_to') ?? $request->input('end_date');
             
-            if ($dateFrom) {
+            if ($dateFrom && $dateFrom !== '') {
                 $query->where('created_at', '>=', $dateFrom);
             }
 
-            if ($dateTo) {
+            if ($dateTo && $dateTo !== '') {
                 $query->where('created_at', '<=', $dateTo . ' 23:59:59');
             }
 
             // Apply provider filter (support both parameter formats)
             $providerId = $request->input('provider_id') ?? $request->input('provider');
-            if ($providerId) {
+            if ($providerId && $providerId !== '') {
                 // Convert UUID to internal ID
                 $provider = \App\Models\ExchangeRateProvider::where('uuid', $providerId)
                     ->where('tenant_id', $tenantId)
@@ -75,12 +75,12 @@ class ExchangeRateHistoryController extends Controller
             }
 
             // Apply event type filter
-            if ($request->has('event_type')) {
+            if ($request->has('event_type') && $request->input('event_type') !== '') {
                 $query->where('event_type', $request->input('event_type'));
             }
 
             // Apply source filter
-            if ($request->has('source')) {
+            if ($request->has('source') && $request->input('source') !== '') {
                 $query->where('source', $request->input('source'));
             }
 

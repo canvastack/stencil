@@ -16,6 +16,7 @@ import {
   Loader2,
   AlertCircle,
 } from 'lucide-react';
+import { CurrencyDisplay, CompactCurrencyDisplay } from '@/components/common/CurrencyDisplay';
 import { useOrder, useOrderPayments, useOrderShipments, useOrderHistory, useTransitionOrderState } from '@/hooks/useOrders';
 import { OrderStatus } from '@/types/order';
 import { BusinessStage, OrderProgressCalculator } from '@/utils/OrderProgressCalculator';
@@ -207,9 +208,11 @@ export default function OrderDetail() {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">Rp {subtotal.toLocaleString('id-ID')}</p>
+                      <div className="font-bold">
+                        <CompactCurrencyDisplay amount={subtotal} />
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        @ Rp {price.toLocaleString('id-ID')}
+                        @ <CompactCurrencyDisplay amount={price} />
                       </p>
                     </div>
                   </div>
@@ -227,17 +230,25 @@ export default function OrderDetail() {
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
                   <span className="font-medium">
-                    Rp {currentOrder.items.reduce((sum: number, item: any) => {
-                      const price = item.price || item.unit_price || item.pricing?.unit_price || 0;
-                      const quantity = item.quantity || 1;
-                      const subtotal = item.subtotal || (price * quantity);
-                      return sum + subtotal;
-                    }, 0).toLocaleString('id-ID')}
+                    <CompactCurrencyDisplay 
+                      amount={currentOrder.items.reduce((sum: number, item: any) => {
+                        const price = item.price || item.unit_price || item.pricing?.unit_price || 0;
+                        const quantity = item.quantity || 1;
+                        const subtotal = item.subtotal || (price * quantity);
+                        return sum + subtotal;
+                      }, 0)}
+                    />
                   </span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t">
                   <span>Total:</span>
-                  <span className="text-primary">Rp {currentOrder.totalAmount.toLocaleString('id-ID')}</span>
+                  <span className="text-primary">
+                    <CurrencyDisplay 
+                      amount={currentOrder.totalAmount} 
+                      primarySize="lg"
+                      secondarySize="sm"
+                    />
+                  </span>
                 </div>
               </div>
             </div>
@@ -364,7 +375,9 @@ export default function OrderDetail() {
                       {payment.notes && <p className="text-xs text-muted-foreground mt-1">{payment.notes}</p>}
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">Rp {(payment.amount || 0).toLocaleString('id-ID')}</p>
+                      <div className="font-bold">
+                        <CompactCurrencyDisplay amount={payment.amount || 0} />
+                      </div>
                       {payment.status && (
                         <Badge variant="outline" className="text-xs mt-1">
                           {payment.status}

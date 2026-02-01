@@ -71,10 +71,60 @@ class ProviderManagementService
         }
         
         try {
-            $client = $this->clientFactory->create($provider);
+            $domainProvider = $provider->toDomainEntity();
+            $client = $this->clientFactory->create($domainProvider);
             return $client->testConnection();
         } catch (\Exception $e) {
             throw new \Exception("API key validation failed for {$provider->name}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Test a provider connection and get sample rate
+     * 
+     * @param ExchangeRateProvider $provider
+     * @return array Test result with success status, response time, and sample rate
+     * @throws \Exception If test fails
+     */
+    public function testProvider(ExchangeRateProvider $provider): array
+    {
+        $startTime = microtime(true);
+        
+        try {
+            $domainProvider = $provider->toDomainEntity();
+            $client = $this->clientFactory->create($domainProvider);
+            
+            // Test connection first
+            if (!$client->testConnection()) {
+                return [
+                    'success' => false,
+                    'error' => 'Connection test failed',
+                    'response_time' => null,
+                    'rate' => null,
+                ];
+            }
+            
+            // Try to get a sample rate (USD to IDR as default test)
+            $rate = $client->fetchRate('USD', 'IDR');
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2); // Convert to milliseconds
+            
+            return [
+                'success' => true,
+                'error' => null,
+                'response_time' => $responseTime,
+                'rate' => $rate,
+                'test_pair' => 'USD/IDR',
+            ];
+            
+        } catch (\Exception $e) {
+            $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'response_time' => $responseTime,
+                'rate' => null,
+            ];
         }
     }
 

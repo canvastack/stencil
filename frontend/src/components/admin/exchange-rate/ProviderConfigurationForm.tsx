@@ -1,368 +1,332 @@
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import {
-  Loader2,
-  Save,
-  TestTube,
-  ChevronUp,
-  ChevronDown,
-  Trash2,
-  Plus,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Loader2, 
+  Settings, 
+  Key, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle,
+  Infinity,
+  TrendingUp
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { exchangeRateService } from '@/services/api/exchangeRate';
-import { ExchangeRateProvider, ProviderFormData } from '@/types/exchangeRate';
+import { useToast } from '@/hooks/use-toast';
+import { tenantApiClient } from '@/services/tenant/tenantApiClient';
+
+interface Provider {
+  uuid: string;
+  name: string;
+  code: string;
+  is_enabled: boolean;
+  requires_api_key: boolean;
+  api_key?: string;
+  is_unlimited: boolean;
+  monthly_quota: number;
+  priority: number;
+  warning_threshold: number;
+  critical_threshold: number;
+  remaining_quota: number | null;
+  quota_percentage: number;
+  next_reset_date: string;
+}
 
 interface ProviderConfigurationFormProps {
-  providers: ExchangeRateProvider[];
-  activeProviderId: string | null;
+  providers: Provider[];
   onUpdate: () => void;
 }
 
-export default function ProviderConfigurationForm({
-  providers,
-  activeProviderId,
-  onUpdate,
-}: ProviderConfigurationFormProps) {
+export function ProviderConfigurationForm({ providers, onUpdate }: ProviderConfigurationFormProps) {
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
-  const [testingProvider, setTestingProvider] = useState<string | null>(null);
-  const [savingProvider, setSavingProvider] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<ProviderFormData>>({});
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  const [testing, setTesting] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const { toast } = useToast();
 
-  const sortedProviders = [...providers].sort((a, b) => a.priority - b.priority);
+  const getQuotaStatus = (provider: Provider) => {
+    if (provider.is_unlimited) {
+      return { color: 'green', label: 'Unlimited', icon: Infinity };
+    }
 
-  const handleEdit = (provider: ExchangeRateProvider) => {
-    setEditingProvider(provider.uuid);
-    setFormData({
-      name: provider.name,
-      api_url: provider.api_url,
-      monthly_quota: provider.monthly_quota,
-      priority: provider.priority,
-      enabled: provider.enabled,
-      warning_threshold: provider.warning_threshold,
-      critical_threshold: provider.critical_threshold,
-    });
+    const percentage = provider.quota_percentage;
+    if (percentage >= 90) {
+      return { color: 'red', label: 'Critical', icon: XCircle };
+    } else if (percentage >= 70) {
+      return { color: 'yellow', label: 'Warning', icon: AlertTriangle };
+    } else {
+      return { color: 'green', label: 'Good', icon: CheckCircle };
+    }
   };
 
-  const handleCancel = () => {
-    setEditingProvider(null);
-    setFormData({});
-  };
-
-  const handleSave = async (uuid: string) => {
+  const handleToggleProvider = async (provider: Provider) => {
     try {
-      setSavingProvider(uuid);
-      await exchangeRateService.updateProvider(uuid, formData);
-      toast.success('Provider updated successfully');
-      setEditingProvider(null);
-      setFormData({});
+      setSaving(prev => ({ ...prev, [provider.uuid]: true }));
+      
+      await tenantApiClient.put(`/settings/exchange-rate-providers/${provider.uuid}`, {
+        is_enabled: !provider.is_enabled
+      });
+
+      toast({
+        title: 'Success',
+        description: `Provider ${provider.is_enabled ? 'disabled' : 'enabled'} successfully`,
+      });
+
       onUpdate();
     } catch (error: any) {
-      console.error('Failed to update provider:', error);
-      toast.error(error?.message || 'Failed to update provider');
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to update provider',
+        variant: 'destructive',
+      });
     } finally {
-      setSavingProvider(null);
+      setSaving(prev => ({ ...prev, [provider.uuid]: false }));
     }
   };
 
-  const handleTest = async (uuid: string) => {
-    try {
-      setTestingProvider(uuid);
-      const result = await exchangeRateService.testProviderConnection(uuid);
-      if (result.success) {
-        toast.success(
-          <div>
-            <div className="font-semibold">Connection successful!</div>
-            <div className="text-sm">
-              Current rate: 1 USD = {result.rate?.toLocaleString()} IDR
-            </div>
-          </div>
-        );
-      } else {
-        toast.error(result.message || 'Connection test failed');
-      }
-    } catch (error: any) {
-      console.error('Failed to test provider:', error);
-      toast.error(error?.message || 'Failed to test provider connection');
-    } finally {
-      setTestingProvider(null);
-    }
-  };
-
-  const handleToggleEnabled = async (uuid: string, enabled: boolean) => {
-    try {
-      await exchangeRateService.updateProvider(uuid, { enabled });
-      toast.success(`Provider ${enabled ? 'enabled' : 'disabled'} successfully`);
-      onUpdate();
-    } catch (error: any) {
-      console.error('Failed to toggle provider:', error);
-      toast.error(error?.message || 'Failed to update provider');
-    }
-  };
-
-  const handlePriorityChange = async (uuid: string, direction: 'up' | 'down') => {
-    const provider = providers.find((p) => p.uuid === uuid);
-    if (!provider) return;
-
-    const newPriority = direction === 'up' ? provider.priority - 1 : provider.priority + 1;
-
-    if (newPriority < 1) return;
-
-    try {
-      await exchangeRateService.updateProvider(uuid, { priority: newPriority });
-      toast.success('Provider priority updated');
-      onUpdate();
-    } catch (error: any) {
-      console.error('Failed to update priority:', error);
-      toast.error(error?.message || 'Failed to update priority');
-    }
-  };
-
-  const handleDelete = async (uuid: string) => {
-    if (!confirm('Are you sure you want to delete this provider?')) {
+  const handleUpdateApiKey = async (provider: Provider) => {
+    const apiKey = apiKeys[provider.uuid];
+    if (!apiKey?.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter an API key',
+        variant: 'destructive',
+      });
       return;
     }
 
     try {
-      await exchangeRateService.deleteProvider(uuid);
-      toast.success('Provider deleted successfully');
+      setSaving(prev => ({ ...prev, [provider.uuid]: true }));
+      
+      await tenantApiClient.put(`/settings/exchange-rate-providers/${provider.uuid}`, {
+        api_key: apiKey.trim()
+      });
+
+      toast({
+        title: 'Success',
+        description: 'API key updated successfully',
+      });
+
+      setApiKeys(prev => ({ ...prev, [provider.uuid]: '' }));
+      setEditingProvider(null);
       onUpdate();
     } catch (error: any) {
-      console.error('Failed to delete provider:', error);
-      toast.error(error?.message || 'Failed to delete provider');
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to update API key',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(prev => ({ ...prev, [provider.uuid]: false }));
+    }
+  };
+
+  const handleTestConnection = async (provider: Provider) => {
+    try {
+      setTesting(prev => ({ ...prev, [provider.uuid]: true }));
+      
+      const response = await tenantApiClient.post(`/settings/exchange-rate-providers/${provider.uuid}/test`);
+      
+      if (response.data.success) {
+        toast({
+          title: 'Success',
+          description: 'Connection test successful',
+        });
+      } else {
+        toast({
+          title: 'Test Failed',
+          description: response.data.message || 'Connection test failed',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Test Failed',
+        description: error.response?.data?.message || 'Connection test failed',
+        variant: 'destructive',
+      });
+    } finally {
+      setTesting(prev => ({ ...prev, [provider.uuid]: false }));
     }
   };
 
   return (
     <div className="space-y-4">
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold">API Providers</h3>
-            <p className="text-sm text-muted-foreground">
-              Configure external API providers for automatic exchange rate fetching
-            </p>
-          </div>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold">Provider Configuration</h2>
+        <p className="text-muted-foreground">
+          Configure and manage exchange rate API providers
+        </p>
+      </div>
 
-        <div className="space-y-4">
-          {sortedProviders.map((provider, index) => (
-            <Card key={provider.uuid} className="p-4">
-              <div className="space-y-4">
-                <div className="flex items-start justify-between">
+      <div className="grid gap-4">
+        {providers.map((provider) => {
+          const quotaStatus = getQuotaStatus(provider);
+          const StatusIcon = quotaStatus.icon;
+
+          return (
+            <Card key={provider.uuid} className={`${!provider.is_enabled ? 'opacity-60' : ''}`}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex flex-col gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => handlePriorityChange(provider.uuid, 'up')}
-                        disabled={index === 0}
-                      >
-                        <ChevronUp className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => handlePriorityChange(provider.uuid, 'down')}
-                        disabled={index === sortedProviders.length - 1}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{provider.name}</h4>
-                        <Badge variant="outline">Priority {provider.priority}</Badge>
-                        {provider.uuid === activeProviderId && (
-                          <Badge variant="default">Active</Badge>
-                        )}
-                        {provider.enabled ? (
-                          <Badge variant="default" className="bg-green-500">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Enabled
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Disabled
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{provider.api_url}</p>
-                    </div>
+                    <CardTitle className="text-lg">{provider.name}</CardTitle>
+                    <Badge variant={provider.is_enabled ? 'default' : 'secondary'}>
+                      Priority {provider.priority}
+                    </Badge>
+                    <Badge 
+                      variant="outline" 
+                      className={`
+                        ${quotaStatus.color === 'green' ? 'border-green-500 text-green-700' : ''}
+                        ${quotaStatus.color === 'yellow' ? 'border-yellow-500 text-yellow-700' : ''}
+                        ${quotaStatus.color === 'red' ? 'border-red-500 text-red-700' : ''}
+                      `}
+                    >
+                      <StatusIcon className="h-3 w-3 mr-1" />
+                      {quotaStatus.label}
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={provider.enabled}
-                      onCheckedChange={(checked) =>
-                        handleToggleEnabled(provider.uuid, checked)
-                      }
-                    />
-                  </div>
+                  
+                  <Switch
+                    checked={provider.is_enabled}
+                    onCheckedChange={() => handleToggleProvider(provider)}
+                    disabled={saving[provider.uuid]}
+                  />
                 </div>
+                
+                <CardDescription>
+                  {provider.is_unlimited ? (
+                    'Unlimited API requests'
+                  ) : (
+                    `${provider.remaining_quota?.toLocaleString() || 0} / ${provider.monthly_quota.toLocaleString()} requests remaining`
+                  )}
+                </CardDescription>
+              </CardHeader>
 
-                {editingProvider === provider.uuid ? (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`api-key-${provider.uuid}`}>API Key</Label>
-                        <Input
-                          id={`api-key-${provider.uuid}`}
-                          type="password"
-                          placeholder="Enter API key (if required)"
-                          value={formData.api_key || ''}
-                          onChange={(e) =>
-                            setFormData({ ...formData, api_key: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`monthly-quota-${provider.uuid}`}>Monthly Quota</Label>
-                        <Input
-                          id={`monthly-quota-${provider.uuid}`}
-                          type="number"
-                          placeholder="0 for unlimited"
-                          value={formData.monthly_quota || 0}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              monthly_quota: parseInt(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </div>
+              <CardContent className="space-y-4">
+                {/* Quota Progress Bar */}
+                {!provider.is_unlimited && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Quota Usage</span>
+                      <span>{(provider.quota_percentage || 0).toFixed(1)}%</span>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`warning-threshold-${provider.uuid}`}>Warning Threshold</Label>
-                        <Input
-                          id={`warning-threshold-${provider.uuid}`}
-                          type="number"
-                          value={formData.warning_threshold || 50}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              warning_threshold: parseInt(e.target.value) || 50,
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`critical-threshold-${provider.uuid}`}>Critical Threshold</Label>
-                        <Input
-                          id={`critical-threshold-${provider.uuid}`}
-                          type="number"
-                          value={formData.critical_threshold || 20}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              critical_threshold: parseInt(e.target.value) || 20,
-                            })
-                          }
-                        />
-                      </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${
+                          (provider.quota_percentage || 0) >= 90 ? 'bg-red-500' :
+                          (provider.quota_percentage || 0) >= 70 ? 'bg-yellow-500' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(provider.quota_percentage || 0, 100)}%` }}
+                      />
                     </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleSave(provider.uuid)}
-                        disabled={savingProvider === provider.uuid}
-                      >
-                        {savingProvider === provider.uuid && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
-                        <Save className="mr-2 h-4 w-4" />
-                        Save
-                      </Button>
-                      <Button variant="outline" onClick={handleCancel}>
-                        Cancel
-                      </Button>
+                    <div className="text-xs text-muted-foreground">
+                      Resets on {new Date(provider.next_reset_date).toLocaleDateString()}
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(provider)}
-                    >
-                      Edit Configuration
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTest(provider.uuid)}
-                      disabled={testingProvider === provider.uuid || !provider.enabled}
-                    >
-                      {testingProvider === provider.uuid ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <TestTube className="mr-2 h-4 w-4" />
-                      )}
-                      Test Connection
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(provider.uuid)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 )}
 
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Monthly Quota:</span>{' '}
-                    <span className="font-medium">
-                      {provider.monthly_quota === 0
-                        ? 'Unlimited'
-                        : provider.monthly_quota.toLocaleString()}
-                    </span>
+                {/* API Key Configuration */}
+                {provider.requires_api_key && (
+                  <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      <Key className="h-4 w-4" />
+                      <Label className="font-medium">API Key Configuration</Label>
+                    </div>
+                    
+                    {editingProvider === provider.uuid ? (
+                      <div className="space-y-3">
+                        <Input
+                          type="password"
+                          placeholder="Enter API key"
+                          value={apiKeys[provider.uuid] || ''}
+                          onChange={(e) => setApiKeys(prev => ({ 
+                            ...prev, 
+                            [provider.uuid]: e.target.value 
+                          }))}
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleUpdateApiKey(provider)}
+                            disabled={saving[provider.uuid]}
+                          >
+                            {saving[provider.uuid] ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingProvider(null);
+                              setApiKeys(prev => ({ ...prev, [provider.uuid]: '' }));
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {provider.api_key ? 'API key configured' : 'No API key set'}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingProvider(provider.uuid)}
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Configure
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Warning:</span>{' '}
-                    <span className="font-medium">{provider.warning_threshold}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Critical:</span>{' '}
-                    <span className="font-medium">{provider.critical_threshold}</span>
-                  </div>
+                )}
+
+                {/* Test Connection */}
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleTestConnection(provider)}
+                    disabled={testing[provider.uuid] || !provider.is_enabled}
+                  >
+                    {testing[provider.uuid] ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                    )}
+                    Test Connection
+                  </Button>
                 </div>
-              </div>
+
+                {/* Provider Info */}
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>• Warning threshold: {provider.warning_threshold} requests</p>
+                  <p>• Critical threshold: {provider.critical_threshold} requests</p>
+                  {provider.requires_api_key && (
+                    <p>• Requires API key for authentication</p>
+                  )}
+                </div>
+              </CardContent>
             </Card>
-          ))}
-        </div>
-
-        {sortedProviders.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>No API providers configured</p>
-            <p className="text-sm">Add providers to enable automatic rate fetching</p>
-          </div>
-        )}
-      </Card>
-
-      <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-          Provider Priority
-        </h4>
-        <p className="text-sm text-blue-700 dark:text-blue-300">
-          Providers are used in priority order (1 = highest). When a provider's quota is
-          exhausted, the system automatically switches to the next available provider.
-        </p>
+          );
+        })}
       </div>
+
+      {providers.length === 0 && (
+        <Alert>
+          <AlertDescription>
+            No exchange rate providers configured. Please contact your administrator.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

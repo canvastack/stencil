@@ -21,7 +21,6 @@ import {
 import {
   Plus,
   CalendarIcon,
-  DollarSign,
   Package,
   User,
   Building,
@@ -29,10 +28,12 @@ import {
   X,
   TrendingUp,
   TrendingDown,
+  Banknote,
 } from 'lucide-react';
 import { Quote, CreateQuoteRequest, UpdateQuoteRequest } from '@/services/tenant/quoteService';
 import { tenantApiClient } from '@/services/tenant/tenantApiClient';
 import { ordersService } from '@/services/api/orders';
+import { exchangeRateService } from '@/services/api/exchangeRate';
 import { Order } from '@/types/order';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -41,6 +42,7 @@ import { RoundingButtonGroup, RoundingMode } from './RoundingButtonGroup';
 import { TermsTemplateDialog } from './TermsTemplateDialog';
 import { InternalNotesTemplateDialog } from './InternalNotesTemplateDialog';
 import { QuoteFormSkeleton } from './QuoteFormSkeleton';
+import { getDefaultExchangeRateSync } from '@/lib/currency';
 
 const quoteItemSchema = z.object({
   product_id: z.string().optional(),
@@ -91,6 +93,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
   const [roundingModes, setRoundingModes] = useState<Record<number, RoundingMode>>({});
   const [termsEditorKey, setTermsEditorKey] = useState(0);
   const [notesEditorKey, setNotesEditorKey] = useState(0);
+  const [exchangeRate, setExchangeRate] = useState<number>(getDefaultExchangeRateSync()); // Use env config as initial value
 
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
@@ -136,6 +139,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
           loadCustomers(),
           loadVendors(),
           loadProducts(),
+          loadExchangeRate(),
         ]);
       } catch (error) {
         console.error('❌ Failed to load initial data:', error);
@@ -424,8 +428,46 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
     }
   };
 
+  const loadExchangeRate = async () => {
+    try {
+      console.log('💱 Loading exchange rate...');
+      const settings = await exchangeRateService.getSettings();
+      
+      // Get rate from manual_rate if in manual mode, or from latest history
+      let rate = getDefaultExchangeRateSync(); // Use env config as fallback
+      
+      if (settings.mode === 'manual' && settings.manual_rate) {
+        rate = settings.manual_rate;
+        console.log('💱 Using manual exchange rate:', rate);
+      } else {
+        // Try to get latest rate from history
+        try {
+          const history = await exchangeRateService.getHistory({ per_page: 1 });
+          if (history?.data && history.data.length > 0 && history.data[0]?.rate) {
+            rate = history.data[0].rate;
+            console.log('💱 Using latest exchange rate from history:', rate);
+          }
+        } catch (historyError) {
+          console.warn('💱 Could not fetch exchange rate history, using fallback');
+        }
+      }
+      
+      setExchangeRate(rate);
+      console.log('💱 Exchange rate set to:', rate);
+    } catch (error) {
+      console.error('❌ Failed to load exchange rate:', error);
+      // Keep using default fallback rate from env
+      console.log('💱 Using fallback exchange rate from env:', exchangeRate);
+    }
+  };
+
   const handleSubmit = async (data: QuoteFormData) => {
     try {
+      // Calculate initial_offer from items total
+      const initialOffer = data.items.reduce((sum, item) => {
+        return sum + (item.quantity * item.unit_price);
+      }, 0);
+
       const submitData: CreateQuoteRequest | UpdateQuoteRequest = {
         ...data,
         valid_until: data.valid_until.toISOString(),
@@ -435,9 +477,11 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
         })),
       };
 
-      // Include order_id if coming from order context
+      // Include order_id and initial_offer if coming from order context
       if (orderId && !quote) {
         (submitData as CreateQuoteRequest).order_id = orderId;
+        // Add initial_offer for backend vendor negotiation
+        (submitData as any).initial_offer = initialOffer;
       }
 
       await onSubmit(submitData);
@@ -479,9 +523,6 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
     const total = quantity * unitPrice;
     return isNaN(total) ? 0 : total;
   };
-
-  // Currency conversion rate (IDR to USD)
-  const USD_TO_IDR_RATE = 15750; // Update this rate as needed
   
   const formatCurrency = (amount: number, currency: 'IDR' | 'USD' = 'IDR') => {
     if (isNaN(amount)) return currency === 'IDR' ? 'Rp 0' : '$0.00';
@@ -504,7 +545,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
   };
 
   const convertToUSD = (idrAmount: number) => {
-    return idrAmount / USD_TO_IDR_RATE;
+    return idrAmount / exchangeRate;
   };
 
   // Profit margin calculation
@@ -875,7 +916,14 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                             <FormItem>
                               <FormLabel>Description</FormLabel>
                               <FormControl>
-                                <Input placeholder="Item description" {...field} />
+                                <WysiwygEditor
+                                  value={field.value || ''}
+                                  onChange={field.onChange}
+                                  label=""
+                                  placeholder="Item description..."
+                                  height={150}
+                                  required={false}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -920,7 +968,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                               <FormLabel>Vendor Cost (IDR)</FormLabel>
                               <FormControl>
                                 <div className="relative">
-                                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                  <Banknote className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                   <Input
                                     type="number"
                                     min="0"
@@ -952,7 +1000,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                               <div className="flex items-center gap-2">
                                 <FormControl>
                                   <div className="relative flex-1">
-                                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                    <Banknote className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                     <Input
                                       type="number"
                                       min="0"
@@ -988,6 +1036,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                         {(() => {
                           const vendorCost = watchedItems[index]?.vendor_cost || 0;
                           const unitPrice = watchedItems[index]?.unit_price || 0;
+                          const quantity = watchedItems[index]?.quantity || 0;
                           const profit = calculateProfitMargin(unitPrice, vendorCost);
                           
                           if (!profit) {
@@ -1004,6 +1053,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                           const profitBgColor = isLoss ? 'bg-red-100 dark:bg-red-900' : 'bg-green-100 dark:bg-green-900';
                           const profitIconColor = isLoss ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400';
                           const ProfitIcon = isLoss ? TrendingDown : TrendingUp;
+                          const totalItemProfit = profit.markupAmount * quantity;
                           
                           return (
                             <div className="space-y-1">
@@ -1026,9 +1076,18 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                                         <div>Vendor Cost: {formatCurrency(vendorCost, 'IDR')}</div>
                                         <div className="border-t pt-1 mt-1">
                                           <div className={`font-semibold ${profitColor}`}>
-                                            {isLoss ? 'Loss' : 'Markup'}: {formatCurrency(Math.abs(profit.markupAmount), 'IDR')}
+                                            {isLoss ? 'Loss' : 'Markup'} per unit: {formatCurrency(Math.abs(profit.markupAmount), 'IDR')}
                                           </div>
-                                          <div>{isLoss ? 'Loss' : 'Profit'} Margin: {Math.abs(profit.profitPercentage).toFixed(1)}%</div>
+                                          <div className="text-muted-foreground">
+                                            ≈ {formatCurrency(convertToUSD(Math.abs(profit.markupAmount)), 'USD')}
+                                          </div>
+                                          <div className="mt-1">
+                                            Total {isLoss ? 'Loss' : 'Profit'} (×{quantity}): {formatCurrency(Math.abs(totalItemProfit), 'IDR')}
+                                          </div>
+                                          <div className="text-muted-foreground">
+                                            ≈ {formatCurrency(convertToUSD(Math.abs(totalItemProfit)), 'USD')}
+                                          </div>
+                                          <div className="mt-1">{isLoss ? 'Loss' : 'Profit'} Margin: {Math.abs(profit.profitPercentage).toFixed(1)}%</div>
                                         </div>
                                         <div className="text-xs opacity-75 mt-2">
                                           Formula: (Customer Price - Vendor Cost) / Vendor Cost × 100%
@@ -1044,6 +1103,9 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                                   {Math.abs(profit.profitPercentage).toFixed(1)}% margin
                                 </p>
                               </div>
+                              <div className="text-xs text-muted-foreground">
+                                ≈ {formatCurrency(convertToUSD(Math.abs(profit.markupAmount)), 'USD')} per unit
+                              </div>
                             </div>
                           );
                         })()}
@@ -1056,12 +1118,17 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                             <FormItem>
                               <FormLabel>Total</FormLabel>
                               <FormControl>
-                                <Input
-                                  {...field}
-                                  value={formatCurrency(field.value || 0)}
-                                  disabled
-                                  className="font-semibold"
-                                />
+                                <div className="space-y-1">
+                                  <Input
+                                    {...field}
+                                    value={formatCurrency(field.value || 0)}
+                                    disabled
+                                    className="font-semibold"
+                                  />
+                                  <div className="text-xs text-muted-foreground pl-1">
+                                    ≈ {formatCurrency(convertToUSD(field.value || 0), 'USD')}
+                                  </div>
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -1102,7 +1169,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
             <div className="border-t pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* LEFT: Total Profit */}
-                {totalProfit && (
+                {totalProfit ? (
                   <div className="space-y-2">
                     <div className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
                       Total Profit
@@ -1128,6 +1195,9 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                     <div className={`text-2xl font-bold ${totalProfit.totalMarkup < 0 ? 'text-red-600' : 'text-green-600'}`}>
                       {totalProfit.totalMarkup < 0 ? '-' : '+'}{formatCurrency(Math.abs(totalProfit.totalMarkup), 'IDR')}
                     </div>
+                    <div className="text-lg text-muted-foreground">
+                      ≈ {formatCurrency(convertToUSD(Math.abs(totalProfit.totalMarkup)), 'USD')}
+                    </div>
                     <div className="flex items-center gap-1">
                       {totalProfit.totalMarkup < 0 ? (
                         <TrendingDown className="w-4 h-4 text-red-600" />
@@ -1139,9 +1209,11 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                       </span>
                     </div>
                   </div>
+                ) : (
+                  <div></div>
                 )}
                 
-                {/* RIGHT: Total Amount */}
+                {/* RIGHT: Total Amount - Always on the right */}
                 <div className="text-right space-y-2">
                   <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
                   <div className="text-2xl font-bold text-primary">
@@ -1158,7 +1230,7 @@ export const QuoteForm = ({ quote, onSubmit, onCancel, loading, isRevision }: Qu
                   Excluding taxes and fees
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Exchange rate: 1 USD = Rp {USD_TO_IDR_RATE.toLocaleString('id-ID')}
+                  Exchange rate: 1 USD = Rp {exchangeRate.toLocaleString('id-ID')}
                 </div>
               </div>
             </div>

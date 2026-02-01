@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import ManualRateForm from '@/components/admin/exchange-rate/ManualRateForm';
+import { ManualRateForm } from '@/components/admin/exchange-rate/ManualRateForm';
 import { exchangeRateService } from '@/services/api/exchangeRate';
 import type { ExchangeRateSetting } from '@/types/exchangeRate';
 

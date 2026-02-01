@@ -66,6 +66,12 @@ class CompleteOrderLifecycleTest extends TestCase
         Event::fake();
 
         $this->tenant = TenantEloquentModel::factory()->create();
+        
+        // Create ExchangeRateSetting for tenant (required by CreatePurchaseOrderUseCase)
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $this->tenant->id,
+        ]);
+        
         $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->vendor = Vendor::factory()->create(['tenant_id' => $this->tenant->id]);
         $this->product = Product::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -297,6 +303,12 @@ class CompleteOrderLifecycleTest extends TestCase
     public function order_lifecycle_respects_tenant_isolation(): void
     {
         $tenantB = TenantEloquentModel::factory()->create();
+        
+        // Create ExchangeRateSetting for tenantB
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $tenantB->id,
+        ]);
+        
         $customerB = Customer::factory()->create(['tenant_id' => $tenantB->id]);
         $vendorB = Vendor::factory()->create(['tenant_id' => $tenantB->id]);
         $productB = Product::factory()->create(['tenant_id' => $tenantB->id]);

@@ -5,10 +5,10 @@ import { Loader2, DollarSign, Settings as SettingsIcon, History } from 'lucide-r
 import { toast } from 'sonner';
 import { exchangeRateService } from '@/services/api/exchangeRate';
 import { ExchangeRateSetting, ExchangeRateProvider } from '@/types/exchangeRate';
-import ManualRateForm from '@/components/admin/exchange-rate/ManualRateForm';
-import ProviderConfigurationForm from '@/components/admin/exchange-rate/ProviderConfigurationForm';
-import QuotaDashboard from '@/components/admin/exchange-rate/QuotaDashboard';
-import ExchangeRateHistory from '@/components/admin/exchange-rate/ExchangeRateHistory';
+import { ManualRateForm } from '@/components/admin/exchange-rate/ManualRateForm';
+import { ProviderConfigurationForm } from '@/components/admin/exchange-rate/ProviderConfigurationForm';
+import { QuotaDashboard } from '@/components/admin/exchange-rate/QuotaDashboard';
+import { ExchangeRateHistory } from '@/components/admin/exchange-rate/ExchangeRateHistory';
 
 export default function ExchangeRateSettings() {
   const [settings, setSettings] = useState<ExchangeRateSetting | null>(null);
@@ -40,14 +40,47 @@ export default function ExchangeRateSettings() {
   const handleModeChange = async (mode: 'manual' | 'auto') => {
     if (!settings) return;
 
+    // If switching to manual mode and no manual_rate exists, just switch mode
+    // The ManualRateForm will be shown and user can set the rate there
+    if (mode === 'manual' && !settings.manual_rate) {
+      // Use a default rate (current_rate or 16000 as fallback)
+      const defaultRate = settings.current_rate || 16000;
+      
+      try {
+        const updatedSettings = await exchangeRateService.updateSettings({
+          mode: 'manual',
+          manual_rate: defaultRate,
+          auto_update_enabled: settings.auto_update_enabled,
+          update_time: settings.update_time,
+        });
+        setSettings(updatedSettings);
+        toast.success('Switched to Manual mode. You can now update the rate below.');
+        return;
+      } catch (error) {
+        console.error('Failed to switch to manual mode:', error);
+        toast.error('Failed to switch to manual mode');
+        return;
+      }
+    }
+
     try {
-      const updatedSettings = await exchangeRateService.updateSettings({
+      const updateData: any = {
         mode,
-        manual_rate: settings.manual_rate || undefined,
-        active_provider_id: settings.active_provider_id || undefined,
         auto_update_enabled: settings.auto_update_enabled,
         update_time: settings.update_time,
-      });
+      };
+
+      // Include manual_rate when switching to manual mode
+      if (mode === 'manual') {
+        updateData.manual_rate = settings.manual_rate;
+      }
+
+      // Include active_provider_id when switching to auto mode
+      if (mode === 'auto' && settings.active_provider_id) {
+        updateData.active_provider_id = settings.active_provider_id;
+      }
+
+      const updatedSettings = await exchangeRateService.updateSettings(updateData);
       setSettings(updatedSettings);
       toast.success(`Switched to ${mode === 'manual' ? 'Manual' : 'Automatic'} mode`);
     } catch (error) {

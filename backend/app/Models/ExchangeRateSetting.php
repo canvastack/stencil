@@ -53,7 +53,7 @@ class ExchangeRateSetting extends Model
 
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo(Tenant::class);
+        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::class, 'tenant_id');
     }
 
     public function activeProvider(): BelongsTo

@@ -134,4 +134,26 @@ class ExchangeRateProvider extends Model
 
         return max(0, $currentQuota->quota_limit - $currentQuota->requests_made);
     }
+
+    /**
+     * Convert Eloquent model to Domain Entity
+     * 
+     * @return \App\Domain\ExchangeRate\Entities\Provider
+     */
+    public function toDomainEntity(): \App\Domain\ExchangeRate\Entities\Provider
+    {
+        return new \App\Domain\ExchangeRate\Entities\Provider(
+            code: $this->code,
+            name: $this->name,
+            apiUrl: $this->api_url,
+            apiKey: $this->api_key,
+            requiresApiKey: $this->requires_api_key,
+            isUnlimited: $this->is_unlimited,
+            monthlyQuota: $this->monthly_quota,
+            priority: $this->priority,
+            isEnabled: $this->is_enabled,
+            warningThreshold: $this->warning_threshold,
+            criticalThreshold: $this->critical_threshold
+        );
+    }
 }

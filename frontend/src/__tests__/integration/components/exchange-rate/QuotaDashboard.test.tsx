@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import QuotaDashboard from '@/components/admin/exchange-rate/QuotaDashboard';
+import { QuotaDashboard } from '@/components/admin/exchange-rate/QuotaDashboard';
 import { exchangeRateService } from '@/services/api/exchangeRate';
 import { QuotaStatus } from '@/types/exchangeRate';
 

@@ -77,6 +77,7 @@ import { StatusColorSystem } from '@/utils/StatusColorSystem';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { OrderStatusAnimations, buildAnimationClasses, useOrderStatusAnimations } from '@/utils/OrderStatusAnimations';
+import { CompactCurrencyDisplay } from '@/components/common/CurrencyDisplay';
 
 interface Order {
   id: string;
@@ -380,9 +381,9 @@ export function EnhancedOrderDetailHeader({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-xs sm:text-sm text-muted-foreground" id="amount-card-title">Total Amount</p>
-              <p className="text-sm sm:text-lg font-bold truncate" aria-label={`Total amount: ${totalAmount.toLocaleString('id-ID')} Rupiah`}>
-                Rp {totalAmount.toLocaleString('id-ID')}
-              </p>
+              <div className="text-sm sm:text-lg font-bold truncate" aria-label={`Total amount: ${totalAmount.toLocaleString('id-ID')} Rupiah`}>
+                <CompactCurrencyDisplay amount={totalAmount} />
+              </div>
             </div>
           </div>
         </Card>

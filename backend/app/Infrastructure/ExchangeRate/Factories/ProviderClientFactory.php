@@ -17,20 +17,33 @@ class ProviderClientFactory
      *
      * @param Provider $provider The provider entity
      * @return ExchangeRateClient The API client instance
-     * @throws InvalidArgumentException When provider name is unknown
+     * @throws InvalidArgumentException When provider code is unknown
      */
     public function create(Provider $provider): ExchangeRateClient
     {
-        return match($provider->getName()) {
-            'exchangerate-api.com' => new ExchangeRateApiClient(
+        $code = $provider->getCode();
+        
+        // Match provider code (supports both simple codes and tenant-specific codes)
+        if (str_starts_with($code, 'exchangerate-api')) {
+            return new ExchangeRateApiClient(
                 $provider->getApiKey() ?? throw new InvalidArgumentException('API key required for exchangerate-api.com')
-            ),
-            'currencyapi.com' => new CurrencyApiClient(
+            );
+        }
+        
+        if (str_starts_with($code, 'currencyapi')) {
+            return new CurrencyApiClient(
                 $provider->getApiKey() ?? throw new InvalidArgumentException('API key required for currencyapi.com')
-            ),
-            'fawazahmed0' => new Fawazahmed0Client(),
-            'frankfurter.app' => new FrankfurterClient(),
-            default => throw new InvalidArgumentException("Unknown provider: {$provider->getName()}")
-        };
+            );
+        }
+        
+        if (str_starts_with($code, 'fawazahmed0')) {
+            return new Fawazahmed0Client();
+        }
+        
+        if (str_starts_with($code, 'frankfurter')) {
+            return new FrankfurterClient();
+        }
+        
+        throw new InvalidArgumentException("Unknown provider code: {$code}");
     }
 }

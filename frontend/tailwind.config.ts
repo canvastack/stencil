@@ -137,6 +137,14 @@ export default {
           "0%": { transform: "scaleX(0)", transformOrigin: "left" },
           "100%": { transform: "scaleX(1)", transformOrigin: "left" },
         },
+        "slide-in-from-right": {
+          "0%": { transform: "translateX(100%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
+        },
+        "shrink-width": {
+          "0%": { width: "100%" },
+          "100%": { width: "0%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -154,6 +162,8 @@ export default {
         "modal-exit": "modal-exit 0.2s cubic-bezier(0.4, 0, 1, 1)",
         "status-success": "status-success 0.6s ease-out",
         "progress-fill": "progress-fill 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+        "slide-in-from-right-full": "slide-in-from-right 0.3s ease-out",
+        "shrink-width": "shrink-width linear",
       },
     },
   },

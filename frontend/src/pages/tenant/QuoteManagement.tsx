@@ -83,7 +83,7 @@ const StatCard = ({
 const QuoteManagement = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const {
     quotes,
@@ -161,24 +161,35 @@ const QuoteManagement = () => {
       
       // Type guard: ensure we have customer_id and vendor_id for create
       if ('customer_id' in data && 'vendor_id' in data) {
-        await createQuote(data as CreateQuoteRequest);
+        const newQuote = await createQuote(data as CreateQuoteRequest);
+        
+        // Remove order_id from URL after successful creation
+        if (searchParams.get('order_id')) {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete('order_id');
+          setSearchParams(newSearchParams);
+        }
+        
+        toast({
+          title: 'Success',
+          description: 'Quote created successfully',
+        });
+        
+        setShowCreateDialog(false);
+        
+        // Refresh quotes list
+        await fetchQuotes();
       } else {
         throw new Error('Invalid quote data: missing customer_id or vendor_id');
       }
-      
-      toast({
-        title: 'Success',
-        description: 'Quote created successfully',
-      });
-      
-      setShowCreateDialog(false);
     } catch (error) {
+      console.error('Failed to create quote:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create quote',
+        description: error instanceof Error ? error.message : 'Failed to create quote',
         variant: 'destructive',
       });
-      throw error; // Re-throw to prevent dialog from closing
+      // Don't re-throw - let dialog stay open for user to fix
     } finally {
       setFormLoading(false);
     }

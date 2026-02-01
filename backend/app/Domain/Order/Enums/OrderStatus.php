@@ -24,6 +24,7 @@ enum OrderStatus: string
     case AWAITING_PAYMENT = 'awaiting_payment';
     case PARTIAL_PAYMENT = 'partial_payment';
     case FULL_PAYMENT = 'full_payment';
+    case PROCESSING = 'processing'; // Legacy status - maps to IN_PRODUCTION
     case IN_PRODUCTION = 'in_production';
     case QUALITY_CONTROL = 'quality_control';
     case SHIPPING = 'shipping';
@@ -46,6 +47,7 @@ enum OrderStatus: string
             self::AWAITING_PAYMENT => 'Awaiting Payment',
             self::PARTIAL_PAYMENT => 'Partial Payment',
             self::FULL_PAYMENT => 'Payment Complete',
+            self::PROCESSING => 'Processing', // Legacy - same as IN_PRODUCTION
             self::IN_PRODUCTION => 'In Production',
             self::QUALITY_CONTROL => 'Quality Control',
             self::SHIPPING => 'Shipping',
@@ -80,6 +82,7 @@ enum OrderStatus: string
             self::NEW => 'New order received, awaiting initial review',
             self::DRAFT => 'Order is being prepared',
             self::PENDING => 'Order is pending review and approval',
+            self::PROCESSING => 'Order is being processed', // Legacy status
             self::VENDOR_SOURCING => 'Finding suitable vendor for production',
             self::VENDOR_NEGOTIATION => 'Negotiating terms with vendor',
             self::CUSTOMER_QUOTE => 'Waiting for customer quote approval',
@@ -112,6 +115,7 @@ enum OrderStatus: string
             self::NEW => [self::DRAFT, self::PENDING, self::VENDOR_SOURCING, self::CANCELLED],
             self::DRAFT => [self::PENDING, self::VENDOR_SOURCING, self::CANCELLED],
             self::PENDING => [self::VENDOR_SOURCING, self::CUSTOMER_QUOTE, self::CANCELLED],
+            self::PROCESSING => [self::VENDOR_SOURCING, self::VENDOR_NEGOTIATION, self::CUSTOMER_QUOTE, self::AWAITING_PAYMENT, self::IN_PRODUCTION, self::CANCELLED], // Legacy status - flexible transitions
             self::VENDOR_SOURCING => [self::VENDOR_NEGOTIATION, self::CUSTOMER_QUOTE, self::CANCELLED],
             self::VENDOR_NEGOTIATION => [self::CUSTOMER_QUOTE, self::VENDOR_SOURCING, self::CANCELLED],
             self::CUSTOMER_QUOTE => [self::AWAITING_PAYMENT, self::VENDOR_NEGOTIATION, self::CANCELLED],
@@ -158,6 +162,7 @@ enum OrderStatus: string
     {
         return in_array($this, [
             self::PENDING,
+            self::PROCESSING, // Legacy status
             self::VENDOR_SOURCING,
             self::VENDOR_NEGOTIATION
         ]);
@@ -220,6 +225,7 @@ enum OrderStatus: string
             self::NEW => 'blue',
             self::DRAFT => 'gray',
             self::PENDING => 'yellow',
+            self::PROCESSING => 'yellow', // Legacy status, same as PENDING
             self::VENDOR_SOURCING => 'blue',
             self::VENDOR_NEGOTIATION => 'indigo',
             self::CUSTOMER_QUOTE => 'purple',

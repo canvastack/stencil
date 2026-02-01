@@ -85,6 +85,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used for CORS configuration and generating frontend links.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Currency Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Default exchange rate and currency settings for the application.
+    | Used as fallback when exchange rate API is unavailable.
+    |
+    */
+
+    'default_exchange_rate' => env('DEFAULT_EXCHANGE_RATE', 15750),
+    'default_currency' => env('DEFAULT_CURRENCY', 'IDR'),
+    'secondary_currency' => env('SECONDARY_CURRENCY', 'USD'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

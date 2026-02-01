@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import ProviderConfigurationForm from '@/components/admin/exchange-rate/ProviderConfigurationForm';
+import { ProviderConfigurationForm } from '@/components/admin/exchange-rate/ProviderConfigurationForm';
 import { exchangeRateService } from '@/services/api/exchangeRate';
 import type { ExchangeRateProvider } from '@/types/exchangeRate';
 

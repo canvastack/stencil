@@ -94,6 +94,7 @@ import { PaymentProcessing } from '@/components/orders/PaymentProcessing';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { logAuthDebugInfo, validateTenantAuth } from '@/utils/authDebug';
+import { CompactCurrencyDisplay, CurrencyDisplay } from '@/components/common/CurrencyDisplay';
 
 export default function OrderManagement() {
   const navigate = useNavigate();
@@ -874,7 +875,11 @@ export default function OrderManagement() {
       ),
       cell: ({ row }) => {
         const totalAmount = row.getValue('totalAmount') as number;
-        return <span className="font-semibold">Rp {(totalAmount || 0).toLocaleString('id-ID')}</span>;
+        return (
+          <span className="font-semibold">
+            <CompactCurrencyDisplay amount={totalAmount || 0} />
+          </span>
+        );
       },
     },
     {

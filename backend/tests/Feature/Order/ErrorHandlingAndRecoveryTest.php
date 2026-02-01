@@ -55,6 +55,11 @@ class ErrorHandlingAndRecoveryTest extends TestCase
 
         $this->tenant = TenantEloquentModel::factory()->create();
         
+        // Create ExchangeRateSetting for tenant (required by CreatePurchaseOrderUseCase)
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $this->tenant->id,
+        ]);
+        
         // Ensure Customer, Vendor, Product have uuid fields
         $this->customer = Customer::factory()->create([
             'tenant_id' => $this->tenant->id,
@@ -253,6 +258,11 @@ class ErrorHandlingAndRecoveryTest extends TestCase
     public function cross_tenant_order_access_throws_exception(): void
     {
         $tenantB = TenantEloquentModel::factory()->create();
+        
+        // Create ExchangeRateSetting for tenantB
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $tenantB->id,
+        ]);
 
         $createCommand = new CreatePurchaseOrderCommand(
             tenantId: $this->tenant->uuid,
@@ -286,6 +296,12 @@ class ErrorHandlingAndRecoveryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         $tenantB = TenantEloquentModel::factory()->create();
+        
+        // Create ExchangeRateSetting for tenantB
+        \App\Models\ExchangeRateSetting::factory()->manual()->withRate(15000.0)->create([
+            'tenant_id' => $tenantB->id,
+        ]);
+        
         $vendorB = Vendor::factory()->create(['tenant_id' => $tenantB->id]);
 
         $createCommand = new CreatePurchaseOrderCommand(

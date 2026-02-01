@@ -38,6 +38,12 @@ use App\Http\Controllers\Api\V1\Admin\BusinessTypeController;
 Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
     ->group(function () {
         
+        // Configuration Endpoints
+        Route::prefix('config')->group(function () {
+            Route::get('/exchange-rate', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ConfigController::class, 'exchangeRate'])->name('tenant.config.exchange_rate');
+            Route::get('/', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ConfigController::class, 'index'])->name('tenant.config.index');
+        });
+        
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('tenant.dashboard.index');
         Route::get('/dashboard/stats', [DashboardController::class, 'stats'])->name('tenant.dashboard.stats');
@@ -375,6 +381,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
                 Route::put('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'update'])->name('tenant.settings.exchange_rate_providers.update');
                 Route::delete('/{uuid}', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'destroy'])->name('tenant.settings.exchange_rate_providers.destroy');
                 Route::get('/quota-status', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'quotaStatus'])->name('tenant.settings.exchange_rate_providers.quota_status');
+                Route::post('/{uuid}/test', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\ExchangeRateProviderController::class, 'test'])->name('tenant.settings.exchange_rate_providers.test');
             });
 
             // Exchange Rate History

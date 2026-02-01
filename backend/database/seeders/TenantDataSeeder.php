@@ -419,12 +419,22 @@ class TenantDataSeeder extends Seeder
         }
 
         $orderCount = rand(15, 25);
+        // PT CEX Business Flow - Complete Status Distribution
         $orderStatuses = [
-            'pending' => 15,      // 15%
-            'processing' => 20,   // 20%
-            'shipped' => 25,      // 25%  
-            'delivered' => 35,    // 35% (changed from completed)
-            'cancelled' => 5      // 5%
+            'new' => 5,                    // 5% - New orders
+            'draft' => 5,                  // 5% - Being prepared
+            'pending' => 8,                // 8% - Awaiting review
+            'vendor_sourcing' => 10,       // 10% - Finding vendors
+            'vendor_negotiation' => 12,    // 12% - Negotiating with vendors
+            'customer_quote' => 8,         // 8% - Quote sent to customer
+            'awaiting_payment' => 7,       // 7% - Waiting for payment
+            'partial_payment' => 5,        // 5% - DP received
+            'full_payment' => 5,           // 5% - Full payment received
+            'in_production' => 10,         // 10% - Being produced
+            'quality_control' => 5,        // 5% - QC inspection
+            'shipping' => 8,               // 8% - Being shipped
+            'completed' => 10,             // 10% - Completed & delivered
+            'cancelled' => 2               // 2% - Cancelled
         ];
         
         for ($i = 0; $i < $orderCount; $i++) {
@@ -806,8 +816,33 @@ class TenantDataSeeder extends Seeder
         ];
         
         $statusNotes = match($status) {
+            // Initial stages
+            'new' => ['New order received from customer', 'Order awaiting initial review', 'Customer inquiry converted to order'],
+            'draft' => ['Order being prepared for processing', 'Validating customer requirements', 'Preparing order documentation'],
+            'pending' => ['Order pending admin approval', 'Awaiting final review before vendor sourcing', 'Customer specifications confirmed'],
+            
+            // Vendor sourcing phase
+            'vendor_sourcing' => ['Searching for suitable vendors', 'Evaluating vendor capabilities', 'Requesting quotes from multiple vendors'],
+            'vendor_negotiation' => ['Negotiating pricing with vendor', 'Discussing production timeline', 'Finalizing vendor agreement'],
+            
+            // Customer quote and payment
+            'customer_quote' => ['Quote sent to customer', 'Awaiting customer approval', 'Customer reviewing quotation'],
+            'awaiting_payment' => ['Invoice sent to customer', 'Waiting for payment confirmation', 'Payment reminder sent'],
+            'partial_payment' => ['DP 50% received', 'Down payment confirmed', 'Partial payment processed'],
+            'full_payment' => ['Full payment received', 'Payment complete - ready for production', '100% payment confirmed'],
+            
+            // Production phase
+            'in_production' => ['Vendor started production', 'Production in progress', 'Regular quality checks ongoing'],
+            'quality_control' => ['Product undergoing QC inspection', 'Quality check in progress', 'Final inspection before shipping'],
+            
+            // Delivery phase
+            'shipping' => ['Product shipped to customer', 'In transit to delivery address', 'Tracking number provided to customer'],
+            'completed' => ['Order delivered successfully', 'Customer satisfied with delivery', 'Repeat customer - excellent service'],
+            
+            // Exception cases
             'cancelled' => ['Customer requested cancellation', 'Payment failed - order cancelled', 'Out of stock - order cancelled'],
-            'delivered' => ['Order delivered successfully', 'Customer satisfied with delivery', 'Repeat customer - excellent service'],
+            'refunded' => ['Refund processed to customer', 'Full refund issued', 'Customer refund completed'],
+            
             default => $notes
         };
         
@@ -819,11 +854,34 @@ class TenantDataSeeder extends Seeder
         $baseUpdate = $orderDate->copy();
         
         return match($status) {
-            'pending' => $baseUpdate->addHours(rand(1, 24)),
-            'processing' => $baseUpdate->addDays(rand(1, 3)),
-            'shipped' => $baseUpdate->addDays(rand(2, 7)),
-            'delivered' => $baseUpdate->addDays(rand(3, 14)),
+            // Initial stages - quick updates
+            'new' => $baseUpdate->addHours(rand(1, 6)),
+            'draft' => $baseUpdate->addHours(rand(6, 24)),
+            'pending' => $baseUpdate->addHours(rand(12, 48)),
+            
+            // Vendor sourcing phase - 1-3 days
+            'vendor_sourcing' => $baseUpdate->addDays(rand(1, 3)),
+            'vendor_negotiation' => $baseUpdate->addDays(rand(2, 5)),
+            
+            // Customer quote and payment - 3-7 days
+            'customer_quote' => $baseUpdate->addDays(rand(3, 7)),
+            'awaiting_payment' => $baseUpdate->addDays(rand(5, 10)),
+            'partial_payment' => $baseUpdate->addDays(rand(7, 12)),
+            'full_payment' => $baseUpdate->addDays(rand(8, 14)),
+            
+            // Production phase - 10-20 days
+            'in_production' => $baseUpdate->addDays(rand(10, 20)),
+            'quality_control' => $baseUpdate->addDays(rand(12, 22)),
+            
+            // Delivery phase - 15-30 days
+            'shipping' => $baseUpdate->addDays(rand(15, 30)),
+            'completed' => $baseUpdate->addDays(rand(20, 40)),
+            
+            // Exception cases
             'cancelled' => $baseUpdate->addHours(rand(2, 72)),
+            'refunded' => $baseUpdate->addDays(rand(25, 50)),
+            
+            default => $baseUpdate->addDays(rand(1, 7))
         };
     }
 }
