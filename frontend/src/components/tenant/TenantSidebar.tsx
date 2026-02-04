@@ -3,11 +3,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAdminStore } from '@/stores/adminStore';
 import { useTenantAuth } from '@/hooks/useTenantAuth';
+import { useQuoteStore } from '@/stores/quoteStore';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from '@/components/ui/badge';
 import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
@@ -275,8 +277,22 @@ export const TenantSidebar = () => {
   const sidebarCollapsed = useAdminStore((state) => state.sidebarCollapsed);
   const { tenant, user, roles, logout } = useTenantAuth();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const { quotes, fetchQuotes } = useQuoteStore();
   
   const allMenuItems = usePluginMenuItems(menuItems);
+
+  // Fetch pending quotes count for notification badge
+  useEffect(() => {
+    fetchQuotes({
+      status: ['open', 'countered'],
+      per_page: 100, // Get all pending quotes for accurate count
+    });
+  }, [fetchQuotes]);
+
+  // Calculate pending quotes count
+  const pendingQuotesCount = quotes.filter(
+    (quote) => quote && (quote.status === 'open' || quote.status === 'countered')
+  ).length;
 
   // Load expanded menus from localStorage on mount
   useEffect(() => {
@@ -387,7 +403,7 @@ export const TenantSidebar = () => {
               variant="ghost"
               size="icon"
               className={cn(
-                'w-12 h-12 rounded-lg transition-all',
+                'w-12 h-12 rounded-lg transition-all relative',
                 active && 'bg-primary text-primary-foreground hover:bg-primary/90'
               )}
               asChild={!hasChildren}
@@ -396,16 +412,35 @@ export const TenantSidebar = () => {
               {hasChildren ? (
                 <div>
                   {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
+                  {item.title === 'Quotes' && pendingQuotesCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {pendingQuotesCount}
+                    </Badge>
+                  )}
                 </div>
               ) : (
-                <Link to={item.path!}>
+                <Link to={item.path!} className="relative">
                   {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
+                  {item.title === 'Quotes' && pendingQuotesCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {pendingQuotesCount}
+                    </Badge>
+                  )}
                 </Link>
               )}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="right">
             <p>{item.title}</p>
+            {item.title === 'Quotes' && pendingQuotesCount > 0 && (
+              <p className="text-xs text-destructive">{pendingQuotesCount} pending</p>
+            )}
           </TooltipContent>
         </Tooltip>
       );
@@ -482,9 +517,16 @@ export const TenantSidebar = () => {
             )}
             asChild
           >
-            <Link to={item.path!}>
-              {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
-              <span className="font-medium">{item.title}</span>
+            <Link to={item.path!} className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                {item.icon && React.createElement(item.icon, { className: "w-5 h-5" })}
+                <span className="font-medium">{item.title}</span>
+              </div>
+              {item.title === 'Quotes' && pendingQuotesCount > 0 && (
+                <Badge variant="destructive" className="ml-auto">
+                  {pendingQuotesCount}
+                </Badge>
+              )}
             </Link>
           </Button>
         )}

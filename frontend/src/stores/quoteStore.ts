@@ -27,6 +27,10 @@ interface QuoteState {
   statsLoading: boolean;
   error: string | null;
 
+  // New state for duplicate check
+  activeQuoteForOrder: Quote | null;
+  checkingDuplicate: boolean;
+
   // Pagination
   currentPage: number;
   totalPages: number;
@@ -73,6 +77,15 @@ interface QuoteState {
   fetchRevisionHistory: (id: string) => Promise<void>;
   fetchQuoteStats: (params?: { date_from?: string; date_to?: string; vendor_id?: string; customer_id?: string }) => Promise<void>;
   bulkUpdateQuotes: (ids: string[], data: { status?: Quote['status']; notes?: string }) => Promise<void>;
+  
+  // New actions for quote management workflow
+  checkExistingQuote: (orderId: string, vendorId?: string) => Promise<{
+    hasActiveQuote: boolean;
+    quote: Quote | null;
+  }>;
+  acceptQuote: (id: string, notes?: string) => Promise<Quote | null>;
+  rejectQuote: (id: string, reason: string) => Promise<Quote | null>;
+  counterQuote: (id: string, price: number, notes?: string) => Promise<Quote | null>;
 
   // Optimistic updates
   optimisticallyUpdateQuote: (updatedQuote: Partial<Quote> & { id: string }) => void;
@@ -94,6 +107,10 @@ export const useQuoteStore = create<QuoteState>()(
       revisionLoading: false,
       statsLoading: false,
       error: null,
+      
+      // New state for duplicate check
+      activeQuoteForOrder: null,
+      checkingDuplicate: false,
       
       currentPage: 1,
       totalPages: 1,
@@ -208,12 +225,22 @@ export const useQuoteStore = create<QuoteState>()(
         set({ loading: true, error: null });
         try {
           const updatedQuote = await quoteService.updateQuote(id, data);
-          set((state) => ({
-            quotes: state.quotes.map(quote => quote.id === id ? updatedQuote : quote),
-            selectedQuote: state.selectedQuote?.id === id ? updatedQuote : state.selectedQuote,
-            loading: false,
-          }));
-          return updatedQuote;
+          
+          // Only update if we got a valid quote back
+          if (updatedQuote) {
+            set((state) => ({
+              quotes: state.quotes.map(quote => quote.id === id ? updatedQuote : quote),
+              selectedQuote: state.selectedQuote?.id === id ? updatedQuote : state.selectedQuote,
+              loading: false,
+            }));
+            return updatedQuote;
+          } else {
+            set({ 
+              error: 'Failed to update quote - no data returned',
+              loading: false 
+            });
+            return null;
+          }
         } catch (error) {
           set({ 
             error: error instanceof Error ? error.message : 'Failed to update quote',
@@ -360,6 +387,150 @@ export const useQuoteStore = create<QuoteState>()(
             error: error instanceof Error ? error.message : 'Failed to update quotes',
             loading: false 
           });
+        }
+      },
+
+      // New actions for quote management workflow
+      checkExistingQuote: async (orderId: string, vendorId?: string) => {
+        set({ checkingDuplicate: true, error: null });
+        try {
+          const result = await quoteService.checkExisting({
+            order_id: orderId,
+            vendor_id: vendorId,
+            status: ['draft', 'open', 'sent', 'countered'],
+          });
+          
+          set({
+            activeQuoteForOrder: result.quote,
+            checkingDuplicate: false,
+          });
+          
+          return {
+            hasActiveQuote: result.has_active_quote,
+            quote: result.quote,
+          };
+        } catch (error) {
+          set({
+            error: error instanceof Error ? error.message : 'Failed to check existing quote',
+            checkingDuplicate: false,
+            activeQuoteForOrder: null,
+          });
+          return {
+            hasActiveQuote: false,
+            quote: null,
+          };
+        }
+      },
+
+      acceptQuote: async (id: string, notes?: string) => {
+        set({ loading: true, error: null });
+        
+        // Optimistic update
+        const state = get();
+        const originalQuote = state.quotes.find(q => q.id === id);
+        if (originalQuote) {
+          get().optimisticallyUpdateQuote({
+            id,
+            status: 'accepted',
+          });
+        }
+        
+        try {
+          const acceptedQuote = await quoteService.acceptQuote(id, notes);
+          
+          set((state) => ({
+            quotes: state.quotes.map(quote => quote.id === id ? acceptedQuote : quote),
+            selectedQuote: state.selectedQuote?.id === id ? acceptedQuote : state.selectedQuote,
+            loading: false,
+          }));
+          
+          return acceptedQuote;
+        } catch (error) {
+          // Revert optimistic update on error
+          if (originalQuote) {
+            get().optimisticallyUpdateQuote(originalQuote);
+          }
+          
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to accept quote',
+            loading: false 
+          });
+          return null;
+        }
+      },
+
+      rejectQuote: async (id: string, reason: string) => {
+        set({ loading: true, error: null });
+        
+        // Optimistic update
+        const state = get();
+        const originalQuote = state.quotes.find(q => q.id === id);
+        if (originalQuote) {
+          get().optimisticallyUpdateQuote({
+            id,
+            status: 'rejected',
+          });
+        }
+        
+        try {
+          const rejectedQuote = await quoteService.rejectQuote(id, reason);
+          
+          set((state) => ({
+            quotes: state.quotes.map(quote => quote.id === id ? rejectedQuote : quote),
+            selectedQuote: state.selectedQuote?.id === id ? rejectedQuote : state.selectedQuote,
+            loading: false,
+          }));
+          
+          return rejectedQuote;
+        } catch (error) {
+          // Revert optimistic update on error
+          if (originalQuote) {
+            get().optimisticallyUpdateQuote(originalQuote);
+          }
+          
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to reject quote',
+            loading: false 
+          });
+          return null;
+        }
+      },
+
+      counterQuote: async (id: string, price: number, notes?: string) => {
+        set({ loading: true, error: null });
+        
+        // Optimistic update
+        const state = get();
+        const originalQuote = state.quotes.find(q => q.id === id);
+        if (originalQuote) {
+          get().optimisticallyUpdateQuote({
+            id,
+            status: 'countered',
+            grand_total: price,
+          });
+        }
+        
+        try {
+          const counteredQuote = await quoteService.counterQuote(id, price, notes);
+          
+          set((state) => ({
+            quotes: state.quotes.map(quote => quote.id === id ? counteredQuote : quote),
+            selectedQuote: state.selectedQuote?.id === id ? counteredQuote : state.selectedQuote,
+            loading: false,
+          }));
+          
+          return counteredQuote;
+        } catch (error) {
+          // Revert optimistic update on error
+          if (originalQuote) {
+            get().optimisticallyUpdateQuote(originalQuote);
+          }
+          
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to create counter offer',
+            loading: false 
+          });
+          return null;
         }
       },
 

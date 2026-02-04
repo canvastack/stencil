@@ -37,7 +37,8 @@ import {
   Send,
   ArrowUpDown,
   Info,
-  ArrowLeft
+  ArrowLeft,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -47,6 +48,7 @@ import type { OrderQuote, QuoteFilters, QuoteStatus, QuoteType } from '@/types/q
 import type { Order } from '@/types/order';
 import { QuoteForm } from '@/components/tenant/quotes/QuoteForm';
 import type { CreateQuoteRequest, UpdateQuoteRequest } from '@/services/tenant/quoteService';
+import { useDuplicateQuoteCheck } from '@/hooks/useDuplicateQuoteCheck';
 
 interface QuoteManagementProps {}
 
@@ -63,6 +65,7 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
   const [quoteToAccept, setQuoteToAccept] = useState<OrderQuote | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [orderContext, setOrderContext] = useState<Order | null>(null);
+  const [editMode, setEditMode] = useState(false);
   const [filters, setFilters] = useState<QuoteFilters>({
     page: 1,
     per_page: 10,
@@ -70,9 +73,14 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
     sort_order: 'desc'
   });
 
+  // Get order_id from URL for duplicate check
+  const orderId = searchParams.get('order_id') || undefined;
+  
+  // Use duplicate quote check hook
+  const { checking, hasActiveQuote, existingQuote } = useDuplicateQuoteCheck(orderId);
+
   // Initialize filters from URL parameters and fetch order context
   useEffect(() => {
-    const orderId = searchParams.get('order_id');
     console.log('🔍 QuoteManagement useEffect triggered, order_id:', orderId);
     
     if (orderId) {
@@ -84,21 +92,34 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
       // Fetch order details for context
       fetchOrderContext(orderId);
       
-      // Auto-open quote form modal when coming from order page
-      // Use setTimeout to ensure component is fully mounted and LazyWrapper is ready
-      console.log('⏰ Scheduling auto-open of quote form modal in 300ms');
-      const timer = setTimeout(() => {
-        console.log('🚀 Opening quote form modal now');
-        setIsFormDialogOpen(true);
-      }, 300);
-      
-      // Cleanup timeout on unmount
-      return () => {
-        console.log('🧹 Cleaning up auto-open timer');
-        clearTimeout(timer);
-      };
+      // Wait for duplicate check to complete before opening modal
+      if (!checking) {
+        console.log('✅ Duplicate check complete. hasActiveQuote:', hasActiveQuote);
+        
+        // Determine mode based on duplicate check result
+        if (hasActiveQuote && existingQuote) {
+          console.log('📝 Opening modal in EDIT mode with existing quote:', existingQuote.id);
+          setEditMode(true);
+        } else {
+          console.log('➕ Opening modal in CREATE mode');
+          setEditMode(false);
+        }
+        
+        // Auto-open quote form modal
+        console.log('⏰ Scheduling auto-open of quote form modal in 300ms');
+        const timer = setTimeout(() => {
+          console.log('🚀 Opening quote form modal now');
+          setIsFormDialogOpen(true);
+        }, 300);
+        
+        // Cleanup timeout on unmount
+        return () => {
+          console.log('🧹 Cleaning up auto-open timer');
+          clearTimeout(timer);
+        };
+      }
     }
-  }, [searchParams]);
+  }, [orderId, checking, hasActiveQuote, existingQuote]);
 
   // Debug: Log when isFormDialogOpen changes
   useEffect(() => {
@@ -170,13 +191,24 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
 
   const handleCreateQuote = async (data: CreateQuoteRequest) => {
     try {
-      await quotesService.createQuote(data);
-      toast.success('Quote created successfully');
+      if (editMode && existingQuote) {
+        // Edit mode: update existing quote
+        console.log('📝 Updating existing quote:', existingQuote.id);
+        await quotesService.updateQuote(existingQuote.id, data as UpdateQuoteRequest);
+        toast.success(`Quote ${existingQuote.quote_number} updated successfully`);
+      } else {
+        // Create mode: create new quote
+        console.log('➕ Creating new quote');
+        await quotesService.createQuote(data);
+        toast.success('Quote created successfully');
+      }
+      
       setIsFormDialogOpen(false);
+      setEditMode(false);
       fetchQuotes();
     } catch (error) {
-      console.error('Error creating quote:', error);
-      toast.error('Failed to create quote');
+      console.error('Error saving quote:', error);
+      toast.error('Failed to save quote');
       throw error;
     }
   };
@@ -775,22 +807,46 @@ const QuoteManagement: React.FC<QuoteManagementProps> = () => {
           onOpenChange={(open) => {
             console.log('📋 Quote Form Dialog onOpenChange:', open);
             setIsFormDialogOpen(open);
+            if (!open) {
+              setEditMode(false);
+            }
           }}
         >
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {orderContext ? `Create Quote for Order #${orderContext.orderNumber}` : 'Create New Quote'}
+                {checking ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Checking for existing quotes...
+                  </span>
+                ) : editMode && existingQuote ? (
+                  `Edit Quote ${existingQuote.quote_number}`
+                ) : orderContext ? (
+                  `Create Quote for Order #${orderContext.orderNumber}`
+                ) : (
+                  'Create New Quote'
+                )}
               </DialogTitle>
             </DialogHeader>
-            <QuoteForm
-              onSubmit={handleCreateQuote}
-              onCancel={() => {
-                console.log('❌ Quote Form cancelled');
-                setIsFormDialogOpen(false);
-              }}
-              loading={false}
-            />
+            
+            {checking ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <QuoteForm
+                mode={editMode ? 'edit' : 'create'}
+                initialData={editMode && existingQuote ? existingQuote : undefined}
+                onSubmit={handleCreateQuote}
+                onCancel={() => {
+                  console.log('❌ Quote Form cancelled');
+                  setIsFormDialogOpen(false);
+                  setEditMode(false);
+                }}
+                loading={false}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>

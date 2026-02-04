@@ -173,6 +173,14 @@ class TenantApiClientManager {
             return result;
           }
           
+          // CRITICAL: Don't unwrap check-existing response - it needs the nested structure
+          // Backend returns { data: { has_active_quote, quote } }
+          // Frontend expects response.data.data to access the actual data
+          if (response.config.url?.includes('/check-existing')) {
+            console.log('[TenantApiClient] Returning check-existing response as-is (nested structure preserved)');
+            return response.data;
+          }
+          
           // Handle single resource responses wrapped in { data: {...} }
           if ('data' in response.data && !Array.isArray(response.data) && Object.keys(response.data).length === 1) {
             console.log('[TenantApiClient] Unwrapping single resource response');

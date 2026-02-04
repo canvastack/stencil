@@ -402,6 +402,7 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/', [QuoteController::class, 'store'])->name('tenant.quotes.store');
             
             // Quote Statistics & Reports (must come before /{quote})
+            Route::get('/check-existing', [QuoteController::class, 'checkExisting'])->name('tenant.quotes.check-existing');
             Route::get('/statistics', [QuoteController::class, 'statistics'])->name('tenant.quotes.statistics');
             Route::get('/stats', [QuoteController::class, 'statistics'])->name('tenant.quotes.stats'); // Add stats alias
             Route::get('/export', [QuoteController::class, 'export'])->name('tenant.quotes.export');

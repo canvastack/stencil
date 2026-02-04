@@ -23,7 +23,7 @@ class OrderVendorNegotiation extends Model
         'initial_offer',
         'latest_offer',
         'currency',
-        'terms',
+        'quote_details',
         'history',
         'round',
         'expires_at',
@@ -31,7 +31,7 @@ class OrderVendorNegotiation extends Model
     ];
 
     protected $casts = [
-        'terms' => 'array',
+        'quote_details' => 'json',
         'history' => 'array',
         'initial_offer' => 'integer',
         'latest_offer' => 'integer',

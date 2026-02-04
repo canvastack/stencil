@@ -1,5 +1,21 @@
 import { tenantApiClient } from './tenantApiClient';
 
+export interface QuoteItemFormField {
+  name: string;
+  label: string;
+  type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'number';
+  options?: string[];
+  required?: boolean;
+}
+
+export interface QuoteItemFormSchema {
+  fields: QuoteItemFormField[];
+}
+
+export interface QuoteItemSpecifications {
+  [key: string]: string | number | boolean;
+}
+
 export interface Quote {
   id: string;
   quote_number: string;
@@ -8,7 +24,7 @@ export interface Quote {
   vendor_id: string;
   title: string;
   description?: string;
-  status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'revised' | 'expired';
+  status: 'draft' | 'open' | 'sent' | 'countered' | 'accepted' | 'rejected' | 'cancelled' | 'expired';
   total_amount: number;
   tax_amount: number;
   grand_total: number;
@@ -43,6 +59,23 @@ export interface Quote {
   
   items: QuoteItem[];
   revision_history?: Quote[];
+  history?: QuoteHistoryEntry[];
+}
+
+export interface QuoteHistoryEntry {
+  action: string;
+  user_id?: string;
+  user_name?: string;
+  vendor_id?: string;
+  timestamp: string;
+  old_value?: any;
+  new_value?: any;
+  notes?: string;
+  ip_address?: string;
+  previous_offer?: number;
+  new_offer?: number;
+  offer?: number;
+  rejection_reason?: string;
 }
 
 export interface QuoteItem {
@@ -51,10 +84,26 @@ export interface QuoteItem {
   product_id?: string;
   description: string;
   quantity: number;
+  
+  // Per-piece values (editable)
   unit_price: number;
   vendor_cost?: number;
+  
+  // Total values (calculated, read-only)
+  total_vendor_cost: number;
+  total_unit_price: number;
   total_price: number;
-  specifications?: Record<string, any>;
+  
+  // Profit margins
+  profit_per_piece: number;
+  profit_per_piece_percent: number;
+  profit_total: number;
+  profit_total_percent: number;
+  
+  // Dynamic form data
+  specifications?: QuoteItemSpecifications;
+  form_schema?: QuoteItemFormSchema;
+  
   notes?: string;
   
   // Relationship
@@ -120,6 +169,31 @@ class QuoteService {
   private baseUrl = '/tenant/quotes';
 
   /**
+   * Check if an active quote exists for the given order
+   */
+  async checkExisting(params: {
+    order_id: string;
+    vendor_id?: string;
+    status?: string[];
+  }): Promise<{
+    has_active_quote: boolean;
+    quote: Quote | null;
+  }> {
+    const response = await tenantApiClient.get(`${this.baseUrl}/check-existing`, { params });
+    console.log('[quoteService.checkExisting] Response received:', {
+      response,
+      responseType: typeof response,
+      responseKeys: response ? Object.keys(response) : [],
+      hasData: response && 'data' in response,
+      data: response?.data,
+    });
+    
+    // Backend returns { data: { has_active_quote, quote } }
+    // tenantApiClient preserves this structure for check-existing endpoint
+    return response.data || { has_active_quote: false, quote: null };
+  }
+
+  /**
    * Get paginated list of quotes with optional filtering
    */
   async getQuotes(params: QuoteListParams = {}): Promise<QuoteListResponse> {
@@ -132,7 +206,8 @@ class QuoteService {
    */
   async getQuote(id: string): Promise<Quote> {
     const response = await tenantApiClient.get(`${this.baseUrl}/${id}`);
-    return response.data;
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
   }
 
   /**
@@ -140,8 +215,8 @@ class QuoteService {
    */
   async createQuote(data: CreateQuoteRequest): Promise<Quote> {
     const response = await tenantApiClient.post(this.baseUrl, data);
-    // Backend returns { data: quote }, so we need to access response.data.data
-    return response.data?.data || response.data;
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
   }
 
   /**
@@ -149,7 +224,8 @@ class QuoteService {
    */
   async updateQuote(id: string, data: UpdateQuoteRequest): Promise<Quote> {
     const response = await tenantApiClient.put(`${this.baseUrl}/${id}`, data);
-    return response.data;
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
   }
 
   /**
@@ -164,7 +240,8 @@ class QuoteService {
    */
   async sendQuote(id: string): Promise<Quote> {
     const response = await tenantApiClient.post(`${this.baseUrl}/${id}/send`);
-    return response.data;
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
   }
 
   /**
@@ -172,7 +249,38 @@ class QuoteService {
    */
   async respondToQuote(id: string, response: QuoteResponse): Promise<Quote> {
     const apiResponse = await tenantApiClient.post(`${this.baseUrl}/${id}/respond`, response);
-    return apiResponse.data;
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return apiResponse;
+  }
+
+  /**
+   * Accept a quote
+   */
+  async acceptQuote(id: string, notes?: string): Promise<Quote> {
+    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/accept`, { notes });
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
+  }
+
+  /**
+   * Reject a quote with reason
+   */
+  async rejectQuote(id: string, reason: string): Promise<Quote> {
+    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/reject`, { reason });
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
+  }
+
+  /**
+   * Create counter offer for a quote
+   */
+  async counterQuote(id: string, price: number, notes?: string): Promise<Quote> {
+    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/counter`, {
+      quoted_price: price,
+      notes
+    });
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
   }
 
   /**
@@ -180,7 +288,8 @@ class QuoteService {
    */
   async createRevision(id: string, data: UpdateQuoteRequest): Promise<Quote> {
     const response = await tenantApiClient.post(`${this.baseUrl}/${id}/revise`, data);
-    return response.data;
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
   }
 
   /**
@@ -188,7 +297,8 @@ class QuoteService {
    */
   async approveQuote(id: string, notes?: string): Promise<Quote> {
     const response = await tenantApiClient.post(`${this.baseUrl}/${id}/approve`, { notes });
-    return response.data;
+    // Backend returns { data: quote }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 
   /**
@@ -204,7 +314,8 @@ class QuoteService {
    */
   async getRevisionHistory(id: string): Promise<Quote[]> {
     const response = await tenantApiClient.get(`${this.baseUrl}/${id}/revisions`);
-    return response.data;
+    // Backend returns { data: quotes }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 
   /**
@@ -243,7 +354,8 @@ class QuoteService {
     average_response_time: number;
   }> {
     const response = await tenantApiClient.get(`${this.baseUrl}/stats`, { params });
-    return response.data;
+    // Backend returns { data: stats }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 
   /**
@@ -251,7 +363,8 @@ class QuoteService {
    */
   async bulkUpdate(ids: string[], data: { status?: Quote['status']; notes?: string }): Promise<Quote[]> {
     const response = await tenantApiClient.post(`${this.baseUrl}/bulk-update`, { ids, ...data });
-    return response.data;
+    // Backend returns { data: quotes }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 
   /**
@@ -272,7 +385,8 @@ class QuoteService {
     const response = await tenantApiClient.get('/customers/for-quotes', {
       params: { search, limit: 50 }
     });
-    return response.data;
+    // Backend returns { data: customers }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 
   /**
@@ -282,7 +396,8 @@ class QuoteService {
     const response = await tenantApiClient.get('/vendors/for-quotes', {
       params: { search, limit: 50 }
     });
-    return response.data;
+    // Backend returns { data: vendors }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 
   /**
@@ -292,7 +407,8 @@ class QuoteService {
     const response = await tenantApiClient.get('/products/for-quotes', {
       params: { search, limit: 100 }
     });
-    return response.data;
+    // Backend returns { data: products }, so we need to access response.data.data
+    return response.data?.data || response.data;
   }
 }
 

@@ -130,6 +130,9 @@ class OrderController extends Controller
             // Ensure order belongs to the current tenant
             $this->ensureOrderBelongsToTenant($request, $order);
             
+            // Eager load relationships to prevent N+1 queries and improve performance
+            $order->load(['customer', 'vendor', 'tenant']);
+            
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\Exception $e) {
             return response()->json([

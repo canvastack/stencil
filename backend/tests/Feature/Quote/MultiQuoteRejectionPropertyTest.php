@@ -514,7 +514,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
                 'initial_offer' => $rejectedQuote->initial_offer,
                 'latest_offer' => $rejectedQuote->latest_offer,
                 'currency' => $rejectedQuote->currency,
-                'terms' => $rejectedQuote->terms,
+                'quote_details' => $rejectedQuote->quote_details,
                 'round' => $rejectedQuote->round,
                 'history' => $rejectedQuote->history,
                 'created_at' => $rejectedQuote->created_at,
@@ -581,9 +581,9 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             );
 
             $this->assertEquals(
-                $originalData['terms'],
-                $rejectedQuote->terms,
-                "Test case {$index}: terms should be preserved"
+                $originalData['quote_details'],
+                $rejectedQuote->quote_details,
+                "Test case {$index}: quote details should be preserved"
             );
 
             $this->assertEquals(

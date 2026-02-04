@@ -306,11 +306,11 @@ class VendorNegotiationServiceTest extends TestCase
             [
                 'vendor_id' => $this->vendor->id,
                 'initial_offer' => 1000000,
-                'terms' => $terms,
+                'quote_details' => $terms, // Changed from 'terms' to 'quote_details'
             ]
         );
 
-        $this->assertEquals($terms, $negotiation->terms);
+        $this->assertEquals($terms, $negotiation->quote_details); // Changed from terms to quote_details
     }
 
     public function test_order_metadata_updated_during_negotiation(): void

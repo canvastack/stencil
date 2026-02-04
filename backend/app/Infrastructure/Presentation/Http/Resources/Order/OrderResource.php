@@ -7,6 +7,28 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderResource extends JsonResource
 {
+    /**
+     * Enrich order items with product UUIDs for frontend API calls
+     * 
+     * @param array $items
+     * @return array
+     */
+    protected function enrichItemsWithProductUuids(array $items): array
+    {
+        return collect($items)->map(function ($item) {
+            // If product_id exists but product_uuid doesn't, fetch it
+            if (isset($item['product_id']) && !isset($item['product_uuid'])) {
+                // Use the correct namespace for Product model
+                $product = \App\Infrastructure\Persistence\Eloquent\Models\Product::find($item['product_id']);
+                if ($product) {
+                    $item['product_uuid'] = $product->uuid;
+                }
+            }
+            
+            return $item;
+        })->toArray();
+    }
+    
     public function toArray(Request $request): array
     {
         $data = [
@@ -29,8 +51,10 @@ class OrderResource extends JsonResource
             'vendorName' => $this->vendor->name ?? null,
             'vendorCode' => $this->vendor->code ?? null,
             
-            // Items (ensure it's always an array)
-            'items' => is_array($this->items) ? $this->items : (is_string($this->items) ? json_decode($this->items, true) : []),
+            // Items (ensure it's always an array and enrich with product UUIDs)
+            'items' => $this->enrichItemsWithProductUuids(
+                is_array($this->items) ? $this->items : (is_string($this->items) ? json_decode($this->items, true) : [])
+            ),
             'items_count' => is_array($this->items) ? count($this->items) : (is_string($this->items) ? count(json_decode($this->items, true) ?? []) : 0),
             
             // Frontend compatibility fields

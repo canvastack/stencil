@@ -145,6 +145,7 @@
     "fast-check": "^4.5.3",
     "gh-pages": "^6.3.0",
     "globals": "^15.15.0",
+    "jest-axe": "^10.0.0",
     "jsdom": "^25.0.1",
     "lovable-tagger": "^1.1.11",
     "msw": "^2.6.6",

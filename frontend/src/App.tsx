@@ -100,6 +100,8 @@ const OrderTracking = lazy(() => import("./pages/admin/OrderTracking"));
 const BulkOrders = lazy(() => import("./pages/admin/BulkOrders"));
 const OrderAnalytics = lazy(() => import("./pages/admin/OrderAnalytics"));
 const QuoteManagement = lazy(() => import("./pages/tenant/QuoteManagement"));
+const QuoteDetail = lazy(() => import("./pages/tenant/QuoteDetail"));
+const QuoteEdit = lazy(() => import("./pages/tenant/QuoteEdit"));
 const InvoiceManagement = lazy(() => import("./pages/tenant/InvoiceManagement"));
 const PaymentManagement = lazy(() => import("./pages/tenant/PaymentManagement"));
 const TenantProductComparison = lazy(() => import("./pages/tenant/ProductComparison"));
@@ -347,6 +349,8 @@ function App() {
                   <Route path="orders/bulk" element={<Suspense fallback={<LoadingFallback />}><BulkOrders /></Suspense>} />
                   <Route path="orders/analytics" element={<Suspense fallback={<LoadingFallback />}><OrderAnalytics /></Suspense>} />
                   <Route path="quotes" element={<Suspense fallback={<LoadingFallback />}><QuoteManagement /></Suspense>} />
+                  <Route path="quotes/:id" element={<Suspense fallback={<LoadingFallback />}><QuoteDetail /></Suspense>} />
+                  <Route path="quotes/:id/edit" element={<Suspense fallback={<LoadingFallback />}><QuoteEdit /></Suspense>} />
                   <Route path="invoices" element={<Suspense fallback={<LoadingFallback />}><InvoiceManagement /></Suspense>} />
                   <Route path="payments" element={<Suspense fallback={<LoadingFallback />}><PaymentManagement /></Suspense>} />
                   <Route path="production" element={<Suspense fallback={<LoadingFallback />}><ProductionManagement /></Suspense>} />

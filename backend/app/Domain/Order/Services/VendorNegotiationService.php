@@ -31,7 +31,7 @@ class VendorNegotiationService
         $initialOffer = Arr::get($payload, 'initial_offer', $order->total_amount);
         $latestOffer = Arr::get($payload, 'latest_offer', $initialOffer);
         $currency = Arr::get($payload, 'currency', $order->currency ?? 'IDR');
-        $terms = Arr::get($payload, 'terms');
+        $quoteDetails = Arr::get($payload, 'quote_details'); // Changed from 'terms' to 'quote_details'
         $expiresAt = Arr::get($payload, 'expires_at');
         $notes = Arr::get($payload, 'notes');
 
@@ -52,7 +52,7 @@ class VendorNegotiationService
             'initial_offer' => $initialOffer,
             'latest_offer' => $latestOffer,
             'currency' => $currency,
-            'terms' => $terms,
+            'quote_details' => $quoteDetails, // Changed from 'terms' to 'quote_details'
             'history' => $history,
             'round' => 1,
             'expires_at' => $expiresAt ? Carbon::parse($expiresAt) : null,
@@ -188,7 +188,7 @@ class VendorNegotiationService
 
         $negotiation->update([
             'status' => 'approved',
-            'terms' => array_merge($negotiation->terms ?? [], $finalTerms),
+            'quote_details' => array_merge($negotiation->quote_details ?? [], $finalTerms), // Changed from terms to quote_details
             'history' => $history,
             'closed_at' => now(),
         ]);

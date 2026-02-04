@@ -268,6 +268,145 @@
       '404':
         $ref: '../../components/schemas.yaml#/NotFound'
 
+# Check Existing Quote
+/tenant/quotes/check-existing:
+  get:
+    tags:
+      - Quote Management
+    summary: Check for Existing Active Quote
+    description: |
+      Check if an active quote already exists for a given order and optionally vendor.
+      
+      **Purpose:**
+      - Prevent duplicate quote creation
+      - Determine if modal should open in EDIT or CREATE mode
+      - Support quote management workflow from order context
+      
+      **Business Logic:**
+      - Searches for quotes with active statuses: draft, open, sent, countered
+      - Can filter by order_id (required) and vendor_id (optional)
+      - Returns first matching active quote if found
+      - Tenant-scoped for data isolation
+      
+      **Use Case:** When navigating to `/admin/quotes?order_id={uuid}`:
+      - If active quote exists → Open modal in EDIT mode with existing quote data
+      - If no active quote → Open modal in CREATE mode with empty form
+    operationId: checkExistingQuote
+    security:
+      - bearerAuth: []
+    parameters:
+      - $ref: '../../components/schemas.yaml#/TenantHeader'
+      - in: query
+        name: order_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Order UUID to check for existing quotes
+        example: "550e8400-e29b-41d4-a716-446655440000"
+      - in: query
+        name: vendor_id
+        schema:
+          type: string
+          format: uuid
+        description: Optional vendor UUID to check for specific order+vendor combination
+        example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [draft, open, sent, countered]
+        style: form
+        explode: true
+        description: Quote statuses to check (defaults to active statuses)
+        example: ["draft", "open", "sent", "countered"]
+    responses:
+      '200':
+        description: Check completed successfully
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        has_active_quote:
+                          type: boolean
+                          description: Whether an active quote exists
+                          example: true
+                        quote:
+                          allOf:
+                            - $ref: '../../components/schemas.yaml#/VendorQuote'
+                            - nullable: true
+                          description: The existing quote data (null if no active quote)
+            examples:
+              active_quote_exists:
+                summary: Active quote found
+                value:
+                  success: true
+                  data:
+                    has_active_quote: true
+                    quote:
+                      id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      quote_number: "Q-000123"
+                      order_id: "550e8400-e29b-41d4-a716-446655440000"
+                      vendor_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                      status: "open"
+                      latest_offer: 9500000.00
+                      currency: "IDR"
+                      round: 2
+                      created_at: "2024-01-15T10:00:00Z"
+                      vendor:
+                        id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                        name: "PT Vendor XYZ"
+                        email: "vendor@example.com"
+              no_active_quote:
+                summary: No active quote found
+                value:
+                  success: true
+                  data:
+                    has_active_quote: false
+                    quote: null
+      '400':
+        description: Bad request - Missing required parameters
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "The order_id field is required"
+                    errors:
+                      type: object
+                      properties:
+                        order_id:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The order_id field is required"]
+      '401':
+        $ref: '../../components/schemas.yaml#/Unauthorized'
+      '403':
+        description: Forbidden - Cross-tenant access denied
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "You do not have permission to access this order"
+
 # Accept Quote
 /tenant/quotes/{id}/accept:
   post:
@@ -287,7 +426,8 @@
         - order.vendor_id = quote.vendor_id
         - order.vendor_terms = quote.terms
         - order.quotation_amount = quote.latest_offer × 1.35
-      - Rejects all other open quotes for the same order
+        - order.status = 'customer_quote'
+      - **Auto-rejects all other quotes** for the same order
       - All operations wrapped in database transaction
       - Triggers QuoteAccepted domain event
       
@@ -302,7 +442,7 @@
       ```
       
       **Use Case:** This is the key integration point that connects quotes
-      with the order workflow.
+      with the order workflow and advances order status.
     operationId: acceptQuote
     security:
       - bearerAuth: []
@@ -326,10 +466,56 @@
                 - type: object
                   properties:
                     data:
-                      $ref: '../../components/schemas.yaml#/VendorQuote'
+                      type: object
+                      properties:
+                        quote:
+                          $ref: '../../components/schemas.yaml#/VendorQuote'
+                        order:
+                          type: object
+                          description: Updated order information
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                              example: "550e8400-e29b-41d4-a716-446655440000"
+                            status:
+                              type: string
+                              example: "customer_quote"
+                            vendor_quoted_price:
+                              type: number
+                              format: double
+                              description: Vendor's quoted price (in cents)
+                              example: 5000000
+                            quotation_amount:
+                              type: number
+                              format: double
+                              description: Customer quotation amount (vendor price × 1.35, in cents)
+                              example: 6750000
+                            vendor_id:
+                              type: string
+                              format: uuid
+                              example: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
                     message:
                       type: string
-                      example: "Quote accepted and order data synchronized"
+                      example: "Quote accepted and order updated"
+            examples:
+              successful_acceptance:
+                summary: Quote accepted successfully
+                value:
+                  success: true
+                  data:
+                    quote:
+                      id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      status: "accepted"
+                      closed_at: "2024-01-20T15:45:00Z"
+                      latest_offer: 5000000.00
+                    order:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      status: "customer_quote"
+                      vendor_quoted_price: 5000000
+                      quotation_amount: 6750000
+                      vendor_id: "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+                  message: "Quote accepted and order updated"
       '400':
         description: Bad request - Quote cannot be accepted
         content:
@@ -342,10 +528,43 @@
                     message:
                       type: string
                       example: "Quote has already been accepted"
+            examples:
+              already_accepted:
+                summary: Quote already accepted
+                value:
+                  success: false
+                  message: "Quote has already been accepted"
+              wrong_status:
+                summary: Invalid quote status
+                value:
+                  success: false
+                  message: "Only quotes with status 'open' or 'countered' can be accepted"
+      '403':
+        description: Forbidden - Cross-tenant access denied
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Cross-tenant access denied"
       '404':
-        $ref: '../../components/schemas.yaml#/NotFound'
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Quote not found"
       '422':
-        description: Validation error
+        description: Validation error - Quote cannot be accepted
         content:
           application/json:
             schema:
@@ -364,6 +583,21 @@
                           items:
                             type: string
                           example: ["This quote has expired and cannot be accepted"]
+            examples:
+              quote_expired:
+                summary: Quote has expired
+                value:
+                  success: false
+                  message: "Quote has expired"
+                  errors:
+                    quote: ["This quote has expired and cannot be accepted"]
+              quote_expired_date:
+                summary: Quote expiration date passed
+                value:
+                  success: false
+                  message: "Cannot accept expired quote"
+                  errors:
+                    expires_at: ["Quote expired on 2024-01-15. Cannot be accepted."]
 
 # Reject Quote
 /tenant/quotes/{id}/reject:
@@ -372,13 +606,22 @@
       - Quote Management
     summary: Reject Vendor Quote
     description: |
-      Reject a vendor quote.
+      Reject a vendor quote with a mandatory rejection reason.
       
       **Business Logic:**
+      - Requires rejection reason (minimum 10 characters)
       - Updates quote status to 'rejected'
       - Sets closed_at timestamp
+      - Saves rejection reason to quote history
       - Preserves quote data for historical reference
-      - Does not affect order data
+      - **Checks if all quotes rejected** for the order:
+        - If all quotes rejected → Order status reverts to 'vendor_sourcing'
+        - Admin notified to select new vendor
+      - Does not affect order data unless all quotes rejected
+      - Tenant-scoped for data isolation
+      
+      **Use Case:** When vendor pricing is not acceptable or vendor cannot
+      fulfill requirements. System tracks rejection reasons for analytics.
     operationId: rejectQuote
     security:
       - bearerAuth: []
@@ -392,15 +635,33 @@
           format: uuid
         description: Quote UUID
     requestBody:
+      required: true
       content:
         application/json:
           schema:
             type: object
+            required:
+              - reason
             properties:
               reason:
                 type: string
-                description: Reason for rejection
-                example: "Price too high"
+                minLength: 10
+                maxLength: 1000
+                description: Reason for rejection (minimum 10 characters)
+                example: "Price exceeds budget constraints"
+          examples:
+            price_too_high:
+              summary: Price rejection
+              value:
+                reason: "Price too high compared to market rate"
+            vendor_unavailable:
+              summary: Vendor capacity issue
+              value:
+                reason: "Vendor cannot meet delivery timeline requirements"
+            quality_concerns:
+              summary: Quality concerns
+              value:
+                reason: "Previous quality issues with this vendor"
     responses:
       '200':
         description: Quote rejected successfully
@@ -412,8 +673,142 @@
                 - type: object
                   properties:
                     data:
-                      $ref: '../../components/schemas.yaml#/VendorQuote'
+                      type: object
+                      properties:
+                        quote:
+                          $ref: '../../components/schemas.yaml#/VendorQuote'
+                        all_quotes_rejected:
+                          type: boolean
+                          description: Whether all quotes for this order are now rejected
+                          example: false
+                        order_status:
+                          type: string
+                          description: Current order status after rejection
+                          example: "vendor_negotiation"
+                    message:
+                      type: string
+                      example: "Quote rejected"
+            examples:
+              normal_rejection:
+                summary: Quote rejected (other quotes still active)
+                value:
+                  success: true
+                  data:
+                    quote:
+                      id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      status: "rejected"
+                      closed_at: "2024-01-20T15:45:00Z"
+                      history:
+                        - action: "rejected"
+                          reason: "Price too high compared to market rate"
+                          timestamp: "2024-01-20T15:45:00Z"
+                          user_id: "8d7e8790-8536-52ef-a55c-f18fd541b9b8"
+                    all_quotes_rejected: false
+                    order_status: "vendor_negotiation"
+                  message: "Quote rejected"
+              all_quotes_rejected:
+                summary: All quotes rejected (order reverts to vendor sourcing)
+                value:
+                  success: true
+                  data:
+                    quote:
+                      id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                      status: "rejected"
+                      closed_at: "2024-01-20T15:45:00Z"
+                    all_quotes_rejected: true
+                    order_status: "vendor_sourcing"
+                  message: "Quote rejected. All quotes for this order have been rejected. Please select a new vendor."
       '400':
-        $ref: '../../components/schemas.yaml#/BadRequest'
+        description: Bad request - Invalid rejection reason
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "The reason field is required"
+                    errors:
+                      type: object
+                      properties:
+                        reason:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The reason field is required"]
+            examples:
+              missing_reason:
+                summary: Missing rejection reason
+                value:
+                  success: false
+                  message: "The reason field is required"
+                  errors:
+                    reason: ["The reason field is required"]
+              reason_too_short:
+                summary: Rejection reason too short
+                value:
+                  success: false
+                  message: "The reason must be at least 10 characters"
+                  errors:
+                    reason: ["The reason must be at least 10 characters"]
+      '403':
+        description: Forbidden - Cross-tenant access denied
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Cross-tenant access denied"
       '404':
-        $ref: '../../components/schemas.yaml#/NotFound'
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Quote not found"
+      '422':
+        description: Validation error - Quote cannot be rejected
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '../../components/schemas.yaml#/BaseResponse'
+                - type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Quote has already been rejected"
+                    errors:
+                      type: object
+                      properties:
+                        quote:
+                          type: array
+                          items:
+                            type: string
+                          example: ["This quote has already been rejected"]
+            examples:
+              already_rejected:
+                summary: Quote already rejected
+                value:
+                  success: false
+                  message: "Quote has already been rejected"
+                  errors:
+                    quote: ["This quote has already been rejected"]
+              already_accepted:
+                summary: Cannot reject accepted quote
+                value:
+                  success: false
+                  message: "Cannot reject an accepted quote"
+                  errors:
+                    quote: ["This quote has been accepted and cannot be rejected"]

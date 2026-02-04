@@ -31,12 +31,14 @@ import {
   Filter,
   Info,
   ArrowLeft,
+  Loader2,
 } from 'lucide-react';
 import { CreateQuoteRequest, UpdateQuoteRequest } from '@/services/tenant/quoteService';
 import { formatCurrency } from '@/utils/currency';
 import { ordersService } from '@/services/api/orders';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Order } from '@/types/order';
+import { useDuplicateQuoteCheck } from '@/hooks/useDuplicateQuoteCheck';
 
 const StatCard = ({ 
   title, 
@@ -93,6 +95,7 @@ const QuoteManagement = () => {
     fetchQuotes,
     fetchQuoteStats,
     createQuote,
+    updateQuote,
     setError: clearError,
   } = useQuoteStore();
   
@@ -100,10 +103,16 @@ const QuoteManagement = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [formLoading, setFormLoading] = useState(false);
   const [orderContext, setOrderContext] = useState<Order | null>(null);
+  const [editMode, setEditMode] = useState(false);
+
+  // Get order_id from URL for duplicate check
+  const orderId = searchParams.get('order_id') || undefined;
+  
+  // Use duplicate quote check hook
+  const { checking, hasActiveQuote, existingQuote } = useDuplicateQuoteCheck(orderId);
 
   // Auto-open quote form when navigating from order detail page
   useEffect(() => {
-    const orderId = searchParams.get('order_id');
     console.log('🔍 QuoteManagement useEffect triggered, order_id:', orderId);
     
     if (orderId) {
@@ -112,21 +121,34 @@ const QuoteManagement = () => {
       // Fetch order details for context
       fetchOrderContext(orderId);
       
-      // Auto-open quote form modal when coming from order page
-      // Use setTimeout to ensure component is fully mounted
-      console.log('⏰ Scheduling auto-open of quote form modal in 300ms');
-      const timer = setTimeout(() => {
-        console.log('🚀 Opening quote form modal now');
-        setShowCreateDialog(true);
-      }, 300);
-      
-      // Cleanup timeout on unmount
-      return () => {
-        console.log('🧹 Cleaning up auto-open timer');
-        clearTimeout(timer);
-      };
+      // Wait for duplicate check to complete before opening modal
+      if (!checking) {
+        console.log('✅ Duplicate check complete. hasActiveQuote:', hasActiveQuote);
+        
+        // Determine mode based on duplicate check result
+        if (hasActiveQuote && existingQuote) {
+          console.log('📝 Opening modal in EDIT mode with existing quote:', existingQuote.id);
+          setEditMode(true);
+        } else {
+          console.log('➕ Opening modal in CREATE mode');
+          setEditMode(false);
+        }
+        
+        // Auto-open quote form modal
+        console.log('⏰ Scheduling auto-open of quote form modal in 300ms');
+        const timer = setTimeout(() => {
+          console.log('🚀 Opening quote form modal now');
+          setShowCreateDialog(true);
+        }, 300);
+        
+        // Cleanup timeout on unmount
+        return () => {
+          console.log('🧹 Cleaning up auto-open timer');
+          clearTimeout(timer);
+        };
+      }
     }
-  }, [searchParams]);
+  }, [orderId, checking, hasActiveQuote, existingQuote]);
 
   // Debug: Log when showCreateDialog changes
   useEffect(() => {
@@ -159,34 +181,49 @@ const QuoteManagement = () => {
     try {
       setFormLoading(true);
       
-      // Type guard: ensure we have customer_id and vendor_id for create
-      if ('customer_id' in data && 'vendor_id' in data) {
-        const newQuote = await createQuote(data as CreateQuoteRequest);
-        
-        // Remove order_id from URL after successful creation
-        if (searchParams.get('order_id')) {
-          const newSearchParams = new URLSearchParams(searchParams);
-          newSearchParams.delete('order_id');
-          setSearchParams(newSearchParams);
-        }
+      if (editMode && existingQuote) {
+        // Edit mode: update existing quote
+        console.log('📝 Updating existing quote:', existingQuote.id);
+        await updateQuote(existingQuote.id, data as UpdateQuoteRequest);
         
         toast({
           title: 'Success',
-          description: 'Quote created successfully',
+          description: `Quote ${existingQuote.quote_number} updated successfully`,
         });
-        
-        setShowCreateDialog(false);
-        
-        // Refresh quotes list
-        await fetchQuotes();
       } else {
-        throw new Error('Invalid quote data: missing customer_id or vendor_id');
+        // Create mode: create new quote
+        console.log('➕ Creating new quote');
+        
+        // Type guard: ensure we have customer_id and vendor_id for create
+        if ('customer_id' in data && 'vendor_id' in data) {
+          await createQuote(data as CreateQuoteRequest);
+          
+          toast({
+            title: 'Success',
+            description: 'Quote created successfully',
+          });
+        } else {
+          throw new Error('Invalid quote data: missing customer_id or vendor_id');
+        }
       }
+      
+      // Remove order_id from URL after successful creation/update
+      if (searchParams.get('order_id')) {
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('order_id');
+        setSearchParams(newSearchParams);
+      }
+      
+      setShowCreateDialog(false);
+      setEditMode(false);
+      
+      // Refresh quotes list
+      await fetchQuotes();
     } catch (error) {
-      console.error('Failed to create quote:', error);
+      console.error('Failed to save quote:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create quote',
+        description: error instanceof Error ? error.message : 'Failed to save quote',
         variant: 'destructive',
       });
       // Don't re-throw - let dialog stay open for user to fix
@@ -269,20 +306,48 @@ const QuoteManagement = () => {
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {orderContext ? `Create Quote for Order #${orderContext.orderNumber}` : 'Create New Quote'}
+                  {checking ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Checking for existing quotes...
+                    </span>
+                  ) : editMode && existingQuote ? (
+                    `Edit Quote ${existingQuote.quote_number}`
+                  ) : orderContext ? (
+                    `Create Quote for Order #${orderContext.orderNumber}`
+                  ) : (
+                    'Create New Quote'
+                  )}
                 </DialogTitle>
                 <DialogDescription>
-                  {orderContext 
-                    ? `Create a new quote for order #${orderContext.orderNumber}`
-                    : 'Create a new quote request for vendor pricing'
-                  }
+                  {checking ? (
+                    'Please wait while we check for existing quotes...'
+                  ) : editMode && existingQuote ? (
+                    `Update the existing quote ${existingQuote.quote_number} for order #${orderContext?.orderNumber || 'N/A'}`
+                  ) : orderContext ? (
+                    `Create a new quote for order #${orderContext.orderNumber}`
+                  ) : (
+                    'Create a new quote request for vendor pricing'
+                  )}
                 </DialogDescription>
               </DialogHeader>
-              <QuoteForm
-                onSubmit={handleCreateQuote}
-                onCancel={() => setShowCreateDialog(false)}
-                loading={formLoading}
-              />
+              
+              {checking ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <QuoteForm
+                  mode={editMode ? 'edit' : 'create'}
+                  initialData={editMode && existingQuote ? existingQuote : undefined}
+                  onSubmit={handleCreateQuote}
+                  onCancel={() => {
+                    setShowCreateDialog(false);
+                    setEditMode(false);
+                  }}
+                  loading={formLoading}
+                />
+              )}
             </DialogContent>
           </Dialog>
         </div>

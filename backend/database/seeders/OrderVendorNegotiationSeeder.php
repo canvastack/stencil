@@ -50,7 +50,7 @@ class OrderVendorNegotiationSeeder extends Seeder
                 'latest_offer' => $status === 'countered' ? $initialOffer + rand(-10000000, 20000000) : $initialOffer,
                 'currency' => 'IDR',
                 'round' => $status === 'countered' ? rand(1, 5) : 1,
-                'terms' => json_encode([
+                'quote_details' => json_encode([
                     'delivery_days' => rand(7, 30),
                     'payment_method' => ['bank_transfer', 'cod', 'credit'][array_rand(['bank_transfer', 'cod', 'credit'])],
                     'warranty_months' => rand(6, 24),

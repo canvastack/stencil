@@ -355,7 +355,7 @@ class MultiQuoteComparisonTest extends TestCase
         $originalQuote1Data = [
             'initial_offer' => $originalQuote1->initial_offer,
             'latest_offer' => $originalQuote1->latest_offer,
-            'terms' => $originalQuote1->terms,
+            'quote_details' => $originalQuote1->quote_details,
             'lead_time_days' => $originalQuote1->lead_time_days,
             'vendor_id' => $originalQuote1->vendor_id,
         ];
@@ -392,9 +392,9 @@ class MultiQuoteComparisonTest extends TestCase
         );
 
         $this->assertEquals(
-            $originalQuote1Data['terms'],
-            $rejectedQuote->terms,
-            'Terms should be preserved'
+            $originalQuote1Data['quote_details'],
+            $rejectedQuote->quote_details,
+            'Quote details should be preserved'
         );
 
         $this->assertEquals(

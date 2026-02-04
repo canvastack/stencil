@@ -89,7 +89,7 @@ class QuoteAcceptanceTest extends TestCase
             'initial_offer' => $vendorPrice,
             'latest_offer' => $vendorPrice,
             'currency' => 'IDR',
-            'terms' => $vendorTerms,
+            'quote_details' => $vendorTerms, // Changed from 'terms' to 'quote_details'
             'status' => 'open',
         ]);
 

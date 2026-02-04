@@ -25,7 +25,7 @@ class OrderVendorNegotiationFactory extends Factory
             'initial_offer' => 150000,
             'latest_offer' => 140000,
             'currency' => 'IDR',
-            'terms' => [
+            'quote_details' => [
                 'delivery_days' => 10,
                 'payment_terms' => '50-50',
             ],
