@@ -106,7 +106,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => $vendorPrice,
             'currency' => 'IDR',
         ]);
@@ -156,7 +156,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -164,7 +164,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor2->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 4500000,
         ]);
 
@@ -217,7 +217,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -256,7 +256,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -264,7 +264,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor2->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 4500000,
         ]);
 
@@ -339,7 +339,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $otherTenant->id,
             'order_id' => $otherOrder->id,
             'vendor_id' => $otherVendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -382,7 +382,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -503,7 +503,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -540,7 +540,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -590,7 +590,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000, // Higher price
         ]);
 
@@ -598,7 +598,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor2->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 4500000, // Better price
         ]);
 
@@ -641,7 +641,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -679,7 +679,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => $initialPrice,
             'round' => 1,
             'history' => [
@@ -739,7 +739,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -782,7 +782,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -790,7 +790,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor2->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 4500000,
         ]);
 
@@ -836,7 +836,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -844,7 +844,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor2->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 4500000,
         ]);
 
@@ -897,7 +897,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => $vendorPrice,
         ]);
 
@@ -935,7 +935,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
             'history' => [
                 [
@@ -987,7 +987,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
             'round' => 1,
         ]);
@@ -1047,7 +1047,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
         ]);
 
@@ -1055,7 +1055,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor2->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 4500000,
         ]);
 
@@ -1068,7 +1068,7 @@ class QuoteManagementWorkflowTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $vendor3->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 4800000,
         ]);
 

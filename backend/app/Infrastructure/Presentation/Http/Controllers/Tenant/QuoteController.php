@@ -23,7 +23,7 @@ class QuoteController extends Controller
             'order_id' => 'required|string|uuid',
             'vendor_id' => 'sometimes|string|uuid',
             'status' => 'sometimes|array',
-            'status.*' => 'sometimes|in:open,countered,accepted,rejected,cancelled,expired',
+            'status.*' => 'sometimes|in:draft,sent,pending_response,countered,accepted,rejected,expired',
         ]);
 
         $tenantId = $this->getCurrentTenantId($request);
@@ -64,17 +64,16 @@ class QuoteController extends Controller
         }
 
         // Filter by status (default: active statuses)
-        // Note: 'draft' and 'sent' are not valid statuses in the database enum
-        // Map them to valid statuses or filter them out
-        $requestedStatuses = $request->input('status', ['open', 'countered']);
-        $validStatuses = ['open', 'countered', 'accepted', 'rejected', 'cancelled', 'expired'];
+        // Active statuses are: draft, sent, pending_response, countered
+        $requestedStatuses = $request->input('status', ['draft', 'sent', 'pending_response', 'countered']);
+        $validStatuses = ['draft', 'sent', 'pending_response', 'countered', 'accepted', 'rejected', 'expired'];
         
-        // Filter out invalid statuses (like 'draft' and 'sent')
+        // Filter out invalid statuses
         $statuses = array_intersect($requestedStatuses, $validStatuses);
         
         // If no valid statuses remain, use default active statuses
         if (empty($statuses)) {
-            $statuses = ['open', 'countered'];
+            $statuses = ['draft', 'sent', 'pending_response', 'countered'];
         }
         
         \Log::info('[QuoteController::checkExisting] Status filter', [
@@ -189,69 +188,117 @@ class QuoteController extends Controller
     /**
      * Store a newly created quote.
      */
-    public function store(Request $request)
+    public function store(\App\Infrastructure\Presentation\Http\Requests\Quote\StoreQuoteRequest $request)
     {
-        $request->validate([
-            'order_id' => 'required|string|uuid',
-            'vendor_id' => 'required|string|uuid',
-            'initial_offer' => 'required|numeric|min:0',
-            'currency' => 'sometimes|string|size:3',
-            'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'terms_and_conditions' => 'sometimes|string',
-            'notes' => 'sometimes|string',
-            'items' => 'sometimes|array',
-            'items.*.product_id' => 'sometimes|string',
-            'items.*.description' => 'sometimes|string',
-            'items.*.quantity' => 'sometimes|numeric|min:1',
-            'items.*.unit_price' => 'sometimes|numeric|min:0',
-            'items.*.vendor_cost' => 'sometimes|numeric|min:0',
-            'items.*.total_price' => 'sometimes|numeric|min:0',
-            'items.*.specifications' => 'sometimes|array',
-            'items.*.notes' => 'sometimes|string',
-            'expires_at' => 'sometimes|date|after:now',
-        ]);
-
-        $tenantId = $this->getCurrentTenantId($request);
-        
-        // Convert UUIDs to internal IDs
-        $order = Order::where('tenant_id', $tenantId)
-            ->where('uuid', $request->input('order_id'))
-            ->firstOrFail();
+        try {
+            $tenantId = $this->getCurrentTenantId($request);
             
-        $vendor = Vendor::where('tenant_id', $tenantId)
-            ->where('uuid', $request->input('vendor_id'))
-            ->firstOrFail();
-        
-        // Build quote_details with form schema
-        $items = $request->input('items', []);
-        $enrichedItems = $this->enrichItemsWithFormSchema($items, $order);
-        
-        $quoteDetails = [
-            'title' => $request->input('title'),
-            'description' => $request->input('description'),
-            'terms_and_conditions' => $request->input('terms_and_conditions'),
-            'notes' => $request->input('notes'),
-            'items' => $enrichedItems,
-        ];
-        
-        $quote = OrderVendorNegotiation::create([
-            'tenant_id' => $tenantId,
-            'order_id' => $order->id,
-            'vendor_id' => $vendor->id,
-            'initial_offer' => $request->input('initial_offer') * 100, // Convert to cents
-            'latest_offer' => $request->input('initial_offer') * 100,
-            'currency' => $request->input('currency', 'IDR'),
-            'quote_details' => $quoteDetails,
-            'expires_at' => $request->input('expires_at'),
-            'status' => 'open',
-        ]);
+            // Convert UUIDs to internal IDs with tenant isolation validation
+            $order = Order::where('tenant_id', $tenantId)
+                ->where('uuid', $request->input('order_id'))
+                ->first();
+            
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found or does not belong to your tenant',
+                    'errors' => [
+                        'order_id' => ['The selected order is invalid or does not belong to your tenant.']
+                    ]
+                ], 422);
+            }
+                
+            $vendor = Vendor::where('tenant_id', $tenantId)
+                ->where('uuid', $request->input('vendor_id'))
+                ->first();
+            
+            if (!$vendor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vendor not found or does not belong to your tenant',
+                    'errors' => [
+                        'vendor_id' => ['The selected vendor is invalid or does not belong to your tenant.']
+                    ]
+                ], 422);
+            }
+            
+            // Build quote_details JSON structure
+            $quoteDetails = [
+                'title' => $request->input('title'),
+                'description' => $request->input('description'),
+                'terms_and_conditions' => $request->input('terms_and_conditions'),
+                'notes' => $request->input('notes'),
+                'items' => $request->input('items', []),
+            ];
+            
+            // Calculate latest_offer from initial_offer (already in cents from frontend)
+            $initialOffer = (int) $request->input('initial_offer');
+            
+            // Create quote record
+            $quote = OrderVendorNegotiation::create([
+                'tenant_id' => $tenantId,
+                'order_id' => $order->id,
+                'vendor_id' => $vendor->id,
+                'initial_offer' => $initialOffer,
+                'latest_offer' => $initialOffer,
+                'quote_details' => $quoteDetails,
+                'status' => 'draft',
+                'status_history' => [[
+                    'from' => null,
+                    'to' => 'draft',
+                    'changed_by' => auth()->id(),
+                    'changed_at' => now()->toIso8601String(),
+                    'reason' => 'Quote created'
+                ]],
+                'expires_at' => $request->input('valid_until'),
+                'round' => 1,
+                'history' => [[
+                    'action' => 'created',
+                    'timestamp' => now()->toIso8601String(),
+                    'user_id' => auth()->id(),
+                ]],
+            ]);
+            
+            // Load relationships for response
+            $quote->load(['order.customer', 'vendor']);
 
-        $quote->load(['order.customer', 'vendor']);
-
-        return response()->json([
-            'data' => $this->transformQuoteToFrontend($quote)
-        ], 201);
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'message' => 'Quote created successfully'
+            ], 201);
+            
+        } catch (\InvalidArgumentException $e) {
+            \Log::warning('Quote creation validation failed', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'tenant_id' => $tenantId ?? null,
+                'request_data' => $request->except(['password', 'token']),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 422);
+            
+        } catch (\Exception $e) {
+            \Log::error('Quote creation failed', [
+                'error' => $e->getMessage(),
+                'error_class' => get_class($e),
+                'user_id' => auth()->id(),
+                'tenant_id' => $tenantId ?? null,
+                'request_data' => $request->except(['password', 'token']),
+                'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create quote'
+            ], 500);
+        }
     }
 
     /**
@@ -424,7 +471,7 @@ class QuoteController extends Controller
         }
 
         // Validate quote status is acceptable for acceptance
-        if (!in_array($quote->status, ['open', 'countered', 'sent'])) {
+        if (!in_array($quote->status, ['draft', 'sent', 'pending_response', 'countered'])) { // Updated to new status enum
             return response()->json([
                 'message' => 'Quote cannot be accepted in current status: ' . $quote->status
             ], 422);
@@ -452,7 +499,7 @@ class QuoteController extends Controller
             $rejectedCount = OrderVendorNegotiation::where('tenant_id', $tenantId)
                 ->where('order_id', $quote->order_id)
                 ->where('id', '!=', $quote->id)
-                ->whereIn('status', ['open', 'countered', 'sent', 'draft'])
+                ->whereIn('status', ['draft', 'sent', 'pending_response', 'countered']) // Updated to new status enum
                 ->update([
                     'status' => 'rejected',
                     'closed_at' => now(),
@@ -631,6 +678,145 @@ class QuoteController extends Controller
         return response()->json([
             'data' => $this->transformQuoteToFrontend($quote)
         ]);
+    }
+
+    /**
+     * Send quote to vendor.
+     */
+    public function sendToVendor(Request $request, string $id)
+    {
+        $tenantId = $this->getCurrentTenantId($request);
+        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->where('uuid', $id)
+            ->with(['order', 'vendor'])
+            ->firstOrFail();
+
+        // Validate quote can be sent
+        if ($quote->status !== 'draft') {
+            return response()->json([
+                'message' => 'Only draft quotes can be sent to vendors'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update status history
+            $statusHistory = $quote->status_history ?? [];
+            $statusHistory[] = [
+                'from' => $quote->status,
+                'to' => 'sent',
+                'changed_by' => auth()->id(),
+                'changed_at' => now()->toIso8601String(),
+                'reason' => 'Quote sent to vendor'
+            ];
+
+            // Update quote
+            $quote->update([
+                'status' => 'sent',
+                'sent_at' => now(),
+                'status_history' => $statusHistory,
+            ]);
+
+            // TODO: Send notification to vendor (Phase 5)
+            // This will be implemented in the notification system phase
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'message' => 'Quote sent to vendor successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Update quote status.
+     */
+    public function updateStatus(Request $request, string $id)
+    {
+        $request->validate([
+            'status' => 'required|in:draft,sent,pending_response,accepted,rejected,countered,expired',
+            'reason' => 'sometimes|string|max:1000'
+        ]);
+
+        $tenantId = $this->getCurrentTenantId($request);
+        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->where('uuid', $id)
+            ->with(['order', 'vendor'])
+            ->firstOrFail();
+
+        $newStatus = $request->input('status');
+        $reason = $request->input('reason');
+
+        // Validate status transition
+        $validTransitions = $this->getValidStatusTransitions($quote->status);
+        if (!in_array($newStatus, $validTransitions)) {
+            return response()->json([
+                'message' => "Cannot transition from {$quote->status} to {$newStatus}",
+                'valid_transitions' => $validTransitions
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update status history
+            $statusHistory = $quote->status_history ?? [];
+            $statusHistory[] = [
+                'from' => $quote->status,
+                'to' => $newStatus,
+                'changed_by' => auth()->id(),
+                'changed_at' => now()->toIso8601String(),
+                'reason' => $reason ?? "Status changed to {$newStatus}"
+            ];
+
+            $updateData = [
+                'status' => $newStatus,
+                'status_history' => $statusHistory,
+            ];
+
+            // Set timestamps based on status
+            if ($newStatus === 'sent' && !$quote->sent_at) {
+                $updateData['sent_at'] = now();
+            }
+
+            if (in_array($newStatus, ['accepted', 'rejected', 'expired']) && !$quote->closed_at) {
+                $updateData['closed_at'] = now();
+            }
+
+            $quote->update($updateData);
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'message' => 'Quote status updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Get valid status transitions for current status.
+     */
+    private function getValidStatusTransitions(string $currentStatus): array
+    {
+        return match($currentStatus) {
+            'draft' => ['sent'],
+            'sent' => ['pending_response', 'expired'],
+            'pending_response' => ['accepted', 'rejected', 'countered', 'expired'],
+            'countered' => ['accepted', 'rejected', 'expired'],
+            'accepted', 'rejected', 'expired' => [], // Terminal states
+            default => []
+        };
     }
 
     /**
@@ -899,9 +1085,16 @@ class QuoteController extends Controller
         $quotationAmountUSD = $quotationAmountIDR / $exchangeRate;
         $profitMarginUSD = $profitMarginIDR / $exchangeRate;
         
+        // Generate quote number with date-based format for better scalability
+        // Format: QT-{YYYYMM}-{ID} (e.g., QT-202602-00123)
+        // This format scales to millions of quotes per month
+        $quoteNumber = $negotiation->created_at 
+            ? sprintf('QT-%s-%05d', $negotiation->created_at->format('Ym'), $negotiation->id)
+            : 'QT-DRAFT';
+        
         return [
             'id' => $negotiation->uuid,
-            'quote_number' => 'Q-' . str_pad($negotiation->id, 6, '0', STR_PAD_LEFT), // Generate quote number
+            'quote_number' => $quoteNumber,
             'order_id' => $negotiation->order->uuid ?? null,
             'order_number' => $negotiation->order->order_number ?? null,
             
@@ -910,6 +1103,10 @@ class QuoteController extends Controller
             'description' => $description,
             'terms_and_conditions' => $termsAndConditions,
             'notes' => $notes,
+            
+            // Add specifications and quantity at root level for compatibility
+            'specifications' => $negotiation->specifications ?? [],
+            'quantity' => !empty($quoteItems) && isset($quoteItems[0]['quantity']) ? $quoteItems[0]['quantity'] : 0,
             
             'customer' => $customer ? [
                 'id' => $customer->uuid,
@@ -927,6 +1124,9 @@ class QuoteController extends Controller
             'vendor_id' => $vendor->uuid ?? null,
             'vendor_name' => $vendor->name ?? null,
             'status' => $negotiation->status,
+            'status_label' => $this->getStatusLabel($negotiation->status),
+            'status_color' => $this->getStatusColor($negotiation->status),
+            'status_history' => $negotiation->status_history ?? [],
             'type' => 'vendor_quote', // Default type for OrderVendorNegotiation
             
             // Monetary values in IDR (cents converted to dollars for display)
@@ -958,9 +1158,11 @@ class QuoteController extends Controller
             'items' => $transformedItems,
             
             // Vendor response tracking (Phase 2 preparation)
-            'sent_at' => null, // Will be populated when send feature is implemented
+            'sent_at' => $negotiation->sent_at?->toISOString(),
+            'responded_at' => $negotiation->responded_at?->toISOString(),
+            'response_type' => $negotiation->response_type,
+            'response_notes' => $negotiation->response_notes,
             'vendor_viewed_at' => null, // Will be populated when vendor views quote
-            'responded_at' => null, // Will be populated when vendor responds
             'vendor_response' => null, // Will contain vendor's response data
             'response_token' => null, // Will contain unique token for vendor response
             
@@ -1003,10 +1205,356 @@ class QuoteController extends Controller
     }
 
     /**
+     * Vendor accepts a quote.
+     */
+    public function vendorAccept(Request $request, string $id)
+    {
+        $request->validate([
+            'notes' => 'sometimes|string|max:1000',
+            'estimated_delivery_days' => 'sometimes|integer|min:1|max:365'
+        ]);
+
+        $tenantId = $this->getCurrentTenantId($request);
+        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->where('uuid', $id)
+            ->with(['order', 'vendor'])
+            ->firstOrFail();
+
+        // Validate quote can be accepted by vendor
+        if (!in_array($quote->status, ['sent', 'pending_response'])) {
+            return response()->json([
+                'message' => 'Quote cannot be accepted in current status: ' . $quote->status
+            ], 422);
+        }
+
+        // Check if quote has expired
+        if ($quote->expires_at && $quote->expires_at < now()) {
+            return response()->json([
+                'message' => 'Quote has expired and cannot be accepted'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update status history
+            $statusHistory = $quote->status_history ?? [];
+            $statusHistory[] = [
+                'from' => $quote->status,
+                'to' => 'accepted',
+                'changed_by' => auth()->id(),
+                'changed_at' => now()->toIso8601String(),
+                'reason' => 'Vendor accepted quote' . ($request->input('notes') ? ': ' . $request->input('notes') : '')
+            ];
+
+            $updateData = [
+                'status' => 'accepted',
+                'responded_at' => now(),
+                'response_type' => 'accept',
+                'response_notes' => $request->input('notes'),
+                'closed_at' => now(),
+                'status_history' => $statusHistory,
+            ];
+
+            // Store estimated delivery days if provided
+            if ($request->filled('estimated_delivery_days')) {
+                $quoteDetails = $quote->quote_details ?? [];
+                $quoteDetails['estimated_delivery_days'] = $request->input('estimated_delivery_days');
+                $updateData['quote_details'] = $quoteDetails;
+            }
+
+            $quote->update($updateData);
+
+            // TODO: Send notification to admin (Phase 5)
+            // This will be implemented in the notification system phase
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'message' => 'Quote accepted successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Vendor rejects a quote.
+     */
+    public function vendorReject(Request $request, string $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|min:10|max:1000'
+        ]);
+
+        $tenantId = $this->getCurrentTenantId($request);
+        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->where('uuid', $id)
+            ->with(['order', 'vendor'])
+            ->firstOrFail();
+
+        // Validate quote can be rejected by vendor
+        if (!in_array($quote->status, ['sent', 'pending_response'])) {
+            return response()->json([
+                'message' => 'Quote cannot be rejected in current status: ' . $quote->status
+            ], 422);
+        }
+
+        // Check if quote has expired
+        if ($quote->expires_at && $quote->expires_at < now()) {
+            return response()->json([
+                'message' => 'Quote has expired and cannot be rejected'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update status history
+            $statusHistory = $quote->status_history ?? [];
+            $statusHistory[] = [
+                'from' => $quote->status,
+                'to' => 'rejected',
+                'changed_by' => auth()->id(),
+                'changed_at' => now()->toIso8601String(),
+                'reason' => 'Vendor rejected quote: ' . $request->input('reason')
+            ];
+
+            $quote->update([
+                'status' => 'rejected',
+                'responded_at' => now(),
+                'response_type' => 'reject',
+                'response_notes' => $request->input('reason'),
+                'closed_at' => now(),
+                'status_history' => $statusHistory,
+            ]);
+
+            // TODO: Send notification to admin (Phase 5)
+            // This will be implemented in the notification system phase
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'message' => 'Quote rejected'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Vendor submits a counter offer.
+     */
+    public function vendorCounter(Request $request, string $id)
+    {
+        $request->validate([
+            'counter_offer' => 'required|numeric|min:0',
+            'notes' => 'sometimes|string|max:1000',
+            'estimated_delivery_days' => 'sometimes|integer|min:1|max:365'
+        ]);
+
+        $tenantId = $this->getCurrentTenantId($request);
+        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->where('uuid', $id)
+            ->with(['order', 'vendor'])
+            ->firstOrFail();
+
+        // Validate quote can be countered by vendor
+        if (!in_array($quote->status, ['sent', 'pending_response'])) {
+            return response()->json([
+                'message' => 'Quote cannot be countered in current status: ' . $quote->status
+            ], 422);
+        }
+
+        // Check if quote has expired
+        if ($quote->expires_at && $quote->expires_at < now()) {
+            return response()->json([
+                'message' => 'Quote has expired and cannot be countered'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $counterOffer = (int) ($request->input('counter_offer')); // Already in cents from frontend
+
+            // Update status history
+            $statusHistory = $quote->status_history ?? [];
+            $statusHistory[] = [
+                'from' => $quote->status,
+                'to' => 'countered',
+                'changed_by' => auth()->id(),
+                'changed_at' => now()->toIso8601String(),
+                'reason' => 'Vendor countered quote' . ($request->input('notes') ? ': ' . $request->input('notes') : '')
+            ];
+
+            // Add to negotiation history
+            $history = $quote->history ?? [];
+            $history[] = [
+                'action' => 'counter_offered',
+                'previous_offer' => $quote->latest_offer,
+                'new_offer' => $counterOffer,
+                'notes' => $request->input('notes'),
+                'timestamp' => now()->toISOString(),
+                'user_id' => auth()->id(),
+            ];
+
+            $updateData = [
+                'status' => 'countered',
+                'latest_offer' => $counterOffer,
+                'round' => $quote->round + 1,
+                'responded_at' => now(),
+                'response_type' => 'counter',
+                'response_notes' => $request->input('notes'),
+                'status_history' => $statusHistory,
+                'history' => $history,
+            ];
+
+            // Store estimated delivery days if provided
+            if ($request->filled('estimated_delivery_days')) {
+                $quoteDetails = $quote->quote_details ?? [];
+                $quoteDetails['estimated_delivery_days'] = $request->input('estimated_delivery_days');
+                $updateData['quote_details'] = $quoteDetails;
+            }
+
+            $quote->update($updateData);
+
+            // TODO: Send notification to admin (Phase 5)
+            // This will be implemented in the notification system phase
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'message' => 'Counter offer submitted successfully'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * List quotes for vendor.
+     */
+    public function vendorIndex(Request $request)
+    {
+        $perPage = $request->input('per_page', 15);
+        $page = $request->input('page', 1);
+        
+        $tenantId = $this->getCurrentTenantId($request);
+        
+        // Get vendor ID from authenticated user
+        // Note: In production, get vendor_id from user's vendor relationship
+        $vendorId = $request->input('vendor_id'); // Temporary for testing
+        
+        if (!$vendorId) {
+            return response()->json([
+                'message' => 'Vendor ID is required'
+            ], 422);
+        }
+
+        // Convert vendor UUID to internal ID if needed
+        if (is_string($vendorId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $vendorId)) {
+            $vendor = Vendor::where('tenant_id', $tenantId)
+                ->where('uuid', $vendorId)
+                ->firstOrFail();
+            $vendorId = $vendor->id;
+        }
+        
+        $query = OrderVendorNegotiation::with(['order.customer', 'vendor'])
+            ->where('tenant_id', $tenantId)
+            ->where('vendor_id', $vendorId);
+            
+        // Apply filters
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function (Builder $q) use ($search) {
+                $q->whereHas('order', function (Builder $orderQuery) use ($search) {
+                    $orderQuery->where('order_number', 'LIKE', "%{$search}%")
+                        ->orWhereHas('customer', function (Builder $customerQuery) use ($search) {
+                            $customerQuery->where('name', 'LIKE', "%{$search}%");
+                        });
+                });
+            });
+        }
+        
+        // Sorting
+        $sortField = $request->input('sort', 'created_at');
+        $sortDirection = $request->input('direction', 'desc');
+        $query->orderBy($sortField, $sortDirection);
+        
+        $quotes = $query->paginate($perPage, ['*'], 'page', $page);
+        
+        return response()->json([
+            'data' => collect($quotes->items())->map(function ($quote) {
+                return $this->transformQuoteToFrontend($quote);
+            })->toArray(),
+            'meta' => [
+                'current_page' => $quotes->currentPage(),
+                'per_page' => $quotes->perPage(),
+                'total' => $quotes->total(),
+                'last_page' => $quotes->lastPage(),
+                'from' => $quotes->firstItem(),
+                'to' => $quotes->lastItem()
+            ]
+        ]);
+    }
+
+    /**
      * Get the current tenant ID.
      */
     private function getCurrentTenantId(Request $request): int
     {
         return $this->resolveTenant($request)->id;
+    }
+
+    /**
+     * Get human-readable label for status.
+     */
+    private function getStatusLabel(string $status): string
+    {
+        return match($status) {
+            'draft' => 'Draft',
+            'sent' => 'Sent to Vendor',
+            'pending_response' => 'Awaiting Response',
+            'accepted' => 'Accepted',
+            'rejected' => 'Rejected',
+            'countered' => 'Counter Offer',
+            'expired' => 'Expired',
+            'open' => 'Open', // Legacy status
+            'cancelled' => 'Cancelled', // Legacy status
+            default => ucfirst($status)
+        };
+    }
+
+    /**
+     * Get color code for status.
+     */
+    private function getStatusColor(string $status): string
+    {
+        return match($status) {
+            'draft' => 'gray',
+            'sent' => 'blue',
+            'pending_response' => 'yellow',
+            'accepted' => 'green',
+            'rejected' => 'red',
+            'countered' => 'orange',
+            'expired' => 'gray',
+            'open' => 'blue', // Legacy status
+            'cancelled' => 'red', // Legacy status
+            default => 'gray'
+        };
     }
 }

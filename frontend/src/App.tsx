@@ -100,7 +100,7 @@ const OrderTracking = lazy(() => import("./pages/admin/OrderTracking"));
 const BulkOrders = lazy(() => import("./pages/admin/BulkOrders"));
 const OrderAnalytics = lazy(() => import("./pages/admin/OrderAnalytics"));
 const QuoteManagement = lazy(() => import("./pages/tenant/QuoteManagement"));
-const QuoteDetail = lazy(() => import("./pages/tenant/QuoteDetail"));
+const QuoteDetail = lazy(() => import("./pages/admin/quotes/QuoteDetail"));
 const QuoteEdit = lazy(() => import("./pages/tenant/QuoteEdit"));
 const InvoiceManagement = lazy(() => import("./pages/tenant/InvoiceManagement"));
 const PaymentManagement = lazy(() => import("./pages/tenant/PaymentManagement"));

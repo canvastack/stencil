@@ -79,7 +79,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $startTime = microtime(true);
@@ -114,7 +114,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $startTime = microtime(true);
@@ -174,7 +174,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Test with active quote
@@ -218,7 +218,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 500000,
             'expires_at' => Carbon::now()->addDays(7),
         ]);
@@ -251,7 +251,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'expires_at' => Carbon::now()->subDays(1), // Expired
         ]);
 
@@ -295,7 +295,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $otherTenant->id,
             'order_id' => $otherOrder->id,
             'vendor_id' => $otherVendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'expires_at' => Carbon::now()->addDays(7),
         ]);
 
@@ -312,7 +312,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 500000,
             'expires_at' => Carbon::now()->addDays(7),
         ]);
@@ -345,7 +345,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $startTime = microtime(true);
@@ -371,7 +371,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $response = $this->postJson("/api/v1/tenant/quotes/{$quote->uuid}/reject", [
@@ -390,7 +390,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $response = $this->postJson("/api/v1/tenant/quotes/{$quote->uuid}/reject", [
@@ -411,7 +411,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $response = $this->postJson("/api/v1/tenant/quotes/{$quote->uuid}/reject", [
@@ -439,7 +439,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 500000,
             'expires_at' => Carbon::now()->addDays(7),
         ]);
@@ -459,7 +459,7 @@ class QuoteApiEndpointTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Test reject endpoint (< 500ms)

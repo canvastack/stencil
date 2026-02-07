@@ -1,0 +1,51 @@
+<?php
+
+namespace Tests\Feature\Quote;
+
+use Tests\TestCase;
+use App\Infrastructure\Persistence\Eloquent\Models\User;
+use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
+use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Property Test: Vendor Dashboard Shows Assigned Quotes
+ * 
+ * Validates: Requirements 6.1
+ * 
+ * Property 19: For any vendor user, their dashboard should display only quotes 
+ * where they are the assigned vendor, filtered by tenant_id.
+ * 
+ * This test verifies that:
+ * 1. Vendor can only see quotes assigned to them
+ * 2. Vendor cannot see quotes assigned to other vendors
+ * 3. Tenant isolation is enforced (no cross-tenant access)
+ * 4. All returned quotes have correct vendor_id
+ */
+class VendorDashboardPropertyTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /**
+     * Property 19: Vendor Dashboard Shows Assigned Quotes
+     * 
+     * @test
+     */
+    public function property_vendor_dashboard_shows_only_assigned_quotes(): void
+    {
+        // Run property test with multiple iterations
+        for ($iteration = 0; $iteration < 20; $iteration++) {
+            $this->refreshDatabase();
+            
+            // Generate random test data
+            $tenant1Id = $this->createTenant('tenant-' . $iteration . '-1');
+            $tenant2Id = $this->createTenant('tenant-' . $iteration . '-2');
+            
+            // Create vendors in tenant 1
+            $vendor1 = $this->createVendor($tenant1Id, 'Vendor 1');
+            $vendor2 = $this->createVendor($tenant1Id, 'Vendor 2');
+            
+            // Create vendor in tenant 2
+            $vendor3 = $this->createVendor($tenant2Id, 'Vendor 3');

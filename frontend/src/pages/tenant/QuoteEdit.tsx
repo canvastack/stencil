@@ -25,7 +25,11 @@ import {
 } from '@/components/ui/alert-dialog';
 
 // Editable statuses - only these can be edited
-const EDITABLE_STATUSES = ['open', 'countered'] as const;
+// draft: Initial state before sending
+// open: Sent to vendor, awaiting response
+// sent: Sent but can still be edited if needed
+// countered: Vendor made counter offer, can be revised
+const EDITABLE_STATUSES = ['draft', 'open', 'sent', 'countered'] as const;
 
 export default function QuoteEdit() {
   const { id } = useParams<{ id: string }>();
@@ -75,7 +79,7 @@ export default function QuoteEdit() {
       // Validate that quote can be edited
       if (!EDITABLE_STATUSES.includes(data.status as any)) {
         console.warn('[QuoteEdit] Quote status not editable:', data.status);
-        setError(`This quote cannot be edited. Only quotes with status "open" or "countered" can be edited. Current status: ${data.status}`);
+        setError(`This quote cannot be edited. Only quotes with status "draft", "open", "sent", or "countered" can be edited. Current status: ${data.status}`);
         setQuote(null);
       } else {
         console.log('[QuoteEdit] Quote loaded successfully:', data.quote_number);
@@ -238,10 +242,41 @@ export default function QuoteEdit() {
             </p>
           </div>
         </div>
-        <Button variant="outline" onClick={handleCancel}>
-          <X className="w-4 h-4 mr-2" />
-          Cancel
-        </Button>
+      </div>
+
+      {/* Actions - Sticky Header Style */}
+      <div className="sticky top-0 z-10 -mx-6 px-6 py-4 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-gray-200/50 dark:border-gray-700/50 shadow-lg shadow-gray-200/20 dark:shadow-black/20">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Updating quote {quote.quote_number}. Customer, vendor, and order cannot be changed.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleCancel}>
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              size="sm"
+              form="quote-edit-form"
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <FileEdit className="w-4 h-4 mr-2" />
+                  Update Quote
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Status Warning for 'countered' quotes */}
@@ -266,6 +301,7 @@ export default function QuoteEdit() {
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         loading={saving}
+        formId="quote-edit-form"
       />
 
       {/* Unsaved Changes Dialog */}

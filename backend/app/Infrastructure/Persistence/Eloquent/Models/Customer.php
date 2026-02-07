@@ -22,38 +22,38 @@ class Customer extends Authenticatable implements TenantAwareModel
         'tenant_id',
         'first_name',
         'last_name',
-        'name',
+        'name', // ✅ EXISTS (added in phase3)
         'email',
         'phone',
         'company_name',
-        'company',
-        'customer_type',
+        'company', // ✅ EXISTS (added in phase3)
+        'customer_type', // ✅ EXISTS (renamed from type in phase3)
         'status',
         'address',
-        'city',
-        'province',
-        'postal_code',
-        'location',
+        'city', // ✅ EXISTS (added in phase3)
+        'province', // ✅ EXISTS (added in phase3)
+        'postal_code', // ✅ EXISTS (added in phase3)
+        'location', // ✅ EXISTS (added in phase3)
         'tags',
-        'notes',
-        'tax_id',
-        'business_license',
-        'total_orders',
-        'total_spent',
+        'notes', // ✅ EXISTS (added in phase3)
+        'tax_id', // ✅ EXISTS (added in phase3)
+        'business_license', // ✅ EXISTS (added in phase3)
+        'total_orders', // ✅ EXISTS (added in phase3)
+        'total_spent', // ✅ EXISTS (added in phase3)
         'last_order_at',
-        'last_order_date',
+        'last_order_date', // ✅ EXISTS (added in phase3)
         'metadata',
         'notification_preferences',
     ];
 
     protected $casts = [
-        'location' => 'json',
+        'location' => 'json', // ✅ EXISTS (added in phase3)
         'tags' => 'json',
         'metadata' => 'json',
         'notification_preferences' => 'json',
-        'total_orders' => 'integer',
-        'total_spent' => 'integer',
-        'last_order_date' => 'datetime',
+        'total_orders' => 'integer', // ✅ EXISTS (added in phase3)
+        'total_spent' => 'integer', // ✅ EXISTS (added in phase3)
+        'last_order_date' => 'datetime', // ✅ EXISTS (added in phase3)
         'last_order_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -61,7 +61,8 @@ class Customer extends Authenticatable implements TenantAwareModel
     ];
 
     protected $dates = [
-        'last_order_date',
+        'last_order_date', // ✅ EXISTS (added in phase3)
+        'last_order_at',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -94,14 +95,15 @@ class Customer extends Authenticatable implements TenantAwareModel
 
     public function scopeByType($query, $type)
     {
-        return $query->where('customer_type', $type);
+        return $query->where('customer_type', $type); // ✅ CORRECT: customer_type (after phase3 rename)
     }
 
     public function updateOrderStats()
     {
-        $this->total_orders = $this->orders()->count();
-        $this->total_spent = $this->orders()->sum('total_paid_amount');
-        $this->last_order_date = $this->orders()->latest()->first()?->created_at;
+        $this->total_orders = $this->orders()->count(); // ✅ EXISTS (added in phase3)
+        $this->total_spent = $this->orders()->sum('total_paid_amount'); // ✅ EXISTS (added in phase3)
+        $this->last_order_date = $this->orders()->latest()->first()?->created_at; // ✅ EXISTS (added in phase3)
+        $this->last_order_at = $this->orders()->latest()->first()?->created_at;
         $this->save();
     }
 

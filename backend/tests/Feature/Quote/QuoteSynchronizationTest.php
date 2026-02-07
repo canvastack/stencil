@@ -96,7 +96,7 @@ class QuoteSynchronizationTest extends TestCase
                 'initial_offer' => $vendorPrice,
                 'latest_offer' => $vendorPrice,
                 'currency' => 'IDR',
-                'status' => 'open',
+                'status' => 'draft',
             ]);
 
             // Accept quote via API
@@ -167,7 +167,7 @@ class QuoteSynchronizationTest extends TestCase
             'latest_offer' => $vendorPrice,
             'currency' => 'IDR',
             'quote_details' => $vendorTerms, // Changed from 'terms' to 'quote_details'
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Accept quote via API
@@ -238,7 +238,7 @@ class QuoteSynchronizationTest extends TestCase
             'initial_offer' => $vendorPrice,
             'latest_offer' => $vendorPrice,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Accept quote via API
@@ -289,7 +289,7 @@ class QuoteSynchronizationTest extends TestCase
             'initial_offer' => 10000000,
             'latest_offer' => 10000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Store original quote status
@@ -333,7 +333,7 @@ class QuoteSynchronizationTest extends TestCase
             'initial_offer' => $vendorPrice,
             'latest_offer' => $vendorPrice,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $response = $this->postJson("/api/v1/tenant/quotes/{$quote->uuid}/accept", [], [
@@ -367,7 +367,7 @@ class QuoteSynchronizationTest extends TestCase
             'initial_offer' => $vendorPrice,
             'latest_offer' => $vendorPrice,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $response = $this->postJson("/api/v1/tenant/quotes/{$quote->uuid}/accept", [], [
@@ -392,10 +392,10 @@ class QuoteSynchronizationTest extends TestCase
     {
         // Test with multiple quotes to verify the property holds universally
         $testCases = [
-            ['price' => 100000, 'status' => 'open'],
-            ['price' => 500000, 'status' => 'open'],
+            ['price' => 100000, 'status' => 'draft'],
+            ['price' => 500000, 'status' => 'draft'],
             ['price' => 1000000, 'status' => 'countered'],
-            ['price' => 5000000, 'status' => 'open'],
+            ['price' => 5000000, 'status' => 'draft'],
             ['price' => 10000000, 'status' => 'countered'],
         ];
 

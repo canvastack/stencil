@@ -61,15 +61,16 @@ export const useDuplicateQuoteCheck = (orderId?: string): UseDuplicateQuoteCheck
       try {
         console.log('[useDuplicateQuoteCheck] Starting API call', {
           orderId,
-          status: ['open', 'countered'],
+          status: ['draft', 'sent', 'pending_response', 'countered'],
         });
         
         // Call backend API check-existing endpoint
-        // This endpoint specifically checks for active quotes (open, countered)
-        // Note: 'draft' and 'sent' are not valid statuses in the database
+        // This endpoint specifically checks for active quotes
+        // Active statuses: draft, sent, pending_response, countered
+        // Terminal statuses (not checked): accepted, rejected, expired
         const response = await quoteService.checkExisting({
           order_id: orderId,
-          status: ['open', 'countered'], // Active statuses only
+          status: ['draft', 'sent', 'pending_response', 'countered'], // Active statuses only
         });
 
         console.log('[useDuplicateQuoteCheck] API response received', {

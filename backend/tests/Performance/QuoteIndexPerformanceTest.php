@@ -29,13 +29,13 @@ class QuoteIndexPerformanceTest extends TestCase
             'tenant_id' => $tenant->id,
             'order_id' => $order->id,
             'vendor_id' => $vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Query that should use the composite index
         $query = OrderVendorNegotiation::where('order_id', $order->id)
             ->where('vendor_id', $vendor->id)
-            ->whereIn('status', ['draft', 'open', 'sent', 'countered'])
+            ->whereIn('status', ['draft', 'sent', 'countered']) // Changed 'open' to 'sent', removed 'sent' duplicate
             ->toSql();
 
         // Verify query structure
@@ -46,7 +46,7 @@ class QuoteIndexPerformanceTest extends TestCase
         // Execute query and verify it works
         $results = OrderVendorNegotiation::where('order_id', $order->id)
             ->where('vendor_id', $vendor->id)
-            ->whereIn('status', ['draft', 'open', 'sent', 'countered'])
+            ->whereIn('status', ['draft', 'sent', 'countered']) // Changed 'open' to 'sent', removed duplicate
             ->get();
 
         $this->assertCount(5, $results);
@@ -104,7 +104,7 @@ class QuoteIndexPerformanceTest extends TestCase
                     'tenant_id' => $tenant->id,
                     'order_id' => $order->id,
                     'vendor_id' => $vendor->id,
-                    'status' => collect(['draft', 'open', 'sent', 'countered', 'accepted', 'rejected'])->random(),
+                    'status' => collect(['draft', 'sent', 'countered', 'accepted', 'rejected'])->random(), // Changed 'open' to 'sent'
                 ]);
             }
         }
@@ -114,7 +114,7 @@ class QuoteIndexPerformanceTest extends TestCase
         
         $results = OrderVendorNegotiation::where('order_id', $orders->first()->id)
             ->where('vendor_id', $vendors->first()->id)
-            ->whereIn('status', ['draft', 'open', 'sent', 'countered'])
+            ->whereIn('status', ['draft', 'sent', 'countered']) // Changed 'open' to 'sent', removed duplicate
             ->get();
         
         $endTime = microtime(true);

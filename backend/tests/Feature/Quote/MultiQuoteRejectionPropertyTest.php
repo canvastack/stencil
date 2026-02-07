@@ -108,7 +108,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             
             for ($i = 0; $i < $numQuotes; $i++) {
                 $vendor = $vendors[$i % count($vendors)];
-                $status = ($i % 2 === 0) ? 'open' : 'countered'; // Mix of open and countered
+                $status = ($i % 2 === 0) ? 'sent' : 'countered'; // Mix of sent and countered (changed from 'open')
                 
                 $quotes[] = OrderVendorNegotiation::create([
                     'tenant_id' => $this->tenant->id,
@@ -206,7 +206,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $counteredQuote = OrderVendorNegotiation::create([
@@ -237,7 +237,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 4000000,
             'latest_offer' => 4000000,
             'currency' => 'IDR',
-            'status' => 'cancelled',
+            'status' => 'rejected', // Already rejected, should remain rejected
             'closed_at' => now()->subDays(2),
         ]);
 
@@ -258,7 +258,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
         $this->assertEquals('accepted', $openQuote->status);
         $this->assertEquals('rejected', $counteredQuote->status, 'Countered quote should be rejected');
         $this->assertEquals('expired', $expiredQuote->status, 'Expired quote should remain expired');
-        $this->assertEquals('cancelled', $cancelledQuote->status, 'Cancelled quote should remain cancelled');
+        $this->assertEquals('rejected', $cancelledQuote->status, 'Already rejected quote should remain rejected'); // Changed from 'cancelled'
     }
 
     /**
@@ -287,7 +287,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $order1Quote2 = OrderVendorNegotiation::create([
@@ -297,7 +297,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 2000000,
             'latest_offer' => 2000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Create quotes for order 2
@@ -308,7 +308,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 3000000,
             'latest_offer' => 3000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $order2Quote2 = OrderVendorNegotiation::create([
@@ -318,7 +318,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 4000000,
             'latest_offer' => 4000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Accept quote from order 1
@@ -339,8 +339,8 @@ class MultiQuoteRejectionPropertyTest extends TestCase
         $this->assertEquals('rejected', $order1Quote2->status);
 
         // Assertions for order 2 - should remain unchanged
-        $this->assertEquals('open', $order2Quote1->status, 'Order 2 quotes should not be affected');
-        $this->assertEquals('open', $order2Quote2->status, 'Order 2 quotes should not be affected');
+        $this->assertEquals('draft', $order2Quote1->status, 'Order 2 quotes should not be affected'); // Changed from 'open'
+        $this->assertEquals('draft', $order2Quote2->status, 'Order 2 quotes should not be affected'); // Changed from 'open'
     }
 
     /**
@@ -369,7 +369,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             
             for ($i = 0; $i < $numQuotes; $i++) {
                 $vendor = $vendors[$i % count($vendors)];
-                $status = (rand(0, 1) === 0) ? 'open' : 'countered';
+                $status = (rand(0, 1) === 0) ? 'sent' : 'countered'; // Changed from 'open' to 'sent'
                 
                 $quotes[] = OrderVendorNegotiation::create([
                     'tenant_id' => $this->tenant->id,
@@ -489,7 +489,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
                 'initial_offer' => 2000000,
                 'latest_offer' => 2000000,
                 'currency' => 'IDR',
-                'status' => 'open',
+                'status' => 'draft',
             ]);
 
             // Create quote to be rejected with specific data
@@ -503,7 +503,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
                 'terms' => $testCase['terms'],
                 'round' => $testCase['round'],
                 'history' => $testCase['history'],
-                'status' => 'open',
+                'status' => 'draft',
             ]);
 
             // Store original data before rejection
@@ -634,7 +634,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $quote2 = OrderVendorNegotiation::create([
@@ -644,7 +644,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 2000000,
             'latest_offer' => 2000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $quote3 = OrderVendorNegotiation::create([
@@ -654,7 +654,7 @@ class MultiQuoteRejectionPropertyTest extends TestCase
             'initial_offer' => 3000000,
             'latest_offer' => 3000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Accept one quote

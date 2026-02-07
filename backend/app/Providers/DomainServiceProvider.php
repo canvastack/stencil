@@ -50,6 +50,9 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
         $this->app->bind(VendorRepositoryInterface::class, VendorRepository::class);
         $this->app->bind(\App\Domain\Product\Repositories\ProductRepositoryInterface::class, \App\Infrastructure\Persistence\Repositories\ProductEloquentRepository::class);
+        $this->app->bind(\App\Domain\Quote\Repositories\QuoteRepositoryInterface::class, \App\Infrastructure\Persistence\Eloquent\Repositories\QuoteRepository::class);
+        $this->app->bind(\App\Domain\Quote\Repositories\MessageRepositoryInterface::class, \App\Infrastructure\Persistence\Eloquent\Repositories\MessageRepository::class);
+        $this->app->bind(\App\Domain\Notification\Repositories\NotificationRepositoryInterface::class, \App\Infrastructure\Persistence\Repositories\NotificationEloquentRepository::class);
         
         // Exchange Rate System bindings
         $this->app->bind(ExchangeRateSettingRepositoryInterface::class, ExchangeRateSettingRepository::class);

@@ -407,16 +407,32 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::get('/stats', [QuoteController::class, 'statistics'])->name('tenant.quotes.stats'); // Add stats alias
             Route::get('/export', [QuoteController::class, 'export'])->name('tenant.quotes.export');
             
+            // Vendor-specific routes (must come before /{quote})
+            Route::get('/vendor/list', [QuoteController::class, 'vendorIndex'])->name('tenant.quotes.vendor.index');
+            
             // Quote by ID (catch-all - must come last)
             Route::get('/{quote}', [QuoteController::class, 'show'])->name('tenant.quotes.show');
             Route::put('/{quote}', [QuoteController::class, 'update'])->name('tenant.quotes.update');
             Route::delete('/{quote}', [QuoteController::class, 'destroy'])->name('tenant.quotes.destroy');
             
-            // Quote Actions
+            // Quote Actions (Admin)
             Route::post('/{quote}/accept', [QuoteController::class, 'accept'])->name('tenant.quotes.accept');
             Route::post('/{quote}/reject', [QuoteController::class, 'reject'])->name('tenant.quotes.reject');
             Route::post('/{quote}/counter', [QuoteController::class, 'counter'])->name('tenant.quotes.counter');
+            Route::post('/{quote}/send-to-vendor', [QuoteController::class, 'sendToVendor'])->name('tenant.quotes.send-to-vendor');
+            Route::post('/{quote}/update-status', [QuoteController::class, 'updateStatus'])->name('tenant.quotes.update-status');
             Route::get('/{quote}/pdf', [QuoteController::class, 'pdf'])->name('tenant.quotes.pdf');
+            
+            // Vendor Response Actions
+            Route::post('/{quote}/vendor/accept', [QuoteController::class, 'vendorAccept'])->name('tenant.quotes.vendor.accept');
+            Route::post('/{quote}/vendor/reject', [QuoteController::class, 'vendorReject'])->name('tenant.quotes.vendor.reject');
+            Route::post('/{quote}/vendor/counter', [QuoteController::class, 'vendorCounter'])->name('tenant.quotes.vendor.counter');
+            
+            // Message Thread (Communication Center)
+            Route::get('/{quote}/messages', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'index'])->name('tenant.quotes.messages.index');
+            Route::post('/{quote}/messages', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'store'])->name('tenant.quotes.messages.store');
+            Route::post('/{quote}/messages/read-all', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'markAllAsRead'])->name('tenant.quotes.messages.read-all');
+            Route::post('/{quote}/messages/{messageUuid}/read', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'markAsRead'])->name('tenant.quotes.messages.read');
         });
 
         // Content Management

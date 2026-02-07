@@ -54,14 +54,13 @@ class VendorFactory extends Factory
             'minimum_order' => $this->faker->numberBetween(100000, 5000000),
             'rating' => $this->faker->randomFloat(2, 3.5, 5.0),
             'total_orders' => $this->faker->numberBetween(0, 200),
-            'average_lead_time_days' => $this->faker->numberBetween(3, 30),
-            'performance_score' => $this->faker->randomFloat(2, 70, 100),
-            'completion_rate' => $this->faker->randomFloat(2, 85, 100),
+            // ❌ REMOVED: 'average_lead_time_days', 'performance_score', 'completion_rate' don't exist in vendors table schema
             'metadata' => [
                 'preferred' => $this->faker->boolean(30),
                 'verified' => $this->faker->boolean(70),
             ],
             'notes' => $this->faker->optional()->sentence(),
+            // ❌ REMOVED: 'company_size' doesn't exist in vendors table schema
         ];
     }
 }

@@ -49,6 +49,7 @@ import { reviewService } from "@/services/api/reviews";
 import { RatingStars } from "@/components/ui/rating-stars";
 import { DynamicFormRenderer } from "@/components/public";
 import { usePublicFooterConfig } from "@/hooks/usePublicNavigation";
+import { generateWhatsAppUrl } from "@/utils/whatsapp";
 
 const ProductDetail = () => {
   const { currentTheme } = useTheme();
@@ -561,7 +562,9 @@ const ProductDetail = () => {
                 }}
                 onWhatsApp={(formattedMessage) => {
                   const message = `Halo, saya tertarik dengan produk *${product.name}*\n\n${formattedMessage}`;
-                  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                  const whatsappUrl = generateWhatsAppUrl(whatsappNumber, message);
+                  console.log('[ProductDetail] WhatsApp URL:', whatsappUrl);
+                  console.log('[ProductDetail] WhatsApp Number (raw):', whatsappNumber);
                   window.open(whatsappUrl, "_blank");
                 }}
                 showCard={true}

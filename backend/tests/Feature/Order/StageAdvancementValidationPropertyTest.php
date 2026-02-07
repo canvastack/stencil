@@ -78,7 +78,7 @@ class StageAdvancementValidationPropertyTest extends TestCase
             }
             
             for ($j = 0; $j < $quoteCount; $j++) {
-                $this->createQuoteWithRandomStatus($order, ['open', 'countered', 'rejected', 'expired']);
+                $this->createQuoteWithRandomStatus($order, ['sent', 'countered', 'rejected', 'expired']); // Changed 'open' to 'sent'
             }
             
             // Attempt to advance stage
@@ -220,7 +220,7 @@ class StageAdvancementValidationPropertyTest extends TestCase
                 if ($j === $acceptedQuoteIndex) {
                     $this->createAcceptedQuote($order);
                 } else {
-                    $this->createQuoteWithRandomStatus($order, ['open', 'countered', 'rejected', 'expired']);
+                    $this->createQuoteWithRandomStatus($order, ['sent', 'countered', 'rejected', 'expired']); // Changed 'open' to 'sent'
                 }
             }
             

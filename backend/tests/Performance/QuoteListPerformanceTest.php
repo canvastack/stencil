@@ -304,7 +304,7 @@ class QuoteListPerformanceTest extends TestCase
 
         // Create quotes in batches for performance
         $batchSize = 100;
-        $statuses = ['open', 'countered', 'accepted', 'rejected', 'expired'];
+        $statuses = ['sent', 'countered', 'accepted', 'rejected', 'expired']; // Changed 'open' to 'sent'
         
         for ($i = 0; $i < $quoteCount; $i += $batchSize) {
             $batch = [];

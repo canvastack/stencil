@@ -4,7 +4,7 @@ export interface QuoteItemFormField {
   name: string;
   label: string;
   type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'number';
-  options?: string[];
+  options?: Array<{ value: string; label: string }> | string[]; // Support both formats
   required?: boolean;
 }
 

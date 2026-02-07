@@ -156,7 +156,7 @@ class VendorNegotiationWorkflowTest extends TestCase
             'uuid' => $quoteId,
             'order_id' => $order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Verify order now has active quotes

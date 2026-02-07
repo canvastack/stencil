@@ -37,6 +37,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the vendor associated with this user (if any).
+     * This relationship is used for vendor users to access their vendor record.
+     * 
+     * Note: This assumes vendors are linked to users via email matching.
+     * If a different linking mechanism exists, update this relationship accordingly.
+     */
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\Models\Vendor::class, 'email', 'email')
+            ->where('tenant_id', $this->tenant_id);
+    }
+
+    /**
      * Get the team identifier for Spatie Permission's teams feature.
      * This method is required for multi-tenant permission scoping.
      *

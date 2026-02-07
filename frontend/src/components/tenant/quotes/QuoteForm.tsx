@@ -44,16 +44,19 @@ import { InternalNotesTemplateDialog } from './InternalNotesTemplateDialog';
 import { QuoteFormSkeleton } from './QuoteFormSkeleton';
 import { getDefaultExchangeRateSync } from '@/lib/currency';
 import { QuoteItemSpecificationsDisplay } from './QuoteItemSpecifications';
+import { ErrorAlert } from '@/components/ui/error-alert';
+import { parseApiError, logError, type ApiError } from '@/lib/errorHandling';
+import { getDefaultQuoteValidUntil } from '@/utils/businessDays';
 
 const quoteItemSchema = z.object({
-  product_id: z.string().optional(),
+  product_id: z.union([z.string(), z.number()]).transform(val => String(val)).refine(val => val.length > 0, 'Product is required'),
   description: z.string().min(1, 'Description is required'),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   unit_price: z.number().min(0, 'Unit price must be non-negative'),
   vendor_cost: z.number().min(0, 'Vendor cost is required'),
   total_price: z.number().min(0),
   specifications: z.record(z.any()).optional(),
-  form_schema: z.any().optional(), // Add form_schema to support dynamic form rendering
+  form_schema: z.any().optional(),
   notes: z.string().optional(),
 });
 
@@ -80,6 +83,7 @@ interface QuoteFormProps {
   onCancel?: () => void;
   loading?: boolean;
   isRevision?: boolean;
+  formId?: string; // Optional form ID for external submit button
 }
 
 export const QuoteForm = ({ 
@@ -89,7 +93,8 @@ export const QuoteForm = ({
   onSubmit, 
   onCancel, 
   loading, 
-  isRevision 
+  isRevision,
+  formId = 'quote-form', // Default form ID
 }: QuoteFormProps) => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
@@ -119,15 +124,31 @@ export const QuoteForm = ({
   const [termsEditorKey, setTermsEditorKey] = useState(0);
   const [notesEditorKey, setNotesEditorKey] = useState(0);
   const [exchangeRate, setExchangeRate] = useState<number>(getDefaultExchangeRateSync()); // Use env config as initial value
+  
+  // Error state management
+  const [submitError, setSubmitError] = useState<ApiError | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
     defaultValues: {
       customer_id: quoteData?.customer_id || '',
       vendor_id: quoteData?.vendor_id || '',
-      title: quoteData?.title || '',
+      title: quoteData?.title || '', // Empty string if null, will be populated by useEffect
       description: quoteData?.description || '',
-      valid_until: quoteData ? new Date(quoteData.valid_until) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
+      valid_until: (() => {
+        // Handle valid_until with proper validation
+        if (quoteData?.valid_until) {
+          const parsedDate = new Date(quoteData.valid_until);
+          // Check if date is valid and not epoch (1970-01-01)
+          if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() > 1970) {
+            return parsedDate;
+          }
+        }
+        // Default: Now + 24 business hours
+        return getDefaultQuoteValidUntil();
+      })(),
       terms_and_conditions: quoteData?.terms_and_conditions || '',
       notes: quoteData?.notes || '',
       items: (() => {
@@ -135,22 +156,25 @@ export const QuoteForm = ({
           ? quoteData.items.map(item => {
               console.log('[QuoteForm] Mapping item from quoteData:', item);
               return {
-                product_id: item.product_id,
-                description: item.description || item.product_name, // Use description first, fallback to product_name
-                quantity: item.quantity,
-                unit_price: item.unit_price,
+                product_id: item.product_id || '',
+                description: item.description || '', // QuoteItem already has description
+                quantity: item.quantity || 1,
+                unit_price: item.unit_price || 0,
                 vendor_cost: item.vendor_cost || 0,
-                total_price: item.total_price,
-                specifications: item.specifications,
-                notes: item.notes,
+                total_price: item.total_price || 0,
+                specifications: item.specifications || {},
+                notes: item.notes || '',
               };
             }) 
           : [{
+              product_id: '',
               description: '',
               quantity: 1,
               unit_price: 0,
               vendor_cost: 0,
               total_price: 0,
+              specifications: {},
+              notes: '',
             }];
         console.log('[QuoteForm] Final items for form:', items);
         return items;
@@ -304,6 +328,7 @@ export const QuoteForm = ({
           if (orderItem) {
             console.log(`  ✅ [ENRICHMENT] Found order item for product ${quoteItem.product_id}:`, orderItem);
             console.log(`  📋 [ENRICHMENT] Order item specifications:`, orderItem.specifications);
+            console.log(`  📋 [ENRICHMENT] Order item customization:`, orderItem.customization);
             
             // Fetch form_schema if product_id exists
             let formSchema = null;
@@ -329,7 +354,7 @@ export const QuoteForm = ({
             const enrichedItem = {
               ...quoteItem,
               description: orderItem.product_name || orderItem.productName || quoteItem.description,
-              specifications: orderItem.specifications || {},
+              specifications: orderItem.customization || orderItem.specifications || {}, // Use customization first, fallback to specifications
               form_schema: formSchema,
             };
             
@@ -394,6 +419,29 @@ export const QuoteForm = ({
           console.log('📦 Vendor ID:', order.vendorId);
           setOrderContext(order);
           
+          // Pre-fill title ONLY if it's empty (null/undefined)
+          // This ensures we don't override user-edited titles
+          const currentTitle = form.getValues('title');
+          
+          if (!currentTitle) {
+            // Generate title with vendor name and quote number if available
+            const vendorName = order.vendorName || 'Vendor TBD';
+            
+            // For EDIT mode with existing quote, use quote_number from quoteData
+            // For CREATE mode, use placeholder
+            let quoteNumber = 'QT-PENDING';
+            if (quoteData?.quote_number) {
+              quoteNumber = quoteData.quote_number;
+            }
+            
+            // Format: "Quote Request - {Vendor Name} ({Quote Number})"
+            const defaultTitle = `Quote Request - ${vendorName} (${quoteNumber})`;
+            console.log('✅ Setting default title:', defaultTitle);
+            form.setValue('title', defaultTitle);
+          } else {
+            console.log('⏭️ Skipping title generation - already has value:', currentTitle);
+          }
+          
           // Pre-fill customer_id from order
           if (order.customerId) {
             console.log('✅ Setting customer_id:', order.customerId);
@@ -438,14 +486,20 @@ export const QuoteForm = ({
               }
               
               // Backend sends snake_case, not camelCase
+              const productIdValue = productId?.toString() || productUuid?.toString() || '';
+              
+              if (!productIdValue) {
+                console.error(`  - ERROR: No valid product_id found for item:`, item);
+              }
+              
               return {
-                product_id: productId?.toString() || '',
+                product_id: productIdValue,
                 description: item.product_name || item.productName || '',
                 quantity: item.quantity || 1,
                 unit_price: item.unit_price || item.unitPrice || item.final_price || 0,
                 vendor_cost: item.vendor_cost || item.vendorCost || 0,
                 total_price: item.subtotal || 0,
-                specifications: item.specifications || {}, // Use specifications from order
+                specifications: item.customization || item.specifications || {}, // Use customization first, fallback to specifications
                 form_schema: formSchema, // Add form_schema for rendering
                 notes: '',
               };
@@ -709,6 +763,18 @@ export const QuoteForm = ({
   };
 
   const handleSubmit = async (data: QuoteFormData) => {
+    console.log('🚀 [QuoteForm.handleSubmit] Function called with data:', data);
+    console.log('🚀 [QuoteForm.handleSubmit] Form state:', {
+      isSubmitting: form.formState.isSubmitting,
+      isValid: form.formState.isValid,
+      errors: form.formState.errors,
+      isDirty: form.formState.isDirty,
+    });
+    
+    // Clear previous errors
+    setSubmitError(null);
+    setIsSubmitting(true);
+    
     try {
       // Calculate initial_offer from items total
       const initialOffer = data.items.reduce((sum, item) => {
@@ -767,24 +833,81 @@ export const QuoteForm = ({
         });
       }
 
+      console.log('📤 [QuoteForm.handleSubmit] Calling onSubmit with data:', submitData);
       await onSubmit(submitData);
+      
+      console.log('✅ [QuoteForm.handleSubmit] onSubmit completed successfully');
+      
+      // Clear error state on success
+      setSubmitError(null);
+      setRetryCount(0);
+      
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error('❌ [QuoteForm.handleSubmit] Error occurred:', error);
+      
+      // Parse and set error
+      const apiError = parseApiError(error);
+      setSubmitError(apiError);
+      
+      // Log error with context
+      logError('QuoteForm.handleSubmit', error, {
+        mode,
+        quoteId: quoteData?.id,
+        orderId,
+        retryCount,
+      });
+      
+      // Show toast notification for user feedback
       toast({
         title: 'Error',
-        description: 'Failed to save quote. Please try again.',
+        description: apiError.message,
         variant: 'destructive',
       });
+      
+      // Set field-level errors if validation error
+      if (apiError.type === 'validation' && apiError.errors) {
+        Object.entries(apiError.errors).forEach(([field, messages]) => {
+          const message = Array.isArray(messages) ? messages[0] : messages;
+          // Map API field names to form field names
+          const formField = field as keyof QuoteFormData;
+          if (formField in form.getValues()) {
+            form.setError(formField, {
+              type: 'manual',
+              message,
+            });
+          }
+        });
+      }
+      
+      // Re-throw to let parent component handle if needed
+      throw error;
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+  
+  // Handle retry for network/timeout errors
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setSubmitError(null);
+    form.handleSubmit(handleSubmit)();
+  };
+  
+  // Handle dismiss error
+  const handleDismissError = () => {
+    setSubmitError(null);
   };
 
   const handleAddItem = () => {
     append({
+      product_id: '',
       description: '',
       quantity: 1,
       unit_price: 0,
       vendor_cost: 0,
       total_price: 0,
+      specifications: {},
+      notes: '',
     });
   };
 
@@ -900,7 +1023,70 @@ export const QuoteForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form 
+        id={formId}
+        onSubmit={(e) => {
+          console.log('📝 [QuoteForm] Form onSubmit event triggered');
+          console.log('📝 [QuoteForm] Event details:', {
+            defaultPrevented: e.defaultPrevented,
+            target: e.target,
+            currentTarget: e.currentTarget,
+          });
+          console.log('📝 [QuoteForm] Form validation state:', {
+            isValid: form.formState.isValid,
+            errors: form.formState.errors,
+            isSubmitting: form.formState.isSubmitting,
+          });
+          
+          // Call React Hook Form's handleSubmit
+          form.handleSubmit(handleSubmit)(e);
+        }} 
+        className="space-y-6"
+      >
+        {/* API Error Alert */}
+        {submitError && (
+          <ErrorAlert
+            error={submitError}
+            onRetry={handleRetry}
+            onDismiss={handleDismissError}
+          />
+        )}
+        
+        {/* Validation Error Summary */}
+        {Object.keys(form.formState.errors).length > 0 && (
+          <Card className="border-destructive bg-destructive/10">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="text-destructive">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-destructive mb-2">Please fix the following errors:</h3>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    {form.formState.errors.customer_id && (
+                      <li>{form.formState.errors.customer_id.message}</li>
+                    )}
+                    {form.formState.errors.vendor_id && (
+                      <li>{form.formState.errors.vendor_id.message}</li>
+                    )}
+                    {form.formState.errors.title && (
+                      <li>{form.formState.errors.title.message}</li>
+                    )}
+                    {form.formState.errors.valid_until && (
+                      <li>{form.formState.errors.valid_until.message}</li>
+                    )}
+                    {form.formState.errors.items && (
+                      <li>{form.formState.errors.items.message || 'Please check quote items for errors'}</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         {/* Header */}
         <Card>
           <CardHeader>
@@ -1176,7 +1362,9 @@ export const QuoteForm = ({
                       <div className="space-y-4">
                         {/* Product Selection - Read-only display with image */}
                         <div className="space-y-2">
-                          <Label>Product (Optional)</Label>
+                          <Label>
+                            Product <span className="text-destructive">*</span>
+                          </Label>
                           {(() => {
                             const productId = watchedItems[index]?.product_id;
                             const description = watchedItems[index]?.description;
@@ -1213,7 +1401,7 @@ export const QuoteForm = ({
                                       onError={(e) => {
                                         // Fallback to icon if image fails to load
                                         e.currentTarget.style.display = 'none';
-                                        const icon = e.currentTarget.nextElementSibling;
+                                        const icon = e.currentTarget.nextElementSibling as HTMLElement;
                                         if (icon) icon.style.display = 'block';
                                       }}
                                     />
@@ -1257,7 +1445,7 @@ export const QuoteForm = ({
                                       onError={(e) => {
                                         // Fallback to icon if image fails to load
                                         e.currentTarget.style.display = 'none';
-                                        const icon = e.currentTarget.nextElementSibling;
+                                        const icon = e.currentTarget.nextElementSibling as HTMLElement;
                                         if (icon) icon.style.display = 'block';
                                       }}
                                     />
@@ -1811,37 +1999,6 @@ export const QuoteForm = ({
                 </FormItem>
               )}
             />
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {mode === 'edit' && quoteData && !isRevision 
-                  ? `Updating quote ${quoteData.quote_number}. Customer, vendor, and order cannot be changed.`
-                  : isRevision 
-                    ? 'Creating a new revision of this quote'
-                    : 'The quote will be saved as draft'
-                }
-              </div>
-              <div className="flex gap-2">
-                {onCancel && (
-                  <Button type="button" variant="outline" onClick={onCancel}>
-                    Cancel
-                  </Button>
-                )}
-                <Button type="submit" disabled={loading}>
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  {isRevision ? 'Create Revision' : mode === 'edit' && quoteData ? 'Update Quote' : 'Save Quote'}
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </form>

@@ -52,7 +52,7 @@ class VendorNegotiationServiceTest extends TestCase
         $this->assertInstanceOf(OrderVendorNegotiation::class, $negotiation);
         $this->assertEquals($this->order->id, $negotiation->order_id);
         $this->assertEquals($this->vendor->id, $negotiation->vendor_id);
-        $this->assertEquals('open', $negotiation->status);
+        $this->assertEquals('draft', $negotiation->status);
         $this->assertEquals(1000000, $negotiation->initial_offer);
         $this->assertEquals(1000000, $negotiation->latest_offer);
         $this->assertEquals(1, $negotiation->round);
@@ -223,11 +223,11 @@ class VendorNegotiationServiceTest extends TestCase
 
         $concluded = $this->negotiationService->concludeNegotiation(
             $negotiation,
-            'cancelled',
+            'rejected',
             ['notes' => 'Order cancelled by customer']
         );
 
-        $this->assertEquals('cancelled', $concluded->status);
+        $this->assertEquals('rejected', $concluded->status);
     }
 
     public function test_throw_exception_for_invalid_conclusion_status(): void
@@ -322,7 +322,7 @@ class VendorNegotiationServiceTest extends TestCase
 
         $this->assertNotNull($negotiation);
         $this->assertEquals($this->order->id, $negotiation->order_id);
-        $this->assertEquals('open', $negotiation->status);
+        $this->assertEquals('draft', $negotiation->status);
     }
 
     public function test_metadata_updated_after_counter_offer(): void

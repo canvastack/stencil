@@ -415,7 +415,7 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     test: {
       globals: true,
       environment: 'jsdom',
-      setupFiles: ['./src/test/setup.ts'],
+      setupFiles: ['./src/__tests__/setup.ts'],
       coverage: {
         reporter: ['text', 'json', 'html'],
         exclude: [

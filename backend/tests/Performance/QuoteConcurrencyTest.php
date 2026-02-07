@@ -65,7 +65,7 @@ class QuoteConcurrencyTest extends TestCase
                 'tenant_id' => $this->tenant->id,
                 'order_id' => $order->id,
                 'vendor_id' => $vendor->id,
-                'status' => 'open',
+                'status' => 'draft',
                 'initial_offer' => 500000000, // 5M IDR in cents
                 'latest_offer' => 500000000,
             ]);
@@ -169,7 +169,7 @@ class QuoteConcurrencyTest extends TestCase
                 'tenant_id' => $this->tenant->id,
                 'order_id' => $order->id,
                 'vendor_id' => $vendor->id,
-                'status' => 'open',
+                'status' => 'draft',
                 'initial_offer' => 500000000,
                 'latest_offer' => 500000000,
             ]);
@@ -237,7 +237,7 @@ class QuoteConcurrencyTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $order->id,
             'vendor_id' => $vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'initial_offer' => 500000000,
             'latest_offer' => 500000000,
         ]);
@@ -295,7 +295,7 @@ class QuoteConcurrencyTest extends TestCase
                 'tenant_id' => $this->tenant->id,
                 'order_id' => $order->id,
                 'vendor_id' => $vendor->id,
-                'status' => 'open',
+                'status' => 'draft',
                 'initial_offer' => 500000000,
                 'latest_offer' => 500000000,
             ]);
@@ -320,7 +320,7 @@ class QuoteConcurrencyTest extends TestCase
                 'tenant_id' => $this->tenant->id,
                 'order_id' => $order->id,
                 'vendor_id' => $vendor->id,
-                'status' => 'open',
+                'status' => 'draft',
                 'initial_offer' => 500000000,
                 'latest_offer' => 500000000,
             ]);

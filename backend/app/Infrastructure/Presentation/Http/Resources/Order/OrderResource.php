@@ -106,10 +106,10 @@ class OrderResource extends JsonResource
             
             // Quote Status Information
             'activeQuotes' => $this->vendorNegotiations()
-                ->whereIn('status', ['open', 'countered'])
+                ->whereIn('status', ['sent', 'pending_response', 'countered']) // Changed from 'open' to 'sent' and 'pending_response'
                 ->count(),
             'active_quotes' => $this->vendorNegotiations()
-                ->whereIn('status', ['open', 'countered'])
+                ->whereIn('status', ['sent', 'pending_response', 'countered']) // Changed from 'open' to 'sent' and 'pending_response'
                 ->count(),
             'acceptedQuote' => $this->vendorNegotiations()
                 ->where('status', 'accepted')

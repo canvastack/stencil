@@ -106,7 +106,7 @@ class UpdateQuoteWithFormSchemaTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Original Quote',
                 'items' => [
@@ -174,7 +174,7 @@ class UpdateQuoteWithFormSchemaTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Quote Without Schema',
                 'items' => [
@@ -255,7 +255,7 @@ class UpdateQuoteWithFormSchemaTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Multi-Item Quote',
                 'items' => [
@@ -330,7 +330,7 @@ class UpdateQuoteWithFormSchemaTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Original Quote',
                 'description' => 'Original description',
@@ -374,7 +374,7 @@ class UpdateQuoteWithFormSchemaTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Original Quote',
                 'items' => [

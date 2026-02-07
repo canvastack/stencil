@@ -19,7 +19,7 @@ class VendorNegotiationService
         }
 
         $existing = $order->vendorNegotiations()
-            ->whereIn('status', ['open', 'countered'])
+            ->whereIn('status', ['draft', 'countered'])
             ->latest('id')
             ->first();
 
@@ -48,7 +48,7 @@ class VendorNegotiationService
             'tenant_id' => $order->tenant_id,
             'order_id' => $order->id,
             'vendor_id' => $vendorId,
-            'status' => 'open',
+            'status' => 'draft',
             'initial_offer' => $initialOffer,
             'latest_offer' => $latestOffer,
             'currency' => $currency,

@@ -62,7 +62,7 @@ class QuoteDuplicateCheckPerformanceTest extends TestCase
                 'tenant_id' => $this->tenant->id,
                 'order_id' => $orders->random()->id,
                 'vendor_id' => $vendors->random()->id,
-                'status' => ['open', 'countered', 'accepted', 'rejected'][array_rand(['open', 'countered', 'accepted', 'rejected'])],
+                'status' => ['sent', 'countered', 'accepted', 'rejected'][array_rand(['sent', 'countered', 'accepted', 'rejected'])], // Changed 'open' to 'sent'
             ]);
         }
 
@@ -135,7 +135,7 @@ class QuoteDuplicateCheckPerformanceTest extends TestCase
             ->where('tenant_id', $this->tenant->id)
             ->where('order_id', $order->id)
             ->where('vendor_id', $vendor->id)
-            ->whereIn('status', ['open', 'countered']);
+            ->whereIn('status', ['draft', 'sent', 'pending_response', 'countered']);
 
         $result = $query->first();
 
@@ -215,7 +215,7 @@ class QuoteDuplicateCheckPerformanceTest extends TestCase
                     'tenant_id' => $this->tenant->id,
                     'order_id' => $order->id,
                     'vendor_id' => $vendor->id,
-                    'status' => 'open',
+                    'status' => 'draft',
                 ]);
             }
 

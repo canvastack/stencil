@@ -9,6 +9,7 @@ import { CustomerDataModal } from '@/components/public/CustomerDataModal';
 import { useTenantAuth } from '@/contexts/TenantAuthContext';
 import type { FormField } from '@/types/form-builder';
 import { cn } from '@/lib/utils';
+import { generateWhatsAppUrl } from '@/utils/whatsapp';
 
 interface DynamicFormRendererProps {
   productUuid: string;
@@ -332,9 +333,9 @@ export function DynamicFormRenderer({
         ? `Halo, saya tertarik untuk memesan produk *${productName}*. Mohon informasi lebih lanjut.`
         : `Halo, saya tertarik untuk memesan produk ini. Mohon informasi lebih lanjut.`;
       
-      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      const whatsappUrl = generateWhatsAppUrl(whatsappNumber, message);
       console.log('[DynamicFormRenderer] WhatsApp URL:', whatsappUrl);
-      console.log('[DynamicFormRenderer] WhatsApp Number:', whatsappNumber);
+      console.log('[DynamicFormRenderer] WhatsApp Number (raw):', whatsappNumber);
       window.open(whatsappUrl, "_blank");
     };
 

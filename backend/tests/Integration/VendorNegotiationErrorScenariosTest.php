@@ -139,7 +139,7 @@ class VendorNegotiationErrorScenariosTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Attempt to advance stage
@@ -320,7 +320,7 @@ class VendorNegotiationErrorScenariosTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
             'expires_at' => Carbon::now()->subDays(7), // Expired 7 days ago
         ]);
 
@@ -447,7 +447,7 @@ class VendorNegotiationErrorScenariosTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Attempt to accept this cross-tenant quote
@@ -493,7 +493,7 @@ class VendorNegotiationErrorScenariosTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Try to access quote from other tenant context
@@ -604,7 +604,7 @@ class VendorNegotiationErrorScenariosTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $vendor2 = Vendor::factory()->create([
@@ -618,7 +618,7 @@ class VendorNegotiationErrorScenariosTest extends TestCase
             'initial_offer' => 950000,
             'latest_offer' => 950000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Accept first quote

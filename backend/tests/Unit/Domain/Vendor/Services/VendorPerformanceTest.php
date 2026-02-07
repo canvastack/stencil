@@ -166,7 +166,7 @@ class VendorPerformanceTest extends TestCase
         ]);
 
         $this->createOrdersForVendor($vendor2, 10, [
-            'status' => 'cancelled',
+            'status' => 'rejected',
         ]);
 
         $underperformers = $this->evaluationService->getUnderperformingVendors(70.0);
@@ -343,7 +343,7 @@ class VendorPerformanceTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'vendor_id' => $this->vendor->id,
             'customer_id' => $customer->id,
-            'status' => 'cancelled',
+            'status' => 'rejected',
         ]);
 
         $evaluation = $this->evaluationService->evaluateVendor($this->vendor);

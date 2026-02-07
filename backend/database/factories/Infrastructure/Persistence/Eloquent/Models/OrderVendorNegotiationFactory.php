@@ -21,7 +21,7 @@ class OrderVendorNegotiationFactory extends Factory
             'tenant_id' => $tenantFactory,
             'order_id' => Order::factory()->for($tenantFactory, 'tenant'),
             'vendor_id' => Vendor::factory()->for($tenantFactory, 'tenant'),
-            'status' => 'open',
+            'status' => 'draft', // Changed from 'open' to 'draft' to match new status enum
             'initial_offer' => 150000,
             'latest_offer' => 140000,
             'currency' => 'IDR',
@@ -58,6 +58,43 @@ class OrderVendorNegotiationFactory extends Factory
             return [
                 'status' => 'rejected',
                 'closed_at' => Carbon::now(),
+            ];
+        });
+    }
+
+    public function sent(): self
+    {
+        return $this->state(function () {
+            return [
+                'status' => 'sent',
+            ];
+        });
+    }
+
+    public function countered(): self
+    {
+        return $this->state(function () {
+            return [
+                'status' => 'countered',
+            ];
+        });
+    }
+
+    public function pendingResponse(): self
+    {
+        return $this->state(function () {
+            return [
+                'status' => 'pending_response',
+            ];
+        });
+    }
+
+    public function expired(): self
+    {
+        return $this->state(function () {
+            return [
+                'status' => 'expired',
+                'expires_at' => Carbon::now()->subDay(),
             ];
         });
     }

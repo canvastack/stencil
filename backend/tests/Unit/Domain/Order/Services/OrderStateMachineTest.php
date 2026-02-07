@@ -392,7 +392,7 @@ class OrderStateMachineTest extends TestCase
         $this->assertCount(1, $negotiations);
 
         $negotiation = $negotiations->first();
-        $this->assertEquals('open', $negotiation->status);
+        $this->assertEquals('draft', $negotiation->status); // Changed from 'open' to 'draft'
         $this->assertEquals(180000, $negotiation->initial_offer);
         $this->assertEquals(180000, $negotiation->latest_offer);
         $this->assertEquals('IDR', $negotiation->currency);

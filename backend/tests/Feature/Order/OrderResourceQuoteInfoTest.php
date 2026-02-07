@@ -98,7 +98,7 @@ class OrderResourceQuoteInfoTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'sent', // Changed from 'draft' to 'sent'
         ]);
 
         OrderVendorNegotiation::factory()->create([
@@ -125,7 +125,7 @@ class OrderResourceQuoteInfoTest extends TestCase
         $resource = new OrderResource($this->order);
         $data = $resource->toArray(request());
 
-        // Should count only 'open' and 'countered' statuses
+        // Should count only 'sent', 'pending_response', and 'countered' statuses
         $this->assertEquals(2, $data['active_quotes']);
         $this->assertEquals(2, $data['activeQuotes']);
     }
@@ -154,7 +154,7 @@ class OrderResourceQuoteInfoTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $resource = new OrderResource($this->order);

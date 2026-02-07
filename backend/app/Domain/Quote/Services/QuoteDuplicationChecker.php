@@ -12,8 +12,8 @@ use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
  * 
  * Business Rules:
  * - Only one active quote allowed per order-vendor combination
- * - Active statuses: open, countered (rejected, expired, cancelled, accepted are considered closed)
- * - Rejected, expired, cancelled, accepted quotes are ignored
+ * - Active statuses: draft, sent, pending_response, countered (rejected, expired, accepted are considered closed)
+ * - Rejected, expired, accepted quotes are ignored
  * - Different vendors can have quotes for same order
  */
 class QuoteDuplicationChecker
@@ -24,7 +24,7 @@ class QuoteDuplicationChecker
      * @param int $tenantId Tenant ID for isolation
      * @param int $orderId Internal order ID
      * @param int $vendorId Internal vendor ID
-     * @param array $statuses Statuses to consider as "active" (default: open, countered)
+     * @param array $statuses Statuses to consider as "active" (default: draft, sent, pending_response, countered)
      * @param int|null $excludeQuoteId Quote ID to exclude from check (for updates)
      * @return bool True if duplicate exists, false otherwise
      */
@@ -32,7 +32,7 @@ class QuoteDuplicationChecker
         int $tenantId,
         int $orderId,
         int $vendorId,
-        array $statuses = ['open', 'countered'],
+        array $statuses = ['draft', 'sent', 'pending_response', 'countered'],
         ?int $excludeQuoteId = null
     ): bool {
         $query = OrderVendorNegotiation::where('tenant_id', $tenantId)
@@ -61,7 +61,7 @@ class QuoteDuplicationChecker
         int $tenantId,
         int $orderId,
         int $vendorId,
-        array $statuses = ['open', 'countered']
+        array $statuses = ['draft', 'sent', 'pending_response', 'countered']
     ): ?OrderVendorNegotiation {
         return OrderVendorNegotiation::where('tenant_id', $tenantId)
             ->where('order_id', $orderId)
@@ -83,7 +83,7 @@ class QuoteDuplicationChecker
     public function hasActiveQuotesForOrder(
         int $tenantId,
         int $orderId,
-        array $statuses = ['open', 'countered']
+        array $statuses = ['draft', 'sent', 'pending_response', 'countered']
     ): bool {
         return OrderVendorNegotiation::where('tenant_id', $tenantId)
             ->where('order_id', $orderId)
@@ -102,7 +102,7 @@ class QuoteDuplicationChecker
     public function countActiveQuotesForOrder(
         int $tenantId,
         int $orderId,
-        array $statuses = ['open', 'countered']
+        array $statuses = ['draft', 'sent', 'pending_response', 'countered']
     ): int {
         return OrderVendorNegotiation::where('tenant_id', $tenantId)
             ->where('order_id', $orderId)
@@ -121,7 +121,7 @@ class QuoteDuplicationChecker
     public function getActiveQuotesForOrder(
         int $tenantId,
         int $orderId,
-        array $statuses = ['open', 'countered']
+        array $statuses = ['draft', 'sent', 'pending_response', 'countered']
     ) {
         return OrderVendorNegotiation::where('tenant_id', $tenantId)
             ->where('order_id', $orderId)

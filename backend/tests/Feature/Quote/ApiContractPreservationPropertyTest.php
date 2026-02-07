@@ -151,7 +151,7 @@ class ApiContractPreservationPropertyTest extends TestCase
         // Test data variations
         $testCases = [
             'open_quote' => [
-                'status' => 'open',
+                'status' => 'draft',
                 'initial_offer' => 1000000,
                 'latest_offer' => 1000000,
             ],
@@ -300,7 +300,7 @@ class ApiContractPreservationPropertyTest extends TestCase
                 'initial_offer' => 1000000 + ($i * 10000),
                 'latest_offer' => 1000000 + ($i * 10000),
                 'currency' => 'IDR',
-                'status' => 'open',
+                'status' => 'draft',
             ]);
         }
 

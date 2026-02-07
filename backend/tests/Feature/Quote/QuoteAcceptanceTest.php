@@ -90,7 +90,7 @@ class QuoteAcceptanceTest extends TestCase
             'latest_offer' => $vendorPrice,
             'currency' => 'IDR',
             'quote_details' => $vendorTerms, // Changed from 'terms' to 'quote_details'
-            'status' => 'open',
+            'status' => 'sent', // Changed from 'open' to 'sent' to match new constraint
         ]);
 
         // Accept quote via API
@@ -188,7 +188,7 @@ class QuoteAcceptanceTest extends TestCase
             'initial_offer' => 10000000,
             'latest_offer' => 10000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'sent', // Changed from 'open' to 'sent' to match new constraint
             'expires_at' => Carbon::now()->subDay(), // Expired yesterday
         ]);
 
@@ -205,7 +205,7 @@ class QuoteAcceptanceTest extends TestCase
 
         // Assert quote status unchanged
         $quote->refresh();
-        $this->assertEquals('open', $quote->status);
+        $this->assertEquals('sent', $quote->status); // Changed from 'open' to 'sent'
     }
 
     /**
@@ -274,7 +274,7 @@ class QuoteAcceptanceTest extends TestCase
             'initial_offer' => 10000000,
             'latest_offer' => 10000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'sent', // Changed from 'open' to 'sent' to match new constraint
         ]);
 
         // Accept quote - should succeed with transaction
@@ -317,7 +317,7 @@ class QuoteAcceptanceTest extends TestCase
             'initial_offer' => 10000000,
             'latest_offer' => 10000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'sent', // Changed from 'open' to 'sent' to match new constraint
         ]);
 
         // Record time before acceptance (with 1 second buffer)
@@ -369,7 +369,7 @@ class QuoteAcceptanceTest extends TestCase
             'initial_offer' => 10000000,
             'latest_offer' => 10000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'sent', // Changed from 'open' to 'sent' to match new constraint
         ]);
 
         // Accept quote

@@ -75,6 +75,21 @@ class Kernel extends ConsoleKernel
         ->at('00:00') // Default time, can be customized per tenant in the command
         ->name('exchange-rate-update')
         ->withoutOverlapping();
+
+        // Quote Expiration - Daily execution to automatically expire quotes
+        // This runs daily at midnight and processes all quotes that have passed their expiration date
+        $schedule->command('quotes:expire')
+            ->daily()
+            ->at('00:00')
+            ->name('quotes-expire')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->onFailure(function () {
+                \Illuminate\Support\Facades\Log::error('[Quote Expiration] Scheduled expiration check failed');
+            })
+            ->onSuccess(function () {
+                \Illuminate\Support\Facades\Log::info('[Quote Expiration] Scheduled expiration check completed successfully');
+            });
     }
 
     /**

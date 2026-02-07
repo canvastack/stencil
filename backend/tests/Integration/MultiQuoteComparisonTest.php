@@ -562,7 +562,7 @@ class MultiQuoteComparisonTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $counteredQuote = OrderVendorNegotiation::create([

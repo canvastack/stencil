@@ -106,7 +106,7 @@ class CrossTenantSyncPreventionPropertyTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Accept the valid quote - should succeed
@@ -146,7 +146,7 @@ class CrossTenantSyncPreventionPropertyTest extends TestCase
             'initial_offer' => 2000000,
             'latest_offer' => 2000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Authenticate as tenant 2 user
@@ -224,7 +224,7 @@ class CrossTenantSyncPreventionPropertyTest extends TestCase
                 'initial_offer' => rand(100000, 10000000),
                 'latest_offer' => rand(100000, 10000000),
                 'currency' => 'IDR',
-                'status' => 'open',
+                'status' => 'draft',
             ]);
 
             Sanctum::actingAs($this->user1);
@@ -251,7 +251,7 @@ class CrossTenantSyncPreventionPropertyTest extends TestCase
                 'initial_offer' => rand(100000, 10000000),
                 'latest_offer' => rand(100000, 10000000),
                 'currency' => 'IDR',
-                'status' => 'open',
+                'status' => 'draft',
             ]);
 
             Sanctum::actingAs($this->user2);
@@ -292,7 +292,7 @@ class CrossTenantSyncPreventionPropertyTest extends TestCase
             'initial_offer' => 1000000,
             'latest_offer' => 1000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Authenticate as tenant 2 user
@@ -341,7 +341,7 @@ class CrossTenantSyncPreventionPropertyTest extends TestCase
             'initial_offer' => 10000000,
             'latest_offer' => 10000000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
         ]);
         
         $crossTenantQuote->saveQuietly();

@@ -4,6 +4,7 @@ export interface Notification {
   id: string;
   type: string;
   data: {
+    // Order-related fields
     order_id?: number;
     order_uuid?: string;
     order_number?: string;
@@ -13,6 +14,17 @@ export interface Notification {
     is_critical?: boolean;
     changed_by?: string;
     reason?: string;
+    
+    // Quote-related fields
+    quote_uuid?: string;
+    quote_number?: string;
+    customer_name?: string;
+    vendor_name?: string;
+    product_name?: string;
+    quantity?: number;
+    response_type?: 'accept' | 'reject' | 'counter';
+    response_notes?: string;
+    new_expires_at?: string;
   };
   read_at: string | null;
   created_at: string;
@@ -90,6 +102,14 @@ class NotificationService {
    */
   async getOrderNotifications(orderUuid: string): Promise<OrderNotificationsResponse> {
     const response = await tenantApiClient.get(`/notifications/orders/${orderUuid}`);
+    return response.data;
+  }
+
+  /**
+   * Get quote-specific notifications
+   */
+  async getQuoteNotifications(quoteUuid: string): Promise<OrderNotificationsResponse> {
+    const response = await tenantApiClient.get(`/notifications/quotes/${quoteUuid}`);
     return response.data;
   }
 }

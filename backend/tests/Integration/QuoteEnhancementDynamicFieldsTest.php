@@ -243,7 +243,7 @@ class QuoteEnhancementDynamicFieldsTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
             'quote_details' => [
                 'title' => 'Initial Quote',
@@ -329,7 +329,7 @@ class QuoteEnhancementDynamicFieldsTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
             'quote_details' => [
                 'title' => 'Test Quote',
@@ -617,7 +617,7 @@ class QuoteEnhancementDynamicFieldsTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
             'quote_details' => [
                 'title' => 'Zero Cost Quote',
@@ -666,7 +666,7 @@ class QuoteEnhancementDynamicFieldsTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'latest_offer' => 5000000,
             'quote_details' => [
                 'title' => 'Single Item Quote',

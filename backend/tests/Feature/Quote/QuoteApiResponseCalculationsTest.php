@@ -54,7 +54,7 @@ class QuoteApiResponseCalculationsTest extends TestCase
             'initial_offer' => 100000, // 1000.00 in cents
             'latest_offer' => 100000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Test Quote',
                 'description' => 'Test Description',
@@ -135,7 +135,7 @@ class QuoteApiResponseCalculationsTest extends TestCase
             'initial_offer' => 100000,
             'latest_offer' => 100000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Test Quote',
                 'items' => [
@@ -190,7 +190,7 @@ class QuoteApiResponseCalculationsTest extends TestCase
             'initial_offer' => 100000,
             'latest_offer' => 100000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Test Quote',
                 'items' => [
@@ -229,7 +229,7 @@ class QuoteApiResponseCalculationsTest extends TestCase
             'initial_offer' => 100000,
             'latest_offer' => 100000,
             'currency' => 'IDR',
-            'status' => 'open',
+            'status' => 'draft',
             'quote_details' => [
                 'title' => 'Test Quote',
                 'items' => [

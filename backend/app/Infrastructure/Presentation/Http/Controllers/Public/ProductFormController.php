@@ -220,6 +220,24 @@ class ProductFormController extends Controller
                     $configuration->update(['avg_completion_time' => (int) $avgTime]);
                 }
 
+                // Send email notification to customer
+                try {
+                    $customer->notify(new \App\Domain\Order\Notifications\OrderCreatedNotification($order));
+                    
+                    Log::info('[PublicFormSubmission] Email notification sent to customer', [
+                        'customer_uuid' => $customer->uuid,
+                        'customer_email' => $customer->email,
+                        'order_uuid' => $order->uuid,
+                    ]);
+                } catch (\Exception $e) {
+                    // Log error but don't fail the order creation
+                    Log::error('[PublicFormSubmission] Failed to send email notification', [
+                        'customer_uuid' => $customer->uuid,
+                        'order_uuid' => $order->uuid,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
                 Log::info('[PublicFormSubmission] Order created successfully', [
                     'order_uuid' => $order->uuid,
                     'order_number' => $order->order_number,
@@ -443,7 +461,7 @@ class ProductFormController extends Controller
             'tenant_id' => $product->tenant_id,
             'customer_id' => $customer->id,
             'order_number' => $orderNumber,
-            'status' => 'draft',
+            'status' => 'new', // ✅ NEW status for customer orders from public form
             'payment_status' => 'unpaid',
             'production_type' => 'vendor',
             'items' => [[

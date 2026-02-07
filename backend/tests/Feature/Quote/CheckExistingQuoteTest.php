@@ -48,7 +48,7 @@ class CheckExistingQuoteTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $response = $this->getJson("/api/v1/tenant/quotes/check-existing?order_id={$this->order->uuid}");
@@ -126,7 +126,7 @@ class CheckExistingQuoteTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Create quote for vendor 2
@@ -134,7 +134,7 @@ class CheckExistingQuoteTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $vendor2->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Check for vendor 1 specifically
@@ -163,7 +163,7 @@ class CheckExistingQuoteTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Check for accepted status only
@@ -188,7 +188,7 @@ class CheckExistingQuoteTest extends TestCase
             'tenant_id' => $otherTenant->id,
             'order_id' => $otherOrder->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Try to check for other tenant's order
@@ -221,7 +221,7 @@ class CheckExistingQuoteTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'created_at' => now()->subDays(2),
         ]);
 
@@ -230,7 +230,7 @@ class CheckExistingQuoteTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor->id,
-            'status' => 'open',
+            'status' => 'draft',
             'created_at' => now()->subDay(),
         ]);
 

@@ -43,7 +43,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $hasDuplicate = $this->checker->check(
@@ -63,7 +63,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Check for vendor 2 (different vendor)
@@ -121,7 +121,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'cancelled',
+            'status' => 'rejected',
         ]);
 
         $hasDuplicate = $this->checker->check(
@@ -140,14 +140,14 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $hasDuplicate = $this->checker->check(
             $this->tenantId,
             $this->order->id,
             $this->vendor1->id,
-            ['open', 'countered']
+            ['draft', 'sent', 'pending_response', 'countered']
         );
 
         $this->assertTrue($hasDuplicate);
@@ -184,7 +184,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Check for tenant 2 (different tenant)
@@ -204,7 +204,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Check with exclusion (should not find duplicate)
@@ -226,7 +226,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $existing = $this->checker->getExisting(
@@ -258,7 +258,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $hasActiveQuotes = $this->checker->hasActiveQuotesForOrder(
@@ -276,7 +276,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         OrderVendorNegotiation::factory()->create([
@@ -301,7 +301,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         OrderVendorNegotiation::factory()->create([
@@ -347,7 +347,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $this->expectException(\InvalidArgumentException::class);
@@ -417,7 +417,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Empty status array should not find any duplicates
@@ -453,7 +453,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Should find the open quote
@@ -473,7 +473,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $quote2 = OrderVendorNegotiation::factory()->create([
@@ -488,7 +488,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             $this->tenantId,
             $this->order->id,
             $this->vendor1->id,
-            ['open', 'countered'],
+            ['draft', 'sent', 'pending_response', 'countered'],
             $quote1->id
         );
 
@@ -499,7 +499,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             $this->tenantId,
             $this->order->id,
             $this->vendor1->id,
-            ['open', 'countered'],
+            ['draft', 'sent', 'pending_response', 'countered'],
             $quote2->id
         );
 
@@ -514,7 +514,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
             'created_at' => now()->subDays(2),
         ]);
 
@@ -531,7 +531,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             $this->tenantId,
             $this->order->id,
             $this->vendor1->id,
-            ['open', 'countered']
+            ['draft', 'sent', 'pending_response', 'countered']
         );
 
         $this->assertNotNull($existing);
@@ -545,7 +545,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $existing = $this->checker->getExisting(
@@ -568,7 +568,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         OrderVendorNegotiation::factory()->create([
@@ -647,7 +647,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
             'created_at' => now()->subDays(3),
         ]);
 
@@ -677,7 +677,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         $quotes = $this->checker->getActiveQuotesForOrder(
@@ -710,7 +710,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Should not throw exception for different order
@@ -731,7 +731,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Should find it with default statuses
@@ -748,7 +748,7 @@ class QuoteDuplicationCheckerTest extends TestCase
             $this->tenantId,
             $this->order->id,
             $this->vendor1->id,
-            ['open', 'countered']
+            ['draft', 'sent', 'pending_response', 'countered']
         );
 
         $this->assertTrue($hasDuplicate);
@@ -789,7 +789,7 @@ class QuoteDuplicationCheckerTest extends TestCase
     /** @test */
     public function it_handles_all_closed_statuses_correctly()
     {
-        $closedStatuses = ['accepted', 'rejected', 'cancelled', 'expired'];
+        $closedStatuses = ['accepted', 'rejected', 'expired'];
 
         foreach ($closedStatuses as $status) {
             // Create quote with closed status
@@ -825,14 +825,14 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         OrderVendorNegotiation::factory()->create([
             'tenant_id' => $otherTenant->id,
             'order_id' => $otherOrder->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Should only count quotes for current tenant
@@ -855,14 +855,14 @@ class QuoteDuplicationCheckerTest extends TestCase
             'tenant_id' => $this->tenantId,
             'order_id' => $this->order->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         OrderVendorNegotiation::factory()->create([
             'tenant_id' => $otherTenant->id,
             'order_id' => $otherOrder->id,
             'vendor_id' => $this->vendor1->id,
-            'status' => 'open',
+            'status' => 'draft',
         ]);
 
         // Should only get quotes for current tenant
