@@ -870,13 +870,92 @@ class QuoteController extends Controller
     /**
      * Generate PDF for a quote.
      */
-    public function pdf(string $id)
+    public function pdf(Request $request, string $id)
     {
-        // For now, return a basic response
-        // In a real implementation, you would generate and return a PDF
-        return response()->json([
-            'message' => 'PDF generation not yet implemented'
-        ], 501);
+        try {
+            $tenantId = $this->getCurrentTenantId($request);
+            
+            \Log::info('[QuoteController::pdf] Starting PDF generation', [
+                'quote_uuid' => $id,
+                'tenant_id' => $tenantId,
+            ]);
+            
+            // Fetch quote with relationships
+            $quote = OrderVendorNegotiation::with(['order.customer', 'vendor'])
+                ->where('tenant_id', $tenantId)
+                ->where('uuid', $id)
+                ->firstOrFail();
+
+            \Log::info('[QuoteController::pdf] Quote found', [
+                'quote_id' => $quote->id,
+                'order_id' => $quote->order_id,
+                'vendor_id' => $quote->vendor_id,
+                'has_customer' => $quote->order && $quote->order->customer ? 'yes' : 'no',
+                'has_vendor' => $quote->vendor ? 'yes' : 'no',
+            ]);
+
+            // Transform quote to frontend format
+            $quoteData = $this->transformQuoteToFrontend($quote);
+            
+            \Log::info('[QuoteController::pdf] Quote transformed', [
+                'quote_number' => $quoteData['quote_number'],
+                'items_count' => count($quoteData['items'] ?? []),
+                'grand_total' => $quoteData['grand_total'] ?? 0,
+                'has_customer' => !empty($quoteData['customer']),
+                'has_vendor' => !empty($quoteData['vendor']),
+            ]);
+            
+            // Get exchange rate
+            $exchangeRate = (float) config('app.default_exchange_rate', 15750);
+            
+            // Generate PDF
+            $pdf = \PDF::loadView('pdf.quote', [
+                'quote' => $quoteData,
+                'exchangeRate' => $exchangeRate,
+            ]);
+            
+            // Set paper size and orientation
+            $pdf->setPaper('a4', 'portrait');
+            
+            // Set PDF options
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'defaultFont' => 'DejaVu Sans',
+            ]);
+            
+            // Generate filename
+            $filename = 'quote-' . $quoteData['quote_number'] . '.pdf';
+            
+            \Log::info('[QuoteController::pdf] PDF generated successfully', [
+                'filename' => $filename,
+            ]);
+            
+            // Return PDF as download
+            return $pdf->download($filename);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('[QuoteController::pdf] Quote not found', [
+                'quote_uuid' => $id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return response()->json([
+                'message' => 'Quote not found'
+            ], 404);
+            
+        } catch (\Exception $e) {
+            \Log::error('[QuoteController::pdf] PDF generation failed', [
+                'quote_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to generate PDF: ' . $e->getMessage(),
+                'error' => config('app.debug') ? $e->getTraceAsString() : null,
+            ], 500);
+        }
     }
 
     /**

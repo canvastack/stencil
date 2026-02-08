@@ -322,7 +322,9 @@ class QuoteService {
    * Generate PDF for quote
    */
   async generatePDF(id: string): Promise<Blob> {
-    const response = await tenantApiClient.get(`${this.baseUrl}/${id}/pdf`, {
+    // Use tenantApiClient directly with responseType blob
+    // The client is already an axios instance, so we can pass config directly
+    const response = await tenantApiClient.get(`/tenant/quotes/${id}/pdf`, {
       responseType: 'blob',
     });
     return response;

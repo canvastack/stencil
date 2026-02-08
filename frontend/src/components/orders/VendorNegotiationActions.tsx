@@ -72,7 +72,19 @@ export const VendorNegotiationActions: React.FC<VendorNegotiationActionsProps> =
   const hasAcceptedQuote = !!order.acceptedQuote;
   
   const handleManageQuotes = () => {
-    // Navigate to QuoteManagement with order_id parameter
+    // If there's an accepted quote, navigate directly to it
+    if (hasAcceptedQuote && order.acceptedQuote) {
+      navigate(`/admin/quotes/${order.acceptedQuote}`);
+      return;
+    }
+    
+    // If there are active quotes but no accepted quote, go to quotes list filtered by order
+    if (hasActiveQuotes) {
+      navigate(`/admin/quotes?order_id=${order.uuid}`);
+      return;
+    }
+    
+    // If no quotes exist, navigate to quote creation page
     navigate(`/admin/quotes?order_id=${order.uuid}`);
   };
   

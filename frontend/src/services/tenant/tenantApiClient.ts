@@ -143,12 +143,19 @@ class TenantApiClientManager {
           status: response.status,
           url: response.config.url,
           dataType: typeof response.data,
+          isBlob: response.data instanceof Blob,
           isObject: response.data && typeof response.data === 'object',
           hasData: response.data && 'data' in response.data,
           hasCurrentPage: response.data && 'current_page' in response.data,
-          dataKeys: response.data && typeof response.data === 'object' ? Object.keys(response.data) : [],
-          data: response.data
+          dataKeys: response.data && typeof response.data === 'object' && !(response.data instanceof Blob) ? Object.keys(response.data) : [],
+          data: response.data instanceof Blob ? '[Blob]' : response.data
         });
+        
+        // CRITICAL: Don't process Blob responses (PDF, images, etc.)
+        if (response.data instanceof Blob) {
+          console.log('[TenantApiClient] Returning Blob response as-is');
+          return response.data;
+        }
         
         // Unwrap nested data structure from Laravel pagination/responses
         if (response.data && typeof response.data === 'object') {
