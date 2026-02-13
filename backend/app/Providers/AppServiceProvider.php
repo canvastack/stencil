@@ -40,6 +40,22 @@ class AppServiceProvider extends ServiceProvider
         
         // SSL Provider Binding
         $this->app->bind(SSLProviderInterface::class, LetsEncryptAdapter::class);
+        
+        // Tenant Configuration Repository Bindings
+        $this->app->bind(
+            \App\Domain\Tenant\Repositories\TenantRepositoryInterface::class,
+            \App\Infrastructure\Persistence\Eloquent\Repositories\TenantRepository::class
+        );
+        
+        $this->app->bind(
+            \App\Domain\Tenant\Repositories\TenantUrlConfigRepositoryInterface::class,
+            \App\Infrastructure\Persistence\Repositories\TenantUrlConfigEloquentRepository::class
+        );
+        
+        $this->app->bind(
+            \App\Domain\Tenant\Repositories\CustomDomainRepositoryInterface::class,
+            \App\Infrastructure\Persistence\Repositories\CustomDomainEloquentRepository::class
+        );
     }
 
     /**

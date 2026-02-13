@@ -54,6 +54,20 @@ class VendorResource extends JsonResource
             $data['tenant_id'] = $this->tenant_id;
         }
         
+        // Include portal access fields for admin requests
+        // Requirements: 2.5, 2.6, 17.7
+        if ($request->is('api/v1/admin/*') || $request->is('api/v1/tenant/*')) {
+            $data['portal_access'] = [
+                'enabled' => (bool) ($this->portal_access_enabled ?? false),
+                'onboarding_status' => $this->onboarding_status ?? 'pending',
+                'onboarding_completed_at' => $this->onboarding_completed_at?->toIso8601String(),
+                'last_access_at' => $this->portal_last_access_at?->toIso8601String(),
+                'welcome_email_sent_at' => $this->welcome_email_sent_at?->toIso8601String(),
+                'temporary_password_expires_at' => $this->temporary_password_expires_at?->toIso8601String(),
+                'can_access_portal' => $this->canAccessPortal(),
+            ];
+        }
+        
         return $data;
     }
 }

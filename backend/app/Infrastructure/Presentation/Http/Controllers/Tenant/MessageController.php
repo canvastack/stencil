@@ -37,21 +37,21 @@ class MessageController extends Controller
     /**
      * Get messages for a quote thread
      * 
-     * GET /api/quotes/{uuid}/messages
+     * GET /api/quotes/{quote}/messages
      * 
-     * @param string $uuid Quote UUID
+     * @param string $quote Quote UUID
      * @param Request $request
      * @return JsonResponse
      */
-    public function index(string $uuid, Request $request): JsonResponse
+    public function index(string $quote, Request $request): JsonResponse
     {
         try {
             $tenantId = auth()->user()->tenant_id;
             
             // Find quote by UUID
-            $quote = $this->quoteRepository->findByUuid($uuid, $tenantId);
+            $quoteEntity = $this->quoteRepository->findByUuid($quote, $tenantId);
             
-            if (!$quote) {
+            if (!$quoteEntity) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Quote not found'
@@ -60,7 +60,7 @@ class MessageController extends Controller
 
             // Get messages for quote
             $messages = $this->messageService->getQuoteMessages(
-                $quote->getId(),
+                $quoteEntity->getId(),
                 $tenantId
             );
 
@@ -70,7 +70,7 @@ class MessageController extends Controller
                 'meta' => [
                     'total' => count($messages),
                     'unread_count' => $this->messageService->getUnreadCount(
-                        $quote->getId(),
+                        $quoteEntity->getId(),
                         auth()->id(),
                         $tenantId
                     )
@@ -79,7 +79,7 @@ class MessageController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Failed to fetch messages', [
-                'quote_uuid' => $uuid,
+                'quote_uuid' => $quote,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -94,13 +94,13 @@ class MessageController extends Controller
     /**
      * Send a new message in a quote thread
      * 
-     * POST /api/quotes/{uuid}/messages
+     * POST /api/quotes/{quote}/messages
      * 
-     * @param string $uuid Quote UUID
+     * @param string $quote Quote UUID
      * @param Request $request
      * @return JsonResponse
      */
-    public function store(string $uuid, Request $request): JsonResponse
+    public function store(string $quote, Request $request): JsonResponse
     {
         try {
             // Validate request
@@ -114,9 +114,9 @@ class MessageController extends Controller
             $senderId = auth()->id();
 
             // Find quote by UUID
-            $quote = $this->quoteRepository->findByUuid($uuid, $tenantId);
+            $quoteEntity = $this->quoteRepository->findByUuid($quote, $tenantId);
             
-            if (!$quote) {
+            if (!$quoteEntity) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Quote not found'
@@ -131,7 +131,7 @@ class MessageController extends Controller
             // Send message
             $message = $this->messageService->sendMessage(
                 tenantId: $tenantId,
-                quoteId: $quote->getId(),
+                quoteId: $quoteEntity->getId(),
                 senderId: $senderId,
                 messageContent: $validated['message'],
                 uploadedFiles: $uploadedFiles
@@ -158,7 +158,7 @@ class MessageController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Failed to send message', [
-                'quote_uuid' => $uuid,
+                'quote_uuid' => $quote,
                 'sender_id' => auth()->id(),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -174,22 +174,22 @@ class MessageController extends Controller
     /**
      * Mark a message as read
      * 
-     * POST /api/quotes/{uuid}/messages/{messageUuid}/read
+     * POST /api/quotes/{quote}/messages/{messageUuid}/read
      * 
-     * @param string $uuid Quote UUID
+     * @param string $quote Quote UUID
      * @param string $messageUuid Message UUID
      * @param Request $request
      * @return JsonResponse
      */
-    public function markAsRead(string $uuid, string $messageUuid, Request $request): JsonResponse
+    public function markAsRead(string $quote, string $messageUuid, Request $request): JsonResponse
     {
         try {
             $tenantId = auth()->user()->tenant_id;
 
             // Verify quote exists
-            $quote = $this->quoteRepository->findByUuid($uuid, $tenantId);
+            $quoteEntity = $this->quoteRepository->findByUuid($quote, $tenantId);
             
-            if (!$quote) {
+            if (!$quoteEntity) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Quote not found'
@@ -213,7 +213,7 @@ class MessageController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Failed to mark message as read', [
-                'quote_uuid' => $uuid,
+                'quote_uuid' => $quote,
                 'message_uuid' => $messageUuid,
                 'error' => $e->getMessage()
             ]);
@@ -228,22 +228,22 @@ class MessageController extends Controller
     /**
      * Mark all messages in a quote as read
      * 
-     * POST /api/quotes/{uuid}/messages/read-all
+     * POST /api/quotes/{quote}/messages/read-all
      * 
-     * @param string $uuid Quote UUID
+     * @param string $quote Quote UUID
      * @param Request $request
      * @return JsonResponse
      */
-    public function markAllAsRead(string $uuid, Request $request): JsonResponse
+    public function markAllAsRead(string $quote, Request $request): JsonResponse
     {
         try {
             $tenantId = auth()->user()->tenant_id;
             $userId = auth()->id();
 
             // Find quote by UUID
-            $quote = $this->quoteRepository->findByUuid($uuid, $tenantId);
+            $quoteEntity = $this->quoteRepository->findByUuid($quote, $tenantId);
             
-            if (!$quote) {
+            if (!$quoteEntity) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Quote not found'
@@ -252,7 +252,7 @@ class MessageController extends Controller
 
             // Mark all messages as read
             $count = $this->messageService->markAllMessagesAsRead(
-                $quote->getId(),
+                $quoteEntity->getId(),
                 $userId,
                 $tenantId
             );
@@ -267,7 +267,7 @@ class MessageController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Failed to mark all messages as read', [
-                'quote_uuid' => $uuid,
+                'quote_uuid' => $quote,
                 'user_id' => auth()->id(),
                 'error' => $e->getMessage()
             ]);

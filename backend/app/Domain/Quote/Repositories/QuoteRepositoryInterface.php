@@ -138,4 +138,66 @@ interface QuoteRepositoryInterface
      * @return array Statistics data
      */
     public function getStatistics(int $tenantId, array $filters = []): array;
+
+    /**
+     * Find quotes requiring vendor action
+     * Requirements: 4.1, 4.2, 4.3
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @return Quote[] Array of quotes requiring action
+     */
+    public function findRequiringVendorAction(int $vendorId, int $tenantId): array;
+
+    /**
+     * Get vendor quote statistics
+     * Requirements: 4.2, 12.1, 12.2, 12.3
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @return array Statistics data (total, pending, accepted, rejected, countered, expired)
+     */
+    public function getVendorStatistics(int $vendorId, int $tenantId): array;
+
+    /**
+     * Calculate vendor response metrics
+     * Requirements: 12.1, 12.2, 12.3
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @return array Metrics data (avg_response_time, acceptance_rate, total_responses)
+     */
+    public function calculateVendorMetrics(int $vendorId, int $tenantId): array;
+
+    /**
+     * Find quotes expiring soon
+     * Requirements: 10.1, 10.2, 10.3
+     * 
+     * @param int $tenantId Tenant ID for isolation
+     * @param int $daysThreshold Days before expiration
+     * @param \DateTimeImmutable $now Current timestamp
+     * @return Quote[] Array of quotes expiring soon
+     */
+    public function findExpiringSoon(
+        int $tenantId,
+        int $daysThreshold,
+        \DateTimeImmutable $now
+    ): array;
+
+    /**
+     * Find vendor quotes expiring soon
+     * Requirements: 7.12, 10.1
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @param int $daysThreshold Days before expiration
+     * @param \DateTimeImmutable $now Current timestamp
+     * @return Quote[] Array of vendor quotes expiring soon
+     */
+    public function findVendorQuotesExpiringSoon(
+        int $vendorId,
+        int $tenantId,
+        int $daysThreshold,
+        \DateTimeImmutable $now
+    ): array;
 }

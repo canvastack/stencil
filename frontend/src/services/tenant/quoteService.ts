@@ -18,13 +18,14 @@ export interface QuoteItemSpecifications {
 
 export interface Quote {
   id: string;
+  uuid?: string; // Some endpoints return uuid instead of id
   quote_number: string;
   order_id?: string;
   customer_id: string;
   vendor_id: string;
   title: string;
   description?: string;
-  status: 'draft' | 'open' | 'sent' | 'countered' | 'accepted' | 'rejected' | 'cancelled' | 'expired';
+  status: 'draft' | 'open' | 'sent' | 'countered' | 'accepted' | 'rejected' | 'cancelled' | 'expired' | 'admin_countered';
   total_amount: number;
   tax_amount: number;
   grand_total: number;
@@ -33,12 +34,42 @@ export interface Quote {
   terms_and_conditions?: string;
   notes?: string;
   revision_number: number;
+  round?: number; // Negotiation round number
   parent_quote_id?: string;
   created_by: string;
   approved_by?: string;
   approved_at?: string;
   sent_at?: string;
   responded_at?: string;
+  
+  // Vendor response fields
+  response_type?: 'accept' | 'reject' | 'counter';
+  rejection_reason?: string;
+  counter_offer_amount?: number; // Legacy field
+  estimated_delivery_days?: number;
+  
+  // Quote details (JSONB field)
+  quote_details?: {
+    counter_offer?: {
+      items: Array<{
+        product_id: string;
+        product_name: string;
+        quantity: number;
+        original_unit_price: number;
+        original_total_price: number;
+        counter_unit_price: number;
+        counter_total_price: number;
+        difference_amount: number;
+        notes?: string;
+      }>;
+      total_counter: number;
+      notes?: string;
+      estimated_delivery_days?: number;
+      submitted_at?: string;
+    };
+    [key: string]: any;
+  };
+  
   created_at: string;
   updated_at: string;
   
@@ -239,7 +270,7 @@ class QuoteService {
    * Send quote to vendor
    */
   async sendQuote(id: string): Promise<Quote> {
-    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/send`);
+    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/send-to-vendor`);
     // Interceptor already unwraps single resource { data: quote } → quote
     return response;
   }
@@ -411,6 +442,47 @@ class QuoteService {
     });
     // Backend returns { data: products }, so we need to access response.data.data
     return response.data?.data || response.data;
+  }
+
+  /**
+   * Accept vendor counter offer with customer pricing
+   */
+  async acceptCounterOffer(id: string, customerPrice: number, notes?: string): Promise<Quote> {
+    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/accept-counter`, {
+      customer_price: customerPrice,
+      notes,
+    });
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
+  }
+
+  /**
+   * Reject vendor counter offer
+   */
+  async rejectCounterOffer(id: string, reason: string): Promise<Quote> {
+    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/reject-counter`, { reason });
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
+  }
+
+  /**
+   * Admin counter offer - Counter back vendor's counter offer
+   */
+  async adminCounterOffer(
+    id: string,
+    data: {
+      counter_offer_amount: number;
+      items: Array<{
+        product_id: string;
+        admin_counter_unit_price: number;
+        notes?: string;
+      }>;
+      notes?: string;
+    }
+  ): Promise<Quote> {
+    const response = await tenantApiClient.post(`${this.baseUrl}/${id}/admin-counter-offer`, data);
+    // Interceptor already unwraps single resource { data: quote } → quote
+    return response;
   }
 }
 

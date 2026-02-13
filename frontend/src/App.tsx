@@ -61,6 +61,21 @@ import TenantLogin from "./pages/tenant/TenantLogin";
 import { TenantLayout } from "@/layouts/TenantLayout";
 import Dashboard from "./pages/admin/Dashboard";
 
+// Vendor Portal Components
+import VendorLogin from "./pages/vendor/VendorLogin";
+import VendorForgotPassword from "./pages/vendor/VendorForgotPassword";
+import VendorResetPassword from "./pages/vendor/VendorResetPassword";
+import { VendorAuthProvider } from "@/contexts/VendorAuthContext";
+import { VendorLayout } from "@/layouts/VendorLayout";
+import { VendorProtectedRoute } from "@/components/vendor/VendorProtectedRoute";
+
+const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
+const VendorQuoteList = lazy(() => import("./pages/vendor/VendorQuoteList"));
+const VendorQuoteDetail = lazy(() => import("./pages/vendor/VendorQuoteDetail"));
+const VendorMessages = lazy(() => import("./pages/vendor/VendorMessages"));
+const VendorProfile = lazy(() => import("./pages/vendor/VendorProfile"));
+const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
+
 
 const PageHome = lazy(() => import("./pages/admin/PageHome"));
 const PageAbout = lazy(() => import("./pages/admin/PageAbout"));
@@ -79,7 +94,7 @@ const MediaLibrary = lazy(() => import("./pages/admin/MediaLibrary"));
 const Documentation = lazy(() => import("./pages/admin/Documentation"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const BusinessRulesManagement = lazy(() => import("./pages/admin/BusinessRulesManagement"));
-const VendorSettings = lazy(() => import("./pages/admin/settings/VendorSettings"));
+const AdminVendorSettings = lazy(() => import("./pages/admin/settings/VendorSettings"));
 const ExchangeRateSettings = lazy(() => import("./pages/admin/settings/ExchangeRateSettings"));
 const ProductCategories = lazy(() => import("./pages/admin/ProductCategories"));
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
@@ -215,7 +230,8 @@ function App() {
             <ApiServiceProvider>
               <PlatformAuthProvider>
                 <TenantAuthProvider>
-                  <GlobalContextProvider>
+                  <VendorAuthProvider>
+                    <GlobalContextProvider>
                     <ThemeProvider initialTheme="default">
                       <ContentProvider>
                         <CartProvider>
@@ -272,6 +288,24 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
+                  
+                {/* Vendor Portal Routes - MUST be before tenant-scoped routes */}
+                <Route path="/vendor/login" element={<VendorLogin />} />
+                <Route path="/vendor/forgot-password" element={<VendorForgotPassword />} />
+                <Route path="/vendor/reset-password" element={<VendorResetPassword />} />
+                <Route path="/vendor" element={
+                  <VendorProtectedRoute>
+                    <VendorLayout />
+                  </VendorProtectedRoute>
+                }>
+                  <Route index element={<Navigate to="/vendor/dashboard" replace />} />
+                  <Route path="dashboard" element={<Suspense fallback={<LoadingFallback />}><VendorDashboard /></Suspense>} />
+                  <Route path="quotes" element={<Suspense fallback={<LoadingFallback />}><VendorQuoteList /></Suspense>} />
+                  <Route path="quotes/:uuid" element={<Suspense fallback={<LoadingFallback />}><VendorQuoteDetail /></Suspense>} />
+                  <Route path="messages" element={<Suspense fallback={<LoadingFallback />}><VendorMessages /></Suspense>} />
+                  <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><VendorProfile /></Suspense>} />
+                  <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><VendorSettings /></Suspense>} />
+                </Route>
                   
                 {/* Platform Routes */}
                 <Route path="/platform/login" element={<PlatformLogin />} />
@@ -374,7 +408,7 @@ function App() {
                   <Route path="settings/general" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
                   <Route path="settings/exchange-rate" element={<Suspense fallback={<LoadingFallback />}><ExchangeRateSettings /></Suspense>} />
                   <Route path="business-rules" element={<Suspense fallback={<LoadingFallback />}><BusinessRulesManagement /></Suspense>} />
-                  <Route path="settings/vendor" element={<Suspense fallback={<LoadingFallback />}><VendorSettings /></Suspense>} />
+                  <Route path="settings/vendor" element={<Suspense fallback={<LoadingFallback />}><AdminVendorSettings /></Suspense>} />
                   <Route path="activity-log" element={<Suspense fallback={<LoadingFallback />}><ActivityLog /></Suspense>} />
                   <Route path="performance" element={<Suspense fallback={<LoadingFallback />}><PerformanceMonitoring /></Suspense>} />
                   <Route path="refunds" element={<Suspense fallback={<LoadingFallback />}><RefundManagement /></Suspense>} />
@@ -439,8 +473,9 @@ function App() {
                       </ContentProvider>
                     </ThemeProvider>
                   </GlobalContextProvider>
-                </TenantAuthProvider>
-              </PlatformAuthProvider>
+                </VendorAuthProvider>
+              </TenantAuthProvider>
+            </PlatformAuthProvider>
             </ApiServiceProvider>
           </QueryClientProvider>
         </HelmetProvider>

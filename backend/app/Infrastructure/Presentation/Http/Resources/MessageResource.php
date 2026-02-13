@@ -30,6 +30,10 @@ class MessageResource extends JsonResource
 
         // Get sender information
         $sender = User::find($message->getSenderId());
+        
+        // Get sender_type from database (QuoteMessage model)
+        $quoteMessage = \App\Infrastructure\Persistence\Eloquent\Models\QuoteMessage::where('uuid', $message->getUuid())->first();
+        $senderType = $quoteMessage?->sender_type ?? 'admin';
 
         // Process attachments to include download URLs
         $attachments = array_map(function ($attachment) {
@@ -54,11 +58,12 @@ class MessageResource extends JsonResource
             'uuid' => $message->getUuid(),
             'quote_id' => $message->getQuoteId(),
             'sender_id' => $message->getSenderId(),
+            'sender_type' => $senderType, // ← NEW: sender_type from database
             'sender' => $sender ? [
                 'uuid' => $sender->uuid,
                 'name' => $sender->name,
                 'email' => $sender->email,
-                'role' => $sender->roles->first()?->name ?? null
+                'role' => $senderType // ← Use sender_type instead of user role
             ] : null,
             'message' => $message->getMessage(),
             'attachments' => $attachments,

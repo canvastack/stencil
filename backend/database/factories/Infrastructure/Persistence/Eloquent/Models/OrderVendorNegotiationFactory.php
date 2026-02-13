@@ -21,7 +21,7 @@ class OrderVendorNegotiationFactory extends Factory
             'tenant_id' => $tenantFactory,
             'order_id' => Order::factory()->for($tenantFactory, 'tenant'),
             'vendor_id' => Vendor::factory()->for($tenantFactory, 'tenant'),
-            'status' => 'draft', // Changed from 'open' to 'draft' to match new status enum
+            'status' => 'draft', // Default status for new negotiations
             'initial_offer' => 150000,
             'latest_offer' => 140000,
             'currency' => 'IDR',

@@ -238,6 +238,10 @@ class QuoteManagementWorkflowTest extends TestCase
             'X-Tenant-ID' => $this->tenant->id,
         ]);
 
+        if ($orderResponse->status() !== 200) {
+            dump('Order fetch error:', $orderResponse->json());
+        }
+
         $orderResponse->assertStatus(200);
         $orderResponse->assertJsonPath('data.status', 'customer_quote');
     }
@@ -361,7 +365,7 @@ class QuoteManagementWorkflowTest extends TestCase
 
         // Verify other tenant's quote is unchanged
         $otherQuote->refresh();
-        $this->assertEquals('open', $otherQuote->status);
+        $this->assertEquals('draft', $otherQuote->status);
 
         // Verify other tenant's order is unchanged
         $otherOrder->refresh();
@@ -765,7 +769,7 @@ class QuoteManagementWorkflowTest extends TestCase
 
         // Verify quote unchanged
         $quote->refresh();
-        $this->assertEquals('open', $quote->status);
+        $this->assertEquals('draft', $quote->status);
         $this->assertEquals(5000000, $quote->latest_offer);
     }
 
@@ -1100,8 +1104,8 @@ class QuoteManagementWorkflowTest extends TestCase
         $this->order->refresh();
         $this->assertEquals('vendor_negotiation', $this->order->status);
 
-        // Verify quote3 is still open
+        // Verify quote3 is still draft
         $quote3->refresh();
-        $this->assertEquals('open', $quote3->status);
+        $this->assertEquals('draft', $quote3->status);
     }
 }

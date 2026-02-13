@@ -33,10 +33,14 @@ class TenantResolver
     public function resolveTenantData(UrlPattern $pattern, string $identifier): array
     {
         $tenant = $this->resolve($pattern, $identifier);
+        
+        // Get integer ID from database (domain entity only has UUID)
+        $eloquentTenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenant->getId()->toString())->first();
+        $integerId = $eloquentTenant ? $eloquentTenant->id : null;
 
         return [
-            'id' => $tenant->getId()->getValue(),
-            'uuid' => $tenant->getId()->toString(),
+            'id' => $integerId, // Integer database ID for infrastructure layer
+            'uuid' => $tenant->getId()->toString(), // UUID for domain layer
             'slug' => $tenant->getSlug()->getValue(),
             'name' => $tenant->getName()->getValue(),
             'status' => $tenant->getStatus()->value,

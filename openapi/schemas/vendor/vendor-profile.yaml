@@ -1,0 +1,186 @@
+# Vendor Portal - Profile Schemas
+# Data models for vendor profile management system
+
+VendorProfileDetail:
+  type: object
+  description: Complete vendor profile with performance metrics
+  properties:
+    vendor:
+      type: object
+      description: Vendor company information
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Vendor UUID
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        company_name:
+          type: string
+          description: Vendor company name
+          example: "ABC Manufacturing Co."
+        vendor_code:
+          type: string
+          description: Unique vendor code
+          example: "VND-001"
+        email:
+          type: string
+          format: email
+          description: Vendor email address
+          example: "vendor@example.com"
+        phone:
+          type: string
+          nullable: true
+          description: Vendor phone number
+          example: "+62 21 1234 5678"
+        contact_person:
+          type: string
+          nullable: true
+          description: Primary contact person name
+          example: "John Doe"
+        address:
+          type: string
+          nullable: true
+          description: Vendor physical address
+          example: "Jl. Sudirman No. 123, Jakarta"
+        location:
+          type: object
+          nullable: true
+          description: Geographic location
+          properties:
+            latitude:
+              type: number
+              format: double
+              example: -6.2088
+            longitude:
+              type: number
+              format: double
+              example: 106.8456
+        status:
+          type: string
+          enum: [active, inactive, on_hold, blacklisted]
+          description: Vendor status
+          example: "active"
+        quality_tier:
+          type: string
+          enum: [standard, premium]
+          nullable: true
+          description: Quality tier classification
+          example: "premium"
+        average_lead_time_days:
+          type: integer
+          nullable: true
+          description: Average lead time in days
+          example: 14
+        production_capacity_monthly:
+          type: integer
+          nullable: true
+          description: Monthly production capacity
+          example: 1000
+        specializations:
+          type: array
+          nullable: true
+          description: Vendor specializations/categories
+          items:
+            type: string
+          example: ["metal_etching", "glass_etching", "custom_awards"]
+        certifications:
+          type: array
+          nullable: true
+          description: Vendor certifications
+          items:
+            type: string
+          example: ["ISO 9001", "ISO 14001"]
+        portal_access_enabled:
+          type: boolean
+          description: Whether vendor can access portal
+          example: true
+        onboarding_status:
+          type: string
+          enum: [pending, in_progress, completed]
+          description: Onboarding workflow status
+          example: "completed"
+        onboarding_completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Onboarding completion timestamp
+          example: "2026-01-20T14:30:00Z"
+        portal_last_access_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last portal access timestamp
+          example: "2026-02-12T10:30:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: Vendor creation timestamp
+          example: "2026-01-15T08:00:00Z"
+    performance_metrics:
+      type: object
+      description: Vendor performance metrics
+      properties:
+        total_quotes:
+          type: integer
+          description: Total number of quotes received
+          example: 45
+        accepted_quotes:
+          type: integer
+          description: Number of quotes accepted
+          example: 28
+        rejected_quotes:
+          type: integer
+          description: Number of quotes rejected
+          example: 5
+        pending_quotes:
+          type: integer
+          description: Number of quotes pending response
+          example: 8
+        acceptance_rate:
+          type: number
+          format: double
+          description: Acceptance rate percentage
+          example: 75.68
+        average_response_time_hours:
+          type: number
+          format: double
+          nullable: true
+          description: Average response time in hours
+          example: 18.5
+        total_orders:
+          type: integer
+          description: Total number of completed orders
+          example: 25
+        completed_orders:
+          type: integer
+          description: Number of successfully completed orders
+          example: 24
+        completion_rate:
+          type: number
+          format: double
+          description: Order completion rate percentage
+          example: 96.0
+        overall_rating:
+          type: number
+          format: double
+          nullable: true
+          description: Overall vendor rating (1-5)
+          example: 4.5
+        quality_rating:
+          type: number
+          format: double
+          nullable: true
+          description: Quality rating (1-5)
+          example: 4.7
+        timeliness_rating:
+          type: number
+          format: double
+          nullable: true
+          description: Timeliness rating (1-5)
+          example: 4.3
+        communication_rating:
+          type: number
+          format: double
+          nullable: true
+          description: Communication rating (1-5)
+          example: 4.6

@@ -40,7 +40,12 @@ class Vendor
         private array $qualityRatings,
         private array $metadata,
         private DateTimeImmutable $createdAt,
-        private DateTimeImmutable $updatedAt
+        private DateTimeImmutable $updatedAt,
+        // Vendor Portal fields
+        private string $onboardingStatus = 'pending',
+        private ?DateTimeImmutable $onboardingCompletedAt = null,
+        private bool $portalAccessEnabled = false,
+        private ?DateTimeImmutable $portalLastAccessAt = null
     ) {}
 
     /**
@@ -117,7 +122,12 @@ class Vendor
         array $metadata,
         string $status,
         DateTimeImmutable $createdAt,
-        DateTimeImmutable $updatedAt
+        DateTimeImmutable $updatedAt,
+        // Vendor Portal fields
+        string $onboardingStatus = 'pending',
+        ?DateTimeImmutable $onboardingCompletedAt = null,
+        bool $portalAccessEnabled = false,
+        ?DateTimeImmutable $portalLastAccessAt = null
     ): self {
         $addressObj = $address ? new Address(
             street: $address['street'],
@@ -159,7 +169,11 @@ class Vendor
             qualityRatings: $qualityRatings,
             metadata: $metadata,
             createdAt: $createdAt,
-            updatedAt: $updatedAt
+            updatedAt: $updatedAt,
+            onboardingStatus: $onboardingStatus,
+            onboardingCompletedAt: $onboardingCompletedAt,
+            portalAccessEnabled: $portalAccessEnabled,
+            portalLastAccessAt: $portalLastAccessAt
         );
     }
 
@@ -277,6 +291,96 @@ class Vendor
         return $this->qualityRatings['overall_rating'];
     }
 
+    /**
+     * Enable portal access for this vendor
+     * Requirements: 2.5
+     */
+    public function enablePortalAccess(): void
+    {
+        $this->portalAccessEnabled = true;
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Disable portal access for this vendor
+     * Requirements: 2.6
+     */
+    public function disablePortalAccess(): void
+    {
+        $this->portalAccessEnabled = false;
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Mark onboarding as completed
+     * Requirements: 17.7
+     */
+    public function completeOnboarding(): void
+    {
+        $this->onboardingStatus = 'completed';
+        $this->onboardingCompletedAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Start onboarding process
+     * Requirements: 17.1
+     */
+    public function startOnboarding(): void
+    {
+        if ($this->onboardingStatus !== 'pending') {
+            throw new InvalidArgumentException('Onboarding has already been started');
+        }
+
+        $this->onboardingStatus = 'in_progress';
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Record portal access timestamp
+     * Requirements: 2.1
+     */
+    public function recordPortalAccess(): void
+    {
+        $this->portalLastAccessAt = new DateTimeImmutable();
+        $this->updatedAt = new DateTimeImmutable();
+    }
+
+    /**
+     * Check if vendor can access the portal
+     * Requirements: 2.1, 2.5, 2.6
+     */
+    public function canAccessPortal(): bool
+    {
+        return $this->portalAccessEnabled 
+            && $this->status === 'active'
+            && $this->onboardingStatus === 'completed';
+    }
+
+    /**
+     * Check if onboarding is completed
+     */
+    public function isOnboardingCompleted(): bool
+    {
+        return $this->onboardingStatus === 'completed';
+    }
+
+    /**
+     * Check if onboarding is in progress
+     */
+    public function isOnboardingInProgress(): bool
+    {
+        return $this->onboardingStatus === 'in_progress';
+    }
+
+    /**
+     * Check if onboarding is pending
+     */
+    public function isOnboardingPending(): bool
+    {
+        return $this->onboardingStatus === 'pending';
+    }
+
     // Getters
     public function getId(): UuidValueObject { return $this->id; }
     public function getTenantId(): UuidValueObject { return $this->tenantId; }
@@ -292,6 +396,10 @@ class Vendor
     public function getMetadata(): array { return $this->metadata; }
     public function getCreatedAt(): DateTimeImmutable { return $this->createdAt; }
     public function getUpdatedAt(): DateTimeImmutable { return $this->updatedAt; }
+    public function getOnboardingStatus(): string { return $this->onboardingStatus; }
+    public function getOnboardingCompletedAt(): ?DateTimeImmutable { return $this->onboardingCompletedAt; }
+    public function isPortalAccessEnabled(): bool { return $this->portalAccessEnabled; }
+    public function getPortalLastAccessAt(): ?DateTimeImmutable { return $this->portalLastAccessAt; }
 
     /**
      * Get vendor rating (for backward compatibility with database field)

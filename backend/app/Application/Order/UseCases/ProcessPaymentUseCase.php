@@ -9,6 +9,8 @@ use App\Domain\Shared\ValueObjects\UuidValueObject;
 use App\Domain\Shared\ValueObjects\Money;
 use App\Domain\Order\Events\PaymentReceived;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderPaymentTransaction;
+use App\Infrastructure\Persistence\Eloquent\Models\Order;
+use App\Infrastructure\Persistence\Eloquent\Models\Customer;
 use Illuminate\Contracts\Events\Dispatcher as EventDispatcher;
 use InvalidArgumentException;
 
@@ -52,7 +54,7 @@ class ProcessPaymentUseCase
         // 3. Validate order can receive payments
         if (!$order->canReceivePayment()) {
             throw new InvalidArgumentException(
-                "Cannot process payment for order in status: {$order->getStatus()}"
+                "Cannot process payment for order in status: {$order->getStatus()->value}"
             );
         }
 
@@ -149,12 +151,16 @@ class ProcessPaymentUseCase
         ProcessPaymentCommand $command,
         PurchaseOrder $order
     ): OrderPaymentTransaction {
+        // Get integer IDs from database using UUIDs
+        $orderModel = Order::where('uuid', $order->getId()->getValue())->first();
+        $customerModel = Customer::where('uuid', $order->getCustomerId()->getValue())->first();
+        
         $transactionData = $command->toTransactionArray(
-            $order->getTenantId()->getValue(),
-            $order->getCustomerId()->getValue()
+            $orderModel->tenant_id,
+            $customerModel->id
         );
 
-        $transactionData['order_id'] = $order->getId()->getValue();
+        $transactionData['order_id'] = $orderModel->id;
         $transactionData['uuid'] = UuidValueObject::generate()->getValue();
 
         return OrderPaymentTransaction::create($transactionData);

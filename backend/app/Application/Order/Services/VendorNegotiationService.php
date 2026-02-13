@@ -54,12 +54,12 @@ class VendorNegotiationService
             throw new InvalidArgumentException('Quote price is required');
         }
 
-        if ($quoteDetails['price'] < 0) {
-            throw new InvalidArgumentException('Quote price must be non-negative');
+        if ($quoteDetails['price'] <= 0) {
+            throw new InvalidArgumentException('Quote price must be positive');
         }
 
         if (!isset($quoteDetails['lead_time_days']) || $quoteDetails['lead_time_days'] <= 0) {
-            throw new InvalidArgumentException('Lead time must be greater than zero');
+            throw new InvalidArgumentException('Lead time must be positive');
         }
 
         return [
@@ -77,13 +77,44 @@ class VendorNegotiationService
     public function compareQuotes(array $quotes): array
     {
         if (empty($quotes)) {
-            throw new InvalidArgumentException('At least one quote is required for comparison');
+            return [
+                'total_quotes' => 0,
+                'min_price' => null,
+                'max_price' => null,
+                'average_price' => null,
+                'best_price_vendor' => null,
+                'fastest_delivery_vendor' => null,
+                'price_variance' => null,
+                'delivery_variance' => null,
+                'quotes' => [],
+            ];
         }
 
         $prices = array_column($quotes, 'quoted_price');
+        $leadTimes = array_column($quotes, 'lead_time_days');
         $minPrice = min($prices);
         $maxPrice = max($prices);
         $avgPrice = array_sum($prices) / count($prices);
+        $minLeadTime = min($leadTimes);
+        $maxLeadTime = max($leadTimes);
+
+        // Find best price vendor
+        $bestPriceVendor = null;
+        foreach ($quotes as $quote) {
+            if ($quote['quoted_price'] == $minPrice) {
+                $bestPriceVendor = $quote['vendor_id'];
+                break;
+            }
+        }
+
+        // Find fastest delivery vendor
+        $fastestDeliveryVendor = null;
+        foreach ($quotes as $quote) {
+            if ($quote['lead_time_days'] == $minLeadTime) {
+                $fastestDeliveryVendor = $quote['vendor_id'];
+                break;
+            }
+        }
 
         $comparison = [];
         foreach ($quotes as $quote) {
@@ -103,6 +134,10 @@ class VendorNegotiationService
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
             'average_price' => $avgPrice,
+            'best_price_vendor' => $bestPriceVendor,
+            'fastest_delivery_vendor' => $fastestDeliveryVendor,
+            'price_variance' => $maxPrice - $minPrice,
+            'delivery_variance' => $maxLeadTime - $minLeadTime,
             'quotes' => $comparison,
         ];
     }
@@ -118,6 +153,7 @@ class VendorNegotiationService
         return [
             'negotiation_id' => $negotiationId,
             'deadline' => $deadline->format('Y-m-d H:i:s'),
+            'deadline_date' => $deadline->format('Y-m-d'),
             'days_remaining' => $daysFromNow,
             'is_urgent' => $daysFromNow <= 2,
         ];

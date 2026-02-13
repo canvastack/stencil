@@ -16,6 +16,7 @@ class OrderVendorNegotiation extends Model
 
     protected $fillable = [
         'uuid',
+        'quote_number',
         'tenant_id',
         'order_id',
         'vendor_id',

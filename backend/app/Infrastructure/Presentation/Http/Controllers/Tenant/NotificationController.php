@@ -146,18 +146,58 @@ class NotificationController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // Default notification preferences
-        $preferences = [
-            'email_notifications' => true,
-            'push_notifications' => true,
-            'order_status_changes' => true,
-            'payment_updates' => true,
-            'vendor_communications' => true,
-            'system_announcements' => true,
-        ];
+        // Get tenant ID from user or tenant context
+        $tenantId = $user->tenant_id;
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant not found'], 400);
+        }
+        
+        // Get or create notification preferences
+        $notificationPreference = \App\Infrastructure\Persistence\Eloquent\Models\NotificationPreference::firstOrCreate(
+            [
+                'tenant_id' => $tenantId,
+                'user_id' => $user->id,
+            ],
+            [
+                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'preferences' => [
+                    // Vendor Portal Notifications
+                    'vendor_quote_accepted' => [
+                        'email' => true,
+                        'in_app' => true,
+                    ],
+                    'vendor_quote_rejected' => [
+                        'email' => true,
+                        'in_app' => true,
+                    ],
+                    'vendor_quote_countered' => [
+                        'email' => true,
+                        'in_app' => true,
+                    ],
+                    'vendor_quote_message' => [
+                        'email' => true,
+                        'in_app' => true,
+                    ],
+                    // General Notifications
+                    'order_status_changes' => [
+                        'email' => true,
+                        'in_app' => true,
+                    ],
+                    'payment_updates' => [
+                        'email' => true,
+                        'in_app' => true,
+                    ],
+                    'system_announcements' => [
+                        'email' => true,
+                        'in_app' => true,
+                    ],
+                ],
+            ]
+        );
 
         return response()->json([
-            'preferences' => $preferences
+            'preferences' => $notificationPreference->preferences
         ]);
     }
 
@@ -173,25 +213,40 @@ class NotificationController extends Controller
         }
 
         $request->validate([
-            'email_notifications' => 'boolean',
-            'push_notifications' => 'boolean',
-            'order_status_changes' => 'boolean',
-            'payment_updates' => 'boolean',
-            'vendor_communications' => 'boolean',
-            'system_announcements' => 'boolean',
+            'preferences' => 'required|array',
+            'preferences.*.email' => 'boolean',
+            'preferences.*.in_app' => 'boolean',
         ]);
 
-        // For now, just return success - preferences can be stored in user metadata later
+        // Get tenant ID from user or tenant context
+        $tenantId = $user->tenant_id;
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant not found'], 400);
+        }
+        
+        // Get or create notification preferences
+        $notificationPreference = \App\Infrastructure\Persistence\Eloquent\Models\NotificationPreference::firstOrCreate(
+            [
+                'tenant_id' => $tenantId,
+                'user_id' => $user->id,
+            ],
+            [
+                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'preferences' => [],
+            ]
+        );
+
+        // Merge new preferences with existing ones
+        $currentPreferences = $notificationPreference->preferences ?? [];
+        $newPreferences = array_merge($currentPreferences, $request->input('preferences'));
+        
+        $notificationPreference->preferences = $newPreferences;
+        $notificationPreference->save();
+
         return response()->json([
             'message' => 'Preferences updated successfully',
-            'preferences' => $request->only([
-                'email_notifications',
-                'push_notifications', 
-                'order_status_changes',
-                'payment_updates',
-                'vendor_communications',
-                'system_announcements'
-            ])
+            'preferences' => $notificationPreference->preferences
         ]);
     }
 

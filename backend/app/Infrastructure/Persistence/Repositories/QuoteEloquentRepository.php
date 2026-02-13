@@ -93,7 +93,7 @@ class QuoteEloquentRepository implements QuoteRepositoryInterface
         $model = OrderVendorNegotiation::where('tenant_id', $tenantId)
             ->where('order_id', $orderId)
             ->where('vendor_id', $vendorId)
-            ->whereIn('status', ['open', 'countered'])
+            ->whereIn('status', ['draft', 'sent', 'pending_response', 'countered'])
             ->with(['order.customer', 'vendor'])
             ->first();
 

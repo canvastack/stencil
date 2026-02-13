@@ -297,9 +297,17 @@ class CustomDomainEloquentRepositoryTest extends TestCase
         $deleted = $this->repository->delete($domainId);
 
         $this->assertTrue($deleted);
-        $this->assertDatabaseMissing('custom_domains', [
-            'uuid' => $domainId->getValue()
+        
+        // Check that the record is soft deleted (deleted_at is not null)
+        $this->assertDatabaseHas('custom_domains', [
+            'uuid' => $domainId->getValue(),
         ]);
+        
+        // Verify it's actually soft deleted by checking deleted_at
+        $deletedRecord = \DB::table('custom_domains')
+            ->where('uuid', $domainId->getValue())
+            ->first();
+        $this->assertNotNull($deletedRecord->deleted_at);
     }
 
     public function test_checks_if_domain_exists(): void

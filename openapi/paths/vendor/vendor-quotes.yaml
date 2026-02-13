@@ -1,0 +1,549 @@
+# Vendor Portal - Quote Management API Endpoints
+# Multi-tenant vendor quote management system
+# Following Hexagonal Architecture + DDD + CQRS patterns
+
+# Vendor Quotes - List
+/api/v1/vendor/quotes:
+  get:
+    tags:
+      - Vendor Portal - Quotes
+    summary: Get Vendor Quotes
+    description: |
+      Retrieve paginated list of quotes assigned to authenticated vendor.
+      
+      **Architecture Context:**
+      - Controller → GetVendorQuotesUseCase → QuoteRepository
+      - Enforces tenant isolation
+      - Enforces vendor ownership
+      - Supports filtering, search, and pagination
+      
+      **Related Use Case:** GetVendorQuotesUseCase
+      **Query Handler:** GetVendorQuotesQuery
+    operationId: getVendorQuotes
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: status
+        in: query
+        description: Filter by quote status
+        schema:
+          type: string
+          enum: [draft, sent, pending_response, accepted, rejected, countered, expired]
+      - name: search
+        in: query
+        description: Search by quote number, order number, or customer name
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: Page number for pagination
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: per_page
+        in: query
+        description: Number of items per page
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: sort_by
+        in: query
+        description: Sort field
+        schema:
+          type: string
+          enum: [created_at, sent_at, expires_at, quote_number]
+          default: created_at
+      - name: sort_direction
+        in: query
+        description: Sort direction
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: desc
+    responses:
+      '200':
+        description: Quotes retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    quotes:
+                      type: array
+                      items:
+                        $ref: '../../schemas/vendor/vendor-quotes.yaml#/QuoteListItem'
+                    statistics:
+                      $ref: '../../schemas/vendor/vendor-quotes.yaml#/QuoteStatistics'
+                    pagination:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          example: 45
+                        per_page:
+                          type: integer
+                          example: 20
+                        current_page:
+                          type: integer
+                          example: 1
+                        last_page:
+                          type: integer
+                          example: 3
+                        from:
+                          type: integer
+                          example: 1
+                        to:
+                          type: integer
+                          example: 20
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden - portal access disabled or onboarding not completed
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+
+# Vendor Quotes - Get Detail
+/api/v1/vendor/quotes/{quote_uuid}:
+  get:
+    tags:
+      - Vendor Portal - Quotes
+    summary: Get Quote Detail
+    description: |
+      Retrieve complete details of a specific quote.
+      
+      **Architecture Context:**
+      - Controller → GetQuoteDetailUseCase → QuoteRepository
+      - Validates vendor ownership
+      - Enforces tenant isolation
+      - Includes order, customer, and product details
+      
+      **Related Use Case:** GetQuoteDetailUseCase
+      **Query Handler:** GetQuoteDetailQuery
+    operationId: getVendorQuoteDetail
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: quote_uuid
+        in: path
+        required: true
+        description: Quote UUID
+        schema:
+          type: string
+          format: uuid
+    responses:
+      '200':
+        description: Quote details retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../../schemas/vendor/vendor-quotes.yaml#/QuoteDetail'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden - quote does not belong to vendor
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "FORBIDDEN"
+                    message:
+                      type: string
+                      example: "You do not have permission to access this quote"
+      '404':
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/NotFoundError'
+
+# Vendor Quotes - Accept
+/api/v1/vendor/quotes/{quote_uuid}/accept:
+  post:
+    tags:
+      - Vendor Portal - Quotes
+    summary: Accept Quote
+    description: |
+      Accept a quote with estimated delivery days.
+      
+      **Architecture Context:**
+      - Controller → AcceptQuoteUseCase → QuoteRepository
+      - Validates quote can be responded to (not expired, not already responded)
+      - Validates vendor ownership
+      - Updates quote status to 'accepted'
+      - Records responded_at timestamp
+      - Stores delivery estimate in quote details
+      - Sends notifications to admins
+      - Logs action to audit trail
+      - Dispatches QuoteAcceptedEvent
+      
+      **Business Rules:**
+      - Quote must be in 'sent' or 'pending_response' status
+      - Quote must not be expired
+      - Quote must not have been responded to already
+      - Estimated delivery days must be positive integer
+      
+      **Related Use Case:** AcceptQuoteUseCase
+      **Command:** AcceptQuoteCommand
+      **Domain Event:** QuoteAcceptedEvent
+    operationId: acceptVendorQuote
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: quote_uuid
+        in: path
+        required: true
+        description: Quote UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - estimated_delivery_days
+            properties:
+              estimated_delivery_days:
+                type: integer
+                minimum: 1
+                description: Estimated delivery time in days
+                example: 14
+              notes:
+                type: string
+                maxLength: 1000
+                description: Optional notes for the admin
+                example: "We can deliver within 2 weeks. Premium quality materials will be used."
+    responses:
+      '200':
+        description: Quote accepted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../../schemas/vendor/vendor-quotes.yaml#/QuoteDetail'
+                message:
+                  type: string
+                  example: "Quote accepted successfully"
+      '400':
+        description: Bad request - quote cannot be accepted
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      enum: [QUOTE_EXPIRED, QUOTE_ALREADY_RESPONDED, INVALID_STATUS]
+                      example: "QUOTE_EXPIRED"
+                    message:
+                      type: string
+                      example: "This quote has expired and cannot be accepted"
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden - quote does not belong to vendor
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+      '404':
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/NotFoundError'
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ValidationError'
+
+# Vendor Quotes - Reject
+/api/v1/vendor/quotes/{quote_uuid}/reject:
+  post:
+    tags:
+      - Vendor Portal - Quotes
+    summary: Reject Quote
+    description: |
+      Reject a quote with rejection reason.
+      
+      **Architecture Context:**
+      - Controller → RejectQuoteUseCase → QuoteRepository
+      - Validates quote can be responded to
+      - Validates vendor ownership
+      - Updates quote status to 'rejected'
+      - Records responded_at timestamp
+      - Stores rejection reason in quote details
+      - Sends notifications to admins
+      - Logs action to audit trail
+      - Dispatches QuoteRejectedEvent
+      
+      **Business Rules:**
+      - Quote must be in 'sent' or 'pending_response' status
+      - Quote must not be expired
+      - Quote must not have been responded to already
+      - Rejection reason is required (max 500 chars)
+      
+      **Related Use Case:** RejectQuoteUseCase
+      **Command:** RejectQuoteCommand
+      **Domain Event:** QuoteRejectedEvent
+    operationId: rejectVendorQuote
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: quote_uuid
+        in: path
+        required: true
+        description: Quote UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - rejection_reason
+            properties:
+              rejection_reason:
+                type: string
+                minLength: 1
+                maxLength: 500
+                description: Reason for rejecting the quote
+                example: "We cannot meet the required specifications with our current equipment"
+    responses:
+      '200':
+        description: Quote rejected successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../../schemas/vendor/vendor-quotes.yaml#/QuoteDetail'
+                message:
+                  type: string
+                  example: "Quote rejected successfully"
+      '400':
+        description: Bad request - quote cannot be rejected
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      enum: [QUOTE_EXPIRED, QUOTE_ALREADY_RESPONDED, INVALID_STATUS]
+                      example: "QUOTE_ALREADY_RESPONDED"
+                    message:
+                      type: string
+                      example: "This quote has already been responded to"
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+      '404':
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/NotFoundError'
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ValidationError'
+
+# Vendor Quotes - Counter Offer
+/api/v1/vendor/quotes/{quote_uuid}/counter-offer:
+  post:
+    tags:
+      - Vendor Portal - Quotes
+    summary: Submit Counter Offer
+    description: |
+      Submit a counter offer with alternative pricing.
+      
+      **Architecture Context:**
+      - Controller → CounterOfferQuoteUseCase → QuoteRepository
+      - Validates quote can be responded to
+      - Validates vendor ownership
+      - Updates quote status to 'countered'
+      - Records responded_at timestamp
+      - Increments round number
+      - Updates latest_offer with counter amount
+      - Sends notifications to admins
+      - Logs action to audit trail
+      - Dispatches QuoteCounterOfferedEvent
+      
+      **Business Rules:**
+      - Quote must be in 'sent' or 'pending_response' status
+      - Quote must not be expired
+      - Quote must not have been responded to already
+      - Counter offer amount must be positive
+      
+      **Related Use Case:** CounterOfferQuoteUseCase
+      **Command:** CounterOfferQuoteCommand
+      **Domain Event:** QuoteCounterOfferedEvent
+    operationId: counterOfferVendorQuote
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: quote_uuid
+        in: path
+        required: true
+        description: Quote UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - counter_offer_amount
+            properties:
+              counter_offer_amount:
+                type: number
+                format: double
+                minimum: 0.01
+                description: Counter offer amount in cents
+                example: 150000
+              notes:
+                type: string
+                maxLength: 1000
+                description: Optional notes explaining the counter offer
+                example: "We can offer this price if we use alternative materials that meet the same quality standards"
+    responses:
+      '200':
+        description: Counter offer submitted successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../../schemas/vendor/vendor-quotes.yaml#/QuoteDetail'
+                message:
+                  type: string
+                  example: "Counter offer submitted successfully"
+      '400':
+        description: Bad request - quote cannot receive counter offer
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      enum: [QUOTE_EXPIRED, QUOTE_ALREADY_RESPONDED, INVALID_STATUS]
+                      example: "QUOTE_EXPIRED"
+                    message:
+                      type: string
+                      example: "This quote has expired and cannot receive a counter offer"
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+      '404':
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/NotFoundError'
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ValidationError'

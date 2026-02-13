@@ -479,6 +479,224 @@ class Quote
     }
 
     /**
+     * Accept quote (vendor action)
+     * Requirements: 6.2, 6.3, 6.4
+     * 
+     * @param int $estimatedDeliveryDays Estimated delivery time
+     * @param string|null $notes Optional acceptance notes
+     * @param int|null $userId Vendor user ID
+     */
+    public function accept(int $estimatedDeliveryDays, ?string $notes = null, ?int $userId = null): void
+    {
+        if ($estimatedDeliveryDays <= 0) {
+            throw new InvalidArgumentException('Estimated delivery days must be positive');
+        }
+
+        $acceptanceNotes = $notes ?? "Estimated delivery: {$estimatedDeliveryDays} days";
+        
+        // Store delivery estimate in quote details
+        $this->quoteDetails['estimated_delivery_days'] = $estimatedDeliveryDays;
+        $this->quoteDetails['acceptance_notes'] = $notes;
+        
+        $this->recordVendorResponse('accept', $acceptanceNotes, null, $userId);
+    }
+
+    /**
+     * Reject quote (vendor action)
+     * Requirements: 6.5, 6.6, 6.7
+     * 
+     * @param string $rejectionReason Reason for rejection
+     * @param int|null $userId Vendor user ID
+     */
+    public function reject(string $rejectionReason, ?int $userId = null): void
+    {
+        if (empty(trim($rejectionReason))) {
+            throw new InvalidArgumentException('Rejection reason is required');
+        }
+
+        // Store rejection reason in quote details
+        $this->quoteDetails['rejection_reason'] = $rejectionReason;
+        
+        $this->recordVendorResponse('reject', $rejectionReason, null, $userId);
+    }
+
+    /**
+     * Counter offer (vendor action)
+     * Requirements: 6.8, 6.9, 6.10
+     * 
+     * @param int $counterOfferAmount Counter offer amount in cents
+     * @param string|null $notes Optional counter offer notes
+     * @param int|null $userId Vendor user ID
+     */
+    public function counterOffer(int $counterOfferAmount, ?string $notes = null, ?int $userId = null): void
+    {
+        if ($counterOfferAmount <= 0) {
+            throw new InvalidArgumentException('Counter offer amount must be positive');
+        }
+
+        // Store counter offer details
+        $this->quoteDetails['counter_offer_amount'] = $counterOfferAmount;
+        $this->quoteDetails['counter_offer_notes'] = $notes;
+        
+        $counterNotes = $notes ?? "Counter offer: {$counterOfferAmount} {$this->currency}";
+        
+        $this->recordVendorResponse('counter', $counterNotes, $counterOfferAmount, $userId);
+    }
+
+    /**
+     * Admin counter offer (admin action)
+     * 
+     * @param array $adminCounterOffer Admin counter offer data with items
+     * @param string|null $notes Optional admin counter offer notes
+     * @param int|null $userId Admin user ID
+     * @throws InvalidStatusTransitionException If not in countered status
+     * @throws QuoteExpiredException If quote is expired
+     */
+    public function adminCounterOffer(array $adminCounterOffer, ?string $notes = null, ?int $userId = null): void
+    {
+        $this->guardAgainstExpired();
+        
+        if (!$this->status->canTransitionTo(QuoteStatus::ADMIN_COUNTERED)) {
+            throw new InvalidStatusTransitionException(
+                "Cannot admin counter from {$this->status->value} status"
+            );
+        }
+
+        // Validate admin counter offer structure
+        if (!isset($adminCounterOffer['items']) || !is_array($adminCounterOffer['items'])) {
+            throw new InvalidArgumentException('Admin counter offer must contain items array');
+        }
+
+        if (!isset($adminCounterOffer['total_counter']) || $adminCounterOffer['total_counter'] <= 0) {
+            throw new InvalidArgumentException('Admin counter offer total must be positive');
+        }
+
+        $oldStatus = $this->status;
+        $this->status = QuoteStatus::ADMIN_COUNTERED;
+        $this->updatedAt = new DateTimeImmutable();
+        
+        // Update latest offer to admin's counter
+        $this->latestOffer = $adminCounterOffer['total_counter'];
+        
+        // Increment round
+        $this->round++;
+        
+        // Store admin counter offer in quote_details
+        $this->quoteDetails['admin_counter_offer'] = $adminCounterOffer;
+        $this->quoteDetails['admin_counter_notes'] = $notes;
+        
+        // Add to negotiation history
+        if (!isset($this->quoteDetails['negotiation_history'])) {
+            $this->quoteDetails['negotiation_history'] = [];
+        }
+        
+        $this->quoteDetails['negotiation_history'][] = [
+            'round' => $this->round,
+            'type' => 'admin_counter',
+            'offer' => $adminCounterOffer,
+            'notes' => $notes,
+            'timestamp' => $this->updatedAt->format('c'),
+            'user_id' => $userId
+        ];
+        
+        // Append to status history
+        $this->statusHistory[] = [
+            'from' => $oldStatus->value,
+            'to' => QuoteStatus::ADMIN_COUNTERED->value,
+            'changed_by' => $userId,
+            'changed_at' => $this->updatedAt->format('c'),
+            'reason' => 'Admin countered vendor offer' . ($notes ? ": {$notes}" : '')
+        ];
+        
+        // Add domain event
+        $this->addDomainEvent(new \App\Domain\Quote\Events\AdminCounteredQuoteEvent($this));
+    }
+
+    /**
+     * Send quote to vendor
+     * Requirements: 6.1
+     * 
+     * @param int|null $userId Admin user ID
+     */
+    public function send(?int $userId = null): void
+    {
+        $this->markAsSent($userId);
+    }
+
+    /**
+     * Expire quote
+     * Requirements: 10.1, 10.2
+     * 
+     * @param int|null $userId User marking as expired (system if null)
+     */
+    public function expire(?int $userId = null): void
+    {
+        $this->markAsExpired($userId);
+    }
+
+    /**
+     * Check if vendor can respond to this quote
+     * Requirements: 6.13, 6.14
+     */
+    public function canRespond(): bool
+    {
+        // Allow response if:
+        // 1. Status is SENT, PENDING_RESPONSE, or ADMIN_COUNTERED (two-way negotiation)
+        // 2. Quote is not expired
+        // 3. Either:
+        //    a. Never responded (respondedAt is null), OR
+        //    b. Has rejection history and not reached max rejections (for re-negotiation), OR
+        //    c. Status is ADMIN_COUNTERED (admin has countered, vendor can respond)
+        
+        $isRespondableStatus = in_array($this->status, [
+            QuoteStatus::SENT,
+            QuoteStatus::PENDING_RESPONSE,
+            QuoteStatus::ADMIN_COUNTERED  // Allow vendor to counter back after admin counter
+        ]);
+        $notExpired = !$this->isExpired();
+        
+        // Check if vendor can resubmit after rejection
+        $canResubmitAfterRejection = false;
+        if ($this->respondedAt !== null) {
+            // Check rejection history in quote_details
+            $quoteDetails = $this->quoteDetails ?? [];
+            $rejectionHistory = $quoteDetails['rejection_history'] ?? [];
+            $rejectionCount = count($rejectionHistory);
+            
+            // Allow resubmit if rejected but not reached max (2) rejections
+            $canResubmitAfterRejection = $rejectionCount > 0 && $rejectionCount < 2;
+        }
+        
+        // Allow response if:
+        // - Never responded yet, OR
+        // - Can resubmit after rejection, OR
+        // - Admin has countered (two-way negotiation)
+        $canRespond = $this->respondedAt === null 
+            || $canResubmitAfterRejection 
+            || $this->status === QuoteStatus::ADMIN_COUNTERED;
+        
+        return $isRespondableStatus && $notExpired && $canRespond;
+    }
+    
+    /**
+     * Check if vendor can submit counter offer
+     * Separate from canRespond() to allow accept/reject at max rounds
+     */
+    public function canCounter(): bool
+    {
+        // Can counter if can respond AND not at max rounds
+        if (!$this->canRespond()) {
+            return false;
+        }
+        
+        // Check max negotiation rounds - vendor can counter only if below max
+        $quoteDetails = $this->quoteDetails ?? [];
+        $maxRounds = $quoteDetails['max_rounds'] ?? 5;
+        
+        return $this->round < $maxRounds;
+    }
+
+    /**
      * Get quote number for display
      */
     public function getQuoteNumber(): string

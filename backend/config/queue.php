@@ -42,6 +42,15 @@ return [
             'after_commit' => false,
         ],
 
+        // Vendor Portal Email Queue
+        'vendor-emails' => [
+            'driver' => 'database',
+            'table' => 'jobs',
+            'queue' => 'vendor-emails',
+            'retry_after' => 180, // 3 minutes for email processing
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => 'localhost',

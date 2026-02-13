@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use App\Infrastructure\Presentation\Http\Middleware\TenantUrlResolverMiddleware;
 use App\Application\TenantConfiguration\Services\UrlResolverService;
+use App\Application\TenantConfiguration\Services\UrlAccessAnalyticsService;
 use App\Application\TenantConfiguration\UseCases\ResolveTenantFromUrlUseCase;
 use App\Domain\Tenant\Services\UrlPatternMatcher;
 use App\Domain\Tenant\Services\TenantResolver;
@@ -34,29 +35,23 @@ class TenantUrlResolverMiddlewareTest extends TestCase
             'name' => 'Test Corporation'
         ]);
 
-        $urlPatternMatcher = new UrlPatternMatcher(
-            baseDomain: 'stencil.canvastack.com',
-            excludedSubdomains: ['www', 'api', 'admin', 'platform', 'mail'],
-            pathPrefix: 't'
-        );
-
-        $tenantResolver = new TenantResolver(
-            app(TenantRepositoryInterface::class),
-            app(TenantUrlConfigRepositoryInterface::class),
-            app(CustomDomainRepositoryInterface::class)
-        );
-
-        $useCase = new ResolveTenantFromUrlUseCase($urlPatternMatcher, $tenantResolver);
-        $urlResolverService = new UrlResolverService($useCase);
-
-        $this->middleware = new TenantUrlResolverMiddleware($urlResolverService);
-
+        // Configure tenant-url settings properly
+        Config::set('tenant-url.detection.subdomain.enabled', true);
+        Config::set('tenant-url.detection.subdomain.base_domain', 'stencil.canvastack.com');
+        Config::set('tenant-url.detection.subdomain.excluded_subdomains', ['www', 'api', 'admin', 'platform', 'mail']);
+        Config::set('tenant-url.detection.path.enabled', true);
+        Config::set('tenant-url.detection.path.prefix', 't');
+        Config::set('tenant-url.detection.custom_domain.enabled', true);
         Config::set('tenant-url.cache.enabled', false);
         Config::set('tenant-url.monitoring.enabled', true);
         Config::set('tenant-url.monitoring.slow_threshold_ms', 10);
         Config::set('tenant-url.fallback.show_404', true);
         Config::set('tenant-url.fallback.log_failures', true);
         Config::set('tenant-url.fallback.redirect_to', 'https://www.stencil.canvastack.com');
+        Config::set('tenant-url.analytics.enabled', true);
+
+        // Use services from Laravel container
+        $this->middleware = app(TenantUrlResolverMiddleware::class);
     }
 
     public function test_resolves_tenant_from_subdomain_and_sets_context(): void
@@ -222,7 +217,8 @@ class TenantUrlResolverMiddlewareTest extends TestCase
         $mockService->method('resolveTenantFromRequest')
             ->willThrowException(new \Exception('Unexpected database error'));
 
-        $middleware = new TenantUrlResolverMiddleware($mockService);
+        $mockAnalytics = $this->createMock(UrlAccessAnalyticsService::class);
+        $middleware = new TenantUrlResolverMiddleware($mockService, $mockAnalytics);
 
         $request = Request::create('http://testcorp.stencil.canvastack.com/dashboard', 'GET');
 

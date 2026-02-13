@@ -9,7 +9,8 @@ use App\Application\Order\Commands\CreatePurchaseOrderCommand;
 use App\Application\Order\Commands\AssignVendorCommand;
 use App\Application\Order\Commands\NegotiateWithVendorCommand;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
-use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Tenant, Vendor};
+use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Vendor};
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -65,11 +66,11 @@ class OrderWorkflowIntegrationTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($command);
 
         $this->assertNotNull($order);
-        $this->assertEquals(100000.00, $order->total_amount);
-        $this->assertEquals('IDR', $order->currency);
-        $this->assertEquals('pending', $order->status);
+        $this->assertEquals(100000.00, $order->getTotalAmount()->getAmount());
+        $this->assertEquals('IDR', $order->getTotalAmount()->getCurrency());
+        $this->assertEquals('pending', $order->getStatus()->value);
 
-        $refreshedOrder = Order::where('uuid', $order->getId())->first();
+        $refreshedOrder = Order::where('uuid', $order->getId()->getValue())->first();
         $this->assertNotNull($refreshedOrder);
         $this->assertEquals($this->customer->id, $refreshedOrder->customer_id);
     }
@@ -94,17 +95,21 @@ class OrderWorkflowIntegrationTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor->uuid,
+            quotedPrice: 10000000, // 100000 IDR in cents
+            leadTimeDays: 14,
+            terms: ['payment_terms' => 'Net 30'],
+            notes: 'Test vendor assignment'
         );
 
         $assignedOrder = $this->assignVendorUseCase->execute($assignCommand);
 
         $this->assertNotNull($assignedOrder);
-        $this->assertEquals($this->vendor->id, $assignedOrder->vendor_id);
+        // AssignVendorUseCase returns Domain Entity, use getter
+        $this->assertEquals($this->vendor->uuid, $assignedOrder->getVendorId()->getValue());
 
-        $refreshedOrder = Order::where('uuid', $order->getId())->first();
+        $refreshedOrder = Order::where('uuid', $order->getId()->getValue())->first();
         $this->assertEquals($this->vendor->id, $refreshedOrder->vendor_id);
     }
 
@@ -128,27 +133,31 @@ class OrderWorkflowIntegrationTest extends TestCase
         $order = $this->createPurchaseOrderUseCase->execute($createCommand);
 
         $assignCommand = new AssignVendorCommand(
-            orderId: $order->getId(),
-            vendorId: $this->vendor->uuid,
-            tenantId: $this->tenant->uuid
+            orderUuid: $order->getId()->getValue(),
+            vendorUuid: $this->vendor->uuid,
+            quotedPrice: 10000000, // 100000 IDR in cents
+            leadTimeDays: 14
         );
 
         $this->assignVendorUseCase->execute($assignCommand);
 
         $negotiateCommand = new NegotiateWithVendorCommand(
-            orderId: $order->getId(),
             tenantId: $this->tenant->uuid,
-            proposedPrice: 95000.00,
-            leadTimeDays: 5
+            orderId: $order->getId()->getValue(),
+            vendorId: $this->vendor->uuid,
+            quotedPrice: 9500000.0, // 95000 IDR in cents
+            leadTimeInDays: 5,
+            notes: 'Counter offer negotiation'
         );
 
         $negotiatedOrder = $this->negotiateWithVendorUseCase->execute($negotiateCommand);
 
         $this->assertNotNull($negotiatedOrder);
-        $this->assertEquals('negotiating', $negotiatedOrder->status);
+        // NegotiateWithVendorUseCase returns Domain Entity with correct status
+        $this->assertEquals('vendor_negotiation', $negotiatedOrder->getStatus()->value);
 
-        $refreshedOrder = Order::where('uuid', $order->getId())->first();
-        $this->assertEquals('negotiating', $refreshedOrder->status);
+        $refreshedOrder = Order::where('uuid', $order->getId()->getValue())->first();
+        $this->assertEquals('vendor_negotiation', $refreshedOrder->status);
     }
 
     /** @test */
@@ -238,8 +247,9 @@ class OrderWorkflowIntegrationTest extends TestCase
 
         $order2 = $this->createPurchaseOrderUseCase->execute($command2);
 
-        $this->assertEquals($this->tenant->id, $order1->tenant_id);
-        $this->assertEquals($tenantB->id, $order2->tenant_id);
+        // getTenantId() returns UUID string, not BIGINT id
+        $this->assertEquals($this->tenant->uuid, $order1->getTenantId()->getValue());
+        $this->assertEquals($tenantB->uuid, $order2->getTenantId()->getValue());
 
         $tenantAOrders = Order::where('tenant_id', $this->tenant->id)->get();
         $tenantBOrders = Order::where('tenant_id', $tenantB->id)->get();

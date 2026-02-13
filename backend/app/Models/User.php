@@ -40,13 +40,11 @@ class User extends Authenticatable
      * Get the vendor associated with this user (if any).
      * This relationship is used for vendor users to access their vendor record.
      * 
-     * Note: This assumes vendors are linked to users via email matching.
-     * If a different linking mechanism exists, update this relationship accordingly.
+     * Links users.vendor_id (UUID) to vendors.uuid (UUID)
      */
     public function vendor(): BelongsTo
     {
-        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\Models\Vendor::class, 'email', 'email')
-            ->where('tenant_id', $this->tenant_id);
+        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\Models\Vendor::class, 'vendor_id', 'uuid');
     }
 
     /**

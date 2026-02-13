@@ -234,9 +234,10 @@ class UrlResolverServiceTest extends TestCase
 
         Cache::flush();
 
+        // warmCache expects array with 'subdomain' or 'custom_domain' keys
         $tenants = [
-            ['url_pattern' => 'subdomain', 'identifier' => 'testcorp'],
-            ['url_pattern' => 'subdomain', 'identifier' => 'acmecorp'],
+            ['subdomain' => 'testcorp'],
+            ['subdomain' => 'acmecorp'],
         ];
 
         $this->service->warmCache($tenants);
@@ -257,8 +258,6 @@ class UrlResolverServiceTest extends TestCase
 
     public function test_disabled_cache_skips_caching(): void
     {
-        Config::set('tenant-url.cache.enabled', false);
-
         TenantUrlConfigurationEloquentModel::factory()->create([
             'tenant_id' => $this->tenant->id,
             'url_pattern' => 'subdomain',
@@ -269,7 +268,25 @@ class UrlResolverServiceTest extends TestCase
 
         Cache::flush();
 
-        $this->service->resolveTenantFromRequest('testcorp.stencil.canvastack.com', '/');
+        // Disable cache and re-instantiate service to pick up new config
+        Config::set('tenant-url.cache.enabled', false);
+        
+        $urlPatternMatcher = new UrlPatternMatcher(
+            baseDomain: 'stencil.canvastack.com',
+            excludedSubdomains: ['www', 'api', 'admin', 'platform', 'mail'],
+            pathPrefix: 't'
+        );
+
+        $tenantResolver = new TenantResolver(
+            app(TenantRepositoryInterface::class),
+            app(TenantUrlConfigRepositoryInterface::class),
+            app(CustomDomainRepositoryInterface::class)
+        );
+
+        $useCase = new ResolveTenantFromUrlUseCase($urlPatternMatcher, $tenantResolver);
+        $serviceWithDisabledCache = new UrlResolverService($useCase);
+
+        $serviceWithDisabledCache->resolveTenantFromRequest('testcorp.stencil.canvastack.com', '/');
         
         $cacheKey = 'tenant_url:' . md5('testcorp.stencil.canvastack.com:/');
         $this->assertFalse(Cache::has($cacheKey));

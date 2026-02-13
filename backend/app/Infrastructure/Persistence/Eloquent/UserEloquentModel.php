@@ -34,6 +34,8 @@ class UserEloquentModel extends Authenticatable
     protected $fillable = [
         'uuid',
         'tenant_id',
+        'vendor_id',
+        'account_type',
         'name',
         'email',
         'password',
@@ -44,6 +46,8 @@ class UserEloquentModel extends Authenticatable
         'avatar',
         'email_verified_at',
         'last_login_at',
+        'failed_login_attempts',
+        'last_failed_login_at',
     ];
 
     protected $hidden = [
@@ -56,6 +60,8 @@ class UserEloquentModel extends Authenticatable
         'location' => 'array',
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'last_failed_login_at' => 'datetime',
+        'failed_login_attempts' => 'integer',
         'password' => 'hashed',
     ];
 
@@ -72,6 +78,15 @@ class UserEloquentModel extends Authenticatable
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(TenantEloquentModel::class, 'tenant_id');
+    }
+
+    /**
+     * Get the vendor associated with this user (for vendor portal users).
+     * Requirements: 1.7, 2.4
+     */
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(\App\Infrastructure\Persistence\Eloquent\Models\Vendor::class, 'vendor_id', 'uuid');
     }
 
     // Global Scopes
@@ -129,6 +144,31 @@ class UserEloquentModel extends Authenticatable
     public function belongsToTenant(string $tenantId): bool
     {
         return $this->tenant_id === $tenantId;
+    }
+
+    /**
+     * Check if user is a vendor portal user.
+     * Requirements: 1.7
+     */
+    public function isVendor(): bool
+    {
+        return $this->account_type === 'vendor';
+    }
+
+    /**
+     * Check if user is a platform admin.
+     */
+    public function isPlatformAdmin(): bool
+    {
+        return $this->account_type === 'platform';
+    }
+
+    /**
+     * Check if user is a tenant user.
+     */
+    public function isTenantUser(): bool
+    {
+        return $this->account_type === 'tenant';
     }
 
     /**

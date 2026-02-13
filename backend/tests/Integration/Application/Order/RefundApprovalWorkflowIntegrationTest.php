@@ -8,9 +8,9 @@ use App\Infrastructure\Persistence\Eloquent\Models\{
     Order, 
     RefundRequest, 
     RefundApproval, 
-    User, 
-    Tenant
+    User
 };
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Domain\Order\Enums\OrderStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -55,17 +55,22 @@ class RefundApprovalWorkflowIntegrationTest extends TestCase
             'tenant_id' => $this->tenant->id
         ]);
 
+        // Create order - factory creates its own tenant, so we need to update it
         $this->order = Order::factory()->create([
-            'tenant_id' => $this->tenant->id,
             'status' => OrderStatus::IN_PRODUCTION->value,
             'total_amount' => 5000000.00,
             'total_paid_amount' => 5000000.00,
             'total_disbursed_amount' => 3000000.00,
         ]);
+        
+        // CRITICAL: Update order to use our test tenant (factory creates its own tenant)
+        $this->order->update(['tenant_id' => $this->tenant->id]);
+        $this->order->refresh();
 
         // Initialize insurance fund for testing - larger amount to cover vendor failures
+        // Use tenant integer ID (BIGINT), not UUID string
         \App\Infrastructure\Persistence\Eloquent\Models\InsuranceFundTransaction::factory()->create([
-            'tenant_id' => $this->tenant->id,
+            'tenant_id' => $this->tenant->id, // Use integer ID, not UUID
             'transaction_type' => 'contribution',
             'amount' => 5000000.00, // 5M IDR balance to cover all scenarios
             'balance_before' => 0,

@@ -1,0 +1,448 @@
+# Vendor Portal - Authentication API Endpoints
+# Multi-tenant vendor portal authentication system
+# Following Hexagonal Architecture + DDD + CQRS patterns
+
+# Vendor Authentication - Login
+/api/v1/vendor/auth/login:
+  post:
+    tags:
+      - Vendor Portal - Authentication
+    summary: Vendor Login
+    description: |
+      Authenticate vendor user and create session token using Laravel Sanctum.
+      
+      **Architecture Context:**
+      - Controller → AuthenticateVendorUseCase → VendorRepository
+      - Validates credentials, portal access, and onboarding status
+      - Creates Sanctum token with 'vendor:access' ability
+      - Logs authentication event to audit trail
+      - Updates portal access timestamp
+      
+      **Security:**
+      - Rate limited: 5 attempts per 15 minutes per IP
+      - Account lockout after 5 failed attempts (15 minutes)
+      - Requires active vendor status
+      - Requires portal access enabled
+      - Requires completed onboarding
+      
+      **Related Use Case:** AuthenticateVendorUseCase
+      **Domain Events:** VendorLoggedInEvent
+    operationId: vendorLogin
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+                format: email
+                description: Vendor user email address
+                example: vendor@example.com
+              password:
+                type: string
+                format: password
+                minLength: 8
+                description: Vendor user password
+                example: SecurePassword123!
+    responses:
+      '200':
+        description: Login successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    token:
+                      type: string
+                      description: Sanctum Bearer token
+                      example: "1|abc123def456..."
+                    token_type:
+                      type: string
+                      example: "Bearer"
+                    expires_in:
+                      type: integer
+                      description: Token expiration in seconds (24 hours)
+                      example: 86400
+                    user:
+                      $ref: '../../schemas/vendor/vendor-authentication.yaml#/VendorUser'
+                    vendor:
+                      $ref: '../../schemas/vendor/vendor-authentication.yaml#/VendorProfile'
+                message:
+                  type: string
+                  example: "Login successful"
+      '401':
+        description: Invalid credentials or authentication failed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "AUTHENTICATION_FAILED"
+                    message:
+                      type: string
+                      example: "Invalid credentials"
+      '403':
+        description: Account locked, portal access disabled, or onboarding not completed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      enum: [ACCOUNT_LOCKED, PORTAL_ACCESS_DISABLED, ONBOARDING_NOT_COMPLETED, VENDOR_INACTIVE]
+                      example: "ACCOUNT_LOCKED"
+                    message:
+                      type: string
+                      example: "Account is temporarily locked due to multiple failed login attempts"
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "VALIDATION_ERROR"
+                    message:
+                      type: string
+                      example: "Validation failed"
+                    details:
+                      type: object
+                      properties:
+                        email:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The email field is required."]
+                        password:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The password field is required."]
+      '429':
+        description: Too many login attempts
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "RATE_LIMIT_EXCEEDED"
+                    message:
+                      type: string
+                      example: "Too many login attempts. Please try again in 15 minutes."
+
+# Vendor Authentication - Logout
+/api/v1/vendor/auth/logout:
+  post:
+    tags:
+      - Vendor Portal - Authentication
+    summary: Vendor Logout
+    description: |
+      Revoke vendor authentication token and end session.
+      
+      **Architecture Context:**
+      - Controller → LogoutVendorUseCase
+      - Revokes current Sanctum token
+      - Logs logout event to audit trail
+      
+      **Related Use Case:** LogoutVendorUseCase
+    operationId: vendorLogout
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: all_devices
+        in: query
+        description: Logout from all devices (revoke all tokens)
+        schema:
+          type: boolean
+          default: false
+    responses:
+      '200':
+        description: Logout successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    tokens_revoked:
+                      type: integer
+                      description: Number of tokens revoked
+                      example: 1
+                message:
+                  type: string
+                  example: "Logout successful"
+      '401':
+        description: Unauthorized - invalid or expired token
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+
+# Vendor Authentication - Request Password Reset
+/api/v1/vendor/auth/password/email:
+  post:
+    tags:
+      - Vendor Portal - Authentication
+    summary: Request Password Reset
+    description: |
+      Request password reset email for vendor account.
+      
+      **Architecture Context:**
+      - Controller → RequestPasswordResetUseCase
+      - Generates secure reset token (64 chars)
+      - Stores token with 60-minute expiration
+      - Sends password reset email
+      - Logs password reset request to audit trail
+      
+      **Security:**
+      - Rate limited: 1 request per 60 seconds per email
+      - Token expires after 60 minutes
+      - Requires portal access enabled
+      
+      **Related Use Case:** RequestPasswordResetUseCase
+    operationId: vendorRequestPasswordReset
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+                format: email
+                description: Vendor user email address
+                example: vendor@example.com
+    responses:
+      '200':
+        description: Password reset email sent
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "Password reset email sent successfully"
+      '404':
+        description: Email not found or vendor account not found
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "EMAIL_NOT_FOUND"
+                    message:
+                      type: string
+                      example: "No vendor account found with this email address"
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ValidationError'
+      '429':
+        description: Too many password reset requests
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "RATE_LIMIT_EXCEEDED"
+                    message:
+                      type: string
+                      example: "Please wait 60 seconds before requesting another password reset"
+
+# Vendor Authentication - Reset Password
+/api/v1/vendor/auth/password/reset:
+  post:
+    tags:
+      - Vendor Portal - Authentication
+    summary: Reset Password
+    description: |
+      Reset vendor password using reset token from email.
+      
+      **Architecture Context:**
+      - Controller → ResetPasswordUseCase
+      - Validates reset token and expiration
+      - Validates password strength requirements
+      - Updates user password with bcrypt hash
+      - Deletes used reset token
+      - Revokes all existing Sanctum tokens (force re-login)
+      - Logs password reset to audit trail
+      
+      **Password Requirements:**
+      - Minimum 8 characters
+      - At least 1 uppercase letter
+      - At least 1 lowercase letter
+      - At least 1 number
+      - At least 1 special character
+      
+      **Related Use Case:** ResetPasswordUseCase
+    operationId: vendorResetPassword
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - token
+              - email
+              - password
+              - password_confirmation
+            properties:
+              token:
+                type: string
+                description: Password reset token from email
+                example: "abc123def456..."
+              email:
+                type: string
+                format: email
+                description: Vendor user email address
+                example: vendor@example.com
+              password:
+                type: string
+                format: password
+                minLength: 8
+                description: New password (must meet strength requirements)
+                example: "NewSecurePassword123!"
+              password_confirmation:
+                type: string
+                format: password
+                description: Password confirmation (must match password)
+                example: "NewSecurePassword123!"
+    responses:
+      '200':
+        description: Password reset successful
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "Password reset successful. Please login with your new password."
+      '400':
+        description: Invalid or expired reset token
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      enum: [INVALID_TOKEN, EXPIRED_TOKEN]
+                      example: "EXPIRED_TOKEN"
+                    message:
+                      type: string
+                      example: "Password reset token has expired. Please request a new one."
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "VALIDATION_ERROR"
+                    message:
+                      type: string
+                      example: "Validation failed"
+                    details:
+                      type: object
+                      properties:
+                        password:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The password must be at least 8 characters.", "The password must contain at least one uppercase letter."]
+                        password_confirmation:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The password confirmation does not match."]

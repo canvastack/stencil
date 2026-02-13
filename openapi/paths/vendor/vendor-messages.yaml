@@ -1,0 +1,243 @@
+# Vendor Portal - Message Thread API Endpoints
+# Multi-tenant vendor-admin communication system
+# Following Hexagonal Architecture + DDD + CQRS patterns
+
+# Vendor Messages - List
+/api/v1/vendor/quotes/{quote_uuid}/messages:
+  get:
+    tags:
+      - Vendor Portal - Messages
+    summary: Get Quote Messages
+    description: |
+      Retrieve paginated list of messages for a specific quote.
+      
+      **Architecture Context:**
+      - Controller → GetQuoteMessagesUseCase → MessageRepository
+      - Loads messages for quote with pagination
+      - Marks admin messages as read automatically
+      - Enforces vendor ownership and tenant isolation
+      - Orders by created_at DESC
+      
+      **Related Use Case:** GetQuoteMessagesUseCase
+      **Query Handler:** GetQuoteMessagesQuery
+    operationId: getVendorQuoteMessages
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: quote_uuid
+        in: path
+        required: true
+        description: Quote UUID
+        schema:
+          type: string
+          format: uuid
+      - name: page
+        in: query
+        description: Page number for pagination
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - name: per_page
+        in: query
+        description: Number of items per page
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+    responses:
+      '200':
+        description: Messages retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  type: object
+                  properties:
+                    messages:
+                      type: array
+                      items:
+                        $ref: '../../schemas/vendor/vendor-messages.yaml#/QuoteMessage'
+                    pagination:
+                      type: object
+                      properties:
+                        total:
+                          type: integer
+                          example: 15
+                        per_page:
+                          type: integer
+                          example: 20
+                        current_page:
+                          type: integer
+                          example: 1
+                        last_page:
+                          type: integer
+                          example: 1
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden - quote does not belong to vendor
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+      '404':
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/NotFoundError'
+
+  post:
+    tags:
+      - Vendor Portal - Messages
+    summary: Send Quote Message
+    description: |
+      Send a message to admin regarding a specific quote.
+      
+      **Architecture Context:**
+      - Controller → SendQuoteMessageUseCase → MessageRepository
+      - Validates quote access and vendor ownership
+      - Processes file attachments (max 5, max 10MB each)
+      - Creates message with sender_type='vendor'
+      - Enforces tenant isolation
+      - Sends notifications to admins
+      - Stores attachments in tenant-scoped directory
+      
+      **Business Rules:**
+      - Message cannot be empty (max 5000 chars)
+      - Maximum 5 attachments per message
+      - Maximum 10MB per attachment
+      - Allowed file types: pdf, jpg, jpeg, png, doc, docx, xls, xlsx
+      
+      **Related Use Case:** SendQuoteMessageUseCase
+      **Command:** SendQuoteMessageCommand
+    operationId: sendVendorQuoteMessage
+    security:
+      - VendorAuth: []
+    parameters:
+      - name: quote_uuid
+        in: path
+        required: true
+        description: Quote UUID
+        schema:
+          type: string
+          format: uuid
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                minLength: 1
+                maxLength: 5000
+                description: Message content
+                example: "I have a question about the specifications. Can we use alternative materials?"
+              attachments:
+                type: array
+                maxItems: 5
+                description: File attachments (max 5 files, 10MB each)
+                items:
+                  type: string
+                  format: binary
+    responses:
+      '201':
+        description: Message sent successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../../schemas/vendor/vendor-messages.yaml#/QuoteMessage'
+                message:
+                  type: string
+                  example: "Message sent successfully"
+      '400':
+        description: Bad request - file validation failed
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      enum: [FILE_TOO_LARGE, INVALID_FILE_TYPE, TOO_MANY_ATTACHMENTS]
+                      example: "FILE_TOO_LARGE"
+                    message:
+                      type: string
+                      example: "File size exceeds 10MB limit"
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden - quote does not belong to vendor
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+      '404':
+        description: Quote not found
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/NotFoundError'
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "VALIDATION_ERROR"
+                    message:
+                      type: string
+                      example: "Validation failed"
+                    details:
+                      type: object
+                      properties:
+                        message:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The message field is required."]
+                        attachments:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The attachments must not have more than 5 items."]

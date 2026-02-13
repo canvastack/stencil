@@ -27,14 +27,23 @@ class VendorRepository implements VendorRepositoryInterface
      */
     public function save(Vendor $vendor): Vendor
     {
+        // Convert tenant UUID to integer ID for database storage
+        $tenantUuid = $vendor->getTenantId()->getValue();
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantUuid)->first();
+        $tenantId = $tenant ? $tenant->id : null;
+        
+        if (!$tenantId) {
+            throw new \InvalidArgumentException("Tenant not found for UUID: {$tenantUuid}");
+        }
+        
         $model = VendorModel::updateOrCreate(
             ['uuid' => $vendor->getId()->getValue()],
             [
-                'tenant_id' => $vendor->getTenantId()->getValue(),
+                'tenant_id' => $tenantId, // Use integer ID, not UUID
                 'name' => $vendor->getName(),
                 'email' => $vendor->getEmail(),
                 'phone' => $vendor->getPhone(),
-                'company' => $vendor->getCompany(),
+                'company_name' => $vendor->getCompany(), // Use company_name field, not company
                 'address' => $vendor->getAddress() ? json_encode([
                     'street' => $vendor->getAddress()->getStreet(),
                     'city' => $vendor->getAddress()->getCity(),
@@ -45,16 +54,21 @@ class VendorRepository implements VendorRepositoryInterface
                 'contact_info' => $vendor->getContactInfo() ? json_encode([
                     'email' => $vendor->getContactInfo()->getEmail(),
                     'phone' => $vendor->getContactInfo()->getPhone(),
-                    'website' => $vendor->getContactInfo()->getWebsite(),
-                    'social_media' => $vendor->getContactInfo()->getSocialMedia(),
+                    'whatsapp' => $vendor->getContactInfo()->getWhatsapp(),
+                    'alternative_email' => $vendor->getContactInfo()->getAlternativeEmail(),
+                    'additional_contacts' => $vendor->getContactInfo()->getAdditionalContacts(),
                 ]) : null,
                 'capabilities' => json_encode($vendor->getCapabilities()),
-                'certifications' => json_encode($vendor->getCertifications()),
                 'rating' => $vendor->getRating(),
                 'metadata' => json_encode($vendor->getMetadata()),
                 'status' => $vendor->getStatus(),
                 'created_at' => $vendor->getCreatedAt(),
                 'updated_at' => $vendor->getUpdatedAt(),
+                // Vendor Portal fields
+                'onboarding_status' => $vendor->getOnboardingStatus(),
+                'onboarding_completed_at' => $vendor->getOnboardingCompletedAt(),
+                'portal_access_enabled' => $vendor->isPortalAccessEnabled(),
+                'portal_last_access_at' => $vendor->getPortalLastAccessAt(),
             ]
         );
 
@@ -128,7 +142,15 @@ class VendorRepository implements VendorRepositoryInterface
         string $sortBy = 'created_at',
         string $sortDirection = 'desc'
     ): array {
-        $query = VendorModel::where('tenant_id', $tenantId->getValue());
+        // Convert UUID to integer tenant_id
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantId->getValue())->first();
+        $tenantIdInt = $tenant ? $tenant->id : null;
+        
+        if (!$tenantIdInt) {
+            return [];
+        }
+        
+        $query = VendorModel::where('tenant_id', $tenantIdInt);
 
         // Apply filters
         if (isset($filters['status'])) {
@@ -139,7 +161,7 @@ class VendorRepository implements VendorRepositoryInterface
             $query->where(function ($q) use ($filters) {
                 $q->where('name', 'ILIKE', '%' . $filters['search'] . '%')
                   ->orWhere('email', 'ILIKE', '%' . $filters['search'] . '%')
-                  ->orWhere('company', 'ILIKE', '%' . $filters['search'] . '%');
+                  ->orWhere('company_name', 'ILIKE', '%' . $filters['search'] . '%');
             });
         }
 
@@ -168,7 +190,15 @@ class VendorRepository implements VendorRepositoryInterface
      */
     public function countWithFilters(UuidValueObject $tenantId, array $filters = []): int
     {
-        $query = VendorModel::where('tenant_id', $tenantId->getValue());
+        // Convert UUID to integer tenant_id
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantId->getValue())->first();
+        $tenantIdInt = $tenant ? $tenant->id : null;
+        
+        if (!$tenantIdInt) {
+            return 0;
+        }
+        
+        $query = VendorModel::where('tenant_id', $tenantIdInt);
 
         // Apply same filters as findWithFilters
         if (isset($filters['status'])) {
@@ -179,7 +209,7 @@ class VendorRepository implements VendorRepositoryInterface
             $query->where(function ($q) use ($filters) {
                 $q->where('name', 'ILIKE', '%' . $filters['search'] . '%')
                   ->orWhere('email', 'ILIKE', '%' . $filters['search'] . '%')
-                  ->orWhere('company', 'ILIKE', '%' . $filters['search'] . '%');
+                  ->orWhere('company_name', 'ILIKE', '%' . $filters['search'] . '%');
             });
         }
 
@@ -211,11 +241,25 @@ class VendorRepository implements VendorRepositoryInterface
      */
     public function getStatistics(UuidValueObject $tenantId): array
     {
-        $total = VendorModel::where('tenant_id', $tenantId->getValue())->count();
-        $active = VendorModel::where('tenant_id', $tenantId->getValue())
+        // Convert UUID to integer tenant_id
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantId->getValue())->first();
+        $tenantIdInt = $tenant ? $tenant->id : null;
+        
+        if (!$tenantIdInt) {
+            return [
+                'total' => 0,
+                'active' => 0,
+                'inactive' => 0,
+                'average_rating' => 0,
+                'active_percentage' => 0,
+            ];
+        }
+        
+        $total = VendorModel::where('tenant_id', $tenantIdInt)->count();
+        $active = VendorModel::where('tenant_id', $tenantIdInt)
             ->where('status', 'active')
             ->count();
-        $avgRating = VendorModel::where('tenant_id', $tenantId->getValue())
+        $avgRating = VendorModel::where('tenant_id', $tenantIdInt)
             ->where('status', 'active')
             ->avg('rating');
 
@@ -251,7 +295,7 @@ class VendorRepository implements VendorRepositoryInterface
             ->where(function ($query) use ($searchTerm) {
                 $query->where('name', 'ILIKE', '%' . $searchTerm . '%')
                       ->orWhere('email', 'ILIKE', '%' . $searchTerm . '%')
-                      ->orWhere('company', 'ILIKE', '%' . $searchTerm . '%');
+                      ->orWhere('company_name', 'ILIKE', '%' . $searchTerm . '%');
             })
             ->orderBy('rating', 'desc')
             ->get();
@@ -388,7 +432,149 @@ class VendorRepository implements VendorRepositoryInterface
             metadata: is_string($model->metadata) ? json_decode($model->metadata, true) ?? [] : ($model->metadata ?? []),
             status: $model->status,
             createdAt: new \DateTimeImmutable($model->created_at->format('Y-m-d H:i:s')),
-            updatedAt: new \DateTimeImmutable($model->updated_at->format('Y-m-d H:i:s'))
+            updatedAt: new \DateTimeImmutable($model->updated_at->format('Y-m-d H:i:s')),
+            // Vendor Portal fields
+            onboardingStatus: $model->onboarding_status ?? 'pending',
+            onboardingCompletedAt: $model->onboarding_completed_at ? new \DateTimeImmutable($model->onboarding_completed_at->format('Y-m-d H:i:s')) : null,
+            portalAccessEnabled: $model->portal_access_enabled ?? false,
+            portalLastAccessAt: $model->portal_last_access_at ? new \DateTimeImmutable($model->portal_last_access_at->format('Y-m-d H:i:s')) : null
         );
     }
+
+    /**
+     * Find vendor by user ID
+     * 
+     * @param int $userId
+     * @param int $tenantId
+     * @return Vendor|null
+     */
+    public function findByUserId(int $userId, int $tenantId): ?Vendor
+    {
+        $model = VendorModel::where('tenant_id', $tenantId)
+            ->whereHas('users', function ($query) use ($userId) {
+                $query->where('id', $userId);
+            })->first();
+
+        return $model ? $this->toDomainEntity($model) : null;
+    }
+
+    /**
+     * Find vendors with portal access enabled
+     * 
+     * @param UuidValueObject $tenantId
+     * @return array
+     */
+    public function findWithPortalAccess(UuidValueObject $tenantId): array
+    {
+        // Convert UUID to integer tenant_id
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantId->getValue())->first();
+        $tenantIdInt = $tenant ? $tenant->id : null;
+        
+        if (!$tenantIdInt) {
+            return [];
+        }
+        
+        $models = VendorModel::where('tenant_id', $tenantIdInt)
+            ->where('portal_access_enabled', true)
+            ->where('status', 'active')
+            ->get();
+
+        return $models->map(fn($model) => $this->toDomainEntity($model))->toArray();
+    }
+
+    /**
+     * Find vendors by onboarding status
+     * 
+     * @param UuidValueObject $tenantId
+     * @param string $status
+     * @return array
+     */
+    public function findByOnboardingStatus(UuidValueObject $tenantId, string $status): array
+    {
+        // Convert UUID to integer tenant_id
+        $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantId->getValue())->first();
+        $tenantIdInt = $tenant ? $tenant->id : null;
+        
+        if (!$tenantIdInt) {
+            return [];
+        }
+        
+        $models = VendorModel::where('tenant_id', $tenantIdInt)
+            ->where('onboarding_status', $status)
+            ->get();
+
+        return $models->map(fn($model) => $this->toDomainEntity($model))->toArray();
+    }
+
+    /**
+     * Update portal access timestamp
+     * 
+     * @param UuidValueObject $vendorId
+     * @return bool
+     */
+    public function updatePortalAccessTimestamp(UuidValueObject $vendorId): bool
+    {
+        return VendorModel::where('uuid', $vendorId->getValue())
+            ->update(['portal_last_access_at' => now()]) > 0;
+    }
+
+    /**
+     * Get portal performance metrics for vendor
+     * 
+     * @param UuidValueObject $vendorId
+     * @return array
+     */
+    public function getPortalPerformanceMetrics(UuidValueObject $vendorId): array
+    {
+        $vendor = VendorModel::where('uuid', $vendorId->getValue())->first();
+        
+        if (!$vendor) {
+            return [
+                'total_quotes' => 0,
+                'accepted_quotes' => 0,
+                'rejected_quotes' => 0,
+                'pending_quotes' => 0,
+                'acceptance_rate' => 0,
+                'avg_response_time_hours' => 0,
+            ];
+        }
+
+        // Get quote statistics from order_vendor_negotiations table
+        $quotes = \Illuminate\Support\Facades\DB::table('order_vendor_negotiations')
+            ->where('vendor_id', $vendor->id)
+            ->whereNull('deleted_at')
+            ->get();
+
+        $totalQuotes = $quotes->count();
+        $acceptedQuotes = $quotes->where('status', 'accepted')->count();
+        $rejectedQuotes = $quotes->where('status', 'rejected')->count();
+        $pendingQuotes = $quotes->whereIn('status', ['sent', 'pending_response', 'draft'])->count();
+
+        $acceptanceRate = $totalQuotes > 0 ? ($acceptedQuotes / $totalQuotes) * 100 : 0;
+
+        // Calculate average response time (in hours)
+        $respondedQuotes = $quotes->whereNotNull('responded_at');
+        $avgResponseTime = 0;
+        
+        if ($respondedQuotes->count() > 0) {
+            $totalResponseTime = 0;
+            foreach ($respondedQuotes as $quote) {
+                $createdAt = new \DateTime($quote->created_at);
+                $respondedAt = new \DateTime($quote->responded_at);
+                $diff = $createdAt->diff($respondedAt);
+                $totalResponseTime += ($diff->days * 24) + $diff->h + ($diff->i / 60);
+            }
+            $avgResponseTime = $totalResponseTime / $respondedQuotes->count();
+        }
+
+        return [
+            'total_quotes' => $totalQuotes,
+            'accepted_quotes' => $acceptedQuotes,
+            'rejected_quotes' => $rejectedQuotes,
+            'pending_quotes' => $pendingQuotes,
+            'acceptance_rate' => round($acceptanceRate, 2),
+            'avg_response_time_hours' => round($avgResponseTime, 2),
+        ];
+    }
 }
+

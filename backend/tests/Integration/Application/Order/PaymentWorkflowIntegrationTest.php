@@ -11,7 +11,8 @@ use App\Application\Order\Commands\VerifyCustomerPaymentCommand;
 use App\Application\Order\Commands\RequestFinalPaymentCommand;
 use App\Application\Order\Commands\RefundOrderCommand;
 use App\Application\Order\Services\PaymentApplicationService;
-use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Tenant, Vendor};
+use App\Infrastructure\Persistence\Eloquent\Models\{Customer, Order, Product, Vendor};
+use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
@@ -164,7 +165,7 @@ class PaymentWorkflowIntegrationTest extends TestCase
         );
 
         $this->assertStringStartsWith('INV-', $invoiceNumber);
-        $this->assertStringContainsString($order->order_number, $invoiceNumber);
+        $this->assertStringContainsString($order->getOrderNumber(), $invoiceNumber);
     }
 
     /** @test */

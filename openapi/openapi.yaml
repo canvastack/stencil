@@ -168,6 +168,34 @@ components:
         }
         ```
     
+    VendorAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Vendor Portal JWT Bearer token authentication (Laravel Sanctum).
+        
+        **Format:** `Authorization: Bearer {sanctum_token}`
+        
+        **Token Abilities:** `vendor:access`
+        
+        **Token Structure:**
+        ```json
+        {
+          "user_id": "uuid",
+          "vendor_id": "uuid",
+          "account_type": "vendor",
+          "tenant_id": "uuid",
+          "exp": 1640995200
+        }
+        ```
+        
+        **Security Requirements:**
+        - Account type must be 'vendor'
+        - Portal access must be enabled
+        - Onboarding must be completed
+        - Vendor status must be 'active'
+    
     tenantHeader:
       type: apiKey
       in: header
@@ -498,6 +526,41 @@ components:
 # Main API Paths (will be extended with specific modules)
 paths:
   # ===== PHASE 4-8 ROADMAP ENDPOINTS =====
+  
+  # ===== VENDOR PORTAL ENDPOINTS =====
+  # Vendor Portal - Authentication, Quotes, Profile, Messages
+  # Following Hexagonal Architecture + DDD + CQRS patterns
+  # Endpoints accessible at /api/v1/vendor/*
+  
+  # Vendor Authentication Endpoints
+  /api/v1/vendor/auth/login:
+    $ref: './paths/vendor/vendor-authentication.yaml#/~1api~1v1~1vendor~1auth~1login'
+  /api/v1/vendor/auth/logout:
+    $ref: './paths/vendor/vendor-authentication.yaml#/~1api~1v1~1vendor~1auth~1logout'
+  /api/v1/vendor/auth/password/email:
+    $ref: './paths/vendor/vendor-authentication.yaml#/~1api~1v1~1vendor~1auth~1password~1email'
+  /api/v1/vendor/auth/password/reset:
+    $ref: './paths/vendor/vendor-authentication.yaml#/~1api~1v1~1vendor~1auth~1password~1reset'
+  
+  # Vendor Quote Management Endpoints
+  /api/v1/vendor/quotes:
+    $ref: './paths/vendor/vendor-quotes.yaml#/~1api~1v1~1vendor~1quotes'
+  /api/v1/vendor/quotes/{quote_uuid}:
+    $ref: './paths/vendor/vendor-quotes.yaml#/~1api~1v1~1vendor~1quotes~1{quote_uuid}'
+  /api/v1/vendor/quotes/{quote_uuid}/accept:
+    $ref: './paths/vendor/vendor-quotes.yaml#/~1api~1v1~1vendor~1quotes~1{quote_uuid}~1accept'
+  /api/v1/vendor/quotes/{quote_uuid}/reject:
+    $ref: './paths/vendor/vendor-quotes.yaml#/~1api~1v1~1vendor~1quotes~1{quote_uuid}~1reject'
+  /api/v1/vendor/quotes/{quote_uuid}/counter-offer:
+    $ref: './paths/vendor/vendor-quotes.yaml#/~1api~1v1~1vendor~1quotes~1{quote_uuid}~1counter-offer'
+  
+  # Vendor Profile Management Endpoints
+  /api/v1/vendor/profile:
+    $ref: './paths/vendor/vendor-profile.yaml#/~1api~1v1~1vendor~1profile'
+  
+  # Vendor Message Thread Endpoints
+  /api/v1/vendor/quotes/{quote_uuid}/messages:
+    $ref: './paths/vendor/vendor-messages.yaml#/~1api~1v1~1vendor~1quotes~1{quote_uuid}~1messages'
   
   # ===== PHASE 4: CONTENT MANAGEMENT SYSTEM (CMS) =====
   # CMS Pages - Following Hexagonal Architecture with Use Cases and Query Handlers

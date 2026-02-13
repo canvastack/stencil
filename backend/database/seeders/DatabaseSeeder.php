@@ -90,6 +90,14 @@ class DatabaseSeeder extends Seeder
         $this->call(VendorSourcingSeeder::class);
         $this->call(VendorPaymentSeeder::class);
         
+        // Seed Vendor User Accounts (for Portal Access)
+        $this->command->info('👤 Seeding Vendor User Accounts...');
+        $this->call(VendorUserSeeder::class);
+        
+        // Seed Order Vendor Negotiations (Quotes for Vendor Portal)
+        $this->command->info('💬 Seeding Order Vendor Negotiations (Quotes)...');
+        $this->call(OrderVendorNegotiationSeeder::class);
+        
         // Seed Plugin Installation Requests
         $this->command->info('🔌 Seeding Plugin Installation Requests...');
         $this->call(InstalledPluginSeeder::class);

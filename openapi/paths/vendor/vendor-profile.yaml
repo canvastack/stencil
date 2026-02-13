@@ -1,0 +1,168 @@
+# Vendor Portal - Profile Management API Endpoints
+# Multi-tenant vendor profile management system
+# Following Hexagonal Architecture + DDD + CQRS patterns
+
+# Vendor Profile - Get
+/api/v1/vendor/profile:
+  get:
+    tags:
+      - Vendor Portal - Profile
+    summary: Get Vendor Profile
+    description: |
+      Retrieve authenticated vendor's profile information and performance metrics.
+      
+      **Architecture Context:**
+      - Controller → GetVendorProfileUseCase → VendorRepository
+      - Loads vendor profile with all fields
+      - Calculates performance metrics (total/accepted/rejected/pending quotes)
+      - Calculates acceptance rate percentage
+      - Calculates average response time in hours
+      - Enforces tenant isolation
+      
+      **Related Use Case:** GetVendorProfileUseCase
+      **Query Handler:** GetVendorProfileQuery
+    operationId: getVendorProfile
+    security:
+      - VendorAuth: []
+    responses:
+      '200':
+        description: Profile retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../../schemas/vendor/vendor-profile.yaml#/VendorProfileDetail'
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden - portal access disabled
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+
+  put:
+    tags:
+      - Vendor Portal - Profile
+    summary: Update Vendor Profile
+    description: |
+      Update vendor profile information.
+      
+      **Architecture Context:**
+      - Controller → UpdateVendorProfileUseCase → VendorRepository
+      - Validates email uniqueness if changed
+      - Supports partial updates (only provided fields)
+      - Updates profile fields (email, phone, contact_person, address, location)
+      - Logs action to audit trail with old/new values
+      - Enforces tenant isolation
+      
+      **Business Rules:**
+      - Email must be unique if changed
+      - Company name and vendor code cannot be changed
+      - Location must be valid JSON with lat/lng
+      
+      **Related Use Case:** UpdateVendorProfileUseCase
+      **Command:** UpdateVendorProfileCommand
+    operationId: updateVendorProfile
+    security:
+      - VendorAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+                description: Vendor email address
+                example: vendor@example.com
+              phone:
+                type: string
+                description: Vendor phone number
+                example: "+62 21 1234 5678"
+              contact_person:
+                type: string
+                description: Primary contact person name
+                example: "John Doe"
+              address:
+                type: string
+                description: Vendor physical address
+                example: "Jl. Sudirman No. 123, Jakarta"
+              location:
+                type: object
+                description: Geographic location (lat/lng)
+                properties:
+                  latitude:
+                    type: number
+                    format: double
+                    example: -6.2088
+                  longitude:
+                    type: number
+                    format: double
+                    example: 106.8456
+    responses:
+      '200':
+        description: Profile updated successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                data:
+                  $ref: '../../schemas/vendor/vendor-profile.yaml#/VendorProfileDetail'
+                message:
+                  type: string
+                  example: "Profile updated successfully"
+      '401':
+        description: Unauthorized
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/UnauthorizedError'
+      '403':
+        description: Forbidden
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/responses.yaml#/ForbiddenError'
+      '422':
+        description: Validation error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: false
+                error:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "VALIDATION_ERROR"
+                    message:
+                      type: string
+                      example: "Validation failed"
+                    details:
+                      type: object
+                      properties:
+                        email:
+                          type: array
+                          items:
+                            type: string
+                          example: ["The email has already been taken."]

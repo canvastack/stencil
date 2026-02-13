@@ -1,0 +1,223 @@
+# Vendor Portal - Quote Schemas
+# Data models for vendor quote management system
+
+QuoteListItem:
+  type: object
+  description: Quote summary for list view
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Quote UUID
+      example: "770e8400-e29b-41d4-a716-446655440002"
+    quote_number:
+      type: string
+      description: Human-readable quote number
+      example: "QT-2026-001"
+    order_number:
+      type: string
+      description: Associated order number
+      example: "ORD-2026-123"
+    customer_name:
+      type: string
+      description: Customer name
+      example: "PT Example Company"
+    status:
+      type: string
+      enum: [draft, sent, pending_response, accepted, rejected, countered, expired]
+      description: Current quote status
+      example: "sent"
+    vendor_price:
+      type: integer
+      nullable: true
+      description: Requested price in cents
+      example: 150000
+    counter_offer_amount:
+      type: integer
+      nullable: true
+      description: Counter offer amount in cents
+      example: 175000
+    created_at:
+      type: string
+      format: date-time
+      description: Quote creation timestamp
+      example: "2026-02-10T09:00:00Z"
+    sent_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Quote sent timestamp
+      example: "2026-02-10T10:00:00Z"
+    expires_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Quote expiration timestamp
+      example: "2026-02-17T10:00:00Z"
+    responded_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Vendor response timestamp
+      example: null
+    is_expired:
+      type: boolean
+      description: Whether quote has expired
+      example: false
+    unread_message_count:
+      type: integer
+      description: Number of unread messages from admin
+      example: 2
+
+QuoteDetail:
+  type: object
+  description: Complete quote details
+  allOf:
+    - $ref: '#/QuoteListItem'
+    - type: object
+      properties:
+        order:
+          type: object
+          description: Associated order information
+          properties:
+            id:
+              type: string
+              format: uuid
+            order_number:
+              type: string
+              example: "ORD-2026-123"
+            order_date:
+              type: string
+              format: date-time
+              example: "2026-02-09T15:00:00Z"
+            items:
+              type: array
+              description: Order items (JSON field)
+              items:
+                type: object
+                properties:
+                  product_id:
+                    type: string
+                    format: uuid
+                  product_name:
+                    type: string
+                    example: "Custom Etching Plate"
+                  quantity:
+                    type: integer
+                    example: 10
+                  specifications:
+                    type: object
+                    description: Product specifications (dynamic fields)
+                    additionalProperties: true
+        customer:
+          type: object
+          description: Customer information
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+              example: "PT Example Company"
+            email:
+              type: string
+              format: email
+              example: "customer@example.com"
+            company:
+              type: string
+              nullable: true
+              example: "PT Example Company"
+        product:
+          type: object
+          description: Product information
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+              example: "Custom Etching Plate"
+            description:
+              type: string
+              nullable: true
+              example: "High-quality stainless steel etching plate"
+        quote_details:
+          type: object
+          description: Quote details (JSON field)
+          properties:
+            estimated_delivery_days:
+              type: integer
+              nullable: true
+              example: 14
+            rejection_reason:
+              type: string
+              nullable: true
+              example: null
+            notes:
+              type: string
+              nullable: true
+              example: "Premium quality materials will be used"
+            admin_notes:
+              type: string
+              nullable: true
+              example: "Customer requires delivery by end of month"
+        history:
+          type: array
+          description: Status change history
+          items:
+            type: object
+            properties:
+              status:
+                type: string
+                example: "sent"
+              timestamp:
+                type: string
+                format: date-time
+                example: "2026-02-10T10:00:00Z"
+              user:
+                type: string
+                example: "Admin User"
+              notes:
+                type: string
+                nullable: true
+                example: "Quote sent to vendor"
+
+QuoteStatistics:
+  type: object
+  description: Vendor quote statistics
+  properties:
+    total_quotes:
+      type: integer
+      description: Total number of quotes
+      example: 45
+    pending_quotes:
+      type: integer
+      description: Quotes awaiting vendor response
+      example: 8
+    accepted_quotes:
+      type: integer
+      description: Quotes accepted by vendor
+      example: 28
+    rejected_quotes:
+      type: integer
+      description: Quotes rejected by vendor
+      example: 5
+    countered_quotes:
+      type: integer
+      description: Quotes with counter offers
+      example: 4
+    expired_quotes:
+      type: integer
+      description: Expired quotes
+      example: 0
+    acceptance_rate:
+      type: number
+      format: double
+      description: Acceptance rate percentage
+      example: 75.68
+    average_response_time_hours:
+      type: number
+      format: double
+      nullable: true
+      description: Average response time in hours
+      example: 18.5

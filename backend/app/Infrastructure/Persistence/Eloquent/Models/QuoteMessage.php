@@ -5,28 +5,19 @@ namespace App\Infrastructure\Persistence\Eloquent\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
+use App\Infrastructure\Persistence\Eloquent\Contracts\TenantAwareModel;
 
 /**
- * QuoteMessage Eloquent Model
+ * QuoteMessage Model
  * 
- * Represents a message in a quote communication thread.
- * Maps to quote_messages table in the database.
- * 
- * Relationships:
- * - Belongs to Tenant (multi-tenant isolation)
- * - Belongs to OrderVendorNegotiation (quote)
- * - Belongs to User (sender)
- * 
- * Features:
- * - UUID for public identification
- * - JSONB attachments storage
- * - Read tracking with timestamp
- * - Tenant scoping
+ * Represents messages in the vendor-admin communication thread for quotes.
+ * Requirements: 13.1, 13.2, 13.3, 13.6, 13.10
  */
-class QuoteMessage extends Model
+class QuoteMessage extends Model implements TenantAwareModel
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, SoftDeletes, BelongsToTenant;
 
     protected $table = 'quote_messages';
 
@@ -37,49 +28,97 @@ class QuoteMessage extends Model
         'sender_id',
         'message',
         'attachments',
+        'sender_type',
+        'is_read',
         'read_at',
     ];
 
     protected $casts = [
         'attachments' => 'array',
+        'is_read' => 'boolean',
         'read_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    protected $dates = [
-        'read_at',
-        'created_at',
-        'updated_at',
-    ];
+    // Relationships
 
-    /**
-     * Get the quote (order_vendor_negotiation) this message belongs to
-     */
-    public function quote(): BelongsTo
-    {
-        return $this->belongsTo(OrderVendorNegotiation::class, 'quote_id');
-    }
-
-    /**
-     * Get the user who sent this message
-     */
-    public function sender(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'sender_id');
-    }
-
-    /**
-     * Get the tenant this message belongs to
-     */
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
     }
 
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(OrderVendorNegotiation::class, 'quote_id');
+    }
+
+    public function sender(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sender_id');
+    }
+
+    // Business Methods
+
     /**
-     * Boot method to auto-generate UUID
+     * Mark this message as read.
+     * Requirements: 13.10
      */
+    public function markAsRead(): void
+    {
+        if ($this->is_read) {
+            return; // Already read
+        }
+
+        $this->update([
+            'is_read' => true,
+            'read_at' => now(),
+        ]);
+    }
+
+    /**
+     * Check if message is from vendor.
+     * Requirements: 13.3
+     */
+    public function isFromVendor(): bool
+    {
+        return $this->sender_type === 'vendor';
+    }
+
+    /**
+     * Check if message is from admin.
+     * Requirements: 13.3
+     */
+    public function isFromAdmin(): bool
+    {
+        return $this->sender_type === 'admin';
+    }
+
+    // Scopes
+
+    public function scopeUnread($query)
+    {
+        return $query->where('is_read', false);
+    }
+
+    public function scopeForQuote($query, $quoteId)
+    {
+        return $query->where('quote_id', $quoteId);
+    }
+
+    public function scopeFromVendor($query)
+    {
+        return $query->where('sender_type', 'vendor');
+    }
+
+    public function scopeFromAdmin($query)
+    {
+        return $query->where('sender_type', 'admin');
+    }
+
+    // Boot
+
     protected static function boot()
     {
         parent::boot();
@@ -89,61 +128,5 @@ class QuoteMessage extends Model
                 $model->uuid = \Ramsey\Uuid\Uuid::uuid4()->toString();
             }
         });
-    }
-
-    /**
-     * Scope to filter unread messages
-     */
-    public function scopeUnread($query)
-    {
-        return $query->whereNull('read_at');
-    }
-
-    /**
-     * Scope to filter read messages
-     */
-    public function scopeRead($query)
-    {
-        return $query->whereNotNull('read_at');
-    }
-
-    /**
-     * Scope to filter by quote
-     */
-    public function scopeForQuote($query, int $quoteId)
-    {
-        return $query->where('quote_id', $quoteId);
-    }
-
-    /**
-     * Scope to filter by sender
-     */
-    public function scopeBySender($query, int $senderId)
-    {
-        return $query->where('sender_id', $senderId);
-    }
-
-    /**
-     * Check if message is read
-     */
-    public function isRead(): bool
-    {
-        return $this->read_at !== null;
-    }
-
-    /**
-     * Check if message has attachments
-     */
-    public function hasAttachments(): bool
-    {
-        return !empty($this->attachments);
-    }
-
-    /**
-     * Get attachment count
-     */
-    public function getAttachmentCount(): int
-    {
-        return count($this->attachments ?? []);
     }
 }

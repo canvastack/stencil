@@ -41,6 +41,9 @@ class VendorNegotiationServiceIntegrationTest extends TestCase
         
         $this->tenantId = new UuidValueObject('550e8400-e29b-41d4-a716-446655440000');
         
+        // Create tenant in database first
+        $tenant = $this->createTenant();
+        
         // Create real repositories
         $this->orderRepository = app(PurchaseOrderRepository::class);
         $this->vendorRepository = app(VendorRepository::class);
@@ -49,14 +52,41 @@ class VendorNegotiationServiceIntegrationTest extends TestCase
             $this->vendorRepository
         );
         
-        // Create real customer entity
+        // Generate customer UUID first
+        $customerUuid = UuidValueObject::generate();
+        
+        // Create real customer in database
+        $customerModel = \App\Infrastructure\Persistence\Eloquent\Models\Customer::create([
+            'uuid' => $customerUuid->getValue(),
+            'tenant_id' => $tenant->id,
+            'name' => 'Test Customer',
+            'email' => 'customer@test.com',
+            'phone' => '+62123456789',
+            'company' => 'Test Company',
+            'status' => 'active',
+            'address' => json_encode([
+                'street' => 'Test Street',
+                'city' => 'Test City',
+                'state' => 'Test State',
+                'postal_code' => '12345',
+                'country' => 'ID'
+            ]),
+        ]);
+        
+        // Create real customer entity with matching UUID
         $this->customer = Customer::create(
             $this->tenantId,
-            'Test Customer',
-            'customer@test.com',
-            '+62123456789',
-            'Test Company'
+            $customerModel->name,
+            $customerModel->email,
+            $customerModel->phone,
+            $customerModel->company
         );
+        
+        // Set customer ID to match database UUID
+        $reflection = new \ReflectionClass($this->customer);
+        $idProperty = $reflection->getProperty('id');
+        $idProperty->setAccessible(true);
+        $idProperty->setValue($this->customer, $customerUuid);
         
         // Create real vendor entity
         $this->vendor = Vendor::create(
@@ -72,7 +102,7 @@ class VendorNegotiationServiceIntegrationTest extends TestCase
         // Create real order entity
         $this->order = PurchaseOrder::create(
             tenantId: $this->tenantId,
-            customerId: $this->customer->getId(),
+            customerId: $customerUuid,
             orderNumber: 'ORD-' . time(),
             items: [
                 ['product_id' => 'prod-001', 'quantity' => 1, 'price' => 10000000]
@@ -90,6 +120,25 @@ class VendorNegotiationServiceIntegrationTest extends TestCase
         // Save to database
         $this->vendorRepository->save($this->vendor);
         $this->orderRepository->save($this->order);
+    }
+
+    /**
+     * Create tenant for testing
+     */
+    private function createTenant()
+    {
+        return \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::create([
+            'uuid' => $this->tenantId->getValue(),
+            'name' => 'Test Tenant',
+            'slug' => 'test-tenant-' . substr(md5(microtime()), 0, 8),
+            'domain' => 'test-tenant.local',
+            'status' => 'active',
+            'subscription_status' => 'active',
+            'settings' => json_encode([]),
+            'features' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /** @test */

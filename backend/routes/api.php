@@ -200,8 +200,32 @@ Route::prefix('tenant')->group(function () {
 
 });
 
+// Vendor Portal Routes
+Route::prefix('vendor')->group(function () {
+    require __DIR__.'/api/vendor.php';
+});
+
 // Admin API (authenticated users)
 Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
+    // Admin Vendor Management API
+    Route::prefix('vendors')->group(function () {
+        Route::post('/{vendorId}/enable-portal-access', [App\Http\Controllers\Api\Admin\AdminVendorController::class, 'enablePortalAccess']);
+        Route::post('/{vendorId}/resend-welcome-email', [App\Http\Controllers\Api\Admin\AdminVendorController::class, 'resendWelcomeEmail']);
+        Route::get('/{vendorId}/portal-status', [App\Http\Controllers\Api\Admin\AdminVendorController::class, 'getPortalStatus']);
+    });
+    
+    // Admin Quote Management API
+    Route::prefix('quotes')->group(function () {
+        Route::post('/{quoteUuid}/extend-expiration', [App\Http\Controllers\Api\Admin\AdminQuoteController::class, 'extendExpiration']);
+    });
+    
+    // Admin Audit Log API
+    Route::prefix('audit-logs')->group(function () {
+        Route::get('/', [App\Http\Controllers\Api\Admin\AdminAuditLogController::class, 'index']);
+        Route::get('/statistics', [App\Http\Controllers\Api\Admin\AdminAuditLogController::class, 'statistics']);
+        Route::get('/export', [App\Http\Controllers\Api\Admin\AdminAuditLogController::class, 'export']);
+    });
+    
     // Admin Reviews API
     Route::prefix('reviews')->group(function () {
         Route::get('/', [App\Http\Controllers\Api\V1\Public\ReviewController::class, 'index']);

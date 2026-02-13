@@ -1852,7 +1852,7 @@ export const QuoteForm = ({
 
             {/* Total Summary */}
             <div className="border-t pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* LEFT: Total Profit */}
                 {totalProfit ? (
                   <div className="space-y-2">
@@ -1898,7 +1898,57 @@ export const QuoteForm = ({
                   <div></div>
                 )}
                 
-                {/* RIGHT: Total Amount - Always on the right */}
+                {/* CENTER: Total Vendor Cost */}
+                <div className="text-center space-y-2">
+                  <div className="text-sm text-muted-foreground mb-1 flex items-center justify-center gap-2">
+                    Total Vendor Cost
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-3 h-3 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center cursor-help">
+                          <span className="text-xs text-yellow-600 dark:text-yellow-400 font-bold">i</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs">
+                        <div className="space-y-1">
+                          <div className="font-semibold">Total Vendor Cost:</div>
+                          <div className="text-sm">
+                            Total harga yang ditawarkan PT CEX kepada vendor
+                          </div>
+                          <div className="text-xs opacity-75 mt-2">
+                            Formula: Σ(Vendor Cost × Quantity)
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-500">
+                    {formatCurrency(
+                      watchedItems.reduce((sum, item) => {
+                        const vendorCost = item?.vendor_cost || 0;
+                        const quantity = item?.quantity || 0;
+                        return sum + (vendorCost * quantity);
+                      }, 0),
+                      'IDR'
+                    )}
+                  </div>
+                  <div className="text-lg text-yellow-700 dark:text-yellow-400">
+                    ≈ {formatCurrency(
+                      convertToUSD(
+                        watchedItems.reduce((sum, item) => {
+                          const vendorCost = item?.vendor_cost || 0;
+                          const quantity = item?.quantity || 0;
+                          return sum + (vendorCost * quantity);
+                        }, 0)
+                      ),
+                      'USD'
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground italic">
+                    Harga ke vendor
+                  </div>
+                </div>
+                
+                {/* RIGHT: Total Amount */}
                 <div className="text-right space-y-2">
                   <div className="text-sm text-muted-foreground mb-1">Total Amount</div>
                   <div className="text-2xl font-bold text-primary">
@@ -1906,6 +1956,9 @@ export const QuoteForm = ({
                   </div>
                   <div className="text-lg text-yellow-600 dark:text-yellow-500">
                     ≈ {formatCurrency(convertToUSD(totalAmount), 'USD')}
+                  </div>
+                  <div className="text-xs text-muted-foreground italic">
+                    Harga ke customer
                   </div>
                 </div>
               </div>

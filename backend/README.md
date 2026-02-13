@@ -47,8 +47,19 @@ php artisan serve
 ### **Running Tests**
 
 ```bash
+# First time setup: Create test database
+cd tests
+./setup-test-database.sh  # Linux/Mac
+# or
+setup-test-database.bat   # Windows
+
 # Run all tests
 php artisan test
+
+# Run specific test suite
+php artisan test --testsuite=Unit
+php artisan test --testsuite=Integration
+php artisan test --testsuite=Feature
 
 # Run specific test file
 php artisan test tests/Feature/Order/OrderApiTest.php
@@ -56,6 +67,11 @@ php artisan test tests/Feature/Order/OrderApiTest.php
 # Run with coverage report
 php artisan test --coverage
 ```
+
+**📖 Test Documentation:**
+- [Quick Start Guide](tests/QUICK_START.md) - Get started quickly
+- [Detailed Setup Guide](tests/TEST_DATABASE_SETUP.md) - Complete documentation
+- [Repository Test Base](tests/Integration/Infrastructure/RepositoryTestCase.php) - Base class for repository tests
 
 ---
 

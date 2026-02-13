@@ -1,0 +1,82 @@
+# Vendor Portal - Message Schemas
+# Data models for vendor-admin communication system
+
+QuoteMessage:
+  type: object
+  description: Message in quote thread
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Message UUID
+      example: "880e8400-e29b-41d4-a716-446655440003"
+    quote_id:
+      type: string
+      format: uuid
+      description: Associated quote UUID
+      example: "770e8400-e29b-41d4-a716-446655440002"
+    sender_id:
+      type: string
+      format: uuid
+      description: Sender user UUID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    sender_type:
+      type: string
+      enum: [admin, vendor]
+      description: Type of sender
+      example: "vendor"
+    sender_name:
+      type: string
+      description: Sender display name
+      example: "ABC Manufacturing Co."
+    message:
+      type: string
+      description: Message content
+      example: "I have a question about the specifications. Can we use alternative materials?"
+    attachments:
+      type: array
+      description: File attachments
+      items:
+        $ref: '#/MessageAttachment'
+    is_read:
+      type: boolean
+      description: Whether message has been read by recipient
+      example: false
+    read_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Message read timestamp
+      example: null
+    created_at:
+      type: string
+      format: date-time
+      description: Message creation timestamp
+      example: "2026-02-11T14:30:00Z"
+
+MessageAttachment:
+  type: object
+  description: File attachment for message
+  properties:
+    filename:
+      type: string
+      description: Original filename
+      example: "specifications.pdf"
+    url:
+      type: string
+      format: uri
+      description: File download URL
+      example: "https://storage.example.com/tenant_123/quotes/770e8400/messages/abc123_specifications.pdf"
+    size:
+      type: integer
+      description: File size in bytes
+      example: 524288
+    type:
+      type: string
+      description: MIME type
+      example: "application/pdf"
+    uploaded_at:
+      type: string
+      format: date-time
+      description: Upload timestamp
+      example: "2026-02-11T14:30:00Z"

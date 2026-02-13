@@ -6,11 +6,13 @@ use Illuminate\Support\ServiceProvider;
 use App\Domain\Order\Repositories\OrderRepositoryInterface;
 use App\Domain\Customer\Repositories\CustomerRepositoryInterface;
 use App\Domain\Vendor\Repositories\VendorRepositoryInterface;
+use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 use App\Domain\Shared\Rules\Repositories\RuleConfigurationRepositoryInterface;
 use App\Domain\Shared\Rules\Repositories\RuleExecutionLogRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Repositories\PurchaseOrderRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\CustomerRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\VendorRepository;
+use App\Infrastructure\Persistence\Repositories\TenantEloquentRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\RuleConfigurationRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\RuleExecutionLogRepository;
 use App\Domain\Shared\Rules\BusinessRuleRegistry;
@@ -49,10 +51,12 @@ class DomainServiceProvider extends ServiceProvider
         $this->app->bind(OrderRepositoryInterface::class, PurchaseOrderRepository::class);
         $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
         $this->app->bind(VendorRepositoryInterface::class, VendorRepository::class);
+        $this->app->bind(TenantRepositoryInterface::class, TenantEloquentRepository::class);
         $this->app->bind(\App\Domain\Product\Repositories\ProductRepositoryInterface::class, \App\Infrastructure\Persistence\Repositories\ProductEloquentRepository::class);
         $this->app->bind(\App\Domain\Quote\Repositories\QuoteRepositoryInterface::class, \App\Infrastructure\Persistence\Eloquent\Repositories\QuoteRepository::class);
         $this->app->bind(\App\Domain\Quote\Repositories\MessageRepositoryInterface::class, \App\Infrastructure\Persistence\Eloquent\Repositories\MessageRepository::class);
         $this->app->bind(\App\Domain\Notification\Repositories\NotificationRepositoryInterface::class, \App\Infrastructure\Persistence\Repositories\NotificationEloquentRepository::class);
+        $this->app->bind(\App\Domain\Audit\Repositories\AuditLogRepositoryInterface::class, \App\Infrastructure\Persistence\Eloquent\Repositories\AuditLogRepository::class);
         
         // Exchange Rate System bindings
         $this->app->bind(ExchangeRateSettingRepositoryInterface::class, ExchangeRateSettingRepository::class);

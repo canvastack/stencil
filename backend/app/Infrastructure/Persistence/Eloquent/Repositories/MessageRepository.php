@@ -134,11 +134,28 @@ class MessageRepository implements MessageRepositoryInterface
         try {
             DB::beginTransaction();
 
+            // Determine sender_type based on user
+            $sender = \App\Infrastructure\Persistence\Eloquent\Models\User::find($message->getSenderId());
+            $senderType = 'admin'; // default
+            
+            if ($sender) {
+                // Check if user has admin role
+                $hasAdminRole = $sender->roles()
+                    ->whereIn('name', ['Admin', 'Super Admin', 'super_admin'])
+                    ->exists();
+                
+                // Check if user is vendor
+                $isVendor = !empty($sender->vendor_id);
+                
+                $senderType = $hasAdminRole ? 'admin' : ($isVendor ? 'vendor' : 'admin');
+            }
+
             $data = [
                 'uuid' => $message->getUuid(),
                 'tenant_id' => $message->getTenantId(),
                 'quote_id' => $message->getQuoteId(),
                 'sender_id' => $message->getSenderId(),
+                'sender_type' => $senderType,
                 'message' => $message->getMessage(),
                 'attachments' => $message->getAttachments(),
                 'read_at' => $message->getReadAt()?->format('Y-m-d H:i:s'),
@@ -167,7 +184,8 @@ class MessageRepository implements MessageRepositoryInterface
                 'message_id' => $model->id,
                 'message_uuid' => $model->uuid,
                 'quote_id' => $model->quote_id,
-                'tenant_id' => $model->tenant_id
+                'tenant_id' => $model->tenant_id,
+                'sender_type' => $senderType
             ]);
 
             return $this->toDomainEntity($model->fresh());
@@ -198,6 +216,7 @@ class MessageRepository implements MessageRepositoryInterface
                 ->where('tenant_id', $message->getTenantId())
                 ->firstOrFail();
             
+            $model->is_read = true;
             $model->read_at = $message->getReadAt()?->format('Y-m-d H:i:s');
             $model->updated_at = $message->getUpdatedAt()->format('Y-m-d H:i:s');
             
@@ -274,6 +293,129 @@ class MessageRepository implements MessageRepositoryInterface
             ]);
             
             return false;
+        }
+    }
+
+    /**
+     * Find messages by sender
+     * Requirements: 13.3, 13.4
+     * 
+     * @param int $senderId Sender user ID
+     * @param string $senderType Sender type ('admin' or 'vendor')
+     * @param int $tenantId Tenant ID for isolation
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @return array{data: Message[], total: int, page: int, per_page: int}
+     */
+    public function findBySender(
+        int $senderId,
+        string $senderType,
+        int $tenantId,
+        int $page = 1,
+        int $perPage = 20
+    ): array {
+        try {
+            $query = QuoteMessage::where('tenant_id', $tenantId)
+                ->where('sender_id', $senderId)
+                ->where('sender_type', $senderType)
+                ->orderBy('created_at', 'desc');
+
+            $total = $query->count();
+            
+            $models = $query->skip(($page - 1) * $perPage)
+                ->take($perPage)
+                ->get();
+
+            $messages = $models->map(fn($model) => $this->toDomainEntity($model))->toArray();
+
+            return [
+                'data' => $messages,
+                'total' => $total,
+                'page' => $page,
+                'per_page' => $perPage,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to find messages by sender', [
+                'sender_id' => $senderId,
+                'sender_type' => $senderType,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [
+                'data' => [],
+                'total' => 0,
+                'page' => $page,
+                'per_page' => $perPage,
+            ];
+        }
+    }
+
+    /**
+     * Count unread messages by sender type
+     * Requirements: 13.9
+     * 
+     * @param int $quoteId Quote ID
+     * @param string $senderType Sender type to count ('admin' or 'vendor')
+     * @param int $tenantId Tenant ID for isolation
+     * @return int Count of unread messages from specified sender type
+     */
+    public function countUnreadBySenderType(
+        int $quoteId,
+        string $senderType,
+        int $tenantId
+    ): int {
+        try {
+            return QuoteMessage::where('quote_id', $quoteId)
+                ->where('tenant_id', $tenantId)
+                ->where('sender_type', $senderType)
+                ->where('is_read', false)
+                ->whereNull('read_at')
+                ->count();
+
+        } catch (\Exception $e) {
+            Log::error('Failed to count unread messages by sender type', [
+                'quote_id' => $quoteId,
+                'sender_type' => $senderType,
+                'error' => $e->getMessage()
+            ]);
+            
+            return 0;
+        }
+    }
+
+    /**
+     * Get recent messages for vendor
+     * Requirements: 13.1, 13.2
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @param int $limit Number of messages to retrieve
+     * @return Message[] Array of recent messages
+     */
+    public function getRecentForVendor(
+        int $vendorId,
+        int $tenantId,
+        int $limit = 10
+    ): array {
+        try {
+            $models = QuoteMessage::where('tenant_id', $tenantId)
+                ->whereHas('quote', function ($query) use ($vendorId) {
+                    $query->where('vendor_id', $vendorId);
+                })
+                ->orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get();
+
+            return $models->map(fn($model) => $this->toDomainEntity($model))->toArray();
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get recent messages for vendor', [
+                'vendor_id' => $vendorId,
+                'error' => $e->getMessage()
+            ]);
+            
+            return [];
         }
     }
 

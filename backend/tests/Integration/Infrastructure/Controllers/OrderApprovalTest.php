@@ -48,7 +48,7 @@ class OrderApprovalTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'customer_id' => $customer->id,
             'status' => OrderStatus::DRAFT->value,
-            'payment_status' => PaymentStatus::Pending->value,
+            'payment_status' => PaymentStatus::UNPAID->value,
         ]);
 
         $response = $this->withHeaders([

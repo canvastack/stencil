@@ -337,16 +337,48 @@ const QuoteManagement = () => {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
-                <QuoteForm
-                  mode={editMode ? 'edit' : 'create'}
-                  initialData={editMode && existingQuote ? existingQuote : undefined}
-                  onSubmit={handleCreateQuote}
-                  onCancel={() => {
-                    setShowCreateDialog(false);
-                    setEditMode(false);
-                  }}
-                  loading={formLoading}
-                />
+                <>
+                  <QuoteForm
+                    mode={editMode ? 'edit' : 'create'}
+                    initialData={editMode && existingQuote ? existingQuote : undefined}
+                    onSubmit={handleCreateQuote}
+                    onCancel={() => {
+                      setShowCreateDialog(false);
+                      setEditMode(false);
+                    }}
+                    loading={formLoading}
+                    formId="quote-form"
+                  />
+                  <div className="flex items-center justify-end gap-2 pt-4 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateDialog(false);
+                        setEditMode(false);
+                      }}
+                      disabled={formLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      form="quote-form"
+                      disabled={formLoading}
+                    >
+                      {formLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {editMode ? 'Updating...' : 'Creating...'}
+                        </>
+                      ) : (
+                        <>
+                          {editMode ? 'Update Quote' : 'Create Quote'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
               )}
             </DialogContent>
           </Dialog>

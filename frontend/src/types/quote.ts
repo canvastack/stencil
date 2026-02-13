@@ -35,6 +35,8 @@ export interface Quote {
     reason: string | null;
   }>;
   round: number;
+  current_round?: number; // Alias for round (used in some API responses)
+  max_rounds?: number; // Maximum negotiation rounds allowed
   sent_at: string | null;
   responded_at: string | null;
   response_type: string | null;

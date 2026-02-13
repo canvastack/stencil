@@ -43,7 +43,7 @@ final class CounterQuoteUseCase
         }
 
         // Find quote by UUID with tenant scoping
-        $quote = $this->quoteRepository->findByUuidAndTenant(
+        $quote = $this->quoteRepository->findByUuid(
             $command->quoteUuid,
             $command->tenantId
         );

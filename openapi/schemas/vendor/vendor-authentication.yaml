@@ -1,0 +1,102 @@
+# Vendor Portal - Authentication Schemas
+# Data models for vendor authentication system
+
+VendorUser:
+  type: object
+  description: Vendor user account information
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: User UUID
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    email:
+      type: string
+      format: email
+      description: User email address
+      example: "vendor@example.com"
+    name:
+      type: string
+      description: User display name (company name)
+      example: "ABC Manufacturing Co."
+    account_type:
+      type: string
+      enum: [vendor]
+      description: Account type (always 'vendor' for vendor portal)
+      example: "vendor"
+    status:
+      type: string
+      enum: [active, inactive, suspended]
+      description: Account status
+      example: "active"
+    last_login_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Last login timestamp
+      example: "2026-02-12T10:30:00Z"
+    created_at:
+      type: string
+      format: date-time
+      description: Account creation timestamp
+      example: "2026-01-15T08:00:00Z"
+
+VendorProfile:
+  type: object
+  description: Vendor company profile information
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Vendor UUID
+      example: "660e8400-e29b-41d4-a716-446655440001"
+    company_name:
+      type: string
+      description: Vendor company name
+      example: "ABC Manufacturing Co."
+    email:
+      type: string
+      format: email
+      description: Vendor email address
+      example: "vendor@example.com"
+    phone:
+      type: string
+      nullable: true
+      description: Vendor phone number
+      example: "+62 21 1234 5678"
+    contact_person:
+      type: string
+      nullable: true
+      description: Primary contact person name
+      example: "John Doe"
+    address:
+      type: string
+      nullable: true
+      description: Vendor physical address
+      example: "Jl. Sudirman No. 123, Jakarta"
+    status:
+      type: string
+      enum: [active, inactive, on_hold, blacklisted]
+      description: Vendor status
+      example: "active"
+    portal_access_enabled:
+      type: boolean
+      description: Whether vendor can access portal
+      example: true
+    onboarding_status:
+      type: string
+      enum: [pending, in_progress, completed]
+      description: Onboarding workflow status
+      example: "completed"
+    onboarding_completed_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Onboarding completion timestamp
+      example: "2026-01-20T14:30:00Z"
+    portal_last_access_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: Last portal access timestamp
+      example: "2026-02-12T10:30:00Z"

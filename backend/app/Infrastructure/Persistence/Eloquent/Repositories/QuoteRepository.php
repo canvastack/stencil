@@ -398,6 +398,158 @@ class QuoteRepository implements QuoteRepositoryInterface
     }
 
     /**
+     * Find quotes requiring vendor action
+     * Requirements: 4.1, 4.2, 4.3
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @return Quote[] Array of quotes requiring action
+     */
+    public function findRequiringVendorAction(int $vendorId, int $tenantId): array
+    {
+        $models = OrderVendorNegotiation::where('vendor_id', $vendorId)
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', ['sent', 'pending_response'])
+            ->whereNull('responded_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return $models->map(fn($model) => $this->toDomainEntity($model))->toArray();
+    }
+
+    /**
+     * Get vendor quote statistics
+     * Requirements: 4.2, 12.1, 12.2, 12.3
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @return array Statistics data (total, pending, accepted, rejected, countered, expired)
+     */
+    public function getVendorStatistics(int $vendorId, int $tenantId): array
+    {
+        $query = OrderVendorNegotiation::where('vendor_id', $vendorId)
+            ->where('tenant_id', $tenantId);
+
+        $total = $query->count();
+        $pending = (clone $query)->whereIn('status', ['sent', 'pending_response'])->count();
+        $accepted = (clone $query)->where('status', 'accepted')->count();
+        $rejected = (clone $query)->where('status', 'rejected')->count();
+        $countered = (clone $query)->where('status', 'countered')->count();
+        $expired = (clone $query)->where('status', 'expired')->count();
+
+        return [
+            'total' => $total,
+            'pending' => $pending,
+            'accepted' => $accepted,
+            'rejected' => $rejected,
+            'countered' => $countered,
+            'expired' => $expired,
+        ];
+    }
+
+    /**
+     * Calculate vendor response metrics
+     * Requirements: 12.1, 12.2, 12.3
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @return array Metrics data (avg_response_time, acceptance_rate, total_responses)
+     */
+    public function calculateVendorMetrics(int $vendorId, int $tenantId): array
+    {
+        $quotes = OrderVendorNegotiation::where('vendor_id', $vendorId)
+            ->where('tenant_id', $tenantId)
+            ->whereNotNull('responded_at')
+            ->whereNotNull('sent_at')
+            ->get();
+
+        $totalResponses = $quotes->count();
+        $acceptedCount = $quotes->where('status', 'accepted')->count();
+
+        // Calculate average response time in hours
+        $totalResponseTimeHours = 0;
+        foreach ($quotes as $quote) {
+            if ($quote->sent_at && $quote->responded_at) {
+                $sentAt = new DateTimeImmutable($quote->sent_at->format('Y-m-d H:i:s'));
+                $respondedAt = new DateTimeImmutable($quote->responded_at->format('Y-m-d H:i:s'));
+                $diff = $respondedAt->getTimestamp() - $sentAt->getTimestamp();
+                $totalResponseTimeHours += $diff / 3600; // Convert seconds to hours
+            }
+        }
+
+        $avgResponseTimeHours = $totalResponses > 0 
+            ? round($totalResponseTimeHours / $totalResponses, 2) 
+            : 0;
+
+        $acceptanceRate = $totalResponses > 0 
+            ? round(($acceptedCount / $totalResponses) * 100, 2) 
+            : 0;
+
+        return [
+            'avg_response_time_hours' => $avgResponseTimeHours,
+            'acceptance_rate' => $acceptanceRate,
+            'total_responses' => $totalResponses,
+        ];
+    }
+
+    /**
+     * Find quotes expiring soon
+     * Requirements: 10.1, 10.2, 10.3
+     * 
+     * @param int $tenantId Tenant ID for isolation
+     * @param int $daysThreshold Days before expiration
+     * @param \DateTimeImmutable $now Current timestamp
+     * @return Quote[] Array of quotes expiring soon
+     */
+    public function findExpiringSoon(
+        int $tenantId,
+        int $daysThreshold,
+        \DateTimeImmutable $now
+    ): array {
+        $thresholdDate = $now->modify("+{$daysThreshold} days");
+
+        $models = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->whereIn('status', ['sent', 'pending_response', 'countered'])
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '>', $now->format('Y-m-d H:i:s'))
+            ->where('expires_at', '<=', $thresholdDate->format('Y-m-d H:i:s'))
+            ->orderBy('expires_at', 'asc')
+            ->get();
+        
+        return $models->map(fn($model) => $this->toDomainEntity($model))->toArray();
+    }
+
+    /**
+     * Find vendor quotes expiring soon
+     * Requirements: 7.12, 10.1
+     * 
+     * @param int $vendorId Vendor ID
+     * @param int $tenantId Tenant ID for isolation
+     * @param int $daysThreshold Days before expiration
+     * @param \DateTimeImmutable $now Current timestamp
+     * @return Quote[] Array of vendor quotes expiring soon
+     */
+    public function findVendorQuotesExpiringSoon(
+        int $vendorId,
+        int $tenantId,
+        int $daysThreshold,
+        \DateTimeImmutable $now
+    ): array {
+        $thresholdDate = $now->modify("+{$daysThreshold} days");
+
+        $models = OrderVendorNegotiation::where('vendor_id', $vendorId)
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', ['sent', 'pending_response', 'countered'])
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '>', $now->format('Y-m-d H:i:s'))
+            ->where('expires_at', '<=', $thresholdDate->format('Y-m-d H:i:s'))
+            ->orderBy('expires_at', 'asc')
+            ->get();
+        
+        return $models->map(fn($model) => $this->toDomainEntity($model))->toArray();
+    }
+
+    /**
      * Convert Eloquent model to domain entity
      * 
      * @param OrderVendorNegotiation $model Eloquent model

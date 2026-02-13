@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnDelete();
-            $table->enum('status', ['open', 'countered', 'accepted', 'rejected', 'cancelled', 'expired'])->default('open');
+            $table->enum('status', ['draft', 'sent', 'pending_response', 'accepted', 'rejected', 'countered', 'expired'])->default('draft');
             $table->bigInteger('initial_offer')->nullable();
             $table->bigInteger('latest_offer')->nullable();
             $table->string('currency', 3)->default('IDR');

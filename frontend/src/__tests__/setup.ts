@@ -5,7 +5,7 @@
  * with modern browser APIs used by UI libraries like Radix UI.
  */
 
-import { expect, afterEach, vi } from 'vitest';
+import { expect, afterEach, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
@@ -248,3 +248,60 @@ export const testUtils = {
     return new Promise(resolve => setImmediate(resolve));
   },
 };
+
+/**
+ * Vendor Portal Test Setup
+ * 
+ * Additional setup for vendor portal testing
+ */
+
+// Mock fetch for API calls
+global.fetch = vi.fn();
+
+// Setup default fetch mock response
+beforeEach(() => {
+  (global.fetch as any).mockClear();
+});
+
+// Mock console methods to reduce noise in tests
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+beforeAll(() => {
+  // Suppress specific console errors/warnings in tests
+  console.error = (...args: any[]) => {
+    const message = args[0]?.toString() || '';
+    
+    // Suppress known React warnings
+    if (
+      message.includes('Warning: ReactDOM.render') ||
+      message.includes('Not implemented: HTMLFormElement.prototype.submit') ||
+      message.includes('Not implemented: HTMLCanvasElement.prototype.getContext') ||
+      message.includes('Error: Could not parse CSS stylesheet')
+    ) {
+      return;
+    }
+    
+    originalConsoleError.call(console, ...args);
+  };
+
+  console.warn = (...args: any[]) => {
+    const message = args[0]?.toString() || '';
+    
+    // Suppress known warnings
+    if (
+      message.includes('componentWillReceiveProps') ||
+      message.includes('componentWillMount')
+    ) {
+      return;
+    }
+    
+    originalConsoleWarn.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  // Restore original console methods
+  console.error = originalConsoleError;
+  console.warn = originalConsoleWarn;
+});

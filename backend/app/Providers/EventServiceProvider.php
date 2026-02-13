@@ -27,6 +27,16 @@ class EventServiceProvider extends ServiceProvider
             OrderStatusChangedListener::class,
             BroadcastOrderStatusChanged::class,
         ],
+        
+        // Quote Response Events
+        \App\Domain\Quote\Events\VendorRespondedToQuote::class => [
+            \App\Domain\Quote\Listeners\SendVendorResponseNotification::class,
+        ],
+        
+        // Admin Counter Offer Events
+        \App\Domain\Quote\Events\AdminCounteredQuoteEvent::class => [
+            \App\Domain\Quote\Listeners\SendAdminCounterOfferNotification::class,
+        ],
     ];
 
     protected $subscribe = [

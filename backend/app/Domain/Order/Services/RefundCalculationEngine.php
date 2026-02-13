@@ -149,6 +149,7 @@ class RefundCalculationEngine
         $calc->companyLoss = max(0, $calc->refundableToCustomer - $calc->vendorRecoverable);
         
         // Apply insurance fund coverage for quality issues
+        // Use tenant_id from order (can be UUID string or integer ID)
         $insuranceBalance = InsuranceFundService::getBalance($order->tenant_id);
         $calc->insuranceCover = min($calc->companyLoss, $insuranceBalance);
         $calc->companyLoss -= $calc->insuranceCover;
@@ -176,6 +177,7 @@ class RefundCalculationEngine
         $potentialCompanyLoss = $calc->refundableToCustomer - $calc->vendorRecoverable;
         
         // Insurance covers any remaining company loss from vendor failure
+        // Use tenant_id from order (can be UUID string or integer ID)
         $insuranceBalance = InsuranceFundService::getBalance($order->tenant_id);
         $calc->insuranceCover = min($potentialCompanyLoss, $insuranceBalance);
         $calc->companyLoss = max(0, $potentialCompanyLoss - $calc->insuranceCover);
@@ -242,6 +244,7 @@ class RefundCalculationEngine
         $calc->companyLoss = $calc->refundableToCustomer;
         
         // Insurance covers production errors but not 100% - company should bear some responsibility
+        // Use tenant_id from order (can be UUID string or integer ID)
         $insuranceBalance = InsuranceFundService::getBalance($order->tenant_id);
         $maxInsuranceCover = $calc->companyLoss * 0.8; // Insurance covers max 80% for production errors
         $calc->insuranceCover = min($maxInsuranceCover, $insuranceBalance);

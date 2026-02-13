@@ -85,5 +85,10 @@ class Kernel extends HttpKernel
         
         // Demo/Development Middleware
         'demo.auth' => \App\Http\Middleware\HandleDemoTokens::class,
+        
+        // Vendor Portal Middleware
+        'vendor.auth' => \App\Http\Middleware\VendorAuthMiddleware::class,
+        'vendor.tenant' => \App\Http\Middleware\VendorTenantScopingMiddleware::class,
+        'vendor.rate-limit' => \App\Http\Middleware\VendorRateLimitMiddleware::class,
     ];
 }

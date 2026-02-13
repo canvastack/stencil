@@ -339,7 +339,7 @@ class VendorNegotiationErrorScenariosTest extends TestCase
 
         // Verify quote status unchanged
         $pastExpirationQuote->refresh();
-        $this->assertEquals('open', $pastExpirationQuote->status);
+        $this->assertEquals('draft', $pastExpirationQuote->status);
 
         // ============================================================
         // SCENARIO 3: Quote already accepted
@@ -496,14 +496,20 @@ class VendorNegotiationErrorScenariosTest extends TestCase
             'status' => 'draft',
         ]);
 
+        // Create user in other tenant and authenticate as that user
+        $otherUser = User::factory()->create([
+            'tenant_id' => $this->otherTenant->id,
+        ]);
+        Sanctum::actingAs($otherUser);
+
         // Try to access quote from other tenant context
         $response = $this->getJson(
             "/api/v1/tenant/quotes/{$quote->uuid}",
             ['X-Tenant-ID' => $this->otherTenant->id]
         );
 
-        // Should not find the quote (404) or return empty
-        $this->assertNotEquals(200, $response->status());
+        // Should not find the quote (404)
+        $response->assertStatus(404);
     }
 
     /**

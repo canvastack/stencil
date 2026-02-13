@@ -1,9 +1,9 @@
+/* Import order workflow interaction styles - MUST be at the top before any other CSS */
+@import './styles/order-workflow-interactions.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import order workflow interaction styles */
-@import './styles/order-workflow-interactions.css';
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.

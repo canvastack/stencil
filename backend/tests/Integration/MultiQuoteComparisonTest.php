@@ -173,9 +173,9 @@ class MultiQuoteComparisonTest extends TestCase
         // Verify all 3 quotes are returned
         $this->assertCount(3, $quotes, 'Should display all quotes regardless of status');
 
-        // Verify all quotes have 'open' status
+        // Verify all quotes have 'draft' status (initial status when created)
         foreach ($quotes as $quote) {
-            $this->assertEquals('open', $quote['status']);
+            $this->assertEquals('draft', $quote['status']);
         }
 
         // ============================================================
@@ -251,7 +251,7 @@ class MultiQuoteComparisonTest extends TestCase
         // Verify all quotes are open
         foreach ($quotes as $quote) {
             $dbQuote = OrderVendorNegotiation::where('uuid', $quote['id'])->first();
-            $this->assertEquals('open', $dbQuote->status);
+            $this->assertEquals('draft', $dbQuote->status);
         }
 
         // ============================================================

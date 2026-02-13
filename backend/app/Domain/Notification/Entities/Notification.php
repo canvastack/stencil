@@ -274,6 +274,80 @@ class Notification
         );
     }
 
+    /**
+     * Factory method for quote assigned notification (vendor portal)
+     */
+    public static function quoteAssigned(
+        int $tenantId,
+        int $userId,
+        string $quoteUuid,
+        string $quoteNumber,
+        string $customerName
+    ): self {
+        return self::create(
+            tenantId: $tenantId,
+            userId: $userId,
+            type: 'quote_assigned',
+            title: 'New Quote Assigned',
+            message: "You have been assigned quote #{$quoteNumber} from {$customerName}",
+            data: [
+                'quote_uuid' => $quoteUuid,
+                'quote_number' => $quoteNumber,
+                'customer_name' => $customerName
+            ]
+        );
+    }
+
+    /**
+     * Factory method for quote message notification (vendor portal)
+     */
+    public static function quoteMessage(
+        int $tenantId,
+        int $userId,
+        string $quoteUuid,
+        string $quoteNumber,
+        string $senderName,
+        string $messagePreview
+    ): self {
+        return self::create(
+            tenantId: $tenantId,
+            userId: $userId,
+            type: 'quote_message',
+            title: 'New Message on Quote',
+            message: "{$senderName} sent a message on quote #{$quoteNumber}",
+            data: [
+                'quote_uuid' => $quoteUuid,
+                'quote_number' => $quoteNumber,
+                'sender_name' => $senderName,
+                'message_preview' => $messagePreview
+            ]
+        );
+    }
+
+    /**
+     * Factory method for quote expiring soon notification (vendor portal)
+     */
+    public static function quoteExpiringSoon(
+        int $tenantId,
+        int $userId,
+        string $quoteUuid,
+        string $quoteNumber,
+        int $hoursRemaining
+    ): self {
+        return self::create(
+            tenantId: $tenantId,
+            userId: $userId,
+            type: 'quote_expiring_soon',
+            title: 'Quote Expiring Soon',
+            message: "Quote #{$quoteNumber} expires in {$hoursRemaining} hours",
+            data: [
+                'quote_uuid' => $quoteUuid,
+                'quote_number' => $quoteNumber,
+                'hours_remaining' => $hoursRemaining
+            ]
+        );
+    }
+
     // Validation methods
     private static function validateType(string $type): void
     {

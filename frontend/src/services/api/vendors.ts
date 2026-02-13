@@ -79,6 +79,26 @@ class VendorsService {
     const response = await tenantApiClient.get(`/vendors/${id}/orders`);
     return response;
   }
+
+  async enablePortalAccess(id: string, sendWelcomeEmail: boolean = true): Promise<{
+    message: string;
+    data: {
+      vendor_id: number;
+      vendor_uuid: string;
+      vendor_name: string;
+      vendor_email: string;
+      temporary_password: string;
+      portal_access_enabled: boolean;
+      onboarding_status: string;
+      temporary_password_expires_at: string;
+      welcome_email_sent: boolean;
+    };
+  }> {
+    const response = await tenantApiClient.post(`/admin/vendors/${id}/enable-portal-access`, {
+      send_welcome_email: sendWelcomeEmail,
+    });
+    return response;
+  }
 }
 
 export const vendorsService = new VendorsService();

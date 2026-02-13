@@ -35,24 +35,32 @@ class InsuranceFundService
 
     /**
      * Get current insurance fund balance for a tenant.
+     * 
+     * @param string|int $tenantId Tenant UUID (string) or integer ID
      */
-    public static function getBalance(string $tenantId): float
+    public static function getBalance($tenantId): float
     {
         try {
-            \Log::info('InsuranceFundService::getBalance called for tenant: ' . $tenantId);
+            // Convert UUID to integer ID if needed (insurance_fund_transactions.tenant_id is BIGINT)
+            if (is_string($tenantId) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $tenantId)) {
+                $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::where('uuid', $tenantId)->first();
+                $tenantId = $tenant ? $tenant->id : null;
+                
+                if (!$tenantId) {
+                    return 0.0;
+                }
+            }
             
             $latestTransaction = InsuranceFundTransaction::where('tenant_id', $tenantId)
                 ->orderBy('created_at', 'desc')
                 ->first();
-
-            \Log::info('Latest transaction found: ' . ($latestTransaction ? $latestTransaction->id : 'none'));
             
-            $balance = $latestTransaction ? floatval($latestTransaction->balance_after) : 0.0;
-            \Log::info('Returning balance: ' . $balance);
-            
-            return $balance;
+            return $latestTransaction ? floatval($latestTransaction->balance_after) : 0.0;
         } catch (\Exception $e) {
-            \Log::error('InsuranceFundService::getBalance error: ' . $e->getMessage());
+            \Log::error('InsuranceFundService::getBalance error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return 0.0;
         }
     }

@@ -28,6 +28,7 @@ enum QuoteStatus: string
     case ACCEPTED = 'accepted';
     case REJECTED = 'rejected';
     case COUNTERED = 'countered';
+    case ADMIN_COUNTERED = 'admin_countered';
     case EXPIRED = 'expired';
 
     /**
@@ -63,6 +64,14 @@ enum QuoteStatus: string
             self::COUNTERED => in_array($newStatus, [
                 self::ACCEPTED,
                 self::REJECTED,
+                self::ADMIN_COUNTERED,
+                self::SENT,
+                self::EXPIRED
+            ]),
+            self::ADMIN_COUNTERED => in_array($newStatus, [
+                self::ACCEPTED,
+                self::REJECTED,
+                self::COUNTERED,
                 self::EXPIRED
             ]),
             // Terminal states cannot transition
@@ -84,6 +93,7 @@ enum QuoteStatus: string
             self::ACCEPTED => 'Accepted',
             self::REJECTED => 'Rejected',
             self::COUNTERED => 'Counter Offer',
+            self::ADMIN_COUNTERED => 'Admin Counter Offer',
             self::EXPIRED => 'Expired',
         };
     }
@@ -110,6 +120,7 @@ enum QuoteStatus: string
             self::ACCEPTED => 'green',
             self::REJECTED => 'red',
             self::COUNTERED => 'orange',
+            self::ADMIN_COUNTERED => 'blue',
             self::EXPIRED => 'gray',
         };
     }
@@ -132,7 +143,7 @@ enum QuoteStatus: string
      */
     public function requiresVendorAction(): bool
     {
-        return in_array($this, [self::SENT, self::PENDING_RESPONSE, self::COUNTERED]);
+        return in_array($this, [self::SENT, self::PENDING_RESPONSE, self::ADMIN_COUNTERED]);
     }
 
     /**
@@ -170,6 +181,14 @@ enum QuoteStatus: string
             self::COUNTERED => [
                 self::ACCEPTED,
                 self::REJECTED,
+                self::ADMIN_COUNTERED,
+                self::SENT,
+                self::EXPIRED
+            ],
+            self::ADMIN_COUNTERED => [
+                self::ACCEPTED,
+                self::REJECTED,
+                self::COUNTERED,
                 self::EXPIRED
             ],
             self::ACCEPTED, self::REJECTED, self::EXPIRED => [],

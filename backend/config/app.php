@@ -96,6 +96,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Vendor Portal URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used for generating vendor portal links in email notifications.
+    | Defaults to the frontend URL if not configured.
+    |
+    */
+
+    'vendor_portal_url' => env('VENDOR_PORTAL_URL', env('FRONTEND_URL', 'http://localhost:5173')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Currency Configuration
     |--------------------------------------------------------------------------
     |
@@ -119,7 +131,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Jakarta',
 
     /*
     |--------------------------------------------------------------------------
@@ -218,6 +230,11 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\DomainServiceProvider::class,
+        App\Providers\EmailServiceProvider::class,
+        App\Providers\VendorNotificationServiceProvider::class,
+        App\Providers\FileStorageServiceProvider::class,
+        App\Providers\AuditLogServiceProvider::class,
+        App\Providers\QueryCacheServiceProvider::class,
         
         /*
          * Plugin Service Providers...

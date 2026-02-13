@@ -22,24 +22,29 @@ class StoreQuoteRequest extends FormRequest
     {
         return [
             'order_id' => 'required|string|uuid',
-            'customer_id' => 'required|string|uuid',
+            'customer_id' => 'nullable|string|uuid', // Made optional - can be derived from order
             'vendor_id' => 'required|string|uuid',
-            'title' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255', // Made optional for flexibility
             'description' => 'nullable|string',
-            'valid_until' => 'required|date|after:now',
+            'valid_until' => 'nullable|date|after:now', // Made optional - can use default
             'terms_and_conditions' => 'nullable|string',
             'notes' => 'nullable|string',
             'initial_offer' => 'required|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required',
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.vendor_cost' => 'required|numeric|min:0',
-            'items.*.total_price' => 'required|numeric|min:0',
+            'items' => 'nullable|array', // Made optional - can use order items as fallback
+            'items.*.product_id' => 'required_with:items',
+            'items.*.description' => 'required_with:items|string',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.unit_price' => 'required_with:items|numeric|min:0',
+            'items.*.vendor_cost' => 'required_with:items|numeric|min:0',
+            'items.*.total_price' => 'nullable|numeric|min:0', // Made optional - can be calculated
             'items.*.specifications' => 'nullable|array',
             'items.*.form_schema' => 'nullable',
             'items.*.notes' => 'nullable|string',
+            
+            // Additional fields for multi-quote comparison
+            'terms' => 'nullable|array',
+            'lead_time_days' => 'nullable|integer|min:0',
+            'currency' => 'nullable|string|in:IDR,USD',
         ];
     }
 

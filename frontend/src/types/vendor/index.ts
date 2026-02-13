@@ -57,6 +57,14 @@ export interface Vendor {
   company_size?: 'small' | 'medium' | 'large';
   is_verified?: boolean;
   
+  // Vendor Portal fields
+  portal_access_enabled?: boolean;
+  onboarding_status?: 'pending' | 'in_progress' | 'completed';
+  onboarding_completed_at?: string;
+  portal_last_access_at?: string;
+  welcome_email_sent_at?: string;
+  temporary_password_expires_at?: string;
+  
   rating?: number;
   overall_rating?: number;
   total_orders?: number;
@@ -234,3 +242,6 @@ export interface VendorQuotationItem {
 
 export type VendorStatus = 'active' | 'inactive' | 'suspended' | 'on_hold' | 'blacklisted';
 export type VendorQualityTier = 'standard' | 'premium' | 'exclusive';
+
+// Export vendor portal types
+export * from './portal';

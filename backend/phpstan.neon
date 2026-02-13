@@ -1,0 +1,29 @@
+parameters:
+    level: 6
+    paths:
+        - app/Application/Vendor
+        - app/Application/Quote
+        - app/Domain/Vendor
+        - app/Domain/Quote
+        - app/Infrastructure/Persistence/Eloquent/Repositories/VendorRepository.php
+        - app/Infrastructure/Persistence/Eloquent/Repositories/QuoteRepository.php
+        - app/Infrastructure/Persistence/Eloquent/Repositories/MessageRepository.php
+        - app/Infrastructure/Persistence/Eloquent/Repositories/AuditLogRepository.php
+        - app/Http/Controllers/Api/Vendor
+        - app/Http/Middleware/VendorAuthMiddleware.php
+        - app/Http/Middleware/VendorTenantScopingMiddleware.php
+        - app/Http/Middleware/VendorRateLimitMiddleware.php
+    ignoreErrors:
+        # Ignore Laravel magic methods
+        - '#Call to an undefined (static )?method Illuminate\\#'
+        - '#Call to an undefined (static )?method App\\Infrastructure\\Persistence\\Eloquent\\#'
+        - '#Call to an undefined method Illuminate\\Contracts\\Routing\\ResponseFactory#'
+        - '#Call to an undefined method object::#'
+        # Ignore dynamic properties
+        - '#Access to an undefined property#'
+        - '#Cannot access property#'
+        - '#Cannot call method#'
+        # Ignore missing iterable value types (Laravel convention)
+        - '#has no value type specified in iterable type array#'
+        - '#return type has no value type specified in iterable type array#'
+        - '#has parameter .* with no value type specified in iterable type array#'

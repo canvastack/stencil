@@ -423,6 +423,11 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{quote}/update-status', [QuoteController::class, 'updateStatus'])->name('tenant.quotes.update-status');
             Route::get('/{quote}/pdf', [QuoteController::class, 'pdf'])->name('tenant.quotes.pdf');
             
+            // Counter Offer Actions (Admin)
+            Route::post('/{quote}/accept-counter', [QuoteController::class, 'acceptCounterOffer'])->name('tenant.quotes.accept-counter');
+            Route::post('/{quote}/reject-counter', [QuoteController::class, 'rejectCounterOffer'])->name('tenant.quotes.reject-counter');
+            Route::post('/{quote}/admin-counter-offer', [QuoteController::class, 'adminCounterOffer'])->name('tenant.quotes.admin-counter');
+            
             // Vendor Response Actions
             Route::post('/{quote}/vendor/accept', [QuoteController::class, 'vendorAccept'])->name('tenant.quotes.vendor.accept');
             Route::post('/{quote}/vendor/reject', [QuoteController::class, 'vendorReject'])->name('tenant.quotes.vendor.reject');

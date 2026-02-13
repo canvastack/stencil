@@ -7,6 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { 
   ArrowLeft, 
   Edit, 
@@ -22,7 +30,10 @@ import {
   Users,
   Award,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Key,
+  Copy,
+  Check
 } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';
@@ -151,6 +162,13 @@ export default function VendorDetail() {
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Portal access state
+  const [showEnablePortalDialog, setShowEnablePortalDialog] = useState(false);
+  const [enablingPortal, setEnablingPortal] = useState(false);
+  const [showCredentialsDialog, setShowCredentialsDialog] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string>('');
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   useEffect(() => {
     const fetchVendor = async () => {
@@ -204,6 +222,42 @@ export default function VendorDetail() {
 
     fetchVendor();
   }, [id]);
+
+  const handleEnablePortalAccess = async () => {
+    if (!id) return;
+    
+    try {
+      setEnablingPortal(true);
+      const result = await vendorsService.enablePortalAccess(id, true);
+      
+      // Store temporary password to show in credentials dialog
+      setTemporaryPassword(result.data.temporary_password);
+      
+      // Close confirmation dialog
+      setShowEnablePortalDialog(false);
+      
+      // Show credentials dialog
+      setShowCredentialsDialog(true);
+      
+      // Refresh vendor data
+      const vendorData = await vendorsService.getVendorById(id);
+      setVendor(vendorData);
+      
+      toast.success('Portal access enabled successfully');
+    } catch (err) {
+      console.error('Failed to enable portal access:', err);
+      toast.error('Failed to enable portal access');
+    } finally {
+      setEnablingPortal(false);
+    }
+  };
+
+  const handleCopyPassword = () => {
+    navigator.clipboard.writeText(temporaryPassword);
+    setPasswordCopied(true);
+    toast.success('Password copied to clipboard');
+    setTimeout(() => setPasswordCopied(false), 2000);
+  };
 
   if (loading) {
     return (
@@ -268,12 +322,23 @@ export default function VendorDetail() {
             </p>
           </div>
         </div>
-        <Link to={`/admin/vendors/${vendor.id}/edit`}>
-          <Button>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Vendor
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {!vendor.portal_access_enabled && (
+            <Button
+              variant="outline"
+              onClick={() => setShowEnablePortalDialog(true)}
+            >
+              <Key className="mr-2 h-4 w-4" />
+              Enable Portal Access
+            </Button>
+          )}
+          <Link to={`/admin/vendors/${vendor.id}/edit`}>
+            <Button>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Vendor
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Overview Cards */}
@@ -568,6 +633,118 @@ export default function VendorDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Enable Portal Access Confirmation Dialog */}
+      <Dialog open={showEnablePortalDialog} onOpenChange={setShowEnablePortalDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enable Portal Access</DialogTitle>
+            <DialogDescription>
+              This will create a vendor user account and send a welcome email with login credentials.
+              The vendor will be able to access the vendor portal to view and respond to quotes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+              <Key className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  What happens next?
+                </p>
+                <ul className="mt-2 text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                  <li>• A secure temporary password will be generated</li>
+                  <li>• Welcome email will be sent to: {vendor?.email}</li>
+                  <li>• Vendor can log in at /vendor/login</li>
+                  <li>• Password expires in 7 days</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEnablePortalDialog(false)}
+              disabled={enablingPortal}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEnablePortalAccess}
+              disabled={enablingPortal}
+            >
+              {enablingPortal ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enabling...
+                </>
+              ) : (
+                <>
+                  <Key className="mr-2 h-4 w-4" />
+                  Enable Portal Access
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credentials Display Dialog */}
+      <Dialog open={showCredentialsDialog} onOpenChange={setShowCredentialsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Portal Access Enabled</DialogTitle>
+            <DialogDescription>
+              The vendor portal has been enabled successfully. Please save these credentials securely.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Email</label>
+              <div className="p-3 bg-muted rounded-md font-mono text-sm">
+                {vendor?.email}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Temporary Password</label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 p-3 bg-muted rounded-md font-mono text-sm">
+                  {temporaryPassword}
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyPassword}
+                >
+                  {passwordCopied ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                  Important
+                </p>
+                <ul className="mt-2 text-sm text-amber-700 dark:text-amber-300 space-y-1">
+                  <li>• This password will only be shown once</li>
+                  <li>• Password expires in 7 days</li>
+                  <li>• Welcome email has been sent to the vendor</li>
+                  <li>• Vendor must change password on first login</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowCredentialsDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

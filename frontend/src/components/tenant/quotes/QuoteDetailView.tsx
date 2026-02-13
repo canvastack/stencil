@@ -17,10 +17,8 @@ import {
   Building2,
   User,
   Mail,
-  Phone,
   Package,
   Calendar,
-  DollarSign,
   ExternalLink,
   Clock,
   CheckCircle,
@@ -89,14 +87,6 @@ const formatDate = (dateString: string): string => {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
-};
-
-const formatDateShort = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
   });
 };
 
@@ -179,10 +169,29 @@ export const QuoteDetailView = ({
                 Created on {formatDate(quote.created_at)}
               </CardDescription>
             </div>
-            <div className="text-left md:text-right">
-              <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
-              <p className="text-2xl font-bold">{formatCurrency(quote.grand_total, quote.currency)}</p>
-              <p className="text-sm text-muted-foreground">{convertToUSD(quote.grand_total)}</p>
+            <div className="text-left md:text-right space-y-3">
+              {/* Total Vendor Cost */}
+              {quote.items.some(item => item.vendor_cost) && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Total Vendor Cost</p>
+                  <p className="text-xl font-bold text-yellow-600 dark:text-yellow-500">
+                    {formatCurrency(
+                      quote.items.reduce((sum, item) => sum + (item.vendor_cost || 0) * item.quantity, 0),
+                      quote.currency
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {convertToUSD(quote.items.reduce((sum, item) => sum + (item.vendor_cost || 0) * item.quantity, 0))}
+                  </p>
+                </div>
+              )}
+              
+              {/* Total Amount */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Amount</p>
+                <p className="text-2xl font-bold">{formatCurrency(quote.grand_total, quote.currency)}</p>
+                <p className="text-sm text-muted-foreground">{convertToUSD(quote.grand_total)}</p>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -252,9 +261,9 @@ export const QuoteDetailView = ({
           <CardContent className="space-y-3">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Name</p>
-              <p className="font-medium">{quote.customer.name}</p>
+              <p className="font-medium">{quote.customer?.name || 'N/A'}</p>
             </div>
-            {quote.customer.company && (
+            {quote.customer?.company && (
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Company</p>
                 <div className="flex items-center gap-2">
@@ -263,15 +272,17 @@ export const QuoteDetailView = ({
                 </div>
               </div>
             )}
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Email</p>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                <a href={`mailto:${quote.customer.email}`} className="text-primary hover:underline">
-                  {quote.customer.email}
-                </a>
+            {quote.customer?.email && (
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Email</p>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <a href={`mailto:${quote.customer.email}`} className="text-primary hover:underline">
+                    {quote.customer.email}
+                  </a>
+                </div>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 

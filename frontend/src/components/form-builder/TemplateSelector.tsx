@@ -73,8 +73,8 @@ export function TemplateSelector({ onApplyTemplate, open: controlledOpen, onOpen
           Use Template
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             Form Templates
@@ -84,8 +84,8 @@ export function TemplateSelector({ onApplyTemplate, open: controlledOpen, onOpen
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="relative">
+        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+          <div className="relative flex-shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search templates..."
@@ -95,8 +95,8 @@ export function TemplateSelector({ onApplyTemplate, open: controlledOpen, onOpen
             />
           </div>
 
-          <Tabs defaultValue="system" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+          <Tabs defaultValue="system" className="w-full flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
               <TabsTrigger value="system">
                 System Templates ({systemTemplates.length})
               </TabsTrigger>
@@ -105,7 +105,7 @@ export function TemplateSelector({ onApplyTemplate, open: controlledOpen, onOpen
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="system">
+            <TabsContent value="system" className="flex-1 overflow-hidden mt-4">
               <TemplateList
                 templates={systemTemplates}
                 isLoading={isLoading}
@@ -114,7 +114,7 @@ export function TemplateSelector({ onApplyTemplate, open: controlledOpen, onOpen
               />
             </TabsContent>
 
-            <TabsContent value="custom">
+            <TabsContent value="custom" className="flex-1 overflow-hidden mt-4">
               <TemplateList
                 templates={customTemplates}
                 isLoading={isLoading}
@@ -124,9 +124,9 @@ export function TemplateSelector({ onApplyTemplate, open: controlledOpen, onOpen
             </TabsContent>
           </Tabs>
 
-          <Separator />
+          <Separator className="flex-shrink-0" />
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-shrink-0">
             <div className="text-sm text-muted-foreground">
               {selectedTemplate ? (
                 <>
@@ -183,66 +183,88 @@ function TemplateList({
   }
 
   return (
-    <ScrollArea className="h-[400px] pr-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <ScrollArea className="h-[350px] pr-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-2">
         {templates.map((template) => (
           <button
             key={template.uuid}
             onClick={() => onSelectTemplate(template)}
             className={cn(
-              'text-left p-4 rounded-lg border-2 transition-all hover:shadow-md',
+              'text-left p-5 rounded-lg border-2 transition-all hover:shadow-lg',
               'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+              'relative overflow-hidden group',
               selectedTemplate?.uuid === template.uuid
-                ? 'border-primary bg-primary/5 shadow-md'
-                : 'border-border hover:border-primary/50'
+                ? 'border-primary bg-primary/10 shadow-lg ring-2 ring-primary/20'
+                : 'border-border hover:border-primary/50 hover:bg-accent/5'
             )}
           >
-            <div className="space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <h4 className="font-semibold text-sm leading-tight">{template.name}</h4>
+            <div className="space-y-3">
+              {/* Header with title and check icon */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-base leading-tight mb-1 truncate">
+                    {template.name}
+                  </h4>
+                  {template.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                      {template.description}
+                    </p>
+                  )}
+                </div>
                 {selectedTemplate?.uuid === template.uuid && (
-                  <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                    <Check className="h-4 w-4 text-primary-foreground" />
+                  </div>
                 )}
               </div>
 
-              {template.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {template.description}
-                </p>
-              )}
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline" className="text-xs">
+              {/* Metadata badges */}
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <Badge variant="outline" className="text-xs font-medium">
                   {template.category}
                 </Badge>
                 {template.isSystem && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="text-xs font-medium">
                     System
                   </Badge>
                 )}
                 {template.formSchema?.fields && (
-                  <span className="text-xs text-muted-foreground">
+                  <Badge variant="outline" className="text-xs font-normal bg-muted/50">
                     {template.formSchema.fields.length} field
                     {template.formSchema.fields.length !== 1 ? 's' : ''}
-                  </span>
+                  </Badge>
                 )}
               </div>
 
+              {/* Tags - limited to 2 visible */}
               {template.tags && Array.isArray(template.tags) && template.tags.length > 0 && (
-                <div className="flex items-center gap-1 flex-wrap">
-                  {template.tags.slice(0, 3).map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs px-1.5 py-0">
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  {template.tags.slice(0, 2).map((tag) => (
+                    <Badge 
+                      key={tag} 
+                      variant="outline" 
+                      className="text-xs px-2 py-0.5 font-normal bg-background"
+                    >
                       {tag}
                     </Badge>
                   ))}
-                  {template.tags.length > 3 && (
-                    <span className="text-xs text-muted-foreground">
-                      +{template.tags.length - 3} more
-                    </span>
+                  {template.tags.length > 2 && (
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs px-2 py-0.5 font-normal bg-muted/30"
+                    >
+                      +{template.tags.length - 2}
+                    </Badge>
                   )}
                 </div>
               )}
             </div>
+
+            {/* Hover effect overlay */}
+            <div className={cn(
+              "absolute inset-0 border-2 border-primary rounded-lg opacity-0 transition-opacity pointer-events-none",
+              "group-hover:opacity-100"
+            )} />
           </button>
         ))}
       </div>

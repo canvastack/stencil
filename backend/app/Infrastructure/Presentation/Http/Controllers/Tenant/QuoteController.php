@@ -121,11 +121,31 @@ class QuoteController extends Controller
         }
         
         if ($request->filled('vendor_id')) {
-            $query->where('vendor_id', $request->input('vendor_id'));
+            // Convert vendor UUID to internal ID
+            $vendor = Vendor::where('tenant_id', $tenantId)
+                ->where('uuid', $request->input('vendor_id'))
+                ->first();
+            if ($vendor) {
+                $query->where('vendor_id', $vendor->id);
+            }
         }
         
         if ($request->filled('order_id')) {
-            $query->where('order_id', $request->input('order_id'));
+            $orderId = $request->input('order_id');
+            
+            // Support both UUID and integer ID
+            if (is_numeric($orderId)) {
+                // Integer ID provided
+                $query->where('order_id', (int)$orderId);
+            } else {
+                // UUID provided - convert to internal ID
+                $order = Order::where('tenant_id', $tenantId)
+                    ->where('uuid', $orderId)
+                    ->first();
+                if ($order) {
+                    $query->where('order_id', $order->id);
+                }
+            }
         }
         
         if ($request->filled('search')) {
@@ -223,16 +243,32 @@ class QuoteController extends Controller
             }
             
             // Build quote_details JSON structure
+            $items = $request->input('items', []);
+            
+            // If no items provided, use order items as fallback
+            if (empty($items) && !empty($order->items)) {
+                $items = $order->items;
+            }
+            
             $quoteDetails = [
                 'title' => $request->input('title'),
                 'description' => $request->input('description'),
                 'terms_and_conditions' => $request->input('terms_and_conditions'),
+                'terms' => $request->input('terms'), // For multi-quote comparison
                 'notes' => $request->input('notes'),
-                'items' => $request->input('items', []),
+                'lead_time_days' => $request->input('lead_time_days'),
+                'items' => $this->enrichItemsWithFormSchema($items, $order),
             ];
             
-            // Calculate latest_offer from initial_offer (already in cents from frontend)
-            $initialOffer = (int) $request->input('initial_offer');
+            // Calculate latest_offer from initial_offer
+            // Frontend sends price in dollars/rupiah, convert to cents
+            $initialOfferDecimal = (float) $request->input('initial_offer');
+            $initialOffer = (int) ($initialOfferDecimal * 100); // Convert to cents
+            
+            // Set default valid_until if not provided (30 days from now)
+            $validUntil = $request->input('valid_until') 
+                ? $request->input('valid_until') 
+                : now()->addDays(30)->toDateString();
             
             // Create quote record
             $quote = OrderVendorNegotiation::create([
@@ -241,8 +277,9 @@ class QuoteController extends Controller
                 'vendor_id' => $vendor->id,
                 'initial_offer' => $initialOffer,
                 'latest_offer' => $initialOffer,
+                'currency' => $request->input('currency', 'IDR'),
                 'quote_details' => $quoteDetails,
-                'status' => 'draft',
+                'status' => 'draft', // Initial status as per requirements
                 'status_history' => [[
                     'from' => null,
                     'to' => 'draft',
@@ -250,7 +287,7 @@ class QuoteController extends Controller
                     'changed_at' => now()->toIso8601String(),
                     'reason' => 'Quote created'
                 ]],
-                'expires_at' => $request->input('valid_until'),
+                'expires_at' => $validUntil,
                 'round' => 1,
                 'history' => [[
                     'action' => 'created',
@@ -329,7 +366,7 @@ class QuoteController extends Controller
             'items.*.notes' => 'sometimes|string',
             'expires_at' => 'sometimes|date|after:now',
             'valid_until' => 'sometimes|date|after:now',
-            'status' => 'sometimes|in:open,countered,accepted,rejected,cancelled,expired',
+            'status' => 'sometimes|in:draft,sent,pending_response,countered,accepted,rejected,expired',
         ]);
 
         $updateData = [];
@@ -445,10 +482,18 @@ class QuoteController extends Controller
     public function accept(Request $request, string $id)
     {
         $tenantId = $this->getCurrentTenantId($request);
-        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+        $quote = OrderVendorNegotiation::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
             ->where('uuid', $id)
             ->with(['order', 'vendor'])
             ->firstOrFail();
+
+        // Validate tenant isolation: order must belong to same tenant as quote
+        if (!$quote->order || $quote->order->tenant_id !== $tenantId) {
+            return response()->json([
+                'message' => 'Cross-tenant operation not allowed'
+            ], 422);
+        }
 
         // Validate quote can be accepted
         if ($quote->status === 'accepted') {
@@ -521,6 +566,7 @@ class QuoteController extends Controller
                 $order->save();
 
                 // Create order history entry
+                $vendorName = $quote->vendor ? $quote->vendor->name : 'Unknown Vendor';
                 DB::table('order_status_histories')->insert([
                     'tenant_id' => $tenantId,
                     'order_id' => $order->id,
@@ -528,7 +574,7 @@ class QuoteController extends Controller
                     'new_status' => 'customer_quote',
                     'changed_by' => auth()->id(),
                     'changed_by_name' => auth()->user()->name ?? 'System',
-                    'notes' => "Quote {$quote->uuid} accepted. Vendor: {$quote->vendor->name}",
+                    'notes' => "Quote {$quote->uuid} accepted. Vendor: {$vendorName}",
                     'changed_at' => now(),
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -591,7 +637,7 @@ class QuoteController extends Controller
             // Check if all quotes for this order are now rejected
             $activeQuotesCount = OrderVendorNegotiation::where('tenant_id', $tenantId)
                 ->where('order_id', $quote->order_id)
-                ->whereIn('status', ['open', 'countered', 'sent', 'draft'])
+                ->whereIn('status', ['draft', 'sent', 'pending_response', 'countered'])
                 ->count();
 
             $allQuotesRejected = ($activeQuotesCount === 0);
@@ -698,6 +744,13 @@ class QuoteController extends Controller
             ], 422);
         }
 
+        // Validate vendor has email
+        if (!$quote->vendor || !$quote->vendor->email) {
+            return response()->json([
+                'message' => 'Vendor does not have an email address configured'
+            ], 422);
+        }
+
         DB::beginTransaction();
         try {
             // Update status history
@@ -717,8 +770,41 @@ class QuoteController extends Controller
                 'status_history' => $statusHistory,
             ]);
 
-            // TODO: Send notification to vendor (Phase 5)
-            // This will be implemented in the notification system phase
+            // Send email notification to vendor if portal access is enabled
+            if ($quote->vendor->portal_access_enabled) {
+                try {
+                    $emailService = app(\App\Infrastructure\Services\Email\EmailServiceInterface::class);
+                    
+                    // Prepare quote data for email
+                    $quoteData = [
+                        'quote_number' => $quote->uuid,
+                        'order_number' => $quote->order->order_number ?? 'N/A',
+                        'customer_name' => $quote->order->customer->name ?? 'N/A',
+                        'product_name' => $this->extractProductName($quote),
+                        'expires_at' => $quote->expires_at ? $quote->expires_at->format('Y-m-d H:i:s') : null,
+                        'quote_url' => config('app.vendor_portal_url') . '/vendor/quotes/' . $quote->uuid,
+                    ];
+                    
+                    $emailService->sendNewQuoteNotification(
+                        $quote->vendor->email,
+                        $quote->vendor->name ?? $quote->vendor->company_name ?? 'Vendor',
+                        $quoteData
+                    );
+                    
+                    \Log::info('Quote sent notification email queued', [
+                        'quote_id' => $quote->uuid,
+                        'vendor_email' => $quote->vendor->email,
+                        'vendor_name' => $quote->vendor->name,
+                    ]);
+                } catch (\Exception $e) {
+                    // Log error but don't fail the request
+                    \Log::error('Failed to send quote notification email', [
+                        'quote_id' => $quote->uuid,
+                        'vendor_email' => $quote->vendor->email,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
 
             DB::commit();
 
@@ -843,7 +929,9 @@ class QuoteController extends Controller
         
         $stats = [
             'total_quotes' => OrderVendorNegotiation::where('tenant_id', $tenantId)->count(),
-            'open_quotes' => OrderVendorNegotiation::where('tenant_id', $tenantId)->where('status', 'open')->count(),
+            'draft_quotes' => OrderVendorNegotiation::where('tenant_id', $tenantId)->where('status', 'draft')->count(),
+            'sent_quotes' => OrderVendorNegotiation::where('tenant_id', $tenantId)->where('status', 'sent')->count(),
+            'pending_quotes' => OrderVendorNegotiation::where('tenant_id', $tenantId)->where('status', 'pending_response')->count(),
             'accepted_quotes' => OrderVendorNegotiation::where('tenant_id', $tenantId)->where('status', 'accepted')->count(),
             'rejected_quotes' => OrderVendorNegotiation::where('tenant_id', $tenantId)->where('status', 'rejected')->count(),
             'total_value' => OrderVendorNegotiation::where('tenant_id', $tenantId)->sum('latest_offer'),
@@ -1003,19 +1091,34 @@ class QuoteController extends Controller
         $enrichedItems = [];
         
         foreach ($items as $item) {
-            $productUuid = $item['product_id'] ?? null;
+            // product_id could be either UUID or integer ID (after prepareForValidation)
+            // Check if product_uuid exists (set by prepareForValidation)
+            $productUuid = $item['product_uuid'] ?? $item['product_id'] ?? null;
+            $productId = null;
             
             // Get form schema from product_form_configurations
             $formSchema = null;
             if ($productUuid) {
-                // Fetch product by UUID
-                $product = \App\Infrastructure\Persistence\Eloquent\Models\Product::where('uuid', $productUuid)
-                    ->where('tenant_id', $order->tenant_id)
-                    ->first();
+                // If it's a UUID string, fetch product by UUID
+                if (is_string($productUuid) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $productUuid)) {
+                    $product = \App\Infrastructure\Persistence\Eloquent\Models\Product::where('uuid', $productUuid)
+                        ->where('tenant_id', $order->tenant_id)
+                        ->first();
+                    
+                    if ($product) {
+                        $productId = $product->id;
+                    }
+                } elseif (is_numeric($productUuid) || is_int($productUuid)) {
+                    // It's already an integer ID
+                    $productId = (int)$productUuid;
+                } elseif (isset($item['product_id']) && is_numeric($item['product_id'])) {
+                    // Fallback to product_id if it's numeric
+                    $productId = (int)$item['product_id'];
+                }
                 
-                if ($product) {
-                    // Fetch ProductFormConfiguration by product_id
-                    $formConfig = \App\Models\ProductFormConfiguration::where('product_id', $product->id)
+                // Fetch ProductFormConfiguration by product_id
+                if ($productId) {
+                    $formConfig = \App\Models\ProductFormConfiguration::where('product_id', $productId)
                         ->where('tenant_id', $order->tenant_id)
                         ->where('is_active', true)
                         ->first();
@@ -1147,21 +1250,28 @@ class QuoteController extends Controller
         // Calculate items count
         $itemsCount = count($transformedItems);
         
-        // Calculate profit margin based on quote's latest_offer
-        // Profit margin = (quotation_amount - vendor_quoted_price)
-        // For quotes: quotation_amount = latest_offer × 1.35 (30% markup + 5% operational cost)
-        $latestOfferIDR = $negotiation->latest_offer ?? 0; // in cents (vendor cost)
-        $quotationAmountIDR = (int) ($latestOfferIDR * 1.35); // in cents (customer price)
-        $profitMarginIDR = $quotationAmountIDR - $latestOfferIDR; // in cents
-        $profitMarginPercentage = $latestOfferIDR > 0 
-            ? (($profitMarginIDR / $latestOfferIDR) * 100) 
+        // Calculate totals from items (items already have correct values)
+        $totalAmount = 0; // Total customer price
+        $totalVendorCost = 0; // Total vendor cost
+        
+        foreach ($transformedItems as $item) {
+            $totalAmount += $item['total_unit_price'] ?? 0;
+            $totalVendorCost += $item['total_vendor_cost'] ?? 0;
+        }
+        
+        // Calculate profit margin from items
+        $profitMarginIDR = $totalAmount - $totalVendorCost;
+        $profitMarginPercentage = $totalVendorCost > 0 
+            ? (($profitMarginIDR / $totalVendorCost) * 100) 
             : 0;
         
+        // Use calculated totals or fallback to negotiation values
+        $grandTotalIDR = $totalAmount > 0 ? $totalAmount : ($negotiation->latest_offer ?? 0);
+        $vendorCostIDR = $totalVendorCost > 0 ? $totalVendorCost : 0;
+        
         // Convert monetary values to USD
-        $initialOfferIDR = $negotiation->initial_offer ?? 0; // in cents
-        $latestOfferUSD = $latestOfferIDR / $exchangeRate; // cents / rate = USD cents
-        $initialOfferUSD = $initialOfferIDR / $exchangeRate;
-        $quotationAmountUSD = $quotationAmountIDR / $exchangeRate;
+        $grandTotalUSD = $grandTotalIDR / $exchangeRate;
+        $vendorCostUSD = $vendorCostIDR / $exchangeRate;
         $profitMarginUSD = $profitMarginIDR / $exchangeRate;
         
         // Generate quote number with date-based format for better scalability
@@ -1182,6 +1292,7 @@ class QuoteController extends Controller
             'description' => $description,
             'terms_and_conditions' => $termsAndConditions,
             'notes' => $notes,
+            'lead_time_days' => $quoteDetails['lead_time_days'] ?? null,
             
             // Add specifications and quantity at root level for compatibility
             'specifications' => $negotiation->specifications ?? [],
@@ -1208,30 +1319,33 @@ class QuoteController extends Controller
             'status_history' => $negotiation->status_history ?? [],
             'type' => 'vendor_quote', // Default type for OrderVendorNegotiation
             
-            // Monetary values in IDR (cents converted to dollars for display)
-            'quoted_price' => $latestOfferIDR / 100, // IDR in dollars
-            'original_price' => $initialOfferIDR / 100, // IDR in dollars
-            'grand_total' => $latestOfferIDR / 100, // Alias for sorting
+            // Monetary values in IDR (already in correct format from items)
+            'quoted_price' => $grandTotalIDR, // Total customer price
+            'original_price' => $grandTotalIDR, // Same as quoted_price for now
+            'grand_total' => $grandTotalIDR, // Total customer price
+            'total_amount' => $grandTotalIDR, // Alias
+            'tax_amount' => 0, // No tax for now
             
             // USD conversions
-            'quoted_price_usd' => round($latestOfferUSD / 100, 2), // USD in dollars
-            'original_price_usd' => round($initialOfferUSD / 100, 2), // USD in dollars
-            'grand_total_usd' => round($latestOfferUSD / 100, 2), // USD in dollars
+            'quoted_price_usd' => round($grandTotalUSD, 2),
+            'original_price_usd' => round($grandTotalUSD, 2),
+            'grand_total_usd' => round($grandTotalUSD, 2),
             
             // Items count from quote items or order items
             'items_count' => $itemsCount,
             
-            // Profit margin calculations (based on 35% markup)
-            'profit_margin' => $profitMarginIDR / 100, // IDR in dollars
-            'profit_margin_usd' => round($profitMarginUSD / 100, 2), // USD in dollars
+            // Profit margin calculations (from items)
+            'profit_margin' => $profitMarginIDR,
+            'profit_margin_usd' => round($profitMarginUSD, 2),
             'profit_margin_percentage' => round($profitMarginPercentage, 2),
-            'quotation_amount' => $quotationAmountIDR / 100, // Customer-facing price in IDR
-            'quotation_amount_usd' => round($quotationAmountUSD / 100, 2), // Customer-facing price in USD
+            'total_vendor_cost' => $vendorCostIDR, // Total vendor cost
+            'total_vendor_cost_usd' => round($vendorCostUSD, 2),
             
             'currency' => $negotiation->currency,
             'exchange_rate' => $exchangeRate,
             'valid_until' => $negotiation->expires_at?->toISOString(),
             'terms' => $negotiation->quote_details ?? [], // Use quote_details instead of terms
+            'quote_details' => $negotiation->quote_details ?? [], // Add quote_details for frontend compatibility
             
             // Items from quote details (transformed with all fields and calculations)
             'items' => $transformedItems,
@@ -1241,14 +1355,20 @@ class QuoteController extends Controller
             'responded_at' => $negotiation->responded_at?->toISOString(),
             'response_type' => $negotiation->response_type,
             'response_notes' => $negotiation->response_notes,
+            'counter_offer_amount' => $negotiation->latest_offer ?? null, // Legacy field
+            'estimated_delivery_days' => $quoteDetails['estimated_delivery_days'] ?? null,
             'vendor_viewed_at' => null, // Will be populated when vendor views quote
             'vendor_response' => null, // Will contain vendor's response data
             'response_token' => null, // Will contain unique token for vendor response
             
             'metadata' => [
                 'round' => $negotiation->round,
+                'max_rounds' => $quoteDetails['max_rounds'] ?? 5, // Default 5 rounds
                 'history' => $negotiation->history ?? [],
             ],
+            'round' => $negotiation->round, // Also at root level for easier access
+            'max_rounds' => $quoteDetails['max_rounds'] ?? 5, // Also at root level for easier access
+            'history' => $negotiation->history ?? [], // Also at root level for easier access
             'created_at' => $negotiation->created_at->toISOString(),
             'updated_at' => $negotiation->updated_at->toISOString(),
             'closed_at' => $negotiation->closed_at?->toISOString(),
@@ -1635,5 +1755,426 @@ class QuoteController extends Controller
             'cancelled' => 'red', // Legacy status
             default => 'gray'
         };
+    }
+
+    /**
+     * Extract product name from quote for email notifications.
+     * 
+     * @param OrderVendorNegotiation $quote
+     * @return string
+     */
+    private function extractProductName(OrderVendorNegotiation $quote): string
+    {
+        // Try to get product name from quote details items
+        $quoteDetails = $quote->quote_details ?? [];
+        $items = $quoteDetails['items'] ?? [];
+        
+        if (!empty($items) && is_array($items)) {
+            $firstItem = $items[0];
+            
+            // Try description first
+            if (!empty($firstItem['description'])) {
+                return $firstItem['description'];
+            }
+            
+            // Try product name
+            if (!empty($firstItem['product_name'])) {
+                return $firstItem['product_name'];
+            }
+        }
+        
+        // Fallback to order items if available
+        if ($quote->order && !empty($quote->order->items) && is_array($quote->order->items)) {
+            $firstOrderItem = $quote->order->items[0];
+            
+            if (!empty($firstOrderItem['description'])) {
+                return $firstOrderItem['description'];
+            }
+            
+            if (!empty($firstOrderItem['product_name'])) {
+                return $firstOrderItem['product_name'];
+            }
+        }
+        
+        // Final fallback
+        return 'Product';
+    }
+
+    /**
+     * Accept vendor counter offer.
+     * 
+     * This endpoint allows admin to accept a vendor's counter offer.
+     * When accepted:
+     * 1. Quote status changes to 'accepted'
+     * 2. Quote items are updated with counter offer pricing
+     * 3. Customer pricing is set (with profit margin)
+     * 4. Order is updated with vendor and pricing data
+     * 5. Order status changes to 'customer_quote'
+     * 6. Latest offer is updated to counter offer total
+     * 7. Status history is recorded
+     * 8. Email notification sent to vendor
+     */
+    public function acceptCounterOffer(Request $request, string $id)
+    {
+        $request->validate([
+            'customer_price' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $tenantId = $this->getCurrentTenantId($request);
+        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->where('uuid', $id)
+            ->with(['order', 'vendor'])
+            ->firstOrFail();
+
+        // Validate quote has counter offer
+        if ($quote->status !== 'countered') {
+            return response()->json([
+                'message' => 'Quote does not have a counter offer to accept'
+            ], 422);
+        }
+
+        // Validate counter offer data exists
+        $quoteDetails = $quote->quote_details ?? [];
+        $counterOffer = $quoteDetails['counter_offer'] ?? null;
+        
+        if (!$counterOffer || empty($counterOffer['items'])) {
+            return response()->json([
+                'message' => 'Counter offer data not found'
+            ], 422);
+        }
+
+        // Get vendor counter offer total (in cents)
+        $vendorCounterOffer = $counterOffer['total_counter'] ?? 0;
+        
+        // Get customer price from request (convert to cents)
+        $customerPrice = (int) round($request->input('customer_price') * 100);
+        
+        // Validate customer price >= vendor price
+        if ($customerPrice < $vendorCounterOffer) {
+            return response()->json([
+                'message' => 'Customer price must be greater than or equal to vendor counter offer',
+                'details' => [
+                    'vendor_counter_offer' => $vendorCounterOffer / 100,
+                    'customer_price' => $customerPrice / 100,
+                ]
+            ], 422);
+        }
+        
+        // Calculate profit
+        $profitAmount = $customerPrice - $vendorCounterOffer;
+        $profitMarginPercent = $vendorCounterOffer > 0 
+            ? ($profitAmount / $vendorCounterOffer) * 100 
+            : 0;
+
+        DB::beginTransaction();
+        try {
+            // Update quote items with counter offer pricing
+            $updatedItems = [];
+            foreach ($counterOffer['items'] as $counterItem) {
+                // Find matching item in quote_details
+                $matchingItem = null;
+                foreach ($quoteDetails['items'] ?? [] as $quoteItem) {
+                    if ($quoteItem['product_id'] === $counterItem['product_id']) {
+                        $matchingItem = $quoteItem;
+                        break;
+                    }
+                }
+
+                if ($matchingItem) {
+                    // Update with counter offer pricing
+                    $updatedItems[] = array_merge($matchingItem, [
+                        'vendor_cost' => $counterItem['counter_unit_price'],
+                        'unit_price' => $counterItem['counter_unit_price'], // Keep vendor cost as unit price for now
+                        'total_price' => $counterItem['counter_total_price'],
+                    ]);
+                }
+            }
+
+            // Update quote_details with new items and mark counter offer as accepted
+            $quoteDetails['items'] = $updatedItems;
+            $quoteDetails['counter_offer']['accepted_at'] = now()->toIso8601String();
+            $quoteDetails['counter_offer']['accepted_by'] = auth()->id();
+            $quoteDetails['counter_offer']['customer_price'] = $customerPrice;
+            $quoteDetails['counter_offer']['profit_amount'] = $profitAmount;
+            $quoteDetails['counter_offer']['profit_margin_percent'] = round($profitMarginPercent, 2);
+            $quoteDetails['counter_offer']['acceptance_notes'] = $request->input('notes');
+
+            // Update status history
+            $statusHistory = $quote->status_history ?? [];
+            $statusHistory[] = [
+                'from' => $quote->status,
+                'to' => 'accepted',
+                'changed_by' => auth()->id(),
+                'changed_at' => now()->toIso8601String(),
+                'reason' => 'Admin accepted vendor counter offer with customer pricing',
+                'customer_price' => $customerPrice / 100,
+                'profit_margin_percent' => round($profitMarginPercent, 2),
+            ];
+
+            // Update quote
+            $quote->update([
+                'status' => 'accepted',
+                'latest_offer' => $counterOffer['total_counter'],
+                'quote_details' => $quoteDetails,
+                'responded_at' => now(),
+                'closed_at' => now(),
+                'status_history' => $statusHistory,
+            ]);
+
+            // Update order with vendor and pricing data
+            $order = $quote->order;
+            $order->update([
+                'vendor_id' => $quote->vendor_id,
+                'vendor_quoted_price' => $vendorCounterOffer,
+                'quotation_amount' => $customerPrice,
+                'profit_margin_percent' => round($profitMarginPercent, 2),
+                'profit_amount' => $profitAmount,
+                'status' => 'customer_quote', // Move to next workflow step
+            ]);
+
+            // Send email notification to vendor
+            try {
+                $emailService = app(\App\Infrastructure\Services\Email\QuoteNotificationService::class);
+                $emailService->sendVendorAcceptanceEmail($quote);
+                
+                \Log::info('[QuoteController::acceptCounterOffer] Acceptance email sent to vendor', [
+                    'quote_id' => $quote->uuid,
+                    'vendor_email' => $quote->vendor->email,
+                ]);
+            } catch (\Exception $e) {
+                // Log error but don't fail the request
+                \Log::error('[QuoteController::acceptCounterOffer] Failed to send acceptance email', [
+                    'quote_id' => $quote->uuid,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            return response()->json([
+                'data' => array_merge($this->transformQuoteToFrontend($quote), [
+                    'vendor_quoted_price' => $vendorCounterOffer / 100,
+                    'quotation_amount' => $customerPrice / 100,
+                    'profit_margin_percent' => round($profitMarginPercent, 2),
+                    'profit_amount' => $profitAmount / 100,
+                    'order_status' => $order->status,
+                ]),
+                'message' => 'Counter offer accepted successfully. Vendor has been notified via email.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('[QuoteController::acceptCounterOffer] Failed to accept counter offer', [
+                'quote_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Reject vendor counter offer.
+     * 
+     * This endpoint allows admin to reject a vendor's counter offer.
+     * When rejected:
+     * 1. Quote status changes to 'rejected'
+     * 2. Rejection reason is recorded
+     * 3. Status history is updated
+     * 4. Quote is closed
+     * 5. Email notification sent to vendor
+     */
+    public function rejectCounterOffer(Request $request, string $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|min:10|max:1000'
+        ]);
+
+        $tenantId = $this->getCurrentTenantId($request);
+        $quote = OrderVendorNegotiation::where('tenant_id', $tenantId)
+            ->where('uuid', $id)
+            ->with(['order', 'vendor'])
+            ->firstOrFail();
+
+        // Validate quote has counter offer
+        if ($quote->status !== 'countered') {
+            return response()->json([
+                'message' => 'Quote does not have a counter offer to reject'
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Store rejection in history (allow multiple rejections)
+            $quoteDetails = $quote->quote_details ?? [];
+            
+            // Initialize rejection_history if not exists
+            if (!isset($quoteDetails['rejection_history'])) {
+                $quoteDetails['rejection_history'] = [];
+            }
+            
+            // Count current rejections
+            $rejectionCount = count($quoteDetails['rejection_history']);
+            $isSecondRejection = $rejectionCount >= 1; // This will be the 2nd rejection
+            
+            // Add current rejection to history
+            $quoteDetails['rejection_history'][] = [
+                'rejection_number' => $rejectionCount + 1,
+                'rejected_at' => now()->toIso8601String(),
+                'rejected_by' => auth()->id(),
+                'rejection_reason' => $request->input('reason'),
+                'counter_offer' => $quoteDetails['counter_offer'] ?? null, // Store rejected counter offer
+            ];
+            
+            // Mark current counter offer as rejected
+            if (isset($quoteDetails['counter_offer'])) {
+                $quoteDetails['counter_offer']['rejected_at'] = now()->toIso8601String();
+                $quoteDetails['counter_offer']['rejected_by'] = auth()->id();
+                $quoteDetails['counter_offer']['rejection_reason'] = $request->input('reason');
+            }
+
+            // Update status history
+            $statusHistory = $quote->status_history ?? [];
+            
+            // Determine new status based on rejection count
+            $newStatus = $isSecondRejection ? 'rejected' : 'sent';
+            $statusReason = $isSecondRejection 
+                ? 'Admin rejected vendor counter offer for the 2nd time. Quote closed - maximum rejections reached.'
+                : 'Admin rejected vendor counter offer (Rejection 1 of 2). Vendor can submit one more counter offer.';
+            
+            $statusHistory[] = [
+                'from' => $quote->status,
+                'to' => $newStatus,
+                'changed_by' => auth()->id(),
+                'changed_at' => now()->toIso8601String(),
+                'reason' => $statusReason . ' Reason: ' . $request->input('reason')
+            ];
+
+            // Update quote
+            $updateData = [
+                'status' => $newStatus,
+                'quote_details' => $quoteDetails,
+                'rejection_reason' => $request->input('reason'),
+                'responded_at' => now(),
+                'status_history' => $statusHistory,
+            ];
+            
+            // Close quote if this is the 2nd rejection
+            if ($isSecondRejection) {
+                $updateData['closed_at'] = now();
+            }
+            
+            $quote->update($updateData);
+
+            // Send email notification to vendor
+            try {
+                $emailService = app(\App\Infrastructure\Services\Email\QuoteNotificationService::class);
+                $emailService->sendVendorRejectionEmail($quote, $request->input('reason'));
+                
+                \Log::info('[QuoteController::rejectCounterOffer] Rejection email sent to vendor', [
+                    'quote_id' => $quote->uuid,
+                    'vendor_email' => $quote->vendor->email,
+                    'rejection_count' => $rejectionCount + 1,
+                    'is_final_rejection' => $isSecondRejection,
+                ]);
+            } catch (\Exception $e) {
+                // Log error but don't fail the request
+                \Log::error('[QuoteController::rejectCounterOffer] Failed to send rejection email', [
+                    'quote_id' => $quote->uuid,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            DB::commit();
+
+            $quote->load(['order.customer', 'vendor']);
+
+            $message = $isSecondRejection
+                ? 'Counter offer rejected. Maximum rejections (2) reached - this quote is now closed. Please select a different vendor for this order.'
+                : 'Counter offer rejected successfully. Vendor has been notified via email and can submit one more counter offer (1 of 2 rejections used).';
+
+            return response()->json([
+                'data' => $this->transformQuoteToFrontend($quote),
+                'rejection_count' => $rejectionCount + 1,
+                'max_rejections_reached' => $isSecondRejection,
+                'message' => $message
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('[QuoteController::rejectCounterOffer] Failed to reject counter offer', [
+                'quote_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Admin counter offer to vendor's counter offer
+     * 
+     * POST /api/v1/tenant/quotes/{id}/admin-counter-offer
+     * 
+     * Enables two-way negotiation between admin and vendor.
+     * Admin can propose a counter price instead of just accept/reject.
+     * 
+     * @param AdminCounterOfferRequest $request
+     * @param string $id Quote UUID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function adminCounterOffer(\App\Http\Requests\Tenant\AdminCounterOfferRequest $request, string $id)
+    {
+        $tenantId = $this->getCurrentTenantId($request);
+        
+        try {
+            // Get authenticated user
+            $userId = auth()->id();
+            
+            // Create command
+            $command = new \App\Application\Quote\Commands\AdminCounterOfferCommand(
+                quoteUuid: $id,
+                tenantId: $tenantId,
+                adminCounterOffer: (int) round($request->input('counter_offer_amount') * 100), // Convert to cents
+                items: $request->input('items'),
+                notes: $request->input('notes'),
+                userId: $userId,
+                ipAddress: $request->ip(),
+                userAgent: $request->userAgent()
+            );
+            
+            // Execute use case
+            $useCase = app(\App\Application\Quote\UseCases\AdminCounterOfferUseCase::class);
+            $result = $useCase->execute($command);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Counter offer sent to vendor successfully',
+                'data' => $result,
+            ], 200);
+            
+        } catch (\App\Domain\Quote\Exceptions\InvalidStatusTransitionException $e) {
+            return response()->json([
+                'message' => 'Cannot counter offer',
+                'error' => $e->getMessage(),
+            ], 422);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => 'Invalid request',
+                'error' => $e->getMessage(),
+            ], 400);
+        } catch (\Exception $e) {
+            \Log::error('[QuoteController::adminCounterOffer] Error', [
+                'quote_uuid' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return response()->json([
+                'message' => 'An error occurred while sending counter offer',
+                'error' => 'Internal server error',
+            ], 500);
+        }
     }
 }

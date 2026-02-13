@@ -28,10 +28,12 @@ class OrderControllerHexagonalTest extends TestCase
         parent::setUp();
         
         $this->tenant = TenantEloquentModel::factory()->create();
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+        ]);
         
-        // Set tenant context
-        tenancy()->initialize($this->tenant);
+        // Set tenant context using Spatie multitenancy
+        $this->tenant->makeCurrent();
         
         // Authenticate user
         Sanctum::actingAs($this->user);

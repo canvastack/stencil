@@ -442,16 +442,18 @@ export const QuoteList = ({
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{quote.customer.name}</p>
-                          {quote.customer.company && (
+                          <p className="font-medium">{quote.customer?.name || 'N/A'}</p>
+                          {quote.customer?.company && (
                             <p className="text-sm text-muted-foreground">{quote.customer.company}</p>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{quote.vendor.name}</p>
-                          <p className="text-sm text-muted-foreground">{quote.vendor.company}</p>
+                          <p className="font-medium">{quote.vendor?.name || 'N/A'}</p>
+                          {quote.vendor?.company && (
+                            <p className="text-sm text-muted-foreground">{quote.vendor.company}</p>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="max-w-[200px]">

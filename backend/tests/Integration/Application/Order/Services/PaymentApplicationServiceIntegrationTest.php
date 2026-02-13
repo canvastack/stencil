@@ -38,7 +38,7 @@ class PaymentApplicationServiceIntegrationTest extends TestCase
         $this->tenantId = new UuidValueObject('550e8400-e29b-41d4-a716-446655440000');
         
         // Create tenant in database first
-        $this->createTenant();
+        $tenant = $this->createTenant();
         
         // Create real database connection and repository
         $this->orderRepository = app(PurchaseOrderRepository::class);
@@ -47,19 +47,47 @@ class PaymentApplicationServiceIntegrationTest extends TestCase
             app('db.connection')
         );
         
-        // Create real customer entity
+        // Generate customer UUID first
+        $customerUuid = UuidValueObject::generate();
+        
+        // Create real customer in database
+        $customerModel = \App\Infrastructure\Persistence\Eloquent\Models\Customer::create([
+            'uuid' => $customerUuid->getValue(), // Use the same UUID
+            'tenant_id' => $tenant->id, // Use BIGINT id
+            'name' => 'Test Customer',
+            'email' => 'customer@test.com',
+            'phone' => '+62123456789',
+            'company' => 'Test Company',
+            'status' => 'active',
+            'address' => json_encode([
+                'street' => 'Test Street',
+                'city' => 'Test City',
+                'state' => 'Test State',
+                'postal_code' => '12345',
+                'country' => 'ID'
+            ]),
+        ]);
+        
+        // Create customer entity with the SAME UUID as database record
         $this->customer = Customer::create(
             $this->tenantId,
-            'Test Customer',
-            'customer@test.com',
-            '+62123456789',
-            'Test Company'
+            $customerModel->name,
+            $customerModel->email,
+            $customerModel->phone,
+            $customerModel->company
         );
+        
+        // CRITICAL: Set the customer ID to match the database UUID
+        // Use reflection to set the private id property
+        $reflection = new \ReflectionClass($this->customer);
+        $idProperty = $reflection->getProperty('id');
+        $idProperty->setAccessible(true);
+        $idProperty->setValue($this->customer, $customerUuid);
         
         // Create real order entity
         $this->order = PurchaseOrder::create(
             tenantId: $this->tenantId,
-            customerId: $this->customer->getId(),
+            customerId: $customerUuid, // Use the same UUID
             orderNumber: 'ORD-' . time(),
             items: [
                 ['product_id' => 'prod-001', 'quantity' => 1, 'price' => 10000000] // 100000 IDR in cents
@@ -81,15 +109,17 @@ class PaymentApplicationServiceIntegrationTest extends TestCase
     /**
      * Create tenant for testing
      */
-    private function createTenant(): void
+    private function createTenant()
     {
-        \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::create([
+        return \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::create([
             'uuid' => $this->tenantId->getValue(),
             'name' => 'Test Tenant',
+            'slug' => 'test-tenant-' . substr(md5(microtime()), 0, 8),
             'domain' => 'test-tenant.local',
-            'database' => 'test_tenant_db',
             'status' => 'active',
+            'subscription_status' => 'active',
             'settings' => json_encode([]),
+            'features' => json_encode([]),
             'created_at' => now(),
             'updated_at' => now(),
         ]);

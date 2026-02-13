@@ -7,7 +7,7 @@ namespace Tests\Feature\Quote;
 use App\Application\Quote\Commands\RejectQuoteCommand;
 use App\Application\Quote\UseCases\RejectQuoteUseCase;
 use App\Domain\Quote\Repositories\QuoteRepositoryInterface;
-use App\Domain\Notification\Services\NotificationService;
+use App\Domain\Audit\Repositories\AuditLogRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
@@ -39,7 +39,7 @@ class VendorRejectPropertyTest extends TestCase
 
         $this->rejectQuoteUseCase = new RejectQuoteUseCase(
             app(QuoteRepositoryInterface::class),
-            app(NotificationService::class)
+            app(AuditLogRepositoryInterface::class)
         );
 
         Event::fake();
@@ -86,9 +86,9 @@ class VendorRejectPropertyTest extends TestCase
             try {
                 $command = new RejectQuoteCommand(
                     quoteUuid: $quote->uuid,
-                    vendorUserId: $vendorUser->id,
+                    vendorId: $vendor->id,
                     tenantId: $tenant->id,
-                    reason: ''
+                    rejectionReason: ''
                 );
 
                 $this->rejectQuoteUseCase->execute($command);
@@ -104,9 +104,9 @@ class VendorRejectPropertyTest extends TestCase
             try {
                 $command = new RejectQuoteCommand(
                     quoteUuid: $quote->uuid,
-                    vendorUserId: $vendorUser->id,
+                    vendorId: $vendor->id,
                     tenantId: $tenant->id,
-                    reason: '   '
+                    rejectionReason: '   '
                 );
 
                 $this->rejectQuoteUseCase->execute($command);
@@ -122,9 +122,9 @@ class VendorRejectPropertyTest extends TestCase
             $validReason = 'Price too high for our budget';
             $command = new RejectQuoteCommand(
                 quoteUuid: $quote->uuid,
-                vendorUserId: $vendorUser->id,
+                vendorId: $vendor->id,
                 tenantId: $tenant->id,
-                reason: $validReason
+                rejectionReason: $validReason
             );
 
             $this->rejectQuoteUseCase->execute($command);
@@ -175,9 +175,9 @@ class VendorRejectPropertyTest extends TestCase
             
             $command = new RejectQuoteCommand(
                 quoteUuid: $quote->uuid,
-                vendorUserId: $vendorUser->id,
+                vendorId: $vendor->id,
                 tenantId: $tenant->id,
-                reason: $rejectionReason
+                rejectionReason: $rejectionReason
             );
 
             $this->rejectQuoteUseCase->execute($command);

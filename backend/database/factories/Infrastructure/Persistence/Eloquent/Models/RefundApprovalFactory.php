@@ -13,9 +13,12 @@ class RefundApprovalFactory extends Factory
 
     public function definition(): array
     {
+        $tenantFactory = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::factory();
+        
         return [
             'id' => $this->faker->uuid(),
-            'refund_request_id' => RefundRequest::factory(),
+            'tenant_id' => $tenantFactory,
+            'refund_request_id' => RefundRequest::factory()->for($tenantFactory, 'tenant'),
             'approver_id' => User::factory(),
             'approval_level' => $this->faker->numberBetween(1, 3),
             

@@ -16,13 +16,14 @@ class OrderResource extends JsonResource
     protected function enrichItemsWithProductUuids(array $items): array
     {
         return collect($items)->map(function ($item) {
-            // If product_id exists but product_uuid doesn't, fetch it
+            // If product_id is a UUID string, use it as product_uuid
             if (isset($item['product_id']) && !isset($item['product_uuid'])) {
-                // Use the correct namespace for Product model
-                $product = \App\Infrastructure\Persistence\Eloquent\Models\Product::find($item['product_id']);
-                if ($product) {
-                    $item['product_uuid'] = $product->uuid;
+                // Check if product_id is a UUID format (string with dashes)
+                if (is_string($item['product_id']) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $item['product_id'])) {
+                    $item['product_uuid'] = $item['product_id'];
                 }
+                // If it's an integer ID, we can't reliably convert it to UUID without a query
+                // In this case, the frontend should handle it or the data should already include product_uuid
             }
             
             return $item;

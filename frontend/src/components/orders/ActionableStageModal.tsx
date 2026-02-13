@@ -102,6 +102,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import {
   CheckCircle2,
   Clock,
@@ -112,7 +113,9 @@ import {
   AlertCircle,
   Info,
   Loader2,
-  ChevronRight
+  ChevronRight,
+  Search,
+  X
 } from 'lucide-react';
 import { BusinessStage, OrderProgressCalculator } from '@/utils/OrderProgressCalculator';
 import { StatusColorSystem } from '@/utils/StatusColorSystem';
@@ -266,6 +269,8 @@ export function ActionableStageModal({
   const [selectedVendorId, setSelectedVendorId] = useState<string>('');
   const [vendors, setVendors] = useState<any[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
+  const [vendorSearchTerm, setVendorSearchTerm] = useState<string>('');
+  const [filteredVendors, setFilteredVendors] = useState<any[]>([]);
 
   // Use the new advancement hook
   const advanceStage = useAdvanceOrderStage();
@@ -276,6 +281,21 @@ export function ActionableStageModal({
       fetchVendors();
     }
   }, [isOpen, stage]);
+
+  // Filter vendors based on search term
+  useEffect(() => {
+    if (vendorSearchTerm.trim() === '') {
+      setFilteredVendors(vendors);
+    } else {
+      const searchLower = vendorSearchTerm.toLowerCase();
+      const filtered = vendors.filter(vendor => 
+        vendor.name?.toLowerCase().includes(searchLower) ||
+        vendor.company_name?.toLowerCase().includes(searchLower) ||
+        vendor.contact_person?.toLowerCase().includes(searchLower)
+      );
+      setFilteredVendors(filtered);
+    }
+  }, [vendorSearchTerm, vendors]);
 
   const fetchVendors = async () => {
     try {
@@ -1043,6 +1063,31 @@ export function ActionableStageModal({
               <Label htmlFor="vendor-select" id="vendor-label" className="text-sm font-medium">
                 Pilih Vendor <span className="text-red-500">*</span>
               </Label>
+              
+              {/* Search Input for Vendor */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Input
+                  type="text"
+                  placeholder="Cari vendor by nama, perusahaan, atau kontak..."
+                  value={vendorSearchTerm}
+                  onChange={(e) => setVendorSearchTerm(e.target.value)}
+                  className="pl-10 pr-10"
+                  disabled={loadingVendors}
+                />
+                {vendorSearchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setVendorSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Vendor Select Dropdown */}
               <Select
                 value={selectedVendorId}
                 onValueChange={setSelectedVendorId}
@@ -1051,13 +1096,21 @@ export function ActionableStageModal({
                 <SelectTrigger id="vendor-select" className="w-full" aria-required="true">
                   <SelectValue placeholder={loadingVendors ? "Memuat vendor..." : "Pilih vendor untuk order ini"} />
                 </SelectTrigger>
-                <SelectContent>
-                  {vendors.length === 0 && !loadingVendors ? (
+                <SelectContent 
+                  className="max-h-[200px]"
+                  position="popper"
+                  side="bottom"
+                  align="start"
+                  sideOffset={5}
+                  avoidCollisions={true}
+                  collisionPadding={10}
+                >
+                  {filteredVendors.length === 0 && !loadingVendors ? (
                     <SelectItem value="no-vendors" disabled>
-                      Tidak ada vendor aktif
+                      {vendorSearchTerm ? 'Tidak ada vendor yang cocok' : 'Tidak ada vendor aktif'}
                     </SelectItem>
                   ) : (
-                    vendors.map((vendor) => (
+                    filteredVendors.map((vendor) => (
                       <SelectItem key={vendor.uuid || vendor.id} value={vendor.uuid || vendor.id}>
                         {vendor.name} {vendor.company_name && `- ${vendor.company_name}`}
                       </SelectItem>
@@ -1065,9 +1118,17 @@ export function ActionableStageModal({
                   )}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                Vendor diperlukan untuk melanjutkan ke tahap negosiasi
-              </p>
+              
+              {/* Helper Text */}
+              <div className="flex items-start gap-2">
+                <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  {filteredVendors.length > 0 
+                    ? `Menampilkan ${filteredVendors.length} dari ${vendors.length} vendor aktif`
+                    : 'Vendor diperlukan untuk melanjutkan ke tahap negosiasi'
+                  }
+                </p>
+              </div>
             </div>
           )}
 
