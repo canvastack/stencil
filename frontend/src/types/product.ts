@@ -40,6 +40,17 @@ export interface Product {
   type_display?: string | null; // Human-readable label
   size?: string | null; // Default/recommended size
   available_sizes?: string[] | null; // Available size options
+  
+  // Metadata JSON field for flexible product data
+  metadata?: {
+    business_type?: string;
+    thickness?: string;
+    backing_type?: string;
+    [key: string]: any;
+  } | null;
+  
+  minOrderQuantity?: number | null; // Alias for minOrder
+  
   price?: number;
   currency?: string;
   priceUnit?: string;

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * PT Custom Etching Xenial Business Logic Service
+ * Custom Etching Xenial Business Logic Service
  * 
  * Handles specific business logic for PT CEX broker/makelar model:
  * - Customer order input → vendor sourcing → price negotiation → customer quotation

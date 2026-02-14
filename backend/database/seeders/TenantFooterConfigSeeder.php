@@ -85,16 +85,6 @@ class TenantFooterConfigSeeder extends Seeder
         return [
             'footer_sections' => [
                 [
-                    'title' => 'Layanan',
-                    'links' => [
-                        ['label' => 'Chemical Etching', 'path' => '/services/chemical-etching'],
-                        ['label' => 'Laser Etching', 'path' => '/services/laser-etching'],
-                        ['label' => 'Photo Etching', 'path' => '/services/photo-etching'],
-                        ['label' => 'Industrial Marking', 'path' => '/services/industrial-marking'],
-                    ],
-                    'sort_order' => 1
-                ],
-                [
                     'title' => 'Perusahaan',
                     'links' => [
                         ['label' => 'Tentang Kami', 'path' => '/about'],
@@ -115,7 +105,7 @@ class TenantFooterConfigSeeder extends Seeder
                     'sort_order' => 3
                 ],
             ],
-            'contact_address' => 'Salak II, Cipayung, Jakarta Timur, Indonesia',
+            'contact_address' => 'Sunter, Jakarta Utara, Indonesia',
             'contact_phone' => '+62 81252525599',
             'contact_email' => 'info@etchingxenial.com',
             'contact_working_hours' => 'Senin - Jumat: 08:00 - 17:00 WIB',
@@ -128,7 +118,7 @@ class TenantFooterConfigSeeder extends Seeder
             'show_newsletter' => true,
             'newsletter_title' => 'Dapatkan Update Terbaru',
             'newsletter_subtitle' => 'Berlangganan newsletter kami untuk informasi produk dan promo terkini',
-            'newsletter_button_text' => 'Berlangganan',
+            'newsletter_button_text' => 'Subscribe',
             'newsletter_api_endpoint' => '/api/newsletter/subscribe',
             'about_text' => 'Etching Xenial adalah layanan industri untuk solusi etching profesional dan berkualitas tinggi untuk memenuhi kebutuhan bisnis dan personal dalam berbagai sektor industri di Indonesia.',
             'copyright_text' => '© 2025 Etching Xenial. Seluruh hak cipta dilindungi.',

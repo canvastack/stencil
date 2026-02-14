@@ -16,7 +16,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { QuoteDetail } from '@/pages/admin/quotes/QuoteDetail';
 import { quoteService } from '@/services/tenant/quoteService';
-import type { Quote } from '@/services/tenant/quoteService';
+import type { Quote } from '@/types/quote';
 
 // Mock the quote service
 vi.mock('@/services/tenant/quoteService', () => ({
@@ -25,6 +25,17 @@ vi.mock('@/services/tenant/quoteService', () => ({
     sendQuote: vi.fn(),
     deleteQuote: vi.fn(),
     generatePDF: vi.fn(),
+    acceptCounterOffer: vi.fn(),
+    rejectCounterOffer: vi.fn(),
+    adminCounterOffer: vi.fn(),
+  },
+}));
+
+// Mock the message service
+vi.mock('@/services/tenant/messageService', () => ({
+  messageService: {
+    getMessages: vi.fn().mockResolvedValue({ data: [], meta: { total: 0, unread_count: 0 } }),
+    sendMessage: vi.fn(),
   },
 }));
 
@@ -233,10 +244,17 @@ describe('QuoteDetail', () => {
 
     renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getByText('Failed to load quote')).toBeInTheDocument();
-      expect(screen.getByText('Back to Quotes')).toBeInTheDocument();
-    });
+    // Wait for loading to finish and error state to appear
+    await waitFor(
+      () => {
+        expect(screen.getByText('Error Loading Quote')).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+    
+    expect(screen.getByText('Failed to load quote')).toBeInTheDocument();
+    expect(screen.getByText('Back to Quotes')).toBeInTheDocument();
+    expect(screen.getByText('Try Again')).toBeInTheDocument();
   });
 
   it('should format status history with user information', async () => {
@@ -331,7 +349,8 @@ describe('QuoteDetail', () => {
       await waitFor(() => {
         expect(screen.getByText('Vendor Counter Offer')).toBeInTheDocument();
         expect(screen.getAllByText('Counter Offer').length).toBeGreaterThan(0);
-        expect(screen.getByText('Counter Offer Amount')).toBeInTheDocument();
+        // Updated to match the new text format (Legacy)
+        expect(screen.getByText('Counter Offer Amount (Legacy)')).toBeInTheDocument();
         // Check for the formatted amount - the formatCurrency function formats it as "Rp 1.250.000"
         expect(screen.getByText(/1\.250\.000/)).toBeInTheDocument();
         expect(screen.getByText(/Responded on January 3rd, 2024/)).toBeInTheDocument();
@@ -371,6 +390,252 @@ describe('QuoteDetail', () => {
       await waitFor(() => {
         expect(screen.getByText('Response Date')).toBeInTheDocument();
         expect(screen.getByText('Jun 15, 2024')).toBeInTheDocument();
+      });
+    });
+  });
+
+  // Post-Acceptance Panel Tests (Task 2.4.1)
+  describe('Post-Acceptance Panel', () => {
+    it('should display post-acceptance panel when quote is accepted', async () => {
+      const acceptedQuote: Quote = {
+        ...mockQuote,
+        status: 'accepted',
+        responded_at: '2024-01-03T10:30:00Z',
+        latest_offer: 1100000,
+        quote_details: {
+          estimated_delivery_days: 14,
+        },
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(acceptedQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText('Quote Accepted by Vendor!')).toBeInTheDocument();
+        expect(screen.getByText(/Vendor accepted on January 3rd, 2024/)).toBeInTheDocument();
+        expect(screen.getByText('Agreed Terms:')).toBeInTheDocument();
+        expect(screen.getByText('Total Price:')).toBeInTheDocument();
+        expect(screen.getByText('Estimated Delivery:')).toBeInTheDocument();
+        expect(screen.getByText('14 days')).toBeInTheDocument();
+      });
+    });
+
+    it('should display production countdown when production progress is available', async () => {
+      const acceptedQuote: Quote = {
+        ...mockQuote,
+        status: 'accepted',
+        responded_at: '2024-01-03T10:30:00Z',
+        latest_offer: 1100000,
+        quote_details: {
+          estimated_delivery_days: 14,
+        },
+        production_progress: {
+          accepted_date: '2024-01-03T10:30:00Z',
+          expected_delivery_date: '2024-01-17T10:30:00Z',
+          days_elapsed: 5,
+          days_remaining: 9,
+          progress_percentage: 35.71,
+          is_overdue: false,
+        },
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(acceptedQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText('Production Timeline')).toBeInTheDocument();
+        expect(screen.getByText('Days Elapsed')).toBeInTheDocument();
+        expect(screen.getByText('Days Remaining')).toBeInTheDocument();
+      });
+    });
+
+    it('should display next steps section with action buttons', async () => {
+      const acceptedQuote: Quote = {
+        ...mockQuote,
+        status: 'accepted',
+        responded_at: '2024-01-03T10:30:00Z',
+        latest_offer: 1100000,
+        quote_details: {
+          estimated_delivery_days: 14,
+        },
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(acceptedQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText('Next Steps:')).toBeInTheDocument();
+        expect(screen.getByText('View Order & Advance to Customer Quote')).toBeInTheDocument();
+        expect(screen.getByText('Generate Purchase Order (Coming Soon)')).toBeInTheDocument();
+      });
+    });
+
+    it('should display order status sync information when available', async () => {
+      const acceptedQuote: Quote = {
+        ...mockQuote,
+        status: 'accepted',
+        responded_at: '2024-01-03T10:30:00Z',
+        latest_offer: 1100000,
+        quote_details: {
+          estimated_delivery_days: 14,
+        },
+        order_status: 'customer_quote',
+        order_status_label: 'Quote ke Customer',
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(acceptedQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText(/Order status:/)).toBeInTheDocument();
+        expect(screen.getByText('Quote ke Customer')).toBeInTheDocument();
+        expect(screen.getByText('✓ Ready for customer quotation')).toBeInTheDocument();
+      });
+    });
+
+    it('should not display post-acceptance panel for non-accepted quotes', async () => {
+      const sentQuote: Quote = {
+        ...mockQuote,
+        status: 'sent',
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(sentQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.queryByText('Quote Accepted by Vendor!')).not.toBeInTheDocument();
+        expect(screen.queryByText('Production Timeline')).not.toBeInTheDocument();
+      });
+    });
+
+    // Task 2.4.3: Comprehensive conditional rendering tests for all statuses
+    it('should not display post-acceptance panel for draft status', async () => {
+      const draftQuote: Quote = {
+        ...mockQuote,
+        status: 'draft',
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(draftQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.queryByText('Quote Accepted by Vendor!')).not.toBeInTheDocument();
+        expect(screen.queryByText('Agreed Terms:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Production Timeline')).not.toBeInTheDocument();
+        expect(screen.queryByText('Next Steps:')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not display post-acceptance panel for open status', async () => {
+      const openQuote: Quote = {
+        ...mockQuote,
+        status: 'open',
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(openQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.queryByText('Quote Accepted by Vendor!')).not.toBeInTheDocument();
+        expect(screen.queryByText('Agreed Terms:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Production Timeline')).not.toBeInTheDocument();
+        expect(screen.queryByText('Next Steps:')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not display post-acceptance panel for countered status', async () => {
+      const counteredQuote: Quote = {
+        ...mockQuote,
+        status: 'countered',
+        quote_details: {
+          counter_offer: {
+            vendor_counter_price: 950000,
+            vendor_notes: 'Counter offer notes',
+          },
+        },
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(counteredQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.queryByText('Quote Accepted by Vendor!')).not.toBeInTheDocument();
+        expect(screen.queryByText('Agreed Terms:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Production Timeline')).not.toBeInTheDocument();
+        expect(screen.queryByText('Next Steps:')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not display post-acceptance panel for rejected status', async () => {
+      const rejectedQuote: Quote = {
+        ...mockQuote,
+        status: 'rejected',
+        responded_at: '2024-01-03T14:45:00Z',
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(rejectedQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.queryByText('Quote Accepted by Vendor!')).not.toBeInTheDocument();
+        expect(screen.queryByText('Agreed Terms:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Production Timeline')).not.toBeInTheDocument();
+        expect(screen.queryByText('Next Steps:')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not display post-acceptance panel for cancelled status', async () => {
+      const cancelledQuote: Quote = {
+        ...mockQuote,
+        status: 'cancelled',
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(cancelledQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.queryByText('Quote Accepted by Vendor!')).not.toBeInTheDocument();
+        expect(screen.queryByText('Agreed Terms:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Production Timeline')).not.toBeInTheDocument();
+        expect(screen.queryByText('Next Steps:')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not display post-acceptance panel for expired status', async () => {
+      const expiredQuote: Quote = {
+        ...mockQuote,
+        status: 'expired',
+        valid_until: '2024-01-01T00:00:00Z', // Past date
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(expiredQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.queryByText('Quote Accepted by Vendor!')).not.toBeInTheDocument();
+        expect(screen.queryByText('Agreed Terms:')).not.toBeInTheDocument();
+        expect(screen.queryByText('Production Timeline')).not.toBeInTheDocument();
+        expect(screen.queryByText('Next Steps:')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should disable Generate PO button with coming soon message', async () => {
+      const acceptedQuote: Quote = {
+        ...mockQuote,
+        status: 'accepted',
+        responded_at: '2024-01-03T10:30:00Z',
+        latest_offer: 1100000,
+        quote_details: {
+          estimated_delivery_days: 14,
+        },
+      };
+      vi.mocked(quoteService.getQuote).mockResolvedValue(acceptedQuote);
+
+      renderComponent();
+
+      await waitFor(() => {
+        const poButton = screen.getByText('Generate Purchase Order (Coming Soon)').closest('button');
+        expect(poButton).toBeDisabled();
       });
     });
   });

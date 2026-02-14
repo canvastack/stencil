@@ -144,7 +144,7 @@ class UpdateFAQPage extends Command
                 "buttons" => [
                     [
                         "text" => "Chat via WhatsApp",
-                        "link" => "https://wa.me/6281234567890",
+                        "link" => "https://wa.me/6281252525599",
                         "variant" => "default"
                     ],
                     [

@@ -214,16 +214,16 @@ class ApiContractPreservationPropertyTest extends TestCase
                 $response->json('data.id')
             );
 
-            // Verify monetary values are in decimal format (not cents)
+            // Verify monetary values are in rupiah format (not cents)
             $this->assertIsNumeric($response->json('data.quoted_price'));
             $this->assertEquals(
-                $quoteData['latest_offer'] / 100,
+                $quoteData['latest_offer'],
                 $response->json('data.quoted_price')
             );
 
             $this->assertIsNumeric($response->json('data.original_price'));
             $this->assertEquals(
-                $quoteData['initial_offer'] / 100,
+                $quoteData['initial_offer'],
                 $response->json('data.original_price')
             );
         }

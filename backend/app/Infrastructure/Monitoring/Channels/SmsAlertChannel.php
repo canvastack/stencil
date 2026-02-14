@@ -22,7 +22,7 @@ class SmsAlertChannel implements AlertChannelInterface
         $this->apiKey = config('monitoring.sms.api_key', '');
         $this->apiUrl = config('monitoring.sms.api_url', '');
         $this->defaultRecipients = config('monitoring.sms.recipients', [
-            '+6281234567890' // Default Indonesian mobile number format
+            '+6281252525599' // Default Indonesian mobile number format
         ]);
     }
 
@@ -175,7 +175,7 @@ class SmsAlertChannel implements AlertChannelInterface
             // In production, lookup phone number by email from users table
             if (str_contains($recipient, '@')) {
                 // Lookup phone number from database
-                $phoneNumbers[] = $this->defaultRecipients[0] ?? '+6281234567890';
+                $phoneNumbers[] = $this->defaultRecipients[0] ?? '+6281252525599';
             } else {
                 // Assume it's already a phone number
                 $phoneNumbers[] = $recipient;

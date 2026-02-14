@@ -283,6 +283,44 @@
                 properties:
                   data:
                     $ref: '../../components/schemas.yaml#/OrderDetail'
+            examples:
+              orderWithAcceptedVendorQuote:
+                summary: Order with accepted vendor quote and production progress
+                description: Example showing order after vendor quote acceptance with production tracking
+                value:
+                  success: true
+                  message: "Order details retrieved successfully"
+                  data:
+                    id: "880e8400-e29b-41d4-a716-446655440003"
+                    order_code: "ORD-2026-01-0123"
+                    order_number: 123
+                    customer_name: "PT Example Company"
+                    customer_email: "customer@example.com"
+                    customer_phone: "+628123456789"
+                    status: "customer_quote"
+                    payment_status: "unpaid"
+                    total_amount: 2017500.00
+                    currency: "IDR"
+                    vendor_id: "bb0e8400-e29b-41d4-a716-446655440006"
+                    vendor_name: "PT Premium Etching"
+                    vendor_quote_id: 42
+                    vendor_quote_uuid: "770e8400-e29b-41d4-a716-446655440002"
+                    vendor_quote_status: "accepted"
+                    vendor_quote_status_label: "Accepted"
+                    vendor_quote_accepted_at: "2026-02-10T14:30:00Z"
+                    vendor_agreed_price: 150000000
+                    vendor_estimated_delivery_days: 14
+                    production_progress:
+                      accepted_date: "2026-02-10T14:30:00Z"
+                      expected_delivery_date: "2026-02-24T14:30:00Z"
+                      days_elapsed: 4
+                      days_remaining: 10
+                      progress_percentage: 28.57
+                      is_overdue: false
+                      overdue_days: 0
+                    order_date: "2026-02-09T15:00:00Z"
+                    created_at: "2026-02-09T15:00:00Z"
+                    updated_at: "2026-02-10T14:30:00Z"
       '401':
         $ref: '../../components/schemas.yaml#/Unauthorized'
       '403':

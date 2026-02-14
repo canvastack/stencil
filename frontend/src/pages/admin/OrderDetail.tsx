@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,7 @@ import { EnhancedOrderStepper } from '@/components/orders/EnhancedOrderStepper';
 import { EnhancedTimelineTab } from '@/components/orders/EnhancedTimelineTab';
 import { EnhancedShipmentTab } from '@/components/orders/EnhancedShipmentTab';
 import { EnhancedOrderDetailHeader } from '@/components/orders/EnhancedOrderDetailHeader';
+import { VendorQuoteCard } from '@/components/orders/VendorQuoteCard';
 import { ActionableStageModal } from '@/components/orders/ActionableStageModal';
 import { OrderNotifications } from '@/components/orders/OrderNotifications';
 import StatusActionPanel from '@/components/orders/StatusActionPanel';
@@ -33,6 +34,7 @@ import { useHelpSystem } from '@/components/help/HelpSystemProvider';
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { setCurrentContext } = useHelpSystem();
   
   // Set help context for this page
@@ -43,6 +45,19 @@ export default function OrderDetail() {
   // State for stage detail modal
   const [selectedStage, setSelectedStage] = useState<BusinessStage | null>(null);
   const [isStageModalOpen, setIsStageModalOpen] = useState(false);
+  
+  // Check for openQuoteModal query param
+  useEffect(() => {
+    if (searchParams.get('openQuoteModal') === 'true') {
+      // Auto-open Quote to Customer modal
+      setSelectedStage(BusinessStage.CUSTOMER_QUOTE);
+      setIsStageModalOpen(true);
+      
+      // Remove query param from URL
+      searchParams.delete('openQuoteModal');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
   
   // Mock user permissions for status management (replace with real permissions)
   const userPermissions = ['update_order_status', 'admin', 'update_payment_status', 'cancel_order', 'process_refund'];
@@ -164,6 +179,11 @@ export default function OrderDetail() {
           }}
         />
       </Card>
+
+      {/* Vendor Quote Card - Only show if order has vendor quote */}
+      {currentOrder.vendor_quote_uuid && (
+        <VendorQuoteCard order={currentOrder} />
+      )}
 
       <Tabs defaultValue="items" className="w-full">
         <TabsList className="grid w-full grid-cols-6">

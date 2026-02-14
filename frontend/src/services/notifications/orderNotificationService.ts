@@ -154,7 +154,7 @@ class OrderNotificationService {
    */
   private async sendEmailNotification(data: OrderStatusNotificationData): Promise<void> {
     try {
-      await apiClient.post('/notifications/email', {
+      await apiClient.post('/tenant/notifications/email', {
         orderId: data.orderId,
         type: 'order_status_change',
         status: data.newStatus,
@@ -183,7 +183,7 @@ class OrderNotificationService {
       const message = messageConfig ? messageConfig.message(data) : 
         `Order #${data.orderId} status updated to ${data.newStatus}`;
 
-      await apiClient.post('/notifications/sms', {
+      await apiClient.post('/tenant/notifications/sms', {
         orderId: data.orderId,
         message: message,
         type: 'order_status_change',
@@ -222,7 +222,7 @@ class OrderNotificationService {
    */
   private async getCustomerNotificationPreferences(orderId: string): Promise<CustomerNotificationPreferences> {
     try {
-      const response = await apiClient.get(`/orders/${orderId}/notification-preferences`);
+      const response = await apiClient.get(`/tenant/orders/${orderId}/notification-preferences`);
       return response.data;
     } catch (error) {
       console.warn('Failed to get customer notification preferences, using defaults:', error);
@@ -307,7 +307,7 @@ class OrderNotificationService {
     timestamp: string;
   }): Promise<void> {
     try {
-      await apiClient.post('/notifications/activity-log', activity);
+      await apiClient.post('/tenant/notifications/activity-log', activity);
     } catch (error) {
       console.error('Failed to log notification activity:', error);
     }

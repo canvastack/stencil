@@ -14,6 +14,7 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\InventoryController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\QuoteController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ActivityController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\NotificationController;
+use App\Http\Controllers\Api\Admin\AdminProductionUpdateController;
 use App\Http\Controllers\Tenant\ContentController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormConfigurationController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\ProductFormTemplateController;
@@ -440,6 +441,36 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{quote}/messages/{messageUuid}/read', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'markAsRead'])->name('tenant.quotes.messages.read');
         });
 
+        // Production Updates (Admin Portal)
+        Route::prefix('purchase-orders')->group(function () {
+            // Purchase Order Management
+            Route::post('/generate-from-quote/{quoteUuid}', [\App\Http\Controllers\Api\Admin\PurchaseOrderController::class, 'generateFromQuote'])
+                ->name('tenant.purchase-orders.generate');
+            Route::get('/{uuid}', [\App\Http\Controllers\Api\Admin\PurchaseOrderController::class, 'show'])
+                ->name('tenant.purchase-orders.show');
+            Route::get('/{uuid}/download', [\App\Http\Controllers\Api\Admin\PurchaseOrderController::class, 'download'])
+                ->name('tenant.purchase-orders.download');
+            Route::post('/{uuid}/send', [\App\Http\Controllers\Api\Admin\PurchaseOrderController::class, 'sendToVendor'])
+                ->name('tenant.purchase-orders.send');
+            
+            // Production updates for a purchase order
+            Route::get('/{uuid}/production-updates', [AdminProductionUpdateController::class, 'index'])
+                ->name('tenant.purchase-orders.production-updates.index');
+            
+            Route::get('/{uuid}/production-updates/milestones', [AdminProductionUpdateController::class, 'milestones'])
+                ->name('tenant.purchase-orders.production-updates.milestones');
+        });
+        
+        Route::prefix('production-updates')->group(function () {
+            // Get recent updates across all POs
+            Route::get('/recent', [AdminProductionUpdateController::class, 'recent'])
+                ->name('tenant.production-updates.recent');
+            
+            // Get single production update
+            Route::get('/{uuid}', [AdminProductionUpdateController::class, 'show'])
+                ->name('tenant.production-updates.show');
+        });
+
         // Content Management
         Route::prefix('content')->group(function () {
             Route::get('/pages', [ContentController::class, 'index'])->name('tenant.content.index');
@@ -495,7 +526,15 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('tenant.notifications.mark_read');
             Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('tenant.notifications.destroy');
             Route::get('/orders/{orderUuid}', [NotificationController::class, 'orderNotifications'])->name('tenant.notifications.order');
+            
+            // Email, SMS, and activity logging endpoints
+            Route::post('/email', [NotificationController::class, 'sendEmail'])->name('tenant.notifications.send_email');
+            Route::post('/sms', [NotificationController::class, 'sendSms'])->name('tenant.notifications.send_sms');
+            Route::post('/activity-log', [NotificationController::class, 'logActivity'])->name('tenant.notifications.log_activity');
         });
+        
+        // Order notification preferences
+        Route::get('/orders/{orderUuid}/notification-preferences', [NotificationController::class, 'orderNotificationPreferences'])->name('tenant.orders.notification_preferences');
         
         // Platform Interaction (Limited)
         Route::prefix('platform')->group(function () {

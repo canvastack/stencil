@@ -99,15 +99,11 @@ class ProductsPageSeeder extends Seeder
                         ],
                         [
                             "value" => "15+",
-                            "label" => "Tahun Pengalaman"
+                            "label" => "Mitra Bisnis"
                         ],
                         [
                             "value" => "98%",
                             "label" => "Tingkat Kepuasan"
-                        ],
-                        [
-                            "value" => "500+",
-                            "label" => "Klien Setia"
                         ]
                     ],
                     "buttons" => [
@@ -135,7 +131,7 @@ class ProductsPageSeeder extends Seeder
                             "text" => "Chat dengan Expert",
                             "variant" => "primary",
                             "icon" => "MessageSquare",
-                            "link" => "https://wa.me/6281234567890"
+                            "link" => "https://wa.me/6281252525599"
                         ]
                     ]
                 ]

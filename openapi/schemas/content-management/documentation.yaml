@@ -89,7 +89,7 @@ DocumentationArticle:
           maxLength: 500
           nullable: true
           description: SEO meta title
-          example: "Complete Etching Design Guide | PT Custom Etching Xenial"
+          example: "Complete Etching Design Guide | Custom Etching Xenial"
         
         meta_description:
           type: string

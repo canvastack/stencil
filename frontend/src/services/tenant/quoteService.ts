@@ -35,6 +35,7 @@ export interface Quote {
   notes?: string;
   revision_number: number;
   round?: number; // Negotiation round number
+  max_rounds?: number; // Maximum negotiation rounds allowed
   parent_quote_id?: string;
   created_by: string;
   approved_by?: string;
@@ -67,8 +68,33 @@ export interface Quote {
       estimated_delivery_days?: number;
       submitted_at?: string;
     };
+    rejection_history?: Array<{
+      rejection_number: number;
+      rejected_at: string;
+      rejection_reason: string;
+    }>;
+    estimated_delivery_days?: number;
     [key: string]: any;
   };
+  
+  // NEW: Order status information (post-acceptance workflow)
+  order_status?: string;
+  order_status_label?: string;
+  
+  // NEW: Production tracking (post-acceptance workflow)
+  production_progress?: {
+    accepted_date: string;
+    expected_delivery_date: string;
+    days_elapsed: number;
+    days_remaining: number;
+    progress_percentage: number;
+    is_overdue: boolean;
+    overdue_days?: number;
+  };
+  
+  // Pricing fields
+  initial_offer?: number;
+  latest_offer?: number;
   
   created_at: string;
   updated_at: string;

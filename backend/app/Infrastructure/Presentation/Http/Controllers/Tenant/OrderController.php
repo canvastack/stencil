@@ -94,6 +94,9 @@ class OrderController extends Controller
             $sortOrder = $request->get('order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
             
+            // ✨ ENHANCED: Eager load vendorQuote relationship for post-acceptance workflow
+            $query->with(['customer', 'vendor', 'vendorQuote.vendor']);
+            
             // Pagination
             $perPage = min((int) $request->get('per_page', 15), 100);
             $orders = $query->paginate($perPage);
@@ -131,7 +134,8 @@ class OrderController extends Controller
             $this->ensureOrderBelongsToTenant($request, $order);
             
             // Eager load relationships to prevent N+1 queries and improve performance
-            $order->load(['customer', 'vendor', 'tenant']);
+            // ✨ ENHANCED: Added vendorQuote relationship for post-acceptance workflow
+            $order->load(['customer', 'vendor', 'tenant', 'vendorQuote.vendor']);
             
             return (new OrderResource($order))->response()->setStatusCode(200);
         } catch (\Exception $e) {

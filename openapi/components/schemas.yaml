@@ -1256,7 +1256,7 @@ SettingsDashboard:
               properties:
                 site_name:
                   type: string
-                  example: "PT Custom Etching Xenial"
+                  example: "Custom Etching Xenial"
                 site_url:
                   type: string
                   format: uri

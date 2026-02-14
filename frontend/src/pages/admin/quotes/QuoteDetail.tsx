@@ -7,11 +7,13 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { quoteService } from '@/services/tenant/quoteService';
 import { messageService, type QuoteMessage } from '@/services/tenant/messageService';
+import { generatePurchaseOrder, getPurchaseOrderPDFUrl, downloadPurchaseOrderPDF } from '@/services/purchaseOrderService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PDFViewerModal } from '@/components/admin/PDFViewerModal';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -43,6 +45,8 @@ import {
   RefreshCw,
   XCircle,
   ExternalLink,
+  Download,
+  Eye,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useRef, useEffect } from 'react';
@@ -52,6 +56,7 @@ import { formatCurrency } from '@/utils/currency';
 import CounterOfferDisplay from '@/components/admin/CounterOfferDisplay';
 import AcceptCounterOfferModal from '@/components/admin/AcceptCounterOfferModal';
 import AdminCounterOfferModal from '@/components/admin/AdminCounterOfferModal';
+import { ProductionCountdown } from '@/components/quotes/ProductionCountdown';
 
 export function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
@@ -68,22 +73,49 @@ export function QuoteDetail() {
   const [isAccepting, setIsAccepting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch quote data
+  // Fetch quote data with order status and production progress
   const { data: quote, isLoading, error, refetch } = useQuery({
     queryKey: ['quote', id],
     queryFn: async () => {
-      const result = await quoteService.getQuote(id!);
-      console.log('[QuoteDetail] Quote data received:', result);
-      console.log('[QuoteDetail] Quote status:', result.status);
-      console.log('[QuoteDetail] Response type:', result.response_type);
-      console.log('[QuoteDetail] Has quote_details:', !!result.quote_details);
-      console.log('[QuoteDetail] Has counter_offer:', !!result.quote_details?.counter_offer);
-      if (result.quote_details?.counter_offer) {
-        console.log('[QuoteDetail] Counter offer data:', result.quote_details.counter_offer);
+      try {
+        const result = await quoteService.getQuote(id!);
+        console.log('[QuoteDetail] Quote data received:', result);
+        console.log('[QuoteDetail] Quote status:', result.status);
+        console.log('[QuoteDetail] Response type:', result.response_type);
+        console.log('[QuoteDetail] Has quote_details:', !!result.quote_details);
+        console.log('[QuoteDetail] Has counter_offer:', !!result.quote_details?.counter_offer);
+        
+        // Log order status and production progress (post-acceptance workflow)
+        console.log('[QuoteDetail] Order status:', result.order_status);
+        console.log('[QuoteDetail] Order status label:', result.order_status_label);
+        console.log('[QuoteDetail] Production progress:', result.production_progress);
+        
+        if (result.quote_details?.counter_offer) {
+          console.log('[QuoteDetail] Counter offer data:', result.quote_details.counter_offer);
+        }
+        
+        // Validate production progress data if quote is accepted
+        if (result.status === 'accepted' && result.production_progress) {
+          console.log('[QuoteDetail] Production progress validation:', {
+            hasAcceptedDate: !!result.production_progress.accepted_date,
+            hasExpectedDate: !!result.production_progress.expected_delivery_date,
+            daysElapsed: result.production_progress.days_elapsed,
+            daysRemaining: result.production_progress.days_remaining,
+            progressPercentage: result.production_progress.progress_percentage,
+            isOverdue: result.production_progress.is_overdue,
+          });
+        }
+        
+        return result;
+      } catch (err: any) {
+        console.error('[QuoteDetail] Error fetching quote:', err);
+        throw err;
       }
-      return result;
     },
     enabled: !!id,
+    retry: 2, // Retry failed requests twice
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
 
   // Fetch messages data with smart polling
@@ -589,6 +621,104 @@ export function QuoteDetail() {
             })} and can no longer be modified.
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Post-Acceptance Panel */}
+      {quote.status === 'accepted' && (
+        <Card className="border-green-500 bg-green-50 dark:bg-green-950/30">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="text-green-600 w-6 h-6" />
+              <div>
+                <CardTitle className="text-green-900 dark:text-green-100">
+                  Quote Accepted by Vendor!
+                </CardTitle>
+                <CardDescription className="text-green-700 dark:text-green-300">
+                  Vendor accepted on {quote.responded_at ? format(new Date(quote.responded_at), 'MMMM do, yyyy') : 'N/A'}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Agreed Terms */}
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border">
+              <h4 className="font-semibold mb-3">Agreed Terms:</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Price:</p>
+                  <p className="text-xl font-bold text-green-600">
+                    {formatCurrency(quote.latest_offer || quote.initial_offer || 0, quote.currency)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Estimated Delivery:</p>
+                  <p className="text-xl font-bold">
+                    {quote.quote_details?.estimated_delivery_days || 'N/A'} days
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Production Timeline - with error handling */}
+            {quote.responded_at && quote.quote_details?.estimated_delivery_days ? (
+              <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Clock className="w-5 h-5" />
+                  Production Timeline
+                </h4>
+                <ProductionCountdown 
+                  acceptedDate={quote.responded_at}
+                  estimatedDays={quote.quote_details.estimated_delivery_days}
+                />
+              </div>
+            ) : (
+              <Alert className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950/30">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-900 dark:text-orange-100">
+                  Production timeline information is not available. 
+                  {!quote.responded_at && ' Missing acceptance date.'}
+                  {!quote.quote_details?.estimated_delivery_days && ' Missing estimated delivery days.'}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Next Actions */}
+            <div className="space-y-2">
+              <h4 className="font-semibold">Next Steps:</h4>
+              
+              <Button 
+                onClick={() => navigate(`/admin/orders/${quote.order_id}?openQuoteModal=true`)}
+                className="w-full"
+                size="lg"
+              >
+                <Package className="w-4 h-4 mr-2" />
+                View Order & Advance to Customer Quote
+              </Button>
+              
+              <GeneratePOButton quoteUuid={quote.uuid || quote.id} />
+            </div>
+
+            {/* Order Status Sync Info - with loading state */}
+            {quote.order_status ? (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Order status: <strong>{quote.order_status_label || quote.order_status}</strong>
+                  {quote.order_status === 'customer_quote' && (
+                    <span className="text-green-600 ml-2">✓ Ready for customer quotation</span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert className="border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <AlertDescription className="text-muted-foreground">
+                  Order status information is being synchronized...
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Read-Only Notice with Status-Specific Styling */}
@@ -1827,6 +1957,166 @@ export function QuoteDetail() {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Generate PO Button Component
+ */
+function GeneratePOButton({ quoteUuid }: { quoteUuid: string }) {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [poData, setPoData] = useState<{ po_uuid: string; po_number: string; pdf_url: string } | null>(null);
+  const [showPDFModal, setShowPDFModal] = useState(false);
+
+  // Validate quoteUuid
+  if (!quoteUuid) {
+    console.error('[GeneratePOButton] quoteUuid is undefined or empty');
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Cannot generate PO: Quote ID is missing
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  const handleGeneratePO = async () => {
+    try {
+      setIsGenerating(true);
+      
+      console.log('[GeneratePOButton] Generating PO for quote:', quoteUuid);
+      
+      const response = await generatePurchaseOrder(quoteUuid, {
+        payment_terms: 'Net 30',
+        delivery_terms: 'FOB',
+        send_to_vendor: false, // Don't send automatically
+      });
+
+      setPoData({
+        po_uuid: response.data.po_uuid,
+        po_number: response.data.po_number,
+        pdf_url: response.data.pdf_url,
+      });
+
+      toast({
+        title: 'Purchase Order Generated',
+        description: `PO ${response.data.po_number} has been created successfully`,
+      });
+    } catch (error: any) {
+      console.error('[GeneratePOButton] Failed to generate PO:', error);
+      console.error('[GeneratePOButton] Error response:', error.response?.data);
+      
+      // Check if PO already exists
+      if (error.response?.data?.data?.po_uuid) {
+        setPoData({
+          po_uuid: error.response.data.data.po_uuid,
+          po_number: error.response.data.data.po_number,
+          pdf_url: error.response.data.data.pdf_url,
+        });
+        
+        toast({
+          title: 'Purchase Order Already Exists',
+          description: `PO ${error.response.data.data.po_number} was previously generated`,
+        });
+      } else {
+        toast({
+          title: 'Failed to Generate PO',
+          description: error.response?.data?.message || error.message || 'An error occurred',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadPO = async () => {
+    if (poData?.po_uuid) {
+      try {
+        await downloadPurchaseOrderPDF(poData.po_uuid, `PO-${poData.po_number}.pdf`);
+      } catch (error) {
+        console.error('Failed to download PO:', error);
+      }
+    }
+  };
+
+  const handleViewPO = () => {
+    setShowPDFModal(true);
+  };
+
+  if (poData) {
+    return (
+      <>
+        <div className="space-y-2">
+          <Alert className="bg-green-50 border-green-200">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-900">
+              Purchase Order <strong>{poData.po_number}</strong> generated successfully
+            </AlertDescription>
+          </Alert>
+          
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleViewPO}
+              variant="default"
+              className="flex-1"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View PDF
+            </Button>
+            
+            <Button 
+              onClick={handleDownloadPO}
+              variant="outline"
+              className="flex-1"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF
+            </Button>
+            
+            <Button 
+              onClick={() => window.open(`/admin/purchase-orders/${poData.po_uuid}`, '_blank')}
+              variant="outline"
+              className="flex-1"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View Details
+            </Button>
+          </div>
+        </div>
+
+        <PDFViewerModal
+          isOpen={showPDFModal}
+          onClose={() => setShowPDFModal(false)}
+          pdfUrl={getPurchaseOrderPDFUrl(poData.po_uuid)}
+          title={`Purchase Order - ${poData.po_number}`}
+          downloadFileName={`PO-${poData.po_number}.pdf`}
+        />
+      </>
+    );
+  }
+
+  return (
+    <Button 
+      onClick={handleGeneratePO}
+      variant="outline"
+      className="w-full"
+      disabled={isGenerating}
+    >
+      {isGenerating ? (
+        <>
+          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+          Generating Purchase Order...
+        </>
+      ) : (
+        <>
+          <FileText className="w-4 h-4 mr-2" />
+          Generate Purchase Order
+        </>
+      )}
+    </Button>
   );
 }
 

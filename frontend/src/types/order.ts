@@ -79,6 +79,17 @@ export interface OrderItem {
   customization?: OrderItemCustomization;
 }
 
+// Production progress tracking for post-acceptance workflow
+export interface ProductionProgress {
+  accepted_date: string;
+  expected_delivery_date: string;
+  days_elapsed: number;
+  days_remaining: number;
+  progress_percentage: number;
+  is_overdue: boolean;
+  overdue_days?: number;
+}
+
 export interface Order {
   id: string;
   uuid: string;
@@ -106,6 +117,16 @@ export interface Order {
   vendorTerms?: any;            // Terms from vendor quote
   activeQuotes?: number;        // Count of active quotes (status 'open' or 'countered')
   acceptedQuote?: string;       // UUID of accepted quote
+  
+  // Post-Acceptance Workflow - Vendor Quote Information
+  vendor_quote_id?: number;                    // Internal ID (not exposed in public API)
+  vendor_quote_uuid?: string;                  // UUID of accepted vendor quote
+  vendor_quote_accepted_at?: string;           // ISO 8601 timestamp
+  vendor_agreed_price?: number;                // Price in cents
+  vendor_estimated_delivery_days?: number;     // Estimated delivery days
+  vendor_quote_status?: string;                // Quote status (accepted, pending, etc.)
+  vendor_quote_status_label?: string;          // Human-readable status label
+  production_progress?: ProductionProgress;    // Production tracking data
   
   // Status and workflow
   status: OrderStatus;

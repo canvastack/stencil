@@ -76,7 +76,7 @@ const mockLocations: InventoryLocation[] = [
     },
     contactInformation: {
       name: 'Adi Permana',
-      phone: '+6281234567890',
+      phone: '+6281252525599',
       email: 'warehouse-a@tenant.local',
     },
     createdAt: isoNow(),

@@ -124,7 +124,7 @@ class TenantContentSeeder extends Seeder
                     [
                         "icon" => "Award", 
                         "value" => "10+",
-                        "label" => "Tahun Pengalaman",
+                        "label" => "Mitra Bisnis",
                         "color" => "text-purple-500"
                     ],
                     [
@@ -268,15 +268,11 @@ class TenantContentSeeder extends Seeder
                         ],
                         [
                             "value" => "15+",
-                            "label" => "Tahun Pengalaman"
+                            "label" => "Mitra Bisnis"
                         ],
                         [
                             "value" => "98%",
                             "label" => "Tingkat Kepuasan"
-                        ],
-                        [
-                            "value" => "500+",
-                            "label" => "Klien Setia"
                         ]
                     ],
                     "buttons" => [
@@ -345,7 +341,7 @@ class TenantContentSeeder extends Seeder
             ],
             "seo" => [
                 "title" => "Jasa Etching Profesional - {$tenantName}",
-                "description" => "Layanan laser etching profesional untuk logam, kaca, kristal, dan berbagai material. Hasil presisi tinggi, pengerjaan cepat, harga kompetitif.",
+                "description" => "layanan etching profesional untuk logam, kaca, kristal, dan berbagai material. Hasil presisi tinggi, pengerjaan cepat, harga kompetitif.",
                 "keywords" => ["jasa etching", "laser etching", "etching logam", "plakat etching"],
                 "ogImage" => "/images/og-image-home.jpg"
             ]
@@ -395,7 +391,7 @@ class TenantContentSeeder extends Seeder
             "company" => [
                 "enabled" => true,
                 "title" => "Profil Perusahaan", 
-                "description" => "Kami adalah perusahaan yang berfokus pada layanan laser etching profesional untuk berbagai kebutuhan industri dan personal. Dengan teknologi terkini dan tim yang berpengalaman, kami berkomitmen memberikan hasil terbaik untuk setiap proyek.",
+                "description" => "Kami adalah perusahaan yang berfokus pada layanan etching profesional untuk berbagai kebutuhan industri dan personal. Dengan teknologi terkini dan tim yang berpengalaman, kami berkomitmen memberikan hasil terbaik untuk setiap proyek.",
                 "founded" => "2008",
                 "location" => "Jakarta, Indonesia", 
                 "employees" => "50+",
@@ -517,7 +513,7 @@ class TenantContentSeeder extends Seeder
                         ],
                         [
                             "value" => "15+",
-                            "label" => "Tahun Pengalaman"
+                            "label" => "Mitra Bisnis"
                         ]
                     ],
                     "background" => "bg-gradient-to-r from-navy to-purple-600"
@@ -577,7 +573,7 @@ class TenantContentSeeder extends Seeder
                     [
                         "icon" => "MapPin",
                         "title" => "Alamat",
-                        "content" => "Jl. Industri Raya No. 123, Jakarta Selatan 12345, Indonesia"
+                        "content" => "Sunter, Jakarta Utara, Indonesia"
                     ],
                     [
                         "icon" => "Phone",
@@ -659,7 +655,7 @@ class TenantContentSeeder extends Seeder
                         "icon" => "MessageCircle",
                         "title" => "WhatsApp",
                         "description" => "Chat langsung dengan tim kami",
-                        "link" => "https://wa.me/6281234567890",
+                        "link" => "https://wa.me/6281252525599",
                         "buttonText" => "Chat WhatsApp"
                     ],
                     [
@@ -685,7 +681,7 @@ class TenantContentSeeder extends Seeder
                     [
                         "icon" => "Award",
                         "value" => "10+",
-                        "label" => "Tahun Pengalaman",
+                        "label" => "Mitra Bisnis",
                         "color" => "text-green-500"
                     ],
                     [
@@ -746,7 +742,7 @@ class TenantContentSeeder extends Seeder
                         ],
                         [
                             "value" => "15+",
-                            "label" => "Tahun Pengalaman"
+                            "label" => "Mitra Bisnis"
                         ],
                         [
                             "value" => "98%",
@@ -926,7 +922,7 @@ class TenantContentSeeder extends Seeder
                 "buttons" => [
                     [
                         "text" => "Chat via WhatsApp",
-                        "link" => "https://wa.me/6281234567890",
+                        "link" => "https://wa.me/6281252525599",
                         "variant" => "default"
                     ],
                     [
@@ -1188,7 +1184,7 @@ class TenantContentSeeder extends Seeder
                         ],
                         [
                             "value" => "15+",
-                            "label" => "Tahun Pengalaman"
+                            "label" => "Mitra Bisnis"
                         ],
                         [
                             "value" => "98%",
@@ -1224,7 +1220,7 @@ class TenantContentSeeder extends Seeder
                             "text" => "Chat dengan Expert",
                             "variant" => "primary",
                             "icon" => "MessageSquare",
-                            "link" => "https://wa.me/6281234567890"
+                            "link" => "https://wa.me/6281252525599"
                         ]
                     ]
                 ]

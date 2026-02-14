@@ -2275,7 +2275,7 @@
                     example: john@ptcex.com
                   company:
                     type: string
-                    example: PT Custom Etching Xenial
+                    example: Custom Etching Xenial
                   address:
                     type: object
                     properties:

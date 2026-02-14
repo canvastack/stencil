@@ -44,20 +44,14 @@ class ProductController extends Controller
 
             $perPage = $validated['per_page'] ?? 20;
             
-            // Build query with review aggregation
+            // Build query with review aggregation using Eloquent relationships
+            // CRITICAL: Must select all columns explicitly when using withAvg/withCount
             $query = Product::query()
-                ->select([
-                    'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
-                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
-                ])
-                ->leftJoin('customer_reviews', function($join) {
-                    $join->on('customer_reviews.product_id', '=', 'products.id')
-                         ->where('customer_reviews.is_approved', '=', true);
-                })
+                ->select('products.*')
                 ->with('category')
-                ->where('products.status', 'published')
-                ->groupBy('products.id');
+                ->withAvg(['reviews as average_rating' => fn($q) => $q->where('is_approved', true)], 'rating')
+                ->withCount(['reviews as review_count' => fn($q) => $q->where('is_approved', true)])
+                ->where('status', 'published');
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -65,7 +59,7 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $query->where('products.tenant_id', $tenant->id);
+                $query->where('tenant_id', $tenant->id);
             }
 
             // Server-side search with ILIKE (case-insensitive)
@@ -113,10 +107,10 @@ class ProductController extends Controller
                 });
             }
 
-            // Rating filter - using HAVING since avg_rating is aggregated
-            // PostgreSQL requires full expression in HAVING, not alias
+            // Rating filter - using HAVING since average_rating is aggregated
+            // With Eloquent withAvg, we can use havingRaw on the alias
             if (isset($validated['min_rating']) && $validated['min_rating'] > 0) {
-                $query->havingRaw('COALESCE(AVG(customer_reviews.rating), 0) >= ?', [$validated['min_rating']]);
+                $query->having('average_rating', '>=', $validated['min_rating']);
             }
 
             // Featured filter
@@ -148,25 +142,27 @@ class ProductController extends Controller
             }
 
             // Server-side sorting
-            $sortBy = $validated['sort'] ?? 'created_at';
+            // Default: created_at DESC (newest products first) - better UX when no manual reordering
+            $sortBy = $validated['sort'] ?? 'default';
             $sortOrder = $validated['order'] ?? 'desc';
 
             // Map frontend sort options to database columns
             $sortMapping = [
+                'default' => ['created_at', 'desc'], // Default: Newest first
+                'newest' => ['created_at', 'desc'], // Produk Terbaru
+                'oldest' => ['created_at', 'asc'], // Produk Terlama
                 'name' => 'name',
-                'name-asc' => ['name', 'asc'],
-                'name-desc' => ['name', 'desc'],
+                'name-asc' => ['name', 'asc'], // Nama (A-Z)
+                'name-desc' => ['name', 'desc'], // Nama (Z-A)
                 'price' => 'price',
                 'price-asc' => ['price', 'asc'],
                 'price-desc' => ['price', 'desc'],
                 'rating' => 'average_rating',
-                'rating-high' => ['average_rating', 'desc'],
-                'rating-low' => ['average_rating', 'asc'],
-                'created_at' => 'created_at',
-                'created-asc' => ['created_at', 'asc'],
-                'created-desc' => ['created_at', 'desc'],
+                'rating-high' => ['average_rating', 'desc'], // Rating Tertinggi
+                'rating-low' => ['average_rating', 'asc'], // Rating Terendah
                 'featured' => ['featured', 'desc'],
                 'popular' => ['view_count', 'desc'],
+                'sort_order' => ['sort_order', 'asc'], // Manual ordering (when admin has reordered)
             ];
 
             if (isset($sortMapping[$sortBy])) {
@@ -178,12 +174,14 @@ class ProductController extends Controller
                     $query->orderBy($mapping, $sortOrder);
                 }
             } else {
-                // Fallback to created_at if invalid sort column
+                // Fallback to created_at DESC (newest first)
                 $query->orderBy('created_at', 'desc');
             }
 
-            // Add secondary sort for consistency
-            $query->orderBy('id', 'asc');
+            // Add secondary sort for consistency (only if not already sorting by id)
+            if ($sortBy !== 'id') {
+                $query->orderBy('id', 'asc');
+            }
 
             // Paginate results
             $products = $query->paginate($perPage);
@@ -211,6 +209,96 @@ class ProductController extends Controller
     }
 
     /**
+     * Get related products with minimal data (optimized for UI cards)
+     * Returns only: id, uuid, name, slug, images, metadata, minOrderQuantity, price, currency
+     */
+    public function related(Request $request, ?string $tenantSlug = null): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'product_id' => 'string|nullable',
+                'category' => 'string|nullable',
+                'limit' => 'integer|min:1|max:20',
+            ]);
+
+            $limit = $validated['limit'] ?? 3;
+            $productId = $validated['product_id'] ?? null;
+            $category = $validated['category'] ?? null;
+
+            // Build query with minimal fields for performance
+            $query = Product::query()
+                ->select([
+                    'products.id',
+                    'products.uuid',
+                    'products.name',
+                    'products.slug',
+                    'products.images',
+                    'products.metadata',
+                    'products.min_order_quantity',
+                    'products.price',
+                    'products.currency',
+                ])
+                ->where('status', 'published');
+
+            // Filter by tenant
+            if ($tenantSlug) {
+                $tenant = TenantEloquentModel::where('slug', $tenantSlug)->first();
+                if (!$tenant) {
+                    return response()->json(['error' => 'Tenant not found'], 404);
+                }
+                $query->where('tenant_id', $tenant->id);
+            }
+
+            // Filter by category if provided
+            if ($category) {
+                $query->whereHas('category', function ($q) use ($category) {
+                    $q->where('slug', $category)
+                      ->orWhere('name', 'ILIKE', "%{$category}%");
+                });
+            }
+
+            // Exclude current product if provided
+            if ($productId) {
+                $query->where('uuid', '!=', $productId);
+            }
+
+            $products = $query->orderBy('created_at', 'desc')
+                            ->limit($limit)
+                            ->get();
+
+            // Transform to minimal response
+            $data = $products->map(function ($product) {
+                return [
+                    'id' => $product->uuid,
+                    'uuid' => $product->uuid,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'images' => $product->images ?? [],
+                    'metadata' => $product->metadata ?? null,
+                    'minOrderQuantity' => $product->min_order_quantity,
+                    'price' => $product->price,
+                    'currency' => $product->currency ?? 'IDR',
+                ];
+            });
+
+            return response()->json([
+                'data' => $data
+            ], 200);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch related products', [
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ]);
+            
+            return response()->json([
+                'message' => 'Failed to fetch related products',
+                'error' => config('app.debug') ? $e->getMessage() : 'An unexpected error occurred'
+            ], 500);
+        }
+    }
+
+    /**
      * Get featured products
      */
     public function featured(Request $request, ?string $tenantSlug = null): JsonResponse
@@ -218,21 +306,15 @@ class ProductController extends Controller
         try {
             $limit = $request->get('limit', 10);
             
-            // Build query with review aggregation
+            // Build query with review aggregation using Eloquent relationships
+            // CRITICAL: Must select all columns explicitly when using withAvg/withCount
             $query = Product::query()
-                ->select([
-                    'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
-                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
-                ])
-                ->leftJoin('customer_reviews', function($join) {
-                    $join->on('customer_reviews.product_id', '=', 'products.id')
-                         ->where('customer_reviews.is_approved', '=', true);
-                })
+                ->select('products.*')
                 ->with('category')
-                ->where('products.status', 'published')
-                ->where('products.featured', true)
-                ->groupBy('products.id');
+                ->withAvg(['reviews as average_rating' => fn($q) => $q->where('is_approved', true)], 'rating')
+                ->withCount(['reviews as review_count' => fn($q) => $q->where('is_approved', true)])
+                ->where('status', 'published')
+                ->where('featured', true);
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -240,7 +322,7 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $query->where('products.tenant_id', $tenant->id);
+                $query->where('tenant_id', $tenant->id);
             }
 
             $products = $query->orderBy('view_count', 'desc')
@@ -267,20 +349,14 @@ class ProductController extends Controller
         try {
             $limit = $request->get('limit', 20);
             
-            // Build query with review aggregation
+            // Build query with review aggregation using Eloquent relationships
+            // CRITICAL: Must select all columns explicitly when using withAvg/withCount
             $query = Product::query()
-                ->select([
-                    'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
-                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
-                ])
-                ->leftJoin('customer_reviews', function($join) {
-                    $join->on('customer_reviews.product_id', '=', 'products.id')
-                         ->where('customer_reviews.is_approved', '=', true);
-                })
+                ->select('products.*')
                 ->with('category')
-                ->where('products.status', 'published')
-                ->groupBy('products.id');
+                ->withAvg(['reviews as average_rating' => fn($q) => $q->where('is_approved', true)], 'rating')
+                ->withCount(['reviews as review_count' => fn($q) => $q->where('is_approved', true)])
+                ->where('status', 'published');
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -288,7 +364,7 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $query->where('products.tenant_id', $tenant->id);
+                $query->where('tenant_id', $tenant->id);
             }
 
             $query->whereHas('category', function ($q) use ($category) {
@@ -320,20 +396,14 @@ class ProductController extends Controller
             $query = $request->get('q', '');
             $limit = $request->get('limit', 20);
             
-            // Build query with review aggregation
+            // Build query with review aggregation using Eloquent relationships
+            // CRITICAL: Must select all columns explicitly when using withAvg/withCount
             $productQuery = Product::query()
-                ->select([
-                    'products.*',
-                    \DB::raw('COALESCE(AVG(customer_reviews.rating), 0) as average_rating'),
-                    \DB::raw('COUNT(DISTINCT customer_reviews.id) as review_count'),
-                ])
-                ->leftJoin('customer_reviews', function($join) {
-                    $join->on('customer_reviews.product_id', '=', 'products.id')
-                         ->where('customer_reviews.is_approved', '=', true);
-                })
+                ->select('products.*')
                 ->with('category')
-                ->where('products.status', 'published')
-                ->groupBy('products.id');
+                ->withAvg(['reviews as average_rating' => fn($q) => $q->where('is_approved', true)], 'rating')
+                ->withCount(['reviews as review_count' => fn($q) => $q->where('is_approved', true)])
+                ->where('status', 'published');
             
             // If tenant slug is provided, filter by tenant
             if ($tenantSlug) {
@@ -341,16 +411,16 @@ class ProductController extends Controller
                 if (!$tenant) {
                     return response()->json(['error' => 'Tenant not found'], 404);
                 }
-                $productQuery->where('products.tenant_id', $tenant->id);
+                $productQuery->where('tenant_id', $tenant->id);
             }
 
             if ($query) {
                 $productQuery->where(function ($q) use ($query) {
-                    $q->where('products.name', 'ILIKE', '%' . $query . '%')
-                      ->orWhere('products.description', 'ILIKE', '%' . $query . '%')
-                      ->orWhere('products.long_description', 'ILIKE', '%' . $query . '%')
-                      ->orWhere('products.sku', 'ILIKE', '%' . $query . '%')
-                      ->orWhereJsonContains('products.tags', $query);
+                    $q->where('name', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('description', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('long_description', 'ILIKE', '%' . $query . '%')
+                      ->orWhere('sku', 'ILIKE', '%' . $query . '%')
+                      ->orWhereJsonContains('tags', $query);
                 });
             }
 

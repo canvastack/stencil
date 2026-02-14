@@ -128,7 +128,7 @@ class SeedTenantContent extends Command
                         'stats' => [
                             ['icon' => 'Users', 'value' => '2000+', 'label' => 'Proyek Selesai', 'color' => 'text-blue-500'],
                             ['icon' => 'Target', 'value' => '500+', 'label' => 'Klien Puas', 'color' => 'text-green-500'],
-                            ['icon' => 'Award', 'value' => '10+', 'label' => 'Tahun Pengalaman', 'color' => 'text-purple-500']
+                            ['icon' => 'Award', 'value' => '15+', 'label' => 'Mitra Bisnis', 'color' => 'text-purple-500']
                         ]
                     ]
                 ]

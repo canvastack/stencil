@@ -10,12 +10,12 @@ class ContentTypeSeeder extends Seeder
     public function run(): void
     {
         $tenantId = DB::table('tenants')
-            ->where('name', 'PT. Custom Etching Xenial')
+            ->where('name', 'Custom Etching Xenial')
             ->value('id');
 
         if (!$tenantId) {
             if ($this->command) {
-                $this->command->warn('Tenant PT. Custom Etching Xenial not found. Skipping seeder.');
+                $this->command->warn('Tenant Custom Etching Xenial not found. Skipping seeder.');
             }
             return;
         }

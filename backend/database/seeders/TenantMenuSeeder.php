@@ -97,12 +97,6 @@ class TenantMenuSeeder extends Seeder
         return [
             ['key' => 'home', 'label' => 'Beranda', 'path' => '/', 'icon' => 'Home', 'sort_order' => 10, 'show_in_footer' => true],
             
-            ['key' => 'services', 'label' => 'Layanan', 'path' => null, 'icon' => 'Briefcase', 'sort_order' => 20, 'description' => 'Layanan etching kami'],
-            ['parent_key' => 'services', 'label' => 'Chemical Etching', 'path' => '/services/chemical-etching', 'icon' => 'Droplet', 'sort_order' => 21],
-            ['parent_key' => 'services', 'label' => 'Laser Etching', 'path' => '/services/laser-etching', 'icon' => 'Zap', 'sort_order' => 22, 'badge_text' => 'Populer', 'badge_color' => 'blue'],
-            ['parent_key' => 'services', 'label' => 'Photo Etching', 'path' => '/services/photo-etching', 'icon' => 'Camera', 'sort_order' => 23],
-            ['parent_key' => 'services', 'label' => 'Industrial Marking', 'path' => '/services/industrial-marking', 'icon' => 'Tag', 'sort_order' => 24],
-            
             ['key' => 'products', 'label' => 'Produk', 'path' => '/products', 'icon' => 'Package', 'sort_order' => 30, 'badge_text' => 'Baru', 'badge_color' => 'green'],
             
             ['key' => 'portfolio', 'label' => 'Portfolio', 'path' => null, 'icon' => 'Image', 'sort_order' => 40],

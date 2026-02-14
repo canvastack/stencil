@@ -31,11 +31,12 @@ import {
   Clock,
   Award,
 } from 'lucide-react';
-import type { VendorProfile as VendorProfileType } from '@/types/vendor/portal';
+import type { VendorProfile as VendorProfileType, VendorPerformanceMetrics } from '@/types/vendor/portal';
 
 export default function VendorProfile() {
   // State
   const [profile, setProfile] = useState<VendorProfileType | null>(null);
+  const [metrics, setMetrics] = useState<VendorPerformanceMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -63,13 +64,16 @@ export default function VendorProfile() {
 
       const response = await vendorApi.getProfile();
 
-      if (response.success) {
-        setProfile(response.data);
+      if (response.success && response.data) {
+        // Set profile with vendor data
+        setProfile(response.data.vendor);
+        setMetrics(response.data.metrics);
+        
         setFormData({
-          email: response.data.email || '',
-          phone: response.data.phone || '',
-          contact_person: response.data.contact_person || '',
-          address: response.data.address || '',
+          email: response.data.vendor.email || '',
+          phone: response.data.vendor.phone || '',
+          contact_person: response.data.vendor.contact_person || '',
+          address: response.data.vendor.address || '',
         });
       }
     } catch (err: any) {
@@ -137,8 +141,8 @@ export default function VendorProfile() {
 
       const response = await vendorApi.updateProfile(formData);
 
-      if (response.success) {
-        setProfile(response.data);
+      if (response.success && response.data) {
+        setProfile(response.data.vendor);
         setIsEditing(false);
         setSuccessMessage('Profile updated successfully');
         
@@ -180,7 +184,10 @@ export default function VendorProfile() {
   /**
    * Format hours
    */
-  const formatHours = (hours: number): string => {
+  const formatHours = (hours: number | null): string => {
+    if (hours === null || hours === undefined) {
+      return 'N/A';
+    }
     if (hours < 1) {
       return `${Math.round(hours * 60)} minutes`;
     }
@@ -192,7 +199,7 @@ export default function VendorProfile() {
    */
   if (loading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid gap-6 md:grid-cols-3">
           <Skeleton className="h-32" />
@@ -209,7 +216,7 @@ export default function VendorProfile() {
    */
   if (error && !profile) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="p-4 md:p-6">
         <Card className="border-destructive">
           <CardContent className="p-6">
             <div className="flex items-center gap-2 text-destructive mb-4">
@@ -231,9 +238,9 @@ export default function VendorProfile() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Vendor Profile</h1>
           <p className="text-muted-foreground">Manage your profile information and view performance metrics</p>
@@ -272,9 +279,9 @@ export default function VendorProfile() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatPercentage(profile.performance_metrics.acceptance_rate)}</div>
+            <div className="text-2xl font-bold">{formatPercentage(metrics?.acceptance_rate ?? 0)}</div>
             <p className="text-xs text-muted-foreground">
-              {profile.performance_metrics.accepted_quotes} of {profile.performance_metrics.total_quotes} quotes accepted
+              {metrics?.accepted_quotes ?? 0} of {metrics?.total_quotes ?? 0} quotes accepted
             </p>
           </CardContent>
         </Card>
@@ -285,7 +292,7 @@ export default function VendorProfile() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatHours(profile.performance_metrics.average_response_time)}</div>
+            <div className="text-2xl font-bold">{formatHours(metrics?.average_response_time ?? 0)}</div>
             <p className="text-xs text-muted-foreground">
               Average time to respond to quotes
             </p>
@@ -298,9 +305,9 @@ export default function VendorProfile() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{profile.performance_metrics.total_quotes}</div>
+            <div className="text-2xl font-bold">{metrics?.total_quotes ?? 0}</div>
             <p className="text-xs text-muted-foreground">
-              {profile.performance_metrics.pending_quotes} pending responses
+              {metrics?.pending_quotes ?? 0} pending responses
             </p>
           </CardContent>
         </Card>

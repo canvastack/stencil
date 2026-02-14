@@ -46,7 +46,18 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 150000,
+            items: [
+                [
+                    'product_id' => 'product-1',
+                    'counter_unit_price' => 75000,
+                    'notes' => 'Standard materials'
+                ],
+                [
+                    'product_id' => 'product-2',
+                    'counter_unit_price' => 75000,
+                    'notes' => 'Standard finish'
+                ]
+            ],
             notes: 'We can do it for this price with standard materials',
             userId: 10,
             ipAddress: '192.168.1.1',
@@ -59,9 +70,28 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::COUNTERED, // Will be final status
             canRespond: true,
+            canCounter: true,
             isExpired: false,
             round: 2, // Will be final round
-            latestOffer: 150000 // Will be final offer
+            latestOffer: 150000, // Will be final offer
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 100000,
+                        'total_vendor_cost' => 100000
+                    ],
+                    [
+                        'product_id' => 'product-2',
+                        'description' => 'Product 2',
+                        'quantity' => 1,
+                        'vendor_cost' => 100000,
+                        'total_vendor_cost' => 100000
+                    ]
+                ]
+            ]
         );
 
         // Override getStatus to return SENT first (for validation), then COUNTERED (for result)
@@ -85,6 +115,8 @@ class CounterOfferQuoteUseCaseTest extends TestCase
                 $quote->shouldReceive('getLatestOffer')->andReturn(150000);
             });
 
+        $quote->shouldReceive('updateQuoteDetails')->once();
+
         // Set up the expectations for after the counter offer
         $quote->shouldReceive('getRound')->andReturn(2);
         $quote->shouldReceive('getLatestOffer')->andReturn(150000);
@@ -101,7 +133,8 @@ class CounterOfferQuoteUseCaseTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEquals('quote-uuid-123', $result['quote_uuid']);
         $this->assertEquals('countered', $result['status']);
-        $this->assertEquals(150000, $result['counter_offer_amount']);
+        $this->assertArrayHasKey('counter_offer_details', $result);
+        $this->assertEquals(150000, $result['counter_offer_details']['total_counter']);
         $this->assertEquals(150000, $result['latest_offer']);
         $this->assertEquals(2, $result['round']);
     }
@@ -114,7 +147,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'non-existent-uuid',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 100000
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 100000]
+            ]
         );
 
         $this->quoteRepository
@@ -139,7 +174,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 2,
             tenantId: 1,
-            counterOfferAmount: 100000
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 100000]
+            ]
         );
 
         $quote = $this->createMockQuote(
@@ -148,9 +185,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::SENT,
             canRespond: true,
+            canCounter: true,
             isExpired: false,
             round: 1,
-            latestOffer: 200000
+            latestOffer: 200000,
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         $this->quoteRepository
@@ -175,7 +224,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 100000
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 100000]
+            ]
         );
 
         $quote = $this->createMockQuote(
@@ -184,9 +235,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::ACCEPTED,
             canRespond: false,
+            canCounter: false,
             isExpired: false,
             round: 1,
-            latestOffer: 200000
+            latestOffer: 200000,
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         $this->quoteRepository
@@ -211,7 +274,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 100000
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 100000]
+            ]
         );
 
         $quote = $this->createMockQuote(
@@ -220,9 +285,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::SENT,
             canRespond: false,
+            canCounter: false,
             isExpired: true,
             round: 1,
-            latestOffer: 200000
+            latestOffer: 200000,
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         $this->quoteRepository
@@ -247,7 +324,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 0
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 0]
+            ]
         );
 
         $quote = $this->createMockQuote(
@@ -256,9 +335,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::SENT,
             canRespond: true,
+            canCounter: true,
             isExpired: false,
             round: 1,
-            latestOffer: 200000
+            latestOffer: 200000,
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         $this->quoteRepository
@@ -269,7 +360,7 @@ class CounterOfferQuoteUseCaseTest extends TestCase
 
         // Assert
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Counter offer amount must be a positive number');
+        $this->expectExceptionMessage('Counter price for product product-1 must be greater than 0');
 
         // Act
         $this->useCase->execute($command);
@@ -283,7 +374,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: -100
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => -100]
+            ]
         );
 
         $quote = $this->createMockQuote(
@@ -292,9 +385,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::SENT,
             canRespond: true,
+            canCounter: true,
             isExpired: false,
             round: 1,
-            latestOffer: 200000
+            latestOffer: 200000,
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         $this->quoteRepository
@@ -305,7 +410,7 @@ class CounterOfferQuoteUseCaseTest extends TestCase
 
         // Assert
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Counter offer amount must be a positive number');
+        $this->expectExceptionMessage('Counter price for product product-1 must be greater than 0');
 
         // Act
         $this->useCase->execute($command);
@@ -319,7 +424,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 120000,
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 120000]
+            ],
             notes: null
         );
 
@@ -329,9 +436,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::SENT,
             canRespond: true,
+            canCounter: true,
             isExpired: false,
             round: 1,
-            latestOffer: 200000
+            latestOffer: 200000,
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         $this->quoteRepository
@@ -342,6 +461,8 @@ class CounterOfferQuoteUseCaseTest extends TestCase
         $quote->shouldReceive('counterOffer')
             ->once()
             ->with(120000, null, null);
+
+        $quote->shouldReceive('updateQuoteDetails')->once();
 
         $quote->shouldReceive('getRound')->andReturn(2);
         $quote->shouldReceive('getLatestOffer')->andReturn(120000);
@@ -355,8 +476,8 @@ class CounterOfferQuoteUseCaseTest extends TestCase
 
         // Assert
         $this->assertIsArray($result);
-        $this->assertEquals(120000, $result['counter_offer_amount']);
-        $this->assertNull($result['notes']);
+        $this->assertEquals(120000, $result['counter_offer_details']['total_counter']);
+        $this->assertNull($result['counter_offer_details']['notes']);
     }
 
     /** @test */
@@ -367,7 +488,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 130000,
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 130000]
+            ],
             notes: 'Second round counter offer',
             userId: 10,
             ipAddress: '192.168.1.1',
@@ -380,9 +503,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::SENT,
             canRespond: true,
+            canCounter: true,
             isExpired: false,
             round: 1,
-            latestOffer: 200000
+            latestOffer: 200000,
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         $this->quoteRepository
@@ -391,6 +526,7 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             ->andReturn($quote);
 
         $quote->shouldReceive('counterOffer')->once();
+        $quote->shouldReceive('updateQuoteDetails')->once();
         $quote->shouldReceive('getRound')->andReturn(2);
         $quote->shouldReceive('getLatestOffer')->andReturn(130000);
 
@@ -410,7 +546,9 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             quoteUuid: 'quote-uuid-123',
             vendorId: 1,
             tenantId: 1,
-            counterOfferAmount: 140000
+            items: [
+                ['product_id' => 'product-1', 'counter_unit_price' => 140000]
+            ]
         );
 
         $quote = $this->createMockQuote(
@@ -419,9 +557,21 @@ class CounterOfferQuoteUseCaseTest extends TestCase
             vendorId: 1,
             status: QuoteStatus::COUNTERED, // Final status
             canRespond: true,
+            canCounter: true,
             isExpired: false,
             round: 2, // Final round (incremented)
-            latestOffer: 140000 // Final offer
+            latestOffer: 140000, // Final offer
+            quoteDetails: [
+                'items' => [
+                    [
+                        'product_id' => 'product-1',
+                        'description' => 'Product 1',
+                        'quantity' => 1,
+                        'vendor_cost' => 200000,
+                        'total_vendor_cost' => 200000
+                    ]
+                ]
+            ]
         );
 
         // Override getStatus to return SENT first, then COUNTERED
@@ -441,6 +591,8 @@ class CounterOfferQuoteUseCaseTest extends TestCase
                 $quote->shouldReceive('getRound')->andReturn(2);
                 $quote->shouldReceive('getLatestOffer')->andReturn(140000);
             });
+
+        $quote->shouldReceive('updateQuoteDetails')->once();
 
         // These will be called after counterOffer
         $quote->shouldReceive('getRound')->andReturn(2); // Incremented
@@ -463,9 +615,11 @@ class CounterOfferQuoteUseCaseTest extends TestCase
         int $vendorId,
         QuoteStatus $status,
         bool $canRespond,
+        bool $canCounter,
         bool $isExpired,
         int $round,
-        int $latestOffer
+        int $latestOffer,
+        array $quoteDetails = []
     ): Quote {
         $quote = Mockery::mock(Quote::class);
         $quote->shouldReceive('getId')->andReturn($id);
@@ -473,9 +627,11 @@ class CounterOfferQuoteUseCaseTest extends TestCase
         $quote->shouldReceive('getVendorId')->andReturn($vendorId);
         $quote->shouldReceive('getStatus')->andReturn($status);
         $quote->shouldReceive('canRespond')->andReturn($canRespond);
+        $quote->shouldReceive('canCounter')->andReturn($canCounter);
         $quote->shouldReceive('isExpired')->andReturn($isExpired);
         $quote->shouldReceive('getRound')->andReturn($round);
         $quote->shouldReceive('getLatestOffer')->andReturn($latestOffer);
+        $quote->shouldReceive('getQuoteDetails')->andReturn($quoteDetails);
         $quote->shouldReceive('getRespondedAt')->andReturn(new DateTimeImmutable());
         $quote->shouldReceive('getResponseType')->andReturn('counter');
         $quote->shouldReceive('getClosedAt')->andReturn(null); // Counter offers don't close quotes

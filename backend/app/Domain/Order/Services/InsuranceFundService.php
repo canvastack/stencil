@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 /**
- * Insurance Fund Service for PT Custom Etching Xenial
+ * Insurance Fund Service for Custom Etching Xenial
  * 
  * Manages the insurance fund that protects the company from financial losses
  * due to quality issues, vendor failures, and other business risks.

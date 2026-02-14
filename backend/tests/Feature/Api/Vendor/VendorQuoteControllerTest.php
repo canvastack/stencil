@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\Vendor;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Event;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\UserEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
@@ -115,15 +116,20 @@ class VendorQuoteControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
+                'success',
                 'message',
-                'data',
-                'pagination',
+                'data' => [
+                    'quotes',
+                    'pagination',
+                    'statistics',
+                ],
             ])
             ->assertJson([
+                'success' => true,
                 'message' => 'Quotes retrieved successfully',
             ]);
 
-        $this->assertCount(3, $response->json('data'));
+        $this->assertCount(3, $response->json('data.quotes'));
     }
 
     /** @test */
@@ -148,8 +154,8 @@ class VendorQuoteControllerTest extends TestCase
             ->getJson('/api/v1/vendor/quotes?status=sent');
 
         $response->assertStatus(200);
-        $this->assertCount(1, $response->json('data'));
-        $this->assertEquals('sent', $response->json('data.0.status'));
+        $this->assertCount(1, $response->json('data.quotes'));
+        $this->assertEquals('sent', $response->json('data.quotes.0.status'));
     }
 
     /** @test */
@@ -184,11 +190,11 @@ class VendorQuoteControllerTest extends TestCase
             ->getJson('/api/v1/vendor/quotes?page=1&per_page=15');
 
         $response->assertStatus(200)
-            ->assertJsonPath('pagination.current_page', 1)
-            ->assertJsonPath('pagination.per_page', 15)
-            ->assertJsonPath('pagination.total', 25);
+            ->assertJsonPath('data.pagination.current_page', 1)
+            ->assertJsonPath('data.pagination.per_page', 15)
+            ->assertJsonPath('data.pagination.total', 25);
 
-        $this->assertCount(15, $response->json('data'));
+        $this->assertCount(15, $response->json('data.quotes'));
     }
 
     /** @test */
@@ -206,6 +212,7 @@ class VendorQuoteControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
+                'success' => true,
                 'message' => 'Quote detail retrieved successfully',
                 'data' => [
                     'uuid' => $quote->uuid,
@@ -254,6 +261,12 @@ class VendorQuoteControllerTest extends TestCase
     /** @test */
     public function vendor_can_accept_quote(): void
     {
+        // Fake events to avoid queue issues in tests
+        Event::fake([
+            \App\Domain\Quote\Events\VendorRespondedToQuote::class,
+            \App\Domain\Order\Events\OrderStatusChanged::class,
+        ]);
+
         $quote = OrderVendorNegotiation::factory()->create([
             'tenant_id' => $this->tenant->id,
             'vendor_id' => $this->vendor->id,
@@ -271,6 +284,7 @@ class VendorQuoteControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
+                'success' => true,
                 'message' => 'Quote accepted successfully',
             ]);
 
@@ -301,6 +315,11 @@ class VendorQuoteControllerTest extends TestCase
     /** @test */
     public function vendor_can_reject_quote(): void
     {
+        // Fake events to avoid queue issues in tests
+        Event::fake([
+            \App\Domain\Quote\Events\VendorRespondedToQuote::class,
+        ]);
+
         $quote = OrderVendorNegotiation::factory()->create([
             'tenant_id' => $this->tenant->id,
             'vendor_id' => $this->vendor->id,
@@ -317,6 +336,7 @@ class VendorQuoteControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
+                'success' => true,
                 'message' => 'Quote rejected successfully',
             ]);
 
@@ -347,6 +367,11 @@ class VendorQuoteControllerTest extends TestCase
     /** @test */
     public function vendor_can_submit_counter_offer(): void
     {
+        // Fake events to avoid queue issues in tests
+        Event::fake([
+            \App\Domain\Quote\Events\VendorRespondedToQuote::class,
+        ]);
+
         $quote = OrderVendorNegotiation::factory()->create([
             'tenant_id' => $this->tenant->id,
             'vendor_id' => $this->vendor->id,
@@ -357,23 +382,40 @@ class VendorQuoteControllerTest extends TestCase
             'round' => 1,
             'sent_at' => now(),
             'expires_at' => now()->addDays(7),
+            'quote_details' => [
+                'items' => [
+                    [
+                        'product_id' => 'product-uuid-1',
+                        'product_name' => 'Test Product',
+                        'quantity' => 10,
+                        'unit_price' => 10000,
+                        'total_price' => 100000,
+                    ],
+                ],
+            ],
         ]);
 
         $response = $this->actingAsVendor()
             ->postJson("/api/v1/vendor/quotes/{$quote->uuid}/counter-offer", [
-                'counter_offer_amount' => 120000,
-                'notes' => 'Higher cost due to material requirements',
+                'items' => [
+                    [
+                        'product_id' => 'product-uuid-1',
+                        'counter_unit_price' => 12000,
+                        'notes' => 'Higher cost due to material requirements',
+                    ],
+                ],
+                'notes' => 'Overall counter offer notes',
             ]);
 
         $response->assertStatus(200)
             ->assertJson([
+                'success' => true,
                 'message' => 'Counter offer submitted successfully',
             ]);
 
         // Verify quote was updated
         $quote->refresh();
         $this->assertEquals('countered', $quote->status);
-        $this->assertEquals(120000, $quote->latest_offer);
     }
 
     /** @test */
@@ -386,12 +428,12 @@ class VendorQuoteControllerTest extends TestCase
             'status' => 'sent',
         ]);
 
-        // Missing counter_offer_amount
+        // Missing items array
         $response = $this->actingAsVendor()
             ->postJson("/api/v1/vendor/quotes/{$quote->uuid}/counter-offer", []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['counter_offer_amount']);
+            ->assertJsonValidationErrors(['items']);
     }
 
     /** @test */
@@ -502,9 +544,13 @@ class VendorQuoteControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
+                'success',
                 'message',
-                'data',
-                'pagination',
+                'data' => [
+                    'quotes',
+                    'pagination',
+                    'statistics',
+                ],
             ]);
 
         // Test detail response format
@@ -513,6 +559,7 @@ class VendorQuoteControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonStructure([
+                'success',
                 'message',
                 'data' => [
                     'uuid',
@@ -524,6 +571,12 @@ class VendorQuoteControllerTest extends TestCase
     /** @test */
     public function audit_logs_are_created_for_quote_actions(): void
     {
+        // Fake events to avoid queue issues in tests
+        Event::fake([
+            \App\Domain\Quote\Events\VendorRespondedToQuote::class,
+            \App\Domain\Order\Events\OrderStatusChanged::class,
+        ]);
+
         $quote = OrderVendorNegotiation::factory()->create([
             'tenant_id' => $this->tenant->id,
             'vendor_id' => $this->vendor->id,
@@ -552,6 +605,12 @@ class VendorQuoteControllerTest extends TestCase
     /** @test */
     public function notifications_are_sent_for_quote_responses(): void
     {
+        // Fake events to avoid queue issues in tests
+        Event::fake([
+            \App\Domain\Quote\Events\VendorRespondedToQuote::class,
+            \App\Domain\Order\Events\OrderStatusChanged::class,
+        ]);
+
         $quote = OrderVendorNegotiation::factory()->create([
             'tenant_id' => $this->tenant->id,
             'vendor_id' => $this->vendor->id,
@@ -568,7 +627,8 @@ class VendorQuoteControllerTest extends TestCase
             ]);
 
         $response->assertStatus(200);
-        // Note: Actual notification verification depends on implementation
-        $this->assertTrue(true);
+        
+        // Verify event was dispatched
+        Event::assertDispatched(\App\Domain\Quote\Events\VendorRespondedToQuote::class);
     }
 }

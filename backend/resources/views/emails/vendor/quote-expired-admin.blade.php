@@ -127,7 +127,7 @@
                 This is an automated notification from the Vendor Portal system.
             </p>
             <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                © {{ date('Y') }} PT Custom Etching Xenial. All rights reserved.
+                © {{ date('Y') }} Custom Etching Xenial. All rights reserved.
             </p>
         </div>
     </div>

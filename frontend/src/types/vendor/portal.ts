@@ -124,6 +124,16 @@ export interface VendorProfile {
   created_at: string;
   updated_at: string;
   deleted_at?: string;
+  
+  // Performance metrics (for profile page)
+  performance_metrics?: {
+    total_quotes: number;
+    accepted_quotes: number;
+    rejected_quotes: number;
+    pending_quotes: number;
+    acceptance_rate: number;
+    average_response_time: number | null;
+  };
 }
 
 /**

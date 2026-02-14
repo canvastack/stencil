@@ -179,6 +179,40 @@ class PublicProductsService {
     return response.data?.map(transformApiProduct) || [];
   }
 
+  /**
+   * Get related products with minimal data (optimized for performance)
+   * Uses tenant-specific endpoint with minimal response
+   */
+  async getRelatedProducts(params: {
+    tenantSlug: string;
+    productId?: string;
+    category?: string;
+    limit?: number;
+  }): Promise<Product[]> {
+    const queryParams = new URLSearchParams();
+    if (params.productId) queryParams.append('product_id', params.productId);
+    if (params.category) queryParams.append('category', params.category);
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+
+    const response = await anonymousApiClient.get<{ data: any[] }>(
+      `/public/${params.tenantSlug}/products/related?${queryParams.toString()}`
+    );
+    
+    // Response already minimal, just map to Product type
+    return response.data?.map(item => ({
+      id: item.uuid,
+      uuid: item.uuid,
+      name: item.name,
+      slug: item.slug,
+      images: item.images,
+      metadata: item.metadata,
+      minOrderQuantity: item.minOrderQuantity,
+      price: item.price,
+      currency: item.currency,
+      stockQuantity: 0, // Not needed for related products
+    })) || [];
+  }
+
   async searchProducts(query: string): Promise<Product[]> {
     const params = new URLSearchParams();
     params.append('search', query);

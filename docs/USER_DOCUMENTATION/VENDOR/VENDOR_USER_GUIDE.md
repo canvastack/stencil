@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Last Updated:** February 12, 2026  
-**Platform:** PT Custom Etching Xenial (PT CEX) Vendor Portal
+**Platform:** Custom Etching Xenial (PT CEX) Vendor Portal
 
 ---
 
@@ -24,7 +24,7 @@
 
 ## Introduction
 
-Welcome to the PT Custom Etching Xenial (PT CEX) Vendor Portal! This guide will help you navigate the portal, manage quote requests, and communicate effectively with the PT CEX team.
+Welcome to the Custom Etching Xenial (PT CEX) Vendor Portal! This guide will help you navigate the portal, manage quote requests, and communicate effectively with the PT CEX team.
 
 ### What is the Vendor Portal?
 
@@ -986,4 +986,4 @@ Need additional training or onboarding assistance?
 
 ---
 
-© 2026 PT Custom Etching Xenial. All rights reserved.
+© 2026 Custom Etching Xenial. All rights reserved.

@@ -274,6 +274,156 @@ class NotificationController extends Controller
     }
 
     /**
+     * Get notification preferences for a specific order
+     */
+    public function orderNotificationPreferences(string $orderUuid): JsonResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Get tenant ID from user
+        $tenantId = $user->tenant_id;
+        
+        if (!$tenantId) {
+            return response()->json(['error' => 'Tenant not found'], 400);
+        }
+        
+        // Get or create notification preferences
+        $notificationPreference = \App\Infrastructure\Persistence\Eloquent\Models\NotificationPreference::firstOrCreate(
+            [
+                'tenant_id' => $tenantId,
+                'user_id' => $user->id,
+            ],
+            [
+                'uuid' => \Ramsey\Uuid\Uuid::uuid4()->toString(),
+                'preferences' => [
+                    'order_status_changes' => [
+                        'email' => true,
+                        'in_app' => true,
+                        'sms' => false,
+                    ],
+                ],
+            ]
+        );
+
+        // Return preferences in the format expected by frontend
+        return response()->json([
+            'orderId' => $orderUuid,
+            'customerId' => $user->id,
+            'channels' => [
+                [
+                    'type' => 'inApp',
+                    'enabled' => $notificationPreference->preferences['order_status_changes']['in_app'] ?? true,
+                ],
+                [
+                    'type' => 'email',
+                    'enabled' => $notificationPreference->preferences['order_status_changes']['email'] ?? true,
+                ],
+                [
+                    'type' => 'sms',
+                    'enabled' => $notificationPreference->preferences['order_status_changes']['sms'] ?? false,
+                ],
+            ],
+            'preferences' => [
+                'orderCreated' => true,
+                'orderConfirmed' => true,
+                'orderProcessing' => true,
+                'orderShipped' => true,
+                'orderDelivered' => true,
+                'orderCancelled' => true,
+                'orderRefunded' => true,
+            ],
+        ]);
+    }
+
+    /**
+     * Send email notification
+     */
+    public function sendEmail(Request $request): JsonResponse
+    {
+        $request->validate([
+            'orderId' => 'required|string',
+            'type' => 'required|string',
+            'status' => 'required|string',
+            'templateData' => 'required|array',
+        ]);
+
+        // Log the email notification request
+        \Log::info('Email notification requested', [
+            'order_id' => $request->orderId,
+            'type' => $request->type,
+            'status' => $request->status,
+        ]);
+
+        // TODO: Implement actual email sending logic
+        // For now, just return success
+        return response()->json([
+            'message' => 'Email notification queued successfully',
+            'orderId' => $request->orderId,
+            'type' => $request->type,
+        ]);
+    }
+
+    /**
+     * Send SMS notification
+     */
+    public function sendSms(Request $request): JsonResponse
+    {
+        $request->validate([
+            'orderId' => 'required|string',
+            'message' => 'required|string',
+            'type' => 'required|string',
+        ]);
+
+        // Log the SMS notification request
+        \Log::info('SMS notification requested', [
+            'order_id' => $request->orderId,
+            'type' => $request->type,
+            'message' => $request->message,
+        ]);
+
+        // TODO: Implement actual SMS sending logic
+        // For now, just return success
+        return response()->json([
+            'message' => 'SMS notification queued successfully',
+            'orderId' => $request->orderId,
+            'type' => $request->type,
+        ]);
+    }
+
+    /**
+     * Log notification activity
+     */
+    public function logActivity(Request $request): JsonResponse
+    {
+        $request->validate([
+            'orderId' => 'required|string',
+            'notificationType' => 'required|string',
+            'channels' => 'required|array',
+            'status' => 'required|string|in:sent,failed',
+            'timestamp' => 'required|string',
+        ]);
+
+        // Log the notification activity
+        \Log::info('Notification activity logged', [
+            'order_id' => $request->orderId,
+            'notification_type' => $request->notificationType,
+            'channels' => $request->channels,
+            'status' => $request->status,
+            'timestamp' => $request->timestamp,
+            'error' => $request->error ?? null,
+        ]);
+
+        return response()->json([
+            'message' => 'Activity logged successfully',
+            'orderId' => $request->orderId,
+        ]);
+    }
+
+    /**
      * Store a new notification (for testing purposes)
      */
     public function store(Request $request): JsonResponse

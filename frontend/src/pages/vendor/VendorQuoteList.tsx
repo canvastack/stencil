@@ -332,12 +332,12 @@ export default function VendorQuoteList() {
   }, [quotes, statistics]);
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Quotes</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Quotes</h1>
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
             Manage and respond to quote requests
           </p>
         </div>
@@ -395,7 +395,7 @@ export default function VendorQuoteList() {
       </div>
 
       {/* Statistics Cards - 4 Column Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className={cn(refreshing && "animate-pulse")}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">

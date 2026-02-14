@@ -421,7 +421,7 @@ QuickContactItem:
           type: string
           maxLength: 255
           description: Contact value (phone, email, URL, etc.)
-          example: "6281234567890"
+          example: "6281252525599"
         iconName:
           type: string
           maxLength: 50

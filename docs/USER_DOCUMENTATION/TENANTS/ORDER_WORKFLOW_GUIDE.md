@@ -2,7 +2,7 @@
 
 ## Overview
 
-This comprehensive guide covers the complete order workflow management system for PT Custom Etching Xenial (PT CEX) business model. The system is designed to handle the complex intermediary (makelar) business process from customer inquiry to final delivery.
+This comprehensive guide covers the complete order workflow management system for Custom Etching Xenial (PT CEX) business model. The system is designed to handle the complex intermediary (makelar) business process from customer inquiry to final delivery.
 
 ## Business Model Context
 

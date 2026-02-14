@@ -131,7 +131,7 @@ const Products = () => {
   const [selectedType, setSelectedType] = useState("all");
   const [selectedSize, setSelectedSize] = useState("all");
   const [minRating, setMinRating] = useState(0);
-  const [sortBy, setSortBy] = useState("name-asc");
+  const [sortBy, setSortBy] = useState("default");
   const [currentPage, setCurrentPage] = useState(1);
   const [typingTextIndex, setTypingTextIndex] = useState(0);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -364,10 +364,13 @@ const Products = () => {
               <Select 
                 value={sortBy} 
                 onValueChange={(value: string) => setSortBy(value)}>
-                <SelectTrigger className="w-[150px] bg-[#0f172a] border-slate-700 text-white">
-                  <SelectValue placeholder="Nama (A-Z)" />
+                <SelectTrigger className="w-[180px] bg-[#0f172a] border-slate-700 text-white">
+                  <SelectValue placeholder="Default" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1e293b] border-slate-700">
+                  <SelectItem value="default">Default</SelectItem>
+                  <SelectItem value="newest">Produk Terbaru</SelectItem>
+                  <SelectItem value="oldest">Produk Terlama</SelectItem>
                   <SelectItem value="name-asc">Nama (A-Z)</SelectItem>
                   <SelectItem value="name-desc">Nama (Z-A)</SelectItem>
                   <SelectItem value="rating-high">Rating Tertinggi</SelectItem>
@@ -501,6 +504,7 @@ const Products = () => {
                     setSelectedType("all");
                     setSelectedSize("all");
                     setMinRating(0);
+                    setSortBy("default");
                   }}
                 >
                   Reset Filter

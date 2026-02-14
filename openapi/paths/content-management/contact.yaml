@@ -87,7 +87,7 @@
                     - id: 1
                       contactType: whatsapp
                       contactLabel: Chat via WhatsApp
-                      contactValue: '6281234567890'
+                      contactValue: '6281252525599'
                       iconName: MessageCircle
                       enabled: true
                   meta:
@@ -186,7 +186,7 @@
                     - id: 1
                       contactType: whatsapp
                       contactLabel: Chat via WhatsApp
-                      contactValue: '6281234567890'
+                      contactValue: '6281252525599'
                       iconName: MessageCircle
                       enabled: true
                   meta:

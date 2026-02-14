@@ -181,7 +181,7 @@ class PlatformSeeder extends Seeder
         $demoTenant = TenantEloquentModel::firstOrCreate(
             ['slug' => 'etchinx'],
             [
-                'name' => 'PT. Custom Etching Xenial',
+                'name' => 'Custom Etching Xenial',
                 'slug' => 'etchinx',
                 'domain' => null,
                 'settings' => [
@@ -364,7 +364,7 @@ class PlatformSeeder extends Seeder
         }
 
         $this->command->info('✅ Demo tenant created successfully');
-        $this->command->info('   Tenant: PT. Custom Etching Xenial (etchinx)');
+        $this->command->info('   Tenant: Custom Etching Xenial (etchinx)');
         $this->command->info('   Admin User: admin@etchinx.com / DemoAdmin2024!');
         $this->command->info('   Manager User: manager@etchinx.com / DemoManager2024!');
         $this->command->info('   Sales User: sales@etchinx.com / DemoSales2024!');

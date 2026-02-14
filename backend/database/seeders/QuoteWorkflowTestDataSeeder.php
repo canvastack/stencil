@@ -46,7 +46,7 @@ class QuoteWorkflowTestDataSeeder extends Seeder
         $tenant = TenantEloquentModel::where('slug', 'etchinx')->first();
 
         if (!$tenant) {
-            $this->command->error('❌ PT Custom Etching Xenial tenant not found!');
+            $this->command->error('❌ Custom Etching Xenial tenant not found!');
             return;
         }
 

@@ -188,7 +188,7 @@ export class VendorTestDataFactory {
       tenant_id: this.generateUUID(),
       company_name: `Test Vendor Company ${Date.now()}`,
       email: `vendor-${Date.now()}@test.com`,
-      phone: '+6281234567890',
+      phone: '+6281252525599',
       address: 'Jl. Test No. 123, Jakarta',
       status: 'active',
       portal_access_enabled: true,

@@ -19,6 +19,7 @@ class QuoteStatusTest extends TestCase
             'accepted',
             'rejected',
             'countered',
+            'admin_countered',
             'expired'
         ];
 
@@ -76,9 +77,10 @@ class QuoteStatusTest extends TestCase
 
         $this->assertTrue($status->canTransitionTo(QuoteStatus::ACCEPTED));
         $this->assertTrue($status->canTransitionTo(QuoteStatus::REJECTED));
+        $this->assertTrue($status->canTransitionTo(QuoteStatus::ADMIN_COUNTERED));
+        $this->assertTrue($status->canTransitionTo(QuoteStatus::SENT));
         $this->assertTrue($status->canTransitionTo(QuoteStatus::EXPIRED));
         $this->assertFalse($status->canTransitionTo(QuoteStatus::DRAFT));
-        $this->assertFalse($status->canTransitionTo(QuoteStatus::SENT));
         $this->assertFalse($status->canTransitionTo(QuoteStatus::PENDING_RESPONSE));
     }
 
@@ -145,7 +147,8 @@ class QuoteStatusTest extends TestCase
         $this->assertTrue(QuoteStatus::PENDING_RESPONSE->requiresVendorAction());
         $this->assertFalse(QuoteStatus::ACCEPTED->requiresVendorAction());
         $this->assertFalse(QuoteStatus::REJECTED->requiresVendorAction());
-        $this->assertTrue(QuoteStatus::COUNTERED->requiresVendorAction());
+        $this->assertFalse(QuoteStatus::COUNTERED->requiresVendorAction());
+        $this->assertTrue(QuoteStatus::ADMIN_COUNTERED->requiresVendorAction());
         $this->assertFalse(QuoteStatus::EXPIRED->requiresVendorAction());
     }
 
@@ -195,6 +198,8 @@ class QuoteStatusTest extends TestCase
             [
                 QuoteStatus::ACCEPTED,
                 QuoteStatus::REJECTED,
+                QuoteStatus::ADMIN_COUNTERED,
+                QuoteStatus::SENT,
                 QuoteStatus::EXPIRED
             ],
             QuoteStatus::COUNTERED->possibleTransitions()

@@ -444,7 +444,7 @@
         <!-- Footer -->
         <div class="footer">
             <p style="margin: 0 0 10px 0;">
-                <strong>PT Custom Etching Xenial</strong><br>
+                <strong>Custom Etching Xenial</strong><br>
                 Customer Service: support@customething.com<br>
                 Phone: +62-21-1234-5678 | WhatsApp: +62-812-3456-7890
             </p>
@@ -453,7 +453,7 @@
                 <a href="{{ $unsubscribeUrl ?? '#' }}">Unsubscribe</a> dari notifikasi email ini.
             </p>
             <p style="margin: 15px 0 0 0; font-size: 12px; opacity: 0.7;">
-                © {{ date('Y') }} PT Custom Etching Xenial. All rights reserved.
+                © {{ date('Y') }} Custom Etching Xenial. All rights reserved.
             </p>
         </div>
     </div>

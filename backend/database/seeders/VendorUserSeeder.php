@@ -27,13 +27,36 @@ class VendorUserSeeder extends Seeder
             return;
         }
 
-        // Get vendor with ID 133 (UD Grosir Utama)
-        $vendor = DB::table('vendors')->where('id', 133)->first();
+        // Get first active vendor
+        $vendor = DB::table('vendors')
+            ->where('tenant_id', $tenant->id)
+            ->where('status', 'active')
+            ->orderBy('id', 'asc')
+            ->first();
         
         if (!$vendor) {
-            $this->command->warn('Vendor with ID 133 not found. Skipping VendorUserSeeder.');
+            $this->command->warn('No active vendor found. Skipping VendorUserSeeder.');
             return;
         }
+
+        // Update vendor with portal access and proper data
+        DB::table('vendors')
+            ->where('id', $vendor->id)
+            ->update([
+                'company_name' => $vendor->name, // Set company_name from name
+                'email' => 'vendor@etchinx.com', // Use consistent email
+                'portal_access_enabled' => true,
+                'onboarding_status' => 'completed',
+                'onboarding_completed_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+
+        // Reload vendor to get updated data
+        $vendor = DB::table('vendors')->where('id', $vendor->id)->first();
+        
+        $this->command->info('✅ Vendor portal access enabled: ' . $vendor->name);
+        $this->command->info('   Company: ' . $vendor->company_name);
+        $this->command->info('   Email: ' . $vendor->email);
 
         // Check if user already exists
         $existingUser = DB::table('users')
@@ -75,23 +98,12 @@ class VendorUserSeeder extends Seeder
             $this->command->info("✅ Created new vendor user (ID: {$userId})");
         }
 
-        // Ensure vendor has portal access enabled
-        DB::table('vendors')
-            ->where('id', $vendor->id)
-            ->update([
-                'status' => 'active',
-                'portal_access_enabled' => true,
-                'onboarding_status' => 'completed',
-                'onboarding_completed_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-
-        $this->command->info('✅ Vendor portal access enabled');
         $this->command->info('');
         $this->command->info('📋 Vendor User Credentials:');
         $this->command->info('   Email: vendor@etchinx.com');
         $this->command->info('   Password: VendorDemo2024!');
         $this->command->info('   Vendor: ' . $vendor->name);
+        $this->command->info('   Company: ' . $vendor->company_name);
         $this->command->info('   Tenant: PT CEX (ID: 1)');
     }
 }

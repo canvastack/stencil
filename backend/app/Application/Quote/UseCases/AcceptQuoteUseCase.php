@@ -9,6 +9,8 @@ use App\Domain\Quote\Repositories\QuoteRepositoryInterface;
 use App\Domain\Audit\Repositories\AuditLogRepositoryInterface;
 use App\Domain\Quote\Exceptions\QuoteExpiredException;
 use App\Domain\Quote\Exceptions\InvalidStatusTransitionException;
+use App\Domain\Order\Events\OrderStatusChanged;
+use App\Domain\Shared\ValueObjects\UuidValueObject;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
@@ -95,6 +97,69 @@ final class AcceptQuoteUseCase
             // Save quote
             $this->quoteRepository->save($quote);
 
+            // ✨ NEW: Update related order status (Post-Acceptance Workflow)
+            $orderId = $quote->getOrderId();
+            $orderModel = \App\Infrastructure\Persistence\Eloquent\Models\Order::find($orderId);
+            
+            $oldOrderStatus = null;
+            $orderStatusUpdated = false;
+            
+            if ($orderModel) {
+                $oldOrderStatus = $orderModel->status;
+                
+                // Update order status from VENDOR_NEGOTIATION to CUSTOMER_QUOTE
+                if ($oldOrderStatus === 'vendor_negotiation') {
+                    $orderModel->status = 'customer_quote';
+                    
+                    // Store vendor quote information in order
+                    $orderModel->vendor_quote_id = $quote->getId();
+                    $orderModel->vendor_quote_accepted_at = now();
+                    $orderModel->vendor_agreed_price = $quote->getLatestOffer();
+                    $orderModel->vendor_estimated_delivery_days = $command->estimatedDeliveryDays;
+                    
+                    $orderModel->save();
+                    $orderStatusUpdated = true;
+                    
+                    // Create audit log for order status change
+                    $this->auditLogRepository->create(
+                        tenantId: $command->tenantId,
+                        action: 'order_status_changed',
+                        entityType: 'order',
+                        entityId: $orderModel->uuid,
+                        userId: $command->userId,
+                        metadata: [
+                            'order_uuid' => $orderModel->uuid,
+                            'order_number' => $orderModel->order_number,
+                            'old_status' => $oldOrderStatus,
+                            'new_status' => 'customer_quote',
+                            'reason' => 'Vendor accepted quote',
+                            'quote_uuid' => $quote->getUuid(),
+                            'vendor_id' => $command->vendorId,
+                            'estimated_delivery_days' => $command->estimatedDeliveryDays,
+                            'agreed_price' => $quote->getLatestOffer(),
+                        ],
+                        ipAddress: $command->ipAddress
+                    );
+                    
+                    // Dispatch order status changed event
+                    $orderUuid = UuidValueObject::fromString($orderModel->uuid);
+                    $tenant = \App\Infrastructure\Persistence\Eloquent\TenantEloquentModel::find($command->tenantId);
+                    
+                    if ($tenant) {
+                        $tenantUuid = UuidValueObject::fromString($tenant->uuid);
+                        $orderStatusChangedEvent = new OrderStatusChanged(
+                            $orderUuid,
+                            $tenantUuid,
+                            $oldOrderStatus,
+                            'customer_quote',
+                            (string) $command->userId,
+                            'Vendor accepted quote'
+                        );
+                        Event::dispatch($orderStatusChangedEvent);
+                    }
+                }
+            }
+
             // Store new values for audit
             $newValues = [
                 'status' => $quote->getStatus()->value,
@@ -144,6 +209,8 @@ final class AcceptQuoteUseCase
                 'estimated_delivery_days' => $command->estimatedDeliveryDays,
                 'notes' => $command->notes,
                 'closed_at' => $quote->getClosedAt()?->format('Y-m-d H:i:s'),
+                'order_status' => $orderModel?->status,
+                'order_status_updated' => $orderStatusUpdated,
             ];
         });
     }

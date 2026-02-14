@@ -30,6 +30,27 @@ class OrderResource extends JsonResource
         })->toArray();
     }
     
+    /**
+     * Get human-readable label for quote status
+     * 
+     * @param string $status
+     * @return string
+     */
+    protected function getQuoteStatusLabel(string $status): string
+    {
+        return match($status) {
+            'draft' => 'Draft',
+            'sent' => 'Sent to Vendor',
+            'pending_response' => 'Pending Response',
+            'countered' => 'Counter Offer',
+            'accepted' => 'Accepted',
+            'rejected' => 'Rejected',
+            'expired' => 'Expired',
+            'cancelled' => 'Cancelled',
+            default => ucfirst($status),
+        };
+    }
+    
     public function toArray(Request $request): array
     {
         $data = [
@@ -122,6 +143,19 @@ class OrderResource extends JsonResource
                 ->latest()
                 ->first()
                 ?->uuid,
+            
+            // ✨ NEW: Vendor quote information (Post-Acceptance Workflow)
+            'vendor_quote_id' => $this->vendor_quote_id,
+            'vendor_quote_uuid' => $this->vendorQuote?->uuid,
+            'vendor_quote_status' => $this->vendorQuote?->status,
+            'vendor_quote_status_label' => $this->vendorQuote ? $this->getQuoteStatusLabel($this->vendorQuote->status) : null,
+            'vendor_quote_accepted_at' => $this->vendor_quote_accepted_at?->toIso8601String(),
+            'vendor_agreed_price' => $this->vendor_agreed_price,
+            'vendor_estimated_delivery_days' => $this->vendor_estimated_delivery_days,
+            'vendor_name' => $this->vendorQuote?->vendor?->name,
+            
+            // ✨ NEW: Production progress (Post-Acceptance Workflow)
+            'production_progress' => $this->getProductionProgress(),
             
             'production' => [
                 'productionType' => $this->production_type,

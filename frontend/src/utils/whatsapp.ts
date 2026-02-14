@@ -9,8 +9,8 @@
  * 
  * Converts various formats to clean international format without + prefix
  * Examples:
- * - "081234567890" → "6281234567890"
- * - "+62 812 3456 7890" → "6281234567890"
+ * - "081234567890" → "6281252525599"
+ * - "+62 812 3456 7890" → "6281252525599"
  * - "62-812-345-6789" → "628123456789"
  * 
  * @param phone - Phone number in any format
@@ -78,7 +78,7 @@ export function isValidIndonesianPhone(phone: string): boolean {
   const sanitized = sanitizeWhatsAppNumber(phone);
   
   // Indonesian phone numbers: 62 + 9-12 digits
-  // Examples: 628123456789, 6281234567890
+  // Examples: 628123456789, 6281252525599
   return /^62[0-9]{9,12}$/.test(sanitized);
 }
 

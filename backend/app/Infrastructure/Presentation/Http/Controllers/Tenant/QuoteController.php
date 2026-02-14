@@ -1319,26 +1319,27 @@ class QuoteController extends Controller
             'status_history' => $negotiation->status_history ?? [],
             'type' => 'vendor_quote', // Default type for OrderVendorNegotiation
             
-            // Monetary values in IDR (already in correct format from items)
-            'quoted_price' => $grandTotalIDR, // Total customer price
-            'original_price' => $grandTotalIDR, // Same as quoted_price for now
-            'grand_total' => $grandTotalIDR, // Total customer price
+            // Monetary values in IDR (already in rupiah from items calculation)
+            'quoted_price' => $grandTotalIDR, // Total customer price in rupiah (latest offer)
+            'original_price' => $negotiation->initial_offer ?? $grandTotalIDR, // Initial offer
+            'grand_total' => $grandTotalIDR, // Total customer price in rupiah
             'total_amount' => $grandTotalIDR, // Alias
             'tax_amount' => 0, // No tax for now
             
             // USD conversions
             'quoted_price_usd' => round($grandTotalUSD, 2),
+            'original_price_usd' => round(($negotiation->initial_offer ?? $grandTotalIDR) / $exchangeRate, 2),
             'original_price_usd' => round($grandTotalUSD, 2),
             'grand_total_usd' => round($grandTotalUSD, 2),
             
             // Items count from quote items or order items
             'items_count' => $itemsCount,
             
-            // Profit margin calculations (from items)
+            // Profit margin calculations (from items, in rupiah)
             'profit_margin' => $profitMarginIDR,
             'profit_margin_usd' => round($profitMarginUSD, 2),
             'profit_margin_percentage' => round($profitMarginPercentage, 2),
-            'total_vendor_cost' => $vendorCostIDR, // Total vendor cost
+            'total_vendor_cost' => $vendorCostIDR, // Total vendor cost in rupiah
             'total_vendor_cost_usd' => round($vendorCostUSD, 2),
             
             'currency' => $negotiation->currency,
@@ -1372,7 +1373,78 @@ class QuoteController extends Controller
             'created_at' => $negotiation->created_at->toISOString(),
             'updated_at' => $negotiation->updated_at->toISOString(),
             'closed_at' => $negotiation->closed_at?->toISOString(),
+            
+            // ✨ NEW: Order status information
+            'order_status' => $order->status ?? null,
+            'order_status_label' => $order ? $this->getOrderStatusLabel($order->status) : null,
+            
+            // ✨ NEW: Production tracking (if accepted)
+            'production_progress' => $negotiation->status === 'accepted' 
+                ? $this->calculateProductionProgress($negotiation) 
+                : null,
         ];
+    }
+
+    /**
+     * Calculate production progress for accepted quotes.
+     * 
+     * @param OrderVendorNegotiation $negotiation
+     * @return array|null Production progress data or null if not applicable
+     */
+    private function calculateProductionProgress(OrderVendorNegotiation $negotiation): ?array
+    {
+        $quoteDetails = $negotiation->quote_details ?? [];
+        $estimatedDays = $quoteDetails['estimated_delivery_days'] ?? null;
+        $acceptedAt = $negotiation->responded_at;
+        
+        if (!$acceptedAt || !$estimatedDays) {
+            return null;
+        }
+        
+        $expectedDate = $acceptedAt->copy()->addDays($estimatedDays);
+        $now = now();
+        
+        $daysElapsed = $acceptedAt->diffInDays($now);
+        $daysRemaining = $now->diffInDays($expectedDate, false);
+        $progressPercentage = min(($daysElapsed / $estimatedDays) * 100, 100);
+        
+        return [
+            'accepted_date' => $acceptedAt->toISOString(),
+            'expected_delivery_date' => $expectedDate->toISOString(),
+            'days_elapsed' => $daysElapsed,
+            'days_remaining' => max($daysRemaining, 0),
+            'progress_percentage' => round($progressPercentage, 2),
+            'is_overdue' => $daysRemaining < 0,
+            'overdue_days' => $daysRemaining < 0 ? abs($daysRemaining) : 0,
+        ];
+    }
+
+    /**
+     * Get human-readable label for order status.
+     * 
+     * @param string $status
+     * @return string
+     */
+    private function getOrderStatusLabel(string $status): string
+    {
+        $labels = [
+            'draft' => 'Draft',
+            'pending_approval' => 'Pending Approval',
+            'approved' => 'Approved',
+            'vendor_sourcing' => 'Vendor Sourcing',
+            'vendor_negotiation' => 'Vendor Negotiation',
+            'customer_quote' => 'Quote ke Customer',
+            'customer_approval' => 'Customer Approval',
+            'production' => 'Production',
+            'quality_control' => 'Quality Control',
+            'ready_for_delivery' => 'Ready for Delivery',
+            'in_transit' => 'In Transit',
+            'delivered' => 'Delivered',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+        ];
+        
+        return $labels[$status] ?? ucfirst(str_replace('_', ' ', $status));
     }
 
     /**

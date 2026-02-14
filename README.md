@@ -85,7 +85,7 @@ Platform ini dibangun dengan visi untuk menyediakan infrastruktur SaaS yang memu
 - **Flexible Configuration**: Business logic yang dapat dikonfigurasi tanpa perubahan kode
 - **Scalable Architecture**: Hexagonal architecture untuk easy integration dan expansion
 
-**Current Focus Tenant**: PT Custom Etching Xenial (PT CEX) - Platform etching berkualitas tinggi untuk logam, kaca, dan plakat penghargaan.
+**Current Focus Tenant**: Custom Etching Xenial (PT CEX) - Platform etching berkualitas tinggi untuk logam, kaca, dan plakat penghargaan.
 
 **Platform Maturity**:
 - ✅ 1063 comprehensive tests passing (100% pass rate)

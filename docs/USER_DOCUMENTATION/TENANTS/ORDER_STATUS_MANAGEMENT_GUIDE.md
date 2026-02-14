@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-Panduan lengkap untuk menggunakan sistem manajemen status order yang telah diperbaharui di CanvaStencil. Sistem baru ini dirancang khusus untuk model bisnis PT Custom Etching Xenial (PT CEX) dengan antarmuka yang lebih intuitif, aksi yang jelas, dan panduan kontekstual untuk setiap tahap workflow.
+Panduan lengkap untuk menggunakan sistem manajemen status order yang telah diperbaharui di CanvaStencil. Sistem baru ini dirancang khusus untuk model bisnis Custom Etching Xenial (PT CEX) dengan antarmuka yang lebih intuitif, aksi yang jelas, dan panduan kontekstual untuk setiap tahap workflow.
 
 > **🎓 ADMIN TRAINING UPDATE (January 2026)**: This guide has been updated to reflect the major UX improvements implemented in the Order Status Workflow system. All admin users should review the new features and workflows described in this document.
 

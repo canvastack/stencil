@@ -558,7 +558,7 @@ class VendorRealTimeMonitor {
    */
   private async sendEmailNotification(alert: VendorAlert): Promise<void> {
     try {
-      await tenantApiClient.post('/notifications/email', {
+      await tenantApiClient.post('/tenant/notifications/email', {
         subject: `[VENDOR ALERT] ${alert.title}`,
         body: alert.message,
         severity: alert.severity,

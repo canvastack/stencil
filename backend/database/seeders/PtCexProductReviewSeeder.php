@@ -17,7 +17,7 @@ class PtCexProductReviewSeeder extends Seeder
         $etchinx = TenantModel::where('slug', 'etchinx')->first();
         
         if (!$etchinx) {
-            $this->command->error('❌ PT Custom Etching Xenial tenant not found!');
+            $this->command->error('❌ Custom Etching Xenial tenant not found!');
             return;
         }
 

@@ -24,7 +24,7 @@ SiteSettings:
           maxLength: 255
           minLength: 3
           description: Site/company name
-          example: "PT Custom Etching Xenial"
+          example: "Custom Etching Xenial"
         site_url:
           type: string
           format: uri
@@ -50,7 +50,7 @@ SiteSettings:
           nullable: true
           maxLength: 50
           description: Contact phone number
-          example: "+6281234567890"
+          example: "+6281252525599"
         contact_address:
           type: string
           nullable: true
@@ -121,7 +121,7 @@ SiteSettings:
               example: "https://youtube.com/@ptcex"
             whatsapp:
               type: string
-              example: "+6281234567890"
+              example: "+6281252525599"
           additionalProperties: true
 
         # Additional Metadata
@@ -171,7 +171,7 @@ EmailSettings:
           maxLength: 255
           minLength: 2
           description: Default sender display name
-          example: "PT Custom Etching Xenial"
+          example: "Custom Etching Xenial"
         reply_to_email:
           type: string
           format: email
@@ -562,7 +562,7 @@ IntegrationSettings:
           nullable: true
           maxLength: 50
           description: WhatsApp Business phone number
-          example: "+6281234567890"
+          example: "+6281252525599"
         whatsapp_default_message:
           type: string
           nullable: true
@@ -834,7 +834,7 @@ SettingsTemplate:
             site_settings:
               timezone: "Asia/Jakarta"
               social_links:
-                whatsapp: "+6281234567890"
+                whatsapp: "+6281252525599"
             email_settings:
               provider: "smtp"
               daily_limit: 1000
@@ -1199,7 +1199,7 @@ SiteSettingsInput:
       maxLength: 255
       minLength: 3
       description: Site/company name
-      example: "PT Custom Etching Xenial"
+      example: "Custom Etching Xenial"
     site_url:
       type: string
       format: uri
@@ -1223,7 +1223,7 @@ SiteSettingsInput:
       nullable: true
       maxLength: 50
       description: Contact phone number
-      example: "+6281234567890"
+      example: "+6281252525599"
     contact_address:
       type: string
       nullable: true
@@ -1296,7 +1296,7 @@ EmailSettingsInput:
       maxLength: 255
       minLength: 2
       description: Default sender display name
-      example: "PT Custom Etching Xenial"
+      example: "Custom Etching Xenial"
     reply_to_email:
       type: string
       format: email

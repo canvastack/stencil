@@ -317,7 +317,7 @@ class QuoteResponseNotificationTest extends TestCase
 
         $this->assertStringContainsString('CanvaStencil', $rendered);
         $this->assertStringContainsString('Vendor Portal', $rendered);
-        $this->assertStringContainsString('PT Custom Etching Xenial', $rendered);
+        $this->assertStringContainsString('Custom Etching Xenial', $rendered);
     }
 
     /** @test */

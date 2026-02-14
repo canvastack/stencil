@@ -461,7 +461,7 @@ SupplierContact:
           maxLength: 50
           nullable: true
           description: Mobile phone number
-          example: "+6281234567890"
+          example: "+6281252525599"
         extension:
           type: string
           maxLength: 20
@@ -1680,7 +1680,7 @@ SupplierContactCreateInput:
       type: string
       maxLength: 50
       nullable: true
-      example: "+6281234567890"
+      example: "+6281252525599"
     extension:
       type: string
       maxLength: 20

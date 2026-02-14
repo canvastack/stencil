@@ -154,7 +154,7 @@ export default function VendorDashboard() {
    */
   if (loading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         {/* Welcome skeleton */}
         <div className="space-y-2">
           <Skeleton className="h-8 w-64" />
@@ -197,7 +197,7 @@ export default function VendorDashboard() {
    */
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="p-4 md:p-6">
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
@@ -218,9 +218,9 @@ export default function VendorDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Welcome back, {vendor?.company_name || 'Vendor'}!

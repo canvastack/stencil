@@ -32,7 +32,7 @@ describe('VendorProfile', () => {
       tenant_id: 'tenant-1',
       company_name: 'ABC Manufacturing',
       email: 'contact@abc.com',
-      phone: '+6281234567890',
+      phone: '+6281252525599',
       contact_person: 'John Doe',
       address: 'Jl. Sudirman No. 123, Jakarta',
       status: 'active',
@@ -77,7 +77,7 @@ describe('VendorProfile', () => {
       // Verify company information is displayed
       expect(screen.getByText('ABC Manufacturing')).toBeInTheDocument();
       expect(screen.getByText('contact@abc.com')).toBeInTheDocument();
-      expect(screen.getByText('+6281234567890')).toBeInTheDocument();
+      expect(screen.getByText('+6281252525599')).toBeInTheDocument();
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('Jl. Sudirman No. 123, Jakarta')).toBeInTheDocument();
 
@@ -174,7 +174,7 @@ describe('VendorProfile', () => {
       renderWithRouter();
 
       await waitFor(() => {
-        expect(screen.getByText('+6281234567890')).toBeInTheDocument();
+        expect(screen.getByText('+6281252525599')).toBeInTheDocument();
       });
     });
 
@@ -318,7 +318,7 @@ describe('VendorProfile', () => {
         const addressInput = screen.getByLabelText('Address') as HTMLInputElement;
 
         expect(emailInput.value).toBe('contact@abc.com');
-        expect(phoneInput.value).toBe('+6281234567890');
+        expect(phoneInput.value).toBe('+6281252525599');
         expect(contactInput.value).toBe('John Doe');
         expect(addressInput.value).toBe('Jl. Sudirman No. 123, Jakarta');
       });
@@ -454,7 +454,7 @@ describe('VendorProfile', () => {
       await waitFor(() => {
         expect(vendorApi.updateProfile).toHaveBeenCalledWith({
           email: 'newemail@abc.com',
-          phone: '+6281234567890',
+          phone: '+6281252525599',
           contact_person: 'John Doe',
           address: 'Jl. Sudirman No. 123, Jakarta',
         });

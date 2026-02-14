@@ -151,6 +151,14 @@ class Product extends Model implements TenantAwareModel
     }
 
     /**
+     * Get the customer reviews for this product
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(CustomerReview::class, 'product_id', 'id');
+    }
+
+    /**
      * Get the active form configuration (single)
      */
     public function activeFormConfiguration(): ?object

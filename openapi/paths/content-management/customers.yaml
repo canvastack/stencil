@@ -161,7 +161,7 @@
                   data:
                   - id: 550e8400-e29b-41d4-a716-446655440000
                     tenant_id: 6ba7b810-9dad-11d1-80b4-00c04fd430c8
-                    tenant_name: PT Custom Etching Xenial
+                    tenant_name: Custom Etching Xenial
                     customer_code: CUST-2025-0001
                     customer_number: 1
                     name: PT Tech Solutions Indonesia

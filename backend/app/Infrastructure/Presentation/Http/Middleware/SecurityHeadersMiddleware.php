@@ -12,6 +12,16 @@ class SecurityHeadersMiddleware
     {
         $response = $next($request);
 
+        // Skip CSP for PDF download routes
+        if ($request->is('api/*/tenant/purchase-orders/*/download')) {
+            // Only set basic security headers for PDF downloads
+            if ($request->secure() && config('ssl.security.hsts_max_age')) {
+                $this->addHSTSHeaders($response);
+            }
+            $this->addGeneralSecurityHeaders($response);
+            return $response;
+        }
+
         if ($request->secure() && config('ssl.security.hsts_max_age')) {
             $this->addHSTSHeaders($response);
         }

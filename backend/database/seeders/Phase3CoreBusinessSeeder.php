@@ -244,6 +244,11 @@ class Phase3CoreBusinessSeeder extends Seeder
                     'weight' => rand(200, 1500),
                     'weight_unit' => 'grams',
                 ],
+                
+                // IMPORTANT: Set older timestamps (31-365 days ago)
+                // This ensures PT CEX products (last 30 days) appear first
+                'created_at' => Carbon::now()->subDays(rand(31, 365))->subHours(rand(0, 23)),
+                'updated_at' => Carbon::now()->subDays(rand(0, 30))->subHours(rand(0, 23)),
             ]);
 
             $productsCreated++;

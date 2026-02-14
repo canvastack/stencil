@@ -334,7 +334,7 @@ class CompleteOrderWorkflowTest extends TestCase
             'tenant_id' => $tenant->id,
             'name' => 'Test Customer Corp',
             'email' => 'customer@testcorp.com',
-            'phone' => '+6281234567890',
+            'phone' => '+6281252525599',
             'address' => '123 Customer Street, Jakarta',
             'status' => 'active'
         ]);

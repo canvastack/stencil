@@ -8,7 +8,7 @@ use App\Domain\Order\ValueObjects\RefundCalculation;
 use App\Domain\Order\Enums\OrderStatus;
 
 /**
- * Refund Calculation Engine for PT Custom Etching Xenial
+ * Refund Calculation Engine for Custom Etching Xenial
  * 
  * Implements business rules for refund calculations based on:
  * - Order status and progress

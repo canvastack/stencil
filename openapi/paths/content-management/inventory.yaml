@@ -103,7 +103,7 @@
                       active_alerts: 89
                     tenant_distribution:
                       - tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-                        tenant_name: "PT Custom Etching Xenial"
+                        tenant_name: "Custom Etching Xenial"
                         inventory_value: 125750000.00
                         item_count: 450
                         alert_count: 12
@@ -191,7 +191,7 @@
                   data:
                     tenant_info:
                       tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-                      tenant_name: "PT Custom Etching Xenial"
+                      tenant_name: "Custom Etching Xenial"
                       tenant_status: "active"
                     inventory_summary:
                       total_items: 450
@@ -297,7 +297,7 @@
                       alert_response_time: 4.2
                     tenant_performance:
                       - tenant_id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-                        tenant_name: "PT Custom Etching Xenial"
+                        tenant_name: "Custom Etching Xenial"
                         performance_score: 87.5
                         inventory_value: 125750000.00
                         turnover_ratio: 5.4

@@ -48,6 +48,7 @@ class ProductFormTemplateSeeder extends Seeder
         return [
             $this->defaultProductOrderForm(),
             $this->metalPlakatForm(),
+            $this->metalPlatForm(),
             $this->glassTrophyForm(),
             $this->corporateAwardForm(),
             $this->acrylicSignageForm(),
@@ -69,6 +70,7 @@ class ProductFormTemplateSeeder extends Seeder
                 'title' => 'Form Pemesanan',
                 'description' => 'Lengkapi form berikut untuk melakukan pemesanan produk',
                 'fields' => [
+                    /*
                     [
                         'id' => 'field_001',
                         'type' => 'text',
@@ -106,6 +108,7 @@ class ProductFormTemplateSeeder extends Seeder
                         ],
                         'order' => 3,
                     ],
+                    */
                     [
                         'id' => 'field_004',
                         'type' => 'number',
@@ -123,7 +126,7 @@ class ProductFormTemplateSeeder extends Seeder
                         'name' => 'productType',
                         'label' => 'Tipe Produk',
                         'required' => true,
-                        'disabled' => true,
+                        'disabled' => false,
                         'helpText' => 'Otomatis terisi dari produk yang dipilih',
                         'order' => 5,
                     ],
@@ -301,28 +304,36 @@ class ProductFormTemplateSeeder extends Seeder
         ];
     }
 
-    private function metalPlakatForm(): array
+    private function metalForm($type = 'plakat'): array
     {
+        $camelCase = ucwords($type);
+        $string    = $type;
+        if ($type == 'plakat') {
+            $string = 'plaque/plakat';
+        } else {
+            $string = $type;
+        }
+
         return [
-            'name' => 'Metal Plakat Order Form',
-            'description' => 'Specialized form for metal plaque/plakat orders with etching specifications',
+            'name' => 'Metal ' . $camelCase . ' Order Form',
+            'description' => 'Specialized form for metal ' . $string . ' orders with etching specifications',
             'category' => 'metal_etching',
-            'tags' => 'plakat,metal,etching,engraving',
+            'tags' => '' . $type . ',metal,etching,engraving',
             'form_schema' => [
                 'version' => '1.0',
-                'title' => 'Pemesanan Plakat Logam',
-                'description' => 'Form khusus untuk pemesanan plakat dengan laser etching',
+                'title' => 'Pemesanan ' . $camelCase . ' Logam',
+                'description' => 'Form khusus untuk pemesanan ' . $type . ' dengan laser etching',
                 'fields' => [
                     [
                         'id' => 'field_001',
                         'type' => 'select',
                         'name' => 'plakat_type',
-                        'label' => 'Jenis Plakat',
+                        'label' => 'Jenis ' . $camelCase . '',
                         'required' => true,
                         'options' => [
-                            ['value' => 'wall_mount', 'label' => 'Plakat Dinding'],
-                            ['value' => 'standing', 'label' => 'Plakat Standing'],
-                            ['value' => 'desktop', 'label' => 'Plakat Desktop'],
+                            ['value' => 'wall_mount', 'label' => '' . $camelCase . ' Dinding'],
+                            ['value' => 'standing', 'label' => '' . $camelCase . ' Standing'],
+                            ['value' => 'desktop', 'label' => '' . $camelCase . ' Desktop'],
                         ],
                         'order' => 1,
                     ],
@@ -397,7 +408,7 @@ class ProductFormTemplateSeeder extends Seeder
                         'type' => 'textarea',
                         'name' => 'text_content',
                         'label' => 'Teks yang Akan Di-Etching',
-                        'placeholder' => 'Masukkan teks lengkap yang akan di-etching pada plakat',
+                        'placeholder' => 'Masukkan teks lengkap yang akan di-etching pada ' . $type . '',
                         'required' => false,
                         'maxLength' => 1000,
                         'order' => 7,
@@ -420,7 +431,7 @@ class ProductFormTemplateSeeder extends Seeder
                         'id' => 'field_009',
                         'type' => 'number',
                         'name' => 'quantity',
-                        'label' => 'Jumlah Plakat',
+                        'label' => 'Jumlah ' . $camelCase . '',
                         'required' => true,
                         'min' => 1,
                         'max' => 500,
@@ -439,6 +450,16 @@ class ProductFormTemplateSeeder extends Seeder
                 ],
             ],
         ];
+    }
+
+    private function metalPlakatForm(): array
+    {
+        return $this->metalForm('plakat');
+    }
+
+    private function metalPlatForm(): array
+    {
+        return $this->metalForm('plat');
     }
 
     private function glassTrophyForm(): array

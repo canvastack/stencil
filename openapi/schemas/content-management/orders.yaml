@@ -138,6 +138,79 @@ PurchaseOrder:
           format: date-time
           description: When vendor was assigned
           nullable: true
+        
+        # Vendor Quote Information (Post-Acceptance Workflow)
+        vendor_quote_id:
+          type: integer
+          description: Internal ID of accepted vendor quote (order_vendor_negotiations table)
+          nullable: true
+        vendor_quote_uuid:
+          type: string
+          format: uuid
+          description: UUID of accepted vendor quote
+          nullable: true
+        vendor_quote_status:
+          type: string
+          nullable: true
+          description: Status of vendor quote
+          example: "accepted"
+        vendor_quote_status_label:
+          type: string
+          nullable: true
+          description: Human-readable vendor quote status
+          example: "Accepted"
+        vendor_quote_accepted_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When vendor accepted the quote
+          example: "2026-02-10T14:30:00Z"
+        vendor_agreed_price:
+          type: integer
+          nullable: true
+          description: Vendor agreed price in cents
+          example: 150000000
+        vendor_estimated_delivery_days:
+          type: integer
+          nullable: true
+          description: Vendor estimated delivery time in days
+          example: 14
+        production_progress:
+          type: object
+          nullable: true
+          description: Production progress tracking (only available when vendor quote is accepted)
+          properties:
+            accepted_date:
+              type: string
+              format: date-time
+              description: When vendor accepted the quote
+              example: "2026-02-10T14:30:00Z"
+            expected_delivery_date:
+              type: string
+              format: date-time
+              description: Expected delivery date based on estimated days
+              example: "2026-02-24T14:30:00Z"
+            days_elapsed:
+              type: integer
+              description: Number of days since acceptance
+              example: 4
+            days_remaining:
+              type: integer
+              description: Number of days until expected delivery (0 if overdue)
+              example: 10
+            progress_percentage:
+              type: number
+              format: double
+              description: Production progress percentage (0-100)
+              example: 28.57
+            is_overdue:
+              type: boolean
+              description: Whether production is past expected delivery date
+              example: false
+            overdue_days:
+              type: integer
+              description: Number of days overdue (0 if not overdue)
+              example: 0
           
         # Production Details
         production_type:

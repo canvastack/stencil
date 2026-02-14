@@ -167,15 +167,11 @@ const Contact = () => {
                       {/* Fallback default options if no options configured */}
                       {(!pageData.form?.serviceOptions || pageData.form.serviceOptions.length === 0) && (
                         <>
-                          <SelectItem value="website-builder">Website Builder</SelectItem>
-                          <SelectItem value="e-commerce">E-Commerce Solutions</SelectItem>
-                          <SelectItem value="template-marketplace">Template Marketplace</SelectItem>
-                          <SelectItem value="plugin-marketplace">Plugin Marketplace</SelectItem>
-                          <SelectItem value="custom-development">Custom Development</SelectItem>
-                          <SelectItem value="consultation">Platform Consultation</SelectItem>
-                          <SelectItem value="training">Training & Support</SelectItem>
-                          <SelectItem value="enterprise">Enterprise Solutions</SelectItem>
-                          <SelectItem value="lainnya">Lainnya</SelectItem>
+                          <SelectItem value="etching-plat">Plat Etching</SelectItem>
+                          <SelectItem value="etching-plakat">Plakat Etching</SelectItem>
+                          <SelectItem value="etching-design">Custom Design</SelectItem>
+                          <SelectItem value="etching-consultation">Konsultasi Etching</SelectItem>
+                          <SelectItem value="etching-other">Lainnya</SelectItem>
                         </>
                       )}
                     </SelectContent>

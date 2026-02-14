@@ -25,8 +25,24 @@ class TestTenantContextMiddleware
         $context = app('test.tenant.context');
         
         if ($context) {
+            // Use merge() to add to request input (same as VendorAuthMiddleware)
+            $request->merge([
+                'tenant_id' => $context['tenant_id'],
+                'tenant' => $context['tenant'],
+            ]);
+            
+            // Also set as attributes for backward compatibility
             $request->attributes->set('tenant_id', $context['tenant_id']);
             $request->attributes->set('tenant', $context['tenant']);
+        }
+        
+        // If user is authenticated and has vendor relationship, add vendor context
+        $user = $request->user();
+        if ($user && $user->vendor) {
+            $request->merge([
+                'vendor' => $user->vendor,
+                'vendor_user' => $user,
+            ]);
         }
         
         return $next($request);

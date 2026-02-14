@@ -20,27 +20,22 @@ export const useRelatedProducts = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!productId && !category) return;
+    if (!tenantSlug || (!productId && !category)) return;
 
     const fetchRelatedProducts = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        let products: Product[] = [];
-        
-        if (category) {
-          // Fetch by category first - more efficient
-          products = await publicProductsService.getProductsByCategory(category, limit + 5);
-        } else {
-          // Fallback to general product fetch
-          const response = await publicProductsService.getProducts({ 
-            per_page: limit + 5 
-          }, tenantSlug);
-          products = response.data;
-        }
+        // Use optimized related products endpoint
+        const products = await publicProductsService.getRelatedProducts({
+          tenantSlug,
+          productId,
+          category: typeof category === 'string' ? category : category?.name,
+          limit: limit + 2, // Fetch extra in case we need to filter
+        });
 
-        // Filter out current product and limit results
+        // Filter and limit
         const filtered = products
           .filter(p => p.id !== productId)
           .slice(0, limit);

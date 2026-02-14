@@ -70,6 +70,10 @@ class ProductResource extends JsonResource
             'customizable' => $this->customizable,
             'customOptions' => $this->custom_options ?? [],
             
+            // Metadata at root level for easy frontend access
+            'metadata' => $this->metadata ?? [],
+            'minOrderQuantity' => $this->min_order_quantity, // Alias for frontend compatibility
+            
             'featured' => $this->featured,
             
             'seoTitle' => $this->seo_title,

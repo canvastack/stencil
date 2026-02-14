@@ -731,7 +731,7 @@ UserProfile:
                 example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
               tenant_name:
                 type: string
-                example: "PT Custom Etching Xenial"
+                example: "Custom Etching Xenial"
               status:
                 type: string
                 enum: ["active", "inactive", "suspended"]
@@ -1151,7 +1151,7 @@ AuthResponse:
                 example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
               tenant_name:
                 type: string
-                example: "PT Custom Etching Xenial"
+                example: "Custom Etching Xenial"
               is_owner:
                 type: boolean
                 example: false

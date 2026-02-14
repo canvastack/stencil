@@ -1,3 +1,5 @@
+import type { ProductionProgress } from './order';
+
 export interface Quote {
   uuid: string;
   quote_number: string;
@@ -60,6 +62,13 @@ export interface Quote {
     name: string;
     email: string;
   };
+  
+  // NEW: Order status information (post-acceptance workflow)
+  order_status?: string;
+  order_status_label?: string;
+  
+  // NEW: Production tracking (post-acceptance workflow)
+  production_progress?: ProductionProgress;
 }
 
 export interface QuoteFilters {

@@ -64,7 +64,7 @@ class UpdateAboutPage extends Command
                         "name" => "John Doe",
                         "role" => "CEO & Founder",
                         "image" => "/images/team/ceo.jpg",
-                        "bio" => "Pengalaman 20+ tahun di industri laser etching"
+                        "bio" => "Pengalaman 20+ tahun di industri etching"
                     ],
                     [
                         "name" => "Jane Smith",
@@ -97,7 +97,7 @@ class UpdateAboutPage extends Command
                     [
                         "year" => "2025",
                         "title" => "Pendirian Perusahaan",
-                        "description" => "Pendirian PT. Custom Etching Xenial"
+                        "description" => "Pendirian Custom Etching Xenial"
                     ]
                 ]
             ],
@@ -141,7 +141,7 @@ class UpdateAboutPage extends Command
                         ],
                         [
                             "value" => "15+",
-                            "label" => "Tahun Pengalaman"
+                            "label" => "Mitra Bisnis"
                         ]
                     ],
                     "background" => "bg-gradient-to-r from-navy to-purple-600"
@@ -149,7 +149,7 @@ class UpdateAboutPage extends Command
             ],
             "seo" => [
                 "title" => "Tentang Kami - Etching Profesional Indonesia",
-                "description" => "Pionir laser etching di Indonesia sejak 2008. Tim profesional dengan pengalaman 15+ tahun, sertifikasi ISO 9001:2015, dan teknologi terkini.",
+                "description" => "Pionir etching di Indonesia sejak 2008. Tim profesional dengan pengalaman 15+ tahun, sertifikasi ISO 9001:2015, dan teknologi terkini.",
                 "keywords" => ["tentang perusahaan etching", "profil perusahaan laser", "tim etching profesional"],
                 "ogImage" => "/images/og-image-about.jpg"
             ]

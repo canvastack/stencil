@@ -153,9 +153,30 @@ class ProductController extends Controller
                 }
             }
 
-            $sortBy = $request->get('sort_by', 'sort_order');
+            // Smart Ordering Strategy:
+            // Convention: sort_order = 0 means "not manually ordered" (use created_at DESC)
+            //            sort_order > 0 means "manually ordered" (use sort_order ASC)
+            
+            $sortBy = $request->get('sort_by');
             $sortOrder = $request->get('sort_order', 'asc');
-            $query->orderBy($sortBy, $sortOrder);
+            
+            if ($sortBy) {
+                // User explicitly requested a sort option
+                if ($sortBy === 'sort_order') {
+                    $query->orderBy('sort_order', 'asc')
+                          ->orderBy('created_at', 'desc')
+                          ->orderBy('id', 'asc');
+                } else {
+                    $query->orderBy($sortBy, $sortOrder)
+                          ->orderBy('id', 'asc');
+                }
+            } else {
+                // No explicit sort requested - use smart default
+                // Default: Show newest products first (created_at DESC)
+                // This gives better UX when admin hasn't manually reordered products
+                $query->orderBy('created_at', 'desc')
+                      ->orderBy('id', 'asc');
+            }
 
             $products = $query->paginate($perPage);
 

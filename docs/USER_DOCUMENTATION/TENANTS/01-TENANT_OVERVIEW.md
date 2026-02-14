@@ -62,7 +62,7 @@ Based on the platform's current tenant portfolio, here are successful businesses
 - **Seasonal Growth**: +45% in Q4
 - **Specialization**: Furniture, decor, home improvement products
 
-### **⚙️ PT. Custom Etching Xenial** (Reference Example)
+### **⚙️ Custom Etching Xenial** (Reference Example)
 - **URL**: `canvastencil.com/etchinx/`
 - **Industry**: Manufacturing/Custom Products  
 - **Specialization**: Custom etching, personalized products, manufacturing services

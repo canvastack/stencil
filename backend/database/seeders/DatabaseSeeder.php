@@ -83,7 +83,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RefundNotificationTemplateSeeder::class);
         $this->call(RefundDataSeeder::class);
         
-        // Seed Enhanced Vendor Data for PT Custom Etching Xenial
+        // Seed Enhanced Vendor Data for Custom Etching Xenial
         $this->command->info('🏭 Seeding Enhanced Vendor Data...');
         $this->call(VendorSeeder::class);
         $this->call(VendorPerformanceSeeder::class);

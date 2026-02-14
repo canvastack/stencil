@@ -57,14 +57,28 @@ class VendorProfileController extends Controller
                 tenantId: $tenantId
             );
 
-            $result = $this->getVendorProfileUseCase->execute($query);
+            $profileData = $this->getVendorProfileUseCase->execute($query);
+            
+            // Extract performance metrics from profile data
+            $performanceMetrics = $profileData['performance_metrics'] ?? [];
+            unset($profileData['performance_metrics']);
+            
+            // Map avg_response_time_hours to average_response_time for frontend compatibility
+            if (isset($performanceMetrics['avg_response_time_hours'])) {
+                $performanceMetrics['average_response_time'] = $performanceMetrics['avg_response_time_hours'];
+            }
 
             return response()->json([
+                'success' => true,
                 'message' => 'Profile retrieved successfully',
-                'data' => $result,
+                'data' => [
+                    'vendor' => $profileData,
+                    'performance_metrics' => $performanceMetrics,
+                ],
             ], 200);
         } catch (InvalidArgumentException $e) {
             return response()->json([
+                'success' => false,
                 'message' => 'Profile not found',
                 'error' => $e->getMessage(),
             ], 404);
@@ -76,6 +90,7 @@ class VendorProfileController extends Controller
             ]);
 
             return response()->json([
+                'success' => false,
                 'message' => 'An error occurred while retrieving profile',
                 'error' => 'Internal server error',
             ], 500);

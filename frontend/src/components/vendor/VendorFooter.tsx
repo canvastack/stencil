@@ -6,7 +6,7 @@ export const VendorFooter = () => {
       <div className="container mx-auto px-4 md:px-6 py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-sm text-muted-foreground text-center md:text-left">
-            © {currentYear} PT Custom Etching Xenial. All rights reserved.
+            © {currentYear} Custom Etching Xenial. All rights reserved.
           </div>
           
           <div className="flex items-center gap-4 text-sm text-muted-foreground">

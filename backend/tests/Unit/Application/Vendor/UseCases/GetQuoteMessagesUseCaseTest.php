@@ -115,8 +115,8 @@ class GetQuoteMessagesUseCaseTest extends TestCase
         $this->assertEquals('Thank you, I will review it.', $result['data'][1]['message']);
         
         // Verify sender info
-        $this->assertEquals('Admin User', $result['data'][0]['sender_name']);
-        $this->assertEquals('Vendor User', $result['data'][1]['sender_name']);
+        $this->assertEquals('Admin User', $result['data'][0]['sender']['name']);
+        $this->assertEquals('Vendor User', $result['data'][1]['sender']['name']);
         
         // Verify pagination
         $this->assertEquals(2, $result['pagination']['total']);

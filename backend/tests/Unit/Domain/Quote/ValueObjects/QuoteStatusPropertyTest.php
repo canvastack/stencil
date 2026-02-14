@@ -243,7 +243,7 @@ class QuoteStatusPropertyTest extends TestCase
     /**
      * Property: COUNTERED can transition to final vendor responses or EXPIRED
      * 
-     * For any COUNTERED status, valid transitions are ACCEPTED, REJECTED, and EXPIRED.
+     * For any COUNTERED status, valid transitions are ACCEPTED, REJECTED, ADMIN_COUNTERED, SENT, and EXPIRED.
      * All other transitions should be rejected.
      * 
      * @test
@@ -254,6 +254,8 @@ class QuoteStatusPropertyTest extends TestCase
         $validTargets = [
             QuoteStatus::ACCEPTED,
             QuoteStatus::REJECTED,
+            QuoteStatus::ADMIN_COUNTERED,
+            QuoteStatus::SENT,
             QuoteStatus::EXPIRED
         ];
 
@@ -263,7 +265,7 @@ class QuoteStatusPropertyTest extends TestCase
             $counteredStatus = QuoteStatus::COUNTERED;
             $canTransition = $counteredStatus->canTransitionTo($targetStatus);
             
-            // Property: COUNTERED should allow final response transitions
+            // Property: COUNTERED should allow final response transitions and admin counter
             if (in_array($targetStatus, $validTargets)) {
                 $this->assertTrue(
                     $canTransition,

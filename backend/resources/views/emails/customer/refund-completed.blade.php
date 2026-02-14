@@ -444,7 +444,7 @@
 
             <div style="text-align: center; margin: 30px 0 0 0; padding: 20px; background-color: #f8fafc; border-radius: 8px;">
                 <p style="color: #6b7280; margin-bottom: 0; font-size: 16px;">
-                    Sekali lagi terima kasih atas kepercayaan Anda kepada <strong>PT Custom Etching Xenial</strong>. 
+                    Sekali lagi terima kasih atas kepercayaan Anda kepada <strong>Custom Etching Xenial</strong>. 
                     Kami berkomitmen untuk terus memberikan layanan dan produk berkualitas tinggi.
                 </p>
             </div>
@@ -453,7 +453,7 @@
         <!-- Footer -->
         <div class="footer">
             <p style="margin: 0 0 15px 0;">
-                <strong>PT Custom Etching Xenial</strong><br>
+                <strong>Custom Etching Xenial</strong><br>
                 Jl. Industri Raya No. 123, Jakarta 12345<br>
                 Indonesia
             </p>
@@ -471,7 +471,7 @@
             </p>
             
             <p style="margin: 15px 0 0 0; font-size: 12px; opacity: 0.7;">
-                © {{ date('Y') }} PT Custom Etching Xenial. All rights reserved.
+                © {{ date('Y') }} Custom Etching Xenial. All rights reserved.
             </p>
         </div>
     </div>

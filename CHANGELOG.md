@@ -1376,7 +1376,7 @@ Comprehensive audit meliputi:
 
 ### 🎯 Current Focus
 
-**Tenant**: PT Custom Etching Xenial (PT CEX) - Bisnis etching untuk logam, kaca, dan plakat
+**Tenant**: Custom Etching Xenial (PT CEX) - Bisnis etching untuk logam, kaca, dan plakat
 
 **Completed**: 
 - ✅ Theme Engine System (Code Editor, Advanced Editor, File Management)
@@ -1490,7 +1490,7 @@ Comprehensive audit meliputi:
 ## [1.0.0] - 2024-01-01
 
 ### Added
-- **Initial Release**: Platform e-commerce untuk produk etching (PT Custom Etching Xenial)
+- **Initial Release**: Platform e-commerce untuk produk etching (Custom Etching Xenial)
 - **Product Pages**: 
   - Product listing dengan grid/list view
   - Advanced filtering (type, category, rating)

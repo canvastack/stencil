@@ -109,6 +109,52 @@ QuoteDetail:
                     type: object
                     description: Product specifications (dynamic fields)
                     additionalProperties: true
+        order_status:
+          type: string
+          nullable: true
+          description: Current order status (synced after quote acceptance)
+          example: "customer_quote"
+        order_status_label:
+          type: string
+          nullable: true
+          description: Human-readable order status label
+          example: "Customer Quote"
+        production_progress:
+          type: object
+          nullable: true
+          description: Production progress tracking (only available when status is 'accepted')
+          properties:
+            accepted_date:
+              type: string
+              format: date-time
+              description: When vendor accepted the quote
+              example: "2026-02-10T14:30:00Z"
+            expected_delivery_date:
+              type: string
+              format: date-time
+              description: Expected delivery date based on estimated days
+              example: "2026-02-24T14:30:00Z"
+            days_elapsed:
+              type: integer
+              description: Number of days since acceptance
+              example: 4
+            days_remaining:
+              type: integer
+              description: Number of days until expected delivery (0 if overdue)
+              example: 10
+            progress_percentage:
+              type: number
+              format: double
+              description: Production progress percentage (0-100)
+              example: 28.57
+            is_overdue:
+              type: boolean
+              description: Whether production is past expected delivery date
+              example: false
+            overdue_days:
+              type: integer
+              description: Number of days overdue (0 if not overdue)
+              example: 0
         customer:
           type: object
           description: Customer information

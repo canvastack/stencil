@@ -268,6 +268,27 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
         Route::post('/analyze-capabilities', [App\Http\Controllers\Api\VendorMatchingController::class, 'analyzeCapabilities']);
     });
     
+    // QC Inspection API
+    Route::prefix('qc-inspections')->group(function () {
+        Route::get('/{inspectionUuid}', [App\Http\Controllers\Api\Admin\QcInspectionController::class, 'show']);
+        Route::put('/{inspectionUuid}', [App\Http\Controllers\Api\Admin\QcInspectionController::class, 'update']);
+        Route::delete('/{inspectionUuid}', [App\Http\Controllers\Api\Admin\QcInspectionController::class, 'destroy']);
+    });
+    
+    Route::prefix('orders')->group(function () {
+        Route::get('/{orderUuid}/qc-inspections', [App\Http\Controllers\Api\Admin\QcInspectionController::class, 'index']);
+        Route::post('/{orderUuid}/qc-inspections', [App\Http\Controllers\Api\Admin\QcInspectionController::class, 'store']);
+    });
+    
+    // Post-Acceptance Analytics API
+    Route::prefix('analytics/post-acceptance')->group(function () {
+        Route::get('/dashboard/metrics', [App\Http\Controllers\Api\Admin\PostAcceptanceAnalyticsController::class, 'getDashboardMetrics']);
+        Route::get('/dashboard/production-timeline', [App\Http\Controllers\Api\Admin\PostAcceptanceAnalyticsController::class, 'getProductionTimeline']);
+        Route::get('/dashboard/vendor-performance', [App\Http\Controllers\Api\Admin\PostAcceptanceAnalyticsController::class, 'getVendorPerformance']);
+        Route::get('/dashboard/delivery-status', [App\Http\Controllers\Api\Admin\PostAcceptanceAnalyticsController::class, 'getDeliveryStatus']);
+        Route::get('/dashboard/recent-activity', [App\Http\Controllers\Api\Admin\PostAcceptanceAnalyticsController::class, 'getRecentActivity']);
+    });
+    
     // Production Management API
     Route::prefix('production')->group(function () {
         Route::get('/plans', [App\Http\Controllers\Api\ProductionController::class, 'getProductionPlans']);
@@ -278,7 +299,9 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
         Route::get('/progress/{orderId}', [App\Http\Controllers\Api\ProductionController::class, 'getProductionProgress']);
         Route::post('/progress/{orderId}', [App\Http\Controllers\Api\ProductionController::class, 'updateProductionProgress']);
         Route::get('/progress/{orderId}/report', [App\Http\Controllers\Api\ProductionController::class, 'getProgressReport']);
-        
+    });
+    
+    Route::prefix('orders')->group(function () {
         Route::get('/schedule', [App\Http\Controllers\Api\ProductionController::class, 'getResourceSchedule']);
         Route::post('/schedule/optimize', [App\Http\Controllers\Api\ProductionController::class, 'optimizeResourceSchedule']);
         
@@ -397,6 +420,7 @@ Route::prefix('public')->group(function () {
     
     // Tenant-specific Products API
     Route::get('/{tenantSlug}/products', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'index']);
+    Route::get('/{tenantSlug}/products/related', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'related']);
     Route::get('/{tenantSlug}/products/featured', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'featured']);
     Route::get('/{tenantSlug}/products/search', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'search']);
     Route::get('/{tenantSlug}/products/categories', [App\Http\Controllers\Api\V1\Public\ProductController::class, 'getCategories']);

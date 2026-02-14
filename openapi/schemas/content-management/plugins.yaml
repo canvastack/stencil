@@ -64,7 +64,7 @@ Plugin:
           type: string
           maxLength: 255
           description: Plugin author/vendor name
-          example: "PT Custom Etching Xenial"
+          example: "Custom Etching Xenial"
         author_email:
           type: string
           format: email
@@ -1550,7 +1550,7 @@ PluginCreateInput:
       type: string
       maxLength: 255
       description: Plugin author/vendor name
-      example: "PT Custom Etching Xenial"
+      example: "Custom Etching Xenial"
     author_email:
       type: string
       format: email

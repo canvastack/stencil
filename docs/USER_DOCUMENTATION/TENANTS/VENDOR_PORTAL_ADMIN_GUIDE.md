@@ -1398,5 +1398,5 @@ A: The system has high availability and backup systems. In case of outage, conta
 
 ---
 
-© 2026 PT Custom Etching Xenial. All rights reserved.
+© 2026 Custom Etching Xenial. All rights reserved.
 

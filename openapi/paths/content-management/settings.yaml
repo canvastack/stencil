@@ -964,7 +964,7 @@
                 type: string
                 nullable: true
                 description: WhatsApp Business phone number
-                example: '+6281234567890'
+                example: '+6281252525599'
               whatsapp_default_message:
                 type: string
                 nullable: true
@@ -1021,7 +1021,7 @@
                   secret_access_key: secret_key_here
                 cdn_enabled: true
                 cdn_url: https://cdn.ptcex.com
-                whatsapp_business_number: '+6281234567890'
+                whatsapp_business_number: '+6281252525599'
                 whatsapp_default_message: Hi! I'm interested in your etching services. Could you provide more info?
                 api_rate_limit: 2000
                 webhook_urls:
@@ -1582,7 +1582,7 @@
                   site_settings:
                     timezone: Asia/Jakarta
                     social_links:
-                      whatsapp: "+6281234567890"
+                      whatsapp: "+6281252525599"
                   email_settings:
                     provider: smtp
                     daily_limit: 1000
@@ -1639,7 +1639,7 @@
                     site_settings:
                       timezone: Asia/Jakarta
                       social_links:
-                        whatsapp: "+6281234567890"
+                        whatsapp: "+6281252525599"
                     email_settings:
                       provider: smtp
                       daily_limit: 1000
@@ -1926,7 +1926,7 @@
                     site_settings.site_name: Jakarta Custom Etching
                     site_settings.site_url: https://jakartaetching.com
                     site_settings.contact_email: info@jakartaetching.com
-                    site_settings.contact_phone: "+6281234567890"
+                    site_settings.contact_phone: "+6281252525599"
                     email_settings.from_name: Jakarta Custom Etching
                     payment_settings.midtrans_config.merchant_id: MYMERCHANT123
                   merge_strategy: merge

@@ -68,7 +68,7 @@ PUT /api/platform/tenants/{id}/activate
 
 Based on current database seeding, the platform includes:
 
-#### **1. PT. Custom Etching Xenial** 
+#### **1. Custom Etching Xenial** 
 - **Slug**: `etchinx`
 - **URL**: `canvastencil.com/etchinx/`
 - **Admin**: `admin@etchinx.com`

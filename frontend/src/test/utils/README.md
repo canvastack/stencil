@@ -72,7 +72,7 @@ const vendor = VendorTestDataFactory.createVendor({
 - `tenant_id`: UUID
 - `company_name`: Generated name
 - `email`: Generated email
-- `phone`: "+6281234567890"
+- `phone`: "+6281252525599"
 - `address`: "Jl. Test No. 123, Jakarta"
 - `status`: "active"
 - `portal_access_enabled`: true
@@ -309,7 +309,7 @@ expect(VendorTestAssertions.isValidISOTimestamp(quote.created_at)).toBe(true);
 expect(VendorTestAssertions.isValidEmail('vendor@test.com')).toBe(true);
 
 // Phone format (Indonesian)
-expect(VendorTestAssertions.isValidPhone('+6281234567890')).toBe(true);
+expect(VendorTestAssertions.isValidPhone('+6281252525599')).toBe(true);
 
 // Quote number format
 expect(VendorTestAssertions.isValidQuoteNumber('Q-2024-0001')).toBe(true);

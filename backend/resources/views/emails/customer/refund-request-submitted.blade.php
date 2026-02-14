@@ -348,7 +348,7 @@
         <!-- Footer -->
         <div class="footer">
             <p style="margin: 0 0 10px 0;">
-                <strong>PT Custom Etching Xenial</strong><br>
+                <strong>Custom Etching Xenial</strong><br>
                 Jl. Industri Raya No. 123, Jakarta 12345<br>
                 Indonesia
             </p>
@@ -357,7 +357,7 @@
                 Untuk bantuan, hubungi <a href="mailto:support@customething.com">support@customething.com</a>
             </p>
             <p style="margin: 15px 0 0 0; font-size: 12px; opacity: 0.7;">
-                © {{ date('Y') }} PT Custom Etching Xenial. All rights reserved.
+                © {{ date('Y') }} Custom Etching Xenial. All rights reserved.
             </p>
         </div>
     </div>

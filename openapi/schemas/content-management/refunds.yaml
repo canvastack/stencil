@@ -1,4 +1,4 @@
-# Refund System Schema Definitions for PT Custom Etching Xenial
+# Refund System Schema Definitions for Custom Etching Xenial
 # Comprehensive data models for refund management with financial protection
 
 RefundRequest:

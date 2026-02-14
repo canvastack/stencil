@@ -114,7 +114,7 @@ class TenantDataSeeder extends Seeder
     {
         // Base customer data (10 core customers)
         $baseCustomerData = [
-            ['Budi', 'Santoso', 'budi.santoso@email.com', '+6281234567890', 'individual'],
+            ['Budi', 'Santoso', 'budi.santoso@email.com', '+6281252525599', 'individual'],
             ['Siti', 'Rahayu', 'siti.rahayu@email.com', '+6281234567891', 'individual'],
             ['Ahmad', 'Wijaya', 'ahmad.wijaya@email.com', '+6281234567892', 'individual'],
             ['PT Maju Bersama', 'Direktur', 'info@majubersama.com', '+6281234567893', 'business'],
@@ -273,7 +273,7 @@ class TenantDataSeeder extends Seeder
             ],
             [
                 'name' => $name,
-                'company_name' => $name,
+                'company_name' => $name, // Set company_name same as name
                 'phone' => $phone,
                 'address' => $address,
                 'status' => rand(0, 15) > 1 ? 'active' : 'inactive', // 93% active

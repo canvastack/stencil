@@ -11,10 +11,10 @@ class ContactInfoTest extends TestCase
     /** @test */
     public function it_can_create_contact_info_with_basic_data()
     {
-        $contactInfo = ContactInfo::fromBasic('test@example.com', '+6281234567890');
+        $contactInfo = ContactInfo::fromBasic('test@example.com', '+6281252525599');
         
         $this->assertEquals('test@example.com', $contactInfo->getEmail());
-        $this->assertEquals('+6281234567890', $contactInfo->getPhone());
+        $this->assertEquals('+6281252525599', $contactInfo->getPhone());
         $this->assertNull($contactInfo->getWhatsapp());
         $this->assertNull($contactInfo->getAlternativeEmail());
     }
@@ -24,7 +24,7 @@ class ContactInfoTest extends TestCase
     {
         $contactInfo = new ContactInfo(
             'primary@example.com',
-            '+6281234567890',
+            '+6281252525599',
             '+6289876543210',
             'secondary@example.com',
             [
@@ -33,7 +33,7 @@ class ContactInfoTest extends TestCase
         );
         
         $this->assertEquals('primary@example.com', $contactInfo->getEmail());
-        $this->assertEquals('+6281234567890', $contactInfo->getPhone());
+        $this->assertEquals('+6281252525599', $contactInfo->getPhone());
         $this->assertEquals('+6289876543210', $contactInfo->getWhatsapp());
         $this->assertEquals('secondary@example.com', $contactInfo->getAlternativeEmail());
         $this->assertCount(1, $contactInfo->getAdditionalContacts());
@@ -44,7 +44,7 @@ class ContactInfoTest extends TestCase
     {
         $contactInfo = ContactInfo::fromBasic('test@example.com', '081234567890');
         
-        $this->assertEquals('+6281234567890', $contactInfo->getPhone());
+        $this->assertEquals('+6281252525599', $contactInfo->getPhone());
     }
 
     /** @test */
@@ -58,21 +58,21 @@ class ContactInfoTest extends TestCase
     /** @test */
     public function it_can_get_best_phone_for_sms()
     {
-        $contactInfo1 = new ContactInfo('test@example.com', '+6281234567890', '+6289876543210');
+        $contactInfo1 = new ContactInfo('test@example.com', '+6281252525599', '+6289876543210');
         $contactInfo2 = new ContactInfo('test@example.com', null, '+6289876543210');
         
-        $this->assertEquals('+6281234567890', $contactInfo1->getBestPhoneForSms());
+        $this->assertEquals('+6281252525599', $contactInfo1->getBestPhoneForSms());
         $this->assertEquals('+6289876543210', $contactInfo2->getBestPhoneForSms());
     }
 
     /** @test */
     public function it_can_get_best_phone_for_whatsapp()
     {
-        $contactInfo1 = new ContactInfo('test@example.com', '+6281234567890', '+6289876543210');
-        $contactInfo2 = new ContactInfo('test@example.com', '+6281234567890', null);
+        $contactInfo1 = new ContactInfo('test@example.com', '+6281252525599', '+6289876543210');
+        $contactInfo2 = new ContactInfo('test@example.com', '+6281252525599', null);
         
         $this->assertEquals('+6289876543210', $contactInfo1->getBestPhoneForWhatsapp());
-        $this->assertEquals('+6281234567890', $contactInfo2->getBestPhoneForWhatsapp());
+        $this->assertEquals('+6281252525599', $contactInfo2->getBestPhoneForWhatsapp());
     }
 
     /** @test */
@@ -80,7 +80,7 @@ class ContactInfoTest extends TestCase
     {
         $contactInfo = new ContactInfo(
             'test@example.com',
-            '+6281234567890',
+            '+6281252525599',
             '+6289876543210',
             'alt@example.com'
         );
@@ -97,7 +97,7 @@ class ContactInfoTest extends TestCase
     /** @test */
     public function it_can_format_indonesian_phone_numbers()
     {
-        $contactInfo = ContactInfo::fromBasic('test@example.com', '+6281234567890');
+        $contactInfo = ContactInfo::fromBasic('test@example.com', '+6281252525599');
         
         $formatted = $contactInfo->getFormattedPhone();
         
@@ -107,21 +107,21 @@ class ContactInfoTest extends TestCase
     /** @test */
     public function it_can_update_email()
     {
-        $original = ContactInfo::fromBasic('old@example.com', '+6281234567890');
+        $original = ContactInfo::fromBasic('old@example.com', '+6281252525599');
         $updated = $original->withEmail('new@example.com');
         
         $this->assertEquals('old@example.com', $original->getEmail());
         $this->assertEquals('new@example.com', $updated->getEmail());
-        $this->assertEquals('+6281234567890', $updated->getPhone());
+        $this->assertEquals('+6281252525599', $updated->getPhone());
     }
 
     /** @test */
     public function it_can_update_phone()
     {
-        $original = ContactInfo::fromBasic('test@example.com', '+6281234567890');
+        $original = ContactInfo::fromBasic('test@example.com', '+6281252525599');
         $updated = $original->withPhone('+6289876543210');
         
-        $this->assertEquals('+6281234567890', $original->getPhone());
+        $this->assertEquals('+6281252525599', $original->getPhone());
         $this->assertEquals('+6289876543210', $updated->getPhone());
     }
 
@@ -143,9 +143,9 @@ class ContactInfoTest extends TestCase
     /** @test */
     public function it_can_check_equality()
     {
-        $contact1 = ContactInfo::fromBasic('test@example.com', '+6281234567890');
-        $contact2 = ContactInfo::fromBasic('test@example.com', '+6281234567890');
-        $contact3 = ContactInfo::fromBasic('different@example.com', '+6281234567890');
+        $contact1 = ContactInfo::fromBasic('test@example.com', '+6281252525599');
+        $contact2 = ContactInfo::fromBasic('test@example.com', '+6281252525599');
+        $contact3 = ContactInfo::fromBasic('different@example.com', '+6281252525599');
         
         $this->assertTrue($contact1->equals($contact2));
         $this->assertFalse($contact1->equals($contact3));
@@ -156,7 +156,7 @@ class ContactInfoTest extends TestCase
     {
         $contactInfo = new ContactInfo(
             'test@example.com',
-            '+6281234567890',
+            '+6281252525599',
             '+6289876543210',
             'alt@example.com'
         );
@@ -171,7 +171,7 @@ class ContactInfoTest extends TestCase
         $this->assertArrayHasKey('available_methods', $array);
         
         $this->assertEquals('test@example.com', $array['email']);
-        $this->assertEquals('+6281234567890', $array['phone']);
+        $this->assertEquals('+6281252525599', $array['phone']);
     }
 
     /** @test */
@@ -179,7 +179,7 @@ class ContactInfoTest extends TestCase
     {
         $data = [
             'email' => 'test@example.com',
-            'phone' => '+6281234567890',
+            'phone' => '+6281252525599',
             'whatsapp' => '+6289876543210',
             'alternative_email' => 'alt@example.com',
             'additional_contacts' => [
@@ -190,7 +190,7 @@ class ContactInfoTest extends TestCase
         $contactInfo = ContactInfo::fromArray($data);
         
         $this->assertEquals('test@example.com', $contactInfo->getEmail());
-        $this->assertEquals('+6281234567890', $contactInfo->getPhone());
+        $this->assertEquals('+6281252525599', $contactInfo->getPhone());
         $this->assertEquals('+6289876543210', $contactInfo->getWhatsapp());
         $this->assertEquals('alt@example.com', $contactInfo->getAlternativeEmail());
         $this->assertCount(1, $contactInfo->getAdditionalContacts());
@@ -208,14 +208,14 @@ class ContactInfoTest extends TestCase
         $contactInfo = ContactInfo::fromCustomerData($data);
         
         $this->assertEquals('customer@example.com', $contactInfo->getEmail());
-        $this->assertEquals('+6281234567890', $contactInfo->getPhone());
+        $this->assertEquals('+6281252525599', $contactInfo->getPhone());
         $this->assertEquals('+6289876543210', $contactInfo->getWhatsapp());
     }
 
     /** @test */
     public function it_converts_to_string_correctly()
     {
-        $contactInfo = ContactInfo::fromBasic('test@example.com', '+6281234567890');
+        $contactInfo = ContactInfo::fromBasic('test@example.com', '+6281252525599');
         
         $string = (string) $contactInfo;
         
@@ -267,14 +267,14 @@ class ContactInfoTest extends TestCase
     {
         $contactInfo = ContactInfo::fromBasic('test@example.com', '0812-3456-7890');
         
-        $this->assertEquals('+6281234567890', $contactInfo->getPhone());
+        $this->assertEquals('+6281252525599', $contactInfo->getPhone());
     }
 
     /** @test */
     public function it_handles_phone_number_starting_with_62()
     {
-        $contactInfo = ContactInfo::fromBasic('test@example.com', '6281234567890');
+        $contactInfo = ContactInfo::fromBasic('test@example.com', '6281252525599');
         
-        $this->assertEquals('+6281234567890', $contactInfo->getPhone());
+        $this->assertEquals('+6281252525599', $contactInfo->getPhone());
     }
 }

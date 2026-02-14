@@ -54,7 +54,7 @@
         {
           "icon": "Award",
           "value": "10+",
-          "label": "Tahun Pengalaman",
+          "label": "Mitra Bisnis",
           "color": "text-purple-500"
         },
         {
@@ -198,15 +198,11 @@
           },
           {
             "value": "15+",
-            "label": "Tahun Pengalaman"
+            "label": "Mitra Bisnis"
           },
           {
             "value": "98%",
             "label": "Tingkat Kepuasan"
-          },
-          {
-            "value": "500+",
-            "label": "Klien Setia"
           }
         ],
         "buttons": [
@@ -276,7 +272,7 @@
     },
     "seo": {
       "title": "Jasa Etching Profesional - Logam, Kaca, Kristal | Etching ID",
-      "description": "Layanan laser etching profesional untuk logam, kaca, kristal, dan berbagai material. Hasil presisi tinggi, pengerjaan cepat, harga kompetitif. Konsultasi gratis!",
+      "description": "layanan etching profesional untuk logam, kaca, kristal, dan berbagai material. Hasil presisi tinggi, pengerjaan cepat, harga kompetitif. Konsultasi gratis!",
       "keywords": [
         "jasa etching",
         "laser etching",

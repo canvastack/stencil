@@ -72,7 +72,7 @@ export const CustomerFixtures = {
   validCustomer: {
     name: 'John Doe',
     email: 'john.doe@example.com',
-    phone: '+6281234567890',
+    phone: '+6281252525599',
     company_name: 'PT Example Corporation',
     address: 'Jl. Sudirman No. 123',
     city: 'Jakarta',
@@ -120,7 +120,7 @@ export const OrderFixtures = {
   validOrder: {
     customer_name: 'John Doe',
     customer_email: 'john.doe@example.com',
-    customer_phone: '+6281234567890',
+    customer_phone: '+6281252525599',
     customer_address: 'Jl. Sudirman No. 123, Jakarta',
     order_type: 'custom_etching' as const,
     status: 'pending' as const,

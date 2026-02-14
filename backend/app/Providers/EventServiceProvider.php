@@ -31,11 +31,22 @@ class EventServiceProvider extends ServiceProvider
         // Quote Response Events
         \App\Domain\Quote\Events\VendorRespondedToQuote::class => [
             \App\Domain\Quote\Listeners\SendVendorResponseNotification::class,
+            \App\Domain\Quote\Listeners\SendAdminQuoteAcceptedNotification::class,
         ],
         
         // Admin Counter Offer Events
         \App\Domain\Quote\Events\AdminCounteredQuoteEvent::class => [
             \App\Domain\Quote\Listeners\SendAdminCounterOfferNotification::class,
+        ],
+        
+        // Vendor Production Update Events
+        \App\Domain\VendorProduction\Events\ProductionUpdateCreated::class => [
+            \App\Domain\VendorProduction\Listeners\SendProductionUpdateNotification::class,
+            \App\Domain\VendorProduction\Listeners\SendProductionDelayedNotification::class,
+        ],
+        
+        \App\Domain\VendorProduction\Events\ProductionCompleted::class => [
+            \App\Domain\VendorProduction\Listeners\SendProductionCompletedNotification::class,
         ],
     ];
 

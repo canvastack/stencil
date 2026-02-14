@@ -423,7 +423,7 @@ class VendorRepository implements VendorRepositoryInterface
             name: $model->name,
             email: $model->email,
             phone: $model->phone,
-            company: $model->company ?? 'Unknown Company',
+            company: $model->company_name ?? $model->name ?? 'Unknown Company',
             address: $model->address ? (is_string($model->address) ? json_decode($model->address, true) : $model->address) : null,
             contactInfo: $model->contact_info ? (is_string($model->contact_info) ? json_decode($model->contact_info, true) : $model->contact_info) : null,
             capabilities: is_string($model->capabilities) ? json_decode($model->capabilities, true) ?? [] : ($model->capabilities ?? []),

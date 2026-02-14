@@ -78,7 +78,7 @@
         description: Filter by author name
         schema:
           type: string
-        example: "PT Custom Etching Xenial"
+        example: "Custom Etching Xenial"
       - name: min_version
         in: query
         description: Filter plugins compatible with minimum version
@@ -150,7 +150,7 @@
                 slug: "stripe-payment-gateway"
                 description: "Accept credit card payments via Stripe API"
                 short_description: "Secure credit card payments with Stripe"
-                author: "PT Custom Etching Xenial"
+                author: "Custom Etching Xenial"
                 author_email: "developer@ptcex.com"
                 plugin_type: "payment"
                 execution_model: "backend"

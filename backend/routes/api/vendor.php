@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Vendor\VendorAuthController;
 use App\Http\Controllers\Api\Vendor\VendorQuoteController;
 use App\Http\Controllers\Api\Vendor\VendorMessageController;
 use App\Http\Controllers\Api\Vendor\VendorProfileController;
+use App\Http\Controllers\Api\Vendor\VendorProductionUpdateController;
 
 /*
 |--------------------------------------------------------------------------
@@ -100,6 +101,32 @@ Route::middleware([
         
         Route::put('/', [VendorProfileController::class, 'update'])
             ->name('vendor.profile.update');
+    });
+    
+    // ------------------------------------------------------------------------
+    // Purchase Order & Production Update Routes
+    // ------------------------------------------------------------------------
+    
+    Route::prefix('purchase-orders')->group(function () {
+        // Production updates for a purchase order
+        Route::get('/{uuid}/production-updates', [VendorProductionUpdateController::class, 'index'])
+            ->name('vendor.purchase-orders.production-updates.index');
+        
+        Route::post('/{uuid}/production-updates', [VendorProductionUpdateController::class, 'store'])
+            ->name('vendor.purchase-orders.production-updates.store');
+    });
+    
+    Route::prefix('production-updates')->group(function () {
+        // Get single production update
+        Route::get('/{uuid}', [VendorProductionUpdateController::class, 'show'])
+            ->name('vendor.production-updates.show');
+        
+        // Photo management
+        Route::post('/{uuid}/photos', [VendorProductionUpdateController::class, 'addPhotos'])
+            ->name('vendor.production-updates.photos.add');
+        
+        Route::delete('/{uuid}/photos/{photoId}', [VendorProductionUpdateController::class, 'deletePhoto'])
+            ->name('vendor.production-updates.photos.delete');
     });
 });
 

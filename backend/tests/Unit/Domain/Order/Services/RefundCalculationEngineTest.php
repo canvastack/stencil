@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 /**
  * Comprehensive Unit Tests for RefundCalculationEngine
  * 
- * Tests all business logic scenarios for PT Custom Etching Xenial:
+ * Tests all business logic scenarios for Custom Etching Xenial:
  * - Customer-initiated refunds (pre/mid/post production)
  * - Quality issue refunds (partial/full)
  * - Vendor failure refunds

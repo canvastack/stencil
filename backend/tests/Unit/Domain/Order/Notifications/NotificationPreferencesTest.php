@@ -166,18 +166,18 @@ class NotificationPreferencesTest extends TestCase
 
         $this->assertNotNull($whatsappPayload);
         $this->assertStringStartsWith('+62', $whatsappPayload['to']);
-        $this->assertEquals('+6281234567890', $whatsappPayload['to']);
+        $this->assertEquals('+6281252525599', $whatsappPayload['to']);
     }
 
     public function test_phone_number_validation_international_format(): void
     {
-        $this->customer->update(['phone' => '+6281234567890']);
+        $this->customer->update(['phone' => '+6281252525599']);
 
         $notification = new OrderCreatedNotification($this->order);
         $whatsappPayload = $notification->toWhatsapp($this->customer);
 
         $this->assertNotNull($whatsappPayload);
-        $this->assertEquals('+6281234567890', $whatsappPayload['to']);
+        $this->assertEquals('+6281252525599', $whatsappPayload['to']);
     }
 
     public function test_phone_number_formatting_local_to_international(): void

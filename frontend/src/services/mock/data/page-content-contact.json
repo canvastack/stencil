@@ -12,7 +12,7 @@
         {
           "icon": "MapPin",
           "title": "Alamat",
-          "content": "Jl. Industri Raya No. 123, Jakarta Selatan 12345, Indonesia"
+          "content": "Sunter, Jakarta Utara, Indonesia"
         },
         {
           "icon": "Phone",
@@ -94,7 +94,7 @@
           "icon": "MessageCircle",
           "title": "WhatsApp",
           "description": "Chat langsung dengan tim kami",
-          "link": "https://wa.me/6281234567890",
+          "link": "https://wa.me/6281252525599",
           "buttonText": "Chat WhatsApp"
         },
         {
@@ -120,7 +120,7 @@
         {
           "icon": "Award",
           "value": "10+",
-          "label": "Tahun Pengalaman",
+          "label": "Mitra Bisnis",
           "color": "text-green-500"
         },
         {
@@ -179,7 +179,7 @@
           },
           {
             "value": "15+",
-            "label": "Tahun Pengalaman"
+            "label": "Mitra Bisnis"
           },
           {
             "value": "98%",

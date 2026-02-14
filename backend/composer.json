@@ -39,6 +39,9 @@
         },
         "classmap": [
             "../plugins/pages-engine/backend/database/seeders"
+        ],
+        "files": [
+            "app/helpers.php"
         ]
     },
     "autoload-dev": {

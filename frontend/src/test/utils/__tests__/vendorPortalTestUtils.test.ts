@@ -299,7 +299,7 @@ describe('VendorTestAssertions', () => {
     });
 
     it('should validate phone format', () => {
-      expect(VendorTestAssertions.isValidPhone('+6281234567890')).toBe(true);
+      expect(VendorTestAssertions.isValidPhone('+6281252525599')).toBe(true);
       expect(VendorTestAssertions.isValidPhone('invalid-phone')).toBe(false);
     });
 

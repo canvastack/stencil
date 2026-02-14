@@ -137,7 +137,7 @@ import { generateWhatsAppUrl } from '@/utils/whatsapp';
 
 // Generate URL
 const url = generateWhatsAppUrl('081234567890', 'Hello World');
-// Result: https://wa.me/6281234567890?text=Hello%20World
+// Result: https://wa.me/6281252525599?text=Hello%20World
 
 // Open chat
 window.open(url, '_blank');
@@ -147,8 +147,8 @@ window.open(url, '_blank');
 
 ```typescript
 // All these formats work:
-'081234567890'      → '6281234567890'
-'+62 812 3456 7890' → '6281234567890'
+'081234567890'      → '6281252525599'
+'+62 812 3456 7890' → '6281252525599'
 '62-812-345-6789'   → '628123456789'
 ```
 

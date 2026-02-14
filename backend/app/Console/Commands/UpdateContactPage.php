@@ -26,7 +26,7 @@ class UpdateContactPage extends Command
                     [
                         "icon" => "MapPin",
                         "title" => "Alamat",
-                        "content" => "Jl. Industri Raya No. 123, Jakarta Selatan 12345, Indonesia"
+                        "content" => "Sunter, Jakarta Utara, Indonesia"
                     ],
                     [
                         "icon" => "Phone",
@@ -108,7 +108,7 @@ class UpdateContactPage extends Command
                         "icon" => "MessageCircle",
                         "title" => "WhatsApp",
                         "description" => "Chat langsung dengan tim kami",
-                        "link" => "https://wa.me/6281234567890",
+                        "link" => "https://wa.me/6281252525599",
                         "buttonText" => "Chat WhatsApp"
                     ],
                     [
@@ -134,7 +134,7 @@ class UpdateContactPage extends Command
                     [
                         "icon" => "Award",
                         "value" => "10+",
-                        "label" => "Tahun Pengalaman",
+                        "label" => "Mitra Bisnis",
                         "color" => "text-green-500"
                     ],
                     [
@@ -161,7 +161,7 @@ class UpdateContactPage extends Command
                     ],
                     [
                         "title" => "Tim Ahli Berpengalaman",
-                        "description" => "Didukung oleh tim ahli dengan pengalaman puluhan tahun di industri etching dan laser cutting."
+                        "description" => "Didukung oleh tim ahli dengan pengalaman puluhan tahun di industri etching."
                     ],
                     [
                         "title" => "Layanan Prima",
@@ -195,7 +195,7 @@ class UpdateContactPage extends Command
                         ],
                         [
                             "value" => "15+",
-                            "label" => "Tahun Pengalaman"
+                            "label" => "Mitra Bisnis"
                         ],
                         [
                             "value" => "98%",
@@ -219,8 +219,8 @@ class UpdateContactPage extends Command
             ],
             "seo" => [
                 "title" => "Hubungi Kami - Etching Profesional Indonesia",
-                "description" => "Hubungi tim profesional kami untuk konsultasi dan informasi layanan laser etching. Response cepat dan layanan ramah. Telepon, email, WhatsApp tersedia.",
-                "keywords" => ["kontak etching", "hubungi laser etching", "konsultasi etching"],
+                "description" => "Hubungi tim profesional kami untuk konsultasi dan informasi layanan etching. Response cepat dan layanan ramah. Telepon, email, WhatsApp tersedia.",
+                "keywords" => ["kontak etching", "hubungi kami", "konsultasi etching"],
                 "ogImage" => "/images/og-image-contact.jpg"
             ]
         ];

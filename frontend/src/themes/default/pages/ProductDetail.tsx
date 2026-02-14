@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useTheme } from '@/core/engine/ThemeContext';
-import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, GitCompare, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, ShoppingCart, MessageCircle, Star, Check, Package, Ruler, Palette, ZoomIn, X, Rotate3D, GitCompare, ArrowUpDown, Layers, Shield, Pause, Play } from "lucide-react";
 import { useProductComparison } from "@/contexts/ProductComparisonContext";
 import { ComparisonBar } from "@/components/products/ComparisonBar";
 import { Modal } from "@/components/ui/modal";
@@ -50,6 +50,7 @@ import { RatingStars } from "@/components/ui/rating-stars";
 import { DynamicFormRenderer } from "@/components/public";
 import { usePublicFooterConfig } from "@/hooks/usePublicNavigation";
 import { generateWhatsAppUrl } from "@/utils/whatsapp";
+import { RelatedProductImageSlider } from "@/components/products/RelatedProductImageSlider";
 
 const ProductDetail = () => {
   const { currentTheme } = useTheme();
@@ -138,7 +139,8 @@ const ProductDetail = () => {
   const { relatedProducts } = useRelatedProducts({ 
     productId: product?.id, 
     category: product?.category,
-    limit: 3 
+    limit: 3,
+    tenantSlug: tenantSlug || undefined
   });
   const [reviewSort, setReviewSort] = useState<'rating-high' | 'rating-low' | 'newest' | 'oldest'>('newest');
 
@@ -689,28 +691,60 @@ const ProductDetail = () => {
                         className="block group"
                       >
                         <Card className="overflow-hidden border-border bg-card/50 backdrop-blur hover:bg-card hover:shadow-lg transition-all">
-                          <div className="aspect-video relative overflow-hidden bg-muted">
-                            <img
-                              src={resolveImageUrl(getProductImage(relatedProduct.images, 0))}
-                              alt={relatedProduct.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                if (target.src !== DEFAULT_PRODUCT_IMAGE) {
-                                  target.src = DEFAULT_PRODUCT_IMAGE;
-                                }
-                              }}
-                            />
-                          </div>
+                          {/* Image Slider */}
+                          <RelatedProductImageSlider
+                            images={relatedProduct.images || []}
+                            productName={relatedProduct.name}
+                            autoPlayInterval={3000}
+                          />
+                          
                           <div className="p-4">
                             <h4 className="font-semibold text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
                               {relatedProduct.name}
                             </h4>
-                            {relatedProduct.price && relatedProduct.price > 0 && (
-                              <p className="text-primary font-bold">
-                                {formatPrice(relatedProduct.price, relatedProduct.currency || 'IDR')}
-                              </p>
-                            )}
+                            {(() => {
+                              console.log('[ProductDetail] Related product:', {
+                                name: relatedProduct.name,
+                                metadata: relatedProduct.metadata,
+                                minOrderQuantity: relatedProduct.minOrderQuantity,
+                                price: relatedProduct.price
+                              });
+                              
+                              if (relatedProduct.metadata) {
+                                return (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    {relatedProduct.metadata.thickness && (
+                                      <div className="flex items-center gap-1">
+                                        <Layers className="w-3.5 h-3.5 text-primary" />
+                                        <span>{relatedProduct.metadata.thickness}</span>
+                                      </div>
+                                    )}
+                                    {relatedProduct.metadata.thickness && relatedProduct.metadata.backing_type && (
+                                      <span className="text-muted-foreground/50">•</span>
+                                    )}
+                                    {relatedProduct.metadata.backing_type && (
+                                      <div className="flex items-center gap-1">
+                                        <Shield className="w-3.5 h-3.5 text-primary" />
+                                        <span>{relatedProduct.metadata.backing_type}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              } else if (relatedProduct.minOrderQuantity && relatedProduct.minOrderQuantity > 0) {
+                                return (
+                                  <p className="text-primary font-bold">
+                                    Min Order: {relatedProduct.minOrderQuantity} pcs
+                                  </p>
+                                );
+                              } else if (relatedProduct.price && relatedProduct.price > 0) {
+                                return (
+                                  <p className="text-primary font-bold">
+                                    {formatPrice(relatedProduct.price, relatedProduct.currency || 'IDR')}
+                                  </p>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
                         </Card>
                       </Link>

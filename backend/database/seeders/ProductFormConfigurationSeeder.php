@@ -47,6 +47,7 @@ class ProductFormConfigurationSeeder extends Seeder
 
         $templates = [
             'default' => ProductFormTemplate::where('name', 'Default Product Order Form')->first(),
+            'plat' => ProductFormTemplate::where('name', 'Metal Plat Order Form')->first(),
             'plakat' => ProductFormTemplate::where('name', 'Metal Plakat Order Form')->first(),
             'trophy' => ProductFormTemplate::where('name', 'Glass Trophy & Award Form')->first(),
             'corporate' => ProductFormTemplate::where('name', 'Corporate Award & Recognition Form')->first(),
@@ -106,14 +107,19 @@ class ProductFormConfigurationSeeder extends Seeder
 
     private function selectTemplateForProduct($product, $templates)
     {
-        $productName = strtolower($product->name);
-        $productType = strtolower($product->product_type ?? '');
-        $subcategory = strtolower($product->subcategory ?? '');
-        $description = strtolower($product->description ?? '');
+        $productName     = strtolower($product->name);
+        $productType     = strtolower($product->product_type ?? '');
+        $productCategory = strtolower($product->category ?? '');
+        $subcategory     = strtolower($product->subcategory ?? '');
+        $description     = strtolower($product->description ?? '');
 
         // PT CEX Business-Specific: Metal Plakat Detection
         if (str_contains($productName, 'plakat') || str_contains($productName, 'plaque')) {
             return $templates['plakat'];
+        }
+
+        if (str_contains($productCategory, 'pin') || str_contains($productName, 'plat')) {
+            return $templates['plat'];
         }
 
         // Metal products (copper, brass, stainless, aluminum) for etching
@@ -121,7 +127,6 @@ class ProductFormConfigurationSeeder extends Seeder
             str_contains($productName, 'brass') || 
             str_contains($productName, 'stainless') ||
             str_contains($productName, 'aluminum') ||
-            str_contains($productName, 'metal') ||
             str_contains($productType, 'metal')) {
             return $templates['plakat'];
         }
@@ -167,8 +172,9 @@ class ProductFormConfigurationSeeder extends Seeder
         }
 
         // Quote Request for expensive/complex items
-        if ($product->requires_quote || 
-            (isset($product->price) && $product->price > 1000000)) {
+        if ($product->requires_quote
+        //    || (isset($product->price) && $product->price > 1000000)
+        ) {
             return $templates['quote'];
         }
 
@@ -177,7 +183,7 @@ class ProductFormConfigurationSeeder extends Seeder
             return $templates['custom'];
         }
 
-        return $templates['default'];
+        return $templates['plat'];
     }
 
     private function customizeSchemaForProduct($product, $baseSchema)

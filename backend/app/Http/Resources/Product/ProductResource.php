@@ -52,6 +52,7 @@ class ProductResource extends JsonResource
             ],
             
             'min_order' => $this->min_order,
+            'minOrderQuantity' => $this->min_order_quantity, // Alias for frontend
             'specifications' => $this->specifications,
             
             // Product options (previously hardcoded in frontend)
@@ -129,6 +130,9 @@ class ProductResource extends JsonResource
                     return $this->getPublicUrl();
                 }
             ),
+            
+            // Metadata JSON field
+            'metadata' => $this->metadata,
             
             // Metadata
             'created_at' => $this->created_at?->toISOString(),

@@ -69,6 +69,10 @@ class Order extends Model implements TenantAwareModel
         'negotiation_notes',
         'vendor_terms',
         'quotation_amount',
+        'vendor_quote_id',
+        'vendor_quote_accepted_at',
+        'vendor_agreed_price',
+        'vendor_estimated_delivery_days',
     ];
 
     protected $casts = [
@@ -90,6 +94,8 @@ class Order extends Model implements TenantAwareModel
         'vendor_quoted_price' => 'integer',
         'quotation_amount' => 'integer',
         'vendor_lead_time_days' => 'integer',
+        'vendor_agreed_price' => 'integer',
+        'vendor_estimated_delivery_days' => 'integer',
         'exchange_rate' => 'decimal:6',
         'original_amount_usd' => 'integer',
         'converted_amount_idr' => 'integer',
@@ -102,6 +108,7 @@ class Order extends Model implements TenantAwareModel
         'invoice_generated_at' => 'datetime',
         'completed_at' => 'datetime',
         'refunded_at' => 'datetime',
+        'vendor_quote_accepted_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -114,6 +121,7 @@ class Order extends Model implements TenantAwareModel
         'estimated_delivery',
         'shipped_at',
         'delivered_at',
+        'vendor_quote_accepted_at',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -137,6 +145,11 @@ class Order extends Model implements TenantAwareModel
     public function vendorNegotiations(): HasMany
     {
         return $this->hasMany(OrderVendorNegotiation::class);
+    }
+
+    public function vendorQuote(): BelongsTo
+    {
+        return $this->belongsTo(OrderVendorNegotiation::class, 'vendor_quote_id');
     }
 
     public function paymentTransactions(): HasMany
@@ -210,6 +223,58 @@ class Order extends Model implements TenantAwareModel
         }
         
         return 0;
+    }
+
+    /**
+     * Set vendor quote information
+     * 
+     * @param int $quoteId The vendor quote ID
+     * @param int $agreedPrice The agreed price in cents
+     * @param int $estimatedDeliveryDays The estimated delivery days
+     * @return void
+     */
+    public function setVendorQuoteInfo(int $quoteId, int $agreedPrice, int $estimatedDeliveryDays): void
+    {
+        $this->vendor_quote_id = $quoteId;
+        $this->vendor_quote_accepted_at = now();
+        $this->vendor_agreed_price = $agreedPrice;
+        $this->vendor_estimated_delivery_days = $estimatedDeliveryDays;
+    }
+
+    /**
+     * Get production progress
+     * 
+     * Calculates production progress based on vendor quote acceptance date and estimated delivery days.
+     * Returns null if vendor quote information is not available.
+     * 
+     * @return array|null Array with production progress data or null if not applicable
+     */
+    public function getProductionProgress(): ?array
+    {
+        if (!$this->vendor_quote_accepted_at || !$this->vendor_estimated_delivery_days) {
+            return null;
+        }
+        
+        $acceptedDate = $this->vendor_quote_accepted_at;
+        $expectedDate = $acceptedDate->copy()->addDays($this->vendor_estimated_delivery_days);
+        $now = now();
+        
+        $daysElapsed = $acceptedDate->diffInDays($now);
+        $daysRemaining = $now->diffInDays($expectedDate, false);
+        $progressPercentage = min(
+            ($daysElapsed / $this->vendor_estimated_delivery_days) * 100,
+            100
+        );
+        
+        return [
+            'accepted_date' => $acceptedDate->toISOString(),
+            'expected_delivery_date' => $expectedDate->toISOString(),
+            'days_elapsed' => $daysElapsed,
+            'days_remaining' => max($daysRemaining, 0),
+            'progress_percentage' => round($progressPercentage, 2),
+            'is_overdue' => $daysRemaining < 0,
+            'overdue_days' => $daysRemaining < 0 ? abs($daysRemaining) : 0,
+        ];
     }
 
     protected static function boot()
