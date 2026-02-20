@@ -1,19 +1,35 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Menu, X, ShoppingCart, LogOut } from "lucide-react";
+import { Moon, Sun, Menu, X, ShoppingCart, LogOut, User } from "lucide-react";
 import { useThemeComponents } from "@/hooks/useThemeComponents";
 import { usePageContent } from "@/hooks/usePageContent";
 import { useAuthState } from "@/hooks/useAuthState";
+import { useCustomerAuth } from "@/contexts/CustomerAuthContext";
 import { ContextSwitcher } from "@/components/ContextSwitcher";
+import { CustomerLoginModal } from "@/components/public/CustomerLoginModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
   const [isDark, setIsDark] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showCustomerLoginModal, setShowCustomerLoginModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout, user, account } = useAuthState();
+  const { 
+    isAuthenticated: isCustomerAuthenticated, 
+    customer, 
+    logout: customerLogout 
+  } = useCustomerAuth();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -106,6 +122,62 @@ const Header = () => {
               )}
             </Button>
 
+            {/* Customer Authentication */}
+            {isCustomerAuthenticated && customer ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-lg hidden md:flex">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{customer.name}</p>
+                      <p className="text-xs text-muted-foreground">{customer.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/customer/dashboard" className="cursor-pointer">
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/customer/quotes" className="cursor-pointer">
+                      Penawaran Saya
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/customer/orders" className="cursor-pointer">
+                      Pesanan Saya
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      customerLogout();
+                      navigate('/');
+                    }}
+                    className="text-destructive cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Keluar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCustomerLoginModal(true)}
+                className="hidden md:flex"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Login
+              </Button>
+            )}
+
             {isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <ContextSwitcher className="hidden md:flex" />
@@ -175,9 +247,74 @@ const Header = () => {
                   {headerContent.cartText}
                 </Link>
               </Button>
+
+              {/* Customer Authentication - Mobile */}
+              {isCustomerAuthenticated && customer ? (
+                <>
+                  <div className="px-4 py-2 border-t border-white/10 mt-2">
+                    <p className="text-sm font-medium">{customer.name}</p>
+                    <p className="text-xs text-muted-foreground">{customer.email}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <Link to="/customer/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      <User className="h-5 w-5 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <Link to="/customer/quotes" onClick={() => setIsMobileMenuOpen(false)}>
+                      <User className="h-5 w-5 mr-2" />
+                      Penawaran Saya
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <Link to="/customer/orders" onClick={() => setIsMobileMenuOpen(false)}>
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      Pesanan Saya
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-destructive"
+                    onClick={() => {
+                      customerLogout();
+                      setIsMobileMenuOpen(false);
+                      navigate('/');
+                    }}
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    Keluar
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setShowCustomerLoginModal(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  <User className="h-5 w-5 mr-2" />
+                  Login Pelanggan
+                </Button>
+              )}
+
               {isAuthenticated ? (
                 <>
-                  <div className="px-4">
+                  <div className="px-4 border-t border-white/10 mt-2 pt-2">
                     <ContextSwitcher className="w-full" />
                   </div>
                   <Button
@@ -217,6 +354,12 @@ const Header = () => {
           </div>
         )}
       </div>
+
+      {/* Customer Login Modal */}
+      <CustomerLoginModal
+        open={showCustomerLoginModal}
+        onClose={() => setShowCustomerLoginModal(false)}
+      />
     </header>
   );
 };

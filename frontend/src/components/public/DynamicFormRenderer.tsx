@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, ShoppingCart, MessageCircle } from 'lucide-react';
 import { DynamicFormField } from '@/components/form-builder/DynamicFormField';
 import { usePublicFormConfiguration } from '@/hooks/useFormConfiguration';
-import { CustomerDataModal } from '@/components/public/CustomerDataModal';
+import { CustomerRegistrationModal } from '@/components/public/CustomerRegistrationModal';
 import { useTenantAuth } from '@/contexts/TenantAuthContext';
 import type { FormField } from '@/types/form-builder';
 import { cn } from '@/lib/utils';
@@ -187,7 +187,7 @@ export function DynamicFormRenderer({
     };
   };
 
-  const performSubmission = async (customerData?: { name: string; email: string; phone: string }) => {
+  const performSubmission = async (customerData?: { name: string; email: string; phone: string; password?: string; createAccount?: boolean }) => {
     setIsSubmitting(true);
     try {
       let submissionData: Record<string, any> = {
@@ -202,6 +202,8 @@ export function DynamicFormRenderer({
           name: customerData.name,
           email: customerData.email,
           phone: customerData.phone,
+          create_account: customerData.createAccount || false,
+          password: customerData.password,
         };
       } else if (isAuthenticated && !hasCustomerFields) {
         const userData = getCustomerDataFromUser();
@@ -253,7 +255,7 @@ export function DynamicFormRenderer({
     await performSubmission();
   };
 
-  const handleCustomerModalSubmit = async (customerData: { name: string; email: string; phone: string }) => {
+  const handleCustomerModalSubmit = async (customerData: { name: string; email: string; phone: string; password?: string; createAccount?: boolean }) => {
     await performSubmission(customerData);
   };
 
@@ -462,7 +464,7 @@ export function DynamicFormRenderer({
           )}
           <CardContent>{renderForm()}</CardContent>
         </Card>
-        <CustomerDataModal
+        <CustomerRegistrationModal
           open={showCustomerModal}
           onClose={() => {
             setShowCustomerModal(false);
@@ -491,7 +493,7 @@ export function DynamicFormRenderer({
         )}
         {renderForm()}
       </div>
-      <CustomerDataModal
+      <CustomerRegistrationModal
         open={showCustomerModal}
         onClose={() => {
           setShowCustomerModal(false);

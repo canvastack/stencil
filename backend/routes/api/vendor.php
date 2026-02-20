@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Vendor\VendorQuoteController;
 use App\Http\Controllers\Api\Vendor\VendorMessageController;
 use App\Http\Controllers\Api\Vendor\VendorProfileController;
 use App\Http\Controllers\Api\Vendor\VendorProductionUpdateController;
+use App\Http\Controllers\Api\Vendor\VendorPurchaseOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -108,6 +109,22 @@ Route::middleware([
     // ------------------------------------------------------------------------
     
     Route::prefix('purchase-orders')->group(function () {
+        // List purchase orders
+        Route::get('/', [VendorPurchaseOrderController::class, 'index'])
+            ->name('vendor.purchase-orders.index');
+        
+        // Get purchase order detail
+        Route::get('/{uuid}', [VendorPurchaseOrderController::class, 'show'])
+            ->name('vendor.purchase-orders.show');
+        
+        // Acknowledge purchase order
+        Route::post('/{uuid}/acknowledge', [VendorPurchaseOrderController::class, 'acknowledge'])
+            ->name('vendor.purchase-orders.acknowledge');
+        
+        // Download purchase order PDF
+        Route::get('/{uuid}/download', [VendorPurchaseOrderController::class, 'download'])
+            ->name('vendor.purchase-orders.download');
+        
         // Production updates for a purchase order
         Route::get('/{uuid}/production-updates', [VendorProductionUpdateController::class, 'index'])
             ->name('vendor.purchase-orders.production-updates.index');

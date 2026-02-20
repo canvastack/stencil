@@ -38,6 +38,12 @@ return new class extends Migration
             $table->bigInteger('tax');
             $table->bigInteger('shipping')->default(0);
             $table->bigInteger('grand_total');
+            $table->string('currency', 3)->default('IDR'); // Currency code (ISO 4217)
+            
+            // Terms
+            $table->text('payment_terms')->nullable();
+            $table->text('delivery_terms')->nullable();
+            $table->text('notes')->nullable();
             
             // Payment Terms
             $table->string('payment_method', 50)->nullable();

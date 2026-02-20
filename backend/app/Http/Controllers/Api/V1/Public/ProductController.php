@@ -107,10 +107,16 @@ class ProductController extends Controller
                 });
             }
 
-            // Rating filter - using HAVING since average_rating is aggregated
-            // With Eloquent withAvg, we can use havingRaw on the alias
+            // Rating filter - filter products that have average rating >= min_rating
+            // Since withAvg creates a subquery, we need to use a whereHas with aggregation
             if (isset($validated['min_rating']) && $validated['min_rating'] > 0) {
-                $query->having('average_rating', '>=', $validated['min_rating']);
+                $minRating = (float) $validated['min_rating'];
+                $query->whereHas('reviews', function($q) use ($minRating) {
+                    $q->select(\DB::raw('1'))
+                      ->where('is_approved', true)
+                      ->groupBy('product_id')
+                      ->havingRaw('AVG(rating) >= ?', [$minRating]);
+                });
             }
 
             // Featured filter

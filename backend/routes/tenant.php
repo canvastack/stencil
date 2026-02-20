@@ -24,6 +24,7 @@ use App\Infrastructure\Presentation\Http\Controllers\Tenant\TenantUrlConfigurati
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\CustomDomainController;
 use App\Infrastructure\Presentation\Http\Controllers\Tenant\UrlAnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\BusinessTypeController;
+use App\Http\Controllers\Admin\PaymentVerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -286,6 +287,29 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{payment}/mark-overdue', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorPaymentController::class, 'markOverdue'])->name('tenant.vendor_payments.mark_overdue');
         });
         
+        // Admin Payment Verification Routes (Customer Payments)
+        Route::prefix('admin/payment-verification')->group(function () {
+            Route::get('/pending', [PaymentVerificationController::class, 'index'])->name('tenant.admin.payment_verification.pending');
+            Route::get('/statistics', [PaymentVerificationController::class, 'statistics'])->name('tenant.admin.payment_verification.statistics');
+            Route::get('/analytics', [PaymentVerificationController::class, 'analytics'])->name('tenant.admin.payment_verification.analytics');
+            Route::get('/{uuid}', [PaymentVerificationController::class, 'show'])->name('tenant.admin.payment_verification.detail');
+            Route::get('/{uuid}/proof-image', [PaymentVerificationController::class, 'serveProofImage'])->name('tenant.admin.payment_verification.proof_image');
+            Route::get('/{uuid}/download-proof', [PaymentVerificationController::class, 'downloadProof'])->name('tenant.admin.payment_verification.download_proof');
+            Route::post('/{uuid}/approve', [PaymentVerificationController::class, 'approve'])->name('tenant.admin.payment_verification.approve');
+            Route::post('/{uuid}/reject', [PaymentVerificationController::class, 'reject'])->name('tenant.admin.payment_verification.reject');
+            Route::post('/{uuid}/assign', [PaymentVerificationController::class, 'assign'])->name('tenant.admin.payment_verification.assign');
+            Route::post('/{uuid}/refund', [PaymentVerificationController::class, 'refund'])->name('tenant.admin.payment_verification.refund');
+            Route::post('/{uuid}/cancel', [PaymentVerificationController::class, 'cancel'])->name('tenant.admin.payment_verification.cancel');
+            Route::post('/{uuid}/send-receipt', [PaymentVerificationController::class, 'sendReceipt'])->name('tenant.admin.payment_verification.send_receipt');
+            Route::post('/bulk-approve', [PaymentVerificationController::class, 'bulkApprove'])->name('tenant.admin.payment_verification.bulk_approve');
+        });
+        
+        // Admin Payment History Routes (All Verified/Rejected Payments)
+        Route::prefix('admin/payment-history')->group(function () {
+            Route::get('/', [PaymentVerificationController::class, 'history'])->name('tenant.admin.payment_history.index');
+            Route::get('/stats', [PaymentVerificationController::class, 'historyStats'])->name('tenant.admin.payment_history.stats');
+        });
+        
         // Vendor Matching and Business Integration Routes
         Route::prefix('orders/{order}')->group(function () {
             Route::get('/vendor-matches', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\VendorMatchingController::class, 'getMatches'])->name('tenant.orders.vendor_matches');
@@ -439,6 +463,90 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'tenant.scoped'])
             Route::post('/{quote}/messages', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'store'])->name('tenant.quotes.messages.store');
             Route::post('/{quote}/messages/read-all', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'markAllAsRead'])->name('tenant.quotes.messages.read-all');
             Route::post('/{quote}/messages/{messageUuid}/read', [\App\Infrastructure\Presentation\Http\Controllers\Tenant\MessageController::class, 'markAsRead'])->name('tenant.quotes.messages.read');
+        });
+
+        // Customer Quote Management (Customer Quote & Approval Workflow)
+        Route::prefix('customer-quotes')->group(function () {
+            // List & Create
+            Route::get('/', [\App\Http\Controllers\Admin\CustomerQuoteController::class, 'index'])->name('tenant.customer_quotes.index');
+            Route::post('/', [\App\Http\Controllers\Admin\CustomerQuoteController::class, 'store'])->name('tenant.customer_quotes.store');
+            
+            // Single Quote Operations
+            Route::get('/{uuid}', [\App\Http\Controllers\Admin\CustomerQuoteController::class, 'show'])->name('tenant.customer_quotes.show');
+            Route::put('/{uuid}', [\App\Http\Controllers\Admin\CustomerQuoteController::class, 'update'])->name('tenant.customer_quotes.update');
+            Route::delete('/{uuid}', [\App\Http\Controllers\Admin\CustomerQuoteController::class, 'destroy'])->name('tenant.customer_quotes.destroy');
+            
+            // Quote Actions
+            Route::post('/{uuid}/send', [\App\Http\Controllers\Admin\CustomerQuoteController::class, 'send'])->name('tenant.customer_quotes.send');
+            
+            // Payment Tracking
+            Route::get('/{uuid}/payment-summary', [\App\Http\Controllers\Admin\CustomerQuoteController::class, 'paymentSummary'])->name('tenant.customer_quotes.payment_summary');
+            
+            // Metrics & Monitoring
+            Route::prefix('metrics')->group(function () {
+                Route::get('/dashboard', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'dashboard'])->name('tenant.customer_quotes.metrics.dashboard');
+                Route::get('/acceptance-rate', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'acceptanceRate'])->name('tenant.customer_quotes.metrics.acceptance_rate');
+                Route::get('/negotiation', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'negotiationMetrics'])->name('tenant.customer_quotes.metrics.negotiation');
+                Route::get('/approval', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'approvalMetrics'])->name('tenant.customer_quotes.metrics.approval');
+                Route::get('/rejection', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'rejectionMetrics'])->name('tenant.customer_quotes.metrics.rejection');
+                Route::get('/errors', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'errorMetrics'])->name('tenant.customer_quotes.metrics.errors');
+                Route::get('/expiry', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'expiryMetrics'])->name('tenant.customer_quotes.metrics.expiry');
+                Route::post('/trigger-alert-check', [\App\Http\Controllers\Admin\CustomerQuoteMetricsController::class, 'triggerAlertCheck'])->name('tenant.customer_quotes.metrics.trigger_alert_check');
+            });
+            
+            // Document Generation
+            Route::get('/{uuid}/documents', [\App\Http\Controllers\Admin\DocumentController::class, 'index'])->name('tenant.customer_quotes.documents.index');
+            Route::post('/{uuid}/documents/quotation', [\App\Http\Controllers\Admin\DocumentController::class, 'generateQuotation'])->name('tenant.customer_quotes.documents.quotation');
+            Route::post('/{uuid}/documents/proforma-invoice', [\App\Http\Controllers\Admin\DocumentController::class, 'generateProformaInvoice'])->name('tenant.customer_quotes.documents.proforma_invoice');
+            Route::post('/{uuid}/documents/tax-invoice', [\App\Http\Controllers\Admin\DocumentController::class, 'generateTaxInvoice'])->name('tenant.customer_quotes.documents.tax_invoice');
+            Route::post('/{uuid}/documents/purchase-order', [\App\Http\Controllers\Admin\DocumentController::class, 'generatePurchaseOrder'])->name('tenant.customer_quotes.documents.purchase_order');
+            Route::get('/documents/{documentId}/download', [\App\Http\Controllers\Admin\DocumentController::class, 'download'])->name('tenant.customer_quotes.documents.download');
+        });
+
+        // Approval Management
+        Route::prefix('approvals')->group(function () {
+            // Pending Approvals
+            Route::get('/pending', [\App\Http\Controllers\Admin\ApprovalController::class, 'index'])->name('tenant.approvals.pending');
+            
+            // Approval Actions
+            Route::post('/{quoteUuid}/approve', [\App\Http\Controllers\Admin\ApprovalController::class, 'approve'])->name('tenant.approvals.approve');
+            Route::post('/{quoteUuid}/reject', [\App\Http\Controllers\Admin\ApprovalController::class, 'reject'])->name('tenant.approvals.reject');
+            
+            // Approval Settings
+            Route::get('/settings', [\App\Http\Controllers\Admin\ApprovalController::class, 'getSettings'])->name('tenant.approvals.settings');
+            Route::put('/settings', [\App\Http\Controllers\Admin\ApprovalController::class, 'updateSettings'])->name('tenant.approvals.settings.update');
+        });
+
+        // Negotiation Management
+        Route::prefix('negotiations')->group(function () {
+            // Counter Offer Actions
+            Route::post('/{quoteUuid}/accept-counter', [\App\Http\Controllers\Admin\NegotiationController::class, 'acceptCounterOffer'])->name('tenant.negotiations.accept_counter');
+            Route::post('/{quoteUuid}/reject-counter', [\App\Http\Controllers\Admin\NegotiationController::class, 'rejectCounterOffer'])->name('tenant.negotiations.reject_counter');
+            Route::post('/{quoteUuid}/send-counter', [\App\Http\Controllers\Admin\NegotiationController::class, 'sendCounterOffer'])->name('tenant.negotiations.send_counter');
+        });
+
+        // Vendor Purchase Order Management (Phase 9.4)
+        Route::prefix('vendor-purchase-orders')->group(function () {
+            // List all vendor POs
+            Route::get('/', [\App\Http\Controllers\Api\Admin\VendorPurchaseOrderController::class, 'index'])->name('tenant.vendor_purchase_orders.index');
+            
+            // Get acknowledgment tracking statistics
+            Route::get('/acknowledgment-stats', [\App\Http\Controllers\Api\Admin\VendorPurchaseOrderController::class, 'acknowledgmentStats'])->name('tenant.vendor_purchase_orders.acknowledgment_stats');
+            
+            // Generate vendor PO from order
+            Route::post('/orders/{orderId}/generate', [\App\Http\Controllers\Api\Admin\VendorPurchaseOrderController::class, 'generate'])->name('tenant.vendor_purchase_orders.generate');
+            
+            // Get vendor PO details
+            Route::get('/{uuid}', [\App\Http\Controllers\Api\Admin\VendorPurchaseOrderController::class, 'show'])->name('tenant.vendor_purchase_orders.show');
+            
+            // Send vendor PO to vendor
+            Route::post('/{uuid}/send', [\App\Http\Controllers\Api\Admin\VendorPurchaseOrderController::class, 'send'])->name('tenant.vendor_purchase_orders.send');
+            
+            // Revise vendor PO (creates new version)
+            Route::post('/{uuid}/revise', [\App\Http\Controllers\Api\Admin\VendorPurchaseOrderController::class, 'revise'])->name('tenant.vendor_purchase_orders.revise');
+            
+            // Download vendor PO PDF
+            Route::get('/{uuid}/download', [\App\Http\Controllers\Api\Admin\VendorPurchaseOrderController::class, 'download'])->name('tenant.vendor_purchase_orders.download');
         });
 
         // Production Updates (Admin Portal)

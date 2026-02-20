@@ -235,6 +235,7 @@ return [
         App\Providers\FileStorageServiceProvider::class,
         App\Providers\AuditLogServiceProvider::class,
         App\Providers\QueryCacheServiceProvider::class,
+        App\Providers\CustomerQuoteServiceProvider::class,
         
         /*
          * Plugin Service Providers...

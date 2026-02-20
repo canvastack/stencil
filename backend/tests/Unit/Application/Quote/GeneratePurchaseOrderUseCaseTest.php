@@ -10,6 +10,7 @@ use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\UserEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\Order;
 use App\Infrastructure\Persistence\Eloquent\Models\OrderVendorNegotiation;
+use App\Infrastructure\Persistence\Eloquent\Models\Vendor;
 use App\Models\VendorPurchaseOrder;
 use InvalidArgumentException;
 
@@ -20,7 +21,8 @@ class GeneratePurchaseOrderUseCaseTest extends TestCase
     private GeneratePurchaseOrderUseCase $useCase;
     private TenantEloquentModel $tenant;
     private UserEloquentModel $admin;
-    private UserEloquentModel $vendor;
+    private UserEloquentModel $vendorUser;
+    private Vendor $vendor;
     private Order $order;
     private OrderVendorNegotiation $quote;
 
@@ -36,9 +38,18 @@ class GeneratePurchaseOrderUseCaseTest extends TestCase
             'tenant_id' => $this->tenant->id,
             'account_type' => 'tenant',
         ]);
-        $this->vendor = UserEloquentModel::factory()->create([
+        
+        // Create vendor record (for order_vendor_negotiations foreign key)
+        $this->vendor = Vendor::factory()->create([
             'tenant_id' => $this->tenant->id,
-            'account_type' => 'tenant',
+        ]);
+        
+        // Create vendor user (for vendor_purchase_orders foreign key)
+        // The users.vendor_id references vendors.uuid
+        $this->vendorUser = UserEloquentModel::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'account_type' => 'vendor',
+            'vendor_id' => $this->vendor->uuid, // Link user to vendor via UUID
         ]);
         
         $this->order = Order::factory()->create([
@@ -49,7 +60,7 @@ class GeneratePurchaseOrderUseCaseTest extends TestCase
         $this->quote = OrderVendorNegotiation::factory()->create([
             'tenant_id' => $this->tenant->id,
             'order_id' => $this->order->id,
-            'vendor_id' => $this->vendor->id,
+            'vendor_id' => $this->vendor->id, // References vendors table
             'status' => 'accepted',
             'latest_offer' => 15000000, // Rp 150,000.00 in cents
             'responded_at' => now(),
@@ -86,7 +97,7 @@ class GeneratePurchaseOrderUseCaseTest extends TestCase
         $this->assertNotNull($po);
         $this->assertEquals($this->quote->id, $po->quote_id);
         $this->assertEquals($this->order->id, $po->order_id);
-        $this->assertEquals($this->vendor->id, $po->vendor_id);
+        $this->assertEquals($this->vendorUser->id, $po->vendor_id); // vendor_id references users table
     }
 
     /** @test */

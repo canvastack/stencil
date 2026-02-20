@@ -360,3 +360,5 @@ export const ContentManagement: React.FC = () => {
     </div>
   );
 };
+
+export default ContentManagement;

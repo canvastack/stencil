@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Infrastructure\Persistence\Eloquent\Traits\BelongsToTenant;
 use App\Infrastructure\Persistence\Eloquent\Contracts\TenantAwareModel;
@@ -150,6 +151,11 @@ class Order extends Model implements TenantAwareModel
     public function vendorQuote(): BelongsTo
     {
         return $this->belongsTo(OrderVendorNegotiation::class, 'vendor_quote_id');
+    }
+
+    public function customerQuote(): HasOne
+    {
+        return $this->hasOne(CustomerQuote::class);
     }
 
     public function paymentTransactions(): HasMany

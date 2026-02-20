@@ -300,6 +300,8 @@ class ProductFormController extends Controller
             'postal_code' => 'postal_code',
             'company' => 'company',
             'company_name' => 'company',
+            'password' => 'password',
+            'create_account' => 'create_account',
         ];
 
         foreach ($formData as $key => $value) {
@@ -320,6 +322,8 @@ class ProductFormController extends Controller
         $email = $this->sanitizeEmail($customerData['email'] ?? null);
         $phone = $this->sanitizePhone($customerData['phone'] ?? null);
         $name = trim($customerData['name'] ?? '');
+        $createAccount = $customerData['create_account'] ?? false;
+        $password = $customerData['password'] ?? null;
         
         // If no name provided, generate a guest customer name
         if (empty($name)) {
@@ -352,14 +356,29 @@ class ProductFormController extends Controller
 
         if ($customer) {
             // Update customer info if changed
-            $customer->update([
+            $updateData = [
                 'name' => $name,
                 'last_order_at' => now(),
-            ]);
+            ];
+            
+            // If customer wants to create account and is currently guest, upgrade account
+            if ($createAccount && $password && $customer->account_type === 'guest') {
+                $updateData['account_type'] = 'registered';
+                $updateData['password_hash'] = \Hash::make($password);
+                $updateData['registration_token'] = Str::uuid();
+                
+                Log::info('[PublicFormSubmission] Upgrading guest customer to registered', [
+                    'customer_uuid' => $customer->uuid,
+                    'tenant_id' => $tenantId,
+                ]);
+            }
+            
+            $customer->update($updateData);
 
             Log::info('[PublicFormSubmission] Existing customer found and updated', [
                 'customer_uuid' => $customer->uuid,
                 'tenant_id' => $tenantId,
+                'account_type' => $customer->account_type,
             ]);
 
             return $customer;
@@ -369,6 +388,11 @@ class ProductFormController extends Controller
         $nameParts = explode(' ', $name, 2);
         $firstName = $nameParts[0] ?? 'Customer';
         $lastName = $nameParts[1] ?? '';
+
+        // Determine account type based on whether they want to create account
+        $accountType = $createAccount && $password ? 'registered' : 'guest';
+        $passwordHash = $createAccount && $password ? \Hash::make($password) : null;
+        $registrationToken = $createAccount && $password ? Str::uuid() : null;
 
         // Create new customer
         $customer = Customer::create([
@@ -386,6 +410,9 @@ class ProductFormController extends Controller
             'postal_code' => trim($customerData['postal_code'] ?? '') ?: null,
             'customer_type' => 'individual',
             'status' => 'active',
+            'account_type' => $accountType,
+            'password_hash' => $passwordHash,
+            'registration_token' => $registrationToken,
             'last_order_at' => now(),
             'metadata' => ['source' => 'website_form'],
         ]);
@@ -393,7 +420,25 @@ class ProductFormController extends Controller
         Log::info('[PublicFormSubmission] New customer created', [
             'customer_uuid' => $customer->uuid,
             'tenant_id' => $tenantId,
+            'account_type' => $accountType,
         ]);
+        
+        // Send email verification if account was created
+        if ($createAccount && $password && $registrationToken) {
+            try {
+                // TODO: Send email verification
+                // event(new CustomerRegistered($customer));
+                Log::info('[PublicFormSubmission] Email verification should be sent', [
+                    'customer_uuid' => $customer->uuid,
+                    'email' => $customer->email,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('[PublicFormSubmission] Failed to send verification email', [
+                    'customer_uuid' => $customer->uuid,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return $customer;
     }

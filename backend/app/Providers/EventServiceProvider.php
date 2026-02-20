@@ -48,6 +48,11 @@ class EventServiceProvider extends ServiceProvider
         \App\Domain\VendorProduction\Events\ProductionCompleted::class => [
             \App\Domain\VendorProduction\Listeners\SendProductionCompletedNotification::class,
         ],
+        
+        // Vendor Purchase Order Events
+        \App\Events\VendorPurchaseOrderAcknowledged::class => [
+            \App\Listeners\NotifyAdminOfVendorAcknowledgment::class,
+        ],
     ];
 
     protected $subscribe = [

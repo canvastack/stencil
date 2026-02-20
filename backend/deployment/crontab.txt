@@ -1,0 +1,94 @@
+# ========================================
+# CanvaStencil Cron Configuration
+# Customer Quote & Approval Workflow
+# ========================================
+#
+# Installation:
+# 1. Edit crontab: crontab -e
+# 2. Add the lines below (adjust paths as needed)
+# 3. Save and exit
+# 4. Verify: crontab -l
+#
+# ========================================
+
+# Laravel Scheduler (runs every minute)
+# This handles all scheduled tasks including:
+# - Check expired quotes (hourly)
+# - Check quote metrics (every 5 minutes)
+# - Database backups
+# - Log rotation
+* * * * * cd /var/www/stencil/backend && php artisan schedule:run >> /dev/null 2>&1
+
+# ========================================
+# Manual Scheduled Jobs (Alternative)
+# ========================================
+# If you prefer to run jobs directly without Laravel scheduler:
+
+# Check expired quotes every hour
+# 0 * * * * cd /var/www/stencil/backend && php artisan customer-quotes:check-expired >> storage/logs/cron-expired.log 2>&1
+
+# Check quote metrics every 5 minutes
+# */5 * * * * cd /var/www/stencil/backend && php artisan customer-quotes:check-metrics >> storage/logs/cron-metrics.log 2>&1
+
+# Database backup daily at 2 AM
+# 0 2 * * * cd /var/www/stencil/backend && php artisan backup:run --only-db >> storage/logs/cron-backup.log 2>&1
+
+# Clean old backups weekly (keep last 30 days)
+# 0 3 * * 0 cd /var/www/stencil/backend && php artisan backup:clean >> storage/logs/cron-backup-clean.log 2>&1
+
+# Clear expired sessions daily at 3 AM
+# 0 3 * * * cd /var/www/stencil/backend && php artisan session:gc >> /dev/null 2>&1
+
+# Rotate logs weekly
+# 0 4 * * 0 cd /var/www/stencil/backend && php artisan log:clear --keep=30 >> /dev/null 2>&1
+
+# ========================================
+# Monitoring & Alerts
+# ========================================
+
+# Check queue health every 5 minutes
+# */5 * * * * cd /var/www/stencil/backend && php artisan queue:monitor redis --max=100 >> storage/logs/cron-queue-monitor.log 2>&1
+
+# Check disk space daily at 6 AM
+# 0 6 * * * df -h | grep -E '^/dev/' | awk '{ if($5+0 > 80) print "Disk space warning: "$0 }' | mail -s "Disk Space Alert" admin@your-domain.com
+
+# Check failed jobs daily at 7 AM
+# 0 7 * * * cd /var/www/stencil/backend && php artisan queue:failed | mail -s "Failed Jobs Report" admin@your-domain.com
+
+# ========================================
+# Performance Optimization
+# ========================================
+
+# Clear application cache weekly at 4 AM Sunday
+# 0 4 * * 0 cd /var/www/stencil/backend && php artisan cache:clear >> /dev/null 2>&1
+
+# Optimize database weekly at 5 AM Sunday
+# 0 5 * * 0 cd /var/www/stencil/backend && php artisan db:optimize >> storage/logs/cron-db-optimize.log 2>&1
+
+# ========================================
+# Notes
+# ========================================
+#
+# Cron Time Format:
+# * * * * * command
+# │ │ │ │ │
+# │ │ │ │ └─── Day of week (0-7, 0 and 7 are Sunday)
+# │ │ │ └───── Month (1-12)
+# │ │ └─────── Day of month (1-31)
+# │ └───────── Hour (0-23)
+# └─────────── Minute (0-59)
+#
+# Examples:
+# */5 * * * *  - Every 5 minutes
+# 0 * * * *    - Every hour
+# 0 0 * * *    - Daily at midnight
+# 0 0 * * 0    - Weekly on Sunday at midnight
+# 0 0 1 * *    - Monthly on the 1st at midnight
+#
+# Logging:
+# >> /dev/null 2>&1  - Discard all output
+# >> file.log 2>&1   - Log both stdout and stderr
+# >> file.log        - Log only stdout
+# 2>> error.log      - Log only stderr
+#
+# ========================================

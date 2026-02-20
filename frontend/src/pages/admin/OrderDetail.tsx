@@ -30,6 +30,8 @@ import { OrderNotifications } from '@/components/orders/OrderNotifications';
 import StatusActionPanel from '@/components/orders/StatusActionPanel';
 import { FloatingHelpButton, HeaderHelpButton } from '@/components/help/HelpButton';
 import { useHelpSystem } from '@/components/help/HelpSystemProvider';
+import { CreateCustomerQuoteButton } from '@/components/admin/orders/CreateCustomerQuoteButton';
+import { CustomerQuoteCard } from '@/components/orders/CustomerQuoteCard';
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -179,6 +181,20 @@ export default function OrderDetail() {
           }}
         />
       </Card>
+
+      {/* Create Customer Quote Button - Show when order is in customer_quote status */}
+      {currentOrder.status === 'customer_quote' && (
+        <div className="flex justify-center">
+          <CreateCustomerQuoteButton
+            orderUuid={currentOrder.uuid || id || ''}
+            vendorQuoteId={currentOrder.vendor_quote_id}
+            orderStatus={currentOrder.status}
+          />
+        </div>
+      )}
+
+      {/* Customer Quote Card - Show if customer quote exists for this order */}
+      <CustomerQuoteCard orderUuid={currentOrder.uuid || id || ''} />
 
       {/* Vendor Quote Card - Only show if order has vendor quote */}
       {currentOrder.vendor_quote_uuid && (

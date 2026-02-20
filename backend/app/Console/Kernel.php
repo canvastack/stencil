@@ -8,6 +8,7 @@ use App\Domain\Inventory\Jobs\InventoryReconciliationJob;
 use App\Infrastructure\Persistence\Eloquent\TenantEloquentModel;
 use App\Infrastructure\Persistence\Eloquent\Models\User;
 use App\Jobs\CheckPluginExpiry;
+use App\Jobs\CheckExpiredQuotesJob;
 use App\Infrastructure\Persistence\Eloquent\Models\Tenant;
 use App\Models\ExchangeRateSetting;
 
@@ -37,14 +38,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('ssl:renew')
             ->daily()
             ->at('02:00')
-            ->withoutOverlapping()
-            ->runInBackground()
-            ->onFailure(function () {
-                \Illuminate\Support\Facades\Log::error('[SSL Renewal] Scheduled renewal failed');
-            })
-            ->onSuccess(function () {
-                \Illuminate\Support\Facades\Log::info('[SSL Renewal] Scheduled renewal completed successfully');
-            });
+            ->withoutOverlapping();
 
         // Exchange Rate Update - Daily execution for each tenant with auto-update enabled
         // This runs daily and processes all tenants that have auto-update enabled
@@ -82,14 +76,21 @@ class Kernel extends ConsoleKernel
             ->daily()
             ->at('00:00')
             ->name('quotes-expire')
-            ->withoutOverlapping()
-            ->runInBackground()
-            ->onFailure(function () {
-                \Illuminate\Support\Facades\Log::error('[Quote Expiration] Scheduled expiration check failed');
-            })
-            ->onSuccess(function () {
-                \Illuminate\Support\Facades\Log::info('[Quote Expiration] Scheduled expiration check completed successfully');
-            });
+            ->withoutOverlapping();
+
+        // Customer Quote Expiration Check - Hourly execution
+        // Checks for expired quotes, sends warnings, and handles expiry notifications
+        $schedule->job(new CheckExpiredQuotesJob)
+            ->hourly()
+            ->name('check-expired-quotes')
+            ->withoutOverlapping();
+
+        // Customer Quote Metrics Check - Every 4 hours
+        // Monitors critical metrics and sends alerts when thresholds are exceeded
+        $schedule->command('quotes:check-metrics')
+            ->everyFourHours()
+            ->name('check-quote-metrics')
+            ->withoutOverlapping();
     }
 
     /**

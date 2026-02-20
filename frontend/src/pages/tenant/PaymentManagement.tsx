@@ -1,28 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePaymentStore } from '@/stores/paymentStore';
-import { PaymentForm } from '@/components/tenant/payments/PaymentForm';
-import { PaymentVerificationQueue } from '@/components/tenant/payments/PaymentVerificationQueue';
-import { PaymentAuditTrail } from '@/components/tenant/payments/PaymentAuditTrail';
+import { tenantApiClient } from '@/services/tenant/tenantApiClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable } from '@/components/ui/data-table';
 import {
   Select,
   SelectContent,
@@ -37,125 +21,59 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Search,
-  Filter,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
-  Download,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Clock,
-  CreditCard,
-  AlertTriangle,
-  TrendingUp,
-  DollarSign,
-  Users,
-  FileText,
-  ArrowUp,
-  ArrowDown,
-  Loader2,
-  Receipt,
-  Send,
-  Ban,
-  RotateCcw,
+  Download, RefreshCw, CheckCircle, XCircle, Clock, CreditCard,
+  AlertTriangle, TrendingUp, DollarSign, ArrowUp, ArrowDown, Loader2,
+  Receipt, Ban, RotateCcw, Home, ListChecks, History, BarChart3,
+  ShieldAlert, XOctagon, Search, MoreHorizontal, Eye
 } from 'lucide-react';
-import { Payment } from '@/services/tenant/paymentService';
-import { formatCurrency } from '@/utils/currency';
-import { format, isAfter } from 'date-fns';
+import PaymentVerificationModal from '@/components/admin/PaymentVerificationModal';
+import type { ColumnDef } from '@tanstack/react-table';
 
-const statusConfig = {
-  pending: { 
-    label: 'Pending', 
-    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', 
-    icon: Clock 
-  },
-  processing: { 
-    label: 'Processing', 
-    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', 
-    icon: RefreshCw 
-  },
-  completed: { 
-    label: 'Completed', 
-    className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', 
-    icon: CheckCircle 
-  },
-  failed: { 
-    label: 'Failed', 
-    className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', 
-    icon: XCircle 
-  },
-  cancelled: { 
-    label: 'Cancelled', 
-    className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', 
-    icon: Ban 
-  },
-  refunded: { 
-    label: 'Refunded', 
-    className: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300', 
-    icon: RotateCcw 
-  },
-  partial_refunded: { 
-    label: 'Partial Refund', 
-    className: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300', 
-    icon: RotateCcw 
-  },
+interface Payment {
+  uuid: string;
+  reference: string;
+  amount: number;
+  currency: string;
+  status: string;
+  customer: {
+    name: string;
+    email: string | null;
+  };
+  quote_number: string | null;
+  submitted_at: string;
+  verified_at: string | null;
+  verified_by_name: string | null;
+}
+
+interface PaymentStats {
+  pending_count: number;
+  verified_today: number;
+  rejected_today: number;
+  revenue_today: number;
+  pending_amount: number;
+  total_payments: number;
+  total_amount: number;
+  success_rate: number;
+  average_payment_amount?: number;
+}
+
+const formatCurrency = (amount: number, currency: string = 'IDR') => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency, minimumFractionDigits: 0 }).format(amount);
 };
 
-const verificationStatusConfig = {
-  pending: { 
-    label: 'Pending Verification', 
-    className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' 
-  },
-  verified: { 
-    label: 'Verified', 
-    className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
-  },
-  rejected: { 
-    label: 'Rejected', 
-    className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' 
-  },
-  fraud_detected: { 
-    label: 'Fraud Detected', 
-    className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' 
-  },
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleString('id-ID', {
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
 };
 
-const StatCard = ({ 
-  title, 
-  value, 
-  subtitle, 
-  icon: Icon, 
-  trend, 
-  trendValue,
-  className = ""
-}: {
-  title: string;
-  value: string | number;
-  subtitle: string;
-  icon: React.ElementType;
-  trend?: 'up' | 'down' | 'neutral';
-  trendValue?: string;
-  className?: string;
-}) => (
-  <Card className={className}>
+const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, className = "", onClick }: any) => (
+  <Card className={`${className} ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`} onClick={onClick}>
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
       <Icon className="h-4 w-4 text-muted-foreground" />
@@ -165,15 +83,8 @@ const StatCard = ({
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">{subtitle}</p>
         {trend && trendValue && (
-          <div className={`flex items-center text-xs ${
-            trend === 'up' ? 'text-green-600' : 
-            trend === 'down' ? 'text-red-600' : 'text-gray-600'
-          }`}>
-            {trend === 'up' ? (
-              <ArrowUp className="w-3 h-3 mr-1" />
-            ) : trend === 'down' ? (
-              <ArrowDown className="w-3 h-3 mr-1" />
-            ) : null}
+          <div className={`flex items-center text-xs ${trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'}`}>
+            {trend === 'up' ? <ArrowUp className="w-3 h-3 mr-1" /> : trend === 'down' ? <ArrowDown className="w-3 h-3 mr-1" /> : null}
             {trendValue}
           </div>
         )}
@@ -184,252 +95,308 @@ const StatCard = ({
 
 export const PaymentManagement = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  const {
-    payments,
-    paymentsLoading: loading,
-    error,
-    stats,
-    verificationQueue,
-    filters,
-    currentPage,
-    totalPages,
-    totalCount,
-    perPage,
-    selectedPaymentIds: selectedIds,
-    fetchPayments,
-    fetchPaymentStats,
-    fetchVerificationQueue,
-    setFilters,
-    selectPayment,
-    selectAllPayments,
-    clearSelection,
-    processPayment,
-    verifyPayment,
-    failPayment,
-    cancelPayment,
-    refundPayment,
-    bulkProcessPayments,
-    bulkVerifyPayments,
-    sendPaymentReceipt,
-    setError: clearError,
-  } = usePaymentStore();
-  
   const [activeTab, setActiveTab] = useState('overview');
-  const [searchTerm, setSearchTerm] = useState(filters.search || '');
-  const [selectedStatus, setSelectedStatus] = useState<Payment['status'] | 'all'>(filters.status || 'all');
-  const [selectedMethod, setSelectedMethod] = useState<string>(filters.payment_method || 'all');
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [stats, setStats] = useState<PaymentStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Payment filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // Modal state
+  const [selectedPaymentUuid, setSelectedPaymentUuid] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Refund dialog state
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
+  const [refundPaymentUuid, setRefundPaymentUuid] = useState<string | null>(null);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [isPartialRefund, setIsPartialRefund] = useState(false);
+  const [refundProcessing, setRefundProcessing] = useState(false);
 
-  const pagination = {
-    currentPage,
-    totalPages,
-    totalCount,
-    perPage,
-  };
+  // Send receipt dialog state
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const [receiptPaymentUuid, setReceiptPaymentUuid] = useState<string | null>(null);
+  const [receiptEmail, setReceiptEmail] = useState('');
+  const [includeProof, setIncludeProof] = useState(true);
+  const [receiptProcessing, setReceiptProcessing] = useState(false);
 
-  // Load data on component mount and filter changes
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
   useEffect(() => {
-    fetchPayments(filters);
-    fetchPaymentStats();
-    fetchVerificationQueue();
-  }, [fetchPayments, fetchPaymentStats, fetchVerificationQueue, filters]);
+    loadStats();
+  }, []);
 
-  // Handle search with debounce
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchTerm !== filters.search) {
-        setFilters({ ...filters, search: searchTerm, page: 1 });
+    if (activeTab === 'payments') {
+      loadPayments();
+    }
+  }, [activeTab, currentPage, statusFilter]);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await tenantApiClient.get('/admin/payment-verification/statistics') as any;
+      if (response && response.success) {
+        setStats(response.data);
       }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, filters, setFilters]);
-
-  const handleStatusFilter = (status: Payment['status'] | 'all') => {
-    setSelectedStatus(status);
-    setFilters({ 
-      ...filters, 
-      status: status === 'all' ? undefined : status, 
-      page: 1 
-    });
-  };
-
-  const handleMethodFilter = (method: string) => {
-    setSelectedMethod(method);
-    setFilters({ 
-      ...filters, 
-      payment_method: method === 'all' ? undefined : method as Payment['payment_method'], 
-      page: 1 
-    });
-  };
-
-  const handleSort = (sortBy: string) => {
-    const sortOrder = filters.sort_by === sortBy && filters.sort_order === 'asc' ? 'desc' : 'asc';
-    setFilters({ ...filters, sort_by: sortBy, sort_order: sortOrder, page: 1 });
-  };
-
-  const handlePageChange = (page: number) => {
-    setFilters({ ...filters, page });
-  };
-
-  const handleSelectPayment = (paymentId: string) => {
-    selectPayment(paymentId);
-  };
-
-  const handleSelectAll = () => {
-    selectAllPayments();
-  };
-
-  const handleProcessPayment = async (paymentId: string) => {
-    try {
-      await processPayment(paymentId, {
-        auto_verify: true
-      });
-      toast({
-        title: 'Success',
-        description: 'Payment processed successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to process payment',
-        variant: 'destructive',
-      });
+    } catch (err: any) {
+      console.error('Failed to load payment stats:', err);
+      setError(err.message || 'Failed to load payment statistics');
+      toast.error(err.message || 'Failed to load payment statistics');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVerifyPayment = async (paymentId: string, status: Payment['verification_status']) => {
+  const loadPayments = async () => {
     try {
-      await verifyPayment(paymentId, {
-        verification_status: status,
-        auto_process: status === 'verified'
+      setPaymentsLoading(true);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        per_page: '20',
+        status: statusFilter === 'all' ? '' : statusFilter,
+        search: searchTerm,
       });
-      toast({
-        title: 'Success',
-        description: `Payment ${status} successfully`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to verify payment',
-        variant: 'destructive',
-      });
+
+      const response = await tenantApiClient.get(`/admin/payment-history?${params}`) as any;
+
+      if (response && response.success) {
+        setPayments(response.data);
+        setTotalPages(response.meta?.last_page || 1);
+        setTotalRecords(response.meta?.total || 0);
+      }
+    } catch (error: any) {
+      console.error('Failed to load payments:', error);
+      toast.error(error.message || 'Failed to load payments');
+    } finally {
+      setPaymentsLoading(false);
     }
   };
 
-  const handleFailPayment = async (paymentId: string) => {
-    try {
-      await failPayment(paymentId, {
-        reason: 'Manual failure',
-        notes: 'Marked as failed by admin'
-      });
-      toast({
-        title: 'Success',
-        description: 'Payment marked as failed',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to mark payment as failed',
-        variant: 'destructive',
-      });
-    }
+  const handleSearch = () => {
+    setCurrentPage(1);
+    loadPayments();
   };
 
-  const handleCancelPayment = async (paymentId: string) => {
-    try {
-      await cancelPayment(paymentId, 'Cancelled by admin');
-      toast({
-        title: 'Success',
-        description: 'Payment cancelled successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to cancel payment',
-        variant: 'destructive',
-      });
-    }
+  const handleViewDetails = (uuid: string) => {
+    setSelectedPaymentUuid(uuid);
+    setIsModalOpen(true);
   };
 
-  const handleRefundPayment = async (paymentId: string, amount?: number) => {
-    try {
-      await refundPayment(paymentId, {
-        amount,
-        reason: 'Refund requested',
-        refund_method: 'original'
-      });
-      toast({
-        title: 'Success',
-        description: 'Payment refunded successfully',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to refund payment',
-        variant: 'destructive',
-      });
-    }
+  const handleRefund = (payment: Payment) => {
+    setRefundPaymentUuid(payment.uuid);
+    setRefundAmount((payment.amount).toString());
+    setRefundReason('');
+    setIsPartialRefund(false);
+    setRefundDialogOpen(true);
   };
 
-  const handleSendReceipt = async (paymentId: string) => {
-    try {
-      await sendPaymentReceipt(paymentId, {
-        include_proof: true
-      });
-      toast({
-        title: 'Success',
-        description: 'Payment receipt sent',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to send receipt',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleBulkAction = async (action: 'process' | 'verify' | 'cancel') => {
-    if (selectedIds.length === 0) {
-      toast({
-        title: 'No Selection',
-        description: 'Please select payments to perform bulk action',
-        variant: 'destructive',
-      });
+  const handleRefundSubmit = async () => {
+    if (!refundPaymentUuid || !refundReason) {
+      toast.error('Please provide refund reason');
       return;
     }
 
     try {
-      switch (action) {
-        case 'process':
-          await bulkProcessPayments(selectedIds, { auto_verify: true });
-          toast({
-            title: 'Success',
-            description: `${selectedIds.length} payments processed successfully`,
-          });
-          break;
-        case 'verify':
-          await bulkVerifyPayments(selectedIds, { 
-            verification_status: 'verified',
-            auto_process: true 
-          });
-          toast({
-            title: 'Success',
-            description: `${selectedIds.length} payments verified successfully`,
-          });
-          break;
+      setRefundProcessing(true);
+      const payload: any = { reason: refundReason };
+      if (isPartialRefund && refundAmount) {
+        payload.amount = parseFloat(refundAmount) * 100; // Convert to cents
       }
-      clearSelection();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: `Failed to ${action} payments`,
-        variant: 'destructive',
-      });
+
+      const response = await tenantApiClient.post(`/admin/payment-verification/${refundPaymentUuid}/refund`, payload) as any;
+      
+      if (response && response.success) {
+        toast.success('Payment refunded successfully');
+        setRefundDialogOpen(false);
+        setRefundPaymentUuid(null);
+        setRefundAmount('');
+        setRefundReason('');
+        setIsPartialRefund(false);
+        loadPayments();
+        loadStats();
+      }
+    } catch (err: any) {
+      console.error('Failed to process refund:', err);
+      toast.error(err.message || 'Failed to process refund');
+    } finally {
+      setRefundProcessing(false);
+    }
+  };
+
+  const handleSendReceipt = (payment: Payment) => {
+    setReceiptPaymentUuid(payment.uuid);
+    setReceiptEmail(payment.customer.email || '');
+    setIncludeProof(true);
+    setShowReceiptDialog(true);
+  };
+
+  const handleSendReceiptSubmit = async () => {
+    if (!receiptPaymentUuid || !receiptEmail) {
+      toast.error('Please provide email address');
+      return;
+    }
+
+    try {
+      setReceiptProcessing(true);
+      const response = await tenantApiClient.post(
+        `/admin/payment-verification/${receiptPaymentUuid}/send-receipt`,
+        {
+          email: receiptEmail,
+          include_proof: includeProof,
+        }
+      ) as any;
+
+      if (response && response.success) {
+        toast.success('Payment receipt sent successfully');
+        setShowReceiptDialog(false);
+      }
+    } catch (error: any) {
+      console.error('Failed to send receipt:', error);
+      toast.error(error.message || 'Failed to send receipt');
+    } finally {
+      setReceiptProcessing(false);
+    }
+  };
+
+  // Define table columns
+  const columns = useMemo<ColumnDef<Payment>[]>(() => [
+    {
+      accessorKey: 'reference',
+      header: 'Reference',
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.reference}</span>
+      ),
+    },
+    {
+      accessorKey: 'customer',
+      header: 'Customer',
+      cell: ({ row }) => (
+        <div>
+          <p className="font-medium">{row.original.customer.name}</p>
+          {row.original.customer.email && (
+            <p className="text-sm text-muted-foreground">
+              {row.original.customer.email}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'quote_number',
+      header: 'Quote',
+      cell: ({ row }) => row.original.quote_number || '-',
+    },
+    {
+      accessorKey: 'amount',
+      header: 'Amount',
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {formatCurrency(row.original.amount, row.original.currency)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ row }) => getStatusBadge(row.original.status),
+    },
+    {
+      accessorKey: 'submitted_at',
+      header: 'Submitted',
+      cell: ({ row }) => formatDate(row.original.submitted_at),
+    },
+    {
+      accessorKey: 'verified_by_name',
+      header: 'Verified By',
+      cell: ({ row }) => row.original.verified_by_name || '-',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleViewDetails(row.original.uuid)}>
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSendReceipt(row.original)}>
+              <Receipt className="w-4 h-4 mr-2" />
+              Send Receipt
+            </DropdownMenuItem>
+            {row.original.status === 'completed' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleRefund(row.original)}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Refund
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ], []);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Verified
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        );
+      case 'pending':
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        );
+      case 'refunded':
+        return (
+          <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
+            <RotateCcw className="h-3 w-3 mr-1" />
+            Refunded
+          </Badge>
+        );
+      case 'cancelled':
+        return (
+          <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+            <Ban className="h-3 w-3 mr-1" />
+            Cancelled
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary">
+            {status}
+          </Badge>
+        );
     }
   };
 
@@ -442,9 +409,7 @@ export const PaymentManagement = () => {
               <XCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
               <h3 className="text-lg font-semibold mb-2">Error Loading Payments</h3>
               <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={() => clearError(null)}>
-                Try Again
-              </Button>
+              <Button onClick={() => { setError(null); loadStats(); }}>Try Again</Button>
             </div>
           </CardContent>
         </Card>
@@ -453,429 +418,308 @@ export const PaymentManagement = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div>
-          <h1 className="text-3xl font-bold">Payment Management</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Payment Management</h1>
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
             Process and manage customer payments and transactions
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowFiltersPanel(!showFiltersPanel)}>
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
+          <Button variant="outline" size="sm" onClick={loadStats}>
+            <RefreshCw className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Refresh</span>
           </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button onClick={() => setShowPaymentForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Payment
+          <Button variant="outline" size="sm">
+            <Download className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Export</span>
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="payments">All Payments</TabsTrigger>
-          <TabsTrigger value="verification">Verification Queue</TabsTrigger>
-          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="overview">
+            <Home className="w-4 h-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="payments">
+            <CreditCard className="w-4 h-4 mr-2" />
+            All Payments
+          </TabsTrigger>
+          <TabsTrigger value="verification">
+            <ListChecks className="w-4 h-4 mr-2" />
+            Verification Queue
+          </TabsTrigger>
+          <TabsTrigger value="audit">
+            <History className="w-4 h-4 mr-2" />
+            Audit Trail
+          </TabsTrigger>
+          <TabsTrigger value="analytics">
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Analytics
+          </TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Stats Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Payments"
-              value={stats?.total_payments || 0}
-              subtitle="All payment records"
-              icon={CreditCard}
-              trend="up"
-              trendValue="+12%"
-            />
-            <StatCard
-              title="Total Amount"
-              value={formatCurrency(stats?.total_amount || 0)}
-              subtitle="Gross payment amount"
-              icon={DollarSign}
-              trend="up"
-              trendValue="+8%"
-            />
-            <StatCard
-              title="Success Rate"
-              value={`${((stats?.success_rate || 0) * 100).toFixed(1)}%`}
-              subtitle="Payment success rate"
-              icon={TrendingUp}
-              trend="up"
-              trendValue="+2%"
-            />
-            <StatCard
-              title="Pending Verification"
-              value={verificationQueue.length}
-              subtitle="Awaiting verification"
-              icon={AlertTriangle}
-              className={verificationQueue.length > 0 ? "border-yellow-200 bg-yellow-50" : ""}
-            />
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center p-12">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <span className="ml-2">Loading statistics...</span>
+            </div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard
+                  title="Total Payments"
+                  value={stats?.total_payments || 0}
+                  subtitle="All payment records"
+                  icon={CreditCard}
+                  trend="up"
+                  trendValue="+12%"
+                />
+                <StatCard
+                  title="Total Amount"
+                  value={formatCurrency(stats?.total_amount || 0)}
+                  subtitle="Gross payment amount"
+                  icon={DollarSign}
+                  trend="up"
+                  trendValue="+8%"
+                />
+                <StatCard
+                  title="Success Rate"
+                  value={`${((stats?.success_rate || 0) * 100).toFixed(1)}%`}
+                  subtitle="Payment success rate"
+                  icon={TrendingUp}
+                  trend="up"
+                  trendValue="+2%"
+                />
+                <StatCard
+                  title="Pending Verification"
+                  value={stats?.pending_count || 0}
+                  subtitle="Awaiting verification"
+                  icon={AlertTriangle}
+                  className={stats?.pending_count ? "border-yellow-200 bg-yellow-50" : ""}
+                  onClick={() => setActiveTab('verification')}
+                />
+              </div>
 
-          {/* Quick Actions */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Payments</CardTitle>
-                <CardDescription>Latest payment transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {payments.slice(0, 5).map((payment) => {
-                    const statusInfo = statusConfig[payment.status];
-                    const StatusIcon = statusInfo.icon;
-                    
-                    return (
-                      <div key={payment.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <StatusIcon className="w-4 h-4" />
-                          <div>
-                            <p className="text-sm font-medium">{payment.customer_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {payment.payment_reference}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{formatCurrency(payment.amount)}</p>
-                          <Badge className={statusInfo.className} variant="secondary">
-                            {statusInfo.label}
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/payments/verification')}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Verification Queue</CardTitle>
+                    <ListChecks className="h-5 w-5 text-blue-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.pending_count || 0}</div>
+                    <p className="text-xs text-muted-foreground mt-1">Pending verification</p>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Methods</CardTitle>
-                <CardDescription>Payment method distribution</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {stats?.payment_methods?.slice(0, 5).map((methodStat) => (
-                    <div key={methodStat.method} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium capitalize">
-                          {(methodStat.method || '').replace('_', ' ')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {methodStat.count} transactions
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{formatCurrency(methodStat.amount)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(methodStat.percentage || 0).toFixed(1)}%
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/payments/history')}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Payment History</CardTitle>
+                    <History className="h-5 w-5 text-green-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.total_payments || 0}</div>
+                    <p className="text-xs text-muted-foreground mt-1">All transactions</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/admin/payments/refunds')}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Refund Management</CardTitle>
+                    <RotateCcw className="h-5 w-5 text-purple-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">Coming Soon</div>
+                    <p className="text-xs text-muted-foreground mt-1">Process refunds</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Analytics</CardTitle>
+                    <BarChart3 className="h-5 w-5 text-orange-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(stats?.revenue_today || 0)}</div>
+                    <p className="text-xs text-muted-foreground mt-1">Revenue today</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Failed Payments</CardTitle>
+                    <XOctagon className="h-5 w-5 text-red-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground mt-1">Requires attention</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Payment Receipts</CardTitle>
+                    <Receipt className="h-5 w-5 text-indigo-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats?.verified_today || 0}</div>
+                    <p className="text-xs text-muted-foreground mt-1">Sent today</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Cancelled Payments</CardTitle>
+                    <Ban className="h-5 w-5 text-gray-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground mt-1">This month</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Fraud Detection</CardTitle>
+                    <ShieldAlert className="h-5 w-5 text-yellow-600" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">0</div>
+                    <p className="text-xs text-muted-foreground mt-1">Flagged transactions</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
         </TabsContent>
 
-        {/* All Payments Tab */}
         <TabsContent value="payments" className="space-y-4">
-          {/* Filters */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
+          <Card hover={false} className="p-6" role="region" aria-label="Payment transactions table">
+            <CardHeader className="px-0 pt-0">
+              <CardTitle>All Payments</CardTitle>
+              <CardDescription>View and manage all payment transactions</CardDescription>
+            </CardHeader>
+            <CardContent className="px-0 pb-0">
+              {/* Filters */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="Search payments..."
+                      placeholder="Search by reference, customer, quote..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                       className="pl-10"
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Select value={selectedStatus} onValueChange={handleStatusFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      {Object.entries(statusConfig).map(([status, config]) => (
-                        <SelectItem key={status} value={status}>
-                          {config.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedMethod} onValueChange={handleMethodFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Methods</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="credit_card">Credit Card</SelectItem>
-                      <SelectItem value="debit_card">Debit Card</SelectItem>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="digital_wallet">Digital Wallet</SelectItem>
-                      <SelectItem value="gopay">GoPay</SelectItem>
-                      <SelectItem value="ovo">OVO</SelectItem>
-                      <SelectItem value="dana">DANA</SelectItem>
-                      <SelectItem value="shopeepay">ShopeePay</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="completed">Verified</SelectItem>
+                    <SelectItem value="failed">Rejected</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleSearch} size="sm">
+                  <Search className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Search</span>
+                </Button>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Bulk Actions */}
-          {selectedIds.length > 0 && (
-            <Card className="border-primary">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
+              {/* DataTable */}
+              <DataTable
+                columns={columns}
+                data={payments}
+                searchKey="reference"
+                searchPlaceholder="Search payments..."
+                loading={paymentsLoading}
+                datasetId="payment-transactions"
+                showPagination={false}
+                getRowId={(payment) => payment.uuid}
+                onRowClick={(payment) => handleViewDetails(payment.uuid)}
+              />
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t">
                   <p className="text-sm text-muted-foreground">
-                    {selectedIds.length} payment(s) selected
+                    Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, totalRecords)} of {totalRecords} payments
                   </p>
                   <div className="flex gap-2">
                     <Button
-                      size="sm"
                       variant="outline"
-                      onClick={() => handleBulkAction('verify')}
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage <= 1}
                     >
-                      Bulk Verify
+                      Previous
                     </Button>
                     <Button
-                      size="sm"
                       variant="outline"
-                      onClick={() => handleBulkAction('process')}
-                    >
-                      Bulk Process
-                    </Button>
-                    <Button
                       size="sm"
-                      variant="outline"
-                      onClick={clearSelection}
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage >= totalPages}
                     >
-                      Clear Selection
+                      Next
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Payment Table */}
-          <Card>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="flex items-center justify-center p-8">
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                  <span className="ml-2">Loading payments...</span>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedIds.length === payments.length && payments.length > 0}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer"
-                        onClick={() => handleSort('payment_reference')}
-                      >
-                        Reference
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer"
-                        onClick={() => handleSort('customer_name')}
-                      >
-                        Customer
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer"
-                        onClick={() => handleSort('amount')}
-                      >
-                        Amount
-                      </TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Verification</TableHead>
-                      <TableHead 
-                        className="cursor-pointer"
-                        onClick={() => handleSort('created_at')}
-                      >
-                        Date
-                      </TableHead>
-                      <TableHead className="w-12">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.map((payment) => {
-                      const statusInfo = statusConfig[payment.status];
-                      const verificationInfo = verificationStatusConfig[payment.verification_status];
-                      
-                      return (
-                        <TableRow key={payment.id}>
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedIds.includes(payment.id)}
-                              onCheckedChange={() => handleSelectPayment(payment.id)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {payment.payment_reference}
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{payment.customer_name}</p>
-                              <p className="text-sm text-muted-foreground">{payment.customer_email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {formatCurrency(payment.amount)}
-                          </TableCell>
-                          <TableCell>
-                            <span className="capitalize">
-                              {(payment.payment_method || '').replace('_', ' ')}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={statusInfo.className} variant="secondary">
-                              {statusInfo.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={verificationInfo.className} variant="secondary">
-                              {verificationInfo.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {format(new Date(payment.created_at), 'MMM dd, yyyy')}
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => navigate(`/admin/payments/${payment.id}`)}>
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
-                                {payment.status === 'pending' && (
-                                  <DropdownMenuItem onClick={() => handleProcessPayment(payment.id)}>
-                                    <CreditCard className="w-4 h-4 mr-2" />
-                                    Process
-                                  </DropdownMenuItem>
-                                )}
-                                {payment.verification_status === 'pending' && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleVerifyPayment(payment.id, 'verified')}>
-                                      <CheckCircle className="w-4 h-4 mr-2" />
-                                      Verify
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleVerifyPayment(payment.id, 'rejected')}>
-                                      <XCircle className="w-4 h-4 mr-2" />
-                                      Reject
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                <DropdownMenuItem onClick={() => handleSendReceipt(payment.id)}>
-                                  <Receipt className="w-4 h-4 mr-2" />
-                                  Send Receipt
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                {payment.status === 'completed' && (
-                                  <DropdownMenuItem onClick={() => handleRefundPayment(payment.id)}>
-                                    <RotateCcw className="w-4 h-4 mr-2" />
-                                    Refund
-                                  </DropdownMenuItem>
-                                )}
-                                {(payment.status === 'pending' || payment.status === 'processing') && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleFailPayment(payment.id)}>
-                                      <XCircle className="w-4 h-4 mr-2" />
-                                      Mark as Failed
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleCancelPayment(payment.id)}>
-                                      <Ban className="w-4 h-4 mr-2" />
-                                      Cancel
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
               )}
             </CardContent>
           </Card>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * perPage) + 1} to {Math.min(currentPage * perPage, totalCount)} of {totalCount} payments
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage <= 1}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
         </TabsContent>
 
-        {/* Verification Queue Tab */}
         <TabsContent value="verification" className="space-y-4">
-          <PaymentVerificationQueue />
+          <Card>
+            <CardHeader>
+              <CardTitle>Verification Queue</CardTitle>
+              <CardDescription>Review and verify pending payment submissions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <ListChecks className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Payment Verification</h3>
+                <p className="text-muted-foreground mb-4">
+                  {stats?.pending_count || 0} payment(s) awaiting verification
+                </p>
+                <Button onClick={() => navigate('/admin/payments/verification')}>
+                  Go to Verification Queue
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Audit Trail Tab */}
         <TabsContent value="audit" className="space-y-4">
-          <PaymentAuditTrail />
+          <Card>
+            <CardHeader>
+              <CardTitle>Audit Trail</CardTitle>
+              <CardDescription>Track all payment-related activities and changes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12">
+                <History className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
+                <p className="text-muted-foreground">
+                  Audit trail functionality will be available in the next update
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Analytics Tab */}
         <TabsContent value="analytics" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
@@ -897,12 +741,8 @@ export const PaymentManagement = () => {
                     <span className="font-medium">{formatCurrency(stats?.average_payment_amount || 0)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Failure Rate</span>
-                    <span className="font-medium">{((stats?.failure_rate || 0) * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Refund Rate</span>
-                    <span className="font-medium">{((stats?.refund_rate || 0) * 100).toFixed(1)}%</span>
+                    <span>Pending Amount</span>
+                    <span className="font-medium">{formatCurrency(stats?.pending_amount || 0)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -910,24 +750,26 @@ export const PaymentManagement = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Gateway Performance</CardTitle>
+                <CardTitle>Today's Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {stats?.gateway_stats?.map((gateway) => (
-                    <div key={gateway.gateway} className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{gateway.gateway}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {gateway.success_rate.toFixed(1)}% success
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>{gateway.count} payments</span>
-                        <span>{gateway.average_processing_time.toFixed(1)}s avg</span>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex justify-between">
+                    <span>Verified Today</span>
+                    <span className="font-medium text-green-600">{stats?.verified_today || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Rejected Today</span>
+                    <span className="font-medium text-red-600">{stats?.rejected_today || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Revenue Today</span>
+                    <span className="font-medium">{formatCurrency(stats?.revenue_today || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Pending Verification</span>
+                    <span className="font-medium text-yellow-600">{stats?.pending_count || 0}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -935,16 +777,132 @@ export const PaymentManagement = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Payment Form Dialog */}
-      <PaymentForm
-        open={showPaymentForm}
-        onOpenChange={setShowPaymentForm}
-        onSuccess={() => {
-          fetchPayments();
-          setShowPaymentForm(false);
-        }}
-        onCancel={() => setShowPaymentForm(false)}
-      />
+      <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Refund</DialogTitle>
+            <DialogDescription>
+              Process a full or partial refund for this payment
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="partial-refund"
+                checked={isPartialRefund}
+                onChange={(e) => setIsPartialRefund(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="partial-refund">Partial Refund</Label>
+            </div>
+            {isPartialRefund && (
+              <div>
+                <Label htmlFor="refund-amount">Refund Amount</Label>
+                <Input
+                  id="refund-amount"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={refundAmount}
+                  onChange={(e) => setRefundAmount(e.target.value)}
+                />
+              </div>
+            )}
+            <div>
+              <Label htmlFor="refund-reason">Refund Reason</Label>
+              <Textarea
+                id="refund-reason"
+                placeholder="Enter reason for refund"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundDialogOpen(false)} disabled={refundProcessing}>
+              Cancel
+            </Button>
+            <Button onClick={handleRefundSubmit} disabled={refundProcessing}>
+              {refundProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Process Refund'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Send Payment Receipt</DialogTitle>
+            <DialogDescription>
+              Send payment receipt to customer via email
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="receipt-email">Email Address</Label>
+              <Input
+                id="receipt-email"
+                type="email"
+                placeholder="customer@example.com"
+                value={receiptEmail}
+                onChange={(e) => setReceiptEmail(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="include-proof"
+                checked={includeProof}
+                onChange={(e) => setIncludeProof(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="include-proof">Include payment proof attachment</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReceiptDialog(false)} disabled={receiptProcessing}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendReceiptSubmit} disabled={receiptProcessing}>
+              {receiptProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Receipt className="w-4 h-4 mr-2" />
+                  Send Receipt
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {selectedPaymentUuid && (
+        <PaymentVerificationModal
+          paymentUuid={selectedPaymentUuid}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedPaymentUuid(null);
+          }}
+          onVerificationComplete={() => {
+            loadPayments();
+            loadStats();
+          }}
+        />
+      )}
     </div>
   );
 };
+
+export default PaymentManagement;

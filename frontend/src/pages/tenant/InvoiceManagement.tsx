@@ -450,3 +450,5 @@ export const InvoiceManagement = () => {
     </div>
   );
 };
+
+export default InvoiceManagement;

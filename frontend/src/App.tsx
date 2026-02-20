@@ -5,7 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/react-query";
 import { ThemeProvider } from "@/core/engine/ThemeProvider";
-import { themeManager } from "@/core/engine/ThemeManager";
 // Import default theme to ensure registration
 import "@/themes/default/index";
 import { 
@@ -20,7 +19,6 @@ import { ContentProvider } from "@/contexts/ContentContext";
 import { HelmetProvider } from "react-helmet-async";
 import { ApiServiceProvider } from "@/contexts/ApiServiceContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
 import { TenantAuthProvider } from "@/contexts/TenantAuthContext";
 import { GlobalContextProvider } from "@/contexts/GlobalContext";
@@ -69,12 +67,30 @@ import { VendorAuthProvider } from "@/contexts/VendorAuthContext";
 import { VendorLayout } from "@/layouts/VendorLayout";
 import { VendorProtectedRoute } from "@/components/vendor/VendorProtectedRoute";
 
+// Customer Portal Layout and Auth
+import { CustomerLayout } from "@/layouts/CustomerLayout";
+import { CustomerAuthProvider } from "@/contexts/CustomerAuthContext";
+
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
 const VendorQuoteList = lazy(() => import("./pages/vendor/VendorQuoteList"));
 const VendorQuoteDetail = lazy(() => import("./pages/vendor/VendorQuoteDetail"));
 const VendorMessages = lazy(() => import("./pages/vendor/VendorMessages"));
 const VendorProfile = lazy(() => import("./pages/vendor/VendorProfile"));
 const VendorSettings = lazy(() => import("./pages/vendor/VendorSettings"));
+
+// Customer Portal Components
+const CustomerDashboard = lazy(() => import("./pages/customer-portal/CustomerDashboard"));
+const MyQuotesPage = lazy(() => import("./pages/customer-portal/MyQuotesPage"));
+const QuoteViewPage = lazy(() => import("./pages/customer-portal/QuoteViewPage"));
+const QuoteDetailPage = lazy(() => import("./pages/customer-portal/QuoteDetailPage"));
+const QuotePaymentPage = lazy(() => import("./pages/customer-portal/QuotePaymentPage"));
+const NotificationsPage = lazy(() => import("./pages/customer-portal/NotificationsPage"));
+const MyReviewsPage = lazy(() => import("./pages/customer-portal/MyReviewsPage"));
+const CustomerProfilePage = lazy(() => import("./pages/customer-portal/CustomerProfilePage"));
+const CustomerLoginPage = lazy(() => import("./pages/customer-portal/CustomerLoginPage"));
+const CustomerRegisterPage = lazy(() => import("./pages/customer-portal/CustomerRegisterPage"));
+const CustomerForgotPasswordPage = lazy(() => import("./pages/customer-portal/CustomerForgotPasswordPage"));
+const CustomerVerifyEmailPage = lazy(() => import("./pages/customer-portal/CustomerVerifyEmailPage"));
 
 
 const PageHome = lazy(() => import("./pages/admin/PageHome"));
@@ -118,9 +134,20 @@ const QCInspectionPage = lazy(() => import("./pages/admin/QCInspectionPage"));
 const QuoteManagement = lazy(() => import("./pages/tenant/QuoteManagement"));
 const QuoteDetail = lazy(() => import("./pages/admin/quotes/QuoteDetail"));
 const QuoteEdit = lazy(() => import("./pages/tenant/QuoteEdit"));
+
+// Customer Quote Management Pages (Customer Quote & Approval Workflow)
+const CustomerQuoteListPage = lazy(() => import("./pages/admin/customer-quotes/CustomerQuoteListPage"));
+const CustomerQuoteDetailPage = lazy(() => import("./pages/admin/customer-quotes/CustomerQuoteDetailPage"));
+const PendingApprovalsPage = lazy(() => import("./pages/admin/customer-quotes/PendingApprovalsPage"));
+const ApprovalSettingsPage = lazy(() => import("./pages/admin/customer-quotes/ApprovalSettingsPage"));
 const PurchaseOrderDetail = lazy(() => import("./pages/admin/purchase-orders/PurchaseOrderDetail"));
 const InvoiceManagement = lazy(() => import("./pages/tenant/InvoiceManagement"));
 const PaymentManagement = lazy(() => import("./pages/tenant/PaymentManagement"));
+const PaymentManagementHub = lazy(() => import("./pages/admin/PaymentManagementHub"));
+const PaymentVerificationList = lazy(() => import("./pages/admin/PaymentVerificationList"));
+const PaymentHistoryPage = lazy(() => import("./pages/admin/PaymentHistoryPage"));
+const RefundManagementPage = lazy(() => import("./pages/admin/RefundManagementPage"));
+const PaymentReportsPage = lazy(() => import("./pages/admin/PaymentReportsPage"));
 const TenantProductComparison = lazy(() => import("./pages/tenant/ProductComparison"));
 const ProductionManagement = lazy(() => import("./pages/tenant/ProductionManagement"));
 const TooltipTestPage = lazy(() => import("./pages/test/TooltipTestPage"));
@@ -233,7 +260,8 @@ function App() {
               <PlatformAuthProvider>
                 <TenantAuthProvider>
                   <VendorAuthProvider>
-                    <GlobalContextProvider>
+                    <CustomerAuthProvider>
+                      <GlobalContextProvider>
                     <ThemeProvider initialTheme="default">
                       <ContentProvider>
                         <CartProvider>
@@ -263,6 +291,9 @@ function App() {
                   <Route path="/status" element={<Suspense fallback={<LoadingFallback />}><StatusPage /></Suspense>} />
                   <Route path="/announcements" element={<Suspense fallback={<LoadingFallback />}><AnnouncementsPage /></Suspense>} />
                   
+                  {/* Customer Quote Public View (token-based access) */}
+                  <Route path="/quotes/:token" element={<Suspense fallback={<LoadingFallback />}><QuoteViewPage /></Suspense>} />
+                  
                   {/* CMS Content Routes - Dynamically loaded from plugins */}
                   <Route path="/content/*" element={<PluginRoutes scope="public" />} />
                   
@@ -275,6 +306,9 @@ function App() {
                   <Route path="/:tenantSlug/products/:slug" element={<Suspense fallback={<LoadingFallback />}><ProductDetail /></Suspense>} />
                   <Route path="/:tenantSlug/cart" element={<Suspense fallback={<LoadingFallback />}><Cart /></Suspense>} />
                   <Route path="/:tenantSlug/faq" element={<Suspense fallback={<LoadingFallback />}><FAQ /></Suspense>} />
+                  
+                  {/* Customer Quote Public View (token-based access, tenant-scoped) */}
+                  <Route path="/:tenantSlug/quotes/:token" element={<Suspense fallback={<LoadingFallback />}><QuoteViewPage /></Suspense>} />
                   
                   {/* Tenant-Scoped CMS Content Routes - Dynamically loaded from plugins */}
                   <Route path="/:tenantSlug/content/*" element={<PluginRoutes scope="public" />} />
@@ -307,6 +341,25 @@ function App() {
                   <Route path="messages" element={<Suspense fallback={<LoadingFallback />}><VendorMessages /></Suspense>} />
                   <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><VendorProfile /></Suspense>} />
                   <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><VendorSettings /></Suspense>} />
+                </Route>
+                  
+                {/* Customer Portal Routes - Public quote access and authenticated customer area */}
+                <Route path="/customer/login" element={<Suspense fallback={<LoadingFallback />}><CustomerLoginPage /></Suspense>} />
+                <Route path="/customer/register" element={<Suspense fallback={<LoadingFallback />}><CustomerRegisterPage /></Suspense>} />
+                <Route path="/customer/forgot-password" element={<Suspense fallback={<LoadingFallback />}><CustomerForgotPasswordPage /></Suspense>} />
+                <Route path="/customer/verify-email/:token" element={<Suspense fallback={<LoadingFallback />}><CustomerVerifyEmailPage /></Suspense>} />
+                <Route path="/quotes/:token" element={<Suspense fallback={<LoadingFallback />}><QuoteViewPage /></Suspense>} />
+                
+                {/* Customer Portal - Authenticated Routes with Layout */}
+                <Route path="/customer" element={<CustomerLayout />}>
+                  <Route index element={<Navigate to="/customer/dashboard" replace />} />
+                  <Route path="dashboard" element={<Suspense fallback={<LoadingFallback />}><CustomerDashboard /></Suspense>} />
+                  <Route path="quotes" element={<Suspense fallback={<LoadingFallback />}><MyQuotesPage /></Suspense>} />
+                  <Route path="quotes/:id" element={<Suspense fallback={<LoadingFallback />}><QuoteDetailPage /></Suspense>} />
+                  <Route path="quotes/:uuid/payment" element={<Suspense fallback={<LoadingFallback />}><QuotePaymentPage /></Suspense>} />
+                  <Route path="notifications" element={<Suspense fallback={<LoadingFallback />}><NotificationsPage /></Suspense>} />
+                  <Route path="reviews" element={<Suspense fallback={<LoadingFallback />}><MyReviewsPage /></Suspense>} />
+                  <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><CustomerProfilePage /></Suspense>} />
                 </Route>
                   
                 {/* Platform Routes */}
@@ -389,9 +442,20 @@ function App() {
                   <Route path="quotes" element={<Suspense fallback={<LoadingFallback />}><QuoteManagement /></Suspense>} />
                   <Route path="quotes/:id" element={<Suspense fallback={<LoadingFallback />}><QuoteDetail /></Suspense>} />
                   <Route path="quotes/:id/edit" element={<Suspense fallback={<LoadingFallback />}><QuoteEdit /></Suspense>} />
+                  
+                  {/* Customer Quote Management Routes (Customer Quote & Approval Workflow) */}
+                  <Route path="customer-quotes" element={<Suspense fallback={<LoadingFallback />}><CustomerQuoteListPage /></Suspense>} />
+                  <Route path="customer-quotes/:id" element={<Suspense fallback={<LoadingFallback />}><CustomerQuoteDetailPage /></Suspense>} />
+                  <Route path="approvals/pending" element={<Suspense fallback={<LoadingFallback />}><PendingApprovalsPage /></Suspense>} />
+                  <Route path="settings/approvals" element={<Suspense fallback={<LoadingFallback />}><ApprovalSettingsPage /></Suspense>} />
+                  
                   <Route path="purchase-orders/:id" element={<Suspense fallback={<LoadingFallback />}><PurchaseOrderDetail /></Suspense>} />
                   <Route path="invoices" element={<Suspense fallback={<LoadingFallback />}><InvoiceManagement /></Suspense>} />
                   <Route path="payments" element={<Suspense fallback={<LoadingFallback />}><PaymentManagement /></Suspense>} />
+                  <Route path="payments/verification" element={<Suspense fallback={<LoadingFallback />}><PaymentVerificationList /></Suspense>} />
+                  <Route path="payments/history" element={<Suspense fallback={<LoadingFallback />}><PaymentHistoryPage /></Suspense>} />
+                  <Route path="payments/refunds" element={<Suspense fallback={<LoadingFallback />}><RefundManagementPage /></Suspense>} />
+                  <Route path="payments/reports" element={<Suspense fallback={<LoadingFallback />}><PaymentReportsPage /></Suspense>} />
                   <Route path="production" element={<Suspense fallback={<LoadingFallback />}><ProductionManagement /></Suspense>} />
                   <Route path="quality" element={<Suspense fallback={<LoadingFallback />}><QualityManagement /></Suspense>} />
                   <Route path="shipping" element={<Suspense fallback={<LoadingFallback />}><ShippingManagement /></Suspense>} />
@@ -428,7 +492,7 @@ function App() {
                   <Route path="products/catalog" element={<Suspense fallback={<LoadingFallback />}><ProductCatalog /></Suspense>} />
                   <Route path="products/bulk" element={<Suspense fallback={<LoadingFallback />}><ProductBulk /></Suspense>} />
                   <Route path="products/analytics" element={<Suspense fallback={<LoadingFallback />}><ProductAnalytics /></Suspense>} />
-                  <Route path="products/compare" element={<Suspense fallback={<LoadingFallback />}><ProductComparisonProvider><ProductComparison /></ProductComparisonProvider></Suspense>} />
+                  <Route path="products/compare" element={<Suspense fallback={<LoadingFallback />}><TenantProductComparison /></Suspense>} />
                   
                   {/* Track B Commerce Management Pages - Customer Management */}
                   <Route path="customers/database" element={<Suspense fallback={<LoadingFallback />}><CustomerDatabase /></Suspense>} />
@@ -478,9 +542,10 @@ function App() {
                       </ContentProvider>
                     </ThemeProvider>
                   </GlobalContextProvider>
-                </VendorAuthProvider>
-              </TenantAuthProvider>
-            </PlatformAuthProvider>
+                </CustomerAuthProvider>
+              </VendorAuthProvider>
+            </TenantAuthProvider>
+          </PlatformAuthProvider>
             </ApiServiceProvider>
           </QueryClientProvider>
         </HelmetProvider>

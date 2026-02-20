@@ -248,6 +248,7 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
         
         Route::get('/configurations/{ruleCode}', [App\Http\Controllers\Admin\BusinessRulesController::class, 'getConfiguration']);
         Route::put('/configurations/{ruleCode}', [App\Http\Controllers\Admin\BusinessRulesController::class, 'updateConfiguration']);
+    });
         Route::post('/configurations/{ruleCode}/reset', [App\Http\Controllers\Admin\BusinessRulesController::class, 'resetConfiguration']);
     });
     
@@ -350,7 +351,6 @@ Route::prefix('admin')->middleware('auth:sanctum')->group(function () {
     Route::get('/search-suggestions', [App\Http\Controllers\Api\SmartSearchController::class, 'suggestions']);
     Route::post('/search-analytics', [App\Http\Controllers\Api\SmartSearchController::class, 'recordSearchAnalytics']);
     Route::get('/search-analytics', [App\Http\Controllers\Api\SmartSearchController::class, 'getSearchAnalytics']);
-});
 
 // Tenant API (authenticated tenant users)
 // Note: Tenant content management routes are in tenant.php using Tenant\ContentController
@@ -368,6 +368,87 @@ Route::prefix('refunds')->middleware(['auth:sanctum'])->group(function () {
 
 // Public API (No authentication required)
 Route::prefix('public')->group(function () {
+    // Customer Portal - Quote Management (Public Access via Token)
+    Route::prefix('customer-quotes')->middleware('customer.quote.security')->group(function () {
+        // View quote by token (no auth required)
+        Route::get('/token/{token}', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'viewByToken'])
+            ->name('public.customer_quotes.view_by_token')
+            ->middleware('throttle:60,1'); // Rate limit: 60 requests per minute
+        
+        // Customer actions (no auth required, uses token)
+        Route::post('/token/{token}/accept', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'accept'])
+            ->name('public.customer_quotes.accept')
+            ->middleware('throttle:10,1'); // Rate limit: 10 requests per minute
+        
+        Route::post('/token/{token}/counter-offer', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'counterOffer'])
+            ->name('public.customer_quotes.counter_offer')
+            ->middleware('throttle:10,1');
+        
+        Route::post('/token/{token}/reject', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'reject'])
+            ->name('public.customer_quotes.reject')
+            ->middleware('throttle:10,1');
+    });
+    
+    // Customer Authentication (Public Access)
+    Route::prefix('customers')->group(function () {
+        // Registration and login (no auth required)
+        Route::post('/register', [\App\Http\Controllers\Public\CustomerAuthController::class, 'register'])
+            ->middleware('throttle:5,1'); // Rate limit: 5 requests per minute
+        
+        Route::post('/login', [\App\Http\Controllers\Public\CustomerAuthController::class, 'login'])
+            ->middleware('throttle:10,1'); // Rate limit: 10 requests per minute
+        
+        // Email verification (no auth required)
+        Route::get('/verify-email/{token}', [\App\Http\Controllers\Public\CustomerAuthController::class, 'verifyEmail'])
+            ->name('public.customers.verify_email');
+        
+        Route::post('/resend-verification', [\App\Http\Controllers\Public\CustomerAuthController::class, 'resendVerification'])
+            ->middleware('throttle:3,1') // Rate limit: 3 requests per minute
+            ->name('public.customers.resend_verification');
+        
+        // Upgrade guest account to registered (no auth required)
+        Route::post('/upgrade-guest', [\App\Http\Controllers\Public\CustomerAuthController::class, 'upgradeGuestAccount'])
+            ->middleware('throttle:5,1');
+        
+        // Authenticated customer routes
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('/logout', [\App\Http\Controllers\Public\CustomerAuthController::class, 'logout']);
+            Route::get('/profile', [\App\Http\Controllers\Public\CustomerAuthController::class, 'profile']);
+            
+            // Customer notifications
+            Route::prefix('notifications')->group(function () {
+                Route::get('/', [\App\Http\Controllers\CustomerPortal\CustomerNotificationController::class, 'index']);
+                Route::get('/unread', [\App\Http\Controllers\CustomerPortal\CustomerNotificationController::class, 'unread']);
+                Route::get('/unread-count', [\App\Http\Controllers\CustomerPortal\CustomerNotificationController::class, 'unreadCount']);
+                Route::post('/{uuid}/read', [\App\Http\Controllers\CustomerPortal\CustomerNotificationController::class, 'markAsRead']);
+                Route::post('/mark-all-read', [\App\Http\Controllers\CustomerPortal\CustomerNotificationController::class, 'markAllAsRead']);
+            });
+            
+            // Customer reviews
+            Route::prefix('reviews')->group(function () {
+                Route::get('/', [\App\Http\Controllers\CustomerPortal\CustomerReviewController::class, 'index']);
+                Route::get('/eligible-products', [\App\Http\Controllers\CustomerPortal\CustomerReviewController::class, 'eligibleProducts']);
+                Route::post('/', [\App\Http\Controllers\CustomerPortal\CustomerReviewController::class, 'store'])
+                    ->middleware('throttle:5,60'); // Rate limit: 5 reviews per hour
+                Route::put('/{uuid}', [\App\Http\Controllers\CustomerPortal\CustomerReviewController::class, 'update']);
+                Route::delete('/{uuid}', [\App\Http\Controllers\CustomerPortal\CustomerReviewController::class, 'destroy']);
+            });
+            
+            // Customer quotes (authenticated)
+            Route::prefix('quotes')->group(function () {
+                Route::get('/', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'index']);
+                Route::get('/{uuid}', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'show']);
+                Route::post('/{uuid}/accept', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'acceptAuthenticated']);
+                Route::post('/{uuid}/counter-offer', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'counterOfferAuthenticated']);
+                Route::post('/{uuid}/reject', [\App\Http\Controllers\CustomerPortal\QuoteController::class, 'rejectAuthenticated']);
+                
+                // Payment endpoints
+                Route::post('/payment/bank-transfer', [\App\Http\Controllers\Api\V1\Customer\QuotePaymentController::class, 'submitBankTransfer']);
+                Route::get('/{uuid}/payment-status', [\App\Http\Controllers\Api\V1\Customer\QuotePaymentController::class, 'getPaymentStatus']);
+            });
+        });
+    });
+    
     // Tenant discovery by domain
     Route::get('/tenant/discover', function (Request $request) {
         $domain = $request->get('domain');

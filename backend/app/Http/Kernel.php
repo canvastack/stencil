@@ -90,5 +90,8 @@ class Kernel extends HttpKernel
         'vendor.auth' => \App\Http\Middleware\VendorAuthMiddleware::class,
         'vendor.tenant' => \App\Http\Middleware\VendorTenantScopingMiddleware::class,
         'vendor.rate-limit' => \App\Http\Middleware\VendorRateLimitMiddleware::class,
+        
+        // Customer Quote Security Middleware
+        'customer.quote.security' => \App\Http\Middleware\CustomerQuoteSecurityMiddleware::class,
     ];
 }

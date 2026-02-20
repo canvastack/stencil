@@ -76,13 +76,20 @@ class GeneratePurchaseOrderUseCase
             // 9. Prepare delivery address
             $deliveryAddress = $command->deliveryAddress ?? $this->getDefaultDeliveryAddress($quote->order);
 
-            // 10. Create purchase order record
+            // 10. Get vendor user ID (vendor_purchase_orders.vendor_id references users table)
+            // The quote->vendor_id references vendors table, so we need to get a user from that vendor
+            $vendorUser = $quote->vendor->users()->first();
+            if (!$vendorUser) {
+                throw new InvalidArgumentException('No user account found for vendor');
+            }
+
+            // 11. Create purchase order record
             $po = VendorPurchaseOrder::create([
                 'uuid' => \Illuminate\Support\Str::uuid(),
                 'tenant_id' => (int) $command->tenantId,
                 'order_id' => $quote->order_id,
                 'quote_id' => $quote->id,
-                'vendor_id' => $quote->vendor_id,
+                'vendor_id' => $vendorUser->id, // Use vendor user ID, not vendor ID
                 'po_number' => $poNumber,
                 'issue_date' => $issueDate,
                 'validity_date' => $validityDate,
@@ -96,23 +103,24 @@ class GeneratePurchaseOrderUseCase
                 'shipping' => $shipping,
                 'grand_total' => $grandTotal,
                 'payment_method' => $command->paymentMethod,
-                'payment_schedule' => json_encode($command->getPaymentSchedule()),
+                'payment_schedule' => $command->getPaymentSchedule(), // Laravel will auto-encode to JSON
                 'status' => 'draft',
                 'created_by' => (int) $command->userId,
             ]);
 
-            // 11. Log PO generation
+            // 12. Log PO generation
             Log::info('[PO Generation] Purchase order created', [
                 'po_uuid' => $po->uuid,
                 'po_number' => $po->po_number,
                 'quote_uuid' => $quote->uuid,
                 'order_uuid' => $quote->order->uuid,
                 'vendor_id' => $quote->vendor_id,
+                'vendor_user_id' => $vendorUser->id,
                 'grand_total' => $grandTotal,
                 'user_id' => $command->userId,
             ]);
 
-            // 12. Return PO data
+            // 13. Return PO data
             return [
                 'po_uuid' => $po->uuid,
                 'po_number' => $po->po_number,

@@ -110,6 +110,13 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🏷️ Seeding CMS Categories...');
         $this->call(CategorySeeder::class);
         
+        // Seed Customer Quote Workflow Data
+        $this->command->info('💰 Seeding Customer Quote Workflow...');
+        $this->call(ApprovalSettingsSeeder::class);
+        $this->call(DocumentTemplateSeeder::class);
+        $this->call(CustomerAuthenticationSeeder::class);
+        $this->call(CustomerQuoteSeeder::class);
+        
         // Synchronize Customer Statistics (Final Step)
         $this->command->info('📊 Synchronizing Customer Statistics...');
         $this->call(CustomerStatsSeeder::class);
@@ -141,6 +148,10 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Navigation Configs: 6+ header configs, 130+ menus, 6+ footer configs');
         $this->command->info('- Refund Requests: 25+ per tenant (various statuses & scenarios)');
         $this->command->info('- Insurance Fund: Initial fund + monthly contributions per tenant');
+        $this->command->info('- Customer Quotes: 180+ quotes (draft, sent, viewed, pending, accepted, rejected, expired)');
+        $this->command->info('- Approval Settings: Default settings for all tenants');
+        $this->command->info('- Document Templates: 6 templates per tenant (quotation, invoice, PO, etc.)');
+        $this->command->info('- Customer Authentication: 40% guest, 30% registered, 30% verified');
         $this->command->info('');
         $this->command->info('🔐 Default Login Credentials:');
         $this->command->info('Platform Super Admin: admin@canvastencil.com / SuperAdmin2024!');
