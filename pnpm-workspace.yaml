@@ -2,3 +2,8 @@ packages:
   - 'packages/*'
   - 'frontend'
   - 'plugins/pages-engine'
+allowBuilds:
+  '@swc/core': true
+  core-js: true
+  esbuild: true
+  msw: true
